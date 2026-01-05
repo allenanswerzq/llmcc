@@ -105,9 +105,11 @@ digraph architecture {
     mod_candle_nn_batch_norm[label="batch_norm"];
     mod_candle_nn_conv[label="conv"];
     mod_candle_nn_cpu_flash_attention[label="cpu_flash_attention"];
+    mod_candle_nn_embedding[label="embedding"];
     mod_candle_nn_func[label="func"];
     mod_candle_nn_group_norm[label="group_norm"];
     mod_candle_nn_kv_cache[label="kv_cache"];
+    mod_candle_nn_layer_norm[label="layer_norm"];
     mod_candle_nn_linear[label="linear"];
     mod_candle_nn_loss[label="loss"];
     mod_candle_nn_moe[label="moe"];
@@ -151,7 +153,6 @@ digraph architecture {
     mod_candle_transformers_mmdit[label="mmdit"];
     mod_candle_transformers_models[label="models"];
     mod_candle_transformers_nvembed_v2[label="nvembed_v2"];
-    mod_candle_transformers_pixtral[label="pixtral"];
     mod_candle_transformers_quantized_nn[label="quantized_nn"];
     mod_candle_transformers_quantized_var_builder[label="quantized_var_builder"];
     mod_candle_transformers_qwen3_vl[label="qwen3_vl"];
@@ -172,7 +173,6 @@ digraph architecture {
     fontname="Helvetica Bold";
 
     mod_candle_wasm_example_llama2_model[label="model"];
-    mod_candle_wasm_example_llama2_worker[label="worker"];
   }
 
   subgraph cluster_candle_wasm_example_t5 {
@@ -207,27 +207,28 @@ digraph architecture {
 
 
   mod_candle_core_cpu_backend -> mod_candle_core_conv;
-  mod_candle_core_cpu_backend -> mod_candle_core_cuda_backend [dir=both]; // dir best-effort not accurate
-  mod_candle_core_cpu_backend -> mod_candle_core_dtype [dir=both]; // dir best-effort not accurate
+  mod_candle_core_cpu_backend -> mod_candle_core_cuda_backend;
+  mod_candle_core_cpu_backend -> mod_candle_core_dtype;
   mod_candle_core_cpu_backend -> mod_candle_core_layout;
   mod_candle_core_cuda_backend -> mod_candle_core_layout;
-  mod_candle_core_dtype -> mod_candle_nn_rotary_emb [dir=both]; // dir best-effort not accurate
-  mod_candle_core_metal_backend -> mod_candle_core_dtype;
+  mod_candle_core_dtype -> mod_candle_nn_rotary_emb;
   mod_candle_core_metal_backend -> mod_candle_metal_kernels_metal;
+  mod_candle_core_quantized -> mod_candle_core_cuda_backend;
+  mod_candle_core_quantized -> mod_candle_core_device;
   mod_candle_core_quantized -> mod_candle_core_dummy_cuda_backend;
   mod_candle_core_quantized -> mod_candle_core_dummy_metal_backend;
   mod_candle_core_quantized -> mod_candle_core_shape;
-  mod_candle_core_quantized -> mod_candle_metal_kernels_metal;
+  mod_candle_core_quantized -> mod_candle_metal_kernels_kernels;
   mod_candle_core_quantized -> mod_candle_nn_func;
   mod_candle_core_quantized -> mod_candle_onnx_eval;
   mod_candle_core_safetensors -> mod_candle_core_device;
   mod_candle_core_safetensors -> mod_candle_core_tensor;
-  mod_candle_core_tensor -> mod_candle_transformers_models [dir=both]; // dir best-effort not accurate
+  mod_candle_core_tensor -> mod_candle_transformers_models;
   mod_candle_core_test_utils -> mod_candle_core_tensor;
   mod_candle_datasets_vision -> mod_candle_core_tensor;
   mod_candle_examples_imagenet -> mod_candle_core_tensor;
   mod_candle_examples_lib -> mod_candle_core_tensor;
-  mod_candle_examples_lib -> mod_candle_pyo3_lib [dir=both]; // dir best-effort not accurate
+  mod_candle_examples_lib -> mod_candle_pyo3_lib;
   mod_candle_flash_attn_lib -> mod_candle_core_tensor;
   mod_candle_flash_attn_v3_lib -> mod_candle_core_tensor;
   mod_candle_metal_kernels_kernels -> mod_candle_core_device;
@@ -246,11 +247,13 @@ digraph architecture {
   mod_candle_nn_loss -> mod_candle_core_tensor;
   mod_candle_nn_moe -> mod_candle_core_tensor;
   mod_candle_nn_moe -> mod_candle_pyo3_lib;
+  mod_candle_nn_ops -> mod_candle_core_cuda_backend;
   mod_candle_nn_ops -> mod_candle_core_tensor;
   mod_candle_nn_ops -> mod_candle_pyo3_lib;
   mod_candle_nn_rnn -> mod_candle_core_tensor;
   mod_candle_nn_rotary_emb -> mod_candle_core_layout;
   mod_candle_nn_rotary_emb -> mod_candle_core_tensor;
+  mod_candle_onnx_eval -> mod_candle_core_tensor;
   mod_candle_pyo3_lib -> mod_candle_core_tensor;
   mod_candle_pyo3_lib -> mod_candle_pyo3_shape;
   mod_candle_transformers_chinese_clip -> mod_candle_core_lib;
@@ -259,57 +262,62 @@ digraph architecture {
   mod_candle_transformers_clip -> mod_candle_core_tensor;
   mod_candle_transformers_flux -> mod_candle_core_tensor;
   mod_candle_transformers_flux -> mod_candle_nn_group_norm;
+  mod_candle_transformers_flux -> mod_candle_nn_linear;
   mod_candle_transformers_flux -> mod_candle_pyo3_lib;
   mod_candle_transformers_flux -> mod_candle_transformers_models;
   mod_candle_transformers_mimi -> mod_candle_core_lib;
   mod_candle_transformers_mimi -> mod_candle_core_streaming;
   mod_candle_transformers_mimi -> mod_candle_core_tensor;
-  mod_candle_transformers_mimi -> mod_candle_transformers_models [dir=both]; // dir best-effort not accurate
+  mod_candle_transformers_mimi -> mod_candle_nn_linear;
+  mod_candle_transformers_mimi -> mod_candle_transformers_models;
   mod_candle_transformers_mmdit -> mod_candle_core_lib;
   mod_candle_transformers_mmdit -> mod_candle_core_tensor;
   mod_candle_transformers_models -> mod_candle_core_device;
   mod_candle_transformers_models -> mod_candle_core_dtype;
   mod_candle_transformers_models -> mod_candle_core_lib;
-  mod_candle_transformers_models -> mod_candle_core_quantized;
   mod_candle_transformers_models -> mod_candle_metal_kernels_lib;
   mod_candle_transformers_models -> mod_candle_metal_kernels_metal;
   mod_candle_transformers_models -> mod_candle_nn_activation;
   mod_candle_transformers_models -> mod_candle_nn_batch_norm;
   mod_candle_transformers_models -> mod_candle_nn_conv;
+  mod_candle_transformers_models -> mod_candle_nn_embedding;
   mod_candle_transformers_models -> mod_candle_nn_func;
   mod_candle_transformers_models -> mod_candle_nn_kv_cache;
+  mod_candle_transformers_models -> mod_candle_nn_layer_norm;
   mod_candle_transformers_models -> mod_candle_nn_linear;
-  mod_candle_transformers_models -> mod_candle_transformers_quantized_nn [dir=both]; // dir best-effort not accurate
+  mod_candle_transformers_models -> mod_candle_transformers_clip;
+  mod_candle_transformers_models -> mod_candle_transformers_quantized_nn;
   mod_candle_transformers_models -> mod_candle_transformers_quantized_var_builder;
-  mod_candle_transformers_models -> mod_candle_transformers_stable_diffusion [dir=both]; // dir best-effort not accurate
+  mod_candle_transformers_models -> mod_candle_transformers_stable_diffusion;
   mod_candle_transformers_nvembed_v2 -> mod_candle_core_tensor;
-  mod_candle_transformers_pixtral -> mod_candle_transformers_models;
+  mod_candle_transformers_nvembed_v2 -> mod_candle_nn_linear;
   mod_candle_transformers_quantized_nn -> mod_candle_transformers_quantized_var_builder;
   mod_candle_transformers_qwen3_vl -> mod_candle_core_tensor;
+  mod_candle_transformers_qwen3_vl -> mod_candle_nn_linear;
   mod_candle_transformers_segment_anything -> mod_candle_core_lib;
   mod_candle_transformers_segment_anything -> mod_candle_core_tensor;
   mod_candle_transformers_stable_diffusion -> mod_candle_core_lib;
   mod_candle_transformers_stable_diffusion -> mod_candle_core_tensor;
+  mod_candle_transformers_stable_diffusion -> mod_candle_transformers_z_image;
   mod_candle_transformers_utils -> mod_candle_core_tensor;
   mod_candle_transformers_voxtral -> mod_candle_core_device;
   mod_candle_transformers_voxtral -> mod_candle_core_tensor;
   mod_candle_transformers_voxtral -> mod_candle_transformers_models;
   mod_candle_transformers_whisper -> mod_candle_core_tensor;
   mod_candle_transformers_whisper -> mod_candle_nn_conv;
+  mod_candle_transformers_whisper -> mod_candle_nn_linear;
   mod_candle_transformers_whisper -> mod_candle_transformers_models;
   mod_candle_transformers_wuerstchen -> mod_candle_core_lib;
   mod_candle_transformers_wuerstchen -> mod_candle_core_tensor;
   mod_candle_transformers_z_image -> mod_candle_core_device;
   mod_candle_transformers_z_image -> mod_candle_core_lib;
   mod_candle_transformers_z_image -> mod_candle_core_tensor;
+  mod_candle_transformers_z_image -> mod_candle_nn_conv;
   mod_candle_transformers_z_image -> mod_candle_nn_group_norm;
-  mod_candle_transformers_z_image -> mod_candle_transformers_models;
   mod_candle_wasm_example_llama2_model -> mod_candle_core_tensor;
-  mod_candle_wasm_example_llama2_model -> mod_candle_transformers_models;
-  mod_candle_wasm_example_llama2_worker -> mod_candle_transformers_models;
   mod_candle_wasm_example_t5_bin -> mod_candle_transformers_models;
   mod_candle_wasm_example_yolo_model -> mod_candle_core_lib;
   mod_candle_wasm_example_yolo_model -> mod_candle_core_tensor;
-  mod_tensor_tools_main -> mod_candle_metal_kernels_metal;
+  mod_tensor_tools_main -> mod_candle_core_device;
   mod_tensor_tools_main -> mod_candle_pyo3_lib;
 }

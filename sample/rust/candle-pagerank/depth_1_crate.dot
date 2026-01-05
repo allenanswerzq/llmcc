@@ -25,17 +25,16 @@ digraph architecture {
   crate_candle_wasm_example_yolo[label="candle-wasm-example-yolo"];
   crate_tensor_tools[label="tensor-tools"];
 
-  crate_candle_core -> crate_candle_metal_kernels [dir=both]; // dir best-effort not accurate
-  crate_candle_core -> crate_candle_nn [dir=both]; // dir best-effort not accurate
-  crate_candle_core -> crate_candle_onnx [dir=both]; // dir best-effort not accurate
-  crate_candle_core -> crate_candle_transformers [dir=both]; // dir best-effort not accurate
+  crate_candle_core -> crate_candle_metal_kernels;
+  crate_candle_core -> crate_candle_nn;
+  crate_candle_core -> crate_candle_onnx;
   crate_candle_flash_attn -> crate_candle_core;
   crate_candle_flash_attn_v3 -> crate_candle_core;
+  crate_candle_nn -> crate_candle_metal_kernels;
   crate_candle_nn -> crate_candle_pyo3;
-  crate_candle_nn -> crate_candle_transformers [dir=both]; // dir best-effort not accurate
+  crate_candle_nn -> crate_candle_transformers;
   crate_candle_transformers -> crate_candle_metal_kernels;
   crate_candle_wasm_example_llama2 -> crate_candle_core;
-  crate_candle_wasm_example_llama2 -> crate_candle_transformers;
   crate_candle_wasm_example_yolo -> crate_candle_core;
   crate_tensor_tools -> crate_candle_pyo3;
 }

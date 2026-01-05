@@ -13,6 +13,7 @@ digraph architecture {
   fontsize=16;
   fontname="Helvetica Bold";
 
+  crate_databend_bendsave[label="databend-bendsave"];
   crate_databend_binaries[label="databend-binaries"];
   crate_databend_codegen[label="databend-codegen"];
   crate_databend_common_ast[label="databend-common-ast"];
@@ -20,11 +21,13 @@ digraph architecture {
   crate_databend_common_cache[label="databend-common-cache"];
   crate_databend_common_catalog[label="databend-common-catalog"];
   crate_databend_common_column[label="databend-common-column"];
+  crate_databend_common_config[label="databend-common-config"];
   crate_databend_common_datavalues[label="databend-common-datavalues"];
   crate_databend_common_exception[label="databend-common-exception"];
   crate_databend_common_expression[label="databend-common-expression"];
   crate_databend_common_formats[label="databend-common-formats"];
   crate_databend_common_functions[label="databend-common-functions"];
+  crate_databend_common_hashtable[label="databend-common-hashtable"];
   crate_databend_common_io[label="databend-common-io"];
   crate_databend_common_management[label="databend-common-management"];
   crate_databend_common_meta_api[label="databend-common-meta-api"];
@@ -43,11 +46,13 @@ digraph architecture {
   crate_databend_common_pipeline_transforms[label="databend-common-pipeline-transforms"];
   crate_databend_common_proto_conv[label="databend-common-proto-conv"];
   crate_databend_common_script[label="databend-common-script"];
+  crate_databend_common_settings[label="databend-common-settings"];
   crate_databend_common_sql[label="databend-common-sql"];
   crate_databend_common_storage[label="databend-common-storage"];
   crate_databend_common_storages_basic[label="databend-common-storages-basic"];
   crate_databend_common_storages_fuse[label="databend-common-storages-fuse"];
   crate_databend_common_storages_hive[label="databend-common-storages-hive"];
+  crate_databend_common_storages_iceberg[label="databend-common-storages-iceberg"];
   crate_databend_common_storages_orc[label="databend-common-storages-orc"];
   crate_databend_common_storages_parquet[label="databend-common-storages-parquet"];
   crate_databend_common_storages_stage[label="databend-common-storages-stage"];
@@ -73,105 +78,127 @@ digraph architecture {
   crate_databend_storages_common_stage[label="databend-storages-common-stage"];
   crate_databend_storages_common_table_meta[label="databend-storages-common-table-meta"];
 
+  crate_databend_bendsave -> crate_databend_common_config;
+  crate_databend_bendsave -> crate_databend_common_sql;
+  crate_databend_binaries -> crate_databend_common_base;
   crate_databend_binaries -> crate_databend_common_tracing;
   crate_databend_binaries -> crate_databend_query;
   crate_databend_codegen -> crate_databend_common_expression;
-  crate_databend_common_ast -> crate_databend_common_expression [dir=both]; // dir best-effort not accurate
-  crate_databend_common_ast -> crate_databend_common_meta_app [dir=both]; // dir best-effort not accurate
+  crate_databend_common_ast -> crate_databend_common_column;
+  crate_databend_common_ast -> crate_databend_common_expression;
+  crate_databend_common_ast -> crate_databend_common_meta_app;
   crate_databend_common_ast -> crate_databend_common_meta_client;
   crate_databend_common_ast -> crate_databend_common_meta_kvapi;
-  crate_databend_common_ast -> crate_databend_common_sql [dir=both]; // dir best-effort not accurate
-  crate_databend_common_ast -> crate_databend_query [dir=both]; // dir best-effort not accurate
-  crate_databend_common_base -> crate_databend_common_meta_client [dir=both]; // dir best-effort not accurate
-  crate_databend_common_base -> crate_databend_common_storage [dir=both]; // dir best-effort not accurate
+  crate_databend_common_ast -> crate_databend_common_meta_types;
+  crate_databend_common_ast -> crate_databend_common_sql;
+  crate_databend_common_ast -> crate_databend_query;
+  crate_databend_common_base -> crate_databend_common_meta_client;
+  crate_databend_common_base -> crate_databend_common_storage;
   crate_databend_common_catalog -> crate_databend_common_expression;
   crate_databend_common_catalog -> crate_databend_common_meta_app;
-  crate_databend_common_catalog -> crate_databend_common_sql [dir=both]; // dir best-effort not accurate
+  crate_databend_common_catalog -> crate_databend_common_sql;
   crate_databend_common_catalog -> crate_databend_common_storage;
-  crate_databend_common_catalog -> crate_databend_common_storages_fuse [dir=both]; // dir best-effort not accurate
-  crate_databend_common_catalog -> crate_databend_query [dir=both]; // dir best-effort not accurate
+  crate_databend_common_catalog -> crate_databend_query;
   crate_databend_common_catalog -> crate_databend_storages_common_table_meta;
   crate_databend_common_column -> crate_databend_common_meta_client;
-  crate_databend_common_column -> crate_databend_query [dir=both]; // dir best-effort not accurate
-  crate_databend_common_datavalues -> crate_databend_common_expression [dir=both]; // dir best-effort not accurate
+  crate_databend_common_column -> crate_databend_query;
+  crate_databend_common_datavalues -> crate_databend_common_expression;
+  crate_databend_common_exception -> crate_databend_common_management;
   crate_databend_common_exception -> crate_databend_common_meta_app;
-  crate_databend_common_expression -> crate_databend_common_functions [dir=both]; // dir best-effort not accurate
+  crate_databend_common_exception -> crate_databend_storages_common_index;
+  crate_databend_common_expression -> crate_databend_common_functions;
   crate_databend_common_expression -> crate_databend_common_io;
   crate_databend_common_expression -> crate_databend_common_meta_client;
-  crate_databend_common_expression -> crate_databend_common_meta_kvapi;
-  crate_databend_common_expression -> crate_databend_common_sql [dir=both]; // dir best-effort not accurate
+  crate_databend_common_expression -> crate_databend_common_meta_raft_store;
+  crate_databend_common_expression -> crate_databend_common_pipeline_transforms;
+  crate_databend_common_expression -> crate_databend_common_sql;
   crate_databend_common_expression -> crate_databend_common_timezone;
-  crate_databend_common_expression -> crate_databend_query [dir=both]; // dir best-effort not accurate
-  crate_databend_common_expression -> crate_databend_storages_common_table_meta [dir=both]; // dir best-effort not accurate
+  crate_databend_common_expression -> crate_databend_query;
+  crate_databend_common_expression -> crate_databend_storages_common_table_meta;
   crate_databend_common_formats -> crate_databend_common_expression;
   crate_databend_common_formats -> crate_databend_common_io;
+  crate_databend_common_formats -> crate_databend_common_meta_app;
   crate_databend_common_functions -> crate_databend_common_base;
+  crate_databend_common_functions -> crate_databend_common_column;
   crate_databend_common_functions -> crate_databend_common_meta_client;
   crate_databend_common_functions -> crate_databend_common_meta_kvapi;
   crate_databend_common_functions -> crate_databend_common_meta_raft_store;
-  crate_databend_common_functions -> crate_databend_common_sql [dir=both]; // dir best-effort not accurate
-  crate_databend_common_io -> crate_databend_query [dir=both]; // dir best-effort not accurate
+  crate_databend_common_functions -> crate_databend_common_sql;
+  crate_databend_common_io -> crate_databend_common_meta_client;
+  crate_databend_common_io -> crate_databend_query;
   crate_databend_common_management -> crate_databend_common_meta_app;
   crate_databend_common_management -> crate_databend_common_meta_types;
-  crate_databend_common_meta_api -> crate_databend_common_meta_app [dir=both]; // dir best-effort not accurate
+  crate_databend_common_meta_api -> crate_databend_common_meta_app;
   crate_databend_common_meta_api -> crate_databend_common_meta_kvapi;
-  crate_databend_common_meta_api -> crate_databend_common_meta_types [dir=both]; // dir best-effort not accurate
-  crate_databend_common_meta_api -> crate_databend_query [dir=both]; // dir best-effort not accurate
+  crate_databend_common_meta_api -> crate_databend_common_meta_types;
+  crate_databend_common_meta_api -> crate_databend_query;
   crate_databend_common_meta_app -> crate_databend_common_datavalues;
   crate_databend_common_meta_app -> crate_databend_common_meta_client;
   crate_databend_common_meta_app -> crate_databend_common_meta_kvapi;
   crate_databend_common_meta_app -> crate_databend_common_proto_conv;
-  crate_databend_common_meta_app -> crate_databend_common_sql [dir=both]; // dir best-effort not accurate
-  crate_databend_common_meta_app -> crate_databend_query [dir=both]; // dir best-effort not accurate
-  crate_databend_common_meta_app_storage -> crate_databend_common_proto_conv;
-  crate_databend_common_meta_client -> crate_databend_query [dir=both]; // dir best-effort not accurate
+  crate_databend_common_meta_app -> crate_databend_common_sql;
+  crate_databend_common_meta_app -> crate_databend_query;
+  crate_databend_common_meta_client -> crate_databend_query;
   crate_databend_common_meta_control -> crate_databend_common_meta_client;
   crate_databend_common_meta_control -> crate_databend_common_meta_raft_store;
+  crate_databend_common_meta_kvapi -> crate_databend_common_meta_raft_store;
   crate_databend_common_meta_raft_store -> crate_databend_common_meta_sled_store;
   crate_databend_common_meta_raft_store -> crate_databend_common_meta_types;
   crate_databend_common_metrics -> crate_databend_common_sql;
   crate_databend_common_native -> crate_databend_common_meta_client;
   crate_databend_common_native -> crate_databend_common_meta_raft_store;
-  crate_databend_common_native -> crate_databend_storages_common_table_meta [dir=both]; // dir best-effort not accurate
+  crate_databend_common_native -> crate_databend_storages_common_table_meta;
   crate_databend_common_pipeline -> crate_databend_common_base;
   crate_databend_common_pipeline -> crate_databend_common_expression;
-  crate_databend_common_pipeline_transforms -> crate_databend_common_sql [dir=both]; // dir best-effort not accurate
+  crate_databend_common_pipeline_transforms -> crate_databend_common_datavalues;
+  crate_databend_common_pipeline_transforms -> crate_databend_common_sql;
   crate_databend_common_pipeline_transforms -> crate_databend_common_storages_stream;
   crate_databend_common_script -> crate_databend_common_expression;
+  crate_databend_common_script -> crate_databend_query;
+  crate_databend_common_settings -> crate_databend_common_meta_app;
   crate_databend_common_sql -> crate_databend_common_base;
+  crate_databend_common_sql -> crate_databend_common_datavalues;
   crate_databend_common_sql -> crate_databend_common_meta_app_storage;
   crate_databend_common_sql -> crate_databend_common_pipeline;
-  crate_databend_common_sql -> crate_databend_common_storage [dir=both]; // dir best-effort not accurate
-  crate_databend_common_sql -> crate_databend_query [dir=both]; // dir best-effort not accurate
-  crate_databend_common_sql -> crate_databend_storages_common_index [dir=both]; // dir best-effort not accurate
-  crate_databend_common_sql -> crate_databend_storages_common_table_meta [dir=both]; // dir best-effort not accurate
+  crate_databend_common_sql -> crate_databend_common_storage;
+  crate_databend_common_sql -> crate_databend_query;
+  crate_databend_common_sql -> crate_databend_storages_common_index;
   crate_databend_common_storage -> crate_databend_common_meta_app_storage;
   crate_databend_common_storage -> crate_databend_common_pipeline_transforms;
   crate_databend_common_storages_basic -> crate_databend_common_catalog;
   crate_databend_common_storages_basic -> crate_databend_common_expression;
+  crate_databend_common_storages_basic -> crate_databend_common_pipeline;
   crate_databend_common_storages_fuse -> crate_databend_common_base;
   crate_databend_common_storages_fuse -> crate_databend_common_datavalues;
   crate_databend_common_storages_fuse -> crate_databend_common_meta_app;
   crate_databend_common_storages_fuse -> crate_databend_common_meta_app_storage;
   crate_databend_common_storages_fuse -> crate_databend_common_meta_client;
   crate_databend_common_storages_fuse -> crate_databend_common_metrics;
+  crate_databend_common_storages_fuse -> crate_databend_common_native;
   crate_databend_common_storages_fuse -> crate_databend_common_pipeline;
+  crate_databend_common_storages_fuse -> crate_databend_common_pipeline_transforms;
   crate_databend_common_storages_fuse -> crate_databend_common_storage;
-  crate_databend_common_storages_fuse -> crate_databend_common_storages_parquet;
   crate_databend_common_storages_fuse -> crate_databend_common_storages_stream;
-  crate_databend_common_storages_fuse -> crate_databend_query [dir=both]; // dir best-effort not accurate
-  crate_databend_common_storages_fuse -> crate_databend_storages_common_cache [dir=both]; // dir best-effort not accurate
+  crate_databend_common_storages_fuse -> crate_databend_query;
+  crate_databend_common_storages_fuse -> crate_databend_storages_common_cache;
   crate_databend_common_storages_fuse -> crate_databend_storages_common_index;
   crate_databend_common_storages_fuse -> crate_databend_storages_common_io;
-  crate_databend_common_storages_fuse -> crate_databend_storages_common_pruner [dir=both]; // dir best-effort not accurate
-  crate_databend_common_storages_fuse -> crate_databend_storages_common_table_meta [dir=both]; // dir best-effort not accurate
+  crate_databend_common_storages_fuse -> crate_databend_storages_common_pruner;
+  crate_databend_common_storages_fuse -> crate_databend_storages_common_table_meta;
   crate_databend_common_storages_hive -> crate_databend_common_catalog;
   crate_databend_common_storages_hive -> crate_databend_common_expression;
   crate_databend_common_storages_hive -> crate_databend_common_sql;
+  crate_databend_common_storages_iceberg -> crate_databend_common_storage;
   crate_databend_common_storages_orc -> crate_databend_common_catalog;
+  crate_databend_common_storages_orc -> crate_databend_common_expression;
+  crate_databend_common_storages_orc -> crate_databend_common_pipeline;
+  crate_databend_common_storages_orc -> crate_databend_common_sql;
+  crate_databend_common_storages_parquet -> crate_databend_common_ast;
   crate_databend_common_storages_parquet -> crate_databend_common_base;
   crate_databend_common_storages_parquet -> crate_databend_common_catalog;
   crate_databend_common_storages_parquet -> crate_databend_common_column;
+  crate_databend_common_storages_parquet -> crate_databend_common_datavalues;
+  crate_databend_common_storages_parquet -> crate_databend_common_exception;
   crate_databend_common_storages_parquet -> crate_databend_common_expression;
   crate_databend_common_storages_parquet -> crate_databend_common_pipeline;
   crate_databend_common_storages_parquet -> crate_databend_common_sql;
@@ -185,28 +212,31 @@ digraph architecture {
   crate_databend_common_storages_stage -> crate_databend_common_pipeline;
   crate_databend_common_storages_stage -> crate_databend_common_pipeline_transforms;
   crate_databend_common_storages_stage -> crate_databend_common_sql;
+  crate_databend_common_storages_stage -> crate_databend_common_storage;
   crate_databend_common_storages_stage -> crate_databend_storages_common_stage;
+  crate_databend_common_storages_stream -> crate_databend_common_catalog;
   crate_databend_common_storages_system -> crate_databend_common_catalog;
   crate_databend_common_storages_system -> crate_databend_common_expression;
   crate_databend_common_storages_system -> crate_databend_common_meta_app;
-  crate_databend_common_storages_system -> crate_databend_query [dir=both]; // dir best-effort not accurate
+  crate_databend_common_storages_system -> crate_databend_query;
   crate_databend_common_tracing -> crate_databend_common_meta_client;
-  crate_databend_common_tracing -> crate_databend_query [dir=both]; // dir best-effort not accurate
+  crate_databend_common_tracing -> crate_databend_query;
   crate_databend_common_users -> crate_databend_common_meta_app;
   crate_databend_enterprise_query -> crate_databend_common_catalog;
-  crate_databend_enterprise_query -> crate_databend_common_expression;
+  crate_databend_enterprise_query -> crate_databend_common_hashtable;
   crate_databend_enterprise_query -> crate_databend_common_sql;
   crate_databend_enterprise_query -> crate_databend_common_storages_fuse;
   crate_databend_functions_scalar_arithmetic -> crate_databend_common_expression;
   crate_databend_functions_scalar_datetime -> crate_databend_common_column;
   crate_databend_functions_scalar_datetime -> crate_databend_common_datavalues;
   crate_databend_functions_scalar_datetime -> crate_databend_common_expression;
-  crate_databend_functions_scalar_datetime -> crate_databend_common_meta_raft_store;
   crate_databend_functions_scalar_decimal -> crate_databend_common_datavalues;
+  crate_databend_functions_scalar_decimal -> crate_databend_common_expression;
+  crate_databend_functions_scalar_decimal -> crate_databend_common_io;
   crate_databend_functions_scalar_decimal -> crate_databend_common_meta_kvapi;
-  crate_databend_functions_scalar_decimal -> crate_databend_common_meta_raft_store;
   crate_databend_functions_scalar_decimal -> crate_databend_storages_common_table_meta;
   crate_databend_functions_scalar_geo -> crate_databend_common_expression;
+  crate_databend_meta -> crate_databend_common_meta_process;
   crate_databend_meta -> crate_databend_common_meta_raft_store;
   crate_databend_meta -> crate_databend_common_meta_types;
   crate_databend_meta -> crate_databend_common_storages_system;
@@ -215,19 +245,22 @@ digraph architecture {
   crate_databend_meta_binaries -> crate_databend_common_meta_control;
   crate_databend_meta_binaries -> crate_databend_common_meta_process;
   crate_databend_meta_binaries -> crate_databend_common_meta_types;
+  crate_databend_meta_binaries -> crate_databend_common_tracing;
   crate_databend_meta_binaries -> crate_databend_meta;
   crate_databend_query -> crate_databend_common_cache;
   crate_databend_query -> crate_databend_common_formats;
   crate_databend_query -> crate_databend_common_storages_stream;
-  crate_databend_query -> crate_databend_storages_common_index [dir=both]; // dir best-effort not accurate
+  crate_databend_query -> crate_databend_common_users;
+  crate_databend_query -> crate_databend_storages_common_cache;
+  crate_databend_query -> crate_databend_storages_common_index;
   crate_databend_query -> crate_databend_storages_common_io;
-  crate_databend_query -> crate_databend_storages_common_table_meta [dir=both]; // dir best-effort not accurate
+  crate_databend_query -> crate_databend_storages_common_table_meta;
   crate_databend_storages_common_blocks -> crate_databend_storages_common_table_meta;
   crate_databend_storages_common_cache -> crate_databend_storages_common_index;
   crate_databend_storages_common_cache -> crate_databend_storages_common_table_meta;
-  crate_databend_storages_common_index -> crate_databend_common_ast;
   crate_databend_storages_common_index -> crate_databend_common_column;
-  crate_databend_storages_common_index -> crate_databend_storages_common_table_meta [dir=both]; // dir best-effort not accurate
+  crate_databend_storages_common_index -> crate_databend_storages_common_table_meta;
+  crate_databend_storages_common_pruner -> crate_databend_common_expression;
   crate_databend_storages_common_session -> crate_databend_common_meta_app;
   crate_databend_storages_common_stage -> crate_databend_common_expression;
   crate_databend_storages_common_table_meta -> crate_databend_common_pipeline_transforms;

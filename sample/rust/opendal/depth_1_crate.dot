@@ -17,6 +17,7 @@ digraph architecture {
   crate_object_store_opendal[label="object_store_opendal"];
   crate_odev[label="odev"];
   crate_opendal_core[label="opendal-core"];
+  crate_opendal_cpp[label="opendal-cpp"];
   crate_opendal_fuzz[label="opendal-fuzz"];
   crate_opendal_java[label="opendal-java"];
   crate_opendal_layer_capability_check[label="opendal-layer-capability-check"];
@@ -27,9 +28,7 @@ digraph architecture {
   crate_opendal_lua[label="opendal-lua"];
   crate_opendal_nodejs[label="opendal-nodejs"];
   crate_opendal_ocaml[label="opendal-ocaml"];
-  crate_opendal_php[label="opendal-php"];
   crate_opendal_python[label="opendal-python"];
-  crate_opendal_ruby[label="opendal-ruby"];
   crate_opendal_service_aliyun_drive[label="opendal-service-aliyun-drive"];
   crate_opendal_service_alluxio[label="opendal-service-alluxio"];
   crate_opendal_service_azblob[label="opendal-service-azblob"];
@@ -59,7 +58,6 @@ digraph architecture {
   crate_opendal_service_memcached[label="opendal-service-memcached"];
   crate_opendal_service_mini_moka[label="opendal-service-mini-moka"];
   crate_opendal_service_moka[label="opendal-service-moka"];
-  crate_opendal_service_mongodb[label="opendal-service-mongodb"];
   crate_opendal_service_monoiofs[label="opendal-service-monoiofs"];
   crate_opendal_service_mysql[label="opendal-service-mysql"];
   crate_opendal_service_obs[label="opendal-service-obs"];
@@ -85,13 +83,14 @@ digraph architecture {
   crate_opendal_service_yandex_disk[label="opendal-service-yandex-disk"];
   crate_opendal_testkit[label="opendal-testkit"];
 
-  crate_dav_server_opendalfs -> crate_opendal_nodejs;
+  crate_dav_server_opendalfs -> crate_opendal_core;
   crate_object_store_opendal -> crate_opendal_core;
+  crate_object_store_opendal -> crate_opendal_nodejs;
   crate_odev -> crate_opendal_service_azdls;
-  crate_opendal_core -> crate_opendal_nodejs [dir=both]; // dir best-effort not accurate
-  crate_opendal_core -> crate_opendal_python [dir=both]; // dir best-effort not accurate
+  crate_opendal_core -> crate_opendal_python;
   crate_opendal_fuzz -> crate_opendal_testkit;
-  crate_opendal_java -> crate_opendal_php;
+  crate_opendal_java -> crate_opendal_core;
+  crate_opendal_java -> crate_opendal_cpp;
   crate_opendal_java -> crate_opendal_python;
   crate_opendal_layer_capability_check -> crate_opendal_core;
   crate_opendal_layer_logging -> crate_opendal_core;
@@ -100,8 +99,9 @@ digraph architecture {
   crate_opendal_layer_timeout -> crate_opendal_core;
   crate_opendal_lua -> crate_opendal_ocaml;
   crate_opendal_nodejs -> crate_opendal_lua;
+  crate_opendal_ocaml -> crate_opendal_nodejs;
   crate_opendal_ocaml -> crate_opendal_python;
-  crate_opendal_ocaml -> crate_opendal_ruby [dir=both]; // dir best-effort not accurate
+  crate_opendal_ocaml -> crate_opendal_service_github;
   crate_opendal_service_aliyun_drive -> crate_opendal_core;
   crate_opendal_service_alluxio -> crate_opendal_core;
   crate_opendal_service_azblob -> crate_opendal_core;
@@ -131,7 +131,6 @@ digraph architecture {
   crate_opendal_service_memcached -> crate_opendal_core;
   crate_opendal_service_mini_moka -> crate_opendal_core;
   crate_opendal_service_moka -> crate_opendal_core;
-  crate_opendal_service_mongodb -> crate_opendal_core;
   crate_opendal_service_monoiofs -> crate_opendal_core;
   crate_opendal_service_mysql -> crate_opendal_core;
   crate_opendal_service_obs -> crate_opendal_core;
@@ -153,7 +152,6 @@ digraph architecture {
   crate_opendal_service_vercel_artifacts -> crate_opendal_core;
   crate_opendal_service_vercel_blob -> crate_opendal_core;
   crate_opendal_service_webdav -> crate_opendal_core;
-  crate_opendal_service_webdav -> crate_opendal_ocaml;
   crate_opendal_service_webhdfs -> crate_opendal_core;
   crate_opendal_service_yandex_disk -> crate_opendal_core;
 }

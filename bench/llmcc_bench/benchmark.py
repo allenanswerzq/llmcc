@@ -183,9 +183,9 @@ def benchmark_project(
 
     result = BenchmarkResult(name=name, src_dir=src_dir)
 
-    # Count files and estimate LoC
+    # Count files and LoC
     result.file_count = count_rust_files(src_dir)
-    result.loc = result.file_count * 200  # Estimate ~200 lines per file
+    result.loc = count_loc(src_dir)
 
     config.benchmark_logs_dir.mkdir(parents=True, exist_ok=True)
 

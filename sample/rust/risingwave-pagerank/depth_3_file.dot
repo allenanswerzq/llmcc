@@ -1,0 +1,2617 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_pgwire {
+    label="pgwire";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_types_rs {
+      label="types.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n14025[label="Row", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/utils/pgwire/src/types.rs:26", sym_ty="Struct", shape=box];
+      n14207[label="Format", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/utils/pgwire/src/types.rs:72", sym_ty="Enum", shape=box];
+    }
+
+  }
+
+  subgraph cluster_prost_helpers {
+    label="prost-helpers";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n169860[label="version", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/prost/helpers/src/lib.rs:71", sym_ty="Function"];
+      n169886[label="version_inner", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/prost/helpers/src/lib.rs:72", sym_ty="Function"];
+    }
+
+  }
+
+  subgraph cluster_risingwave_fields_derive {
+    label="risingwave-fields-derive";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n104037[label="fields", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/fields-derive/src/lib.rs:20", sym_ty="Function"];
+      n104065[label="inner", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/fields-derive/src/lib.rs:24", sym_ty="Function"];
+      n104095[label="r#gen", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/fields-derive/src/lib.rs:31", sym_ty="Function"];
+    }
+
+  }
+
+  subgraph cluster_risingwave_batch {
+    label="risingwave_batch";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_error_rs {
+      label="error.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n205169[label="BatchError", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/batch/src/error.rs:42", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_executor {
+      label="executor";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n25617[label="ExecutorInfo", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/batch/src/executor/mod.rs:40", sym_ty="Struct", shape=box];
+        n25817[label="ExecutorBuilder", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/batch/src/executor/mod.rs:76", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_task {
+      label="task";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_task_execution_rs {
+        label="task_execution.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n96409[label="ShutdownToken", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/batch/src/task/task_execution.rs:252", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_risingwave_cmd {
+    label="risingwave_cmd";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n8324[label="meta", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/cmd/src/lib.rs:45", sym_ty="Function"];
+    }
+
+  }
+
+  subgraph cluster_risingwave_common {
+    label="risingwave_common";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_array {
+      label="array";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_bool_array_rs {
+        label="bool_array.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n46668[label="BoolArray", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/array/bool_array.rs:22", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_data_chunk_rs {
+        label="data_chunk.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n125267[label="DataChunk", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/array/data_chunk.rs:65", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_error_rs {
+        label="error.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n20409[label="ArrayError", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/array/error.rs:25", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_list_array_rs {
+        label="list_array.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n146330[label="ListValue", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/array/list_array.rs:339", sym_ty="Struct", shape=box];
+        n147629[label="ListRef", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/array/list_array.rs:510", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_map_array_rs {
+        label="map_array.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n166712[label="MapRef", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/array/map_array.rs:218", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_primitive_array_rs {
+        label="primitive_array.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n182067[label="PrimitiveArray", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/array/primitive_array.rs:137", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_stream_chunk_rs {
+        label="stream_chunk.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n46039[label="StreamChunk", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/array/stream_chunk.rs:106", sym_ty="Struct", shape=box];
+        n45653[label="Op", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/array/stream_chunk.rs:45", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_stream_chunk_builder_rs {
+        label="stream_chunk_builder.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n172157[label="StreamChunkBuilder", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/array/stream_chunk_builder.rs:23", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_bitmap_rs {
+      label="bitmap.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n121418[label="Bitmap", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/bitmap.rs:212", sym_ty="Struct", shape=box];
+      n119998[label="BitmapBuilder", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/bitmap.rs:48", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_catalog {
+      label="catalog";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_column_rs {
+        label="column.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n156026[label="ColumnDesc", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/catalog/column.rs:117", sym_ty="Struct", shape=box];
+        n156964[label="ColumnCatalog", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/catalog/column.rs:292", sym_ty="Struct", shape=box];
+        n155392[label="ColumnId", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/catalog/column.rs:41", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n125352[label="UserId", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/catalog/mod.rs:183", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_schema_rs {
+        label="schema.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n73654[label="Schema", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/catalog/schema.rs:134", sym_ty="Struct", shape=box];
+        n72935[label="Field", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/catalog/schema.rs:26", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_config {
+      label="config";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_streaming_rs {
+        label="streaming.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n164029[label="StreamingConfig", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/config/streaming.rs:29", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_memory {
+      label="memory";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mem_context_rs {
+        label="mem_context.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n203095[label="MemoryContext", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/memory/mem_context.rs:66", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_range_rs {
+      label="range.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n20786[label="PartialOrd", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/range.rs:51", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_row {
+      label="row";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n163781[label="Row", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/row/mod.rs:30", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_owned_row_rs {
+        label="owned_row.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n61129[label="OwnedRow", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/row/owned_row.rs:29", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_session_config {
+      label="session_config";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n200732[label="SessionConfig", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/session_config/mod.rs:85", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_types {
+      label="types";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_cow_rs {
+        label="cow.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n28606[label="DatumCow", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/types/cow.rs:35", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_interval_rs {
+        label="interval.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n109056[label="Interval", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/types/interval.rs:44", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_jsonb_rs {
+        label="jsonb.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n59655[label="JsonbVal", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/types/jsonb.rs:34", sym_ty="Struct", shape=box];
+        n59663[label="JsonbRef", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/types/jsonb.rs:37", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n18257[label="DataType", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/types/mod.rs:132", sym_ty="Enum", shape=box];
+        n24144[label="ToDatumRef", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/types/mod.rs:793", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_ordered_float_rs {
+        label="ordered_float.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n189781[label="OrderedFloat", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/types/ordered_float.rs:101", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_struct_type_rs {
+        label="struct_type.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n26814[label="StructType", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/types/struct_type.rs:31", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_util {
+      label="util";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_addr_rs {
+        label="addr.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n206034[label="HostAddr", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/util/addr.rs:28", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_chunk_coalesce_rs {
+        label="chunk_coalesce.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n186211[label="DataChunkBuilder", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/util/chunk_coalesce.rs:30", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_column_index_mapping_rs {
+        label="column_index_mapping.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n184959[label="ColIndexMapping", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/util/column_index_mapping.rs:26", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_epoch_rs {
+        label="epoch.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n172647[label="EpochPair", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/util/epoch.rs:156", sym_ty="Struct", shape=box];
+        n172029[label="Epoch", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/util/epoch.rs:31", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_panic_rs {
+        label="panic.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n96909[label="rw_catch_unwind", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/util/panic.rs:41", sym_ty="Function"];
+      }
+
+      subgraph cluster_row_serde_rs {
+        label="row_serde.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n176624[label="OrderedRowSerde", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/util/row_serde.rs:27", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_sort_util_rs {
+        label="sort_util.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n113245[label="ColumnOrder", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/util/sort_util.rs:254", sym_ty="Struct", shape=box];
+        n112427[label="OrderType", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/util/sort_util.rs:95", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_stream_graph_visitor_rs {
+        label="stream_graph_visitor.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n167579[label="visit_inner", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/util/stream_graph_visitor.rs:69", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_value_encoding {
+      label="value_encoding";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n118070[label="serialize_datum_into", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/util/value_encoding/mod.rs:155", sym_ty="Function"];
+        n118140[label="estimate_serialize_datum_size", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/util/value_encoding/mod.rs:164", sym_ty="Function"];
+        n118394[label="serialize_scalar", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/util/value_encoding/mod.rs:206", sym_ty="Function"];
+        n118616[label="estimate_serialize_scalar_size", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/util/value_encoding/mod.rs:238", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_risingwave_common_estimate_size {
+    label="risingwave_common_estimate_size";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_collections {
+      label="collections";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_btreemap_rs {
+        label="btreemap.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n87802[label="EstimatedBTreeMap", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/estimate_size/src/collections/btreemap.rs:22", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n61322[label="EstimateSize", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/common/estimate_size/src/lib.rs:31", sym_ty="Trait", shape=box];
+    }
+
+  }
+
+  subgraph cluster_risingwave_compute {
+    label="risingwave_compute";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_server_rs {
+      label="server.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n45181[label="compute_node_serve", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/compute/src/server.rs:92", sym_ty="Function"];
+    }
+
+  }
+
+  subgraph cluster_risingwave_connector {
+    label="risingwave_connector";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_enforce_secret_rs {
+      label="enforce_secret.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n15101[label="EnforceSecret", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src/enforce_secret.rs:25", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_iceberg {
+      label="iceberg";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n88458[label="IcebergConfig", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src/sink/iceberg/mod.rs:268", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_schema_registry {
+      label="schema_registry";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_util_rs {
+        label="util.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n135166[label="request", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src/schema/schema_registry/util.rs:117", sym_ty="Function"];
+        n134979[label="RequestError", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src/schema/schema_registry/util.rs:88", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_sink {
+      label="sink";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_log_store_rs {
+        label="log_store.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n112235[label="Box", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src/sink/log_store.rs:129", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n141573[label="SinkParam", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src/sink/mod.rs:242", sym_ty="Struct", shape=box];
+        n142715[label="SinkWriterParam", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src/sink/mod.rs:565", sym_ty="Struct", shape=box];
+        n144538[label="SinkError", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src/sink/mod.rs:924", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_source {
+      label="source";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_manager_rs {
+        label="manager.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n56785[label="SourceColumnDesc", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src/source/manager.rs:29", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_with_options_rs {
+      label="with_options.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n168324[label="WithOptionsSecResolved", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src/with_options.rs:233", sym_ty="Struct", shape=box];
+      n165528[label="WithOptions", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src/with_options.rs:39", sym_ty="Trait", shape=box];
+    }
+
+  }
+
+  subgraph cluster_risingwave_ctl {
+    label="risingwave_ctl";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_common {
+      label="common";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_context_rs {
+        label="context.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n36692[label="CtlContext", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/ctl/src/common/context.rs:24", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_hummock {
+      label="hummock";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_sst_dump_rs {
+        label="sst_dump.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n121879[label="sst_dump", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/ctl/src/cmd_impl/hummock/sst_dump.rs:67", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_table {
+      label="table";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_list_rs {
+        label="list.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5890[label="list", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/ctl/src/cmd_impl/table/list.rs:19", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_risingwave_expr {
+    label="risingwave_expr";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_aggregate {
+      label="aggregate";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n181129[label="AggregateState", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/expr/core/src/aggregate/mod.rs:78", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_error_rs {
+      label="error.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n127307[label="ExprError", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/expr/core/src/error.rs:42", sym_ty="Enum", shape=box];
+    }
+
+  }
+
+  subgraph cluster_risingwave_expr_impl {
+    label="risingwave_expr_impl";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_aggregate {
+      label="aggregate";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_general_rs {
+        label="general.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n198129[label="count", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/expr/impl/src/aggregate/general.rs:155", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_scalar {
+      label="scalar";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_array_rs {
+        label="array.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n145541[label="array", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/expr/impl/src/scalar/array.rs:25", sym_ty="Function"];
+      }
+
+      subgraph cluster_format_rs {
+        label="format.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n137974[label="Formatter", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/expr/impl/src/scalar/format.rs:115", sym_ty="Struct", shape=box];
+        n137551[label="format", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/expr/impl/src/scalar/format.rs:42", sym_ty="Function"];
+      }
+
+      subgraph cluster_string_rs {
+        label="string.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n153732[label="quote_ident", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/expr/impl/src/scalar/string.rs:367", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_risingwave_frontend {
+    label="risingwave_frontend";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_binder {
+      label="binder";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n77056[label="Binder", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/binder/mod.rs:93", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_catalog {
+      label="catalog";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_catalog_service_rs {
+        label="catalog_service.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n22258[label="CatalogWriterImpl", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/catalog/catalog_service.rs:269", sym_ty="Struct", shape=box];
+        n20699[label="CatalogReader", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/catalog/catalog_service.rs:54", sym_ty="Struct", shape=box];
+        n20785[label="CatalogWriter", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/catalog/catalog_service.rs:72", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_root_catalog_rs {
+        label="root_catalog.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n65211[label="Catalog", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/catalog/root_catalog.rs:101", sym_ty="Struct", shape=box];
+        n64896[label="SchemaPath", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/catalog/root_catalog.rs:49", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_schema_catalog_rs {
+        label="schema_catalog.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n116373[label="SchemaCatalog", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/catalog/schema_catalog.rs:46", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_source_catalog_rs {
+        label="source_catalog.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n54122[label="SourceCatalog", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/catalog/source_catalog.rs:34", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_table_catalog_rs {
+        label="table_catalog.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n145743[label="TableCatalog", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/catalog/table_catalog.rs:83", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_create_source {
+      label="create_source";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_external_schema_rs {
+        label="external_schema.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n149626[label="bind_columns_from_source", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/handler/create_source/external_schema.rs:72", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_error_rs {
+      label="error.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n184362[label="ErrorCode", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/error.rs:42", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_expr {
+      label="expr";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_agg_call_rs {
+        label="agg_call.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n51114[label="AggCall", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/expr/agg_call.rs:23", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_function_call_rs {
+        label="function_call.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n184157[label="FunctionCall", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/expr/function_call.rs:26", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_input_ref_rs {
+        label="input_ref.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n58924[label="InputRef", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/expr/input_ref.rs:25", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_literal_rs {
+        label="literal.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n71623[label="Literal", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/expr/literal.rs:22", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n153986[label="Expr", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/expr/mod.rs:80", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+    subgraph cluster_generic {
+      label="generic";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_agg_rs {
+        label="agg.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n86507[label="Agg", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/generic/agg.rs:54", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n134114[label="GenericPlanRef", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/generic/mod.rs:127", sym_ty="Trait", shape=box];
+        n134263[label="GenericPlanNode", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/generic/mod.rs:140", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+    subgraph cluster_handler {
+      label="handler";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_create_sink_rs {
+        label="create_sink.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n95901[label="gen_sink_plan", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/handler/create_sink.rs:108", sym_ty="Function"];
+      }
+
+      subgraph cluster_create_source_rs {
+        label="create_source.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n62378[label="bind_create_source_or_table_with_connector", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/handler/create_source.rs:829", sym_ty="Function"];
+      }
+
+      subgraph cluster_create_table_rs {
+        label="create_table.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n105694[label="handle_create_table_plan", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/handler/create_table.rs:1061", sym_ty="Function"];
+        n106632[label="handle_create_table", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/handler/create_table.rs:1402", sym_ty="Function"];
+        n106934[label="create_iceberg_engine_table", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/handler/create_table.rs:1530", sym_ty="Function"];
+      }
+
+      subgraph cluster_explain_rs {
+        label="explain.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n185549[label="do_handle_explain", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/handler/explain.rs:45", sym_ty="Function"];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n115852[label="HandlerArgs", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/handler/mod.rs:195", sym_ty="Struct", shape=box];
+        n116058[label="handle", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/handler/mod.rs:266", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_meta_client_rs {
+      label="meta_client.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n160964[label="FrontendMetaClientImpl", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/meta_client.rs:218", sym_ty="Struct", shape=box];
+      n159727[label="FrontendMetaClient", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/meta_client.rs:59", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_optimizer {
+      label="optimizer";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_optimizer_context_rs {
+        label="optimizer_context.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n85294[label="OptimizerContext", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/optimizer_context.rs:38", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_plan_node {
+      label="plan_node";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_col_pruning_rs {
+        label="col_pruning.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n204542[label="ColPrunable", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/col_pruning.rs:22", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_convert_rs {
+        label="convert.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n163537[label="ToBatch", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/convert.rs:205", sym_ty="Trait", shape=box];
+        n162694[label="ToStream", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/convert.rs:33", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_eq_join_predicate_rs {
+        label="eq_join_predicate.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n190803[label="EqJoinPredicate", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/eq_join_predicate.rs:28", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_expr_rewritable_rs {
+        label="expr_rewritable.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n18656[label="ExprRewritable", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/expr_rewritable.rs:22", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_expr_visitable_rs {
+        label="expr_visitable.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4582[label="ExprVisitable", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/expr_visitable.rs:19", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_logical_agg_rs {
+        label="logical_agg.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n40493[label="LogicalAgg", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/logical_agg.rs:67", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_logical_filter_rs {
+        label="logical_filter.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n135333[label="LogicalFilter", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/logical_filter.rs:42", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_logical_join_rs {
+        label="logical_join.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n171125[label="LogicalJoin", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/logical_join.rs:58", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_logical_project_rs {
+        label="logical_project.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n133424[label="LogicalProject", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/logical_project.rs:41", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_logical_scan_rs {
+        label="logical_scan.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n105999[label="LogicalScan", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/logical_scan.rs:51", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n30194[label="PlanRef", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/mod.rs:249", sym_ty="Struct", shape=box];
+        n27686[label="ConventionMarker", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/mod.rs:66", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_plan_base_rs {
+        label="plan_base.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n177889[label="PlanBase", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/plan_base.rs:111", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_plan_tree_node_rs {
+        label="plan_tree_node.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n156430[label="PlanTreeNodeUnary", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/plan_tree_node.rs:47", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_predicate_pushdown_rs {
+        label="predicate_pushdown.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3313[label="PredicatePushdown", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/predicate_pushdown.rs:23", sym_ty="Trait", shape=box];
+        n3405[label="PredicatePushdownContext", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/predicate_pushdown.rs:59", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_to_prost_rs {
+        label="to_prost.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n46794[label="StreamNode", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/to_prost.rs:67", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_utils_rs {
+        label="utils.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n84792[label="Distill", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/utils.rs:232", sym_ty="Trait", shape=box];
+        n83794[label="TableCatalogBuilder", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/plan_node/utils.rs:56", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_planner {
+      label="planner";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4574[label="Planner", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/planner/mod.rs:38", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_property {
+      label="property";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_cardinality_rs {
+        label="cardinality.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n52206[label="Cardinality", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/property/cardinality.rs:61", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_distribution_rs {
+        label="distribution.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n114479[label="RequiredDist", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/property/distribution.rs:102", sym_ty="Enum", shape=box];
+        n114385[label="Distribution", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/property/distribution.rs:68", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_func_dep_rs {
+        label="func_dep.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n129839[label="FunctionalDependencySet", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/property/func_dep.rs:129", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_order_rs {
+        label="order.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n203388[label="Order", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer/property/order.rs:27", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_scheduler {
+      label="scheduler";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_streaming_manager_rs {
+        label="streaming_manager.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n114006[label="TaskId", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/scheduler/streaming_manager.rs:31", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_session {
+      label="session";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_current_rs {
+        label="current.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1142[label="with_current_session", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/session/current.rs:23", sym_ty="Function"];
+        n1152[label="config", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/session/current.rs:36", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_session_rs {
+      label="session.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n50483[label="FrontendEnv", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/session.rs:141", sym_ty="Struct", shape=box];
+      n53300[label="SessionImpl", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/session.rs:716", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_system_catalog {
+      label="system_catalog";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n21180[label="SysCatalogReaderImpl", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/catalog/system_catalog/mod.rs:90", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_test_utils_rs {
+      label="test_utils.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n141321[label="MockFrontendMetaClient", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/test_utils.rs:1052", sym_ty="Struct", shape=box];
+      n131360[label="MockCatalogWriter", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/test_utils.rs:246", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_user {
+      label="user";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_user_catalog_rs {
+        label="user_catalog.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n86672[label="UserCatalog", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/user/user_catalog.rs:28", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_utils {
+      label="utils";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_condition_rs {
+        label="condition.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n123896[label="Condition", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/utils/condition.rs:40", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_index_set_rs {
+        label="index_set.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n145498[label="IndexSet", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/utils/index_set.rs:21", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_webhook {
+      label="webhook";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_utils_rs {
+        label="utils.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n662[label="err", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/webhook/utils.rs:36", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_risingwave_hummock_sdk {
+    label="risingwave_hummock_sdk";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_compact_task_rs {
+      label="compact_task.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n89158[label="CompactTask", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src/compact_task.rs:35", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_key_rs {
+      label="key.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n104464[label="TableKey", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src/key.rs:469", sym_ty="Struct", shape=box];
+      n105142[label="UserKey", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src/key.rs:579", sym_ty="Struct", shape=box];
+      n105906[label="FullKey", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src/key.rs:703", sym_ty="Struct", shape=box];
+      n106805[label="TableKey", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src/key.rs:897", sym_ty="Struct", shape=box];
+      n106828[label="UserKey", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src/key.rs:901", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_key_range_rs {
+      label="key_range.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n19525[label="KeyRange", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src/key_range.rs:23", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n64132[label="HummockVersionId", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src/lib.rs:189", sym_ty="Struct", shape=box];
+      n65455[label="HummockReadEpoch", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src/lib.rs:434", sym_ty="Enum", shape=box];
+      n66384[label="EpochWithGap", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src/lib.rs:591", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_sstable_info_rs {
+      label="sstable_info.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n95077[label="SstableInfo", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src/sstable_info.rs:240", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_table_watermark_rs {
+      label="table_watermark.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n21333[label="TableWatermarks", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src/table_watermark.rs:415", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_risingwave_hummock_trace {
+    label="risingwave_hummock_trace";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_record_rs {
+      label="record.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n81029[label="Operation", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_trace/src/record.rs:106", sym_ty="Enum", shape=box];
+      n82716[label="TracedBytes", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_trace/src/record.rs:201", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_replay {
+      label="replay";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n52149[label="WorkerId", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_trace/src/replay/mod.rs:53", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_risingwave_jni_core {
+    label="risingwave_jni_core";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n97051[label="EnvParam", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/jni_core/src/lib.rs:204", sym_ty="Struct", shape=box];
+      n97259[label="execute_and_catch", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/jni_core/src/lib.rs:229", sym_ty="Function"];
+    }
+
+  }
+
+  subgraph cluster_risingwave_meta {
+    label="risingwave_meta";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_barrier {
+      label="barrier";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_rpc_rs {
+        label="rpc.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n132954[label="ControlStreamManager", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/barrier/rpc.rs:116", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_catalog {
+      label="catalog";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n80424[label="CatalogController", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/controller/catalog/mod.rs:111", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_manager {
+      label="manager";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_env_rs {
+        label="env.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n62523[label="MetaSrvEnv", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/manager/env.rs:51", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_metadata_rs {
+        label="metadata.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n74859[label="MetadataManager", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/manager/metadata.rs:45", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n108491[label="HummockManager", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/hummock/manager/mod.rs:113", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_rpc {
+      label="rpc";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_ddl_controller_rs {
+        label="ddl_controller.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n137629[label="DdlController", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/rpc/ddl_controller.rs:262", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_metrics_rs {
+        label="metrics.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n64780[label="MetaMetrics", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/rpc/metrics.rs:57", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_risingwave_meta_model_migration {
+    label="risingwave_meta_model_migration";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_m20231008_020431_hummock_rs {
+      label="m20231008_020431_hummock.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n59020[label="HummockVersionStats", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src/m20231008_020431_hummock.rs:255", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_m20250603_084830_default_privilege_rs {
+      label="m20250603_084830_default_privilege.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n12088[label="Schema", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src/m20250603_084830_default_privilege.rs:112", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_m20250905_144810_deprecate_table_incoming_sinks_rs {
+      label="m20250905_144810_deprecate_table_incoming_sinks.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n8552[label="Table", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src/m20250905_144810_deprecate_table_incoming_sinks.rs:25", sym_ty="Enum", shape=box];
+    }
+
+  }
+
+  subgraph cluster_risingwave_meta_service {
+    label="risingwave_meta_service";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_ddl_service_rs {
+      label="ddl_service.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n27488[label="DdlServiceImpl", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/service/src/ddl_service.rs:68", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_hummock_service_rs {
+      label="hummock_service.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n149532[label="HummockServiceImpl", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/service/src/hummock_service.rs:42", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_risingwave_object_store {
+    label="risingwave_object_store";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_object {
+      label="object";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_object_metrics_rs {
+        label="object_metrics.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n92932[label="ObjectStoreMetrics", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/object_store/src/object/object_metrics.rs:29", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_risingwave_rpc_client {
+    label="risingwave_rpc_client";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_meta_client_rs {
+      label="meta_client.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n119141[label="MetaClient", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/rpc_client/src/meta_client.rs:139", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_risingwave_rt {
+    label="risingwave_rt";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n90276[label="main_okk", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/utils/runtime/src/lib.rs:69", sym_ty="Function"];
+    }
+
+    subgraph cluster_logger_rs {
+      label="logger.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n104887[label="init_risingwave_logger", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/utils/runtime/src/logger.rs:192", sym_ty="Function"];
+    }
+
+  }
+
+  subgraph cluster_risingwave_sqlparser {
+    label="risingwave_sqlparser";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_ast {
+      label="ast";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_data_type_rs {
+        label="data_type.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n202422[label="DataType", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/sqlparser/src/ast/data_type.rs:19", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n37172[label="Ident", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/sqlparser/src/ast/mod.rs:104", sym_ty="Struct", shape=box];
+        n43640[label="Statement", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/sqlparser/src/ast/mod.rs:1256", sym_ty="Enum", shape=box];
+        n37798[label="ObjectName", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/sqlparser/src/ast/mod.rs:223", sym_ty="Struct", shape=box];
+        n53257[label="Action", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/sqlparser/src/ast/mod.rs:2613", sym_ty="Enum", shape=box];
+        n38315[label="Expr", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/sqlparser/src/ast/mod.rs:315", sym_ty="Enum", shape=box];
+        n59157[label="SqlOption", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/sqlparser/src/ast/mod.rs:3239", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_statement_rs {
+        label="statement.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n138450[label="FormatEncodeOptions", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/sqlparser/src/ast/statement.rs:218", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_value_rs {
+        label="value.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n62275[label="Value", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/sqlparser/src/ast/value.rs:19", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_parser_rs {
+      label="parser.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n333[label="Parser", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/sqlparser/src/parser.rs:196", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_parser_v2 {
+      label="parser_v2";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n152054[label="TokenStream", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/sqlparser/src/parser_v2/mod.rs:37", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+    subgraph cluster_test_utils_rs {
+      label="test_utils.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n206997[label="table", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/sqlparser/src/test_utils.rs:132", sym_ty="Function"];
+    }
+
+    subgraph cluster_tokenizer_rs {
+      label="tokenizer.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n73341[label="Token", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/sqlparser/src/tokenizer.rs:29", sym_ty="Enum", shape=box];
+    }
+
+  }
+
+  subgraph cluster_risingwave_storage {
+    label="risingwave_storage";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_compactor {
+      label="compactor";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_compactor_runner_rs {
+        label="compactor_runner.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n21075[label="compact_with_agent", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/hummock/compactor/compactor_runner.rs:318", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_hummock {
+      label="hummock";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_sstable_store_rs {
+        label="sstable_store.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n52860[label="CachePolicy", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/hummock/sstable_store.rs:156", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_iterator {
+      label="iterator";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_merge_inner_rs {
+        label="merge_inner.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n169983[label="MergeIterator", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/hummock/iterator/merge_inner.rs:67", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n171222[label="HummockIterator", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/hummock/iterator/mod.rs:71", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+    subgraph cluster_local_version {
+      label="local_version";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_pinned_version_rs {
+        label="pinned_version.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n28399[label="PinnedVersion", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/hummock/local_version/pinned_version.rs:88", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_monitor {
+      label="monitor";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_monitored_store_rs {
+        label="monitored_store.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n198872[label="MonitoredStateStore", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/monitor/monitored_store.rs:46", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_traced_store_rs {
+        label="traced_store.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n194000[label="TracedStateStore", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/monitor/traced_store.rs:40", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_sstable {
+      label="sstable";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_block_iterator_rs {
+        label="block_iterator.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n190573[label="BlockIterator", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/hummock/sstable/block_iterator.rs:27", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_store {
+      label="store";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_hummock_storage_rs {
+        label="hummock_storage.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n110834[label="HummockStorage", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/hummock/store/hummock_storage.rs:90", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_store_rs {
+      label="store.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n41434[label="StateStore", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/store.rs:332", sym_ty="Trait", shape=box];
+      n38314[label="IterItem", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/store.rs:49", sym_ty="Trait", shape=box];
+      n42496[label="ReadOptions", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/store.rs:503", sym_ty="Struct", shape=box];
+      n38402[label="StateStoreIter", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/store.rs:61", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_store_impl_rs {
+      label="store_impl.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n127559[label="StateStorePointer", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/store_impl.rs:1429", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_risingwave_stream {
+    label="risingwave_stream";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_barrier_manager {
+      label="barrier_manager";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n88251[label="LocalBarrierManager", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/task/barrier_manager/mod.rs:85", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_cache {
+      label="cache";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_managed_lru_rs {
+        label="managed_lru.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n64889[label="ManagedLruCache", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/cache/managed_lru.rs:33", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_executor {
+      label="executor";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n72160[label="Watermark", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/executor/mod.rs:1189", sym_ty="Struct", shape=box];
+        n67623[label="Stream", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/executor/mod.rs:202", sym_ty="Trait", shape=box];
+        n68483[label="Executor", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/executor/mod.rs:255", sym_ty="Struct", shape=box];
+        n69516[label="BarrierInner", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/executor/mod.rs:393", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_join {
+      label="join";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_hash_join_rs {
+        label="hash_join.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n17138[label="JoinHashMap", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/executor/join/hash_join.rs:179", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_row_rs {
+        label="row.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n203924[label="JoinRow", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/executor/join/row.rs:57", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_lookup {
+      label="lookup";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_sides_rs {
+        label="sides.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n194344[label="Status", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/executor/lookup/sides.rs:300", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_monitor {
+      label="monitor";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_streaming_stats_rs {
+        label="streaming_stats.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n75995[label="StreamingMetrics", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/executor/monitor/streaming_stats.rs:45", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_table {
+      label="table";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_state_table_rs {
+        label="state_table.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n55047[label="StateTableBuilder", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/common/table/state_table.rs:396", sym_ty="Struct", shape=box];
+        n53950[label="StateTableInner", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/common/table/state_table.rs:82", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_task {
+      label="task";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_actor_manager_rs {
+        label="actor_manager.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n132917[label="ExecutorParams", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/task/actor_manager.rs:570", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_wrapper {
+      label="wrapper";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_trace_rs {
+        label="trace.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n11503[label="trace", full_path="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/executor/wrapper/trace.rs:27", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+
+  n333 -> n73341 [from="trait", to="impl"];
+  n1152 -> n1142 [from="caller", to="callee"];
+  n1152 -> n200732 [from="func", to="type_dep"];
+  n3313 -> n30194 [from="trait", to="impl"];
+  n3313 -> n40493 [from="trait", to="impl"];
+  n3313 -> n105999 [from="trait", to="impl"];
+  n3313 -> n133424 [from="trait", to="impl"];
+  n3313 -> n135333 [from="trait", to="impl"];
+  n3313 -> n171125 [from="trait", to="impl"];
+  n4582 -> n40493 [from="trait", to="impl"];
+  n4582 -> n105999 [from="trait", to="impl"];
+  n4582 -> n133424 [from="trait", to="impl"];
+  n4582 -> n135333 [from="trait", to="impl"];
+  n4582 -> n171125 [from="trait", to="impl"];
+  n5890 -> n8324 [from="caller", to="callee"];
+  n8324 -> n90276 [from="caller", to="callee"];
+  n8324 -> n104887 [from="caller", to="callee"];
+  n8552 -> n55047 [from="field_type", to="struct"];
+  n11503 -> n198129 [from="caller", to="callee"];
+  n12088 -> n25617 [from="field_type", to="struct"];
+  n14025 -> n145541 [from="input", to="func"];
+  n14025 -> n203924 [from="field_type", to="struct"];
+  n14207 -> n116058 [from="input", to="func"];
+  n15101 -> n88458 [from="trait", to="impl"];
+  n18257 -> n17138 [from="type_dep", to="struct"];
+  n18257 -> n51114 [from="field_type", to="struct"];
+  n18257 -> n53950 [from="type_dep", to="struct"];
+  n18257 -> n56785 [from="field_type", to="struct"];
+  n18257 -> n72160 [from="field_type", to="struct"];
+  n18656 -> n40493 [from="trait", to="impl"];
+  n18656 -> n105999 [from="trait", to="impl"];
+  n18656 -> n133424 [from="trait", to="impl"];
+  n18656 -> n135333 [from="trait", to="impl"];
+  n18656 -> n171125 [from="trait", to="impl"];
+  n19525 -> n89158 [from="type_dep", to="struct"];
+  n20409 -> n127307 [from="field_type", to="enum"];
+  n20409 -> n144538 [from="type_arg", to="impl"];
+  n20409 -> n184362 [from="field_type", to="enum"];
+  n20409 -> n205169 [from="field_type", to="enum"];
+  n20699 -> n21180 [from="field_type", to="struct"];
+  n20699 -> n50483 [from="field_type", to="struct"];
+  n20785 -> n22258 [from="trait", to="impl"];
+  n20785 -> n50483 [from="field_type", to="struct"];
+  n20785 -> n131360 [from="trait", to="impl"];
+  n20786 -> n18257 [from="trait", to="impl"];
+  n20786 -> n19525 [from="trait", to="impl"];
+  n20786 -> n59655 [from="trait", to="impl"];
+  n20786 -> n59663 [from="trait", to="impl"];
+  n20786 -> n72160 [from="trait", to="impl"];
+  n20786 -> n105906 [from="trait", to="impl"];
+  n20786 -> n109056 [from="trait", to="impl"];
+  n20786 -> n146330 [from="trait", to="impl"];
+  n20786 -> n147629 [from="trait", to="impl"];
+  n20786 -> n166712 [from="trait", to="impl"];
+  n20786 -> n189781 [from="trait", to="impl"];
+  n21333 -> n89158 [from="type_dep", to="struct"];
+  n24144 -> n28606 [from="trait", to="impl"];
+  n24144 -> n118070 [from="input", to="func"];
+  n24144 -> n118140 [from="input", to="func"];
+  n25617 -> n11503 [from="input", to="func"];
+  n25617 -> n68483 [from="field_type", to="struct"];
+  n25617 -> n132917 [from="field_type", to="struct"];
+  n26814 -> n18257 [from="field_type", to="enum"];
+  n26814 -> n73654 [from="type_arg", to="impl"];
+  n27686 -> n18656 [from="bound", to="generic"];
+  n27686 -> n156430 [from="bound", to="generic"];
+  n28399 -> n110834 [from="type_dep", to="struct"];
+  n30194 -> n4574 [from="type_dep", to="struct"];
+  n30194 -> n85294 [from="type_dep", to="struct"];
+  n30194 -> n86507 [from="type_arg", to="generic", dir=both];
+  n30194 -> n133424 [from="type_dep", to="struct"];
+  n30194 -> n135333 [from="type_dep", to="struct"];
+  n30194 -> n171125 [from="type_arg", to="impl"];
+  n36692 -> n5890 [from="input", to="func"];
+  n36692 -> n121879 [from="input", to="func"];
+  n37172 -> n37798 [from="type_arg", to="generic"];
+  n37172 -> n37798 [from="type_arg", to="impl"];
+  n37172 -> n38315 [from="field_type", to="enum"];
+  n37172 -> n43640 [from="field_type", to="enum"];
+  n37172 -> n53257 [from="field_type", to="enum"];
+  n37798 -> n38315 [from="field_type", to="enum"];
+  n37798 -> n43640 [from="field_type", to="enum"];
+  n37798 -> n59157 [from="field_type", to="struct"];
+  n37798 -> n62378 [from="input", to="func"];
+  n37798 -> n105694 [from="input", to="func"];
+  n37798 -> n106632 [from="input", to="func"];
+  n37798 -> n106934 [from="input", to="func"];
+  n37798 -> n202422 [from="field_type", to="enum"];
+  n38314 -> n38402 [from="bound", to="generic"];
+  n38315 -> n43640 [from="field_type", to="enum"];
+  n38402 -> n112235 [from="trait", to="impl"];
+  n41434 -> n17138 [from="type_arg", to="generic"];
+  n41434 -> n53950 [from="type_arg", to="generic"];
+  n41434 -> n55047 [from="field_type", to="struct"];
+  n41434 -> n110834 [from="trait", to="impl"];
+  n41434 -> n127559 [from="trait", to="impl"];
+  n41434 -> n194000 [from="trait", to="impl"];
+  n41434 -> n198872 [from="trait", to="impl"];
+  n43640 -> n116058 [from="input", to="func"];
+  n43640 -> n185549 [from="input", to="func"];
+  n45181 -> n119141 [from="func", to="type_dep"];
+  n45653 -> n172157 [from="type_dep", to="struct"];
+  n46794 -> n167579 [from="input", to="func"];
+  n50483 -> n53300 [from="field_type", to="struct"];
+  n52149 -> n119141 [from="field_type", to="struct"];
+  n52149 -> n119141 [from="type_arg", to="generic"];
+  n52149 -> n132954 [from="type_dep", to="struct"];
+  n52206 -> n145743 [from="field_type", to="struct"];
+  n52860 -> n42496 [from="field_type", to="struct"];
+  n53300 -> n85294 [from="type_dep", to="struct"];
+  n53300 -> n106934 [from="input", to="func"];
+  n53300 -> n115852 [from="type_dep", to="struct"];
+  n53300 -> n116058 [from="input", to="func"];
+  n53300 -> n149626 [from="input", to="func"];
+  n54122 -> n116373 [from="type_dep", to="struct"];
+  n59020 -> n65211 [from="field_type", to="struct"];
+  n59157 -> n43640 [from="field_type", to="enum"];
+  n59157 -> n138450 [from="type_dep", to="struct"];
+  n59663 -> n59655 [from="type_arg", to="impl"];
+  n61129 -> n64889 [from="type_arg", to="generic"];
+  n61129 -> n87802 [from="type_arg", to="generic"];
+  n61322 -> n46039 [from="trait", to="impl"];
+  n61322 -> n46668 [from="trait", to="impl"];
+  n61322 -> n59655 [from="trait", to="impl"];
+  n61322 -> n61129 [from="trait", to="impl"];
+  n61322 -> n87802 [from="trait", to="impl"];
+  n61322 -> n87802 [from="type_arg", to="generic"];
+  n61322 -> n104464 [from="trait", to="impl"];
+  n61322 -> n112235 [from="trait", to="impl"];
+  n61322 -> n121418 [from="trait", to="impl"];
+  n61322 -> n125267 [from="trait", to="impl"];
+  n61322 -> n181129 [from="trait", to="impl"];
+  n61322 -> n203924 [from="trait", to="impl"];
+  n62275 -> n38315 [from="field_type", to="enum"];
+  n62275 -> n43640 [from="field_type", to="enum"];
+  n62275 -> n59655 [from="field_type", to="struct"];
+  n62378 -> n54122 [from="func", to="type_dep"];
+  n62378 -> n77056 [from="func", to="type_dep"];
+  n62523 -> n27488 [from="field_type", to="struct"];
+  n62523 -> n80424 [from="field_type", to="struct"];
+  n62523 -> n108491 [from="field_type", to="struct"];
+  n62523 -> n132954 [from="field_type", to="struct"];
+  n62523 -> n137629 [from="field_type", to="struct"];
+  n64132 -> n65455 [from="field_type", to="enum"];
+  n64780 -> n27488 [from="type_dep", to="struct"];
+  n64780 -> n108491 [from="type_dep", to="struct"];
+  n64889 -> n17138 [from="type_arg", to="impl"];
+  n65211 -> n131360 [from="type_dep", to="struct"];
+  n66384 -> n105906 [from="field_type", to="struct"];
+  n67623 -> n333 [from="trait", to="impl"];
+  n67623 -> n177889 [from="type_arg", to="generic"];
+  n68483 -> n132917 [from="type_dep", to="struct"];
+  n71623 -> n51114 [from="type_dep", to="struct"];
+  n72935 -> n73654 [from="type_dep", to="struct"];
+  n73654 -> n177889 [from="field_type", to="struct"];
+  n74859 -> n27488 [from="field_type", to="struct"];
+  n74859 -> n108491 [from="field_type", to="struct"];
+  n74859 -> n137629 [from="field_type", to="struct"];
+  n74859 -> n149532 [from="field_type", to="struct"];
+  n75995 -> n132917 [from="type_dep", to="struct"];
+  n82716 -> n81029 [from="field_type", to="enum"];
+  n84792 -> n105999 [from="trait", to="impl"];
+  n84792 -> n133424 [from="trait", to="impl"];
+  n84792 -> n171125 [from="trait", to="impl"];
+  n86507 -> n40493 [from="field_type", to="struct"];
+  n88251 -> n132917 [from="field_type", to="struct"];
+  n89158 -> n21075 [from="input", to="func"];
+  n92932 -> n64780 [from="type_dep", to="struct"];
+  n95077 -> n28399 [from="type_dep", to="struct"];
+  n95077 -> n89158 [from="type_dep", to="struct"];
+  n95901 -> n4574 [from="func", to="type_dep"];
+  n95901 -> n77056 [from="func", to="type_dep"];
+  n95901 -> n85294 [from="func", to="type_dep"];
+  n95901 -> n137551 [from="caller", to="callee"];
+  n96409 -> n25817 [from="field_type", to="struct"];
+  n97051 -> n97259 [from="input", to="func"];
+  n97259 -> n96909 [from="caller", to="callee"];
+  n104037 -> n104065 [from="caller", to="callee"];
+  n104037 -> n152054 [from="func", to="output"];
+  n104065 -> n662 [from="caller", to="callee"];
+  n104065 -> n104095 [from="caller", to="callee"];
+  n104065 -> n152054 [from="func", to="output", dir=both];
+  n104095 -> n152054 [from="func", to="type_dep", dir=both];
+  n104464 -> n105142 [from="field_type", to="struct"];
+  n104887 -> n137551 [from="caller", to="callee"];
+  n105142 -> n105906 [from="field_type", to="struct"];
+  n105694 -> n64896 [from="func", to="type_dep"];
+  n105694 -> n77056 [from="func", to="type_dep"];
+  n105694 -> n85294 [from="func", to="type_dep"];
+  n105906 -> n190573 [from="field_type", to="struct"];
+  n106632 -> n105694 [from="caller", to="callee"];
+  n106632 -> n106934 [from="caller", to="callee"];
+  n106805 -> n105142 [from="type_arg", to="impl"];
+  n106805 -> n106828 [from="field_type", to="struct"];
+  n106828 -> n105906 [from="type_arg", to="impl"];
+  n106934 -> n333 [from="func", to="type_dep"];
+  n106934 -> n37172 [from="func", to="type_dep"];
+  n106934 -> n62378 [from="caller", to="callee"];
+  n106934 -> n95901 [from="caller", to="callee"];
+  n106934 -> n137551 [from="caller", to="callee"];
+  n106934 -> n141573 [from="func", to="type_dep"];
+  n106934 -> n149626 [from="caller", to="callee"];
+  n106934 -> n206997 [from="caller", to="callee"];
+  n112235 -> n38315 [from="field_type", to="enum"];
+  n112235 -> n43640 [from="field_type", to="enum"];
+  n112235 -> n61129 [from="field_type", to="struct"];
+  n112235 -> n68483 [from="field_type", to="struct"];
+  n112235 -> n81029 [from="field_type", to="enum"];
+  n112235 -> n121418 [from="field_type", to="struct"];
+  n112235 -> n127307 [from="field_type", to="enum"];
+  n112235 -> n146330 [from="field_type", to="struct"];
+  n112235 -> n181129 [from="field_type", to="enum"];
+  n112235 -> n182067 [from="field_type", to="struct"];
+  n112235 -> n202422 [from="field_type", to="enum"];
+  n112427 -> n113245 [from="field_type", to="struct"];
+  n112427 -> n176624 [from="type_dep", to="struct"];
+  n113245 -> n83794 [from="type_dep", to="struct"];
+  n113245 -> n145743 [from="type_dep", to="struct"];
+  n113245 -> n203388 [from="type_dep", to="struct"];
+  n114006 -> n25817 [from="field_type", to="struct"];
+  n114385 -> n114479 [from="field_type", to="enum"];
+  n115852 -> n62378 [from="input", to="func"];
+  n115852 -> n95901 [from="input", to="func"];
+  n115852 -> n105694 [from="input", to="func"];
+  n115852 -> n106632 [from="input", to="func"];
+  n115852 -> n106934 [from="input", to="func"];
+  n115852 -> n185549 [from="input", to="func"];
+  n116058 -> n115852 [from="func", to="type_dep"];
+  n118070 -> n118394 [from="caller", to="callee"];
+  n118140 -> n118616 [from="caller", to="callee"];
+  n119141 -> n22258 [from="field_type", to="struct"];
+  n119141 -> n36692 [from="type_arg", to="impl"];
+  n119141 -> n160964 [from="field_type", to="struct"];
+  n119998 -> n172157 [from="field_type", to="struct"];
+  n121418 -> n46668 [from="field_type", to="struct"];
+  n121418 -> n55047 [from="type_dep", to="struct"];
+  n121418 -> n119998 [from="type_arg", to="impl"];
+  n121418 -> n125267 [from="field_type", to="struct"];
+  n121418 -> n125267 [from="type_arg", to="generic"];
+  n121418 -> n132917 [from="type_dep", to="struct"];
+  n121418 -> n142715 [from="type_dep", to="struct"];
+  n121418 -> n182067 [from="field_type", to="struct"];
+  n121879 -> n169860 [from="caller", to="callee"];
+  n123896 -> n3405 [from="type_dep", to="struct"];
+  n123896 -> n51114 [from="field_type", to="struct"];
+  n123896 -> n190803 [from="field_type", to="struct"];
+  n125267 -> n46039 [from="field_type", to="struct"];
+  n125267 -> n46039 [from="type_arg", to="generic"];
+  n125352 -> n54122 [from="field_type", to="struct"];
+  n125352 -> n86672 [from="field_type", to="struct"];
+  n125352 -> n116373 [from="field_type", to="struct"];
+  n125352 -> n145743 [from="field_type", to="struct"];
+  n127307 -> n205169 [from="field_type", to="enum"];
+  n129839 -> n177889 [from="field_type", to="struct"];
+  n134114 -> n30194 [from="trait", to="impl"];
+  n134114 -> n105999 [from="trait", to="impl"];
+  n134263 -> n86507 [from="trait", to="impl"];
+  n135166 -> n134979 [from="func", to="type_dep"];
+  n137551 -> n153732 [from="caller", to="callee"];
+  n137629 -> n27488 [from="field_type", to="struct"];
+  n137974 -> n137551 [from="input", to="func"];
+  n138450 -> n62378 [from="input", to="func"];
+  n138450 -> n105694 [from="input", to="func"];
+  n138450 -> n106632 [from="input", to="func"];
+  n138450 -> n149626 [from="input", to="func"];
+  n145498 -> n86507 [from="type_dep", to="struct"];
+  n145743 -> n65211 [from="type_dep", to="struct"];
+  n145743 -> n106934 [from="input", to="func"];
+  n145743 -> n116373 [from="type_dep", to="struct"];
+  n147629 -> n166712 [from="field_type", to="struct"];
+  n152054 -> n169860 [from="input", to="func", dir=both];
+  n153986 -> n51114 [from="trait", to="impl"];
+  n153986 -> n58924 [from="trait", to="impl"];
+  n153986 -> n71623 [from="trait", to="impl"];
+  n153986 -> n184157 [from="trait", to="impl"];
+  n155392 -> n54122 [from="type_dep", to="struct"];
+  n155392 -> n55047 [from="type_dep", to="struct"];
+  n155392 -> n56785 [from="field_type", to="struct"];
+  n155392 -> n156026 [from="field_type", to="struct"];
+  n156026 -> n56785 [from="type_arg", to="impl"];
+  n156026 -> n72935 [from="type_arg", to="generic"];
+  n156026 -> n72935 [from="type_arg", to="impl"];
+  n156026 -> n141573 [from="type_dep", to="struct"];
+  n156026 -> n156964 [from="field_type", to="struct"];
+  n156430 -> n40493 [from="trait", to="impl"];
+  n156430 -> n133424 [from="trait", to="impl"];
+  n156430 -> n135333 [from="trait", to="impl"];
+  n156964 -> n54122 [from="type_dep", to="struct"];
+  n156964 -> n62378 [from="input", to="func"];
+  n156964 -> n83794 [from="type_dep", to="struct"];
+  n156964 -> n145743 [from="type_dep", to="struct"];
+  n159727 -> n21180 [from="field_type", to="struct"];
+  n159727 -> n50483 [from="field_type", to="struct"];
+  n159727 -> n141321 [from="trait", to="impl"];
+  n159727 -> n160964 [from="trait", to="impl"];
+  n162694 -> n40493 [from="trait", to="impl"];
+  n162694 -> n105999 [from="trait", to="impl"];
+  n162694 -> n133424 [from="trait", to="impl"];
+  n162694 -> n135333 [from="trait", to="impl"];
+  n162694 -> n171125 [from="trait", to="impl"];
+  n163537 -> n40493 [from="trait", to="impl"];
+  n163537 -> n105999 [from="trait", to="impl"];
+  n163537 -> n133424 [from="trait", to="impl"];
+  n163537 -> n135333 [from="trait", to="impl"];
+  n163537 -> n171125 [from="trait", to="impl"];
+  n163781 -> n112235 [from="trait", to="impl"];
+  n164029 -> n50483 [from="field_type", to="struct"];
+  n164029 -> n132917 [from="type_dep", to="struct"];
+  n164029 -> n142715 [from="field_type", to="struct"];
+  n165528 -> n62378 [from="input", to="func"];
+  n165528 -> n85294 [from="field_type", to="struct"];
+  n165528 -> n115852 [from="field_type", to="struct"];
+  n165528 -> n149626 [from="input", to="func"];
+  n168324 -> n54122 [from="field_type", to="struct"];
+  n169860 -> n169886 [from="caller", to="callee"];
+  n171222 -> n112235 [from="trait", to="impl"];
+  n171222 -> n169983 [from="trait", to="impl"];
+  n172029 -> n54122 [from="type_dep", to="struct"];
+  n172029 -> n145743 [from="type_dep", to="struct"];
+  n172647 -> n53950 [from="type_dep", to="struct"];
+  n172647 -> n69516 [from="field_type", to="struct"];
+  n176624 -> n17138 [from="field_type", to="struct"];
+  n176624 -> n53950 [from="field_type", to="struct"];
+  n177889 -> n40493 [from="field_type", to="struct"];
+  n177889 -> n105999 [from="field_type", to="struct"];
+  n177889 -> n105999 [from="type_arg", to="generic"];
+  n177889 -> n133424 [from="field_type", to="struct"];
+  n177889 -> n135333 [from="field_type", to="struct"];
+  n177889 -> n171125 [from="field_type", to="struct"];
+  n184959 -> n53950 [from="field_type", to="struct"];
+  n185549 -> n85294 [from="func", to="type_dep"];
+  n185549 -> n95901 [from="caller", to="callee"];
+  n185549 -> n105694 [from="caller", to="callee"];
+  n185549 -> n206997 [from="caller", to="callee"];
+  n200732 -> n21180 [from="type_dep", to="struct"];
+  n200732 -> n50483 [from="type_dep", to="struct"];
+  n200732 -> n53300 [from="type_dep", to="struct"];
+  n200732 -> n77056 [from="type_dep", to="struct"];
+  n202422 -> n38315 [from="field_type", to="enum"];
+  n202422 -> n43640 [from="field_type", to="enum"];
+  n202422 -> n58924 [from="field_type", to="struct"];
+  n202422 -> n71623 [from="type_dep", to="struct"];
+  n202422 -> n72935 [from="field_type", to="struct"];
+  n202422 -> n72935 [from="type_arg", to="generic"];
+  n202422 -> n116373 [from="type_dep", to="struct"];
+  n202422 -> n127307 [from="field_type", to="enum"];
+  n202422 -> n156026 [from="field_type", to="struct"];
+  n202422 -> n172157 [from="type_dep", to="struct"];
+  n202422 -> n176624 [from="type_dep", to="struct"];
+  n202422 -> n184157 [from="field_type", to="struct"];
+  n202422 -> n186211 [from="type_dep", to="struct"];
+  n203095 -> n50483 [from="field_type", to="struct"];
+  n204542 -> n30194 [from="trait", to="impl"];
+  n204542 -> n40493 [from="trait", to="impl"];
+  n204542 -> n105999 [from="trait", to="impl"];
+  n204542 -> n133424 [from="trait", to="impl"];
+  n204542 -> n135333 [from="trait", to="impl"];
+  n204542 -> n171125 [from="trait", to="impl"];
+  n205169 -> n194344 [from="type_arg", to="impl"];
+  n206034 -> n45181 [from="input", to="func"];
+  n206034 -> n50483 [from="field_type", to="struct"];
+  n206034 -> n119141 [from="field_type", to="struct"];
+  n206034 -> n119141 [from="type_arg", to="generic"];
+  n206997 -> n37798 [from="func", to="type_dep"];
+}

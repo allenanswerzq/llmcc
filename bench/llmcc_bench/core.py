@@ -91,6 +91,7 @@ class SystemInfo:
     memory_available: str
     os_kernel: str
     os_distribution: str
+    disk_speed: str
 
 
 @dataclass
@@ -111,8 +112,10 @@ class Config:
         return self.sample_dir / "benchmark_logs"
 
     def benchmark_file(self, suffix: str = "") -> Path:
+        import platform
         cores = get_cpu_info()[1]  # physical cores
-        name = f"benchmark_results_{cores}{suffix}.md"
+        os_name = platform.system().lower()
+        name = f"benchmark_results_{cores}_{os_name}{suffix}.md"
         return self.sample_dir / name
 
     def language_dir(self, language: str) -> Path:
@@ -333,11 +336,91 @@ def get_os_info() -> Tuple[str, str]:
     return kernel, distribution
 
 
+def get_disk_speed() -> str:
+    """
+    Measure disk write speed.
+    Returns human-readable speed string (e.g., '1.2 GB/s').
+    Cross-platform support for Windows, Linux, and macOS.
+    """
+    import tempfile
+    import time
+
+    system = platform.system()
+    test_size_mb = 256
+    test_size_bytes = test_size_mb * 1024 * 1024
+
+    def format_speed(bytes_per_sec: float) -> str:
+        """Format speed as human-readable string."""
+        if bytes_per_sec >= 1e9:
+            return f"{bytes_per_sec / 1e9:.1f} GB/s"
+        elif bytes_per_sec >= 1e6:
+            return f"{bytes_per_sec / 1e6:.1f} MB/s"
+        else:
+            return f"{bytes_per_sec / 1e3:.1f} KB/s"
+
+    try:
+        # Create a temporary file for testing
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            tmp_path = tmp.name
+
+        if system == "Windows":
+            # Measure write speed
+            data = os.urandom(test_size_bytes)
+            start = time.perf_counter()
+            with open(tmp_path, 'wb') as f:
+                f.write(data)
+                f.flush()
+                os.fsync(f.fileno())
+            elapsed = time.perf_counter() - start
+
+            os.unlink(tmp_path)
+            return format_speed(test_size_bytes / elapsed)
+
+        else:  # Linux and macOS
+            # Measure write speed using dd with fdatasync (ensures data hits disk)
+            write_result = subprocess.run(
+                [
+                    "dd",
+                    "if=/dev/zero",
+                    f"of={tmp_path}",
+                    "bs=1M",
+                    f"count={test_size_mb}",
+                    "conv=fdatasync",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+
+            os.unlink(tmp_path)
+
+            # Parse the speed from dd output (in stderr)
+            # Format: "268435456 bytes (268 MB, 256 MiB) copied, 0.123 s, 2.2 GB/s"
+            # Note: dd output may contain newlines, so normalize whitespace first
+            output = ' '.join(write_result.stderr.split())
+            if ", " in output:
+                parts = output.split(", ")
+                for part in parts:
+                    if "/s" in part:
+                        return part.strip()
+
+            return "unknown"
+
+    except Exception:
+        # Clean up temp file if it exists
+        try:
+            os.unlink(tmp_path)
+        except Exception:
+            pass
+        return "unknown"
+
+
 def get_system_info() -> SystemInfo:
     """Get complete system information."""
     cpu_model, cpu_physical, cpu_logical = get_cpu_info()
     mem_total, mem_available = get_memory_info()
     os_kernel, os_distro = get_os_info()
+    disk_speed = get_disk_speed()
 
     return SystemInfo(
         cpu_model=cpu_model,
@@ -347,6 +430,7 @@ def get_system_info() -> SystemInfo:
         memory_available=mem_available,
         os_kernel=os_kernel,
         os_distribution=os_distro,
+        disk_speed=disk_speed,
     )
 
 
@@ -379,7 +463,18 @@ def count_loc(src_dir: Path, use_estimate: bool = False) -> int:
         file_count = count_rust_files(src_dir)
         return file_count * 200  # ~200 lines per file average
 
-    # Try tokei first (most accurate and fast)
+    # Install tokei if not available (cargo must exist for Rust projects)
+    if not shutil.which("tokei"):
+        try:
+            print("Installing tokei for accurate LoC counting...")
+            subprocess.run(
+                ["cargo", "install", "tokei"],
+                capture_output=True, text=True, timeout=300
+            )
+        except Exception:
+            pass
+
+    # Try tokei (most accurate and fast)
     if shutil.which("tokei"):
         try:
             result = subprocess.run(
@@ -393,8 +488,9 @@ def count_loc(src_dir: Path, use_estimate: bool = False) -> int:
         except Exception:
             pass
 
-    # Fallback: count lines manually
+    # Fallback: count lines manually (excludes comments and blank lines)
     total_lines = 0
+    in_block_comment = False
     for root, _, files in os.walk(src_dir):
         for f in files:
             if f.endswith('.rs'):
@@ -403,8 +499,42 @@ def count_loc(src_dir: Path, use_estimate: bool = False) -> int:
                     with open(filepath, 'r', encoding='utf-8', errors='ignore') as fp:
                         for line in fp:
                             stripped = line.strip()
-                            if stripped and not stripped.startswith('//'):
-                                total_lines += 1
+
+                            # Handle block comments
+                            if in_block_comment:
+                                if '*/' in stripped:
+                                    in_block_comment = False
+                                    # Check if there's code after the block comment ends
+                                    after_comment = stripped[stripped.index('*/') + 2:].strip()
+                                    if after_comment and not after_comment.startswith('//'):
+                                        total_lines += 1
+                                continue
+
+                            if not stripped:
+                                continue
+
+                            # Skip single-line comments
+                            if stripped.startswith('//'):
+                                continue
+
+                            # Check for block comment start
+                            if '/*' in stripped:
+                                # Check if it's a single-line block comment
+                                if '*/' in stripped[stripped.index('/*') + 2:]:
+                                    # Remove the block comment and check remaining
+                                    before = stripped[:stripped.index('/*')].strip()
+                                    after_end = stripped[stripped.index('*/') + 2:].strip()
+                                    if before or (after_end and not after_end.startswith('//')):
+                                        total_lines += 1
+                                else:
+                                    in_block_comment = True
+                                    # Count if there's code before the comment
+                                    before = stripped[:stripped.index('/*')].strip()
+                                    if before:
+                                        total_lines += 1
+                                continue
+
+                            total_lines += 1
                 except Exception:
                     pass
     return total_lines
