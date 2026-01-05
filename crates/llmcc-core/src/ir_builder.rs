@@ -104,7 +104,14 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
         let id = next_hir_id();
         let kind_id = node.kind_id();
         let kind = Language::hir_kind(kind_id);
-        let children = self.collect_children(node, id);
+
+        // Skip collecting children for leaf node types (Text, Identifier)
+        // This provides a massive performance improvement for large array/object literals
+        let children = if matches!(kind, HirKind::Text | HirKind::Identifier) {
+            SmallVec::new()
+        } else {
+            self.collect_children(node, id)
+        };
         let child_ids: SmallVec<[HirId; 4]> = children.iter().map(|n| n.id()).collect();
         let base = self.make_base(id, parent, node, kind, child_ids);
 

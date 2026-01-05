@@ -13,6 +13,7 @@ from typing import Dict, List, Optional, Tuple
 from .core import (
     PROJECTS,
     Config,
+    count_files,
     count_graph_stats,
     count_loc,
     count_rust_files,
@@ -120,6 +121,7 @@ def run_llmcc(
     depth: int = 3,
     pagerank_top_k: Optional[int] = None,
     threads: Optional[int] = None,
+    language: str = "rust",
 ) -> Tuple[Path, float]:
     """
     Run llmcc and capture output.
@@ -137,6 +139,7 @@ def run_llmcc(
         "--graph",
         "--depth", str(depth),
         "-o", str(output_file),
+        "--lang", language,
     ]
 
     if pagerank_top_k:
@@ -184,7 +187,7 @@ def benchmark_project(
     result = BenchmarkResult(name=name, src_dir=src_dir)
 
     # Count files and LoC
-    result.file_count = count_rust_files(src_dir)
+    result.file_count = count_files(src_dir, project.language)
     result.loc = count_loc(src_dir)
 
     config.benchmark_logs_dir.mkdir(parents=True, exist_ok=True)
@@ -194,7 +197,7 @@ def benchmark_project(
         print(f"  Running depth={config.depth} benchmark...")
 
     full_dot = config.benchmark_logs_dir / f"{name}_depth{config.depth}.dot"
-    log_file, _ = run_llmcc(config, src_dir, full_dot, depth=config.depth)
+    log_file, _ = run_llmcc(config, src_dir, full_dot, depth=config.depth, language=project.language)
     result.full_timing = TimingResult.from_log(log_file)
 
     if verbose and result.full_timing:
@@ -208,7 +211,7 @@ def benchmark_project(
         print(f"  Running depth={config.depth} benchmark with PageRank top-{config.top_k}...")
 
     pr_dot = config.benchmark_logs_dir / f"{name}_pagerank_depth{config.depth}.dot"
-    log_file, _ = run_llmcc(config, src_dir, pr_dot, depth=config.depth, pagerank_top_k=config.top_k)
+    log_file, _ = run_llmcc(config, src_dir, pr_dot, depth=config.depth, pagerank_top_k=config.top_k, language=project.language)
     result.pagerank_timing = TimingResult.from_log(log_file)
 
     if verbose and result.pagerank_timing:
@@ -251,7 +254,7 @@ def benchmark_all(
         project = PROJECTS[name]
         src_dir = config.project_repo_path(project)
         if src_dir.exists():
-            count = count_rust_files(src_dir)
+            count = count_files(src_dir, project.language)
             file_counts[name] = count
             if verbose:
                 print(f"  {name}: {count} files")

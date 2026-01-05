@@ -111,11 +111,12 @@ class Config:
     def benchmark_logs_dir(self) -> Path:
         return self.sample_dir / "benchmark_logs"
 
-    def benchmark_file(self, suffix: str = "") -> Path:
+    def benchmark_file(self, suffix: str = "", language: str = "") -> Path:
         import platform
         cores = get_cpu_info()[1]  # physical cores
         os_name = platform.system().lower()
-        name = f"benchmark_results_{cores}_{os_name}{suffix}.md"
+        lang_suffix = f"_{language}" if language else ""
+        name = f"benchmark_results_{cores}_{os_name}{lang_suffix}{suffix}.md"
         return self.sample_dir / name
 
     def language_dir(self, language: str) -> Path:
@@ -436,12 +437,37 @@ def get_system_info() -> SystemInfo:
 
 def count_rust_files(src_dir: Path) -> int:
     """Count number of .rs files in a directory."""
+    return count_files(src_dir, "rust")
+
+
+def count_files(src_dir: Path, language: str = "rust") -> int:
+    """Count number of source files in a directory for a given language.
+
+    Excludes common non-source directories like node_modules, tests, etc.
+    """
     if not src_dir.exists():
         return 0
+
+    extensions = {
+        "rust": [".rs"],
+        "typescript": [".ts", ".tsx"],
+        "python": [".py"],
+    }
+
+    # Directories to skip (common non-source directories)
+    skip_dirs = {
+        "node_modules", "tests", "test", "__tests__",
+        "baselines", "fixtures", "examples", "dist", "build",
+        ".git", "target", "__pycache__", ".tox", "venv",
+    }
+
+    exts = extensions.get(language, [".rs"])
     count = 0
-    for root, _, files in os.walk(src_dir):
+    for root, dirs, files in os.walk(src_dir):
+        # Modify dirs in-place to skip unwanted directories
+        dirs[:] = [d for d in dirs if d not in skip_dirs]
         for f in files:
-            if f.endswith('.rs'):
+            if any(f.endswith(ext) for ext in exts):
                 count += 1
     return count
 

@@ -354,6 +354,14 @@ pub fn build_and_collect_symbols<'a, L: LanguageTrait>(
 
         let file_path = cc.file_path(i).map(|p| p.to_string());
         let file_bytes = cc.files[i].content();
+
+        tracing::debug!(
+            "start fusing build+collect for unit {} ({}:{} bytes)",
+            i,
+            file_path.as_deref().unwrap_or("unknown"),
+            file_bytes.len()
+        );
+
         let parse_tree = cc
             .get_parse_tree(i)
             .ok_or_else(|| format!("No parse tree for unit {}", i))?;

@@ -39,10 +39,23 @@ def cmd_benchmark(args, config: Config) -> int:
     from .benchmark import benchmark_all, run_scaling_benchmark
     from .report import generate_report
 
+    # Filter projects by language if specified
+    if args.language:
+        filtered_projects = [
+            name for name, p in PROJECTS.items()
+            if p.language == args.language
+        ]
+        if not filtered_projects:
+            print(f"Error: No projects found for language '{args.language}'")
+            return 1
+    else:
+        filtered_projects = None
+
     # Check if any repos exist
+    projects_to_check = filtered_projects if filtered_projects else list(PROJECTS.keys())
     has_repos = any(
-        config.project_repo_path(p).exists()
-        for p in PROJECTS.values()
+        config.project_repo_path(PROJECTS[name]).exists()
+        for name in projects_to_check
     )
     if not has_repos:
         print("Error: No repositories found. Run 'llmcc-bench fetch' first.")
@@ -54,26 +67,33 @@ def cmd_benchmark(args, config: Config) -> int:
     if args.depth:
         config.depth = args.depth
 
-    projects = args.projects if args.projects else None
+    # Use explicit projects if given, otherwise use language-filtered projects
+    projects = args.projects if args.projects else filtered_projects
+
+    verbose = getattr(args, 'verbose', False)
 
     print("=== LLMCC Benchmark ===")
     print(f"Binary: {config.llmcc_path}")
-    print(f"Results: {config.benchmark_file()}")
+    print(f"Results: {config.benchmark_file(language=args.language or '')}")
+    if args.language:
+        print(f"Language: {args.language}")
     print()
 
     # Run benchmarks
-    results = benchmark_all(config, projects=projects)
+    results = benchmark_all(config, projects=projects, verbose=verbose)
 
-    # Run scaling benchmark if not skipped
+    # Run scaling benchmark if not skipped (only for Rust projects)
     scaling_results = None
     scaling_project = args.scaling_project or "databend"
 
-    if not args.skip_scaling:
+    # Skip scaling for non-rust language filter
+    skip_scaling = args.skip_scaling or (args.language and args.language != "rust")
+    if not skip_scaling:
         print()
         scaling_results = run_scaling_benchmark(config, project=scaling_project)
 
     # Generate report
-    output_file = config.benchmark_file()
+    output_file = config.benchmark_file(language=args.language or '')
     report = generate_report(
         config, results,
         scaling_results=scaling_results,
@@ -224,6 +244,17 @@ def main() -> int:
         type=str,
         default="databend",
         help="Project for scaling benchmark (default: databend)",
+    )
+    bench_parser.add_argument(
+        "--language",
+        type=str,
+        default=None,
+        help="Filter projects by language (rust, typescript)",
+    )
+    bench_parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Verbose output",
     )
     bench_parser.add_argument(
         "projects",

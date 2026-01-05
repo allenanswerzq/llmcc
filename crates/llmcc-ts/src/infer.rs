@@ -1,9 +1,44 @@
+use std::cell::Cell;
+
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::symbol::{SYM_KIND_TYPES, SymKind, SymKindSet, Symbol};
 use llmcc_resolver::BinderScopes;
 
 use crate::token::LangTypeScript;
+
+/// Maximum recursion depth for type inference to prevent exponential blowup
+/// on complex TypeScript types (like zod's 4500-line schemas.ts)
+const MAX_INFER_DEPTH: u32 = 16;
+
+thread_local! {
+    static INFER_DEPTH: Cell<u32> = const { Cell::new(0) };
+}
+
+/// Guard that increments depth on creation and decrements on drop
+struct DepthGuard;
+
+impl DepthGuard {
+    fn try_new() -> Option<Self> {
+        INFER_DEPTH.with(|depth| {
+            let current = depth.get();
+            if current >= MAX_INFER_DEPTH {
+                None
+            } else {
+                depth.set(current + 1);
+                Some(DepthGuard)
+            }
+        })
+    }
+}
+
+impl Drop for DepthGuard {
+    fn drop(&mut self) {
+        INFER_DEPTH.with(|depth| {
+            depth.set(depth.get().saturating_sub(1));
+        });
+    }
+}
 
 /// Infer the type of any TypeScript AST node
 #[tracing::instrument(skip_all)]
@@ -12,6 +47,9 @@ pub fn infer_type<'tcx>(
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
+    // Depth limit to prevent exponential recursion on complex types
+    let _guard = DepthGuard::try_new()?;
+
     match node.kind_id() {
         // Literal types - check text content
         LangTypeScript::number => get_primitive_type(scopes, "number"),
