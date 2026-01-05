@@ -4,6 +4,9 @@ import {
     ChatCompletionRequest,
     ChatCompletionResponse,
     ChatCompletionChunk,
+    ToolDefinition,
+    ToolCall,
+    ToolCallDelta,
     getModelSelector,
     generateRequestId
 } from '../types';
@@ -19,6 +22,9 @@ export async function handleChatCompletions(
     const modelSelector = getModelSelector(request.model);
 
     console.log(`[API Bridge] Request for model: ${request.model} -> ${modelSelector.vendor}/${modelSelector.family}`);
+    if (request.tools?.length) {
+        console.log(`[API Bridge] Tools provided: ${request.tools.map(t => t.function.name).join(', ')}`);
+    }
 
     // Select a chat model
     const models = await vscode.lm.selectChatModels({
@@ -51,28 +57,35 @@ export async function handleChatCompletions(
     console.log(`[API Bridge] Using model: ${model.id} (${model.name})`);
 
     // Convert messages to VS Code format
-    const vscodMessages = request.messages.map(msg => {
-        if (msg.role === 'user') {
-            return vscode.LanguageModelChatMessage.User(msg.content);
-        } else if (msg.role === 'assistant') {
-            return vscode.LanguageModelChatMessage.Assistant(msg.content);
-        } else {
-            // System messages - prepend to first user message or add as user
-            return vscode.LanguageModelChatMessage.User(`[System]: ${msg.content}`);
-        }
-    });
+    const vscodeMessages = convertMessagesToVSCode(request.messages);
 
-    // Build request options
+    // Build request options with tools
     const options: vscode.LanguageModelChatRequestOptions = {};
 
-    // Note: VS Code LM API has limited options compared to OpenAI
-    // temperature, max_tokens etc. are not directly supported
+    // Convert OpenAI tools to VS Code tools
+    if (request.tools?.length) {
+        options.tools = convertToolsToVSCode(request.tools);
+        console.log(`[API Bridge] Converted ${options.tools.length} tools to VS Code format`);
+        console.log(`[API Bridge] Tools: ${options.tools.map(t => t.name).join(', ')}`);
+
+        // Set tool mode based on tool_choice
+        if (request.tool_choice === 'required') {
+            options.toolMode = vscode.LanguageModelChatToolMode.Required;
+        } else if (request.tool_choice === 'auto' || request.tool_choice === undefined) {
+            // Auto mode - let the model decide
+            options.toolMode = vscode.LanguageModelChatToolMode.Auto;
+        }
+        // 'none' means don't pass tools at all
+        if (request.tool_choice === 'none') {
+            delete options.tools;
+        }
+    }
 
     try {
         if (request.stream) {
-            await handleStreamingResponse(model, vscodMessages, options, res, requestId, created, request.model);
+            await handleStreamingResponse(model, vscodeMessages, options, res, requestId, created, request.model);
         } else {
-            await handleNonStreamingResponse(model, vscodMessages, options, res, requestId, created, request.model);
+            await handleNonStreamingResponse(model, vscodeMessages, options, res, requestId, created, request.model);
         }
     } catch (error) {
         console.error('[API Bridge] Error during chat completion:', error);
@@ -99,6 +112,54 @@ export async function handleChatCompletions(
     }
 }
 
+// Convert OpenAI messages to VS Code format
+function convertMessagesToVSCode(messages: ChatCompletionRequest['messages']): vscode.LanguageModelChatMessage[] {
+    const vscodeMessages: vscode.LanguageModelChatMessage[] = [];
+
+    for (const msg of messages) {
+        const content = msg.content ?? '';
+
+        if (msg.role === 'user') {
+            vscodeMessages.push(vscode.LanguageModelChatMessage.User(content));
+        } else if (msg.role === 'assistant') {
+            if (msg.tool_calls?.length) {
+                // Assistant message with tool calls - include tool call info
+                const toolCallsText = msg.tool_calls.map(tc =>
+                    `[Tool Call: ${tc.function.name}(${tc.function.arguments})]`
+                ).join('\n');
+                const fullContent = content ? `${content}\n${toolCallsText}` : toolCallsText;
+                vscodeMessages.push(vscode.LanguageModelChatMessage.Assistant(fullContent));
+            } else {
+                vscodeMessages.push(vscode.LanguageModelChatMessage.Assistant(content));
+            }
+        } else if (msg.role === 'tool') {
+            // Tool result - add as user message with context
+            vscodeMessages.push(vscode.LanguageModelChatMessage.User(
+                `[Tool Result for ${msg.tool_call_id}]: ${content}`
+            ));
+        } else if (msg.role === 'system') {
+            // System messages - prepend to first user message or add as user
+            vscodeMessages.push(vscode.LanguageModelChatMessage.User(`[System]: ${content}`));
+        }
+    }
+
+    return vscodeMessages;
+}
+
+// Convert OpenAI tools to VS Code tools
+function convertToolsToVSCode(tools: ToolDefinition[]): vscode.LanguageModelChatTool[] {
+    return tools.map(tool => ({
+        name: tool.function.name,
+        description: tool.function.description || '',
+        inputSchema: tool.function.parameters
+    }));
+}
+
+// Generate a unique tool call ID
+function generateToolCallId(): string {
+    return 'call_' + Math.random().toString(36).substring(2, 15);
+}
+
 async function handleNonStreamingResponse(
     model: vscode.LanguageModelChat,
     messages: vscode.LanguageModelChatMessage[],
@@ -110,11 +171,27 @@ async function handleNonStreamingResponse(
 ): Promise<void> {
     const response = await model.sendRequest(messages, options);
 
-    // Collect all chunks
+    // Collect all chunks and tool calls
     let fullContent = '';
-    for await (const chunk of response.text) {
-        fullContent += chunk;
+    const toolCalls: ToolCall[] = [];
+
+    for await (const part of response.stream) {
+        if (part instanceof vscode.LanguageModelTextPart) {
+            fullContent += part.value;
+        } else if (part instanceof vscode.LanguageModelToolCallPart) {
+            console.log(`[API Bridge] Tool call: ${part.name}(${JSON.stringify(part.input)})`);
+            toolCalls.push({
+                id: part.callId || generateToolCallId(),
+                type: 'function',
+                function: {
+                    name: part.name,
+                    arguments: typeof part.input === 'string' ? part.input : JSON.stringify(part.input)
+                }
+            });
+        }
     }
+
+    const hasToolCalls = toolCalls.length > 0;
 
     const completionResponse: ChatCompletionResponse = {
         id: requestId,
@@ -125,14 +202,15 @@ async function handleNonStreamingResponse(
             index: 0,
             message: {
                 role: 'assistant',
-                content: fullContent,
+                content: hasToolCalls ? null : fullContent,
+                ...(hasToolCalls && { tool_calls: toolCalls })
             },
-            finish_reason: 'stop',
+            finish_reason: hasToolCalls ? 'tool_calls' : 'stop',
         }],
         usage: {
             prompt_tokens: estimateTokens(getMessageContents(messages)),
             completion_tokens: estimateTokens(fullContent),
-            total_tokens: 0, // Will be calculated
+            total_tokens: 0,
         },
     };
 
@@ -174,20 +252,54 @@ async function handleStreamingResponse(
     };
     res.write(`data: ${JSON.stringify(initialChunk)}\n\n`);
 
+    // Track tool calls for finish reason
+    let hasToolCalls = false;
+    let toolCallIndex = 0;
+
     // Stream content chunks
-    for await (const text of response.text) {
-        const chunk: ChatCompletionChunk = {
-            id: requestId,
-            object: 'chat.completion.chunk',
-            created,
-            model: requestedModel,
-            choices: [{
-                index: 0,
-                delta: { content: text },
-                finish_reason: null,
-            }],
-        };
-        res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+    for await (const part of response.stream) {
+        if (part instanceof vscode.LanguageModelTextPart) {
+            const chunk: ChatCompletionChunk = {
+                id: requestId,
+                object: 'chat.completion.chunk',
+                created,
+                model: requestedModel,
+                choices: [{
+                    index: 0,
+                    delta: { content: part.value },
+                    finish_reason: null,
+                }],
+            };
+            res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+        } else if (part instanceof vscode.LanguageModelToolCallPart) {
+            hasToolCalls = true;
+            console.log(`[API Bridge] Streaming tool call: ${part.name}`);
+
+            // Send tool call in chunks
+            const toolCallDelta: ToolCallDelta = {
+                index: toolCallIndex,
+                id: part.callId || generateToolCallId(),
+                type: 'function',
+                function: {
+                    name: part.name,
+                    arguments: typeof part.input === 'string' ? part.input : JSON.stringify(part.input)
+                }
+            };
+
+            const chunk: ChatCompletionChunk = {
+                id: requestId,
+                object: 'chat.completion.chunk',
+                created,
+                model: requestedModel,
+                choices: [{
+                    index: 0,
+                    delta: { tool_calls: [toolCallDelta] },
+                    finish_reason: null,
+                }],
+            };
+            res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+            toolCallIndex++;
+        }
     }
 
     // Send final chunk
@@ -199,7 +311,7 @@ async function handleStreamingResponse(
         choices: [{
             index: 0,
             delta: {},
-            finish_reason: 'stop',
+            finish_reason: hasToolCalls ? 'tool_calls' : 'stop',
         }],
     };
     res.write(`data: ${JSON.stringify(finalChunk)}\n\n`);

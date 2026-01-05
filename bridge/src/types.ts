@@ -1,6 +1,36 @@
 import * as vscode from 'vscode';
 
 // OpenAI-compatible types
+
+// Tool/Function definitions
+export interface FunctionDefinition {
+    name: string;
+    description?: string;
+    parameters?: Record<string, unknown>;
+}
+
+export interface ToolDefinition {
+    type: 'function';
+    function: FunctionDefinition;
+}
+
+// Tool call in response
+export interface ToolCall {
+    id: string;
+    type: 'function';
+    function: {
+        name: string;
+        arguments: string;
+    };
+}
+
+// Tool call result in request
+export interface ToolMessage {
+    role: 'tool';
+    tool_call_id: string;
+    content: string;
+}
+
 export interface ChatCompletionRequest {
     model: string;
     messages: ChatMessage[];
@@ -9,11 +39,15 @@ export interface ChatCompletionRequest {
     stream?: boolean;
     top_p?: number;
     stop?: string | string[];
+    tools?: ToolDefinition[];
+    tool_choice?: 'auto' | 'none' | 'required' | { type: 'function'; function: { name: string } };
 }
 
 export interface ChatMessage {
-    role: 'system' | 'user' | 'assistant';
-    content: string;
+    role: 'system' | 'user' | 'assistant' | 'tool';
+    content: string | null;
+    tool_calls?: ToolCall[];
+    tool_call_id?: string;
 }
 
 export interface ChatCompletionResponse {
@@ -33,9 +67,10 @@ export interface ChatCompletionChoice {
     index: number;
     message: {
         role: 'assistant';
-        content: string;
+        content: string | null;
+        tool_calls?: ToolCall[];
     };
-    finish_reason: 'stop' | 'length' | 'content_filter' | null;
+    finish_reason: 'stop' | 'length' | 'content_filter' | 'tool_calls' | null;
 }
 
 export interface ChatCompletionChunk {
@@ -48,9 +83,20 @@ export interface ChatCompletionChunk {
         delta: {
             role?: 'assistant';
             content?: string;
+            tool_calls?: ToolCallDelta[];
         };
-        finish_reason: 'stop' | 'length' | null;
+        finish_reason: 'stop' | 'length' | 'tool_calls' | null;
     }[];
+}
+
+export interface ToolCallDelta {
+    index: number;
+    id?: string;
+    type?: 'function';
+    function?: {
+        name?: string;
+        arguments?: string;
+    };
 }
 
 export interface ModelInfo {

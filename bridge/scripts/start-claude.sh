@@ -13,10 +13,13 @@ fi
 
 export ANTHROPIC_BASE_URL="http://${HOST_IP}:5168"
 export ANTHROPIC_API_KEY="sk-copilot-bridge"
-export ANTHROPIC_AUTH_TOKEN="sk-copilot-bridge"
+# Only set API_KEY, not AUTH_TOKEN to avoid conflict
+unset ANTHROPIC_AUTH_TOKEN
 
 echo -e "\033[36mStarting Claude Code with Copilot API Bridge...\033[0m"
 echo -e "\033[90m  ANTHROPIC_BASE_URL = $ANTHROPIC_BASE_URL\033[0m"
 echo ""
 
-claude "$@"
+# Use --dangerously-skip-permissions to allow Claude to read files and run commands
+# Remove this flag in production and use proper permission grants instead
+claude --dangerously-skip-permissions "$@"

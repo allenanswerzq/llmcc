@@ -11,6 +11,14 @@ interface MessagesRequest {
     temperature?: number;
     stream?: boolean;
     stop_sequences?: string[];
+    tools?: AnthropicTool[];
+    tool_choice?: { type: 'auto' | 'any' | 'tool'; name?: string };
+}
+
+interface AnthropicTool {
+    name: string;
+    description?: string;
+    input_schema: Record<string, unknown>;
 }
 
 interface AnthropicMessage {
@@ -19,8 +27,14 @@ interface AnthropicMessage {
 }
 
 interface ContentBlock {
-    type: 'text' | 'image';
+    type: 'text' | 'image' | 'tool_use' | 'tool_result';
     text?: string;
+    id?: string;
+    name?: string;
+    input?: unknown;
+    tool_use_id?: string;
+    content?: string | ContentBlock[];
+    is_error?: boolean;
 }
 
 interface MessagesResponse {
@@ -29,7 +43,7 @@ interface MessagesResponse {
     role: 'assistant';
     content: ContentBlock[];
     model: string;
-    stop_reason: 'end_turn' | 'max_tokens' | 'stop_sequence' | null;
+    stop_reason: 'end_turn' | 'max_tokens' | 'stop_sequence' | 'tool_use' | null;
     stop_sequence: string | null;
     usage: {
         input_tokens: number;
@@ -47,6 +61,9 @@ export async function handleMessages(
     const modelSelector = getModelSelector(request.model);
 
     console.log(`[API Bridge] Messages API request for model: ${request.model} -> ${modelSelector.vendor}/${modelSelector.family}`);
+    if (request.tools?.length) {
+        console.log(`[API Bridge] Tools provided: ${request.tools.map(t => t.name).join(', ')}`);
+    }
 
     // Select a chat model
     const models = await vscode.lm.selectChatModels({
@@ -80,11 +97,32 @@ export async function handleMessages(
     // Convert messages to VS Code format
     const vscodeMessages = convertMessagesToVSCode(request.messages, request.system);
 
+    // Build request options with tools
+    const options: vscode.LanguageModelChatRequestOptions = {};
+
+    // Convert Anthropic tools to VS Code tools
+    if (request.tools?.length) {
+        options.tools = request.tools.map(tool => ({
+            name: tool.name,
+            description: tool.description || '',
+            inputSchema: tool.input_schema
+        }));
+        console.log(`[API Bridge] Converted ${options.tools.length} tools to VS Code format`);
+        console.log(`[API Bridge] Tools: ${options.tools.map(t => t.name).join(', ')}`);
+
+        // Set tool mode based on tool_choice
+        if (request.tool_choice?.type === 'any' || request.tool_choice?.type === 'tool') {
+            options.toolMode = vscode.LanguageModelChatToolMode.Required;
+        } else {
+            options.toolMode = vscode.LanguageModelChatToolMode.Auto;
+        }
+    }
+
     try {
         if (request.stream) {
-            await handleStreamingMessages(model, vscodeMessages, res, requestId, request.model);
+            await handleStreamingMessages(model, vscodeMessages, options, res, requestId, request.model);
         } else {
-            await handleNonStreamingMessages(model, vscodeMessages, res, requestId, request.model);
+            await handleNonStreamingMessages(model, vscodeMessages, options, res, requestId, request.model);
         }
     } catch (error) {
         console.error('[API Bridge] Error during messages:', error);
@@ -124,10 +162,11 @@ function convertMessagesToVSCode(
     }
 
     for (const msg of messages) {
-        const content = extractContent(msg.content);
         if (msg.role === 'user') {
+            const content = extractContent(msg.content);
             vscodeMessages.push(vscode.LanguageModelChatMessage.User(content));
         } else if (msg.role === 'assistant') {
+            const content = extractContent(msg.content);
             vscodeMessages.push(vscode.LanguageModelChatMessage.Assistant(content));
         }
     }
@@ -139,40 +178,88 @@ function extractContent(content: string | ContentBlock[]): string {
     if (typeof content === 'string') {
         return content;
     }
-    return content
-        .filter(block => block.type === 'text' && block.text)
-        .map(block => block.text!)
-        .join('');
+
+    const parts: string[] = [];
+
+    for (const block of content) {
+        if (block.type === 'text' && block.text) {
+            parts.push(block.text);
+        } else if (block.type === 'tool_use' && block.name) {
+            // Include tool use in assistant message
+            parts.push(`[Tool Call: ${block.name}(${JSON.stringify(block.input)})]`);
+        } else if (block.type === 'tool_result' && block.tool_use_id) {
+            // Include tool result
+            const resultContent = typeof block.content === 'string'
+                ? block.content
+                : block.content?.map(b => b.type === 'text' ? b.text : '').join('') || '';
+            parts.push(`[Tool Result for ${block.tool_use_id}]: ${resultContent}`);
+        }
+    }
+
+    return parts.join('\n');
+}
+
+// Generate a unique tool use ID
+function generateToolUseId(): string {
+    return 'toolu_' + Math.random().toString(36).substring(2, 15);
 }
 
 async function handleNonStreamingMessages(
     model: vscode.LanguageModelChat,
     messages: vscode.LanguageModelChatMessage[],
+    options: vscode.LanguageModelChatRequestOptions,
     res: http.ServerResponse,
     requestId: string,
     requestedModel: string
 ): Promise<void> {
-    const response = await model.sendRequest(messages, {});
+    const response = await model.sendRequest(messages, options);
 
-    let fullContent = '';
-    for await (const chunk of response.text) {
-        fullContent += chunk;
+    const contentBlocks: ContentBlock[] = [];
+    let fullText = '';
+
+    for await (const part of response.stream) {
+        if (part instanceof vscode.LanguageModelTextPart) {
+            fullText += part.value;
+        } else if (part instanceof vscode.LanguageModelToolCallPart) {
+            console.log(`[API Bridge] Tool use: ${part.name}(${JSON.stringify(part.input)})`);
+            contentBlocks.push({
+                type: 'tool_use',
+                id: part.callId || generateToolUseId(),
+                name: part.name,
+                input: part.input
+            });
+        }
     }
+
+    // Add text block if we have any text content
+    if (fullText) {
+        contentBlocks.unshift({
+            type: 'text',
+            text: fullText
+        });
+    }
+
+    // If no content at all, add empty text block
+    if (contentBlocks.length === 0) {
+        contentBlocks.push({
+            type: 'text',
+            text: ''
+        });
+    }
+
+    const hasToolUse = contentBlocks.some(b => b.type === 'tool_use');
 
     const messagesResponse: MessagesResponse = {
         id: `msg_${requestId}`,
         type: 'message',
         role: 'assistant',
-        content: [{
-            type: 'text',
-            text: fullContent
-        }],
+        content: contentBlocks,
         model: requestedModel,
-        stop_reason: 'end_turn',
+        stop_reason: hasToolUse ? 'tool_use' : 'end_turn',
         stop_sequence: null,
         usage: {
             input_tokens: estimateTokens(messages.map(m => getMessageText(m)).join('')),
-            output_tokens: estimateTokens(fullContent)
+            output_tokens: estimateTokens(fullText)
         }
     };
 
@@ -183,6 +270,7 @@ async function handleNonStreamingMessages(
 async function handleStreamingMessages(
     model: vscode.LanguageModelChat,
     messages: vscode.LanguageModelChatMessage[],
+    options: vscode.LanguageModelChatRequestOptions,
     res: http.ServerResponse,
     requestId: string,
     requestedModel: string
@@ -193,7 +281,7 @@ async function handleStreamingMessages(
         'Connection': 'keep-alive',
     });
 
-    const response = await model.sendRequest(messages, {});
+    const response = await model.sendRequest(messages, options);
 
     // Send message_start event
     const messageStart = {
@@ -214,44 +302,101 @@ async function handleStreamingMessages(
     };
     res.write(`event: message_start\ndata: ${JSON.stringify(messageStart)}\n\n`);
 
-    // Send content_block_start
-    const contentBlockStart = {
-        type: 'content_block_start',
-        index: 0,
-        content_block: {
-            type: 'text',
-            text: ''
-        }
-    };
-    res.write(`event: content_block_start\ndata: ${JSON.stringify(contentBlockStart)}\n\n`);
-
-    // Stream content deltas
+    let contentBlockIndex = 0;
+    let hasToolUse = false;
+    let inTextBlock = false;
     let fullContent = '';
-    for await (const text of response.text) {
-        fullContent += text;
-        const delta = {
-            type: 'content_block_delta',
-            index: 0,
-            delta: {
-                type: 'text_delta',
-                text: text
+
+    for await (const part of response.stream) {
+        if (part instanceof vscode.LanguageModelTextPart) {
+            // Start text block if not already in one
+            if (!inTextBlock) {
+                const contentBlockStart = {
+                    type: 'content_block_start',
+                    index: contentBlockIndex,
+                    content_block: {
+                        type: 'text',
+                        text: ''
+                    }
+                };
+                res.write(`event: content_block_start\ndata: ${JSON.stringify(contentBlockStart)}\n\n`);
+                inTextBlock = true;
             }
-        };
-        res.write(`event: content_block_delta\ndata: ${JSON.stringify(delta)}\n\n`);
+
+            fullContent += part.value;
+            const delta = {
+                type: 'content_block_delta',
+                index: contentBlockIndex,
+                delta: {
+                    type: 'text_delta',
+                    text: part.value
+                }
+            };
+            res.write(`event: content_block_delta\ndata: ${JSON.stringify(delta)}\n\n`);
+        } else if (part instanceof vscode.LanguageModelToolCallPart) {
+            hasToolUse = true;
+            console.log(`[API Bridge] Streaming tool use: ${part.name}`);
+
+            // Close text block if open
+            if (inTextBlock) {
+                const contentBlockStop = {
+                    type: 'content_block_stop',
+                    index: contentBlockIndex
+                };
+                res.write(`event: content_block_stop\ndata: ${JSON.stringify(contentBlockStop)}\n\n`);
+                contentBlockIndex++;
+                inTextBlock = false;
+            }
+
+            // Send tool_use block
+            const toolUseId = part.callId || generateToolUseId();
+            const toolBlockStart = {
+                type: 'content_block_start',
+                index: contentBlockIndex,
+                content_block: {
+                    type: 'tool_use',
+                    id: toolUseId,
+                    name: part.name,
+                    input: {}
+                }
+            };
+            res.write(`event: content_block_start\ndata: ${JSON.stringify(toolBlockStart)}\n\n`);
+
+            // Send input as delta
+            const inputDelta = {
+                type: 'content_block_delta',
+                index: contentBlockIndex,
+                delta: {
+                    type: 'input_json_delta',
+                    partial_json: typeof part.input === 'string' ? part.input : JSON.stringify(part.input)
+                }
+            };
+            res.write(`event: content_block_delta\ndata: ${JSON.stringify(inputDelta)}\n\n`);
+
+            // Close tool block
+            const toolBlockStop = {
+                type: 'content_block_stop',
+                index: contentBlockIndex
+            };
+            res.write(`event: content_block_stop\ndata: ${JSON.stringify(toolBlockStop)}\n\n`);
+            contentBlockIndex++;
+        }
     }
 
-    // Send content_block_stop
-    const contentBlockStop = {
-        type: 'content_block_stop',
-        index: 0
-    };
-    res.write(`event: content_block_stop\ndata: ${JSON.stringify(contentBlockStop)}\n\n`);
+    // Close text block if still open
+    if (inTextBlock) {
+        const contentBlockStop = {
+            type: 'content_block_stop',
+            index: contentBlockIndex
+        };
+        res.write(`event: content_block_stop\ndata: ${JSON.stringify(contentBlockStop)}\n\n`);
+    }
 
     // Send message_delta with stop reason
     const messageDelta = {
         type: 'message_delta',
         delta: {
-            stop_reason: 'end_turn',
+            stop_reason: hasToolUse ? 'tool_use' : 'end_turn',
             stop_sequence: null
         },
         usage: {

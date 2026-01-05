@@ -8,4 +8,6 @@ Write-Host "Starting Claude Code with Copilot API Bridge..." -ForegroundColor Cy
 Write-Host "  ANTHROPIC_BASE_URL = $env:ANTHROPIC_BASE_URL" -ForegroundColor Gray
 Write-Host ""
 
-claude
+# Use --dangerously-skip-permissions to allow Claude to read files and run commands
+# Remove this flag in production and use proper permission grants instead
+claude --dangerously-skip-permissions @args

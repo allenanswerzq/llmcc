@@ -1,6 +1,7 @@
 import * as http from 'http';
 import * as vscode from 'vscode';
 import { handleChatCompletions } from './handlers/chatCompletions';
+import { handleAgentChatCompletions } from './handlers/agentCompletions';
 import { handleModels } from './handlers/models';
 import { handleResponses } from './handlers/responses';
 import { handleMessages } from './handlers/messages';
@@ -97,7 +98,16 @@ export class ApiServer {
             } else if (url === '/v1/chat/completions' && req.method === 'POST') {
                 const body = await this.readBody(req);
                 const request = JSON.parse(body);
-                await handleChatCompletions(request, res);
+                // Use agent handler if tools are provided, otherwise regular handler
+                const hasTools = request.tools && request.tools.length > 0;
+                console.log(`[API Bridge] hasTools: ${hasTools}, tools count: ${request.tools?.length || 0}`);
+                if (hasTools) {
+                    console.log(`[API Bridge] Routing to AGENT handler`);
+                    await handleAgentChatCompletions(request, res);
+                } else {
+                    console.log(`[API Bridge] Routing to regular handler`);
+                    await handleChatCompletions(request, res);
+                }
             } else if (url === '/v1/responses' && req.method === 'POST') {
                 const body = await this.readBody(req);
                 const request = JSON.parse(body);
