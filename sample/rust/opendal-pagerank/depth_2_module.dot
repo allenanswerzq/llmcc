@@ -29,16 +29,6 @@ digraph architecture {
     mod_opendal_core_write[label="write"];
   }
 
-  subgraph cluster_opendal_cpp {
-    label="opendal-cpp";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
-
-    mod_opendal_cpp_lib[label="lib"];
-  }
-
   subgraph cluster_opendal_hs {
     label="opendal-hs";
     style=rounded;
@@ -165,35 +155,30 @@ digraph architecture {
 
   mod_opendal_core_http_util -> mod_opendal_core_raw [dir=both]; // dir best-effort not accurate
   mod_opendal_core_http_util -> mod_opendal_core_types [dir=both]; // dir best-effort not accurate
-  mod_opendal_core_http_util -> mod_opendal_nodejs_lib;
+  mod_opendal_core_http_util -> mod_opendal_ocaml_operator;
   mod_opendal_core_http_util -> mod_opendal_python_utils;
   mod_opendal_core_layers -> mod_opendal_core_http_util;
   mod_opendal_core_layers -> mod_opendal_core_raw;
-  mod_opendal_core_layers -> mod_opendal_core_types;
   mod_opendal_core_operator -> mod_opendal_python_operator;
   mod_opendal_core_raw -> mod_opendal_core_types [dir=both]; // dir best-effort not accurate
   mod_opendal_core_raw -> mod_opendal_core_write [dir=both]; // dir best-effort not accurate
   mod_opendal_core_raw -> mod_opendal_ocaml_operator;
-  mod_opendal_core_raw -> mod_opendal_python_utils;
   mod_opendal_core_read -> mod_opendal_core_raw;
   mod_opendal_core_read -> mod_opendal_core_types [dir=both]; // dir best-effort not accurate
-  mod_opendal_core_read -> mod_opendal_python_utils;
-  mod_opendal_core_types -> mod_opendal_nodejs_lib [dir=both]; // dir best-effort not accurate
+  mod_opendal_core_read -> mod_opendal_python_utils [dir=both]; // dir best-effort not accurate
   mod_opendal_core_write -> mod_opendal_core_types;
   mod_opendal_core_write -> mod_opendal_python_utils;
-  mod_opendal_cpp_lib -> mod_opendal_ocaml_operator;
   mod_opendal_hs_lib -> mod_opendal_hs_result;
   mod_opendal_hs_lib -> mod_opendal_ocaml_operator;
   mod_opendal_java_async_operator -> mod_opendal_java_executor;
+  mod_opendal_java_async_operator -> mod_opendal_nodejs_lib;
   mod_opendal_layer_observe_metrics_common_lib -> mod_opendal_core_http_util;
   mod_opendal_layer_observe_metrics_common_lib -> mod_opendal_core_raw;
   mod_opendal_layer_observe_metrics_common_lib -> mod_opendal_core_types;
   mod_opendal_layer_tail_cut_lib -> mod_opendal_core_raw;
-  mod_opendal_ocaml_operator -> mod_opendal_core_operator;
+  mod_opendal_nodejs_lib -> mod_opendal_core_types;
   mod_opendal_ocaml_operator -> mod_opendal_core_read;
-  mod_opendal_ocaml_operator -> mod_opendal_core_types;
   mod_opendal_ocaml_operator -> mod_opendal_core_write;
-  mod_opendal_ocaml_operator -> mod_opendal_nodejs_lib;
   mod_opendal_ocaml_operator -> mod_opendal_python_operator;
   mod_opendal_service_aliyun_drive_core -> mod_opendal_core_raw;
   mod_opendal_service_b2_core -> mod_opendal_core_raw;

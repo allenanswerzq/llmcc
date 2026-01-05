@@ -53,15 +53,12 @@ digraph architecture {
   crate_risingwave_stream[label="risingwave_stream"];
 
   crate_lints -> crate_risingwave_expr_impl [dir=both]; // dir best-effort not accurate
-  crate_lints -> crate_risingwave_sqlparser;
+  crate_lints -> crate_risingwave_frontend [dir=both]; // dir best-effort not accurate
   crate_pgwire -> crate_risingwave_connector [dir=both]; // dir best-effort not accurate
-  crate_pgwire -> crate_risingwave_storage [dir=both]; // dir best-effort not accurate
-  crate_pgwire -> crate_risingwave_stream [dir=both]; // dir best-effort not accurate
   crate_risedev -> crate_risingwave_meta [dir=both]; // dir best-effort not accurate
   crate_risingwave_backup -> crate_risingwave_meta [dir=both]; // dir best-effort not accurate
   crate_risingwave_batch -> crate_risingwave_common;
   crate_risingwave_batch -> crate_risingwave_frontend [dir=both]; // dir best-effort not accurate
-  crate_risingwave_batch -> crate_risingwave_stream [dir=both]; // dir best-effort not accurate
   crate_risingwave_batch_executors -> crate_risingwave_batch;
   crate_risingwave_batch_executors -> crate_risingwave_common [dir=both]; // dir best-effort not accurate
   crate_risingwave_batch_executors -> crate_risingwave_expr;
@@ -97,6 +94,7 @@ digraph architecture {
   crate_risingwave_connector -> crate_risingwave_storage [dir=both]; // dir best-effort not accurate
   crate_risingwave_connector -> crate_risingwave_stream [dir=both]; // dir best-effort not accurate
   crate_risingwave_connector_codec -> crate_risingwave_common;
+  crate_risingwave_connector_codec -> crate_risingwave_sqlparser;
   crate_risingwave_ctl -> crate_risingwave_expr_impl [dir=both]; // dir best-effort not accurate
   crate_risingwave_ctl -> crate_risingwave_frontend [dir=both]; // dir best-effort not accurate
   crate_risingwave_ctl -> crate_risingwave_hummock_sdk;
@@ -104,7 +102,7 @@ digraph architecture {
   crate_risingwave_dml -> crate_risingwave_stream [dir=both]; // dir best-effort not accurate
   crate_risingwave_expr -> crate_risingwave_expr_impl [dir=both]; // dir best-effort not accurate
   crate_risingwave_expr -> crate_risingwave_frontend [dir=both]; // dir best-effort not accurate
-  crate_risingwave_expr -> crate_risingwave_sqlparser;
+  crate_risingwave_expr -> crate_risingwave_sqlparser [dir=both]; // dir best-effort not accurate
   crate_risingwave_expr_impl -> crate_risingwave_common_estimate_size;
   crate_risingwave_expr_impl -> crate_risingwave_frontend [dir=both]; // dir best-effort not accurate
   crate_risingwave_expr_impl -> crate_risingwave_sqlparser [dir=both]; // dir best-effort not accurate
@@ -129,20 +127,24 @@ digraph architecture {
   crate_risingwave_jni_core -> crate_risingwave_common;
   crate_risingwave_meta -> crate_risingwave_expr_impl;
   crate_risingwave_meta -> crate_risingwave_hummock_sdk;
-  crate_risingwave_meta -> crate_risingwave_meta_model [dir=both]; // dir best-effort not accurate
+  crate_risingwave_meta -> crate_risingwave_meta_model;
   crate_risingwave_meta -> crate_risingwave_meta_model_migration;
   crate_risingwave_meta -> crate_risingwave_sqlparser [dir=both]; // dir best-effort not accurate
   crate_risingwave_meta -> crate_risingwave_storage [dir=both]; // dir best-effort not accurate
   crate_risingwave_meta -> crate_risingwave_stream [dir=both]; // dir best-effort not accurate
   crate_risingwave_meta_model -> crate_risingwave_common;
+  crate_risingwave_meta_model -> crate_risingwave_meta_model_migration;
+  crate_risingwave_meta_node -> crate_risingwave_common;
   crate_risingwave_meta_node -> crate_risingwave_meta;
   crate_risingwave_meta_node -> crate_risingwave_meta_service;
   crate_risingwave_meta_service -> crate_risingwave_meta;
   crate_risingwave_rpc_client -> crate_risingwave_common;
   crate_risingwave_sqlparser -> crate_risingwave_stream [dir=both]; // dir best-effort not accurate
+  crate_risingwave_storage -> crate_risingwave_hummock_trace;
   crate_risingwave_storage -> crate_risingwave_rpc_client;
   crate_risingwave_storage -> crate_risingwave_stream [dir=both]; // dir best-effort not accurate
   crate_risingwave_stream -> crate_delta_btree_map;
+  crate_risingwave_stream -> crate_risingwave_batch;
   crate_risingwave_stream -> crate_risingwave_common_estimate_size;
   crate_risingwave_stream -> crate_risingwave_common_rate_limit;
   crate_risingwave_stream -> crate_risingwave_expr;

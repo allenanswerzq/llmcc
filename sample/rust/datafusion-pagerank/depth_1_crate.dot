@@ -36,17 +36,14 @@ digraph architecture {
 
   crate_datafusion -> crate_datafusion_common;
   crate_datafusion -> crate_datafusion_expr [dir=both]; // dir best-effort not accurate
-  crate_datafusion -> crate_datafusion_proto;
   crate_datafusion_common -> crate_datafusion_datasource [dir=both]; // dir best-effort not accurate
   crate_datafusion_common -> crate_datafusion_expr [dir=both]; // dir best-effort not accurate
   crate_datafusion_common -> crate_datafusion_functions_nested [dir=both]; // dir best-effort not accurate
-  crate_datafusion_common -> crate_datafusion_physical_expr [dir=both]; // dir best-effort not accurate
   crate_datafusion_common -> crate_datafusion_physical_plan [dir=both]; // dir best-effort not accurate
   crate_datafusion_common -> crate_datafusion_proto [dir=both]; // dir best-effort not accurate
   crate_datafusion_datasource -> crate_datafusion_proto [dir=both]; // dir best-effort not accurate
   crate_datafusion_execution -> crate_datafusion_proto [dir=both]; // dir best-effort not accurate
   crate_datafusion_expr -> crate_datafusion_expr_common [dir=both]; // dir best-effort not accurate
-  crate_datafusion_expr -> crate_datafusion_ffi [dir=both]; // dir best-effort not accurate
   crate_datafusion_expr -> crate_datafusion_functions [dir=both]; // dir best-effort not accurate
   crate_datafusion_expr -> crate_datafusion_functions_nested [dir=both]; // dir best-effort not accurate
   crate_datafusion_expr -> crate_datafusion_physical_expr [dir=both]; // dir best-effort not accurate
@@ -59,27 +56,30 @@ digraph architecture {
   crate_datafusion_expr_common -> crate_datafusion_functions_aggregate [dir=both]; // dir best-effort not accurate
   crate_datafusion_expr_common -> crate_datafusion_physical_expr [dir=both]; // dir best-effort not accurate
   crate_datafusion_expr_common -> crate_datafusion_proto [dir=both]; // dir best-effort not accurate
+  crate_datafusion_ffi -> crate_datafusion_expr;
   crate_datafusion_ffi -> crate_datafusion_proto [dir=both]; // dir best-effort not accurate
   crate_datafusion_functions -> crate_datafusion_common;
   crate_datafusion_functions -> crate_datafusion_physical_expr [dir=both]; // dir best-effort not accurate
+  crate_datafusion_functions -> crate_datafusion_physical_plan [dir=both]; // dir best-effort not accurate
   crate_datafusion_functions_aggregate -> crate_datafusion_expr;
+  crate_datafusion_functions_aggregate -> crate_datafusion_proto;
   crate_datafusion_functions_nested -> crate_datafusion_expr_common;
   crate_datafusion_optimizer -> crate_datafusion_common;
   crate_datafusion_optimizer -> crate_datafusion_expr;
   crate_datafusion_optimizer -> crate_datafusion_expr_common;
   crate_datafusion_optimizer -> crate_datafusion_physical_expr [dir=both]; // dir best-effort not accurate
+  crate_datafusion_physical_expr -> crate_datafusion_common;
   crate_datafusion_physical_expr -> crate_datafusion_physical_expr_common [dir=both]; // dir best-effort not accurate
   crate_datafusion_physical_expr -> crate_datafusion_physical_plan [dir=both]; // dir best-effort not accurate
   crate_datafusion_physical_expr -> crate_datafusion_proto [dir=both]; // dir best-effort not accurate
   crate_datafusion_physical_expr_common -> crate_datafusion_physical_optimizer [dir=both]; // dir best-effort not accurate
   crate_datafusion_physical_expr_common -> crate_datafusion_physical_plan [dir=both]; // dir best-effort not accurate
-  crate_datafusion_physical_expr_common -> crate_datafusion_proto [dir=both]; // dir best-effort not accurate
   crate_datafusion_physical_optimizer -> crate_datafusion_common;
   crate_datafusion_physical_optimizer -> crate_datafusion_physical_expr;
   crate_datafusion_physical_optimizer -> crate_datafusion_physical_plan [dir=both]; // dir best-effort not accurate
   crate_datafusion_physical_plan -> crate_datafusion_execution;
-  crate_datafusion_physical_plan -> crate_datafusion_functions;
   crate_datafusion_physical_plan -> crate_datafusion_proto [dir=both]; // dir best-effort not accurate
+  crate_datafusion_physical_plan -> crate_datafusion_proto_common;
   crate_datafusion_proto -> crate_datafusion_proto_common [dir=both]; // dir best-effort not accurate
   crate_datafusion_spark -> crate_datafusion_common;
   crate_datafusion_spark -> crate_datafusion_expr_common;
