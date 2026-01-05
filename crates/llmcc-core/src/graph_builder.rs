@@ -347,7 +347,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 BasicBlock::Module(block_ref)
             }
             _ => {
-                panic!("unknown block kind: {}", kind)
+                panic!("unknown block kind: {kind}")
             }
         }
     }

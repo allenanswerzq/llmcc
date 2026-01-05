@@ -8,6 +8,10 @@ use clap::Parser;
 #[global_allocator]
 static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
+#[cfg(target_env = "msvc")]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 use llmcc_cli::LlmccOptions;
 use llmcc_cli::run_main;
 use llmcc_dot::ComponentDepth;
@@ -122,12 +126,15 @@ pub fn run(args: Cli) -> Result<()> {
             // No output requested (e.g., print-ir or print-block mode)
         }
         Err(e) => {
-            eprintln!("Error: {}", e);
+            eprintln!("Error: {e}");
             tracing::error!("Error: {}", e);
         }
     }
 
-    tracing::info!("Total time: {:.2}s", total_start.elapsed().as_secs_f64());
+    // Print total time - use eprintln to ensure it flushes before exit
+    let total_secs = total_start.elapsed().as_secs_f64();
+    tracing::info!("Total time: {:.2}s", total_secs);
+    eprintln!("Total time: {total_secs:.2}s");
     Ok(())
 }
 

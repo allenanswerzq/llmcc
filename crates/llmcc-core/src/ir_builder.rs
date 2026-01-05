@@ -96,17 +96,24 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
 
     /// Build HIR nodes from a parse tree root.
     fn build(self, root: &dyn ParseNode) -> HirNode<'unit> {
-        self.build_node(root, None)
+        // Root node has no field_id (no parent)
+        self.build_node(root, None, u16::MAX)
     }
 
     /// Recursively build a single HIR node and all descendants, allocating directly into arena.
-    fn build_node(&self, node: &dyn ParseNode, parent: Option<HirId>) -> HirNode<'unit> {
+    /// `field_id` is passed from the parent's child collection (avoids O(n) lookup per node).
+    fn build_node(
+        &self,
+        node: &dyn ParseNode,
+        parent: Option<HirId>,
+        field_id: u16,
+    ) -> HirNode<'unit> {
         let id = next_hir_id();
         let kind_id = node.kind_id();
         let kind = Language::hir_kind(kind_id);
         let children = self.collect_children(node, id);
         let child_ids: SmallVec<[HirId; 4]> = children.iter().map(|n| n.id()).collect();
-        let base = self.make_base(id, parent, node, kind, child_ids);
+        let base = self.make_base(id, parent, node, kind, child_ids, field_id);
 
         let hir_node = match kind {
             HirKind::File => {
@@ -160,6 +167,7 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
 
     /// Collect all valid child nodes from a parse node.
     /// Filters out test code (items with #[test] or #[cfg(test)] attributes).
+    /// Uses cursor-based iteration to get field_id during traversal (O(n) total instead of O(n²)).
     fn collect_children(
         &self,
         node: &dyn ParseNode,
@@ -168,30 +176,34 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
         let mut child_nodes = SmallVec::new();
         let mut skip_next = false;
 
-        for i in 0..node.child_count() {
-            if let Some(child) = node.child(i) {
-                // Check if this is a test attribute that should cause the next item to be skipped
-                if Language::is_test_attribute(child.as_ref(), self.file_bytes) {
-                    skip_next = true;
-                    // Still add the attribute node itself (it will be orphaned but harmless)
-                    // Actually, skip the attribute too for cleaner HIR
-                    continue;
-                }
+        // Use efficient cursor-based collection that provides field_id during iteration
+        let children_with_fields = node.collect_children_with_field_ids();
 
-                // Skip items that follow test attributes
-                if skip_next {
-                    skip_next = false;
-                    continue;
-                }
+        for child_with_field in children_with_fields {
+            let child = child_with_field.node;
+            let field_id = child_with_field.field_id;
 
-                let child_node = self.build_node(child.as_ref(), Some(parent_id));
-                child_nodes.push(child_node);
+            // Check if this is a test attribute that should cause the next item to be skipped
+            if Language::is_test_attribute(child.as_ref(), self.file_bytes) {
+                skip_next = true;
+                // Skip the attribute for cleaner HIR
+                continue;
             }
+
+            // Skip items that follow test attributes
+            if skip_next {
+                skip_next = false;
+                continue;
+            }
+
+            let child_node = self.build_node(child.as_ref(), Some(parent_id), field_id);
+            child_nodes.push(child_node);
         }
         child_nodes
     }
 
     /// Construct the base metadata for a HIR node.
+    /// `field_id` is passed from parent's child collection (already looked up via cursor).
     fn make_base(
         &self,
         id: HirId,
@@ -199,11 +211,12 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
         node: &dyn ParseNode,
         kind: HirKind,
         children: SmallVec<[HirId; 4]>,
+        field_id: u16,
     ) -> HirBase {
         let kind_id = node.kind_id();
         let start_byte = node.start_byte();
         let end_byte = node.end_byte();
-        let field_id = node.field_id().unwrap_or(u16::MAX);
+
         HirBase {
             id,
             parent,
@@ -276,7 +289,7 @@ pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
 
         let parse_tree = cc
             .get_parse_tree(index)
-            .ok_or_else(|| format!("No parse tree for unit {}", index))?;
+            .ok_or_else(|| format!("No parse tree for unit {index}"))?;
 
         let file_root_id =
             build_llmcc_ir_inner::<L>(file_path, file_bytes, parse_tree, &cc.arena, config)?;

@@ -53,7 +53,7 @@ fn get_component_key_with_crate(
             let module_path = node.module_path.clone();
 
             let (label, id, short) = if let Some(ref module) = module_path {
-                let full_label = format!("{}::{}", crate_name, module);
+                let full_label = format!("{crate_name}::{module}");
                 let short_label = module.clone();
                 let id = format!("mod_{}_{}", sanitize_id(&crate_name), sanitize_id(module));
                 (full_label, id, short_label)
@@ -69,7 +69,7 @@ fn get_component_key_with_crate(
                             .to_string()
                     })
                     .unwrap_or_else(|| "unknown".to_string());
-                let full_label = format!("{}::{}", crate_name, file_name);
+                let full_label = format!("{crate_name}::{file_name}");
                 let short_label = file_name.clone();
                 let id = format!(
                     "mod_{}_{}",
@@ -407,13 +407,12 @@ fn render_to_dot(
             if from < to {
                 let _ = writeln!(
                     output,
-                    "  {} -> {} [dir=both]; // dir best-effort not accurate",
-                    from, to
+                    "  {from} -> {to} [dir=both]; // dir best-effort not accurate"
                 );
             }
             // Skip the reverse direction
         } else {
-            let _ = writeln!(output, "  {} -> {};", from, to);
+            let _ = writeln!(output, "  {from} -> {to};");
         }
     }
 
@@ -438,8 +437,8 @@ fn render_clustered_nodes(output: &mut String, nodes: &[&AggregatedNode]) {
     // Render each crate as a subgraph cluster
     for (crate_name, crate_nodes) in &crate_groups {
         let cluster_id = sanitize_id(crate_name);
-        let _ = writeln!(output, "  subgraph cluster_{} {{", cluster_id);
-        let _ = writeln!(output, "    label=\"{}\";", crate_name);
+        let _ = writeln!(output, "  subgraph cluster_{cluster_id} {{");
+        let _ = writeln!(output, "    label=\"{crate_name}\";");
         output.push_str("    style=rounded;\n");
         output.push_str("    color=\"#888888\";\n");
         output.push_str("    bgcolor=\"#f0f0f0\";\n");
