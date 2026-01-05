@@ -20,11 +20,11 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
+    mod_tokio_blocking[label="blocking"];
     mod_tokio_context[label="context"];
     mod_tokio_current_thread[label="current_thread"];
     mod_tokio_fs[label="fs"];
     mod_tokio_io[label="io"];
-    mod_tokio_loom[label="loom"];
     mod_tokio_metrics[label="metrics"];
     mod_tokio_mpsc[label="mpsc"];
     mod_tokio_multi_thread[label="multi_thread"];
@@ -62,17 +62,6 @@ digraph architecture {
     fontname="Helvetica Bold";
 
     mod_tokio_util_io[label="io"];
-<<<<<<<< HEAD:sample/rust/tokio/depth_2_module.dot
-    mod_tokio_util_wheel[label="wheel"];
-  }
-
-
-  mod_tokio_context -> mod_tokio_task [dir=both]; // dir best-effort not accurate
-  mod_tokio_current_thread -> mod_tokio_runtime [dir=both]; // dir best-effort not accurate
-  mod_tokio_current_thread -> mod_tokio_util [dir=both]; // dir best-effort not accurate
-  mod_tokio_driver -> mod_tokio_uring [dir=both]; // dir best-effort not accurate
-  mod_tokio_fs -> mod_tokio_sync [dir=both]; // dir best-effort not accurate
-========
     mod_tokio_util_sync[label="sync"];
     mod_tokio_util_task[label="task"];
   }
@@ -85,30 +74,11 @@ digraph architecture {
   mod_tokio_current_thread -> mod_tokio_task [dir=both]; // dir best-effort not accurate
   mod_tokio_current_thread -> mod_tokio_util [dir=both]; // dir best-effort not accurate
   mod_tokio_fs -> mod_tokio_io;
->>>>>>>> origin/main:sample/rust/tokio-pagerank/depth_2_module.dot
   mod_tokio_fs -> mod_tokio_unix [dir=both]; // dir best-effort not accurate
   mod_tokio_fs -> mod_tokio_util [dir=both]; // dir best-effort not accurate
   mod_tokio_io -> mod_tokio_process [dir=both]; // dir best-effort not accurate
   mod_tokio_io -> mod_tokio_std [dir=both]; // dir best-effort not accurate
   mod_tokio_io -> mod_tokio_util [dir=both]; // dir best-effort not accurate
-<<<<<<<< HEAD:sample/rust/tokio/depth_2_module.dot
-  mod_tokio_loom -> mod_tokio_util [dir=both]; // dir best-effort not accurate
-  mod_tokio_macros_lib -> mod_tokio_util;
-  mod_tokio_metrics -> mod_tokio_multi_thread [dir=both]; // dir best-effort not accurate
-  mod_tokio_metrics -> mod_tokio_util;
-  mod_tokio_mpsc -> mod_tokio_std [dir=both]; // dir best-effort not accurate
-  mod_tokio_mpsc -> mod_tokio_sync [dir=both]; // dir best-effort not accurate
-  mod_tokio_mpsc -> mod_tokio_time;
-  mod_tokio_multi_thread -> mod_tokio_io;
-  mod_tokio_multi_thread -> mod_tokio_runtime [dir=both]; // dir best-effort not accurate
-  mod_tokio_multi_thread -> mod_tokio_std [dir=both]; // dir best-effort not accurate
-  mod_tokio_multi_thread -> mod_tokio_util [dir=both]; // dir best-effort not accurate
-  mod_tokio_runtime -> mod_tokio_task [dir=both]; // dir best-effort not accurate
-  mod_tokio_rwlock -> mod_tokio_mpsc;
-  mod_tokio_rwlock -> mod_tokio_std;
-  mod_tokio_rwlock -> mod_tokio_sync;
-  mod_tokio_signal -> mod_tokio_unix [dir=both]; // dir best-effort not accurate
-========
   mod_tokio_metrics -> mod_tokio_time;
   mod_tokio_metrics -> mod_tokio_util;
   mod_tokio_mpsc -> mod_tokio_std [dir=both]; // dir best-effort not accurate
@@ -126,44 +96,26 @@ digraph architecture {
   mod_tokio_rwlock -> mod_tokio_std;
   mod_tokio_signal -> mod_tokio_runtime;
   mod_tokio_signal -> mod_tokio_sync;
->>>>>>>> origin/main:sample/rust/tokio-pagerank/depth_2_module.dot
   mod_tokio_signal -> mod_tokio_windows [dir=both]; // dir best-effort not accurate
   mod_tokio_std -> mod_tokio_sync [dir=both]; // dir best-effort not accurate
   mod_tokio_std -> mod_tokio_task [dir=both]; // dir best-effort not accurate
   mod_tokio_std -> mod_tokio_util [dir=both]; // dir best-effort not accurate
-<<<<<<<< HEAD:sample/rust/tokio/depth_2_module.dot
-  mod_tokio_stream_empty -> mod_tokio_io;
-========
->>>>>>>> origin/main:sample/rust/tokio-pagerank/depth_2_module.dot
   mod_tokio_stream_wrappers -> mod_tokio_signal;
+  mod_tokio_stream_wrappers -> mod_tokio_time_alt;
   mod_tokio_sync -> mod_tokio_time;
-<<<<<<<< HEAD:sample/rust/tokio/depth_2_module.dot
-  mod_tokio_sync -> mod_tokio_util [dir=both]; // dir best-effort not accurate
-  mod_tokio_task -> mod_tokio_trace [dir=both]; // dir best-effort not accurate
-  mod_tokio_task -> mod_tokio_util [dir=both]; // dir best-effort not accurate
-  mod_tokio_tcp -> mod_tokio_io;
-  mod_tokio_tcp -> mod_tokio_unix [dir=both]; // dir best-effort not accurate
-========
   mod_tokio_sync -> mod_tokio_time_alt [dir=both]; // dir best-effort not accurate
   mod_tokio_sync -> mod_tokio_util [dir=both]; // dir best-effort not accurate
   mod_tokio_task -> mod_tokio_trace [dir=both]; // dir best-effort not accurate
   mod_tokio_task -> mod_tokio_util [dir=both]; // dir best-effort not accurate
->>>>>>>> origin/main:sample/rust/tokio-pagerank/depth_2_module.dot
   mod_tokio_time -> mod_tokio_std;
   mod_tokio_time_alt -> mod_tokio_util [dir=both]; // dir best-effort not accurate
   mod_tokio_unix -> mod_tokio_io;
   mod_tokio_unix -> mod_tokio_process;
   mod_tokio_unix -> mod_tokio_util [dir=both]; // dir best-effort not accurate
-<<<<<<<< HEAD:sample/rust/tokio/depth_2_module.dot
-  mod_tokio_util -> mod_tokio_util_wheel;
-  mod_tokio_util_either -> mod_tokio_io;
-  mod_tokio_util_io -> mod_tokio_io;
-========
   mod_tokio_util -> mod_tokio_wheel;
   mod_tokio_util_io -> mod_tokio_io;
   mod_tokio_util_sync -> mod_tokio_mpsc;
   mod_tokio_util_sync -> mod_tokio_time_alt;
   mod_tokio_util_task -> mod_tokio_std;
->>>>>>>> origin/main:sample/rust/tokio-pagerank/depth_2_module.dot
   mod_tokio_windows -> mod_tokio_io;
 }
