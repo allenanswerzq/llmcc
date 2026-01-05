@@ -112,9 +112,14 @@ pub fn render_aggregated_graph(
     // Detect and mark bidirectional edges
     let bidirectional_pairs = detect_bidirectional_edges(&component_edges);
 
-    // Remove reverse edges from bidirectional pairs
+    // Remove reverse edges from bidirectional pairs, merging their weights
     for (a, b) in &bidirectional_pairs {
-        component_edges.remove(&(b.clone(), a.clone()));
+        if let Some(reverse_weight) = component_edges.remove(&(b.clone(), a.clone())) {
+            // Add the reverse edge's weight to the canonical edge
+            if let Some(weight) = component_edges.get_mut(&(a.clone(), b.clone())) {
+                *weight += reverse_weight;
+            }
+        }
     }
 
     // Filter weak edges by weight threshold

@@ -14,6 +14,7 @@ digraph architecture {
   fontname="Helvetica Bold";
 
   crate_opendal_core[label="opendal-core"];
+  crate_opendal_cpp[label="opendal-cpp"];
   crate_opendal_java[label="opendal-java"];
   crate_opendal_nodejs[label="opendal-nodejs"];
   crate_opendal_ocaml[label="opendal-ocaml"];
@@ -23,12 +24,16 @@ digraph architecture {
   crate_opendal_service_oss[label="opendal-service-oss"];
   crate_opendal_service_s3[label="opendal-service-s3"];
 
-  crate_opendal_core -> crate_opendal_java;
-  crate_opendal_core -> crate_opendal_nodejs;
-  crate_opendal_core -> crate_opendal_python;
+  crate_opendal_core -> crate_opendal_java [dir=both]; // dir best-effort not accurate
+  crate_opendal_core -> crate_opendal_nodejs [dir=both]; // dir best-effort not accurate
+  crate_opendal_core -> crate_opendal_ocaml [dir=both]; // dir best-effort not accurate
+  crate_opendal_core -> crate_opendal_python [dir=both]; // dir best-effort not accurate
+  crate_opendal_core -> crate_opendal_ruby [dir=both]; // dir best-effort not accurate
+  crate_opendal_java -> crate_opendal_cpp;
+  crate_opendal_java -> crate_opendal_ruby [dir=both]; // dir best-effort not accurate
+  crate_opendal_ocaml -> crate_opendal_nodejs;
   crate_opendal_ocaml -> crate_opendal_python;
-  crate_opendal_ocaml -> crate_opendal_ruby;
-  crate_opendal_ruby -> crate_opendal_java;
+  crate_opendal_ocaml -> crate_opendal_ruby [dir=both]; // dir best-effort not accurate
   crate_opendal_service_aliyun_drive -> crate_opendal_core;
   crate_opendal_service_oss -> crate_opendal_core;
   crate_opendal_service_s3 -> crate_opendal_core;

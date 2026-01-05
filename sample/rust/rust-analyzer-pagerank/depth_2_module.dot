@@ -13,16 +13,6 @@ digraph architecture {
   fontsize=16;
   fontname="Helvetica Bold";
 
-  subgraph cluster_base_db {
-    label="base-db";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
-
-    mod_base_db_input[label="input"];
-  }
-
   subgraph cluster_hir {
     label="hir";
     style=rounded;
@@ -127,6 +117,16 @@ digraph architecture {
     mod_ide_diagnostics_handlers[label="handlers"];
   }
 
+  subgraph cluster_ide_ssr {
+    label="ide-ssr";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_ide_ssr_fragments[label="fragments"];
+  }
+
   subgraph cluster_parser {
     label="parser";
     style=rounded;
@@ -140,14 +140,14 @@ digraph architecture {
     mod_parser_syntax_kind[label="syntax_kind"];
   }
 
-  subgraph cluster_paths {
-    label="paths";
+  subgraph cluster_project_model {
+    label="project-model";
     style=rounded;
     color="#888888";
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_paths_lib[label="lib"];
+    mod_project_model_project_json[label="project_json"];
   }
 
   subgraph cluster_query_group_macro {
@@ -216,7 +216,6 @@ digraph architecture {
   }
 
 
-  mod_base_db_input -> mod_test_utils_minicore [dir=both]; // dir best-effort not accurate
   mod_hir_def_expr_store -> mod_hir_def_hir [dir=both]; // dir best-effort not accurate
   mod_hir_def_expr_store -> mod_hir_def_lib;
   mod_hir_def_expr_store -> mod_hir_ty_next_solver [dir=both]; // dir best-effort not accurate
@@ -226,16 +225,27 @@ digraph architecture {
   mod_hir_def_expr_store -> mod_syntax_ast;
   mod_hir_def_expr_store -> mod_syntax_generated;
   mod_hir_def_expr_store -> mod_test_utils_minicore [dir=both]; // dir best-effort not accurate
+  mod_hir_def_hir -> mod_query_group_macro_lib [dir=both]; // dir best-effort not accurate
   mod_hir_def_hir -> mod_syntax_ast;
-  mod_hir_def_hir -> mod_test_utils_minicore [dir=both]; // dir best-effort not accurate
+  mod_hir_def_hir -> mod_syntax_generated;
+  mod_hir_def_hir -> mod_test_utils_minicore;
+  mod_hir_def_item_tree -> mod_parser_ok [dir=both]; // dir best-effort not accurate
+  mod_hir_def_item_tree -> mod_query_group_macro_lib [dir=both]; // dir best-effort not accurate
+  mod_hir_def_item_tree -> mod_syntax_generated;
   mod_hir_def_item_tree -> mod_test_utils_minicore [dir=both]; // dir best-effort not accurate
+  mod_hir_def_lib -> mod_hir_lib [dir=both]; // dir best-effort not accurate
+  mod_hir_def_lib -> mod_hir_semantics [dir=both]; // dir best-effort not accurate
   mod_hir_def_lib -> mod_hir_ty_next_solver [dir=both]; // dir best-effort not accurate
-  mod_hir_def_lib -> mod_test_utils_minicore [dir=both]; // dir best-effort not accurate
+  mod_hir_def_lib -> mod_test_utils_minicore;
   mod_hir_def_nameres -> mod_hir_def_item_tree;
+  mod_hir_def_nameres -> mod_hir_def_lib;
+  mod_hir_def_nameres -> mod_hir_lib [dir=both]; // dir best-effort not accurate
   mod_hir_def_nameres -> mod_syntax_generated;
   mod_hir_def_nameres -> mod_test_utils_minicore [dir=both]; // dir best-effort not accurate
+  mod_hir_expand_builtin -> mod_hir_ty_next_solver;
   mod_hir_expand_builtin -> mod_parser_grammar;
   mod_hir_expand_builtin -> mod_query_group_macro_lib;
+  mod_hir_expand_builtin -> mod_syntax_ast;
   mod_hir_expand_builtin -> mod_syntax_generated;
   mod_hir_expand_builtin -> mod_test_utils_minicore;
   mod_hir_lib -> mod_hir_def_expr_store;
@@ -250,7 +260,8 @@ digraph architecture {
   mod_hir_ty_infer -> mod_hir_def_hir;
   mod_hir_ty_infer -> mod_hir_def_lib;
   mod_hir_ty_infer -> mod_hir_ty_db;
-  mod_hir_ty_infer -> mod_hir_ty_lower;
+  mod_hir_ty_infer -> mod_hir_ty_lower [dir=both]; // dir best-effort not accurate
+  mod_hir_ty_infer -> mod_hir_ty_mir [dir=both]; // dir best-effort not accurate
   mod_hir_ty_infer -> mod_hir_ty_next_solver [dir=both]; // dir best-effort not accurate
   mod_hir_ty_infer -> mod_query_group_macro_lib;
   mod_hir_ty_infer -> mod_syntax_ast;
@@ -260,6 +271,7 @@ digraph architecture {
   mod_hir_ty_lower -> mod_hir_def_lib;
   mod_hir_ty_lower -> mod_hir_ty_db;
   mod_hir_ty_lower -> mod_hir_ty_next_solver [dir=both]; // dir best-effort not accurate
+  mod_hir_ty_lower -> mod_ide_ssr_fragments;
   mod_hir_ty_lower -> mod_parser_grammar;
   mod_hir_ty_lower -> mod_query_group_macro_lib;
   mod_hir_ty_lower -> mod_test_utils_minicore [dir=both]; // dir best-effort not accurate
@@ -268,10 +280,12 @@ digraph architecture {
   mod_hir_ty_mir -> mod_hir_ty_db;
   mod_hir_ty_mir -> mod_hir_ty_next_solver;
   mod_hir_ty_mir -> mod_parser_ok;
+  mod_hir_ty_mir -> mod_query_group_macro_lib [dir=both]; // dir best-effort not accurate
   mod_hir_ty_mir -> mod_syntax_generated;
-  mod_hir_ty_mir -> mod_test_utils_minicore [dir=both]; // dir best-effort not accurate
+  mod_hir_ty_mir -> mod_test_utils_minicore;
   mod_hir_ty_next_solver -> mod_hir_ty_db;
   mod_hir_ty_next_solver -> mod_parser_ok;
+  mod_hir_ty_next_solver -> mod_query_group_macro_lib [dir=both]; // dir best-effort not accurate
   mod_hir_ty_next_solver -> mod_syntax_generated;
   mod_hir_ty_next_solver -> mod_test_utils_minicore [dir=both]; // dir best-effort not accurate
   mod_ide_assists_handlers -> mod_hir_def_item_tree;
@@ -282,7 +296,10 @@ digraph architecture {
   mod_ide_assists_handlers -> mod_ide_assists_utils [dir=both]; // dir best-effort not accurate
   mod_ide_assists_handlers -> mod_ide_completion_render;
   mod_ide_assists_handlers -> mod_ide_db_imports;
+  mod_ide_assists_handlers -> mod_ide_diagnostics_handlers;
   mod_ide_assists_handlers -> mod_ide_hover;
+  mod_ide_assists_handlers -> mod_ide_ssr_fragments;
+  mod_ide_assists_handlers -> mod_ide_syntax_highlighting;
   mod_ide_assists_handlers -> mod_parser_err;
   mod_ide_assists_handlers -> mod_parser_grammar;
   mod_ide_assists_handlers -> mod_parser_ok;
@@ -296,24 +313,25 @@ digraph architecture {
   mod_ide_assists_handlers -> mod_ungrammar_parser;
   mod_ide_assists_utils -> mod_hir_semantics;
   mod_ide_assists_utils -> mod_hir_ty_db;
+  mod_ide_assists_utils -> mod_ide_ssr_fragments;
   mod_ide_assists_utils -> mod_parser_grammar;
   mod_ide_assists_utils -> mod_query_group_macro_lib;
   mod_ide_assists_utils -> mod_syntax_ast;
   mod_ide_assists_utils -> mod_syntax_fuzz_failures;
   mod_ide_assists_utils -> mod_syntax_generated;
   mod_ide_assists_utils -> mod_syntax_validation;
-  mod_ide_assists_utils -> mod_test_utils_minicore;
   mod_ide_completion_completions -> mod_hir_semantics;
   mod_ide_completion_completions -> mod_ide_completion_context [dir=both]; // dir best-effort not accurate
   mod_ide_completion_completions -> mod_ide_db_imports;
+  mod_ide_completion_completions -> mod_ide_ssr_fragments;
   mod_ide_completion_completions -> mod_parser_grammar;
   mod_ide_completion_completions -> mod_query_group_macro_lib;
   mod_ide_completion_completions -> mod_syntax_ast;
-  mod_ide_completion_completions -> mod_syntax_fuzz_failures;
   mod_ide_completion_completions -> mod_syntax_generated;
   mod_ide_completion_completions -> mod_test_utils_minicore [dir=both]; // dir best-effort not accurate
   mod_ide_completion_context -> mod_hir_semantics;
-  mod_ide_completion_context -> mod_parser_grammar;
+  mod_ide_completion_context -> mod_ide_diagnostics_handlers;
+  mod_ide_completion_context -> mod_ide_ssr_fragments;
   mod_ide_completion_context -> mod_parser_ok;
   mod_ide_completion_context -> mod_query_group_macro_lib [dir=both]; // dir best-effort not accurate
   mod_ide_completion_context -> mod_syntax_ast [dir=both]; // dir best-effort not accurate
@@ -323,84 +341,86 @@ digraph architecture {
   mod_ide_completion_render -> mod_ide_completion_context;
   mod_ide_completion_render -> mod_ide_db_imports;
   mod_ide_completion_render -> mod_ide_hover [dir=both]; // dir best-effort not accurate
+  mod_ide_completion_render -> mod_ide_ssr_fragments;
   mod_ide_completion_render -> mod_parser_err;
   mod_ide_completion_render -> mod_parser_grammar [dir=both]; // dir best-effort not accurate
   mod_ide_completion_render -> mod_query_group_macro_lib [dir=both]; // dir best-effort not accurate
   mod_ide_completion_render -> mod_syntax_ast [dir=both]; // dir best-effort not accurate
   mod_ide_completion_render -> mod_syntax_generated;
-  mod_ide_completion_render -> mod_test_utils_minicore;
+  mod_ide_db_imports -> mod_hir_lib;
   mod_ide_db_imports -> mod_hir_semantics;
   mod_ide_db_imports -> mod_parser_grammar;
   mod_ide_db_imports -> mod_parser_ok;
   mod_ide_db_imports -> mod_query_group_macro_lib;
-  mod_ide_db_imports -> mod_syntax_ast [dir=both]; // dir best-effort not accurate
-  mod_ide_db_imports -> mod_syntax_fuzz_failures;
+  mod_ide_db_imports -> mod_syntax_ast;
   mod_ide_db_imports -> mod_syntax_generated;
   mod_ide_db_imports -> mod_test_utils_minicore;
   mod_ide_diagnostics_handlers -> mod_hir_semantics;
-  mod_ide_diagnostics_handlers -> mod_parser_grammar;
+  mod_ide_diagnostics_handlers -> mod_ide_ssr_fragments;
   mod_ide_diagnostics_handlers -> mod_parser_ok;
   mod_ide_diagnostics_handlers -> mod_query_group_macro_lib;
   mod_ide_diagnostics_handlers -> mod_syntax_ast;
   mod_ide_diagnostics_handlers -> mod_syntax_fuzz_failures;
   mod_ide_diagnostics_handlers -> mod_syntax_generated;
   mod_ide_diagnostics_handlers -> mod_syntax_validation;
-  mod_ide_diagnostics_handlers -> mod_test_utils_minicore [dir=both]; // dir best-effort not accurate
   mod_ide_diagnostics_handlers -> mod_xtask_codegen;
   mod_ide_hover -> mod_hir_semantics;
-  mod_ide_hover -> mod_parser_grammar;
+  mod_ide_hover -> mod_ide_ssr_fragments;
   mod_ide_hover -> mod_query_group_macro_lib [dir=both]; // dir best-effort not accurate
-  mod_ide_hover -> mod_syntax_ast [dir=both]; // dir best-effort not accurate
+  mod_ide_hover -> mod_syntax_ast;
   mod_ide_hover -> mod_syntax_generated;
-  mod_ide_hover -> mod_test_utils_minicore [dir=both]; // dir best-effort not accurate
+  mod_ide_hover -> mod_test_utils_minicore;
   mod_ide_inlay_hints -> mod_hir_semantics;
   mod_ide_inlay_hints -> mod_ide_completion_render;
+  mod_ide_inlay_hints -> mod_ide_hover;
+  mod_ide_inlay_hints -> mod_ide_ssr_fragments;
   mod_ide_inlay_hints -> mod_parser_err;
   mod_ide_inlay_hints -> mod_parser_grammar;
   mod_ide_inlay_hints -> mod_parser_ok;
-  mod_ide_inlay_hints -> mod_query_group_macro_lib;
+  mod_ide_inlay_hints -> mod_query_group_macro_lib [dir=both]; // dir best-effort not accurate
+  mod_ide_inlay_hints -> mod_rust_analyzer_lsp [dir=both]; // dir best-effort not accurate
   mod_ide_inlay_hints -> mod_syntax_ast;
   mod_ide_inlay_hints -> mod_syntax_fuzz_failures;
   mod_ide_inlay_hints -> mod_syntax_generated;
-  mod_ide_inlay_hints -> mod_test_utils_minicore [dir=both]; // dir best-effort not accurate
+  mod_ide_inlay_hints -> mod_test_utils_minicore;
   mod_ide_inlay_hints -> mod_ungrammar_parser;
+  mod_ide_ssr_fragments -> mod_syntax_fuzz_failures;
+  mod_ide_ssr_fragments -> mod_test_utils_minicore;
   mod_ide_syntax_highlighting -> mod_hir_semantics;
-  mod_ide_syntax_highlighting -> mod_parser_grammar;
   mod_ide_syntax_highlighting -> mod_query_group_macro_lib;
   mod_ide_syntax_highlighting -> mod_syntax_ast;
   mod_ide_syntax_highlighting -> mod_syntax_fuzz_failures;
   mod_ide_syntax_highlighting -> mod_syntax_generated;
   mod_parser_err -> mod_parser_ok [dir=both]; // dir best-effort not accurate
-  mod_parser_err -> mod_test_utils_minicore [dir=both]; // dir best-effort not accurate
+  mod_parser_err -> mod_test_utils_minicore;
   mod_parser_grammar -> mod_parser_ok [dir=both]; // dir best-effort not accurate
-  mod_parser_grammar -> mod_paths_lib [dir=both]; // dir best-effort not accurate
-  mod_parser_grammar -> mod_query_group_macro_lib [dir=both]; // dir best-effort not accurate
+  mod_parser_grammar -> mod_query_group_macro_lib;
+  mod_parser_grammar -> mod_syntax_ast [dir=both]; // dir best-effort not accurate
   mod_parser_grammar -> mod_test_utils_minicore;
   mod_parser_grammar -> mod_ungrammar_parser;
   mod_parser_ok -> mod_hir_lib;
   mod_parser_ok -> mod_test_utils_minicore [dir=both]; // dir best-effort not accurate
   mod_parser_syntax_kind -> mod_test_utils_minicore;
-  mod_paths_lib -> mod_hir_def_expr_store;
-  mod_paths_lib -> mod_test_utils_minicore [dir=both]; // dir best-effort not accurate
+  mod_project_model_project_json -> mod_query_group_macro_lib [dir=both]; // dir best-effort not accurate
+  mod_project_model_project_json -> mod_syntax_generated;
+  mod_project_model_project_json -> mod_test_utils_minicore;
   mod_query_group_macro_lib -> mod_rust_analyzer_lsp [dir=both]; // dir best-effort not accurate
+  mod_query_group_macro_lib -> mod_syntax_ast [dir=both]; // dir best-effort not accurate
   mod_query_group_macro_lib -> mod_syntax_generated;
   mod_query_group_macro_lib -> mod_test_utils_minicore [dir=both]; // dir best-effort not accurate
-  mod_rust_analyzer_config -> mod_paths_lib;
+  mod_rust_analyzer_config -> mod_rust_analyzer_lsp [dir=both]; // dir best-effort not accurate
   mod_rust_analyzer_config -> mod_syntax_generated;
   mod_rust_analyzer_config -> mod_test_utils_minicore [dir=both]; // dir best-effort not accurate
   mod_rust_analyzer_handlers -> mod_ide_completion_render;
   mod_rust_analyzer_handlers -> mod_ide_hover;
   mod_rust_analyzer_handlers -> mod_ide_inlay_hints;
-  mod_rust_analyzer_handlers -> mod_parser_ok;
   mod_rust_analyzer_handlers -> mod_query_group_macro_lib;
   mod_rust_analyzer_handlers -> mod_rust_analyzer_config;
   mod_rust_analyzer_handlers -> mod_rust_analyzer_lsp;
   mod_rust_analyzer_handlers -> mod_syntax_generated;
   mod_rust_analyzer_handlers -> mod_test_utils_minicore;
-  mod_rust_analyzer_lsp -> mod_paths_lib;
   mod_rust_analyzer_lsp -> mod_syntax_generated;
   mod_rust_analyzer_lsp -> mod_test_utils_minicore;
-  mod_syntax_ast -> mod_parser_grammar;
   mod_syntax_ast -> mod_parser_syntax_kind;
   mod_syntax_ast -> mod_syntax_generated [dir=both]; // dir best-effort not accurate
   mod_syntax_ast -> mod_test_utils_minicore [dir=both]; // dir best-effort not accurate
@@ -408,13 +428,15 @@ digraph architecture {
   mod_syntax_fuzz_failures -> mod_query_group_macro_lib;
   mod_syntax_fuzz_failures -> mod_syntax_generated;
   mod_syntax_fuzz_failures -> mod_ungrammar_parser;
+  mod_syntax_generated -> mod_hir_semantics;
   mod_syntax_generated -> mod_test_utils_minicore [dir=both]; // dir best-effort not accurate
   mod_syntax_validation -> mod_query_group_macro_lib;
   mod_syntax_validation -> mod_syntax_ast;
   mod_ungrammar_parser -> mod_parser_ok;
   mod_ungrammar_parser -> mod_test_utils_minicore;
-  mod_xtask_codegen -> mod_hir_def_expr_store;
+  mod_xtask_codegen -> mod_parser_grammar;
   mod_xtask_codegen -> mod_parser_ok;
+  mod_xtask_codegen -> mod_query_group_macro_lib;
   mod_xtask_codegen -> mod_syntax_generated;
   mod_xtask_codegen -> mod_test_utils_minicore;
   mod_xtask_codegen -> mod_ungrammar_parser;
