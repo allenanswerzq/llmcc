@@ -46,8 +46,7 @@ fn should_skip_dir(name: &str) -> bool {
 
 /// Check if a file should be skipped due to size.
 /// Returns Some(reason) if the file should be skipped, None otherwise.
-fn should_skip_file(path: &std::path::Path) -> Option<String> {
-
+fn should_skip_file(_path: &std::path::Path) -> Option<String> {
     None
 }
 
