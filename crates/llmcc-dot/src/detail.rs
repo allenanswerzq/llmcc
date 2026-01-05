@@ -87,7 +87,7 @@ pub fn render_dot(
             if from_id < to_id {
                 let _ = writeln!(
                     output,
-                    "  n{} -> n{} [from=\"{}\", to=\"{}\", dir=both];",
+                    "  n{} -> n{} [from=\"{}\", to=\"{}\", dir=both]; // best effort, direction not guaranteed",
                     from_id.as_u32(),
                     to_id.as_u32(),
                     edge.from_label,

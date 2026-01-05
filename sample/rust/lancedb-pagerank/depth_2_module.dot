@@ -1,0 +1,43 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  mod_lancedb_arrow[label="lancedb::arrow"];
+  mod_lancedb_connection[label="lancedb::connection"];
+  mod_lancedb_data[label="lancedb::data"];
+  mod_lancedb_database[label="lancedb::database"];
+  mod_lancedb_embeddings[label="lancedb::embeddings"];
+  mod_lancedb_index[label="lancedb::index"];
+  mod_lancedb_nodejs_table[label="lancedb-nodejs::table"];
+  mod_lancedb_python_index[label="lancedb-python::index"];
+  mod_lancedb_python_table[label="lancedb-python::table"];
+  mod_lancedb_query[label="lancedb::query"];
+  mod_lancedb_remote[label="lancedb::remote"];
+  mod_lancedb_table[label="lancedb::table"];
+  mod_lancedb_test_utils[label="lancedb::test_utils"];
+
+  mod_lancedb_arrow -> mod_lancedb_data [dir=both]; // dir best-effort not accurate
+  mod_lancedb_arrow -> mod_lancedb_table [dir=both]; // dir best-effort not accurate
+  mod_lancedb_connection -> mod_lancedb_database;
+  mod_lancedb_connection -> mod_lancedb_embeddings;
+  mod_lancedb_database -> mod_lancedb_table [dir=both]; // dir best-effort not accurate
+  mod_lancedb_embeddings -> mod_lancedb_arrow;
+  mod_lancedb_nodejs_table -> mod_lancedb_table;
+  mod_lancedb_python_index -> mod_lancedb_index;
+  mod_lancedb_python_table -> mod_lancedb_table [dir=both]; // dir best-effort not accurate
+  mod_lancedb_query -> mod_lancedb_table [dir=both]; // dir best-effort not accurate
+  mod_lancedb_remote -> mod_lancedb_table;
+  mod_lancedb_table -> mod_lancedb_embeddings;
+  mod_lancedb_test_utils -> mod_lancedb_connection;
+}

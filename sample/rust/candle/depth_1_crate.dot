@@ -1,0 +1,45 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  crate_candle_core[label="candle-core"];
+  crate_candle_examples[label="candle-examples"];
+  crate_candle_flash_attn[label="candle-flash-attn"];
+  crate_candle_flash_attn_v3[label="candle-flash-attn-v3"];
+  crate_candle_metal_kernels[label="candle-metal-kernels"];
+  crate_candle_nn[label="candle-nn"];
+  crate_candle_onnx[label="candle-onnx"];
+  crate_candle_pyo3[label="candle-pyo3"];
+  crate_candle_transformers[label="candle-transformers"];
+  crate_candle_wasm_example_llama2[label="candle-wasm-example-llama2"];
+  crate_candle_wasm_example_t5[label="candle-wasm-example-t5"];
+  crate_candle_wasm_example_yolo[label="candle-wasm-example-yolo"];
+
+  crate_candle_core -> crate_candle_examples [dir=both]; // dir best-effort not accurate
+  crate_candle_core -> crate_candle_metal_kernels [dir=both]; // dir best-effort not accurate
+  crate_candle_core -> crate_candle_nn [dir=both]; // dir best-effort not accurate
+  crate_candle_core -> crate_candle_onnx [dir=both]; // dir best-effort not accurate
+  crate_candle_core -> crate_candle_pyo3 [dir=both]; // dir best-effort not accurate
+  crate_candle_core -> crate_candle_transformers [dir=both]; // dir best-effort not accurate
+  crate_candle_examples -> crate_candle_pyo3 [dir=both]; // dir best-effort not accurate
+  crate_candle_flash_attn -> crate_candle_core;
+  crate_candle_flash_attn_v3 -> crate_candle_core;
+  crate_candle_nn -> crate_candle_pyo3;
+  crate_candle_nn -> crate_candle_transformers [dir=both]; // dir best-effort not accurate
+  crate_candle_pyo3 -> crate_candle_transformers [dir=both]; // dir best-effort not accurate
+  crate_candle_transformers -> crate_candle_metal_kernels;
+  crate_candle_transformers -> crate_candle_wasm_example_llama2 [dir=both]; // dir best-effort not accurate
+  crate_candle_wasm_example_t5 -> crate_candle_transformers;
+  crate_candle_wasm_example_yolo -> crate_candle_core;
+}

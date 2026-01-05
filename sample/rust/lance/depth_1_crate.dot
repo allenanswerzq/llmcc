@@ -1,0 +1,46 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  crate_lance[label="lance"];
+  crate_lance_core[label="lance-core"];
+  crate_lance_encoding[label="lance-encoding"];
+  crate_lance_file[label="lance-file"];
+  crate_lance_index[label="lance-index"];
+  crate_lance_io[label="lance-io"];
+  crate_lance_jni[label="lance-jni"];
+  crate_lance_linalg[label="lance-linalg"];
+  crate_lance_namespace_impls[label="lance-namespace-impls"];
+  crate_lance_table[label="lance-table"];
+  crate_pylance[label="pylance"];
+
+  crate_lance -> crate_lance_core [dir=both]; // dir best-effort not accurate
+  crate_lance -> crate_lance_index [dir=both]; // dir best-effort not accurate
+  crate_lance -> crate_lance_io [dir=both]; // dir best-effort not accurate
+  crate_lance -> crate_lance_jni [dir=both]; // dir best-effort not accurate
+  crate_lance -> crate_lance_linalg;
+  crate_lance -> crate_lance_table [dir=both]; // dir best-effort not accurate
+  crate_lance -> crate_pylance [dir=both]; // dir best-effort not accurate
+  crate_lance_core -> crate_lance_index [dir=both]; // dir best-effort not accurate
+  crate_lance_encoding -> crate_lance_core;
+  crate_lance_encoding -> crate_lance_file [dir=both]; // dir best-effort not accurate
+  crate_lance_file -> crate_lance_core;
+  crate_lance_file -> crate_lance_io;
+  crate_lance_index -> crate_lance_io;
+  crate_lance_index -> crate_lance_linalg [dir=both]; // dir best-effort not accurate
+  crate_lance_index -> crate_pylance [dir=both]; // dir best-effort not accurate
+  crate_lance_namespace_impls -> crate_lance_io;
+  crate_lance_table -> crate_lance_io;
+  crate_lance_table -> crate_pylance [dir=both]; // dir best-effort not accurate
+}

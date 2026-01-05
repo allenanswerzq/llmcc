@@ -1,0 +1,40 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  crate_api[label="api"];
+  crate_collection[label="collection"];
+  crate_common[label="common"];
+  crate_qdrant[label="qdrant"];
+  crate_qdrant_edge_py[label="qdrant-edge-py"];
+  crate_segment[label="segment"];
+  crate_shard[label="shard"];
+  crate_storage[label="storage"];
+
+  crate_api -> crate_collection [dir=both]; // dir best-effort not accurate
+  crate_api -> crate_segment [dir=both]; // dir best-effort not accurate
+  crate_api -> crate_shard [dir=both]; // dir best-effort not accurate
+  crate_collection -> crate_common [dir=both]; // dir best-effort not accurate
+  crate_collection -> crate_qdrant [dir=both]; // dir best-effort not accurate
+  crate_collection -> crate_segment [dir=both]; // dir best-effort not accurate
+  crate_collection -> crate_shard [dir=both]; // dir best-effort not accurate
+  crate_collection -> crate_storage [dir=both]; // dir best-effort not accurate
+  crate_common -> crate_segment [dir=both]; // dir best-effort not accurate
+  crate_qdrant -> crate_api;
+  crate_qdrant -> crate_segment [dir=both]; // dir best-effort not accurate
+  crate_qdrant -> crate_shard [dir=both]; // dir best-effort not accurate
+  crate_qdrant -> crate_storage;
+  crate_qdrant_edge_py -> crate_segment [dir=both]; // dir best-effort not accurate
+  crate_shard -> crate_segment;
+}

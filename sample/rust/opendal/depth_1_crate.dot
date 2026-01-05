@@ -1,0 +1,136 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  crate_dav_server_opendalfs[label="dav-server-opendalfs"];
+  crate_object_store_opendal[label="object_store_opendal"];
+  crate_opendal_core[label="opendal-core"];
+  crate_opendal_dart[label="opendal-dart"];
+  crate_opendal_java[label="opendal-java"];
+  crate_opendal_layer_capability_check[label="opendal-layer-capability-check"];
+  crate_opendal_layer_logging[label="opendal-layer-logging"];
+  crate_opendal_layer_mime_guess[label="opendal-layer-mime-guess"];
+  crate_opendal_layer_observe_metrics_common[label="opendal-layer-observe-metrics-common"];
+  crate_opendal_lua[label="opendal-lua"];
+  crate_opendal_nodejs[label="opendal-nodejs"];
+  crate_opendal_ocaml[label="opendal-ocaml"];
+  crate_opendal_php[label="opendal-php"];
+  crate_opendal_python[label="opendal-python"];
+  crate_opendal_ruby[label="opendal-ruby"];
+  crate_opendal_service_aliyun_drive[label="opendal-service-aliyun-drive"];
+  crate_opendal_service_alluxio[label="opendal-service-alluxio"];
+  crate_opendal_service_azdls[label="opendal-service-azdls"];
+  crate_opendal_service_azfile[label="opendal-service-azfile"];
+  crate_opendal_service_b2[label="opendal-service-b2"];
+  crate_opendal_service_cloudflare_kv[label="opendal-service-cloudflare-kv"];
+  crate_opendal_service_cos[label="opendal-service-cos"];
+  crate_opendal_service_d1[label="opendal-service-d1"];
+  crate_opendal_service_dashmap[label="opendal-service-dashmap"];
+  crate_opendal_service_dbfs[label="opendal-service-dbfs"];
+  crate_opendal_service_dropbox[label="opendal-service-dropbox"];
+  crate_opendal_service_gcs[label="opendal-service-gcs"];
+  crate_opendal_service_gdrive[label="opendal-service-gdrive"];
+  crate_opendal_service_ghac[label="opendal-service-ghac"];
+  crate_opendal_service_github[label="opendal-service-github"];
+  crate_opendal_service_gridfs[label="opendal-service-gridfs"];
+  crate_opendal_service_http[label="opendal-service-http"];
+  crate_opendal_service_huggingface[label="opendal-service-huggingface"];
+  crate_opendal_service_ipfs[label="opendal-service-ipfs"];
+  crate_opendal_service_ipmfs[label="opendal-service-ipmfs"];
+  crate_opendal_service_koofr[label="opendal-service-koofr"];
+  crate_opendal_service_lakefs[label="opendal-service-lakefs"];
+  crate_opendal_service_mini_moka[label="opendal-service-mini-moka"];
+  crate_opendal_service_moka[label="opendal-service-moka"];
+  crate_opendal_service_mongodb[label="opendal-service-mongodb"];
+  crate_opendal_service_obs[label="opendal-service-obs"];
+  crate_opendal_service_onedrive[label="opendal-service-onedrive"];
+  crate_opendal_service_oss[label="opendal-service-oss"];
+  crate_opendal_service_pcloud[label="opendal-service-pcloud"];
+  crate_opendal_service_redb[label="opendal-service-redb"];
+  crate_opendal_service_redis[label="opendal-service-redis"];
+  crate_opendal_service_rocksdb[label="opendal-service-rocksdb"];
+  crate_opendal_service_s3[label="opendal-service-s3"];
+  crate_opendal_service_seafile[label="opendal-service-seafile"];
+  crate_opendal_service_sftp[label="opendal-service-sftp"];
+  crate_opendal_service_swift[label="opendal-service-swift"];
+  crate_opendal_service_tikv[label="opendal-service-tikv"];
+  crate_opendal_service_upyun[label="opendal-service-upyun"];
+  crate_opendal_service_vercel_artifacts[label="opendal-service-vercel-artifacts"];
+  crate_opendal_service_vercel_blob[label="opendal-service-vercel-blob"];
+  crate_opendal_service_webdav[label="opendal-service-webdav"];
+  crate_opendal_service_webhdfs[label="opendal-service-webhdfs"];
+  crate_opendal_service_yandex_disk[label="opendal-service-yandex-disk"];
+
+  crate_dav_server_opendalfs -> crate_opendal_ocaml;
+  crate_object_store_opendal -> crate_opendal_core;
+  crate_object_store_opendal -> crate_opendal_ocaml;
+  crate_opendal_core -> crate_opendal_java [dir=both]; // dir best-effort not accurate
+  crate_opendal_core -> crate_opendal_nodejs [dir=both]; // dir best-effort not accurate
+  crate_opendal_core -> crate_opendal_ocaml [dir=both]; // dir best-effort not accurate
+  crate_opendal_core -> crate_opendal_python [dir=both]; // dir best-effort not accurate
+  crate_opendal_core -> crate_opendal_service_gdrive [dir=both]; // dir best-effort not accurate
+  crate_opendal_core -> crate_opendal_service_ipfs [dir=both]; // dir best-effort not accurate
+  crate_opendal_java -> crate_opendal_dart;
+  crate_opendal_layer_capability_check -> crate_opendal_core;
+  crate_opendal_layer_logging -> crate_opendal_core;
+  crate_opendal_layer_mime_guess -> crate_opendal_core;
+  crate_opendal_layer_observe_metrics_common -> crate_opendal_core;
+  crate_opendal_lua -> crate_opendal_ocaml;
+  crate_opendal_nodejs -> crate_opendal_lua;
+  crate_opendal_ocaml -> crate_opendal_php;
+  crate_opendal_ocaml -> crate_opendal_python;
+  crate_opendal_ocaml -> crate_opendal_ruby [dir=both]; // dir best-effort not accurate
+  crate_opendal_ruby -> crate_opendal_core;
+  crate_opendal_service_aliyun_drive -> crate_opendal_core;
+  crate_opendal_service_alluxio -> crate_opendal_core;
+  crate_opendal_service_azdls -> crate_opendal_core;
+  crate_opendal_service_azfile -> crate_opendal_core;
+  crate_opendal_service_b2 -> crate_opendal_core;
+  crate_opendal_service_cloudflare_kv -> crate_opendal_core;
+  crate_opendal_service_cos -> crate_opendal_core;
+  crate_opendal_service_d1 -> crate_opendal_core;
+  crate_opendal_service_dashmap -> crate_opendal_core;
+  crate_opendal_service_dbfs -> crate_opendal_core;
+  crate_opendal_service_dropbox -> crate_opendal_core;
+  crate_opendal_service_gcs -> crate_opendal_core;
+  crate_opendal_service_ghac -> crate_opendal_core;
+  crate_opendal_service_github -> crate_opendal_core;
+  crate_opendal_service_gridfs -> crate_opendal_core;
+  crate_opendal_service_http -> crate_opendal_core;
+  crate_opendal_service_huggingface -> crate_opendal_core;
+  crate_opendal_service_ipmfs -> crate_opendal_core;
+  crate_opendal_service_koofr -> crate_opendal_core;
+  crate_opendal_service_lakefs -> crate_opendal_core;
+  crate_opendal_service_mini_moka -> crate_opendal_core;
+  crate_opendal_service_moka -> crate_opendal_core;
+  crate_opendal_service_mongodb -> crate_opendal_core;
+  crate_opendal_service_obs -> crate_opendal_core;
+  crate_opendal_service_onedrive -> crate_opendal_core;
+  crate_opendal_service_oss -> crate_opendal_core;
+  crate_opendal_service_pcloud -> crate_opendal_core;
+  crate_opendal_service_redb -> crate_opendal_java;
+  crate_opendal_service_redis -> crate_opendal_core;
+  crate_opendal_service_rocksdb -> crate_opendal_core;
+  crate_opendal_service_s3 -> crate_opendal_core;
+  crate_opendal_service_seafile -> crate_opendal_core;
+  crate_opendal_service_sftp -> crate_opendal_core;
+  crate_opendal_service_swift -> crate_opendal_core;
+  crate_opendal_service_tikv -> crate_opendal_core;
+  crate_opendal_service_upyun -> crate_opendal_core;
+  crate_opendal_service_vercel_artifacts -> crate_opendal_core;
+  crate_opendal_service_vercel_blob -> crate_opendal_core;
+  crate_opendal_service_webdav -> crate_opendal_core;
+  crate_opendal_service_webhdfs -> crate_opendal_core;
+  crate_opendal_service_yandex_disk -> crate_opendal_core;
+}
