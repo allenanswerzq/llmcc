@@ -459,22 +459,16 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectorScopes<'tcx>> for CollectorVisito
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if node.as_scope().is_none() {
+        if let Some(sn) = node.as_scope() {
+            // Arrow functions are anonymous - create a scope and set it on the HirScope
+            let scope = unit.cc.alloc_scope(node.id());
+            sn.set_scope(scope);
+            scopes.push_scope(scope);
+            self.visit_children(unit, node, scopes, scope, parent);
+            scopes.pop_scope();
+        } else {
             self.visit_children(unit, node, scopes, namespace, parent);
-            return;
-        };
-
-        // Arrow functions are anonymous - just create a scope for them
-        let depth = scopes.scope_depth();
-        scopes.push_scope_with(node, None);
-        self.visit_children(
-            unit,
-            node,
-            scopes,
-            scopes.top().unwrap_or(namespace),
-            parent,
-        );
-        scopes.pop_until(depth);
+        }
     }
 
     // Variable declarator
@@ -682,6 +676,250 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectorScopes<'tcx>> for CollectorVisito
         }
 
         self.visit_children(unit, node, scopes, namespace, parent);
+    }
+
+    // =========================================================================
+    // Anonymous scope handlers - these create scopes without symbols
+    // =========================================================================
+
+    /// Handle statement_block - function bodies, if/for/while bodies, etc.
+    fn visit_statement_block(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        if let Some(sn) = node.as_scope() {
+            let scope = unit.cc.alloc_scope(node.id());
+            sn.set_scope(scope);
+            scopes.push_scope(scope);
+            self.visit_children(unit, node, scopes, scope, parent);
+            scopes.pop_scope();
+        } else {
+            self.visit_children(unit, node, scopes, namespace, parent);
+        }
+    }
+
+    /// Handle function_expression - anonymous functions
+    fn visit_function_expression(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        if let Some(sn) = node.as_scope() {
+            let scope = unit.cc.alloc_scope(node.id());
+            sn.set_scope(scope);
+            scopes.push_scope(scope);
+            self.visit_children(unit, node, scopes, scope, parent);
+            scopes.pop_scope();
+        } else {
+            self.visit_children(unit, node, scopes, namespace, parent);
+        }
+    }
+
+    /// Handle generator_function - generator function expressions
+    fn visit_generator_function(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        if let Some(sn) = node.as_scope() {
+            let scope = unit.cc.alloc_scope(node.id());
+            sn.set_scope(scope);
+            scopes.push_scope(scope);
+            self.visit_children(unit, node, scopes, scope, parent);
+            scopes.pop_scope();
+        } else {
+            self.visit_children(unit, node, scopes, namespace, parent);
+        }
+    }
+
+    /// Handle class - class expressions (anonymous classes)
+    fn visit_class(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        if let Some(sn) = node.as_scope() {
+            let scope = unit.cc.alloc_scope(node.id());
+            sn.set_scope(scope);
+            scopes.push_scope(scope);
+            self.visit_children(unit, node, scopes, scope, parent);
+            scopes.pop_scope();
+        } else {
+            self.visit_children(unit, node, scopes, namespace, parent);
+        }
+    }
+
+    /// Handle class_body - body of class declarations
+    fn visit_class_body(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        if let Some(sn) = node.as_scope() {
+            let scope = unit.cc.alloc_scope(node.id());
+            sn.set_scope(scope);
+            scopes.push_scope(scope);
+            self.visit_children(unit, node, scopes, scope, parent);
+            scopes.pop_scope();
+        } else {
+            self.visit_children(unit, node, scopes, namespace, parent);
+        }
+    }
+
+    /// Handle interface_body - body of interface declarations
+    fn visit_interface_body(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        if let Some(sn) = node.as_scope() {
+            let scope = unit.cc.alloc_scope(node.id());
+            sn.set_scope(scope);
+            scopes.push_scope(scope);
+            self.visit_children(unit, node, scopes, scope, parent);
+            scopes.pop_scope();
+        } else {
+            self.visit_children(unit, node, scopes, namespace, parent);
+        }
+    }
+
+    /// Handle enum_body - body of enum declarations
+    fn visit_enum_body(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        if let Some(sn) = node.as_scope() {
+            let scope = unit.cc.alloc_scope(node.id());
+            sn.set_scope(scope);
+            scopes.push_scope(scope);
+            self.visit_children(unit, node, scopes, scope, parent);
+            scopes.pop_scope();
+        } else {
+            self.visit_children(unit, node, scopes, namespace, parent);
+        }
+    }
+
+    /// Handle module - ES module wrapper
+    fn visit_module(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        if let Some(sn) = node.as_scope() {
+            let scope = unit.cc.alloc_scope(node.id());
+            sn.set_scope(scope);
+            scopes.push_scope(scope);
+            self.visit_children(unit, node, scopes, scope, parent);
+            scopes.pop_scope();
+        } else {
+            self.visit_children(unit, node, scopes, namespace, parent);
+        }
+    }
+
+    /// Handle call_signature - function call signatures in interfaces
+    fn visit_call_signature(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        if let Some(sn) = node.as_scope() {
+            let scope = unit.cc.alloc_scope(node.id());
+            sn.set_scope(scope);
+            scopes.push_scope(scope);
+            self.visit_children(unit, node, scopes, scope, parent);
+            scopes.pop_scope();
+        } else {
+            self.visit_children(unit, node, scopes, namespace, parent);
+        }
+    }
+
+    /// Handle construct_signature - constructor signatures in interfaces
+    fn visit_construct_signature(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        if let Some(sn) = node.as_scope() {
+            let scope = unit.cc.alloc_scope(node.id());
+            sn.set_scope(scope);
+            scopes.push_scope(scope);
+            self.visit_children(unit, node, scopes, scope, parent);
+            scopes.pop_scope();
+        } else {
+            self.visit_children(unit, node, scopes, namespace, parent);
+        }
+    }
+
+    /// Handle tuple_type - tuple type definitions
+    fn visit_tuple_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        if let Some(sn) = node.as_scope() {
+            let scope = unit.cc.alloc_scope(node.id());
+            sn.set_scope(scope);
+            scopes.push_scope(scope);
+            self.visit_children(unit, node, scopes, scope, parent);
+            scopes.pop_scope();
+        } else {
+            self.visit_children(unit, node, scopes, namespace, parent);
+        }
+    }
+
+    /// Handle object_type - object type literals
+    fn visit_object_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        if let Some(sn) = node.as_scope() {
+            let scope = unit.cc.alloc_scope(node.id());
+            sn.set_scope(scope);
+            scopes.push_scope(scope);
+            self.visit_children(unit, node, scopes, scope, parent);
+            scopes.pop_scope();
+        } else {
+            self.visit_children(unit, node, scopes, namespace, parent);
+        }
     }
 }
 

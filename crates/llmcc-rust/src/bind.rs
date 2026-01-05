@@ -64,7 +64,10 @@ impl<'tcx> BinderVisitor<'tcx> {
         }
 
         let child_parent = sn.opt_symbol().or(parent);
+
+        // Push scope (always succeeds for Rust since collector sets all scopes)
         scopes.push_scope_node(sn);
+
         if let Some(scope_enter) = on_scope_enter {
             scope_enter(unit, sn, scopes);
         }

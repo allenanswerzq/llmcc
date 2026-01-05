@@ -49,6 +49,12 @@ impl<'tcx> BinderVisitor<'tcx> {
         // TODO: Check for export keyword in parent
 
         let child_parent = sn.opt_symbol().or(parent);
+
+        // Skip if scope wasn't set (incomplete TypeScript parsing)
+        if sn.opt_scope().is_none() {
+            self.visit_children(unit, node, scopes, scopes.top(), child_parent);
+            return;
+        }
         scopes.push_scope_node(sn);
 
         // Run the scope enter callback if provided

@@ -44,7 +44,7 @@ pub struct Cli {
     )]
     dirs: Vec<String>,
 
-    /// Language to use: 'rust' or 'python'
+    /// Language to use: 'rust', 'typescript' (or 'ts')
     #[arg(long, value_name = "LANG", default_value = "rust")]
     lang: String,
 

@@ -21,8 +21,8 @@ This repo includes a ready-made example under [sample](sample). Download and ope
 
 ### Depth 1: crate graph
 
-<p align="center">
-	<img src="sample/rust/codex-pagerank/depth_1_crate.svg" alt="Codex crate graph (depth 1)" style="max-width: 50%; height: 70%;" />
+<p style="height: 250px; text-align: center;">
+	<img src="sample/rust/codex-pagerank/depth_1_crate.svg" alt="Codex crate graph (depth 1)" style="max-width: 100%; height: 100%;" />
 </p>
 
 ### Depth 2: module graph
