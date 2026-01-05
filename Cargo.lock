@@ -697,6 +697,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2874a2af47a2325c2001a6e6fad9b16a53b802102b528163885171cf92b15976"
 
 [[package]]
+name = "libmimalloc-sys"
+version = "0.1.44"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "667f4fec20f29dfc6bc7357c582d91796c169ad7e2fce709468aefeb2c099870"
+dependencies = [
+ "cc",
+ "libc",
+]
+
+[[package]]
 name = "linux-raw-sys"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -726,7 +736,7 @@ dependencies = [
  "llmcc-dot",
  "llmcc-resolver",
  "llmcc-rust",
- "llmcc-ts",
+ "mimalloc",
  "pprof",
  "rayon",
  "regex",
@@ -820,7 +830,6 @@ dependencies = [
  "llmcc-dot",
  "llmcc-resolver",
  "llmcc-rust",
- "llmcc-ts",
  "regex",
  "shell-words",
  "similar",
@@ -837,19 +846,6 @@ dependencies = [
  "serde_json",
  "toml",
  "tree-sitter",
-]
-
-[[package]]
-name = "llmcc-ts"
-version = "0.2.50"
-dependencies = [
- "anyhow",
- "llmcc-core",
- "llmcc-resolver",
- "llmcc-tree",
- "tracing",
- "tree-sitter",
- "tree-sitter-typescript",
 ]
 
 [[package]]
@@ -898,6 +894,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "488016bfae457b036d996092f6cb448677611ce4449e970ceaf42695203f218a"
 dependencies = [
  "autocfg",
+]
+
+[[package]]
+name = "mimalloc"
+version = "0.1.48"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e1ee66a4b64c74f4ef288bcbb9192ad9c3feaad75193129ac8509af543894fd8"
+dependencies = [
+ "libmimalloc-sys",
 ]
 
 [[package]]
@@ -1730,16 +1735,6 @@ name = "tree-sitter-rust"
 version = "0.24.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4b9b18034c684a2420722be8b2a91c9c44f2546b631c039edf575ccba8c61be1"
-dependencies = [
- "cc",
- "tree-sitter-language",
-]
-
-[[package]]
-name = "tree-sitter-typescript"
-version = "0.23.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c5f76ed8d947a75cc446d5fccd8b602ebf0cde64ccf2ffa434d873d7a575eff"
 dependencies = [
  "cc",
  "tree-sitter-language",

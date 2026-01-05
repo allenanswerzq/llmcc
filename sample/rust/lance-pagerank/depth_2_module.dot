@@ -62,6 +62,16 @@ digraph architecture {
     mod_lance_encoding_testing[label="testing"];
   }
 
+  subgraph cluster_lance_file {
+    label="lance-file";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_lance_file_writer[label="writer"];
+  }
+
   subgraph cluster_lance_index {
     label="lance-index";
     style=rounded;
@@ -92,6 +102,7 @@ digraph architecture {
     fontname="Helvetica Bold";
 
     mod_lance_jni_blocking_dataset[label="blocking_dataset"];
+    mod_lance_jni_namespace[label="namespace"];
   }
 
   subgraph cluster_lance_linalg {
@@ -102,6 +113,16 @@ digraph architecture {
     fontname="Helvetica Bold";
 
     mod_lance_linalg_distance[label="distance"];
+  }
+
+  subgraph cluster_lance_namespace_impls {
+    label="lance-namespace-impls";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_lance_namespace_impls_rest_adapter[label="rest_adapter"];
   }
 
   subgraph cluster_lance_table {
@@ -127,6 +148,8 @@ digraph architecture {
   }
 
 
+  mod_lance_core_utils -> mod_lance_index_inverted [dir=both]; // dir best-effort not accurate
+  mod_lance_core_utils -> mod_lance_table_rowids [dir=both]; // dir best-effort not accurate
   mod_lance_datagen_generator -> mod_lance_core_datatypes;
   mod_lance_dataset -> mod_lance_core_datatypes;
   mod_lance_dataset -> mod_lance_core_utils;
@@ -136,7 +159,6 @@ digraph architecture {
   mod_lance_dataset -> mod_lance_table_io [dir=both]; // dir best-effort not accurate
   mod_lance_dataset -> mod_lance_table_rowids;
   mod_lance_dataset -> mod_lance_write [dir=both]; // dir best-effort not accurate
-  mod_lance_dataset -> mod_pylance_dataset [dir=both]; // dir best-effort not accurate
   mod_lance_encoding_decoder -> mod_lance_core_datatypes;
   mod_lance_encoding_decoder -> mod_lance_encoding_logical [dir=both]; // dir best-effort not accurate
   mod_lance_encoding_logical -> mod_lance_core_datatypes;
@@ -144,24 +166,32 @@ digraph architecture {
   mod_lance_encoding_physical -> mod_lance_encoding_data;
   mod_lance_encoding_physical -> mod_lance_encoding_decoder;
   mod_lance_encoding_testing -> mod_lance_core_datatypes;
+  mod_lance_encoding_testing -> mod_lance_encoding_decoder;
   mod_lance_exec -> mod_lance_core_datatypes;
   mod_lance_exec -> mod_lance_core_utils;
   mod_lance_exec -> mod_lance_dataset;
   mod_lance_exec -> mod_lance_index_inverted;
+  mod_lance_exec -> mod_lance_index_scalar;
   mod_lance_exec -> mod_lance_index_vector;
   mod_lance_exec -> mod_lance_table_format;
+  mod_lance_exec -> mod_pylance_dataset;
+  mod_lance_file_writer -> mod_lance_core_datatypes;
+  mod_lance_index -> mod_lance_core_utils;
   mod_lance_index -> mod_lance_dataset;
   mod_lance_index -> mod_lance_index_scalar [dir=both]; // dir best-effort not accurate
   mod_lance_index -> mod_lance_index_vector [dir=both]; // dir best-effort not accurate
   mod_lance_index -> mod_lance_table_format;
   mod_lance_index -> mod_lance_vector [dir=both]; // dir best-effort not accurate
-  mod_lance_index -> mod_pylance_dataset [dir=both]; // dir best-effort not accurate
   mod_lance_index_inverted -> mod_lance_index_scalar [dir=both]; // dir best-effort not accurate
   mod_lance_index_scalar -> mod_lance_core_datatypes;
   mod_lance_index_scalar -> mod_lance_core_utils;
+  mod_lance_index_scalar -> mod_lance_io_object_store;
   mod_lance_index_vector -> mod_lance_linalg_distance;
+  mod_lance_jni_blocking_dataset -> mod_lance_core_datatypes;
   mod_lance_jni_blocking_dataset -> mod_lance_dataset;
+  mod_lance_jni_namespace -> mod_lance_namespace_impls_rest_adapter;
   mod_lance_table_format -> mod_lance_table_rowids [dir=both]; // dir best-effort not accurate
+  mod_lance_table_format -> mod_pylance_dataset [dir=both]; // dir best-effort not accurate
   mod_lance_table_io -> mod_lance_io_object_store;
   mod_lance_table_io -> mod_lance_table_format;
   mod_lance_table_io -> mod_pylance_dataset [dir=both]; // dir best-effort not accurate
@@ -171,5 +201,8 @@ digraph architecture {
   mod_lance_vector -> mod_lance_linalg_distance;
   mod_lance_write -> mod_lance_core_datatypes;
   mod_lance_write -> mod_lance_core_utils;
+  mod_lance_write -> mod_lance_io_object_store;
   mod_lance_write -> mod_lance_table_format;
+  mod_lance_write -> mod_lance_table_io;
+  mod_pylance_dataset -> mod_lance_dataset;
 }

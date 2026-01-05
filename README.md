@@ -21,7 +21,7 @@ This repo includes a ready-made example under [sample](sample). Download and ope
 
 ### Depth 1: crate graph
 
-<p style="height: 250px; text-align: center;">
+<p style="height: 200px; text-align: center;">
 	<img src="sample/rust/codex-pagerank/depth_1_crate.svg" alt="Codex crate graph (depth 1)" style="max-width: 100%; height: 100%;" />
 </p>
 
@@ -35,6 +35,12 @@ This repo includes a ready-made example under [sample](sample). Download and ope
 
 <p align="center">
 	<img src="sample/rust/codex-pagerank/depth_3_file.svg" alt="Codex file and symbol graph (depth 3)" style="max-width: 100%; height: auto;" />
+</p>
+
+Here's a small portion of the graph at depth 3, showing the core abstraction layer for prompt handling in Codex. Developers and AI agents can quickly grasp the architecture by examining this view.
+
+<p style="height: 200px; text-align: center;">
+	<img src="doc/codex.jpg" alt="codex core logic" style="max-width: 100%; height: auto;" />
 </p>
 
 If you open those .dot/.svg files, you’ll see the same system from different “altitudes”, which is exactly what you want when:
@@ -53,9 +59,9 @@ Excerpt (PageRank timing, depth=3, top-200):
 
 | Project | Files | LoC | Total |
 |---------|-------|-----|-------|
-| databend | 3130 | 627K | 3.03s |
-| ruff | 1661 | 418K | 2.23s |
-| codex | 617 | 224K | 0.60s |
+| databend | 3130 | 627K | 2.53s |
+| ruff | 1661 | 418K | 1.73s |
+| codex | 617 | 224K | 0.46s |
 
 ## CLI: generate graphs
 

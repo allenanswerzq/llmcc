@@ -7,6 +7,14 @@ use crate::ir::HirKind;
 use crate::ir::HirNode;
 use crate::scope::{Scope, ScopeStack};
 
+/// A child node paired with its field ID for efficient iteration.
+pub struct ChildWithFieldId<'a> {
+    /// The child node (boxed for trait object)
+    pub node: Box<dyn ParseNode + 'a>,
+    /// The field ID of this child within its parent (u16::MAX if none)
+    pub field_id: u16,
+}
+
 /// Generic trait for parse tree representation.
 ///
 /// Implementations can wrap tree-sitter trees, custom ASTs, or other parse representations.
@@ -78,6 +86,25 @@ pub trait ParseNode: Send + Sync {
         None
     }
 
+    /// Collect all children with their field IDs in a single pass.
+    /// This is more efficient than calling child() + field_id() separately
+    /// because it uses a cursor to get field_id during iteration.
+    ///
+    /// Default implementation falls back to child() + field_id() for each child.
+    fn collect_children_with_field_ids(&self) -> Vec<ChildWithFieldId<'_>> {
+        let mut result = Vec::with_capacity(self.child_count());
+        for i in 0..self.child_count() {
+            if let Some(child) = self.child(i) {
+                let field_id = child.field_id().unwrap_or(u16::MAX);
+                result.push(ChildWithFieldId {
+                    node: child,
+                    field_id,
+                });
+            }
+        }
+        result
+    }
+
     /// Get a child by field name (if supported by the parser)
     fn child_by_field_name(&self, field_name: &str) -> Option<Box<dyn ParseNode + '_>>;
 
@@ -135,11 +162,11 @@ pub trait ParseNode: Send + Sync {
 
         // Add field name if provided
         if let Some(fname) = field_name {
-            label.push_str(&format!("|{}|_ ", fname));
+            label.push_str(&format!("|{fname}|_ "));
         }
 
         // Add kind and kind_id
-        label.push_str(&format!("{} [{}]", kind_str, kind_id));
+        label.push_str(&format!("{kind_str} [{kind_id}]"));
 
         // Add status flags
         if self.is_error() {
@@ -195,6 +222,7 @@ impl<'tree> ParseNode for TreeSitterParseNode<'tree> {
 
     fn field_id(&self) -> Option<u16> {
         // Walk up to parent and find this node's field ID
+        // NOTE: This is O(n) per call - prefer collect_children_with_field_ids for bulk access
         let parent = self.node.parent()?;
         let mut cursor = parent.walk();
 
@@ -212,6 +240,32 @@ impl<'tree> ParseNode for TreeSitterParseNode<'tree> {
         }
 
         None
+    }
+
+    /// Efficient cursor-based collection of children with field IDs.
+    /// This avoids the O(n²) cost of calling field_id() on each child separately.
+    fn collect_children_with_field_ids(&self) -> Vec<ChildWithFieldId<'_>> {
+        let mut result = Vec::with_capacity(self.node.child_count());
+        let mut cursor = self.node.walk();
+
+        if !cursor.goto_first_child() {
+            return result;
+        }
+
+        loop {
+            let child_node = cursor.node();
+            let field_id = cursor.field_id().map(|id| id.get()).unwrap_or(u16::MAX);
+            result.push(ChildWithFieldId {
+                node: Box::new(TreeSitterParseNode::new(child_node)),
+                field_id,
+            });
+
+            if !cursor.goto_next_sibling() {
+                break;
+            }
+        }
+
+        result
     }
 
     fn child_by_field_name(&self, field_name: &str) -> Option<Box<dyn ParseNode + '_>> {

@@ -250,7 +250,7 @@ mod tests {
         // Intern 1000 strings in parallel
         let symbols: Vec<_> = (0..1000)
             .into_par_iter()
-            .map(|i| pool.intern(format!("string_{}", i).as_str()))
+            .map(|i| pool.intern(format!("string_{i}").as_str()))
             .collect();
 
         // Verify all were interned
@@ -260,7 +260,7 @@ mod tests {
         // Verify each resolves correctly
         for (i, sym) in symbols.iter().enumerate() {
             let resolved = pool.resolve_owned(*sym).expect("should resolve");
-            assert_eq!(resolved, format!("string_{}", i));
+            assert_eq!(resolved, format!("string_{i}"));
         }
     }
 

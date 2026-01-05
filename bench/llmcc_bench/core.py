@@ -276,8 +276,8 @@ def get_memory_info() -> Tuple[str, str]:
                         key = parts[0].strip()
                         value = parts[1].strip().split()[0]
                         meminfo[key] = int(value) * 1024  # Convert from kB
-                total = format_bytes(meminfo.get("MemTotal", 0))
-                available = format_bytes(meminfo.get("MemAvailable", 0))
+            total = format_bytes(meminfo.get("MemTotal", 0))
+            available = format_bytes(meminfo.get("MemAvailable", 0))
         elif system == "Darwin":
             result = subprocess.run(
                 ["sysctl", "-n", "hw.memsize"],

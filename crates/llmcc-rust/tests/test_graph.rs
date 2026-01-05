@@ -520,10 +520,10 @@ fn test_type_alias_block() {
                 let has_return = cc
                     .related_map
                     .get_related(child_id, BlockRelation::HasReturn);
-                eprintln!("DEBUG use_alias has_return: {:?}", has_return);
+                eprintln!("DEBUG use_alias has_return: {has_return:?}");
                 for ret_id in has_return {
                     let type_of = cc.related_map.get_related(ret_id, BlockRelation::TypeOf);
-                    eprintln!("DEBUG return type_of: {:?}", type_of);
+                    eprintln!("DEBUG return type_of: {type_of:?}");
                 }
             }
         }
@@ -533,7 +533,7 @@ fn test_type_alias_block() {
         // Check if MyInt alias is referenced
         if let Some(alias_id) = my_int_id {
             let type_for = cc.related_map.get_related(alias_id, BlockRelation::TypeFor);
-            eprintln!("DEBUG MyInt type_for: {:?}", type_for);
+            eprintln!("DEBUG MyInt type_for: {type_for:?}");
         }
     });
 }

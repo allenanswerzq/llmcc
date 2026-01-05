@@ -364,7 +364,7 @@ pub fn build_and_collect_symbols<'a, L: LanguageTrait>(
 
         let parse_tree = cc
             .get_parse_tree(i)
-            .ok_or_else(|| format!("No parse tree for unit {}", i))?;
+            .ok_or_else(|| format!("No parse tree for unit {i}"))?;
 
         let file_root_id =
             build_llmcc_ir_inner::<L>(file_path, file_bytes, parse_tree, &cc.arena, ir_config)?;

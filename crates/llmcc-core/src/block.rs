@@ -683,7 +683,7 @@ impl<'blk> BlockFunc<'blk> {
                     .base()
                     .and_then(|b| b.opt_get_name())
                     .unwrap_or("");
-                deps.push(format!("@tdep:{} {}", dep_id, dep_name));
+                deps.push(format!("@tdep:{dep_id} {dep_name}"));
             }
         }
 
@@ -698,7 +698,7 @@ impl<'blk> BlockFunc<'blk> {
                     .base()
                     .and_then(|b| b.opt_get_name())
                     .unwrap_or("");
-                deps.push(format!("@fdep:{} {}", dep_id, dep_name));
+                deps.push(format!("@fdep:{dep_id} {dep_name}"));
             }
         }
 
@@ -1088,10 +1088,10 @@ impl<'blk> BlockImpl<'blk> {
     pub fn format(&self) -> String {
         let mut parts = vec![format!("{}:{} {}", self.base.kind, self.base.id, self.name)];
         if let Some(target_id) = self.get_target() {
-            parts.push(format!("@type:{}", target_id));
+            parts.push(format!("@type:{target_id}"));
         }
         if let Some(trait_id) = self.get_trait_ref() {
-            parts.push(format!("@trait:{}", trait_id));
+            parts.push(format!("@trait:{trait_id}"));
         }
         parts.join(" ")
     }

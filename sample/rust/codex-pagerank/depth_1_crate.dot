@@ -35,7 +35,8 @@ digraph architecture {
   crate_codex_app_server_protocol -> crate_codex_core [dir=both]; // dir best-effort not accurate
   crate_codex_app_server_protocol -> crate_codex_protocol [dir=both]; // dir best-effort not accurate
   crate_codex_app_server_protocol -> crate_codex_tui2 [dir=both]; // dir best-effort not accurate
-  crate_codex_cli -> crate_codex_core;
+  crate_codex_cli -> crate_codex_app_server_protocol;
+  crate_codex_cli -> crate_codex_core [dir=both]; // dir best-effort not accurate
   crate_codex_cli -> crate_codex_rmcp_client;
   crate_codex_cloud_tasks -> crate_codex_tui [dir=both]; // dir best-effort not accurate
   crate_codex_cloud_tasks -> crate_codex_tui2 [dir=both]; // dir best-effort not accurate
@@ -43,16 +44,14 @@ digraph architecture {
   crate_codex_core -> crate_codex_git;
   crate_codex_core -> crate_codex_protocol [dir=both]; // dir best-effort not accurate
   crate_codex_core -> crate_codex_rmcp_client;
+  crate_codex_core -> crate_codex_tui [dir=both]; // dir best-effort not accurate
   crate_codex_core -> crate_codex_tui2 [dir=both]; // dir best-effort not accurate
   crate_codex_core -> crate_mcp_types;
   crate_codex_exec -> crate_codex_protocol;
-  crate_codex_exec -> crate_codex_tui [dir=both]; // dir best-effort not accurate
-  crate_codex_exec -> crate_codex_tui2 [dir=both]; // dir best-effort not accurate
   crate_codex_protocol -> crate_codex_tui2 [dir=both]; // dir best-effort not accurate
   crate_codex_rmcp_client -> crate_mcp_types;
   crate_codex_tui -> crate_codex_app_server_protocol;
-  crate_codex_tui -> crate_codex_core;
   crate_codex_tui -> crate_codex_protocol;
   crate_codex_tui -> crate_codex_tui2 [dir=both]; // dir best-effort not accurate
-  crate_codex_windows_sandbox -> crate_codex_app_server_protocol;
+  crate_codex_windows_sandbox -> crate_codex_protocol;
 }
