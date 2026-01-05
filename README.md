@@ -21,8 +21,8 @@ This repo includes a ready-made example under [sample](sample). Download and ope
 
 ### Depth 1: crate graph
 
-<p align="center">
-	<img src="sample/rust/codex-pagerank/depth_1_crate.svg" alt="Codex crate graph (depth 1)" style="max-width: 50%; height: 70%;" />
+<p style="height: 200px; text-align: center;">
+	<img src="sample/rust/codex-pagerank/depth_1_crate.svg" alt="Codex crate graph (depth 1)" style="max-width: 100%; height: 100%;" />
 </p>
 
 ### Depth 2: module graph
@@ -53,9 +53,9 @@ Excerpt (PageRank timing, depth=3, top-200):
 
 | Project | Files | LoC | Total |
 |---------|-------|-----|-------|
-| databend | 3130 | 627K | 3.03s |
-| ruff | 1661 | 418K | 2.23s |
-| codex | 617 | 224K | 0.60s |
+| databend | 3130 | 627K | 2.53s |
+| ruff | 1661 | 418K | 1.73s |
+| codex | 617 | 224K | 0.46s |
 
 ## CLI: generate graphs
 
