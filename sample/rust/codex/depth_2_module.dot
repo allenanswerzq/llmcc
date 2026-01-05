@@ -227,7 +227,6 @@ digraph architecture {
     mod_codex_core_tasks[label="tasks"];
     mod_codex_core_token_data[label="token_data"];
     mod_codex_core_tools[label="tools"];
-    mod_codex_core_truncate[label="truncate"];
     mod_codex_core_unified_exec[label="unified_exec"];
     mod_codex_core_user_instructions[label="user_instructions"];
     mod_codex_core_user_shell_command[label="user_shell_command"];
@@ -288,6 +287,16 @@ digraph architecture {
     mod_codex_execpolicy_legacy_policy_parser[label="policy_parser"];
     mod_codex_execpolicy_legacy_program[label="program"];
     mod_codex_execpolicy_legacy_valid_exec[label="valid_exec"];
+  }
+
+  subgraph cluster_codex_file_search {
+    label="codex-file-search";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_codex_file_search_cli[label="cli"];
   }
 
   subgraph cluster_codex_git {
@@ -359,6 +368,7 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
+    mod_codex_protocol_account[label="account"];
     mod_codex_protocol_approvals[label="approvals"];
     mod_codex_protocol_config_types[label="config_types"];
     mod_codex_protocol_conversation_id[label="conversation_id"];
@@ -369,7 +379,16 @@ digraph architecture {
     mod_codex_protocol_parse_command[label="parse_command"];
     mod_codex_protocol_plan_tool[label="plan_tool"];
     mod_codex_protocol_protocol[label="protocol"];
-    mod_codex_protocol_user_input[label="user_input"];
+  }
+
+  subgraph cluster_codex_responses_api_proxy {
+    label="codex-responses-api-proxy";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_codex_responses_api_proxy_lib[label="lib"];
   }
 
   subgraph cluster_codex_rmcp_client {
@@ -409,6 +428,7 @@ digraph architecture {
     mod_codex_tui_notifications[label="notifications"];
     mod_codex_tui_onboarding[label="onboarding"];
     mod_codex_tui_pager_overlay[label="pager_overlay"];
+    mod_codex_tui_render[label="render"];
     mod_codex_tui_resume_picker[label="resume_picker"];
     mod_codex_tui_selection_list[label="selection_list"];
     mod_codex_tui_shimmer[label="shimmer"];
@@ -431,7 +451,6 @@ digraph architecture {
     mod_codex_tui2_app_event_sender[label="app_event_sender"];
     mod_codex_tui2_bottom_pane[label="bottom_pane"];
     mod_codex_tui2_chatwidget[label="chatwidget"];
-    mod_codex_tui2_cli[label="cli"];
     mod_codex_tui2_color[label="color"];
     mod_codex_tui2_custom_terminal[label="custom_terminal"];
     mod_codex_tui2_exec_cell[label="exec_cell"];
@@ -459,7 +478,6 @@ digraph architecture {
     mod_codex_tui2_update_action[label="update_action"];
     mod_codex_tui2_update_prompt[label="update_prompt"];
     mod_codex_tui2_updates[label="updates"];
-    mod_codex_tui2_wrapping[label="wrapping"];
   }
 
   subgraph cluster_codex_utils_absolute_path {
@@ -528,15 +546,14 @@ digraph architecture {
   }
 
 
-  mod_codex_api_auth -> mod_codex_client_request;
+  mod_codex_api_auth -> mod_mcp_types_lib;
+  mod_codex_api_common -> mod_codex_api_endpoint [dir=both]; // dir best-effort not accurate
   mod_codex_api_common -> mod_codex_protocol_models;
   mod_codex_api_common -> mod_codex_protocol_protocol;
   mod_codex_api_endpoint -> mod_codex_api_auth;
-  mod_codex_api_endpoint -> mod_codex_api_common;
   mod_codex_api_endpoint -> mod_codex_api_provider;
   mod_codex_api_endpoint -> mod_codex_client_telemetry;
   mod_codex_api_endpoint -> mod_codex_client_transport;
-  mod_codex_api_endpoint -> mod_codex_core_client_common [dir=both]; // dir best-effort not accurate
   mod_codex_api_rate_limits -> mod_codex_protocol_protocol;
   mod_codex_api_requests -> mod_codex_api_common;
   mod_codex_api_requests -> mod_codex_protocol_protocol;
@@ -552,7 +569,6 @@ digraph architecture {
   mod_codex_app_server_bespoke_event_handling -> mod_codex_backend_client_types;
   mod_codex_app_server_bespoke_event_handling -> mod_codex_core_codex_conversation;
   mod_codex_app_server_bespoke_event_handling -> mod_codex_exec_exec_events;
-  mod_codex_app_server_bespoke_event_handling -> mod_codex_mcp_server_outgoing_message;
   mod_codex_app_server_bespoke_event_handling -> mod_codex_protocol_conversation_id;
   mod_codex_app_server_bespoke_event_handling -> mod_codex_protocol_protocol;
   mod_codex_app_server_codex_message_processor -> mod_codex_app_server_protocol_protocol;
@@ -564,15 +580,15 @@ digraph architecture {
   mod_codex_app_server_outgoing_message -> mod_mcp_types_lib;
   mod_codex_app_server_protocol_export -> mod_codex_tui2_color;
   mod_codex_app_server_protocol_export -> mod_mcp_types_lib;
-  mod_codex_app_server_protocol_protocol -> mod_codex_backend_client_types;
+  mod_codex_app_server_protocol_jsonrpc_lite -> mod_codex_mcp_server_outgoing_message [dir=both]; // dir best-effort not accurate
   mod_codex_app_server_protocol_protocol -> mod_codex_core_config [dir=both]; // dir best-effort not accurate
-  mod_codex_app_server_protocol_protocol -> mod_codex_core_token_data;
+  mod_codex_app_server_protocol_protocol -> mod_codex_protocol_account;
   mod_codex_app_server_protocol_protocol -> mod_codex_protocol_config_types;
   mod_codex_app_server_protocol_protocol -> mod_codex_protocol_conversation_id;
   mod_codex_app_server_protocol_protocol -> mod_codex_protocol_openai_models;
   mod_codex_app_server_protocol_protocol -> mod_codex_protocol_protocol;
   mod_codex_app_server_protocol_protocol -> mod_codex_utils_absolute_path_lib;
-  mod_codex_app_server_test_client_main -> mod_codex_protocol_protocol;
+  mod_codex_app_server_test_client_main -> mod_codex_app_server_protocol_protocol;
   mod_codex_apply_patch_invocation -> mod_codex_apply_patch_lib [dir=both]; // dir best-effort not accurate
   mod_codex_apply_patch_invocation -> mod_codex_apply_patch_parser;
   mod_codex_apply_patch_lib -> mod_codex_apply_patch_parser [dir=both]; // dir best-effort not accurate
@@ -580,7 +596,6 @@ digraph architecture {
   mod_codex_chatgpt_chatgpt_client -> mod_codex_chatgpt_chatgpt_token;
   mod_codex_chatgpt_chatgpt_token -> mod_codex_core_auth;
   mod_codex_chatgpt_chatgpt_token -> mod_codex_core_token_data;
-  mod_codex_cli_debug_sandbox -> mod_codex_app_server_protocol_protocol;
   mod_codex_cli_debug_sandbox -> mod_codex_cli_lib;
   mod_codex_cli_lib -> mod_codex_common_config_override;
   mod_codex_cli_login -> mod_codex_common_config_override;
@@ -591,7 +606,7 @@ digraph architecture {
   mod_codex_cli_main -> mod_codex_common_config_override;
   mod_codex_cli_main -> mod_codex_core_features;
   mod_codex_cli_main -> mod_codex_execpolicy_execpolicycheck;
-  mod_codex_cli_main -> mod_codex_tui2_app;
+  mod_codex_cli_main -> mod_codex_tui_app;
   mod_codex_cli_mcp_cmd -> mod_codex_app_server_protocol_protocol;
   mod_codex_cli_mcp_cmd -> mod_codex_common_config_override;
   mod_codex_cli_mcp_cmd -> mod_codex_common_format_env_display;
@@ -602,11 +617,10 @@ digraph architecture {
   mod_codex_cloud_tasks_client_http -> mod_codex_cloud_tasks_client_api;
   mod_codex_cloud_tasks_client_mock -> mod_codex_cloud_tasks_client_api;
   mod_codex_cloud_tasks_lib -> mod_codex_cloud_tasks_util;
-  mod_codex_cloud_tasks_lib -> mod_codex_tui2_custom_terminal;
   mod_codex_cloud_tasks_lib -> mod_codex_tui_app;
   mod_codex_cloud_tasks_ui -> mod_codex_cloud_tasks_app;
-  mod_codex_cloud_tasks_ui -> mod_codex_tui2_app;
   mod_codex_cloud_tasks_ui -> mod_codex_tui2_custom_terminal;
+  mod_codex_cloud_tasks_ui -> mod_codex_tui_app;
   mod_codex_common_approval_presets -> mod_codex_protocol_protocol;
   mod_codex_core_apply_patch -> mod_codex_apply_patch_lib;
   mod_codex_core_apply_patch -> mod_codex_core_codex;
@@ -614,10 +628,10 @@ digraph architecture {
   mod_codex_core_auth -> mod_codex_client_default_client;
   mod_codex_core_auth -> mod_codex_core_error;
   mod_codex_core_auth -> mod_codex_core_token_data;
+  mod_codex_core_auth -> mod_codex_execpolicy_error [dir=both]; // dir best-effort not accurate
   mod_codex_core_auth -> mod_codex_keyring_store_lib;
-  mod_codex_core_client -> mod_codex_app_server_protocol_protocol;
   mod_codex_core_client -> mod_codex_core_auth;
-  mod_codex_core_client -> mod_codex_core_client_common;
+  mod_codex_core_client -> mod_codex_core_config;
   mod_codex_core_client -> mod_codex_otel_otel_manager;
   mod_codex_core_client_common -> mod_codex_core_tools [dir=both]; // dir best-effort not accurate
   mod_codex_core_codex -> mod_codex_app_server_protocol_protocol;
@@ -642,9 +656,9 @@ digraph architecture {
   mod_codex_core_codex_delegate -> mod_codex_protocol_protocol;
   mod_codex_core_command_safety -> mod_codex_core_bash;
   mod_codex_core_command_safety -> mod_codex_protocol_protocol;
+  mod_codex_core_compact -> mod_codex_app_server_protocol_protocol;
   mod_codex_core_compact -> mod_codex_protocol_models;
   mod_codex_core_compact -> mod_codex_protocol_protocol;
-  mod_codex_core_compact -> mod_codex_protocol_user_input;
   mod_codex_core_compact_remote -> mod_codex_protocol_protocol;
   mod_codex_core_config -> mod_codex_core_auth;
   mod_codex_core_config -> mod_codex_core_config_loader [dir=both]; // dir best-effort not accurate
@@ -656,6 +670,7 @@ digraph architecture {
   mod_codex_core_config -> mod_codex_rmcp_client_oauth;
   mod_codex_core_config -> mod_codex_utils_absolute_path_lib;
   mod_codex_core_config_loader -> mod_codex_app_server_protocol_protocol;
+  mod_codex_core_config_loader -> mod_codex_protocol_config_types;
   mod_codex_core_config_loader -> mod_codex_utils_absolute_path_lib;
   mod_codex_core_context_manager -> mod_codex_protocol_models;
   mod_codex_core_conversation_manager -> mod_codex_core_codex_conversation;
@@ -663,9 +678,11 @@ digraph architecture {
   mod_codex_core_conversation_manager -> mod_codex_protocol_protocol;
   mod_codex_core_custom_prompts -> mod_codex_protocol_custom_prompts;
   mod_codex_core_environment_context -> mod_codex_protocol_protocol;
-  mod_codex_core_error -> mod_codex_execpolicy_error;
+  mod_codex_core_error -> mod_codex_execpolicy_legacy_error;
   mod_codex_core_event_mapping -> mod_codex_core_user_instructions;
-  mod_codex_core_exec -> mod_codex_core_safety [dir=both]; // dir best-effort not accurate
+  mod_codex_core_event_mapping -> mod_codex_protocol_items;
+  mod_codex_core_exec -> mod_codex_app_server_protocol_protocol;
+  mod_codex_core_exec -> mod_codex_core_safety;
   mod_codex_core_exec -> mod_codex_core_sandboxing [dir=both]; // dir best-effort not accurate
   mod_codex_core_exec -> mod_codex_protocol_protocol;
   mod_codex_core_exec_env -> mod_codex_core_config;
@@ -680,8 +697,8 @@ digraph architecture {
   mod_codex_core_handlers -> mod_codex_protocol_protocol;
   mod_codex_core_handlers -> mod_codex_utils_string_lib;
   mod_codex_core_handlers -> mod_mcp_types_lib;
+  mod_codex_core_landlock -> mod_codex_app_server_protocol_protocol;
   mod_codex_core_landlock -> mod_codex_core_spawn;
-  mod_codex_core_landlock -> mod_codex_protocol_protocol;
   mod_codex_core_mcp -> mod_codex_core_config;
   mod_codex_core_mcp -> mod_codex_core_mcp_connection_manager [dir=both]; // dir best-effort not accurate
   mod_codex_core_mcp -> mod_codex_protocol_protocol;
@@ -690,10 +707,9 @@ digraph architecture {
   mod_codex_core_mcp_connection_manager -> mod_codex_rmcp_client_rmcp_client;
   mod_codex_core_mcp_tool_call -> mod_codex_core_codex;
   mod_codex_core_mcp_tool_call -> mod_codex_protocol_protocol;
-  mod_codex_core_message_history -> mod_codex_app_server_protocol_protocol;
   mod_codex_core_message_history -> mod_codex_core_config;
-  mod_codex_core_models_manager -> mod_codex_core_truncate;
   mod_codex_core_models_manager -> mod_codex_protocol_openai_models;
+  mod_codex_core_models_manager -> mod_codex_protocol_protocol;
   mod_codex_core_parse_command -> mod_codex_cloud_tasks_client_http;
   mod_codex_core_parse_command -> mod_codex_core_bash;
   mod_codex_core_parse_command -> mod_codex_protocol_parse_command;
@@ -709,15 +725,16 @@ digraph architecture {
   mod_codex_core_runtimes -> mod_codex_core_tools;
   mod_codex_core_runtimes -> mod_codex_core_unified_exec;
   mod_codex_core_runtimes -> mod_codex_protocol_models;
+  mod_codex_core_safety -> mod_codex_app_server_protocol_protocol;
   mod_codex_core_safety -> mod_codex_apply_patch_lib;
-  mod_codex_core_safety -> mod_codex_protocol_protocol;
+  mod_codex_core_safety -> mod_codex_cli_debug_sandbox;
   mod_codex_core_sandboxing -> mod_codex_protocol_models;
   mod_codex_core_seatbelt -> mod_codex_app_server_protocol_protocol;
   mod_codex_core_seatbelt -> mod_codex_core_spawn;
   mod_codex_core_shell -> mod_codex_core_shell_snapshot [dir=both]; // dir best-effort not accurate
   mod_codex_core_skills -> mod_codex_app_server_protocol_protocol;
-  mod_codex_core_skills -> mod_codex_execpolicy_error;
-  mod_codex_core_skills -> mod_codex_protocol_protocol;
+  mod_codex_core_skills -> mod_codex_core_config;
+  mod_codex_core_skills -> mod_codex_execpolicy_legacy_error;
   mod_codex_core_skills -> mod_codex_utils_absolute_path_lib;
   mod_codex_core_state -> mod_codex_core_tools [dir=both]; // dir best-effort not accurate
   mod_codex_core_state -> mod_codex_protocol_protocol;
@@ -741,6 +758,7 @@ digraph architecture {
   mod_codex_core_user_shell_command -> mod_codex_core_exec;
   mod_codex_exec_event_processor_with_human_output -> mod_codex_protocol_protocol;
   mod_codex_exec_event_processor_with_jsonl_output -> mod_codex_exec_exec_events;
+  mod_codex_exec_lib -> mod_codex_app_server_protocol_protocol;
   mod_codex_exec_lib -> mod_codex_core_auth;
   mod_codex_exec_lib -> mod_codex_core_config;
   mod_codex_exec_lib -> mod_codex_exec_cli;
@@ -768,13 +786,14 @@ digraph architecture {
   mod_codex_login_server -> mod_codex_login_pkce;
   mod_codex_mcp_server_codex_tool_config -> mod_mcp_types_lib;
   mod_codex_mcp_server_codex_tool_runner -> mod_codex_app_server_outgoing_message;
-  mod_codex_mcp_server_codex_tool_runner -> mod_codex_app_server_protocol_jsonrpc_lite;
   mod_codex_mcp_server_codex_tool_runner -> mod_codex_core_codex_conversation;
+  mod_codex_mcp_server_codex_tool_runner -> mod_mcp_types_lib;
   mod_codex_mcp_server_exec_approval -> mod_codex_core_codex_conversation;
   mod_codex_mcp_server_exec_approval -> mod_codex_protocol_parse_command;
-  mod_codex_mcp_server_outgoing_message -> mod_codex_app_server_protocol_jsonrpc_lite;
   mod_codex_mcp_server_patch_approval -> mod_codex_core_codex_conversation;
   mod_codex_mcp_server_patch_approval -> mod_codex_protocol_protocol;
+  mod_codex_mcp_server_patch_approval -> mod_mcp_types_lib;
+  mod_codex_otel_otel_provider -> mod_codex_core_config;
   mod_codex_otel_otel_provider -> mod_codex_execpolicy_legacy_error;
   mod_codex_otel_otel_provider -> mod_codex_otel_config;
   mod_codex_otel_otel_provider -> mod_mcp_types_lib;
@@ -786,8 +805,10 @@ digraph architecture {
   mod_codex_protocol_protocol -> mod_codex_protocol_models;
   mod_codex_protocol_protocol -> mod_codex_protocol_parse_command;
   mod_codex_protocol_protocol -> mod_codex_utils_absolute_path_lib;
+  mod_codex_responses_api_proxy_lib -> mod_codex_client_request;
   mod_codex_rmcp_client_auth_status -> mod_codex_rmcp_client_oauth;
   mod_codex_rmcp_client_auth_status -> mod_codex_rmcp_client_utils;
+  mod_codex_rmcp_client_bin -> mod_codex_client_request;
   mod_codex_rmcp_client_bin -> mod_mcp_types_lib;
   mod_codex_rmcp_client_perform_oauth_login -> mod_codex_rmcp_client_oauth;
   mod_codex_rmcp_client_rmcp_client -> mod_codex_rmcp_client_oauth;
@@ -798,32 +819,32 @@ digraph architecture {
   mod_codex_tui2_app -> mod_codex_tui2_model_migration;
   mod_codex_tui2_app -> mod_codex_tui2_scrolling;
   mod_codex_tui2_app -> mod_codex_tui2_update_action;
+  mod_codex_tui2_app_event -> mod_codex_app_server_protocol_protocol;
   mod_codex_tui2_app_event -> mod_codex_protocol_openai_models;
   mod_codex_tui2_app_event -> mod_codex_protocol_protocol;
   mod_codex_tui2_app_event -> mod_codex_tui2_bottom_pane [dir=both]; // dir best-effort not accurate
   mod_codex_tui2_bottom_pane -> mod_codex_core_features;
-  mod_codex_tui2_bottom_pane -> mod_codex_core_skills;
   mod_codex_tui2_bottom_pane -> mod_codex_protocol_approvals;
   mod_codex_tui2_bottom_pane -> mod_codex_protocol_custom_prompts;
   mod_codex_tui2_bottom_pane -> mod_codex_protocol_protocol;
   mod_codex_tui2_bottom_pane -> mod_codex_tui2_app_event_sender;
   mod_codex_tui2_bottom_pane -> mod_codex_tui2_key_hint;
   mod_codex_tui2_bottom_pane -> mod_codex_tui2_render;
-  mod_codex_tui2_bottom_pane -> mod_codex_tui2_slash_command;
   mod_codex_tui2_bottom_pane -> mod_codex_tui2_tui;
-  mod_codex_tui2_bottom_pane -> mod_codex_tui2_wrapping;
   mod_codex_tui2_bottom_pane -> mod_codex_tui_bottom_pane [dir=both]; // dir best-effort not accurate
   mod_codex_tui2_bottom_pane -> mod_codex_tui_key_hint;
+  mod_codex_tui2_bottom_pane -> mod_codex_tui_render;
+  mod_codex_tui2_bottom_pane -> mod_codex_tui_wrapping;
+  mod_codex_tui2_bottom_pane -> mod_mcp_types_lib;
   mod_codex_tui2_chatwidget -> mod_codex_app_server_protocol_protocol;
   mod_codex_tui2_chatwidget -> mod_codex_core_auth;
   mod_codex_tui2_chatwidget -> mod_codex_core_models_manager;
-  mod_codex_tui2_chatwidget -> mod_codex_core_skills;
   mod_codex_tui2_chatwidget -> mod_codex_protocol_approvals;
   mod_codex_tui2_chatwidget -> mod_codex_protocol_protocol;
   mod_codex_tui2_chatwidget -> mod_codex_tui2_app_event_sender;
+  mod_codex_tui2_chatwidget -> mod_codex_tui2_bottom_pane;
   mod_codex_tui2_chatwidget -> mod_codex_tui2_status [dir=both]; // dir best-effort not accurate
   mod_codex_tui2_chatwidget -> mod_codex_tui2_tui;
-  mod_codex_tui2_chatwidget -> mod_codex_tui_chatwidget [dir=both]; // dir best-effort not accurate
   mod_codex_tui2_exec_cell -> mod_codex_protocol_parse_command;
   mod_codex_tui2_exec_cell -> mod_codex_protocol_protocol;
   mod_codex_tui2_exec_cell -> mod_codex_tui2_history_cell [dir=both]; // dir best-effort not accurate
@@ -837,44 +858,44 @@ digraph architecture {
   mod_codex_tui2_lib -> mod_codex_core_auth;
   mod_codex_tui2_lib -> mod_codex_core_config;
   mod_codex_tui2_lib -> mod_codex_core_rollout;
+  mod_codex_tui2_lib -> mod_codex_file_search_cli;
   mod_codex_tui2_lib -> mod_codex_tui2_app;
-  mod_codex_tui2_lib -> mod_codex_tui2_cli;
   mod_codex_tui2_lib -> mod_codex_tui_onboarding [dir=both]; // dir best-effort not accurate
-  mod_codex_tui2_model_migration -> mod_codex_core_config;
-  mod_codex_tui2_onboarding -> mod_codex_app_server_protocol_protocol;
+  mod_codex_tui2_model_migration -> mod_codex_tui2_tui;
   mod_codex_tui2_onboarding -> mod_codex_core_auth;
   mod_codex_tui2_onboarding -> mod_codex_tui2_tui;
+  mod_codex_tui2_onboarding -> mod_codex_tui_lib;
   mod_codex_tui2_onboarding -> mod_codex_tui_onboarding [dir=both]; // dir best-effort not accurate
+  mod_codex_tui2_pager_overlay -> mod_codex_tui2_history_cell;
   mod_codex_tui2_pager_overlay -> mod_codex_tui2_render;
-  mod_codex_tui2_pager_overlay -> mod_codex_tui_history_cell;
   mod_codex_tui2_render -> mod_codex_tui2_selection_list [dir=both]; // dir best-effort not accurate
   mod_codex_tui2_render -> mod_codex_tui_selection_list [dir=both]; // dir best-effort not accurate
-  mod_codex_tui2_resume_picker -> mod_codex_core_config;
   mod_codex_tui2_resume_picker -> mod_codex_core_rollout;
   mod_codex_tui2_resume_picker -> mod_codex_tui2_custom_terminal;
-  mod_codex_tui2_resume_picker -> mod_mcp_types_lib;
+  mod_codex_tui2_resume_picker -> mod_codex_tui2_tui;
   mod_codex_tui2_scrolling -> mod_codex_core_config;
   mod_codex_tui2_shimmer -> mod_codex_tui2_terminal_palette;
   mod_codex_tui2_status -> mod_codex_app_server_protocol_protocol;
   mod_codex_tui2_status -> mod_codex_core_auth;
+  mod_codex_tui2_status -> mod_codex_core_config;
   mod_codex_tui2_status -> mod_codex_core_models_manager;
-  mod_codex_tui2_status -> mod_codex_protocol_protocol;
   mod_codex_tui2_status -> mod_codex_tui2_history_cell;
   mod_codex_tui2_transcript_copy -> mod_codex_tui2_transcript_selection;
   mod_codex_tui2_transcript_multi_click -> mod_codex_tui2_transcript_selection;
   mod_codex_tui2_transcript_selection -> mod_codex_tui2_tui;
-  mod_codex_tui2_tui -> mod_codex_tui_tui [dir=both]; // dir best-effort not accurate
   mod_codex_tui2_update_prompt -> mod_codex_tui2_update_action;
   mod_codex_tui2_updates -> mod_codex_app_server_protocol_protocol;
   mod_codex_tui_app -> mod_codex_app_server_protocol_protocol;
   mod_codex_tui_app -> mod_codex_protocol_conversation_id;
   mod_codex_tui_app -> mod_codex_protocol_protocol;
   mod_codex_tui_app -> mod_codex_tui2_app_event_sender;
+  mod_codex_tui_app -> mod_codex_tui2_model_migration;
   mod_codex_tui_app -> mod_codex_tui2_update_action;
+  mod_codex_tui_app_event -> mod_codex_app_server_protocol_protocol;
   mod_codex_tui_app_event -> mod_codex_protocol_openai_models;
   mod_codex_tui_app_event -> mod_codex_protocol_protocol;
+  mod_codex_tui_bottom_pane -> mod_codex_app_server_protocol_protocol;
   mod_codex_tui_bottom_pane -> mod_codex_core_features;
-  mod_codex_tui_bottom_pane -> mod_codex_core_skills;
   mod_codex_tui_bottom_pane -> mod_codex_protocol_approvals;
   mod_codex_tui_bottom_pane -> mod_codex_protocol_custom_prompts;
   mod_codex_tui_bottom_pane -> mod_codex_protocol_protocol;
@@ -886,7 +907,6 @@ digraph architecture {
   mod_codex_tui_bottom_pane -> mod_codex_tui2_tui;
   mod_codex_tui_bottom_pane -> mod_codex_tui_key_hint;
   mod_codex_tui_bottom_pane -> mod_codex_tui_wrapping;
-  mod_codex_tui_bottom_pane -> mod_mcp_types_lib;
   mod_codex_tui_chatwidget -> mod_codex_app_server_protocol_protocol;
   mod_codex_tui_chatwidget -> mod_codex_core_auth;
   mod_codex_tui_chatwidget -> mod_codex_core_models_manager;
@@ -894,6 +914,7 @@ digraph architecture {
   mod_codex_tui_chatwidget -> mod_codex_protocol_protocol;
   mod_codex_tui_chatwidget -> mod_codex_tui2_app_event_sender;
   mod_codex_tui_chatwidget -> mod_codex_tui2_bottom_pane;
+  mod_codex_tui_chatwidget -> mod_codex_tui2_chatwidget;
   mod_codex_tui_chatwidget -> mod_codex_tui2_tui;
   mod_codex_tui_exec_cell -> mod_codex_protocol_parse_command;
   mod_codex_tui_exec_cell -> mod_codex_protocol_protocol;
@@ -905,36 +926,35 @@ digraph architecture {
   mod_codex_tui_history_cell -> mod_mcp_types_lib;
   mod_codex_tui_insert_history -> mod_codex_exec_cli;
   mod_codex_tui_lib -> mod_codex_app_server_protocol_protocol;
+  mod_codex_tui_lib -> mod_codex_cloud_tasks_cli;
   mod_codex_tui_lib -> mod_codex_core_auth;
   mod_codex_tui_lib -> mod_codex_core_config;
   mod_codex_tui_lib -> mod_codex_core_rollout;
-  mod_codex_tui_lib -> mod_codex_exec_cli;
   mod_codex_tui_lib -> mod_codex_tui_app;
   mod_codex_tui_lib -> mod_codex_tui_onboarding [dir=both]; // dir best-effort not accurate
   mod_codex_tui_model_migration -> mod_codex_tui2_tui;
   mod_codex_tui_notifications -> mod_codex_tui2_notifications;
-  mod_codex_tui_onboarding -> mod_codex_app_server_protocol_protocol;
   mod_codex_tui_onboarding -> mod_codex_core_auth;
   mod_codex_tui_onboarding -> mod_codex_tui2_tui;
+  mod_codex_tui_pager_overlay -> mod_codex_tui2_history_cell;
   mod_codex_tui_pager_overlay -> mod_codex_tui2_render;
-  mod_codex_tui_pager_overlay -> mod_codex_tui_history_cell;
-  mod_codex_tui_resume_picker -> mod_codex_core_config;
   mod_codex_tui_resume_picker -> mod_codex_core_rollout;
   mod_codex_tui_resume_picker -> mod_codex_tui2_custom_terminal;
-  mod_codex_tui_resume_picker -> mod_mcp_types_lib;
+  mod_codex_tui_resume_picker -> mod_codex_tui2_tui;
   mod_codex_tui_shimmer -> mod_codex_tui2_terminal_palette;
   mod_codex_tui_status -> mod_codex_app_server_protocol_protocol;
   mod_codex_tui_status -> mod_codex_core_auth;
+  mod_codex_tui_status -> mod_codex_core_config;
   mod_codex_tui_status -> mod_codex_core_models_manager;
-  mod_codex_tui_status -> mod_codex_protocol_protocol;
   mod_codex_tui_status -> mod_codex_tui2_chatwidget;
   mod_codex_tui_status -> mod_codex_tui2_history_cell;
   mod_codex_tui_status -> mod_codex_tui2_status;
   mod_codex_tui_tui -> mod_codex_exec_cli;
+  mod_codex_tui_tui -> mod_codex_tui2_tui;
   mod_codex_tui_update_prompt -> mod_codex_tui2_update_action;
   mod_codex_tui_updates -> mod_codex_app_server_protocol_protocol;
   mod_codex_utils_image_lib -> mod_codex_utils_image_error;
-  mod_codex_windows_sandbox_audit -> mod_codex_protocol_protocol;
+  mod_codex_windows_sandbox_audit -> mod_codex_app_server_protocol_protocol;
   mod_codex_windows_sandbox_audit -> mod_codex_windows_sandbox_acl;
   mod_codex_windows_sandbox_audit -> mod_codex_windows_sandbox_cap;
   mod_codex_windows_sandbox_audit -> mod_codex_windows_sandbox_logging;
@@ -942,10 +962,10 @@ digraph architecture {
   mod_codex_windows_sandbox_elevated_impl -> mod_codex_windows_sandbox_env;
   mod_codex_windows_sandbox_elevated_impl -> mod_codex_windows_sandbox_logging;
   mod_codex_windows_sandbox_elevated_impl -> mod_codex_windows_sandbox_winutil;
-  mod_codex_windows_sandbox_identity -> mod_codex_protocol_protocol;
+  mod_codex_windows_sandbox_identity -> mod_codex_app_server_protocol_protocol;
   mod_codex_windows_sandbox_identity -> mod_codex_windows_sandbox_logging;
   mod_codex_windows_sandbox_identity -> mod_codex_windows_sandbox_setup_orchestrator;
-  mod_codex_windows_sandbox_lib -> mod_codex_protocol_protocol;
+  mod_codex_windows_sandbox_lib -> mod_codex_app_server_protocol_protocol;
   mod_codex_windows_sandbox_lib -> mod_codex_windows_sandbox_acl;
   mod_codex_windows_sandbox_lib -> mod_codex_windows_sandbox_env;
   mod_codex_windows_sandbox_lib -> mod_codex_windows_sandbox_logging;
@@ -956,6 +976,5 @@ digraph architecture {
   mod_codex_windows_sandbox_setup_main_win -> mod_codex_windows_sandbox_read_acl_mutex;
   mod_codex_windows_sandbox_setup_main_win -> mod_codex_windows_sandbox_setup_orchestrator;
   mod_codex_windows_sandbox_setup_main_win -> mod_codex_windows_sandbox_winutil;
-  mod_codex_windows_sandbox_setup_orchestrator -> mod_codex_cloud_tasks_cli;
-  mod_codex_windows_sandbox_setup_orchestrator -> mod_codex_protocol_protocol;
+  mod_codex_windows_sandbox_setup_orchestrator -> mod_codex_app_server_protocol_protocol;
 }

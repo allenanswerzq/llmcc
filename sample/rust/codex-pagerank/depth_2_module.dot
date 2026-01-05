@@ -36,7 +36,6 @@ digraph architecture {
     mod_codex_core_command_safety[label="command_safety"];
     mod_codex_core_config[label="config"];
     mod_codex_core_config_loader[label="config_loader"];
-    mod_codex_core_exec[label="exec"];
     mod_codex_core_handlers[label="handlers"];
     mod_codex_core_rollout[label="rollout"];
     mod_codex_core_skills[label="skills"];
@@ -74,6 +73,7 @@ digraph architecture {
     mod_codex_tui_bottom_pane[label="bottom_pane"];
     mod_codex_tui_chatwidget[label="chatwidget"];
     mod_codex_tui_history_cell[label="history_cell"];
+    mod_codex_tui_status[label="status"];
   }
 
   subgraph cluster_codex_tui2 {
@@ -114,30 +114,23 @@ digraph architecture {
   mod_codex_core_config -> mod_codex_core_config_loader [dir=both]; // dir best-effort not accurate
   mod_codex_core_config -> mod_codex_rmcp_client_oauth;
   mod_codex_core_config_loader -> mod_codex_app_server_protocol_protocol;
-  mod_codex_core_exec -> mod_codex_protocol_protocol;
   mod_codex_core_handlers -> mod_codex_core_codex;
   mod_codex_core_handlers -> mod_codex_core_tools;
   mod_codex_core_handlers -> mod_codex_protocol_protocol;
   mod_codex_core_handlers -> mod_mcp_types_lib;
-  mod_codex_core_rollout -> mod_codex_app_server_protocol_protocol;
   mod_codex_core_rollout -> mod_codex_protocol_protocol;
   mod_codex_core_skills -> mod_codex_app_server_protocol_protocol;
   mod_codex_core_skills -> mod_codex_protocol_protocol;
   mod_codex_core_tools -> mod_codex_app_server_protocol_protocol;
-  mod_codex_core_tools -> mod_codex_core_exec;
   mod_codex_core_tools -> mod_codex_protocol_protocol;
   mod_codex_core_unified_exec -> mod_codex_core_codex;
-  mod_codex_core_unified_exec -> mod_codex_core_exec;
   mod_codex_core_unified_exec -> mod_codex_core_tools;
-  mod_codex_protocol_protocol -> mod_mcp_types_lib;
-  mod_codex_tui2_bottom_pane -> mod_codex_core_skills;
   mod_codex_tui2_bottom_pane -> mod_codex_protocol_protocol;
   mod_codex_tui2_bottom_pane -> mod_codex_tui2_render;
   mod_codex_tui2_bottom_pane -> mod_codex_tui_bottom_pane [dir=both]; // dir best-effort not accurate
   mod_codex_tui2_bottom_pane -> mod_mcp_types_lib;
   mod_codex_tui2_chatwidget -> mod_codex_app_server_protocol_protocol;
   mod_codex_tui2_chatwidget -> mod_codex_core_auth;
-  mod_codex_tui2_chatwidget -> mod_codex_core_config;
   mod_codex_tui2_chatwidget -> mod_codex_protocol_protocol;
   mod_codex_tui2_chatwidget -> mod_codex_tui2_bottom_pane;
   mod_codex_tui2_chatwidget -> mod_codex_tui2_status [dir=both]; // dir best-effort not accurate
@@ -148,16 +141,20 @@ digraph architecture {
   mod_codex_tui2_status -> mod_codex_core_auth;
   mod_codex_tui2_status -> mod_codex_core_config;
   mod_codex_tui2_status -> mod_codex_tui2_history_cell;
-  mod_codex_tui_bottom_pane -> mod_codex_core_skills;
   mod_codex_tui_bottom_pane -> mod_codex_protocol_protocol;
   mod_codex_tui_bottom_pane -> mod_codex_tui2_render;
   mod_codex_tui_bottom_pane -> mod_mcp_types_lib;
   mod_codex_tui_chatwidget -> mod_codex_app_server_protocol_protocol;
   mod_codex_tui_chatwidget -> mod_codex_core_auth;
   mod_codex_tui_chatwidget -> mod_codex_protocol_protocol;
-  mod_codex_tui_chatwidget -> mod_codex_tui2_bottom_pane;
   mod_codex_tui_chatwidget -> mod_codex_tui2_chatwidget;
   mod_codex_tui_history_cell -> mod_codex_app_server_protocol_protocol;
   mod_codex_tui_history_cell -> mod_codex_protocol_protocol;
   mod_codex_tui_history_cell -> mod_mcp_types_lib;
+  mod_codex_tui_status -> mod_codex_app_server_protocol_protocol;
+  mod_codex_tui_status -> mod_codex_core_auth;
+  mod_codex_tui_status -> mod_codex_core_config;
+  mod_codex_tui_status -> mod_codex_tui2_chatwidget;
+  mod_codex_tui_status -> mod_codex_tui2_history_cell;
+  mod_codex_tui_status -> mod_codex_tui2_status;
 }

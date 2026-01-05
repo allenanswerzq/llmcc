@@ -23,6 +23,7 @@ digraph architecture {
   crate_storage[label="storage"];
 
   crate_api -> crate_collection [dir=both]; // dir best-effort not accurate
+  crate_api -> crate_qdrant_edge_py [dir=both]; // dir best-effort not accurate
   crate_api -> crate_segment [dir=both]; // dir best-effort not accurate
   crate_api -> crate_shard [dir=both]; // dir best-effort not accurate
   crate_collection -> crate_common [dir=both]; // dir best-effort not accurate
@@ -35,6 +36,6 @@ digraph architecture {
   crate_qdrant -> crate_segment [dir=both]; // dir best-effort not accurate
   crate_qdrant -> crate_shard [dir=both]; // dir best-effort not accurate
   crate_qdrant -> crate_storage;
-  crate_qdrant_edge_py -> crate_segment [dir=both]; // dir best-effort not accurate
-  crate_shard -> crate_segment;
+  crate_qdrant_edge_py -> crate_segment;
+  crate_segment -> crate_shard [dir=both]; // dir best-effort not accurate
 }

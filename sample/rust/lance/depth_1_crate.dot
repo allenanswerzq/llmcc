@@ -19,28 +19,12 @@ digraph architecture {
   crate_lance_file[label="lance-file"];
   crate_lance_index[label="lance-index"];
   crate_lance_io[label="lance-io"];
+  crate_lance_jni[label="lance-jni"];
   crate_lance_linalg[label="lance-linalg"];
   crate_lance_namespace_impls[label="lance-namespace-impls"];
   crate_lance_table[label="lance-table"];
   crate_pylance[label="pylance"];
 
-<<<<<<<< HEAD:sample/rust/lance-pagerank/depth_1_crate.dot
-  crate_lance -> crate_lance_core;
-  crate_lance -> crate_lance_datafusion;
-  crate_lance -> crate_lance_encoding;
-  crate_lance -> crate_lance_index;
-  crate_lance -> crate_lance_io;
-  crate_lance -> crate_lance_linalg;
-  crate_lance -> crate_lance_table;
-  crate_lance -> crate_pylance;
-  crate_lance_datafusion -> crate_lance_core;
-  crate_lance_encoding -> crate_lance_core;
-  crate_lance_encoding -> crate_lance_file;
-  crate_lance_file -> crate_lance_core;
-  crate_lance_file -> crate_lance_io;
-  crate_lance_index -> crate_lance_io;
-  crate_lance_index -> crate_lance_linalg;
-========
   crate_lance -> crate_lance_core [dir=both]; // dir best-effort not accurate
   crate_lance -> crate_lance_index [dir=both]; // dir best-effort not accurate
   crate_lance -> crate_lance_io [dir=both]; // dir best-effort not accurate
@@ -48,16 +32,16 @@ digraph architecture {
   crate_lance -> crate_lance_linalg;
   crate_lance -> crate_lance_table [dir=both]; // dir best-effort not accurate
   crate_lance -> crate_pylance [dir=both]; // dir best-effort not accurate
+  crate_lance_core -> crate_lance_file [dir=both]; // dir best-effort not accurate
   crate_lance_core -> crate_lance_index [dir=both]; // dir best-effort not accurate
   crate_lance_encoding -> crate_lance_core;
   crate_lance_encoding -> crate_lance_file [dir=both]; // dir best-effort not accurate
-  crate_lance_file -> crate_lance_core;
   crate_lance_file -> crate_lance_io;
   crate_lance_index -> crate_lance_io;
   crate_lance_index -> crate_lance_linalg [dir=both]; // dir best-effort not accurate
   crate_lance_index -> crate_pylance [dir=both]; // dir best-effort not accurate
->>>>>>>> origin/main:sample/rust/lance/depth_1_crate.dot
   crate_lance_namespace_impls -> crate_lance_io;
   crate_lance_table -> crate_lance_io;
   crate_lance_table -> crate_pylance [dir=both]; // dir best-effort not accurate
+  crate_pylance -> crate_lance_core;
 }

@@ -20,6 +20,7 @@ digraph architecture {
   mod_lancedb_embeddings[label="lancedb::embeddings"];
   mod_lancedb_index[label="lancedb::index"];
   mod_lancedb_lib[label="lancedb::lib"];
+  mod_lancedb_nodejs_connection[label="lancedb-nodejs::connection"];
   mod_lancedb_nodejs_table[label="lancedb-nodejs::table"];
   mod_lancedb_python_connection[label="lancedb-python::connection"];
   mod_lancedb_python_index[label="lancedb-python::index"];
@@ -43,5 +44,6 @@ digraph architecture {
   mod_lancedb_remote -> mod_lancedb_python_connection;
   mod_lancedb_remote -> mod_lancedb_table;
   mod_lancedb_table -> mod_lancedb_embeddings;
-  mod_lancedb_test_utils -> mod_lancedb_connection;
+  mod_lancedb_test_utils -> mod_lancedb_nodejs_connection;
+  mod_lancedb_test_utils -> mod_lancedb_python_connection;
 }

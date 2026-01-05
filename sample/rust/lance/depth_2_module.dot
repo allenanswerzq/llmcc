@@ -30,6 +30,7 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
+    mod_lance_arrow[label="arrow"];
     mod_lance_commit[label="commit"];
     mod_lance_dataset[label="dataset"];
     mod_lance_exec[label="exec"];
@@ -220,26 +221,28 @@ digraph architecture {
     mod_pylance_indices[label="indices"];
     mod_pylance_lib[label="lib"];
     mod_pylance_schema[label="schema"];
+    mod_pylance_session[label="session"];
   }
 
 
   mod_fsst_fsst -> mod_lance_encoding_lib;
+  mod_lance_arrow -> mod_lance_core_datatypes [dir=both]; // dir best-effort not accurate
   mod_lance_commit -> mod_lance_dataset;
+  mod_lance_core_datatypes -> mod_lance_file_datatypes [dir=both]; // dir best-effort not accurate
   mod_lance_datagen_generator -> mod_lance_core_datatypes;
   mod_lance_dataset -> mod_lance_core_datatypes;
   mod_lance_dataset -> mod_lance_core_utils;
   mod_lance_dataset -> mod_lance_encoding_version;
   mod_lance_dataset -> mod_lance_file_reader;
-  mod_lance_dataset -> mod_lance_index_scalar [dir=both]; // dir best-effort not accurate
+  mod_lance_dataset -> mod_lance_index_scalar;
   mod_lance_dataset -> mod_lance_io [dir=both]; // dir best-effort not accurate
   mod_lance_dataset -> mod_lance_io_object_store;
-  mod_lance_dataset -> mod_lance_io_scheduler [dir=both]; // dir best-effort not accurate
   mod_lance_dataset -> mod_lance_optimize [dir=both]; // dir best-effort not accurate
-  mod_lance_dataset -> mod_lance_session;
   mod_lance_dataset -> mod_lance_table_format;
   mod_lance_dataset -> mod_lance_table_io [dir=both]; // dir best-effort not accurate
   mod_lance_dataset -> mod_lance_table_rowids;
   mod_lance_dataset -> mod_lance_write [dir=both]; // dir best-effort not accurate
+  mod_lance_dataset -> mod_pylance_session;
   mod_lance_encoding_compression -> mod_lance_encoding_compression_config;
   mod_lance_encoding_compression -> mod_lance_encoding_data;
   mod_lance_encoding_compression -> mod_lance_encoding_physical [dir=both]; // dir best-effort not accurate
@@ -278,7 +281,6 @@ digraph architecture {
   mod_lance_exec -> mod_lance_index_vector;
   mod_lance_exec -> mod_lance_io_scheduler;
   mod_lance_exec -> mod_lance_table_format;
-  mod_lance_exec -> mod_pylance_dataset;
   mod_lance_file_previous -> mod_lance_core_datatypes;
   mod_lance_file_previous -> mod_lance_io_lib;
   mod_lance_file_testing -> mod_lance_encoding_decoder;
@@ -294,6 +296,7 @@ digraph architecture {
   mod_lance_index -> mod_lance_optimize [dir=both]; // dir best-effort not accurate
   mod_lance_index -> mod_lance_table_format;
   mod_lance_index -> mod_lance_vector [dir=both]; // dir best-effort not accurate
+  mod_lance_index -> mod_pylance_dataset [dir=both]; // dir best-effort not accurate
   mod_lance_index_bq -> mod_lance_index_vector [dir=both]; // dir best-effort not accurate
   mod_lance_index_flat -> mod_lance_index_vector [dir=both]; // dir best-effort not accurate
   mod_lance_index_flat -> mod_lance_linalg_distance;
@@ -313,7 +316,6 @@ digraph architecture {
   mod_lance_io -> mod_lance_io_object_store;
   mod_lance_io -> mod_lance_table_format;
   mod_lance_io -> mod_lance_table_io;
-  mod_lance_io -> mod_pylance_dataset;
   mod_lance_io_encodings -> mod_lance_io_traits;
   mod_lance_io_object_store -> mod_lance_io_utils [dir=both]; // dir best-effort not accurate
   mod_lance_io_providers -> mod_lance_io_object_store;
@@ -352,7 +354,6 @@ digraph architecture {
   mod_lance_write -> mod_lance_core_datatypes;
   mod_lance_write -> mod_lance_core_utils;
   mod_lance_write -> mod_lance_table_format;
-  mod_lance_write -> mod_pylance_dataset;
   mod_pylance_dataset -> mod_lance_dataset;
   mod_pylance_indices -> mod_lance_dataset;
   mod_pylance_indices -> mod_lance_index_ivf;
