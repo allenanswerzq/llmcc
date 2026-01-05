@@ -46,7 +46,7 @@ impl<'a> SnapshotContext<'a> {
 /// Format a label like "u0:42" for unit index and ID.
 #[allow(dead_code)]
 pub fn format_unit_label(unit: usize, id: u32) -> String {
-    format!("u{}:{}", unit, id)
+    format!("u{unit}:{id}")
 }
 
 /// Parse a label like "u0:42" into (unit, id).
@@ -96,7 +96,7 @@ impl TableBuilder {
                     buf.push_str(" | ");
                 }
                 let width = self.widths.get(i).copied().unwrap_or(0);
-                let _ = write!(buf, "{:<width$}", cell, width = width);
+                let _ = write!(buf, "{cell:<width$}");
             }
             // Trim trailing whitespace from each line
             let trimmed = buf.trim_end();

@@ -34,7 +34,7 @@ impl TokenSet {
     pub fn render(&self, language_ident: &str) -> String {
         let mut out = String::new();
         out.push_str("define_lang! {\n");
-        out.push_str(&format!("    {},\n", language_ident));
+        out.push_str(&format!("    {language_ident},\n"));
 
         if !self.text_tokens.is_empty() {
             out.push_str("    // Text tokens\n");
@@ -121,7 +121,7 @@ pub(crate) fn format_hir(kind: &str) -> String {
     if kind.starts_with("HirKind::") {
         kind.to_string()
     } else {
-        format!("HirKind::{}", kind)
+        format!("HirKind::{kind}")
     }
 }
 
@@ -136,18 +136,14 @@ pub(crate) fn format_block(kind: &str) -> String {
 pub(crate) fn resolve_kind_id(language: Language, name: &str, named: bool) -> Result<u16> {
     let id = language.id_for_node_kind(name, named);
     if id == u16::MAX {
-        anyhow::bail!(
-            "node kind '{}' (named={}) not found in tree-sitter language",
-            name,
-            named
-        );
+        anyhow::bail!("node kind '{name}' (named={named}) not found in tree-sitter language");
     }
     Ok(id)
 }
 
 pub(crate) fn resolve_field_id(language: Language, field_name: &str) -> Result<u16> {
     let Some(field_id) = language.field_id_for_name(field_name.as_bytes()) else {
-        anyhow::bail!("field '{}' not found in language metadata", field_name);
+        anyhow::bail!("field '{field_name}' not found in language metadata");
     };
     Ok(field_id.get())
 }

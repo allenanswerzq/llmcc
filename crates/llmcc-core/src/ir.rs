@@ -54,7 +54,7 @@ impl<'hir> HirNode<'hir> {
     pub fn format(&self, _unit: CompileUnit<'hir>) -> String {
         let id = self.id();
         let kind = self.kind();
-        format!("{}:{}", kind, id)
+        format!("{kind}:{id}")
     }
 
     /// Get the base information for any HIR node

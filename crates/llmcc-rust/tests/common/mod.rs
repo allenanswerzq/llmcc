@@ -44,7 +44,7 @@ pub fn find_symbol_id<'a>(
         .into_iter()
         .find(|symbol| symbol.name == name_key && symbol.kind() == kind)
         .map(|symbol| symbol.id())
-        .unwrap_or_else(|| panic!("symbol {name} with kind {:?} not found", kind))
+        .unwrap_or_else(|| panic!("symbol {name} with kind {kind:?} not found"))
 }
 
 #[allow(dead_code)]
@@ -62,7 +62,7 @@ pub fn assert_collect_symbol<'a>(
         .collect();
 
     if matches.is_empty() {
-        panic!("symbol {} with kind {:?} not found", name, kind);
+        panic!("symbol {name} with kind {kind:?} not found");
     }
 
     let symbol = if expect_scope {
@@ -71,13 +71,13 @@ pub fn assert_collect_symbol<'a>(
             .copied()
             .find(|sym| sym.opt_scope().is_some())
             .unwrap_or_else(|| {
-                panic!("symbol {} expected to have an associated scope", name);
+                panic!("symbol {name} expected to have an associated scope");
             })
     } else {
         matches.remove(0)
     };
 
-    assert!(symbol.id().0 > 0, "symbol {} should have a valid id", name);
+    assert!(symbol.id().0 > 0, "symbol {name} should have a valid id");
 
     if expect_scope {
         debug_assert!(symbol.opt_scope().is_some());
@@ -170,7 +170,7 @@ pub fn assert_bind_symbol<'a>(
             .copied()
             .find(|sym| sym.opt_scope().is_some())
             .unwrap_or_else(|| {
-                panic!("symbol {} expected to have an associated scope", name);
+                panic!("symbol {name} expected to have an associated scope");
             })
     } else {
         *candidates.first().unwrap()
@@ -179,45 +179,43 @@ pub fn assert_bind_symbol<'a>(
     if expect.expect_scope {
         assert!(
             symbol.opt_scope().is_some(),
-            "symbol {} should have a scope",
-            name
+            "symbol {name} should have a scope"
         );
     }
 
     if let Some(expected) = expect.type_of {
         let ty_id = symbol
             .type_of()
-            .unwrap_or_else(|| panic!("symbol {} missing type_of", name));
+            .unwrap_or_else(|| panic!("symbol {name} missing type_of"));
         let ty_sym = cc
             .opt_get_symbol(ty_id)
-            .unwrap_or_else(|| panic!("type symbol for {} not found", expected));
+            .unwrap_or_else(|| panic!("type symbol for {expected} not found"));
         let ty_name = cc
             .interner
             .resolve_owned(ty_sym.name)
             .unwrap_or_else(|| "<anon>".to_string());
-        assert_eq!(ty_name, expected, "symbol {} type mismatch", name);
+        assert_eq!(ty_name, expected, "symbol {name} type mismatch");
     }
 
     if let Some(owner) = expect.field_of {
         let owner_id = symbol
             .field_of()
-            .unwrap_or_else(|| panic!("symbol {} missing field_of", name));
+            .unwrap_or_else(|| panic!("symbol {name} missing field_of"));
         let owner_sym = cc
             .opt_get_symbol(owner_id)
-            .unwrap_or_else(|| panic!("field owner symbol {} not found", owner));
+            .unwrap_or_else(|| panic!("field owner symbol {owner} not found"));
         let owner_name = cc
             .interner
             .resolve_owned(owner_sym.name)
             .unwrap_or_else(|| "<anon>".to_string());
-        assert_eq!(owner_name, owner, "symbol {} field_of mismatch", name);
+        assert_eq!(owner_name, owner, "symbol {name} field_of mismatch");
     }
 
     if let Some(expected) = expect.is_global {
         assert_eq!(
             symbol.is_global(),
             expected,
-            "symbol {} global flag mismatch",
-            name
+            "symbol {name} global flag mismatch"
         );
     }
 
@@ -227,33 +225,32 @@ pub fn assert_bind_symbol<'a>(
             .get_all_symbols()
             .into_iter()
             .find(|sym| sym.name == scope_name_key)
-            .unwrap_or_else(|| panic!("symbol {} not found for scope comparison", scope_of));
+            .unwrap_or_else(|| panic!("symbol {scope_of} not found for scope comparison"));
 
         let symbol_scope = symbol
             .opt_scope()
-            .unwrap_or_else(|| panic!("symbol {} missing scope", name));
+            .unwrap_or_else(|| panic!("symbol {name} missing scope"));
         let peer_scope = peer_symbol
             .opt_scope()
-            .unwrap_or_else(|| panic!("symbol {} missing scope", scope_of));
+            .unwrap_or_else(|| panic!("symbol {scope_of} missing scope"));
 
         assert_eq!(
             symbol_scope, peer_scope,
-            "symbol {} scope mismatch with {}",
-            name, scope_of
+            "symbol {name} scope mismatch with {scope_of}"
         );
     }
 
     if let Some(expected_nested) = expect.nested_types {
         let nested = symbol
             .nested_types()
-            .unwrap_or_else(|| panic!("symbol {} missing nested types", name));
+            .unwrap_or_else(|| panic!("symbol {name} missing nested types"));
         assert_eq!(nested.len(), expected_nested.len());
         let nested_names: Vec<String> = nested
             .iter()
             .map(|id| {
                 let sym = cc
                     .opt_get_symbol(*id)
-                    .unwrap_or_else(|| panic!("nested symbol not found for {}", name));
+                    .unwrap_or_else(|| panic!("nested symbol not found for {name}"));
                 cc.interner
                     .resolve_owned(sym.name)
                     .unwrap_or_else(|| "<anon>".to_string())
@@ -262,8 +259,7 @@ pub fn assert_bind_symbol<'a>(
         let expected: Vec<String> = expected_nested.into_iter().map(|s| s.to_string()).collect();
         assert_eq!(
             nested_names, expected,
-            "symbol {} nested types mismatch",
-            name
+            "symbol {name} nested types mismatch"
         );
     }
 
@@ -280,7 +276,7 @@ pub fn assert_exists<'a>(cc: &'a CompileCtxt<'a>, name: &str, kind: SymKind) {
     let symbol = all_symbols
         .iter()
         .find(|sym| sym.name == name_key && sym.kind() == kind)
-        .unwrap_or_else(|| panic!("symbol {} with kind {:?} not found", name, kind));
+        .unwrap_or_else(|| panic!("symbol {name} with kind {kind:?} not found"));
     // prints all symbol for debugging
     assert!(symbol.id().0 > 0, "symbol should have a valid id");
 }

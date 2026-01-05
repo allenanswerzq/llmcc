@@ -53,8 +53,7 @@ impl std::str::FromStr for PrintFormat {
             "compact" => Ok(PrintFormat::Compact),
             "flat" => Ok(PrintFormat::Flat),
             other => Err(format!(
-                "Unknown format: {}. Use 'tree', 'compact', or 'flat'",
-                other
+                "Unknown format: {other}. Use 'tree', 'compact', or 'flat'"
             )),
         }
     }
@@ -283,7 +282,7 @@ impl RenderError {
 
     /// Error for exceeding maximum depth
     pub fn max_depth_exceeded(depth: usize, max: usize) -> Self {
-        RenderError::new(format!("Maximum depth {} exceeded (limit: {})", depth, max))
+        RenderError::new(format!("Maximum depth {depth} exceeded (limit: {max})"))
     }
 
     /// Error for invalid configuration
@@ -395,7 +394,7 @@ pub fn print_llmcc_ir_with_config(unit: CompileUnit<'_>, config: &PrintConfig) -
         .ok_or_else(|| RenderError::new("No HIR root node found"))?;
 
     let (ast, _hir) = render_llmcc_ir_with_config(root, unit, config)?;
-    println!("{}\n", ast);
+    println!("{ast}\n");
     // println!("{}\n", hir);
     Ok(())
 }
@@ -425,7 +424,7 @@ pub fn print_llmcc_graph_with_config(
     config: &PrintConfig,
 ) -> RenderResult<()> {
     let graph = render_llmcc_graph_with_config(root, unit, config)?;
-    println!("{}\n", graph);
+    println!("{graph}\n");
     Ok(())
 }
 
@@ -610,7 +609,7 @@ fn render_node_tree(
     config: &PrintConfig,
 ) -> RenderResult<()> {
     let indent = " ".repeat(depth * config.indent_width);
-    let mut line = format!("{}(", indent);
+    let mut line = format!("{indent}(");
 
     // Add label
     line.push_str(&node.label);
@@ -619,12 +618,12 @@ fn render_node_tree(
     if config.include_node_ids
         && let Some(id) = &node.node_id
     {
-        line.push_str(&format!(" #{}", id));
+        line.push_str(&format!(" #{id}"));
     }
 
     // Add line information
     if let Some(line_info) = &node.line_info {
-        line.push_str(&format!(" {}", line_info));
+        line.push_str(&format!(" {line_info}"));
     }
 
     // Handle children
@@ -632,7 +631,7 @@ fn render_node_tree(
         line.push(')');
         // Add suffix after closing paren (e.g., "@type i32")
         if let Some(suffix) = &node.suffix {
-            line.push_str(&format!(" {}", suffix));
+            line.push_str(&format!(" {suffix}"));
         }
         // Align snippet to column and add inline with pipes
         if let Some(snippet) = &node.snippet {
@@ -643,7 +642,7 @@ fn render_node_tree(
             } else {
                 line.push(' ');
             }
-            line.push_str(&format!("|{}|", snippet));
+            line.push_str(&format!("|{snippet}|"));
         }
         out.push(line);
     } else {
@@ -655,13 +654,13 @@ fn render_node_tree(
             } else {
                 line.push(' ');
             }
-            line.push_str(&format!("|{}|", snippet));
+            line.push_str(&format!("|{snippet}|"));
         }
         out.push(line);
         for child in &node.children {
             render_node_tree(child, depth + 1, out, config)?;
         }
-        out.push(format!("{})", indent));
+        out.push(format!("{indent})"));
     }
 
     Ok(())
@@ -678,7 +677,7 @@ fn render_node_compact(
     if config.include_line_info
         && let Some(info) = &node.line_info
     {
-        line.push_str(&format!(" {}", info));
+        line.push_str(&format!(" {info}"));
     }
 
     for child in &node.children {
@@ -686,7 +685,7 @@ fn render_node_compact(
         if config.include_line_info && child.line_info.is_some() {
             child_line.push_str(&format!(" {}", child.line_info.as_ref().unwrap()));
         }
-        line.push_str(&format!(" {}", child_line));
+        line.push_str(&format!(" {child_line}"));
     }
 
     out.push(line);
@@ -704,7 +703,7 @@ fn render_node_flat(
     if config.include_line_info
         && let Some(info) = &node.line_info
     {
-        line.push_str(&format!(" {}", info));
+        line.push_str(&format!(" {info}"));
     }
 
     out.push(line);

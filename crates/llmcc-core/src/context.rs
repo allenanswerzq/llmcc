@@ -179,7 +179,7 @@ impl<'tcx> CompileUnit<'tcx> {
     /// Get a HIR node by ID, panicking if not found
     pub fn hir_node(self, id: HirId) -> HirNode<'tcx> {
         self.opt_hir_node(id)
-            .unwrap_or_else(|| panic!("hir node not found {}", id))
+            .unwrap_or_else(|| panic!("hir node not found {id}"))
     }
 
     /// Get a HIR node by ID, returning None if not found
@@ -191,7 +191,7 @@ impl<'tcx> CompileUnit<'tcx> {
     /// Get a HIR node by ID, panicking if not found
     pub fn bb(self, id: BlockId) -> BasicBlock<'tcx> {
         self.opt_bb(id)
-            .unwrap_or_else(|| panic!("basic block not found: {}", id))
+            .unwrap_or_else(|| panic!("basic block not found: {id}"))
     }
 
     /// Get the Root block for this compile unit (file).
@@ -331,7 +331,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             .iter()
             .enumerate()
             .map(|(index, src)| {
-                let path = temp_dir.join(format!("source_{}.rs", index));
+                let path = temp_dir.join(format!("source_{index}.rs"));
                 if let Ok(mut file) = fs::File::create(&path) {
                     let _ = file.write_all(src);
                 }

@@ -48,7 +48,7 @@ impl DotBuilder {
     /// Create a new DOT graph with the given name.
     pub fn new(name: &str) -> Self {
         let mut output = String::with_capacity(4096);
-        let _ = writeln!(output, "digraph {} {{", name);
+        let _ = writeln!(output, "digraph {name} {{");
         Self { output, indent: 1 }
     }
 
@@ -62,7 +62,7 @@ impl DotBuilder {
     /// Add a node style default.
     pub fn node_style(&mut self, attrs: &str) -> &mut Self {
         write_indent(&mut self.output, self.indent);
-        let _ = writeln!(self.output, "node [{}];", attrs);
+        let _ = writeln!(self.output, "node [{attrs}];");
         self
     }
 
@@ -82,7 +82,7 @@ impl DotBuilder {
     /// Add a node with full attributes.
     pub fn node_full(&mut self, id: &str, attrs: &[(&str, &str)]) -> &mut Self {
         write_indent(&mut self.output, self.indent);
-        let _ = write!(self.output, "{}[", id);
+        let _ = write!(self.output, "{id}[");
         for (i, (key, value)) in attrs.iter().enumerate() {
             if i > 0 {
                 self.output.push_str(", ");
@@ -96,19 +96,19 @@ impl DotBuilder {
     /// Add an edge.
     pub fn edge(&mut self, from: &str, to: &str) -> &mut Self {
         write_indent(&mut self.output, self.indent);
-        let _ = writeln!(self.output, "{} -> {};", from, to);
+        let _ = writeln!(self.output, "{from} -> {to};");
         self
     }
 
     /// Add an edge with attributes.
     pub fn edge_with_attrs(&mut self, from: &str, to: &str, attrs: &[(&str, &str)]) -> &mut Self {
         write_indent(&mut self.output, self.indent);
-        let _ = write!(self.output, "{} -> {} [", from, to);
+        let _ = write!(self.output, "{from} -> {to} [");
         for (i, (key, value)) in attrs.iter().enumerate() {
             if i > 0 {
                 self.output.push_str(", ");
             }
-            let _ = write!(self.output, "{}=\"{}\"", key, value);
+            let _ = write!(self.output, "{key}=\"{value}\"");
         }
         self.output.push_str("];\n");
         self
@@ -117,7 +117,7 @@ impl DotBuilder {
     /// Add a bidirectional edge.
     pub fn edge_bidirectional(&mut self, from: &str, to: &str) -> &mut Self {
         write_indent(&mut self.output, self.indent);
-        let _ = writeln!(self.output, "{} -> {} [dir=both];", from, to);
+        let _ = writeln!(self.output, "{from} -> {to} [dir=both];");
         self
     }
 
