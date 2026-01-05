@@ -15,6 +15,7 @@ import {
     parseToolCalls,
     isToolAvailable,
     getAvailableTools,
+    formatBuiltinToolsForPrompt,
     ToolDefinition as InternalToolDef
 } from '../tools';
 
@@ -99,25 +100,43 @@ function buildToolDefinitions(tools: NonNullable<ChatCompletionRequest['tools']>
 
 function buildToolSystemPrompt(tools: InternalToolDef[]): string {
     const availableBuiltin = getAvailableTools();
-    const toolDescriptions = tools.map(t => {
-        const isBuiltin = availableBuiltin.includes(t.name);
-        return `- ${t.name}${isBuiltin ? ' [EXECUTABLE]' : ''}: ${t.description}`;
-    }).join('\n');
 
-    return `CRITICAL: You MUST use tools to complete tasks. DO NOT explain how to use tools - USE THEM DIRECTLY.
+    // Separate builtin tools from client-provided tools
+    const builtinToolNames = tools.filter(t => availableBuiltin.includes(t.name)).map(t => t.name);
+    const externalTools = tools.filter(t => !availableBuiltin.includes(t.name));
 
-Available tools:
-${toolDescriptions}
+    // Build the prompt with detailed builtin tool documentation
+    let prompt = `CRITICAL: You MUST use tools to complete tasks. DO NOT explain how to use tools - USE THEM DIRECTLY.
 
-When you need to perform an action, output EXACTLY this JSON format (no markdown, no explanation):
-{"tool": "tool_name", "argument_name": "value"}
+=== EXECUTABLE BUILT-IN TOOLS ===
+These tools are executed automatically. Use them by outputting the JSON format shown.
 
-Examples:
-- To run a command: {"tool": "bash", "command": "echo hello"}
-- To read a file: {"tool": "read_file", "path": "/path/to/file"}
-- To list directory: {"tool": "list_dir", "path": "."}
+${formatBuiltinToolsForPrompt()}
+`;
 
-IMPORTANT: Output ONLY the JSON. No other text. No code blocks. Just the raw JSON object.`;
+    // Add external tools if any
+    if (externalTools.length > 0) {
+        const externalDescriptions = externalTools.map(t =>
+            `- ${t.name}: ${t.description}`
+        ).join('\n');
+        prompt += `
+=== EXTERNAL TOOLS (handled by client) ===
+${externalDescriptions}
+`;
+    }
+
+    prompt += `
+=== HOW TO USE TOOLS ===
+Output EXACTLY this JSON format (no markdown, no code blocks, no explanation):
+{"tool": "tool_name", "arg1": "value1", "arg2": "value2"}
+
+IMPORTANT:
+- Output ONLY the raw JSON object
+- Do NOT wrap in code blocks
+- Do NOT add explanatory text before or after
+- Wait for the tool result before continuing`;
+
+    return prompt;
 }
 
 function buildMessagesWithToolPrompt(
