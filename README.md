@@ -36,11 +36,13 @@ This repo includes a ready-made example under [sample](sample). Download and ope
 <p align="center">
 	<img src="sample/rust/codex-pagerank/depth_3_file.svg" alt="Codex file and symbol graph (depth 3)" style="max-width: 100%; height: auto;" />
 </p>
+
 Here's a small portion of the graph at depth 3, showing the core abstraction layer for prompt handling in Codex. Developers and AI agents can quickly grasp the architecture by examining this view.
 
 <p style="height: 250px; text-align: center;">
 	<img src="doc/codex.jpg" alt="codex core logic" style="max-width: 100%; height: auto;" />
 </p>
+
 If you open those .dot/.svg files, you’ll see the same system from different “altitudes”, which is exactly what you want when:
 - orienting yourself in an unfamiliar repo
 - deciding *where* to make a change
