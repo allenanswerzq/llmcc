@@ -96,7 +96,10 @@ pub trait ParseNode: Send + Sync {
         for i in 0..self.child_count() {
             if let Some(child) = self.child(i) {
                 let field_id = child.field_id().unwrap_or(u16::MAX);
-                result.push(ChildWithFieldId { node: child, field_id });
+                result.push(ChildWithFieldId {
+                    node: child,
+                    field_id,
+                });
             }
         }
         result
@@ -159,11 +162,11 @@ pub trait ParseNode: Send + Sync {
 
         // Add field name if provided
         if let Some(fname) = field_name {
-            label.push_str(&format!("|{}|_ ", fname));
+            label.push_str(&format!("|{fname}|_ "));
         }
 
         // Add kind and kind_id
-        label.push_str(&format!("{} [{}]", kind_str, kind_id));
+        label.push_str(&format!("{kind_str} [{kind_id}]"));
 
         // Add status flags
         if self.is_error() {

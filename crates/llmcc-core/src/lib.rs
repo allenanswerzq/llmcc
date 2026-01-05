@@ -24,8 +24,8 @@ pub use graph::{ProjectGraph, UnitGraph, UnitNode};
 pub use graph_builder::{BlockId, BlockRelation, GraphBuildConfig, build_llmcc_graph};
 pub use ir::HirId;
 pub use ir_builder::{
-    IrBuildOption, build_llmcc_ir, build_llmcc_ir_inner,
-    get_ir_build_cpu_time_ms, next_hir_id, reset_ir_build_counters,
+    IrBuildOption, build_llmcc_ir, build_llmcc_ir_inner, get_ir_build_cpu_time_ms, next_hir_id,
+    reset_ir_build_counters,
 };
 pub use lang_def::{ChildWithFieldId, LanguageTrait, LanguageTraitImpl};
 pub use paste;

@@ -22,12 +22,12 @@ digraph architecture {
   crate_clap_mangen[label="clap_mangen"];
 
   crate_clap -> crate_clap_builder;
-  crate_clap_builder -> crate_clap_complete;
-  crate_clap_builder -> crate_clap_derive;
+  crate_clap_builder -> crate_clap_complete [dir=both]; // dir best-effort not accurate
+  crate_clap_builder -> crate_clap_derive [dir=both]; // dir best-effort not accurate
+  crate_clap_builder -> crate_clap_lex [dir=both]; // dir best-effort not accurate
   crate_clap_complete -> crate_clap_derive;
   crate_clap_complete_nushell -> crate_clap_builder;
   crate_clap_complete_nushell -> crate_clap_complete;
   crate_clap_derive -> crate_clap_mangen;
-  crate_clap_lex -> crate_clap_builder;
   crate_clap_mangen -> crate_clap_builder;
 }

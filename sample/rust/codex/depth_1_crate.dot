@@ -16,6 +16,7 @@ digraph architecture {
   crate_codex_api[label="codex-api"];
   crate_codex_app_server[label="codex-app-server"];
   crate_codex_app_server_protocol[label="codex-app-server-protocol"];
+  crate_codex_apply_patch[label="codex-apply-patch"];
   crate_codex_cli[label="codex-cli"];
   crate_codex_client[label="codex-client"];
   crate_codex_cloud_tasks[label="codex-cloud-tasks"];
@@ -38,43 +39,49 @@ digraph architecture {
 
   crate_codex_api -> crate_codex_app_server_protocol;
   crate_codex_api -> crate_codex_client;
-  crate_codex_api -> crate_codex_protocol;
+  crate_codex_api -> crate_codex_protocol [dir=both]; // dir best-effort not accurate
   crate_codex_app_server -> crate_codex_app_server_protocol;
   crate_codex_app_server -> crate_codex_core;
   crate_codex_app_server -> crate_codex_protocol;
   crate_codex_app_server -> crate_mcp_types;
-  crate_codex_app_server_protocol -> crate_codex_protocol;
+  crate_codex_app_server_protocol -> crate_codex_core [dir=both]; // dir best-effort not accurate
+  crate_codex_app_server_protocol -> crate_codex_protocol [dir=both]; // dir best-effort not accurate
+  crate_codex_app_server_protocol -> crate_codex_tui2 [dir=both]; // dir best-effort not accurate
   crate_codex_cli -> crate_codex_app_server_protocol;
   crate_codex_cli -> crate_codex_common;
-  crate_codex_cli -> crate_codex_core;
+  crate_codex_cli -> crate_codex_core [dir=both]; // dir best-effort not accurate
   crate_codex_cli -> crate_codex_rmcp_client;
   crate_codex_cloud_tasks -> crate_codex_cloud_tasks_client;
-  crate_codex_cloud_tasks -> crate_codex_tui;
-  crate_codex_cloud_tasks -> crate_codex_tui2;
+  crate_codex_cloud_tasks -> crate_codex_tui [dir=both]; // dir best-effort not accurate
+  crate_codex_cloud_tasks -> crate_codex_tui2 [dir=both]; // dir best-effort not accurate
+  crate_codex_core -> crate_codex_apply_patch;
   crate_codex_core -> crate_codex_client;
-  crate_codex_core -> crate_codex_execpolicy;
-  crate_codex_core -> crate_codex_execpolicy_legacy;
+  crate_codex_core -> crate_codex_exec [dir=both]; // dir best-effort not accurate
+  crate_codex_core -> crate_codex_execpolicy [dir=both]; // dir best-effort not accurate
+  crate_codex_core -> crate_codex_execpolicy_legacy [dir=both]; // dir best-effort not accurate
   crate_codex_core -> crate_codex_git;
   crate_codex_core -> crate_codex_otel;
-  crate_codex_core -> crate_codex_protocol;
+  crate_codex_core -> crate_codex_protocol [dir=both]; // dir best-effort not accurate
   crate_codex_core -> crate_codex_rmcp_client;
-  crate_codex_core -> crate_codex_tui2;
+  crate_codex_core -> crate_codex_tui2 [dir=both]; // dir best-effort not accurate
   crate_codex_core -> crate_codex_utils_absolute_path;
   crate_codex_core -> crate_mcp_types;
   crate_codex_exec -> crate_codex_protocol;
-  crate_codex_execpolicy_legacy -> crate_codex_execpolicy;
-  crate_codex_mcp_server -> crate_codex_app_server;
+  crate_codex_exec -> crate_codex_tui [dir=both]; // dir best-effort not accurate
+  crate_codex_execpolicy -> crate_codex_execpolicy_legacy [dir=both]; // dir best-effort not accurate
   crate_codex_mcp_server -> crate_codex_core;
   crate_codex_mcp_server -> crate_codex_protocol;
-  crate_codex_mcp_server -> crate_mcp_types;
+  crate_codex_mcp_server -> crate_mcp_types [dir=both]; // dir best-effort not accurate
   crate_codex_otel -> crate_codex_execpolicy;
+  crate_codex_protocol -> crate_codex_tui2 [dir=both]; // dir best-effort not accurate
   crate_codex_rmcp_client -> crate_mcp_types;
   crate_codex_tui -> crate_codex_app_server_protocol;
   crate_codex_tui -> crate_codex_common;
-  crate_codex_tui -> crate_codex_execpolicy_legacy;
+  crate_codex_tui -> crate_codex_core;
   crate_codex_tui -> crate_codex_protocol;
-  crate_codex_tui -> crate_codex_tui2;
+  crate_codex_tui -> crate_codex_tui2 [dir=both]; // dir best-effort not accurate
   crate_codex_tui2 -> crate_codex_common;
+  crate_codex_tui2 -> crate_codex_exec;
   crate_codex_tui2 -> crate_mcp_types;
   crate_codex_windows_sandbox -> crate_codex_app_server_protocol;
 }

@@ -283,7 +283,7 @@ impl std::fmt::Display for RelationStats {
         writeln!(f, "  Total relationships: {}", self.total_relations)?;
         writeln!(f, "  By type:")?;
         for (&relation, &count) in &self.by_relation {
-            writeln!(f, "    {}: {}", relation, count)?;
+            writeln!(f, "    {relation}: {count}")?;
         }
         Ok(())
     }

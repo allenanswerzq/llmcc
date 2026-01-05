@@ -445,6 +445,7 @@ digraph architecture {
     fontname="Helvetica Bold";
 
     mod_opendal_nodejs_capability[label="capability"];
+    mod_opendal_nodejs_layer[label="layer"];
     mod_opendal_nodejs_lib[label="lib"];
     mod_opendal_nodejs_options[label="options"];
   }
@@ -460,16 +461,6 @@ digraph architecture {
     mod_opendal_ocaml_operator[label="operator"];
   }
 
-  subgraph cluster_opendal_php {
-    label="opendal-php";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
-
-    mod_opendal_php_lib[label="lib"];
-  }
-
   subgraph cluster_opendal_python {
     label="opendal-python";
     style=rounded;
@@ -477,12 +468,11 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
+    mod_opendal_python_capability[label="capability"];
     mod_opendal_python_file[label="file"];
-    mod_opendal_python_layers[label="layers"];
     mod_opendal_python_lister[label="lister"];
     mod_opendal_python_metadata[label="metadata"];
     mod_opendal_python_operator[label="operator"];
-    mod_opendal_python_options[label="options"];
     mod_opendal_python_utils[label="utils"];
   }
 
@@ -1473,31 +1463,28 @@ digraph architecture {
   }
 
 
-  mod_dav_server_opendalfs_dir -> mod_opendal_core_operator;
-  mod_dav_server_opendalfs_dir -> mod_opendal_cpp_lister;
   mod_dav_server_opendalfs_dir -> mod_opendal_nodejs_lib;
-  mod_dav_server_opendalfs_dir -> mod_opendal_ocaml_operator;
-  mod_dav_server_opendalfs_file -> mod_opendal_core_blocking;
   mod_dav_server_opendalfs_file -> mod_opendal_core_read;
   mod_dav_server_opendalfs_file -> mod_opendal_core_write;
+  mod_dav_server_opendalfs_file -> mod_opendal_ocaml_operator;
   mod_dav_server_opendalfs_fs -> mod_opendal_cpp_async;
-  mod_dav_server_opendalfs_metadata -> mod_opendal_python_metadata;
+  mod_dav_server_opendalfs_metadata -> mod_opendal_core_types;
   mod_dav_server_opendalfs_utils -> mod_opendal_c_error;
   mod_edge_test_aws_s3_assume_role_with_web_identity_main -> mod_opendal_testkit_utils;
-  mod_edge_test_file_write_on_full_disk_main -> mod_opendal_core_blocking;
-  mod_edge_test_s3_read_on_wasm_lib -> mod_opendal_core_blocking;
-  mod_object_store_opendal_lib -> mod_opendal_core_blocking;
+  mod_edge_test_file_write_on_full_disk_main -> mod_opendal_nodejs_lib;
+  mod_edge_test_s3_read_on_wasm_lib -> mod_opendal_cpp_async;
+  mod_object_store_opendal_lib -> mod_opendal_cpp_async;
   mod_object_store_opendal_lib -> mod_opendal_lua_lib;
   mod_object_store_opendal_service -> mod_object_store_opendal_lib;
   mod_object_store_opendal_service -> mod_opendal_core_raw;
   mod_object_store_opendal_service -> mod_opendal_core_types;
-  mod_object_store_opendal_service -> mod_opendal_nodejs_lib;
-  mod_object_store_opendal_store -> mod_opendal_dart_api;
+  mod_object_store_opendal_store -> mod_opendal_core_write;
+  mod_object_store_opendal_store -> mod_opendal_nodejs_lib;
   mod_object_store_opendal_store -> mod_opendal_ocaml_operator;
   mod_object_store_opendal_store -> mod_opendal_service_azdls_lister;
   mod_object_store_opendal_utils -> mod_opendal_core_types;
-  mod_object_store_opendal_utils -> mod_opendal_ocaml_operator;
-  mod_odev_generate -> mod_odev_main;
+  mod_object_store_opendal_utils -> mod_opendal_service_ipfs_ipld;
+  mod_odev_generate -> mod_odev_main [dir=both]; // dir best-effort not accurate
   mod_odev_generate -> mod_opendal_service_compfs_lister;
   mod_odev_main -> mod_opendal_service_azdls_lister;
   mod_odev_release -> mod_odev_main;
@@ -1505,7 +1492,7 @@ digraph architecture {
   mod_opendal_c_c -> mod_opendal_service_azdls_lister;
   mod_opendal_c_error -> mod_opendal_c_types;
   mod_opendal_c_operator -> mod_opendal_c_error;
-  mod_opendal_c_operator -> mod_opendal_c_result;
+  mod_opendal_c_operator -> mod_opendal_c_result [dir=both]; // dir best-effort not accurate
   mod_opendal_c_operator -> mod_opendal_c_types;
   mod_opendal_c_result -> mod_opendal_c_entry;
   mod_opendal_c_result -> mod_opendal_c_error;
@@ -1518,69 +1505,65 @@ digraph architecture {
   mod_opendal_core_blocking -> mod_opendal_python_operator;
   mod_opendal_core_context -> mod_opendal_core_raw;
   mod_opendal_core_executors -> mod_opendal_core_execute;
-  mod_opendal_core_http_util -> mod_opendal_core_raw;
-  mod_opendal_core_http_util -> mod_opendal_core_types;
+  mod_opendal_core_http_util -> mod_opendal_core_raw [dir=both]; // dir best-effort not accurate
+  mod_opendal_core_http_util -> mod_opendal_core_types [dir=both]; // dir best-effort not accurate
   mod_opendal_core_http_util -> mod_opendal_java_error;
-  mod_opendal_core_http_util -> mod_opendal_nodejs_lib;
+  mod_opendal_core_http_util -> mod_opendal_ocaml_operator;
   mod_opendal_core_http_util -> mod_opendal_python_utils;
   mod_opendal_core_layers -> mod_opendal_core_http_util;
   mod_opendal_core_layers -> mod_opendal_core_raw;
-  mod_opendal_core_layers -> mod_opendal_java_error;
+  mod_opendal_core_layers -> mod_opendal_core_types;
   mod_opendal_core_memory -> mod_opendal_core_operator;
   mod_opendal_core_memory -> mod_opendal_core_raw;
   mod_opendal_core_memory -> mod_opendal_core_types;
-  mod_opendal_core_memory -> mod_opendal_nodejs_lib;
-  mod_opendal_core_memory -> mod_opendal_python_utils;
-  mod_opendal_core_oio -> mod_opendal_nodejs_lib;
+  mod_opendal_core_oio -> mod_opendal_core_types;
   mod_opendal_core_operator -> mod_opendal_python_operator;
   mod_opendal_core_raw -> mod_opendal_core_execute;
-  mod_opendal_core_raw -> mod_opendal_core_types;
-  mod_opendal_core_raw -> mod_opendal_core_write;
-  mod_opendal_core_raw -> mod_opendal_java_error;
+  mod_opendal_core_raw -> mod_opendal_core_types [dir=both]; // dir best-effort not accurate
+  mod_opendal_core_raw -> mod_opendal_core_write [dir=both]; // dir best-effort not accurate
+  mod_opendal_core_raw -> mod_opendal_java_executor;
   mod_opendal_core_raw -> mod_opendal_nodejs_options;
   mod_opendal_core_raw -> mod_opendal_ocaml_operator;
-  mod_opendal_core_raw -> mod_opendal_php_lib;
-  mod_opendal_core_raw -> mod_opendal_python_options;
-  mod_opendal_core_raw -> mod_opendal_python_utils;
-  mod_opendal_core_raw -> mod_opendal_ruby_capability;
-  mod_opendal_core_raw -> mod_opendal_service_gdrive_core;
+  mod_opendal_core_raw -> mod_opendal_python_capability;
+  mod_opendal_core_raw -> mod_opendal_python_metadata;
+  mod_opendal_core_raw -> mod_opendal_service_gdrive_core [dir=both]; // dir best-effort not accurate
   mod_opendal_core_read -> mod_opendal_core_context;
   mod_opendal_core_read -> mod_opendal_core_raw;
   mod_opendal_core_read -> mod_opendal_python_utils;
-  mod_opendal_core_read -> mod_parquet_opendal_async_reader;
+  mod_opendal_core_read -> mod_parquet_opendal_async_reader [dir=both]; // dir best-effort not accurate
   mod_opendal_core_types -> mod_opendal_core_read;
-  mod_opendal_core_types -> mod_opendal_hs_types;
-  mod_opendal_core_types -> mod_opendal_nodejs_lib;
+  mod_opendal_core_types -> mod_opendal_python_metadata;
   mod_opendal_core_write -> mod_opendal_core_context;
   mod_opendal_core_write -> mod_opendal_core_execute;
   mod_opendal_core_write -> mod_opendal_core_types;
+  mod_opendal_core_write -> mod_opendal_java_executor;
   mod_opendal_core_write -> mod_opendal_python_utils;
   mod_opendal_core_write -> mod_opendal_ruby_metadata;
   mod_opendal_core_write -> mod_parquet_opendal_async_writer;
-  mod_opendal_cpp_lib -> mod_opendal_core_read;
   mod_opendal_cpp_lib -> mod_opendal_cpp_lister;
+  mod_opendal_cpp_lib -> mod_opendal_cpp_reader;
   mod_opendal_cpp_reader -> mod_opendal_core_read;
   mod_opendal_dart_api -> mod_opendal_lua_lib;
   mod_opendal_dotnet_lib -> mod_opendal_lua_lib;
-  mod_opendal_fuzz_fuzz -> mod_opendal_core_blocking;
+  mod_opendal_fuzz_fuzz -> mod_opendal_cpp_async;
+  mod_opendal_fuzz_fuzz -> mod_opendal_nodejs_lib;
   mod_opendal_fuzz_fuzz -> mod_opendal_testkit_read;
   mod_opendal_fuzz_fuzz -> mod_opendal_testkit_write;
   mod_opendal_hs_lib -> mod_opendal_hs_result;
   mod_opendal_hs_lib -> mod_opendal_ocaml_operator;
-  mod_opendal_java_async_operator -> mod_opendal_core_blocking;
-  mod_opendal_java_async_operator -> mod_opendal_core_execute;
-  mod_opendal_java_async_operator -> mod_opendal_core_oio;
   mod_opendal_java_async_operator -> mod_opendal_java_convert;
   mod_opendal_java_async_operator -> mod_opendal_java_executor;
   mod_opendal_java_async_operator -> mod_opendal_java_lib;
+  mod_opendal_java_async_operator -> mod_opendal_nodejs_lib;
+  mod_opendal_java_async_operator -> mod_opendal_python_metadata;
   mod_opendal_java_convert -> mod_opendal_lua_lib;
-  mod_opendal_java_layer -> mod_opendal_core_blocking;
-  mod_opendal_java_layer -> mod_opendal_python_layers;
+  mod_opendal_java_layer -> mod_opendal_cpp_async;
+  mod_opendal_java_layer -> mod_opendal_nodejs_layer;
+  mod_opendal_java_lib -> mod_opendal_core_oio;
   mod_opendal_java_lib -> mod_opendal_core_types;
-  mod_opendal_java_lib -> mod_opendal_ocaml_operator;
-  mod_opendal_java_lib -> mod_opendal_python_operator;
-  mod_opendal_java_lib -> mod_opendal_ruby_lister;
-  mod_opendal_java_lib -> mod_opendal_ruby_metadata;
+  mod_opendal_java_lib -> mod_opendal_nodejs_lib;
+  mod_opendal_java_lib -> mod_opendal_python_capability;
+  mod_opendal_java_lib -> mod_opendal_ruby_operator_info;
   mod_opendal_java_operator -> mod_opendal_java_convert;
   mod_opendal_java_operator -> mod_opendal_java_lib;
   mod_opendal_java_operator_input_stream -> mod_opendal_core_read;
@@ -1592,7 +1575,7 @@ digraph architecture {
   mod_opendal_layer_async_backtrace_lib -> mod_opendal_core_raw;
   mod_opendal_layer_await_tree_lib -> mod_opendal_core_raw;
   mod_opendal_layer_capability_check_lib -> mod_opendal_core_raw;
-  mod_opendal_layer_capability_check_lib -> mod_opendal_java_error;
+  mod_opendal_layer_capability_check_lib -> mod_opendal_core_types;
   mod_opendal_layer_chaos_lib -> mod_opendal_core_raw;
   mod_opendal_layer_concurrent_limit_lib -> mod_opendal_core_http_util;
   mod_opendal_layer_concurrent_limit_lib -> mod_opendal_core_raw;
@@ -1612,7 +1595,7 @@ digraph architecture {
   mod_opendal_layer_oteltrace_lib -> mod_opendal_core_raw;
   mod_opendal_layer_prometheus_client_lib -> mod_opendal_core_raw;
   mod_opendal_layer_prometheus_lib -> mod_opendal_core_raw;
-  mod_opendal_layer_prometheus_lib -> mod_opendal_java_error;
+  mod_opendal_layer_prometheus_lib -> mod_opendal_core_types;
   mod_opendal_layer_retry_lib -> mod_opendal_core_raw;
   mod_opendal_layer_tail_cut_lib -> mod_opendal_core_raw;
   mod_opendal_layer_throttle_lib -> mod_opendal_core_raw;
@@ -1622,32 +1605,30 @@ digraph architecture {
   mod_opendal_layer_tracing_lib -> mod_opendal_core_raw;
   mod_opendal_lua_lib -> mod_opendal_ocaml_operator;
   mod_opendal_nodejs_capability -> mod_opendal_lua_lib;
+  mod_opendal_nodejs_lib -> mod_opendal_core_types;
   mod_opendal_nodejs_lib -> mod_opendal_lua_lib;
-  mod_opendal_nodejs_options -> mod_opendal_python_options;
   mod_opendal_ocaml_operator -> mod_opendal_core_operator;
   mod_opendal_ocaml_operator -> mod_opendal_core_read;
-  mod_opendal_ocaml_operator -> mod_opendal_cpp_lister;
-  mod_opendal_ocaml_operator -> mod_opendal_dart_api;
-  mod_opendal_ocaml_operator -> mod_opendal_nodejs_lib;
+  mod_opendal_ocaml_operator -> mod_opendal_core_types;
+  mod_opendal_ocaml_operator -> mod_opendal_core_write;
   mod_opendal_ocaml_operator -> mod_opendal_ocaml_lib;
+  mod_opendal_ocaml_operator -> mod_opendal_python_capability;
   mod_opendal_ocaml_operator -> mod_opendal_python_metadata;
   mod_opendal_ocaml_operator -> mod_opendal_python_operator;
   mod_opendal_ocaml_operator -> mod_opendal_ruby_capability;
-  mod_opendal_ocaml_operator -> mod_opendal_ruby_lister;
   mod_opendal_python_file -> mod_opendal_core_read;
   mod_opendal_python_file -> mod_opendal_core_write;
   mod_opendal_python_lister -> mod_opendal_cpp_lister;
-  mod_opendal_python_utils -> mod_opendal_c_types;
   mod_opendal_ruby_capability -> mod_opendal_java_error;
   mod_opendal_ruby_io -> mod_opendal_core_read;
   mod_opendal_ruby_io -> mod_opendal_core_types;
   mod_opendal_ruby_io -> mod_opendal_core_write;
   mod_opendal_ruby_lib -> mod_opendal_core_types;
   mod_opendal_ruby_lib -> mod_opendal_ocaml_operator;
-  mod_opendal_ruby_lister -> mod_opendal_java_error;
+  mod_opendal_ruby_lister -> mod_opendal_core_types;
   mod_opendal_ruby_metadata -> mod_opendal_java_error;
-  mod_opendal_ruby_middlewares -> mod_opendal_core_blocking;
   mod_opendal_ruby_middlewares -> mod_opendal_core_types;
+  mod_opendal_ruby_middlewares -> mod_opendal_nodejs_lib;
   mod_opendal_ruby_middlewares -> mod_opendal_ocaml_operator;
   mod_opendal_ruby_operator -> mod_opendal_java_error;
   mod_opendal_ruby_operator_info -> mod_opendal_core_types;
@@ -1680,7 +1661,7 @@ digraph architecture {
   mod_opendal_service_azblob_backend -> mod_opendal_service_azblob_core;
   mod_opendal_service_azblob_core -> mod_opendal_core_raw;
   mod_opendal_service_azblob_deleter -> mod_opendal_service_azblob_core;
-  mod_opendal_service_azblob_error -> mod_opendal_core_types;
+  mod_opendal_service_azblob_error -> mod_opendal_java_error;
   mod_opendal_service_azblob_error -> mod_opendal_service_azure_common_lib;
   mod_opendal_service_azblob_error -> mod_opendal_service_memcached_binary;
   mod_opendal_service_azblob_lister -> mod_opendal_service_azblob_core;
@@ -1704,19 +1685,19 @@ digraph architecture {
   mod_opendal_service_azfile_backend -> mod_opendal_service_azfile_core;
   mod_opendal_service_azfile_core -> mod_opendal_core_raw;
   mod_opendal_service_azfile_deleter -> mod_opendal_service_azfile_core;
-  mod_opendal_service_azfile_error -> mod_opendal_java_error;
+  mod_opendal_service_azfile_error -> mod_opendal_core_types;
   mod_opendal_service_azfile_error -> mod_opendal_service_azure_common_lib;
   mod_opendal_service_azfile_error -> mod_opendal_service_memcached_binary;
   mod_opendal_service_azfile_lister -> mod_opendal_service_azfile_core;
   mod_opendal_service_azfile_writer -> mod_opendal_core_raw;
   mod_opendal_service_azfile_writer -> mod_opendal_service_azfile_core;
-  mod_opendal_service_azure_common_lib -> mod_opendal_java_error;
+  mod_opendal_service_azure_common_lib -> mod_opendal_core_types;
   mod_opendal_service_b2_backend -> mod_opendal_core_raw;
   mod_opendal_service_b2_backend -> mod_opendal_core_types;
   mod_opendal_service_b2_backend -> mod_opendal_service_b2_config;
   mod_opendal_service_b2_backend -> mod_opendal_service_b2_core;
   mod_opendal_service_b2_core -> mod_opendal_core_raw;
-  mod_opendal_service_b2_core -> mod_opendal_python_metadata;
+  mod_opendal_service_b2_core -> mod_opendal_nodejs_lib;
   mod_opendal_service_b2_deleter -> mod_opendal_service_b2_core;
   mod_opendal_service_b2_error -> mod_opendal_core_http_util;
   mod_opendal_service_b2_error -> mod_opendal_java_error;
@@ -1752,8 +1733,8 @@ digraph architecture {
   mod_opendal_service_compfs_lister -> mod_opendal_service_azdls_lister;
   mod_opendal_service_compfs_lister -> mod_opendal_service_compfs_core;
   mod_opendal_service_compfs_reader -> mod_opendal_service_compfs_core;
-  mod_opendal_service_compfs_writer -> mod_opendal_service_b2_core;
   mod_opendal_service_compfs_writer -> mod_opendal_service_compfs_core;
+  mod_opendal_service_compfs_writer -> mod_opendal_service_upyun_core;
   mod_opendal_service_cos_backend -> mod_opendal_core_raw;
   mod_opendal_service_cos_backend -> mod_opendal_core_types;
   mod_opendal_service_cos_backend -> mod_opendal_service_cos_config;
@@ -1796,7 +1777,7 @@ digraph architecture {
   mod_opendal_service_dbfs_core -> mod_opendal_core_http_util;
   mod_opendal_service_dbfs_deleter -> mod_opendal_service_dbfs_core;
   mod_opendal_service_dbfs_error -> mod_opendal_core_http_util;
-  mod_opendal_service_dbfs_error -> mod_opendal_java_error;
+  mod_opendal_service_dbfs_error -> mod_opendal_core_types;
   mod_opendal_service_dbfs_error -> mod_opendal_service_memcached_binary;
   mod_opendal_service_dbfs_lister -> mod_opendal_service_dbfs_core;
   mod_opendal_service_dbfs_writer -> mod_opendal_service_dbfs_core;
@@ -1817,7 +1798,7 @@ digraph architecture {
   mod_opendal_service_etcd_backend -> mod_opendal_service_etcd_config;
   mod_opendal_service_etcd_backend -> mod_opendal_service_etcd_core;
   mod_opendal_service_etcd_deleter -> mod_opendal_service_etcd_core;
-  mod_opendal_service_etcd_error -> mod_opendal_java_error;
+  mod_opendal_service_etcd_error -> mod_opendal_core_types;
   mod_opendal_service_etcd_writer -> mod_opendal_service_etcd_core;
   mod_opendal_service_foundationdb_backend -> mod_opendal_core_raw;
   mod_opendal_service_foundationdb_backend -> mod_opendal_core_types;
@@ -1833,9 +1814,9 @@ digraph architecture {
   mod_opendal_service_fs_core -> mod_opendal_core_raw;
   mod_opendal_service_fs_deleter -> mod_opendal_service_fs_core;
   mod_opendal_service_fs_error -> mod_opendal_core_raw;
-  mod_opendal_service_fs_error -> mod_opendal_java_error;
+  mod_opendal_service_fs_error -> mod_opendal_core_types;
   mod_opendal_service_fs_reader -> mod_opendal_service_fs_core;
-  mod_opendal_service_fs_writer -> mod_opendal_service_b2_core;
+  mod_opendal_service_fs_writer -> mod_opendal_service_upyun_core;
   mod_opendal_service_ftp_backend -> mod_opendal_core_raw;
   mod_opendal_service_ftp_backend -> mod_opendal_core_types;
   mod_opendal_service_ftp_backend -> mod_opendal_service_ftp_config;
@@ -1874,7 +1855,7 @@ digraph architecture {
   mod_opendal_service_ghac_core -> mod_opendal_core_raw;
   mod_opendal_service_ghac_core -> mod_opendal_core_types;
   mod_opendal_service_ghac_error -> mod_opendal_core_http_util;
-  mod_opendal_service_ghac_error -> mod_opendal_core_types;
+  mod_opendal_service_ghac_error -> mod_opendal_java_error;
   mod_opendal_service_ghac_error -> mod_opendal_service_memcached_binary;
   mod_opendal_service_ghac_writer -> mod_opendal_core_raw;
   mod_opendal_service_ghac_writer -> mod_opendal_service_azblob_writer;
@@ -1887,6 +1868,7 @@ digraph architecture {
   mod_opendal_service_github_core -> mod_opendal_core_raw;
   mod_opendal_service_github_deleter -> mod_opendal_service_github_core;
   mod_opendal_service_github_error -> mod_opendal_core_http_util;
+  mod_opendal_service_github_error -> mod_opendal_core_types;
   mod_opendal_service_github_error -> mod_opendal_java_error;
   mod_opendal_service_github_error -> mod_opendal_service_memcached_binary;
   mod_opendal_service_github_lister -> mod_opendal_service_github_core;
@@ -1911,19 +1893,19 @@ digraph architecture {
   mod_opendal_service_hdfs_native_backend -> mod_opendal_service_hdfs_native_core;
   mod_opendal_service_hdfs_native_core -> mod_opendal_core_raw;
   mod_opendal_service_hdfs_native_deleter -> mod_opendal_service_hdfs_native_core;
-  mod_opendal_service_hdfs_native_error -> mod_opendal_java_error;
+  mod_opendal_service_hdfs_native_error -> mod_opendal_core_types;
   mod_opendal_service_http_backend -> mod_opendal_core_raw;
   mod_opendal_service_http_backend -> mod_opendal_core_types;
   mod_opendal_service_http_backend -> mod_opendal_service_http_config;
   mod_opendal_service_http_backend -> mod_opendal_service_http_core;
   mod_opendal_service_http_core -> mod_opendal_core_raw;
   mod_opendal_service_http_error -> mod_opendal_core_http_util;
-  mod_opendal_service_http_error -> mod_opendal_core_types;
+  mod_opendal_service_http_error -> mod_opendal_java_error;
   mod_opendal_service_http_error -> mod_opendal_service_memcached_binary;
   mod_opendal_service_huggingface_backend -> mod_opendal_core_raw;
   mod_opendal_service_huggingface_backend -> mod_opendal_core_types;
   mod_opendal_service_huggingface_backend -> mod_opendal_service_huggingface_config;
-  mod_opendal_service_huggingface_backend -> mod_opendal_service_huggingface_core;
+  mod_opendal_service_huggingface_backend -> mod_opendal_service_huggingface_core [dir=both]; // dir best-effort not accurate
   mod_opendal_service_huggingface_core -> mod_opendal_core_raw;
   mod_opendal_service_huggingface_error -> mod_opendal_core_http_util;
   mod_opendal_service_huggingface_error -> mod_opendal_core_types;
@@ -1953,7 +1935,7 @@ digraph architecture {
   mod_opendal_service_koofr_backend -> mod_opendal_service_koofr_config;
   mod_opendal_service_koofr_backend -> mod_opendal_service_koofr_core;
   mod_opendal_service_koofr_core -> mod_opendal_core_raw;
-  mod_opendal_service_koofr_core -> mod_opendal_python_utils;
+  mod_opendal_service_koofr_core -> mod_opendal_core_types;
   mod_opendal_service_koofr_core -> mod_opendal_service_memcached_binary;
   mod_opendal_service_koofr_deleter -> mod_opendal_service_koofr_core;
   mod_opendal_service_koofr_error -> mod_opendal_core_http_util;
@@ -1969,7 +1951,7 @@ digraph architecture {
   mod_opendal_service_lakefs_core -> mod_opendal_core_raw;
   mod_opendal_service_lakefs_deleter -> mod_opendal_service_lakefs_core;
   mod_opendal_service_lakefs_error -> mod_opendal_core_http_util;
-  mod_opendal_service_lakefs_error -> mod_opendal_java_error;
+  mod_opendal_service_lakefs_error -> mod_opendal_core_types;
   mod_opendal_service_lakefs_error -> mod_opendal_service_memcached_binary;
   mod_opendal_service_lakefs_lister -> mod_opendal_service_lakefs_core;
   mod_opendal_service_lakefs_writer -> mod_opendal_core_raw;
@@ -1986,7 +1968,7 @@ digraph architecture {
   mod_opendal_service_mini_moka_backend -> mod_opendal_service_mini_moka_config;
   mod_opendal_service_mini_moka_backend -> mod_opendal_service_mini_moka_core;
   mod_opendal_service_mini_moka_config -> mod_opendal_core_types;
-  mod_opendal_service_mini_moka_core -> mod_opendal_ocaml_operator;
+  mod_opendal_service_mini_moka_core -> mod_opendal_nodejs_lib;
   mod_opendal_service_mini_moka_core -> mod_opendal_python_utils;
   mod_opendal_service_mini_moka_deleter -> mod_opendal_service_mini_moka_core;
   mod_opendal_service_mini_moka_writer -> mod_opendal_core_raw;
@@ -2053,7 +2035,7 @@ digraph architecture {
   mod_opendal_service_opfs_backend -> mod_opendal_core_raw;
   mod_opendal_service_opfs_backend -> mod_opendal_core_types;
   mod_opendal_service_opfs_backend -> mod_opendal_service_opfs_config;
-  mod_opendal_service_opfs_error -> mod_opendal_java_error;
+  mod_opendal_service_opfs_error -> mod_opendal_core_types;
   mod_opendal_service_oss_backend -> mod_opendal_core_raw;
   mod_opendal_service_oss_backend -> mod_opendal_core_types;
   mod_opendal_service_oss_backend -> mod_opendal_service_oss_config;
@@ -2073,7 +2055,7 @@ digraph architecture {
   mod_opendal_service_pcloud_backend -> mod_opendal_service_pcloud_core;
   mod_opendal_service_pcloud_config -> mod_opendal_core_types;
   mod_opendal_service_pcloud_core -> mod_opendal_core_raw;
-  mod_opendal_service_pcloud_core -> mod_opendal_service_ipfs_ipld;
+  mod_opendal_service_pcloud_core -> mod_opendal_hs_types;
   mod_opendal_service_pcloud_deleter -> mod_opendal_service_pcloud_core;
   mod_opendal_service_pcloud_error -> mod_opendal_core_http_util;
   mod_opendal_service_pcloud_error -> mod_opendal_core_types;
@@ -2091,7 +2073,7 @@ digraph architecture {
   mod_opendal_service_postgresql_backend -> mod_opendal_core_types;
   mod_opendal_service_postgresql_backend -> mod_opendal_service_postgresql_config;
   mod_opendal_service_postgresql_backend -> mod_opendal_service_postgresql_core;
-  mod_opendal_service_postgresql_core -> mod_opendal_java_error;
+  mod_opendal_service_postgresql_core -> mod_opendal_core_types;
   mod_opendal_service_postgresql_deleter -> mod_opendal_service_postgresql_core;
   mod_opendal_service_postgresql_writer -> mod_opendal_service_postgresql_core;
   mod_opendal_service_redb_backend -> mod_opendal_core_raw;
@@ -2106,7 +2088,7 @@ digraph architecture {
   mod_opendal_service_redis_backend -> mod_opendal_service_redis_config;
   mod_opendal_service_redis_backend -> mod_opendal_service_redis_core;
   mod_opendal_service_redis_config -> mod_opendal_core_types;
-  mod_opendal_service_redis_core -> mod_opendal_java_error;
+  mod_opendal_service_redis_core -> mod_opendal_core_types;
   mod_opendal_service_redis_delete -> mod_opendal_service_redis_core;
   mod_opendal_service_redis_writer -> mod_opendal_service_redis_core;
   mod_opendal_service_rocksdb_backend -> mod_opendal_core_raw;
@@ -2127,7 +2109,7 @@ digraph architecture {
   mod_opendal_service_s3_deleter -> mod_opendal_service_s3_core;
   mod_opendal_service_s3_deleter -> mod_opendal_service_s3_error;
   mod_opendal_service_s3_error -> mod_opendal_core_http_util;
-  mod_opendal_service_s3_error -> mod_opendal_java_error;
+  mod_opendal_service_s3_error -> mod_opendal_core_types;
   mod_opendal_service_s3_error -> mod_opendal_service_memcached_binary;
   mod_opendal_service_s3_lister -> mod_opendal_core_raw;
   mod_opendal_service_s3_lister -> mod_opendal_service_s3_core;
@@ -2138,7 +2120,7 @@ digraph architecture {
   mod_opendal_service_seafile_backend -> mod_opendal_service_seafile_config;
   mod_opendal_service_seafile_backend -> mod_opendal_service_seafile_core;
   mod_opendal_service_seafile_core -> mod_opendal_core_raw;
-  mod_opendal_service_seafile_core -> mod_opendal_ruby_metadata;
+  mod_opendal_service_seafile_core -> mod_opendal_core_types;
   mod_opendal_service_seafile_deleter -> mod_opendal_service_seafile_core;
   mod_opendal_service_seafile_error -> mod_opendal_core_http_util;
   mod_opendal_service_seafile_error -> mod_opendal_core_types;
@@ -2153,11 +2135,11 @@ digraph architecture {
   mod_opendal_service_sftp_core -> mod_opendal_core_raw;
   mod_opendal_service_sftp_deleter -> mod_opendal_service_sftp_core;
   mod_opendal_service_sftp_error -> mod_opendal_core_types;
-  mod_opendal_service_sftp_lister -> mod_opendal_nodejs_lib;
-  mod_opendal_service_sftp_reader -> mod_opendal_service_azfile_lister;
+  mod_opendal_service_sftp_lister -> mod_opendal_core_oio;
   mod_opendal_service_sftp_reader -> mod_opendal_service_ftp_core;
+  mod_opendal_service_sftp_reader -> mod_opendal_service_upyun_core;
   mod_opendal_service_sftp_utils -> mod_opendal_core_raw;
-  mod_opendal_service_sftp_utils -> mod_opendal_ocaml_operator;
+  mod_opendal_service_sftp_utils -> mod_opendal_nodejs_lib;
   mod_opendal_service_sled_backend -> mod_opendal_core_raw;
   mod_opendal_service_sled_backend -> mod_opendal_core_types;
   mod_opendal_service_sled_backend -> mod_opendal_service_sled_config;
@@ -2176,7 +2158,7 @@ digraph architecture {
   mod_opendal_service_surrealdb_backend -> mod_opendal_core_types;
   mod_opendal_service_surrealdb_backend -> mod_opendal_service_surrealdb_config;
   mod_opendal_service_surrealdb_backend -> mod_opendal_service_surrealdb_core;
-  mod_opendal_service_surrealdb_core -> mod_opendal_core_types;
+  mod_opendal_service_surrealdb_core -> mod_opendal_java_error;
   mod_opendal_service_surrealdb_deleter -> mod_opendal_service_surrealdb_core;
   mod_opendal_service_surrealdb_writer -> mod_opendal_service_surrealdb_core;
   mod_opendal_service_swift_backend -> mod_opendal_core_raw;
@@ -2205,8 +2187,7 @@ digraph architecture {
   mod_opendal_service_upyun_config -> mod_opendal_core_types;
   mod_opendal_service_upyun_core -> mod_opendal_core_http_util;
   mod_opendal_service_upyun_core -> mod_opendal_core_raw;
-  mod_opendal_service_upyun_core -> mod_opendal_python_utils;
-  mod_opendal_service_upyun_core -> mod_opendal_service_ipfs_ipld;
+  mod_opendal_service_upyun_core -> mod_opendal_core_types;
   mod_opendal_service_upyun_core -> mod_opendal_service_memcached_binary;
   mod_opendal_service_upyun_deleter -> mod_opendal_service_upyun_core;
   mod_opendal_service_upyun_error -> mod_opendal_core_http_util;
@@ -2230,7 +2211,7 @@ digraph architecture {
   mod_opendal_service_vercel_blob_backend -> mod_opendal_service_vercel_blob_config;
   mod_opendal_service_vercel_blob_backend -> mod_opendal_service_vercel_blob_core;
   mod_opendal_service_vercel_blob_core -> mod_opendal_core_raw;
-  mod_opendal_service_vercel_blob_core -> mod_opendal_ruby_metadata;
+  mod_opendal_service_vercel_blob_core -> mod_opendal_core_types;
   mod_opendal_service_vercel_blob_deleter -> mod_opendal_service_vercel_blob_core;
   mod_opendal_service_vercel_blob_error -> mod_opendal_core_http_util;
   mod_opendal_service_vercel_blob_error -> mod_opendal_java_error;
@@ -2247,7 +2228,7 @@ digraph architecture {
   mod_opendal_service_webdav_core -> mod_opendal_ocaml_operator;
   mod_opendal_service_webdav_deleter -> mod_opendal_service_webdav_core;
   mod_opendal_service_webdav_error -> mod_opendal_core_http_util;
-  mod_opendal_service_webdav_error -> mod_opendal_core_types;
+  mod_opendal_service_webdav_error -> mod_opendal_java_error;
   mod_opendal_service_webdav_error -> mod_opendal_service_memcached_binary;
   mod_opendal_service_webdav_lister -> mod_opendal_core_raw;
   mod_opendal_service_webdav_lister -> mod_opendal_service_webdav_core;
@@ -2270,17 +2251,17 @@ digraph architecture {
   mod_opendal_service_yandex_disk_backend -> mod_opendal_service_yandex_disk_config;
   mod_opendal_service_yandex_disk_backend -> mod_opendal_service_yandex_disk_core;
   mod_opendal_service_yandex_disk_core -> mod_opendal_core_raw;
-  mod_opendal_service_yandex_disk_core -> mod_opendal_ruby_metadata;
+  mod_opendal_service_yandex_disk_core -> mod_opendal_core_types;
   mod_opendal_service_yandex_disk_deleter -> mod_opendal_service_yandex_disk_core;
   mod_opendal_service_yandex_disk_error -> mod_opendal_core_http_util;
   mod_opendal_service_yandex_disk_error -> mod_opendal_java_error;
   mod_opendal_service_yandex_disk_error -> mod_opendal_service_memcached_binary;
   mod_opendal_service_yandex_disk_lister -> mod_opendal_service_yandex_disk_core;
   mod_opendal_service_yandex_disk_writer -> mod_opendal_service_yandex_disk_core;
-  mod_opendal_testkit_utils -> mod_opendal_ocaml_operator;
+  mod_opendal_testkit_utils -> mod_opendal_nodejs_lib;
   mod_parquet_opendal_async_writer -> mod_opendal_ocaml_operator;
-  mod_unftp_sbe_opendal_lib -> mod_opendal_cpp_lib;
-  mod_unftp_sbe_opendal_lib -> mod_opendal_java_error;
+  mod_unftp_sbe_opendal_lib -> mod_opendal_core_operator;
+  mod_unftp_sbe_opendal_lib -> mod_opendal_core_types;
   mod_unftp_sbe_opendal_lib -> mod_opendal_lua_lib;
   mod_unftp_sbe_opendal_lib -> mod_opendal_service_azdls_lister;
 }

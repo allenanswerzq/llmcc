@@ -80,7 +80,7 @@ fn render_node(block_id: BlockId, unit: CompileUnit<'_>, depth: usize, buf: &mut
         .and_then(|base| base.opt_get_name())
         .filter(|name| !name.is_empty())
     {
-        let _ = write!(buf, " {}", name);
+        let _ = write!(buf, " {name}");
     }
 
     let children = block.children();

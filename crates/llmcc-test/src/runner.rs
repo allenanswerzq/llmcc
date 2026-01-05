@@ -632,7 +632,7 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
             let symbols = summary
                 .symbols
                 .as_ref()
-                .ok_or_else(|| anyhow!("case {} requested symbols but summary missing", case_id))?;
+                .ok_or_else(|| anyhow!("case {case_id} requested symbols but summary missing"))?;
             Ok(render_symbol_snapshot(symbols))
         }
         "symbol-types" => {
@@ -645,48 +645,27 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
         }
         "block-relations" => {
             let relations = summary.block_relations.as_ref().ok_or_else(|| {
-                anyhow!(
-                    "case {} requested block-relations but summary missing",
-                    case_id
-                )
+                anyhow!("case {case_id} requested block-relations but summary missing")
             })?;
             Ok(render_block_relations_snapshot(relations))
         }
         "dep-graph" => summary.dep_graph_dot.clone().ok_or_else(|| {
-            anyhow!(
-                "case {} requested dep-graph output but summary missing",
-                case_id
-            )
+            anyhow!("case {case_id} requested dep-graph output but summary missing")
         }),
         "arch-graph" => summary.arch_graph_dot.clone().ok_or_else(|| {
-            anyhow!(
-                "case {} requested arch-graph output but summary missing",
-                case_id
-            )
+            anyhow!("case {case_id} requested arch-graph output but summary missing")
         }),
         "arch-graph-depth-0" => summary.arch_graph_depth_0.clone().ok_or_else(|| {
-            anyhow!(
-                "case {} requested arch-graph-depth-0 output but summary missing",
-                case_id
-            )
+            anyhow!("case {case_id} requested arch-graph-depth-0 output but summary missing")
         }),
         "arch-graph-depth-1" => summary.arch_graph_depth_1.clone().ok_or_else(|| {
-            anyhow!(
-                "case {} requested arch-graph-depth-1 output but summary missing",
-                case_id
-            )
+            anyhow!("case {case_id} requested arch-graph-depth-1 output but summary missing")
         }),
         "arch-graph-depth-2" => summary.arch_graph_depth_2.clone().ok_or_else(|| {
-            anyhow!(
-                "case {} requested arch-graph-depth-2 output but summary missing",
-                case_id
-            )
+            anyhow!("case {case_id} requested arch-graph-depth-2 output but summary missing")
         }),
         "arch-graph-depth-3" => summary.arch_graph_depth_3.clone().ok_or_else(|| {
-            anyhow!(
-                "case {} requested arch-graph-depth-3 output but summary missing",
-                case_id
-            )
+            anyhow!("case {case_id} requested arch-graph-depth-3 output but summary missing")
         }),
         "blocks" => {
             // summary
@@ -706,27 +685,19 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
             .as_ref()
             .map(|deps| render_symbol_dependencies(deps))
             .ok_or_else(|| {
-                anyhow!(
-                    "case {} requested block-deps output but summary missing",
-                    case_id
-                )
+                anyhow!("case {case_id} requested block-deps output but summary missing")
             }),
         "block-graph" => summary.block_graph.clone().ok_or_else(|| {
-            anyhow!(
-                "case {} requested block-graph output but summary missing",
-                case_id
-            )
+            anyhow!("case {case_id} requested block-graph output but summary missing")
         }),
         "symbol-deps" => {
             let deps = summary.symbol_deps.as_ref().ok_or_else(|| {
-                anyhow!("case {} requested symbol-deps but summary missing", case_id)
+                anyhow!("case {case_id} requested symbol-deps but summary missing")
             })?;
             Ok(render_symbol_dependencies(deps))
         }
         other => Err(anyhow!(
-            "case {} uses unsupported expectation '{}'",
-            case_id,
-            other
+            "case {case_id} uses unsupported expectation '{other}'"
         )),
     }
 }
@@ -806,12 +777,12 @@ fn render_symbol_types_snapshot(entries: &[SymbolSnapshot]) -> String {
     for row in rows {
         let label = format!("u{}:{}", row.unit, row.id);
         let type_info = if let Some(type_of) = &row.type_of {
-            format!("-> {}", type_of)
+            format!("-> {type_of}")
         } else {
             String::new()
         };
         let block_info = if let Some(block_id) = &row.block_id {
-            format!("[{}]", block_id)
+            format!("[{block_id}]")
         } else {
             String::new()
         };
@@ -863,7 +834,7 @@ fn render_block_relations_snapshot(entries: &[BlockRelationSnapshot]) -> String 
                     .map(|e| (e.name.as_str(), e.kind.as_str()))
                     .unwrap_or(("?", "?"));
                 let target_id = target_label.replace("u0:", "");
-                let target = format!("{}:{} ({})", target_name, target_id, target_kind);
+                let target = format!("{target_name}:{target_id} ({target_kind})");
 
                 edges.push((source.clone(), rel_type.clone(), target));
             }
@@ -885,12 +856,7 @@ fn render_block_relations_snapshot(entries: &[BlockRelationSnapshot]) -> String 
     for (source, rel, target) in &edges {
         let _ = writeln!(
             buf,
-            "{:<source_width$}  --{:^rel_width$}-->  {}",
-            source,
-            rel,
-            target,
-            source_width = source_width,
-            rel_width = rel_width,
+            "{source:<source_width$}  --{rel:^rel_width$}-->  {target}",
         );
     }
     buf
@@ -988,7 +954,7 @@ fn format_expectation_diff(kind: &str, expected: &str, actual: &str) -> String {
             similar::ChangeTag::Insert => "+",
             similar::ChangeTag::Equal => " ",
         };
-        let _ = write!(buf, "{sign}{}", change);
+        let _ = write!(buf, "{sign}{change}");
     }
     buf
 }
@@ -1309,11 +1275,11 @@ fn format_sexpr_indented(expr: &SExpr, depth: usize) -> String {
             let children: Vec<&SExpr> = items.iter().skip(head_parts.len()).collect();
 
             if children.is_empty() {
-                format!("({})", head)
+                format!("({head})")
             } else {
                 let indent = "  ".repeat(depth);
                 let child_indent = "  ".repeat(depth + 1);
-                let mut buf = format!("({}\n", head);
+                let mut buf = format!("({head}\n");
                 for child in children {
                     buf.push_str(&child_indent);
                     buf.push_str(&format_sexpr_indented(child, depth + 1));
@@ -1359,7 +1325,7 @@ fn materialize_case(case: &CorpusCase, keep_temps: bool) -> Result<MaterializedP
             original_path.to_path_buf()
         } else {
             // Add numeric prefix to filename to preserve declaration order after WalkDir + sort
-            let prefixed_filename = format!("{:03}_{}", idx, file_name_str);
+            let prefixed_filename = format!("{idx:03}_{file_name_str}");
             original_path
                 .parent()
                 .map(|p| p.join(&prefixed_filename))
@@ -1672,7 +1638,7 @@ fn render_block_graph_node(
     let suffix = block.format_suffix();
     let deps = block.format_deps(unit);
 
-    let _ = write!(buf, "{}({}", indent, label);
+    let _ = write!(buf, "{indent}({label}");
 
     let children = block.children();
     if children.is_empty() && deps.is_empty() {
@@ -1697,7 +1663,7 @@ fn render_block_graph_node(
     // Render deps as pseudo-children (after real children)
     let child_indent = "  ".repeat(depth + 1);
     for dep in deps {
-        let _ = writeln!(buf, "{}({})", child_indent, dep);
+        let _ = writeln!(buf, "{child_indent}({dep})");
     }
     buf.push_str(&indent);
     buf.push_str(")\n");

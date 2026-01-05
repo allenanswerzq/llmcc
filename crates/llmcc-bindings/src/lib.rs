@@ -42,8 +42,7 @@ fn run_llmcc(
         "file" => ComponentDepth::File,
         other => {
             return Err(PyValueError::new_err(format!(
-                "Unknown component_depth: {}. Use 'crate', 'module', or 'file'",
-                other
+                "Unknown component_depth: {other}. Use 'crate', 'module', or 'file'"
             )));
         }
     };
@@ -66,8 +65,7 @@ fn run_llmcc(
         // "python" => run_main::<LangPython>(&opts),  // TODO: will be added back in the future
         other => {
             return Err(PyValueError::new_err(format!(
-                "Unknown language: {}. Use 'rust'",
-                other
+                "Unknown language: {other}. Use 'rust'"
             )));
         }
     };

@@ -87,7 +87,7 @@ pub fn render_dot(
             if from_id < to_id {
                 let _ = writeln!(
                     output,
-                    "  n{} -> n{} [from=\"{}\", to=\"{}\", dir=both];",
+                    "  n{} -> n{} [from=\"{}\", to=\"{}\", dir=both]; // best effort, direction not guaranteed",
                     from_id.as_u32(),
                     to_id.as_u32(),
                     edge.from_label,
@@ -145,7 +145,7 @@ fn render_tree_recursive(
         let cluster_id = sanitize_id(component_name);
 
         write_indent(output, indent_level);
-        let _ = writeln!(output, "subgraph cluster_{} {{", cluster_id);
+        let _ = writeln!(output, "subgraph cluster_{cluster_id} {{");
 
         write_indent(output, indent_level + 1);
         let _ = writeln!(output, "label=\"{}\";", escape_label(component_name));
@@ -214,10 +214,10 @@ fn render_node(output: &mut String, node: &RenderNode, indent_level: usize) {
     }
 
     if let Some(sym_kind) = &node.sym_kind {
-        let _ = write!(output, ", sym_ty=\"{:?}\"", sym_kind);
+        let _ = write!(output, ", sym_ty=\"{sym_kind:?}\"");
         let shape = shape_for_kind(Some(*sym_kind));
         if shape != "ellipse" {
-            let _ = write!(output, ", shape={}", shape);
+            let _ = write!(output, ", shape={shape}");
         }
     }
 

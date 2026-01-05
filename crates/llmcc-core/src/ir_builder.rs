@@ -102,7 +102,12 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
 
     /// Recursively build a single HIR node and all descendants, allocating directly into arena.
     /// `field_id` is passed from the parent's child collection (avoids O(n) lookup per node).
-    fn build_node(&self, node: &dyn ParseNode, parent: Option<HirId>, field_id: u16) -> HirNode<'unit> {
+    fn build_node(
+        &self,
+        node: &dyn ParseNode,
+        parent: Option<HirId>,
+        field_id: u16,
+    ) -> HirNode<'unit> {
         let id = next_hir_id();
         let kind_id = node.kind_id();
         let kind = Language::hir_kind(kind_id);
@@ -284,7 +289,7 @@ pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
 
         let parse_tree = cc
             .get_parse_tree(index)
-            .ok_or_else(|| format!("No parse tree for unit {}", index))?;
+            .ok_or_else(|| format!("No parse tree for unit {index}"))?;
 
         let file_root_id =
             build_llmcc_ir_inner::<L>(file_path, file_bytes, parse_tree, &cc.arena, config)?;
