@@ -22,19 +22,19 @@ This repo includes a ready-made example under [sample](sample). Download and ope
 ### Depth 1: crate graph
 
 <p align="center">
-	<img src="sample/codex-pagerank/depth_1_crate.svg" alt="Codex crate graph (depth 1)" style="max-width: 70%; height: auto;" />
+	<img src="sample/rust/codex-pagerank/depth_1_crate.svg" alt="Codex crate graph (depth 1)" style="max-width: 70%; height: auto;" />
 </p>
 
 ### Depth 2: module graph
 
 <p align="center">
-	<img src="sample/codex-pagerank/depth_2_module.svg" alt="Codex module graph (depth 2)" style="max-width: 70%; height: auto;" />
+	<img src="sample/rust/codex-pagerank/depth_2_module.svg" alt="Codex module graph (depth 2)" style="max-width: 70%; height: auto;" />
 </p>
 
 ### Depth 3: file + symbol graph
 
 <p align="center">
-	<img src="sample/codex-pagerank/depth_3_file.svg" alt="Codex file and symbol graph (depth 3)" style="max-width: 100%; height: auto;" />
+	<img src="sample/rust/codex-pagerank/depth_3_file.svg" alt="Codex file and symbol graph (depth 3)" style="max-width: 100%; height: auto;" />
 </p>
 
 If you open those .dot/.svg files, you’ll see the same system from different “altitudes”, which is exactly what you want when:
@@ -47,7 +47,7 @@ If you open those .dot/.svg files, you’ll see the same system from different �
 
 llmcc is designed to be very fast, and we will try to make it faster.
 
-The repo contains benchmark for many famous project output here: [sample/benchmark_results_16.md](sample/benchmark_results_16.md).
+The repo contains benchmark for many famous project output here: [sample/benchmark_results_16.md](sample/benchmark_results_8_linux.md).
 
 Excerpt (PageRank timing, depth=3, top-200):
 

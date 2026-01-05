@@ -122,6 +122,7 @@ pub fn run(args: Cli) -> Result<()> {
             // No output requested (e.g., print-ir or print-block mode)
         }
         Err(e) => {
+            eprintln!("Error: {}", e);
             tracing::error!("Error: {}", e);
         }
     }
