@@ -1,0 +1,130 @@
+===============================================================================
+shared-types-package
+===============================================================================
+Shared types package used by multiple other packages.
+lang: typescript
+
+--- file: shared/types.ts ---
+
+export interface Entity {
+    id: number;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface Result<T> {
+    success: boolean;
+    data: T | null;
+    error: string | null;
+}
+
+--- file: users/user.ts ---
+
+import { Entity, Result } from "../shared/types";
+
+export interface User extends Entity {
+    email: string;
+    name: string;
+}
+
+export function findUser(id: number): Result<User> {
+    return { success: true, data: null, error: null };
+}
+
+--- file: orders/order.ts ---
+
+import { Entity, Result } from "../shared/types";
+
+export interface Order extends Entity {
+    userId: number;
+    total: number;
+}
+
+export function findOrder(id: number): Result<Order> {
+    return { success: true, data: null, error: null };
+}
+
+--- expect:block-graph ---
+(root:1 types ($TMP/shared/types.ts)
+  (interface:2 Entity
+    (field:3 id @type number)
+    (field:4 createdAt @type Date)
+    (field:5 updatedAt @type Date)
+  )
+  (interface:6 Result
+    (field:7 success @type boolean)
+    (field:8 data @type T)
+    (field:9 error @type string)
+  )
+)
+
+(root:10 user ($TMP/users/user.ts)
+  (interface:11 User @extends:2 Entity
+    (field:12 email @type string)
+    (field:13 name @type string)
+  )
+  (func:14 findUser
+    (parameter:15 id @type number)
+    (return:16 @type:6 Result)
+  )
+)
+
+(root:17 order ($TMP/orders/order.ts)
+  (interface:18 Order @extends:2 Entity
+    (field:19 userId @type number)
+    (field:20 total @type number)
+  )
+  (func:21 findOrder
+    (parameter:22 id @type number)
+    (return:23 @type:6 Result)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_order_ts {
+    label="order.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n18[label="Order", full_path="$TMP/orders/order.ts:4", sym_ty="Interface"];
+    n21[label="findOrder", full_path="$TMP/orders/order.ts:9", sym_ty="Function"];
+  }
+
+  subgraph cluster_types_ts {
+    label="types.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n2[label="Entity", full_path="$TMP/shared/types.ts:2", sym_ty="Interface"];
+    n6[label="Result", full_path="$TMP/shared/types.ts:8", sym_ty="Interface"];
+  }
+
+  subgraph cluster_user_ts {
+    label="user.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n11[label="User", full_path="$TMP/users/user.ts:4", sym_ty="Interface"];
+    n14[label="findUser", full_path="$TMP/users/user.ts:9", sym_ty="Function"];
+  }
+
+
+  n2 -> n11 [from="base", to="extends"];
+  n2 -> n18 [from="base", to="extends"];
+  n14 -> n6 [from="func", to="output"];
+  n21 -> n6 [from="func", to="output"];
+}

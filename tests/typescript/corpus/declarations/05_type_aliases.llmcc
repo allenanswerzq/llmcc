@@ -1,0 +1,30 @@
+===============================================================================
+type-aliases
+===============================================================================
+Basic type alias declarations.
+Type aliases for object types show field structure.
+Type aliases for function types show parameter structure.
+lang: typescript
+
+--- file: src/lib.ts ---
+type ID = string;
+
+type Point = {
+    x: number;
+    y: number;
+};
+
+type Callback = (value: string) => void;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (alias:2 ID)
+  (alias:3 Point
+    (field:4 x @type number)
+    (field:5 y @type number)
+  )
+  (alias:6 Callback
+    (parameter:7 value @type string)
+    (return:8 @type void)
+  )
+)

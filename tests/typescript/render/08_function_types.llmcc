@@ -1,0 +1,47 @@
+===============================================================================
+function-params-return
+===============================================================================
+Test that function parameter and return types create edges.
+lang: typescript
+
+--- file: sample/src/lib.ts ---
+
+class Input {
+    data: string;
+}
+
+class Output {
+    result: number;
+}
+
+function transform(input: Input): Output {
+    return new Output();
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_ts {
+    label="lib.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n6[label="transform", full_path="$TMP/sample/src/lib.ts:10", sym_ty="Function"];
+    n2[label="Input", full_path="$TMP/sample/src/lib.ts:2", sym_ty="Struct", shape=box];
+    n4[label="Output", full_path="$TMP/sample/src/lib.ts:6", sym_ty="Struct", shape=box];
+  }
+
+
+  n2 -> n6 [from="input", to="func"];
+  n6 -> n4 [from="func", to="output"];
+}

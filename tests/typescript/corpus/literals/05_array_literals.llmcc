@@ -1,0 +1,21 @@
+===============================================================================
+array-literals
+===============================================================================
+Array literal expressions.
+lang: typescript
+
+--- file: src/lib.ts ---
+function getEmpty(): number[] { return []; }
+function getNumbers() { return [1, 2, 3]; }
+function getStrings() { return ["a", "b", "c"]; }
+function getNested() { return [[1, 2], [3, 4]]; }
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 getEmpty
+    (return:3 @type number)
+  )
+  (func:4 getNumbers)
+  (func:5 getStrings)
+  (func:6 getNested)
+)

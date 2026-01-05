@@ -71,52 +71,63 @@ pub fn create_client(url: String) -> HttpClient {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs))
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 core)
+  (module:3 api)
+)
 
-(root:2 mod ($TMP/sample/src/core/mod.rs))
+(root:4 mod ($TMP/sample/src/core/mod.rs)
+  (module:5 types)
+  (module:6 error)
+)
 
-(root:3 types ($TMP/sample/src/core/types.rs)
-  (alias:4 Result)
-  (class:5 Request
-    (field:6 url @type String)
-    (field:7 method @type String)
+(root:7 types ($TMP/sample/src/core/types.rs)
+  (alias:8 Result)
+  (class:9 Request
+    (field:10 url @type String)
+    (field:11 method @type String)
   )
-  (class:8 Response
-    (field:9 status @type u16)
-    (field:10 body @type String)
+  (class:12 Response
+    (field:13 status @type u16)
+    (field:14 body @type String)
   )
 )
 
-(root:11 error ($TMP/sample/src/core/error.rs)
-  (class:12 Error
-    (field:13 code @type i32)
-    (field:14 message @type String)
+(root:15 error ($TMP/sample/src/core/error.rs)
+  (class:16 Error
+    (field:17 code @type i32)
+    (field:18 message @type String)
   )
 )
 
-(root:15 mod ($TMP/sample/src/api/mod.rs))
+(root:19 mod ($TMP/sample/src/api/mod.rs)
+  (module:20 client)
+)
 
-(root:16 client ($TMP/sample/src/api/client.rs)
-  (trait:17 Transport
-    (method:18 send
-      (parameter:19 self @type:17 Transport)
-      (parameter:20 req @type:5 Request)
-      (return:21 @type:8 Response)
+(root:21 client ($TMP/sample/src/api/client.rs)
+  (trait:22 Transport
+    (method:23 send
+      (parameter:24 self @type:22 Transport)
+      (parameter:25 req @type:9 Request)
+      (return:26 @type:12 Response)
+      (@tdep:12 Response)
     )
   )
-  (class:22 HttpClient
-    (field:23 base_url @type String)
+  (class:27 HttpClient
+    (field:28 base_url @type String)
   )
-  (impl:24 HttpClient @type:22 @trait:17
-    (method:25 send
-      (parameter:26 self @type:22 HttpClient)
-      (parameter:27 req @type:5 Request)
-      (return:28 @type:8 Response)
+  (impl:29 HttpClient @type:27 @trait:22
+    (method:30 send
+      (parameter:31 self @type:27 HttpClient)
+      (parameter:32 req @type:9 Request)
+      (return:33 @type:12 Response)
+      (@tdep:12 Response)
     )
   )
-  (func:30 create_client
-    (parameter:31 url @type String)
-    (return:32 @type:22 HttpClient)
+  (func:35 create_client
+    (parameter:36 url @type String)
+    (return:37 @type:27 HttpClient)
+    (@tdep:27 HttpClient)
   )
 )
 
@@ -131,9 +142,6 @@ digraph architecture {
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
-
-  label="architecture graph";
-  labelloc=t;
 
   subgraph cluster_sample {
     label="sample";
@@ -153,9 +161,9 @@ digraph architecture {
         color="#aaaaaa";
         bgcolor="#fafafa";
 
-        n30[label="create_client", full_path="$TMP/sample/src/api/client.rs:23", sym_ty="Function"];
-        n17[label="Transport", full_path="$TMP/sample/src/api/client.rs:4", sym_ty="Trait", shape=box];
-        n22[label="HttpClient", full_path="$TMP/sample/src/api/client.rs:8", sym_ty="Struct", shape=box];
+        n35[label="create_client", full_path="$TMP/sample/src/api/client.rs:23", sym_ty="Function"];
+        n22[label="Transport", full_path="$TMP/sample/src/api/client.rs:4", sym_ty="Trait", shape=box];
+        n27[label="HttpClient", full_path="$TMP/sample/src/api/client.rs:8", sym_ty="Struct", shape=box];
       }
 
     }
@@ -163,6 +171,6 @@ digraph architecture {
   }
 
 
-  n17 -> n22 [from="trait", to="impl"];
-  n30 -> n22 [from="func", to="output"];
+  n22 -> n27 [from="trait", to="impl"];
+  n35 -> n27 [from="func", to="output"];
 }

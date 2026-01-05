@@ -1,0 +1,26 @@
+===============================================================================
+async-await
+===============================================================================
+Async/await syntax.
+lang: typescript
+
+--- file: src/lib.ts ---
+async function fetchData(): Promise<string> {
+    return "data";
+}
+
+async function process(): Promise<void> {
+    const result = await fetchData();
+    console.log(result);
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 fetchData
+    (return:3 @type string)
+  )
+  (func:4 process
+    (return:5 @type void)
+    (@fdep:2 fetchData)
+  )
+)

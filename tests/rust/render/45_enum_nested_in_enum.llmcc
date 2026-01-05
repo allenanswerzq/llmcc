@@ -44,40 +44,43 @@ pub enum Notification {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs))
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 types)
+  (module:3 messages)
+)
 
-(root:2 types ($TMP/sample/src/types.rs)
-  (enum:3 Priority
-    (field:4 Low @type:3 Low)
-    (field:5 Medium @type:3 Medium)
-    (field:6 High @type:3 High)
+(root:4 types ($TMP/sample/src/types.rs)
+  (enum:5 Priority
+    (field:6 Low)
+    (field:7 Medium)
+    (field:8 High)
   )
-  (enum:7 Status
-    (field:8 Pending @type:7 Pending)
-    (field:9 Active @type:7 Active)
-    (field:10 Done @type:7 Done)
+  (enum:9 Status
+    (field:10 Pending)
+    (field:11 Active)
+    (field:12 Done)
   )
 )
 
-(root:11 messages ($TMP/sample/src/messages.rs)
-  (enum:12 Message
-    (field:13 Simple @type:12 Simple
-      (field:14 0 @type String)
+(root:13 messages ($TMP/sample/src/messages.rs)
+  (enum:14 Message
+    (field:15 Simple
+      (field:16 0 @type String)
     )
-    (field:15 StatusUpdate @type:12 StatusUpdate
-      (field:16 status @type:7 Status)
-      (field:17 priority @type:3 Priority)
+    (field:17 StatusUpdate
+      (field:18 status @type:9 Status)
+      (field:19 priority @type:5 Priority)
     )
-    (field:18 PriorityChange @type:12 PriorityChange
-      (field:19 0 @type:3 Priority)
+    (field:20 PriorityChange
+      (field:21 0 @type:5 Priority)
     )
   )
-  (enum:20 Notification
-    (field:21 Message @type:20 Message
-      (field:22 0 @type:12 Message)
+  (enum:22 Notification
+    (field:23 Message
+      (field:24 0 @type:14 Message)
     )
-    (field:23 Alert @type:20 Alert
-      (field:24 priority @type:3 Priority)
+    (field:25 Alert
+      (field:26 priority @type:5 Priority)
     )
   )
 )
@@ -94,9 +97,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_sample {
     label="sample";
     style=rounded;
@@ -109,8 +109,8 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n20[label="Notification", full_path="$TMP/sample/src/messages.rs:12", sym_ty="Enum", shape=box];
-      n12[label="Message", full_path="$TMP/sample/src/messages.rs:3", sym_ty="Enum", shape=box];
+      n22[label="Notification", full_path="$TMP/sample/src/messages.rs:12", sym_ty="Enum", shape=box];
+      n14[label="Message", full_path="$TMP/sample/src/messages.rs:3", sym_ty="Enum", shape=box];
     }
 
     subgraph cluster_types_rs {
@@ -119,15 +119,15 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n3[label="Priority", full_path="$TMP/sample/src/types.rs:1", sym_ty="Enum", shape=box];
-      n7[label="Status", full_path="$TMP/sample/src/types.rs:7", sym_ty="Enum", shape=box];
+      n5[label="Priority", full_path="$TMP/sample/src/types.rs:1", sym_ty="Enum", shape=box];
+      n9[label="Status", full_path="$TMP/sample/src/types.rs:7", sym_ty="Enum", shape=box];
     }
 
   }
 
 
-  n3 -> n12 [from="field_type", to="enum"];
-  n3 -> n20 [from="field_type", to="enum"];
-  n7 -> n12 [from="field_type", to="enum"];
-  n12 -> n20 [from="field_type", to="enum"];
+  n5 -> n14 [from="field_type", to="enum"];
+  n5 -> n22 [from="field_type", to="enum"];
+  n9 -> n14 [from="field_type", to="enum"];
+  n14 -> n22 [from="field_type", to="enum"];
 }

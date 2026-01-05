@@ -39,30 +39,36 @@ pub struct Project {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs))
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 types)
+  (module:3 models)
+)
 
-(root:2 types ($TMP/sample/src/types.rs)
-  (enum:3 Status
-    (field:4 Active @type:3 Active)
-    (field:5 Inactive @type:3 Inactive)
-    (field:6 Pending @type:3 Pending)
+(root:4 types ($TMP/sample/src/types.rs)
+  (enum:5 Status
+    (field:6 Active)
+    (field:7 Inactive)
+    (field:8 Pending)
   )
-  (enum:7 Priority
-    (field:8 Low @type:7 Low)
-    (field:9 Medium @type:7 Medium)
-    (field:10 High @type:7 High)
+  (enum:9 Priority
+    (field:10 Low)
+    (field:11 Medium)
+    (field:12 High)
   )
 )
 
-(root:11 models ($TMP/sample/src/models.rs)
-  (class:12 Task
-    (field:13 name @type String)
-    (field:14 status @type:3 Status)
-    (field:15 priority @type:7 Priority)
+(root:13 models ($TMP/sample/src/models.rs)
+  (class:14 Task
+    (field:15 name @type String)
+    (field:16 status @type:5 Status)
+    (field:17 priority @type:9 Priority)
+    (@tdep:5 Status)
+    (@tdep:9 Priority)
   )
-  (class:16 Project
-    (field:17 title @type String)
-    (field:18 status @type:3 Status)
+  (class:18 Project
+    (field:19 title @type String)
+    (field:20 status @type:5 Status)
+    (@tdep:5 Status)
   )
 )
 
@@ -78,9 +84,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_sample {
     label="sample";
     style=rounded;
@@ -93,8 +96,8 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n12[label="Task", full_path="$TMP/sample/src/models.rs:3", sym_ty="Struct", shape=box];
-      n16[label="Project", full_path="$TMP/sample/src/models.rs:9", sym_ty="Struct", shape=box];
+      n14[label="Task", full_path="$TMP/sample/src/models.rs:3", sym_ty="Struct", shape=box];
+      n18[label="Project", full_path="$TMP/sample/src/models.rs:9", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_types_rs {
@@ -103,14 +106,17 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n3[label="Status", full_path="$TMP/sample/src/types.rs:1", sym_ty="Enum", shape=box];
-      n7[label="Priority", full_path="$TMP/sample/src/types.rs:7", sym_ty="Enum", shape=box];
+      n5[label="Status", full_path="$TMP/sample/src/types.rs:1", sym_ty="Enum", shape=box];
+      n9[label="Priority", full_path="$TMP/sample/src/types.rs:7", sym_ty="Enum", shape=box];
     }
 
   }
 
 
-  n3 -> n12 [from="field_type", to="struct"];
-  n3 -> n16 [from="field_type", to="struct"];
-  n7 -> n12 [from="field_type", to="struct"];
+  n5 -> n14 [from="field_type", to="struct"];
+  n5 -> n14 [from="interface", to="implements"];
+  n5 -> n18 [from="field_type", to="struct"];
+  n5 -> n18 [from="interface", to="implements"];
+  n9 -> n14 [from="field_type", to="struct"];
+  n9 -> n14 [from="interface", to="implements"];
 }

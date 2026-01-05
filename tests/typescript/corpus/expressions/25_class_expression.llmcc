@@ -1,0 +1,28 @@
+===============================================================================
+class-expression
+===============================================================================
+Class expression usage.
+lang: typescript
+
+--- file: src/lib.ts ---
+const MyClass = class {
+    x: number = 0;
+    getX(): number { return this.x; }
+};
+
+const instance = new (class {
+    value = 42;
+})();
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 class {
+    x: number = 0;
+    getX(): number { return this.x; }
+}
+    (field:3 x @type number)
+    (method:4 getX
+      (return:5 @type number)
+    )
+  )
+)

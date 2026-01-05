@@ -1,0 +1,66 @@
+===============================================================================
+event-system
+===============================================================================
+Test event system with handlers and event types.
+lang: typescript
+
+--- file: sample/src/lib.ts ---
+
+interface Event {
+    type: string;
+    timestamp: number;
+}
+
+class UserCreatedEvent implements Event {
+    type: string;
+    timestamp: number;
+    userId: number;
+}
+
+class UserDeletedEvent implements Event {
+    type: string;
+    timestamp: number;
+    userId: number;
+}
+
+interface EventHandler<T extends Event> {
+    handle(event: T): void;
+}
+
+class UserCreatedHandler implements EventHandler<UserCreatedEvent> {
+    handle(event: UserCreatedEvent): void {
+        console.log("User created:", event.userId);
+    }
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_ts {
+    label="lib.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n9[label="UserDeletedEvent", full_path="$TMP/sample/src/lib.ts:13", sym_ty="Struct", shape=box];
+    n13[label="EventHandler", full_path="$TMP/sample/src/lib.ts:19", sym_ty="Interface"];
+    n2[label="Event", full_path="$TMP/sample/src/lib.ts:2", sym_ty="Interface"];
+    n17[label="UserCreatedHandler", full_path="$TMP/sample/src/lib.ts:23", sym_ty="Struct", shape=box];
+    n5[label="UserCreatedEvent", full_path="$TMP/sample/src/lib.ts:7", sym_ty="Struct", shape=box];
+  }
+
+
+  n2 -> n5 [from="interface", to="implements"];
+  n2 -> n9 [from="interface", to="implements"];
+  n2 -> n13 [from="bound", to="generic"];
+  n13 -> n17 [from="interface", to="implements"];
+}

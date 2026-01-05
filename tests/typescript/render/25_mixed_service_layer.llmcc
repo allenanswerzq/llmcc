@@ -1,0 +1,111 @@
+===============================================================================
+mixed-service-layer
+===============================================================================
+Complex service layer pattern with interfaces, classes, generics, and cross-file deps.
+lang: typescript
+
+--- file: sample/src/models.ts ---
+
+export class User {
+    id: number;
+    name: string;
+}
+
+export class Order {
+    id: number;
+    userId: number;
+    total: number;
+}
+
+--- file: sample/src/repository.ts ---
+
+export interface Repository<T> {
+    find(id: number): T | null;
+    save(item: T): boolean;
+}
+
+--- file: sample/src/impl_repos.ts ---
+import { Repository } from './repository';
+import { User, Order } from './models';
+
+export class UserRepo implements Repository<User> {
+    connection: string;
+
+    find(id: number): User | null {
+        return null;
+    }
+
+    save(item: User): boolean {
+        return true;
+    }
+}
+
+export class OrderRepo implements Repository<Order> {
+    connection: string;
+
+    find(id: number): Order | null {
+        return null;
+    }
+
+    save(item: Order): boolean {
+        return true;
+    }
+}
+
+--- file: sample/src/service.ts ---
+import { Repository } from './repository';
+import { User } from './models';
+
+export class UserService {
+    repo: Repository<User>;
+
+    getUser(id: number): User | null {
+        return this.repo.find(id);
+    }
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_impl_repos_ts {
+    label="impl_repos.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n26[label="OrderRepo", full_path="$TMP/sample/src/impl_repos.ts:16", sym_ty="Struct", shape=box];
+    n18[label="UserRepo", full_path="$TMP/sample/src/impl_repos.ts:4", sym_ty="Struct", shape=box];
+  }
+
+  subgraph cluster_repository_ts {
+    label="repository.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n10[label="Repository", full_path="$TMP/sample/src/repository.ts:2", sym_ty="Interface"];
+  }
+
+  subgraph cluster_service_ts {
+    label="service.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n35[label="UserService", full_path="$TMP/sample/src/service.ts:4", sym_ty="Struct", shape=box];
+  }
+
+
+  n10 -> n18 [from="interface", to="implements"];
+  n10 -> n26 [from="interface", to="implements"];
+  n10 -> n35 [from="field_type", to="struct"];
+}

@@ -1,0 +1,202 @@
+===============================================================================
+three-layers-architecture
+===============================================================================
+Three-layer architecture: domain -> service -> api.
+lang: typescript
+
+--- file: domain/models.ts ---
+
+export interface User {
+    id: number;
+    email: string;
+}
+
+export interface Order {
+    id: number;
+    userId: number;
+    amount: number;
+}
+
+export enum OrderStatus {
+    Pending,
+    Confirmed,
+    Shipped,
+    Delivered,
+}
+
+--- file: service/user-service.ts ---
+
+import { User } from "../domain/models";
+
+export interface UserRepository {
+    findById(id: number): User | null;
+    save(user: User): User;
+}
+
+export function getUser(id: number): User | null {
+    return null;
+}
+
+--- file: service/order-service.ts ---
+
+import { Order, OrderStatus } from "../domain/models";
+
+export interface OrderRepository {
+    findById(id: number): Order | null;
+    updateStatus(id: number, status: OrderStatus): void;
+}
+
+export function processOrder(order: Order): OrderStatus {
+    return OrderStatus.Confirmed;
+}
+
+--- file: api/handlers.ts ---
+
+import { User, Order } from "../domain/models";
+import { getUser } from "../service/user-service";
+import { processOrder } from "../service/order-service";
+
+export interface ApiResponse {
+    success: boolean;
+    data: User | null;
+}
+
+export function handleGetUser(id: number): ApiResponse {
+    const user = getUser(id);
+    return { success: user !== null, data: user };
+}
+
+export function handleOrder(order: Order): boolean {
+    const status = processOrder(order);
+    return status !== null;
+}
+
+--- expect:block-graph ---
+(root:1 models ($TMP/domain/models.ts)
+  (interface:2 User
+    (field:3 id @type number)
+    (field:4 email @type string)
+  )
+  (interface:5 Order
+    (field:6 id @type number)
+    (field:7 userId @type number)
+    (field:8 amount @type number)
+  )
+  (enum:9 OrderStatus)
+)
+
+(root:10 user-service ($TMP/service/user-service.ts)
+  (interface:11 UserRepository
+    (method:12 findById
+      (parameter:13 id @type number)
+      (return:14 @type:2 User)
+    )
+    (method:15 save
+      (parameter:16 user @type:2 User)
+      (return:17 @type:2 User)
+    )
+  )
+  (func:18 getUser
+    (parameter:19 id @type number)
+    (return:20 @type:2 User)
+  )
+)
+
+(root:21 order-service ($TMP/service/order-service.ts)
+  (interface:22 OrderRepository
+    (method:23 findById
+      (parameter:24 id @type number)
+      (return:25 @type:5 Order)
+    )
+    (method:26 updateStatus
+      (parameter:27 id @type number)
+      (parameter:28 status @type:9 OrderStatus)
+      (return:29 @type void)
+    )
+  )
+  (func:30 processOrder
+    (parameter:31 order @type:5 Order)
+    (return:32 @type:9 OrderStatus)
+    (@tdep:9 OrderStatus)
+  )
+)
+
+(root:33 handlers ($TMP/api/handlers.ts)
+  (interface:34 ApiResponse
+    (field:35 success @type boolean)
+    (field:36 data @type:2 User)
+  )
+  (func:37 handleGetUser
+    (parameter:38 id @type number)
+    (return:39 @type:34 ApiResponse)
+    (@fdep:18 getUser)
+  )
+  (func:41 handleOrder
+    (parameter:42 order @type:5 Order)
+    (return:43 @type boolean)
+    (@fdep:30 processOrder)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_handlers_ts {
+    label="handlers.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n37[label="handleGetUser", full_path="$TMP/api/handlers.ts:11", sym_ty="Function"];
+    n41[label="handleOrder", full_path="$TMP/api/handlers.ts:16", sym_ty="Function"];
+    n34[label="ApiResponse", full_path="$TMP/api/handlers.ts:6", sym_ty="Interface"];
+  }
+
+  subgraph cluster_models_ts {
+    label="models.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n9[label="OrderStatus", full_path="$TMP/domain/models.ts:13", sym_ty="Enum", shape=box];
+    n2[label="User", full_path="$TMP/domain/models.ts:2", sym_ty="Interface"];
+    n5[label="Order", full_path="$TMP/domain/models.ts:7", sym_ty="Interface"];
+  }
+
+  subgraph cluster_order_service_ts {
+    label="order-service.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n30[label="processOrder", full_path="$TMP/service/order-service.ts:9", sym_ty="Function"];
+  }
+
+  subgraph cluster_user_service_ts {
+    label="user-service.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n18[label="getUser", full_path="$TMP/service/user-service.ts:9", sym_ty="Function"];
+  }
+
+
+  n2 -> n34 [from="field_type", to="struct"];
+  n5 -> n30 [from="input", to="func"];
+  n5 -> n41 [from="input", to="func"];
+  n18 -> n2 [from="func", to="output"];
+  n30 -> n9 [from="func", to="output"];
+  n37 -> n18 [from="caller", to="callee"];
+  n37 -> n34 [from="func", to="output"];
+  n41 -> n30 [from="caller", to="callee"];
+}

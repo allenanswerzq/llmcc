@@ -24,19 +24,23 @@ pub struct Dispatcher {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs))
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 handler)
+  (module:3 dispatcher)
+)
 
-(root:2 handler ($TMP/sample/src/handler.rs)
-  (trait:3 Handler
-    (method:4 handle
-      (parameter:5 self @type:3 Handler)
+(root:4 handler ($TMP/sample/src/handler.rs)
+  (trait:5 Handler
+    (method:6 handle
+      (parameter:7 self @type:5 Handler)
     )
   )
 )
 
-(root:6 dispatcher ($TMP/sample/src/dispatcher.rs)
-  (class:7 Dispatcher
-    (field:8 handler @type:3 Handler)
+(root:8 dispatcher ($TMP/sample/src/dispatcher.rs)
+  (class:9 Dispatcher
+    (field:10 handler @type:5 Handler)
+    (@tdep:5 Handler)
   )
 )
 
@@ -52,9 +56,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_sample {
     label="sample";
     style=rounded;
@@ -67,7 +68,7 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n7[label="Dispatcher", full_path="$TMP/sample/src/dispatcher.rs:3", sym_ty="Struct", shape=box];
+      n9[label="Dispatcher", full_path="$TMP/sample/src/dispatcher.rs:3", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_handler_rs {
@@ -76,11 +77,13 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n3[label="Handler", full_path="$TMP/sample/src/handler.rs:1", sym_ty="Trait", shape=box];
+      n5[label="Handler", full_path="$TMP/sample/src/handler.rs:1", sym_ty="Trait", shape=box];
     }
 
   }
 
 
-  n3 -> n7 [from="field_type", to="struct"];
+  n5 -> n9 [from="bound", to="generic"];
+  n5 -> n9 [from="field_type", to="struct"];
+  n5 -> n9 [from="interface", to="implements"];
 }

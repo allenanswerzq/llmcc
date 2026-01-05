@@ -1,0 +1,53 @@
+===============================================================================
+function-overloads
+===============================================================================
+Function overload signatures.
+lang: typescript
+
+--- file: src/lib.ts ---
+function format(value: string): string;
+function format(value: number): string;
+function format(value: string | number): string {
+    return String(value);
+}
+
+function createDate(timestamp: number): Date;
+function createDate(year: number, month: number, day: number): Date;
+function createDate(yearOrTimestamp: number, month?: number, day?: number): Date {
+    if (month !== undefined && day !== undefined) {
+        return new Date(yearOrTimestamp, month, day);
+    }
+    return new Date(yearOrTimestamp);
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 format
+    (parameter:3 value @type string)
+    (return:4 @type string)
+  )
+  (func:5 format
+    (parameter:6 value @type string)
+    (return:7 @type string)
+  )
+  (func:8 format
+    (parameter:9 value @type string)
+    (return:10 @type string)
+  )
+  (func:12 createDate
+    (parameter:13 timestamp @type number)
+    (return:14 @type Date)
+  )
+  (func:15 createDate
+    (parameter:16 year @type number)
+    (parameter:17 month @type number)
+    (parameter:18 day @type number)
+    (return:19 @type Date)
+  )
+  (func:20 createDate
+    (parameter:21 yearOrTimestamp @type number)
+    (parameter:22 month @type number)
+    (parameter:23 day @type number)
+    (return:24 @type Date)
+  )
+)

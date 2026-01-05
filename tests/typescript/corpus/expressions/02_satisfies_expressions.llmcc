@@ -1,0 +1,39 @@
+===============================================================================
+satisfies-expressions
+===============================================================================
+Type checking with 'satisfies' keyword.
+lang: typescript
+
+--- file: src/lib.ts ---
+type Colors = "red" | "green" | "blue";
+
+const palette = {
+    red: [255, 0, 0],
+    green: "#00ff00",
+    blue: [0, 0, 255]
+} satisfies Record<Colors, string | number[]>;
+
+interface Config {
+    host: string;
+    port: number;
+}
+
+const config = {
+    host: "localhost",
+    port: 8080
+} satisfies Config;
+
+const routes = {
+    home: "/",
+    about: "/about",
+    contact: "/contact"
+} satisfies Record<string, string>;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (alias:2 Colors)
+  (interface:3 Config
+    (field:4 host @type string)
+    (field:5 port @type number)
+  )
+)

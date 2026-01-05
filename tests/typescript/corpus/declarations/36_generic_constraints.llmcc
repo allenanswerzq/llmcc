@@ -1,0 +1,33 @@
+===============================================================================
+generic-constraints
+===============================================================================
+Generic type constraints.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface HasLength {
+    length: number;
+}
+
+function longest<T extends HasLength>(a: T, b: T): T {
+    return a.length >= b.length ? a : b;
+}
+
+class Container<T extends object> {
+    value: T | undefined;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 HasLength
+    (field:3 length @type number)
+  )
+  (func:4 longest
+    (parameter:5 a @type:2 HasLength)
+    (parameter:6 b @type:2 HasLength)
+    (return:7 @type:2 HasLength)
+  )
+  (class:8 Container
+    (field:9 value @type object)
+  )
+)

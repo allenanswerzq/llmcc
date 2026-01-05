@@ -1,0 +1,70 @@
+===============================================================================
+getters-setters
+===============================================================================
+Property getters and setters.
+lang: typescript
+
+--- file: src/lib.ts ---
+class Rectangle {
+    private _width: number;
+    private _height: number;
+
+    constructor(width: number, height: number) {
+        this._width = width;
+        this._height = height;
+    }
+
+    get width(): number {
+        return this._width;
+    }
+
+    set width(value: number) {
+        this._width = value;
+    }
+
+    get area(): number {
+        return this._width * this._height;
+    }
+}
+
+class User {
+    private _name: string = "";
+
+    get name(): string {
+        return this._name;
+    }
+
+    set name(value: string) {
+        this._name = value.trim();
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 Rectangle
+    (field:3 _width @type number)
+    (field:4 _height @type number)
+    (method:5 constructor
+      (parameter:6 width @type number)
+      (parameter:7 height @type number)
+    )
+    (method:8 width
+      (return:9 @type number)
+    )
+    (method:10 width
+      (parameter:11 value @type number)
+    )
+    (method:12 area
+      (return:13 @type number)
+    )
+  )
+  (class:14 User
+    (field:15 _name @type string)
+    (method:16 name
+      (return:17 @type string)
+    )
+    (method:18 name
+      (parameter:19 value @type string)
+    )
+  )
+)

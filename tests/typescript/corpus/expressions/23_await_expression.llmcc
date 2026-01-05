@@ -1,0 +1,21 @@
+===============================================================================
+await-expression
+===============================================================================
+Await expressions.
+lang: typescript
+
+--- file: src/lib.ts ---
+async function fetchAll(): Promise<void> {
+    const p1 = Promise.resolve(1);
+    const p2 = Promise.resolve(2);
+    
+    const result1 = await p1;
+    const [r1, r2] = await Promise.all([p1, p2]);
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 fetchAll
+    (return:3 @type void)
+  )
+)

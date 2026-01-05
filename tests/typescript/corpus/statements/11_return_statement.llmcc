@@ -1,0 +1,33 @@
+===============================================================================
+return-statement
+===============================================================================
+Return statements.
+lang: typescript
+
+--- file: src/lib.ts ---
+function noReturn(): void {
+    return;
+}
+
+function withValue(): number {
+    return 42;
+}
+
+function earlyReturn(x: number): string {
+    if (x < 0) return "negative";
+    return "non-negative";
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 noReturn
+    (return:3 @type void)
+  )
+  (func:4 withValue
+    (return:5 @type number)
+  )
+  (func:6 earlyReturn
+    (parameter:7 x @type number)
+    (return:8 @type string)
+  )
+)

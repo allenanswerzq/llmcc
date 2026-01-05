@@ -1,0 +1,20 @@
+===============================================================================
+generic-interface
+===============================================================================
+Test that generic interfaces appear correctly.
+lang: typescript
+
+--- file: sample/src/lib.ts ---
+
+interface Repository<T> {
+    find(id: number): T;
+    save(item: T): boolean;
+}
+
+interface Mapper<S, D> {
+    map(source: S): D;
+}
+
+--- expect:arch-graph ---
+digraph G {
+}

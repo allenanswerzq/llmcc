@@ -1,0 +1,67 @@
+===============================================================================
+deeply-nested-namespace
+===============================================================================
+Test that deeply nested namespaces (A.B.C.Type) resolve correctly.
+lang: typescript
+
+--- file: sample/src/lib.ts ---
+
+namespace Api {
+    export namespace V1 {
+        export namespace Models {
+            export class User {
+                id: number;
+                name: string;
+            }
+
+            export interface IEntity {
+                getId(): number;
+            }
+        }
+    }
+}
+
+namespace Services {
+    export class UserService {
+        // Use deeply nested path: Api.V1.Models.User
+        getUser(id: number): Api.V1.Models.User {
+            return new Api.V1.Models.User();
+        }
+
+        // Use deeply nested interface
+        getEntity(): Api.V1.Models.IEntity {
+            throw new Error("not implemented");
+        }
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.ts)
+  (module:2 Api (inline)
+    (module:3 V1 (inline)
+      (module:4 Models (inline)
+        (class:5 User
+          (field:6 id @type number)
+          (field:7 name @type string)
+        )
+        (interface:8 IEntity
+          (method:9 getId
+            (return:10 @type number)
+          )
+        )
+      )
+    )
+  )
+  (module:11 Services (inline)
+    (class:12 UserService
+      (method:13 getUser
+        (parameter:14 id @type number)
+        (return:15 @type:5 User)
+        (@tdep:5 User)
+      )
+      (method:17 getEntity
+        (return:18 @type:8 IEntity)
+      )
+    )
+  )
+)

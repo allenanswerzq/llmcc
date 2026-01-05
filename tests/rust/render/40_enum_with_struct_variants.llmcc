@@ -46,37 +46,40 @@ pub enum Event {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs))
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 types)
+  (module:3 events)
+)
 
-(root:2 types ($TMP/sample/src/types.rs)
-  (class:3 User
-    (field:4 id @type u64)
-    (field:5 name @type String)
+(root:4 types ($TMP/sample/src/types.rs)
+  (class:5 User
+    (field:6 id @type u64)
+    (field:7 name @type String)
   )
-  (class:6 Order
-    (field:7 id @type u64)
-    (field:8 amount @type f64)
+  (class:8 Order
+    (field:9 id @type u64)
+    (field:10 amount @type f64)
   )
-  (class:9 Error
-    (field:10 code @type i32)
-    (field:11 message @type String)
+  (class:11 Error
+    (field:12 code @type i32)
+    (field:13 message @type String)
   )
 )
 
-(root:12 events ($TMP/sample/src/events.rs)
-  (enum:13 Event
-    (field:14 UserCreated @type:13 UserCreated
-      (field:15 user @type:3 User)
-      (field:16 timestamp @type u64)
+(root:14 events ($TMP/sample/src/events.rs)
+  (enum:15 Event
+    (field:16 UserCreated
+      (field:17 user @type:5 User)
+      (field:18 timestamp @type u64)
     )
-    (field:17 OrderPlaced @type:13 OrderPlaced
-      (field:18 order @type:6 Order)
-      (field:19 user @type:3 User)
+    (field:19 OrderPlaced
+      (field:20 order @type:8 Order)
+      (field:21 user @type:5 User)
     )
-    (field:20 Failed @type:13 Failed
-      (field:21 error @type:9 Error)
+    (field:22 Failed
+      (field:23 error @type:11 Error)
     )
-    (field:22 Empty @type:13 Empty)
+    (field:24 Empty)
   )
 )
 
@@ -92,9 +95,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_sample {
     label="sample";
     style=rounded;
@@ -107,7 +107,7 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n13[label="Event", full_path="$TMP/sample/src/events.rs:3", sym_ty="Enum", shape=box];
+      n15[label="Event", full_path="$TMP/sample/src/events.rs:3", sym_ty="Enum", shape=box];
     }
 
     subgraph cluster_types_rs {
@@ -116,15 +116,15 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n3[label="User", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
-      n9[label="Error", full_path="$TMP/sample/src/types.rs:11", sym_ty="Struct", shape=box];
-      n6[label="Order", full_path="$TMP/sample/src/types.rs:6", sym_ty="Struct", shape=box];
+      n5[label="User", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+      n11[label="Error", full_path="$TMP/sample/src/types.rs:11", sym_ty="Struct", shape=box];
+      n8[label="Order", full_path="$TMP/sample/src/types.rs:6", sym_ty="Struct", shape=box];
     }
 
   }
 
 
-  n3 -> n13 [from="field_type", to="enum"];
-  n6 -> n13 [from="field_type", to="enum"];
-  n9 -> n13 [from="field_type", to="enum"];
+  n5 -> n15 [from="field_type", to="enum"];
+  n8 -> n15 [from="field_type", to="enum"];
+  n11 -> n15 [from="field_type", to="enum"];
 }

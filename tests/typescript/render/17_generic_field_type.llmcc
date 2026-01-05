@@ -1,0 +1,46 @@
+===============================================================================
+generic-field-type
+===============================================================================
+Test that generic field types with concrete type arguments create edges.
+lang: typescript
+
+--- file: sample/src/lib.ts ---
+
+class User {
+    id: number;
+    name: string;
+}
+
+class Container<T> {
+    value: T;
+}
+
+class UserManager {
+    users: Container<User>;
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_ts {
+    label="lib.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n7[label="UserManager", full_path="$TMP/sample/src/lib.ts:11", sym_ty="Struct", shape=box];
+    n5[label="Container", full_path="$TMP/sample/src/lib.ts:7", sym_ty="Struct", shape=box];
+  }
+
+
+  n5 -> n7 [from="field_type", to="struct"];
+}

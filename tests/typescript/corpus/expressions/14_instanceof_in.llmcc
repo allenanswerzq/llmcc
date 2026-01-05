@@ -1,0 +1,20 @@
+===============================================================================
+instanceof-in
+===============================================================================
+Instanceof and in operator expressions.
+lang: typescript
+
+--- file: src/lib.ts ---
+class Animal {}
+class Dog extends Animal {}
+const dog = new Dog();
+const isDog = dog instanceof Dog;
+const isAnimal = dog instanceof Animal;
+const obj = { key: "value" };
+const hasKey = "key" in obj;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 Animal)
+  (class:3 Dog @extends:2 Animal)
+)

@@ -11,14 +11,15 @@ use llmcc_core::symbol::SymKind;
 // ============================================================================
 
 /// Block kinds to include in architecture graph:
-/// - Types (Class, Trait, Enum) - the building blocks
+/// - Types (Class, Trait, Interface, Enum) - the building blocks
 /// - Free functions (Func) - entry points and pipelines
 ///
 /// NOTE: Methods are EXCLUDED - they are implementation details of types.
 /// NOTE: Fields are EXCLUDED - we only show type composition edges.
-pub const ARCHITECTURE_KINDS: [BlockKind; 4] = [
+pub const ARCHITECTURE_KINDS: [BlockKind; 5] = [
     BlockKind::Class,
     BlockKind::Trait,
+    BlockKind::Interface,
     BlockKind::Enum,
     BlockKind::Func,
 ];

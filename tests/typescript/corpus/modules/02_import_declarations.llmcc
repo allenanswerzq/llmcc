@@ -1,0 +1,44 @@
+===============================================================================
+import-declarations
+===============================================================================
+Import declarations.
+lang: typescript
+
+--- file: src/lib.ts ---
+import { User, Config } from "./types";
+import type { Settings } from "./settings";
+import * as utils from "./utils";
+import defaultExport from "./default";
+import defaultExport2, { named } from "./mixed";
+
+interface User {
+    name: string;
+}
+
+interface Config {
+    debug: boolean;
+}
+
+interface Settings {
+    theme: string;
+}
+
+function process(user: User, config: Config): void {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 User
+    (field:3 name @type string)
+  )
+  (interface:4 Config
+    (field:5 debug @type boolean)
+  )
+  (interface:6 Settings
+    (field:7 theme @type string)
+  )
+  (func:8 process
+    (parameter:9 user @type:2 User)
+    (parameter:10 config @type:4 Config)
+    (return:11 @type void)
+  )
+)

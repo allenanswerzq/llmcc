@@ -1,0 +1,77 @@
+===============================================================================
+cross-file-reference
+===============================================================================
+Test that types defined in different files create edges.
+lang: typescript
+
+--- file: sample/src/types.ts ---
+
+export class User {
+    id: number;
+    name: string;
+}
+
+--- file: sample/src/services.ts ---
+import { User } from './types';
+
+export class UserService {
+    currentUser: User;
+}
+
+export function getUser(): User {
+    return new User();
+}
+
+--- expect:block-graph ---
+(root:1 types ($TMP/sample/src/types.ts)
+  (class:2 User
+    (field:3 id @type number)
+    (field:4 name @type string)
+  )
+)
+
+(root:5 services ($TMP/sample/src/services.ts)
+  (class:6 UserService
+    (field:7 currentUser @type:2 User)
+  )
+  (func:8 getUser
+    (return:9 @type:2 User)
+    (@tdep:2 User)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_services_ts {
+    label="services.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n6[label="UserService", full_path="$TMP/sample/src/services.ts:3", sym_ty="Struct", shape=box];
+    n8[label="getUser", full_path="$TMP/sample/src/services.ts:7", sym_ty="Function"];
+  }
+
+  subgraph cluster_types_ts {
+    label="types.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n2[label="User", full_path="$TMP/sample/src/types.ts:2", sym_ty="Struct", shape=box];
+  }
+
+
+  n2 -> n6 [from="field_type", to="struct"];
+  n8 -> n2 [from="func", to="output"];
+}

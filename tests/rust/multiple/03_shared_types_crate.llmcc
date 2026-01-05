@@ -89,83 +89,92 @@ pub fn find_user(id: UserId) -> Result<User, StoreError> {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/types/src/lib.rs))
+(root:1 lib ($TMP/types/src/lib.rs)
+  (module:2 common)
+)
 
-(root:2 common ($TMP/types/src/common.rs)
-  (class:3 UserId
-    (field:4 0 @type u64)
+(root:3 common ($TMP/types/src/common.rs)
+  (class:4 UserId
+    (field:5 0 @type u64)
   )
-  (class:5 Email
-    (field:6 0 @type String)
+  (class:6 Email
+    (field:7 0 @type String)
   )
-  (class:7 User
-    (field:8 id @type:3 UserId)
-    (field:9 email @type:5 Email)
+  (class:8 User
+    (field:9 id @type:4 UserId)
+    (field:10 email @type:6 Email)
+    (@tdep:4 UserId)
+    (@tdep:6 Email)
   )
-  (enum:10 AuthError
-    (field:11 InvalidCredentials @type:10 InvalidCredentials)
-    (field:12 Expired @type:10 Expired)
-    (field:13 Forbidden @type:10 Forbidden)
+  (enum:11 AuthError
+    (field:12 InvalidCredentials)
+    (field:13 Expired)
+    (field:14 Forbidden)
   )
-  (enum:14 StoreError
-    (field:15 NotFound @type:14 NotFound)
-    (field:16 Conflict @type:14 Conflict)
-    (field:17 Internal @type:14 Internal)
+  (enum:15 StoreError
+    (field:16 NotFound)
+    (field:17 Conflict)
+    (field:18 Internal)
   )
 )
 
-(root:18 lib ($TMP/auth/src/lib.rs))
+(root:19 lib ($TMP/auth/src/lib.rs)
+  (module:20 auth)
+)
 
-(root:19 auth ($TMP/auth/src/auth.rs)
-  (class:20 Session
-    (field:21 user @type:7 User)
-    (field:22 token @type String)
+(root:21 auth ($TMP/auth/src/auth.rs)
+  (class:22 Session
+    (field:23 user @type:8 User)
+    (field:24 token @type String)
+    (@tdep:8 User)
   )
-  (func:23 authenticate
-    (parameter:24 user_id @type:3 UserId)
-    (parameter:25 password @type String)
-    (return:26)
-    (@tdep:10 AuthError)
-    (@tdep:20 Session)
+  (func:25 authenticate
+    (parameter:26 user_id @type:4 UserId)
+    (parameter:27 password @type String)
+    (return:28)
+    (@tdep:11 AuthError)
+    (@tdep:22 Session)
   )
-  (func:28 validate_session
-    (parameter:29 session @type:20 Session)
-    (return:30)
-    (@tdep:7 User)
-    (@tdep:10 AuthError)
+  (func:30 validate_session
+    (parameter:31 session @type:22 Session)
+    (return:32)
+    (@tdep:8 User)
+    (@tdep:11 AuthError)
   )
 )
 
-(root:32 lib ($TMP/store/src/lib.rs))
+(root:34 lib ($TMP/store/src/lib.rs)
+  (module:35 repository)
+)
 
-(root:33 repository ($TMP/store/src/repository.rs)
-  (trait:34 UserStore
-    (method:35 get
-      (parameter:36 self @type:34 UserStore)
-      (parameter:37 id @type:3 UserId)
-      (return:38)
-      (@tdep:7 User)
-      (@tdep:14 StoreError)
+(root:36 repository ($TMP/store/src/repository.rs)
+  (trait:37 UserStore
+    (method:38 get
+      (parameter:39 self @type:37 UserStore)
+      (parameter:40 id @type:4 UserId)
+      (return:41)
+      (@tdep:8 User)
+      (@tdep:15 StoreError)
     )
-    (method:39 save
-      (parameter:40 self @type:34 UserStore)
-      (parameter:41 user @type:7 User)
-      (return:42)
-      (@tdep:7 User)
-      (@tdep:14 StoreError)
+    (method:42 save
+      (parameter:43 self @type:37 UserStore)
+      (parameter:44 user @type:8 User)
+      (return:45)
+      (@tdep:8 User)
+      (@tdep:15 StoreError)
     )
-    (method:43 delete
-      (parameter:44 self @type:34 UserStore)
-      (parameter:45 id @type:3 UserId)
-      (return:46)
-      (@tdep:14 StoreError)
+    (method:46 delete
+      (parameter:47 self @type:37 UserStore)
+      (parameter:48 id @type:4 UserId)
+      (return:49)
+      (@tdep:15 StoreError)
     )
   )
-  (func:47 find_user
-    (parameter:48 id @type:3 UserId)
-    (return:49)
-    (@tdep:7 User)
-    (@tdep:14 StoreError)
+  (func:50 find_user
+    (parameter:51 id @type:4 UserId)
+    (return:52)
+    (@tdep:8 User)
+    (@tdep:15 StoreError)
   )
 )
 
@@ -181,9 +190,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_auth {
     label="auth";
     style=rounded;
@@ -196,9 +202,9 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n28[label="validate_session", full_path="$TMP/auth/src/auth.rs:12", sym_ty="Function"];
-      n20[label="Session", full_path="$TMP/auth/src/auth.rs:3", sym_ty="Struct", shape=box];
-      n23[label="authenticate", full_path="$TMP/auth/src/auth.rs:8", sym_ty="Function"];
+      n30[label="validate_session", full_path="$TMP/auth/src/auth.rs:12", sym_ty="Function"];
+      n22[label="Session", full_path="$TMP/auth/src/auth.rs:3", sym_ty="Struct", shape=box];
+      n25[label="authenticate", full_path="$TMP/auth/src/auth.rs:8", sym_ty="Function"];
     }
 
   }
@@ -215,7 +221,7 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n47[label="find_user", full_path="$TMP/store/src/repository.rs:9", sym_ty="Function"];
+      n50[label="find_user", full_path="$TMP/store/src/repository.rs:9", sym_ty="Function"];
     }
 
   }
@@ -232,26 +238,29 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n3[label="UserId", full_path="$TMP/types/src/common.rs:1", sym_ty="Struct", shape=box];
-      n10[label="AuthError", full_path="$TMP/types/src/common.rs:10", sym_ty="Enum", shape=box];
-      n14[label="StoreError", full_path="$TMP/types/src/common.rs:16", sym_ty="Enum", shape=box];
-      n5[label="Email", full_path="$TMP/types/src/common.rs:3", sym_ty="Struct", shape=box];
-      n7[label="User", full_path="$TMP/types/src/common.rs:5", sym_ty="Struct", shape=box];
+      n4[label="UserId", full_path="$TMP/types/src/common.rs:1", sym_ty="Struct", shape=box];
+      n11[label="AuthError", full_path="$TMP/types/src/common.rs:10", sym_ty="Enum", shape=box];
+      n15[label="StoreError", full_path="$TMP/types/src/common.rs:16", sym_ty="Enum", shape=box];
+      n6[label="Email", full_path="$TMP/types/src/common.rs:3", sym_ty="Struct", shape=box];
+      n8[label="User", full_path="$TMP/types/src/common.rs:5", sym_ty="Struct", shape=box];
     }
 
   }
 
 
-  n3 -> n7 [from="field_type", to="struct"];
-  n3 -> n23 [from="input", to="func"];
-  n3 -> n47 [from="input", to="func"];
-  n5 -> n7 [from="field_type", to="struct"];
-  n7 -> n20 [from="field_type", to="struct"];
-  n20 -> n28 [from="input", to="func"];
-  n23 -> n10 [from="func", to="type_dep"];
-  n23 -> n20 [from="func", to="type_dep"];
-  n28 -> n7 [from="func", to="type_dep"];
-  n28 -> n10 [from="func", to="type_dep"];
-  n47 -> n7 [from="func", to="type_dep"];
-  n47 -> n14 [from="func", to="type_dep"];
+  n4 -> n8 [from="field_type", to="struct"];
+  n4 -> n8 [from="interface", to="implements"];
+  n4 -> n25 [from="input", to="func"];
+  n4 -> n50 [from="input", to="func"];
+  n6 -> n8 [from="field_type", to="struct"];
+  n6 -> n8 [from="interface", to="implements"];
+  n8 -> n22 [from="field_type", to="struct"];
+  n8 -> n22 [from="interface", to="implements"];
+  n22 -> n30 [from="input", to="func"];
+  n25 -> n11 [from="func", to="type_dep"];
+  n25 -> n22 [from="func", to="type_dep"];
+  n30 -> n8 [from="func", to="type_dep"];
+  n30 -> n11 [from="func", to="type_dep"];
+  n50 -> n8 [from="func", to="type_dep"];
+  n50 -> n15 [from="func", to="type_dep"];
 }

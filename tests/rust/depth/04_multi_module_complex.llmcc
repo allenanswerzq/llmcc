@@ -60,10 +60,19 @@ pub fn handle_request<R: UserRepo>(service: &UserService<R>) -> Option<User> {
 
 --- expect:arch-graph-depth-2 ---
 digraph architecture {
-  node [shape=box];
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
 
-  label="module graph";
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
   labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
 
   mod_sample_handlers[label="sample::handlers"];
   mod_sample_models[label="sample::models"];
@@ -71,6 +80,7 @@ digraph architecture {
   mod_sample_services[label="sample::services"];
 
   mod_sample_handlers -> mod_sample_models;
+  mod_sample_handlers -> mod_sample_repository [dir=both]; // dir best-effort not accurate
   mod_sample_handlers -> mod_sample_services;
   mod_sample_services -> mod_sample_repository;
 }

@@ -1,0 +1,24 @@
+===============================================================================
+type-narrowing
+===============================================================================
+Type narrowing with control flow.
+lang: typescript
+
+--- file: src/lib.ts ---
+function process(value: string | number | null): string {
+    if (value === null) {
+        return "null";
+    }
+    if (typeof value === "string") {
+        return value.toUpperCase();
+    }
+    return value.toFixed(2);
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 process
+    (parameter:3 value @type string)
+    (return:4 @type string)
+  )
+)

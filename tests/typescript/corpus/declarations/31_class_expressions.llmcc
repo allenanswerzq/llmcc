@@ -1,0 +1,28 @@
+===============================================================================
+class-expressions
+===============================================================================
+Class expression declarations.
+lang: typescript
+
+--- file: src/lib.ts ---
+const MyClass = class {
+    value: number = 0;
+};
+
+const NamedClass = class Named {
+    name: string = "test";
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 class {
+    value: number = 0;
+}
+    (field:3 value @type number)
+  )
+  (class:4 class Named {
+    name: string = "test";
+}
+    (field:5 name @type string)
+  )
+)

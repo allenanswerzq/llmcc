@@ -1,0 +1,43 @@
+===============================================================================
+mapped-types
+===============================================================================
+Mapped type declarations.
+lang: typescript
+
+--- file: src/lib.ts ---
+type Readonly<T> = { readonly [P in keyof T]: T[P] };
+type Partial<T> = { [P in keyof T]?: T[P] };
+type Required<T> = { [P in keyof T]-?: T[P] };
+type Mutable<T> = { -readonly [P in keyof T]: T[P] };
+
+type Pick<T, K extends keyof T> = { [P in K]: T[P] };
+type Record<K extends string, T> = { [P in K]: T };
+
+type Nullable<T> = { [P in keyof T]: T[P] | null };
+type Stringify<T> = { [P in keyof T]: string };
+
+interface User {
+    name: string;
+    age: number;
+}
+
+type ReadonlyUser = Readonly<User>;
+type PartialUser = Partial<User>;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (alias:2 Readonly)
+  (alias:3 Partial)
+  (alias:4 Required)
+  (alias:5 Mutable)
+  (alias:6 Pick)
+  (alias:7 Record)
+  (alias:8 Nullable)
+  (alias:9 Stringify)
+  (interface:10 User
+    (field:11 name @type string)
+    (field:12 age @type number)
+  )
+  (alias:13 ReadonlyUser)
+  (alias:14 PartialUser)
+)

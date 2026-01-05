@@ -1,0 +1,757 @@
+# TypeScript token mappings for llmcc
+# Maps tree-sitter node types to HirKind and BlockKind
+
+default_hir_kind = "Internal"
+
+#
+# Text tokens - literal syntax elements
+#
+[[text_tokens]]
+name = "Text_function"
+literal = "function"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_class"
+literal = "class"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_interface"
+literal = "interface"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_type"
+literal = "type"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_const"
+literal = "const"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_let"
+literal = "let"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_var"
+literal = "var"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_enum"
+literal = "enum"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_import"
+literal = "import"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_export"
+literal = "export"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_from"
+literal = "from"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_extends"
+literal = "extends"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_implements"
+literal = "implements"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_return"
+literal = "return"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_async"
+literal = "async"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_await"
+literal = "await"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_LPAREN"
+literal = "("
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_RPAREN"
+literal = ")"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_LBRACE"
+literal = "{"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_RBRACE"
+literal = "}"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_LBRACKET"
+literal = "["
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_RBRACKET"
+literal = "]"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_SEMI"
+literal = ";"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_COLON"
+literal = ":"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_COMMA"
+literal = ","
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_DOT"
+literal = "."
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_ARROW"
+literal = "=>"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_EQ"
+literal = "="
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_QUESTION"
+literal = "?"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_LT"
+literal = "<"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_GT"
+literal = ">"
+hir_kind = "Text"
+
+#
+# Node tokens - AST node types
+#
+
+# Root
+[[nodes]]
+ts_name = "program"
+hir_kind = "Scope"
+block_kind = "Root"
+
+# Module/Namespace
+[[nodes]]
+ts_name = "internal_module"
+hir_kind = "Scope"
+block_kind = "Module"
+
+[[nodes]]
+ts_name = "module"
+hir_kind = "Scope"
+block_kind = "Module"
+
+# Class declarations
+[[nodes]]
+ts_name = "class_declaration"
+hir_kind = "Scope"
+block_kind = "Class"
+
+[[nodes]]
+ts_name = "abstract_class_declaration"
+hir_kind = "Scope"
+block_kind = "Class"
+
+[[nodes]]
+ts_name = "class"
+hir_kind = "Scope"
+block_kind = "Class"
+
+[[nodes]]
+ts_name = "class_body"
+hir_kind = "Scope"
+
+# Interface declarations
+[[nodes]]
+ts_name = "interface_declaration"
+hir_kind = "Scope"
+block_kind = "Interface"
+
+[[nodes]]
+ts_name = "interface_body"
+hir_kind = "Scope"
+
+# Type aliases
+[[nodes]]
+ts_name = "type_alias_declaration"
+hir_kind = "Scope"
+block_kind = "Alias"
+
+# Enum declarations
+[[nodes]]
+ts_name = "enum_declaration"
+hir_kind = "Scope"
+block_kind = "Enum"
+
+[[nodes]]
+ts_name = "enum_body"
+hir_kind = "Scope"
+
+# Enum members with assignment (e.g., Active = 1)
+[[nodes]]
+ts_name = "enum_assignment"
+hir_kind = "Scope"
+block_kind = "Field"
+
+# Function declarations
+[[nodes]]
+ts_name = "function_declaration"
+hir_kind = "Scope"
+block_kind = "Func"
+
+[[nodes]]
+ts_name = "generator_function_declaration"
+hir_kind = "Scope"
+block_kind = "Func"
+
+[[nodes]]
+ts_name = "function_expression"
+hir_kind = "Scope"
+block_kind = "Func"
+
+[[nodes]]
+ts_name = "arrow_function"
+hir_kind = "Scope"
+block_kind = "Func"
+
+[[nodes]]
+ts_name = "generator_function"
+hir_kind = "Scope"
+block_kind = "Func"
+
+[[nodes]]
+ts_name = "function_signature"
+hir_kind = "Scope"
+block_kind = "Func"
+
+# Method declarations
+[[nodes]]
+ts_name = "method_definition"
+hir_kind = "Scope"
+block_kind = "Func"
+
+[[nodes]]
+ts_name = "method_signature"
+hir_kind = "Scope"
+block_kind = "Func"
+
+[[nodes]]
+ts_name = "abstract_method_signature"
+hir_kind = "Scope"
+block_kind = "Func"
+
+# Call and construct signatures (for callable/constructable interfaces)
+[[nodes]]
+ts_name = "call_signature"
+hir_kind = "Scope"
+block_kind = "Func"
+
+[[nodes]]
+ts_name = "construct_signature"
+hir_kind = "Scope"
+block_kind = "Func"
+
+# Properties
+[[nodes]]
+ts_name = "public_field_definition"
+hir_kind = "Scope"
+block_kind = "Field"
+
+[[nodes]]
+ts_name = "property_signature"
+hir_kind = "Scope"
+block_kind = "Field"
+
+# Parameters
+[[nodes]]
+ts_name = "formal_parameters"
+
+[[nodes]]
+ts_name = "required_parameter"
+block_kind = "Parameter"
+
+[[nodes]]
+ts_name = "optional_parameter"
+block_kind = "Parameter"
+
+[[nodes]]
+ts_name = "rest_pattern"
+block_kind = "Parameter"
+
+# Variable declarations
+[[nodes]]
+ts_name = "variable_declaration"
+
+[[nodes]]
+ts_name = "lexical_declaration"
+
+[[nodes]]
+ts_name = "variable_declarator"
+
+# Statements
+[[nodes]]
+ts_name = "statement_block"
+hir_kind = "Scope"
+block_kind = "Scope"
+
+# return_statement is just a statement, not a block
+# The return type is captured from field_return_type
+[[nodes]]
+ts_name = "return_statement"
+
+[[nodes]]
+ts_name = "if_statement"
+
+[[nodes]]
+ts_name = "for_statement"
+
+[[nodes]]
+ts_name = "for_in_statement"
+
+[[nodes]]
+ts_name = "while_statement"
+
+[[nodes]]
+ts_name = "switch_statement"
+
+[[nodes]]
+ts_name = "try_statement"
+
+[[nodes]]
+ts_name = "catch_clause"
+
+# Expressions
+[[nodes]]
+ts_name = "call_expression"
+block_kind = "Call"
+
+[[nodes]]
+ts_name = "new_expression"
+block_kind = "Call"
+
+[[nodes]]
+ts_name = "member_expression"
+
+[[nodes]]
+ts_name = "subscript_expression"
+
+[[nodes]]
+ts_name = "assignment_expression"
+
+[[nodes]]
+ts_name = "binary_expression"
+
+[[nodes]]
+ts_name = "unary_expression"
+
+[[nodes]]
+ts_name = "ternary_expression"
+
+[[nodes]]
+ts_name = "await_expression"
+
+[[nodes]]
+ts_name = "as_expression"
+
+[[nodes]]
+ts_name = "satisfies_expression"
+
+[[nodes]]
+ts_name = "type_assertion"
+
+# Identifiers
+[[nodes]]
+ts_name = "identifier"
+hir_kind = "Identifier"
+
+[[nodes]]
+ts_name = "type_identifier"
+hir_kind = "Identifier"
+
+[[nodes]]
+ts_name = "nested_type_identifier"
+
+[[nodes]]
+ts_name = "nested_identifier"
+
+[[nodes]]
+ts_name = "property_identifier"
+hir_kind = "Identifier"
+
+[[nodes]]
+ts_name = "shorthand_property_identifier"
+hir_kind = "Identifier"
+
+[[nodes]]
+ts_name = "shorthand_property_identifier_pattern"
+hir_kind = "Identifier"
+
+[[nodes]]
+ts_name = "private_property_identifier"
+hir_kind = "Identifier"
+
+# Literals
+[[nodes]]
+ts_name = "string"
+# hir_kind = "Text"
+
+[[nodes]]
+ts_name = "number"
+# hir_kind = "Text"
+
+[[nodes]]
+ts_name = "template_string"
+
+[[nodes]]
+ts_name = "regex"
+
+# Types
+[[nodes]]
+ts_name = "type_annotation"
+
+[[nodes]]
+ts_name = "type_arguments"
+
+[[nodes]]
+ts_name = "type_parameters"
+
+[[nodes]]
+ts_name = "type_parameter"
+hir_kind = "Scope"
+
+[[nodes]]
+ts_name = "constraint"
+
+[[nodes]]
+ts_name = "default_type"
+
+[[nodes]]
+ts_name = "union_type"
+
+[[nodes]]
+ts_name = "intersection_type"
+
+[[nodes]]
+ts_name = "function_type"
+
+[[nodes]]
+ts_name = "array_type"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "tuple_type"
+hir_kind = "Scope"
+
+[[nodes]]
+ts_name = "generic_type"
+
+[[nodes]]
+ts_name = "object_type"
+hir_kind = "Scope"
+
+[[nodes]]
+ts_name = "predefined_type"
+hir_kind = "Identifier"
+
+[[nodes]]
+ts_name = "literal_type"
+
+[[nodes]]
+ts_name = "conditional_type"
+
+[[nodes]]
+ts_name = "mapped_type"
+
+[[nodes]]
+ts_name = "indexed_access_type"
+
+[[nodes]]
+ts_name = "infer_type"
+
+[[nodes]]
+ts_name = "constructor_type"
+
+[[nodes]]
+ts_name = "this_type"
+hir_kind = "Identifier"
+
+# Patterns
+[[nodes]]
+ts_name = "object_pattern"
+
+[[nodes]]
+ts_name = "array_pattern"
+
+[[nodes]]
+ts_name = "assignment_pattern"
+
+[[nodes]]
+ts_name = "pair_pattern"
+
+[[nodes]]
+ts_name = "object_assignment_pattern"
+
+# Imports/Exports
+[[nodes]]
+ts_name = "import_statement"
+
+[[nodes]]
+ts_name = "import_clause"
+
+[[nodes]]
+ts_name = "named_imports"
+
+[[nodes]]
+ts_name = "import_specifier"
+
+[[nodes]]
+ts_name = "namespace_import"
+
+[[nodes]]
+ts_name = "export_statement"
+
+[[nodes]]
+ts_name = "export_clause"
+
+[[nodes]]
+ts_name = "export_specifier"
+
+[[nodes]]
+ts_name = "ambient_declaration"
+
+# Decorators
+[[nodes]]
+ts_name = "decorator"
+
+# Class heritage
+[[nodes]]
+ts_name = "class_heritage"
+
+[[nodes]]
+ts_name = "extends_clause"
+
+[[nodes]]
+ts_name = "extends_type_clause"
+
+[[nodes]]
+ts_name = "implements_clause"
+
+# Accessibility modifiers
+[[nodes]]
+ts_name = "accessibility_modifier"
+hir_kind = "Text"
+
+[[nodes]]
+ts_name = "override_modifier"
+hir_kind = "Text"
+
+[[nodes]]
+ts_name = "readonly_type"
+hir_kind = "Text"
+
+# Object/Array literals
+[[nodes]]
+ts_name = "object"
+
+[[nodes]]
+ts_name = "array"
+
+[[nodes]]
+ts_name = "pair"
+
+[[nodes]]
+ts_name = "spread_element"
+
+# Comments
+[[nodes]]
+ts_name = "comment"
+hir_kind = "Text"
+
+#
+# Field tokens - for field-based node access
+#
+
+[[fields]]
+name = "field_name"
+field_name = "name"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_body"
+field_name = "body"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_type"
+field_name = "type"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_value"
+field_name = "value"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_parameters"
+field_name = "parameters"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_return_type"
+field_name = "return_type"
+hir_kind = "Internal"
+block_kind = "Return"
+
+[[fields]]
+name = "field_type_parameters"
+field_name = "type_parameters"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_type_arguments"
+field_name = "type_arguments"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_constraint"
+field_name = "constraint"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_source"
+field_name = "source"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_alias"
+field_name = "alias"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_declaration"
+field_name = "declaration"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_left"
+field_name = "left"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_right"
+field_name = "right"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_object"
+field_name = "object"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_property"
+field_name = "property"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_function"
+field_name = "function"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_arguments"
+field_name = "arguments"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_pattern"
+field_name = "pattern"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_condition"
+field_name = "condition"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_consequence"
+field_name = "consequence"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_alternative"
+field_name = "alternative"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_index"
+field_name = "index"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_key"
+field_name = "key"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_decorator"
+field_name = "decorator"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_module"
+field_name = "module"
+hir_kind = "Internal"
+
+# Field for new expression constructor (e.g., new User())
+[[fields]]
+name = "field_constructor"
+field_name = "constructor"
+hir_kind = "Internal"
+
+# TypeScript uses 'type' for what Rust uses 'trait' in impl blocks
+# We map field_trait to 'type' as a workaround for the macro requirement
+[[fields]]
+name = "field_trait"
+field_name = "type"
+hir_kind = "Internal"

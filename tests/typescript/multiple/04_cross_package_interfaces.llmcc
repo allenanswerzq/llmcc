@@ -1,0 +1,136 @@
+===============================================================================
+cross-package-interfaces
+===============================================================================
+Cross-package interface implementations.
+lang: typescript
+
+--- file: contracts/repository.ts ---
+
+export interface Repository<T> {
+    findById(id: number): T | null;
+    save(entity: T): T;
+    delete(id: number): boolean;
+}
+
+export interface Validator<T> {
+    validate(entity: T): boolean;
+}
+
+--- file: impl/user-repository.ts ---
+
+import { Repository, Validator } from "../contracts/repository";
+
+export interface User {
+    id: number;
+    name: string;
+}
+
+export class UserRepository implements Repository<User> {
+    findById(id: number): User | null {
+        return null;
+    }
+
+    save(entity: User): User {
+        return entity;
+    }
+
+    delete(id: number): boolean {
+        return true;
+    }
+}
+
+export class UserValidator implements Validator<User> {
+    validate(entity: User): boolean {
+        return entity.name.length > 0;
+    }
+}
+
+--- expect:block-graph ---
+(root:1 repository ($TMP/contracts/repository.ts)
+  (interface:2 Repository
+    (method:3 findById
+      (parameter:4 id @type number)
+      (return:5 @type T)
+    )
+    (method:6 save
+      (parameter:7 entity @type T)
+      (return:8 @type T)
+    )
+    (method:9 delete
+      (parameter:10 id @type number)
+      (return:11 @type boolean)
+    )
+  )
+  (interface:12 Validator
+    (method:13 validate
+      (parameter:14 entity @type T)
+      (return:15 @type boolean)
+    )
+  )
+)
+
+(root:16 user-repository ($TMP/impl/user-repository.ts)
+  (interface:17 User
+    (field:18 id @type number)
+    (field:19 name @type string)
+  )
+  (class:20 UserRepository
+    (method:21 findById
+      (parameter:22 id @type number)
+      (return:23 @type:17 User)
+    )
+    (method:24 save
+      (parameter:25 entity @type:17 User)
+      (return:26 @type:17 User)
+    )
+    (method:27 delete
+      (parameter:28 id @type number)
+      (return:29 @type boolean)
+    )
+    (@tdep:2 Repository)
+  )
+  (class:30 UserValidator
+    (method:31 validate
+      (parameter:32 entity @type:17 User)
+      (return:33 @type boolean)
+    )
+    (@tdep:12 Validator)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_repository_ts {
+    label="repository.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n2[label="Repository", full_path="$TMP/contracts/repository.ts:2", sym_ty="Interface"];
+    n12[label="Validator", full_path="$TMP/contracts/repository.ts:8", sym_ty="Interface"];
+  }
+
+  subgraph cluster_user_repository_ts {
+    label="user-repository.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n30[label="UserValidator", full_path="$TMP/impl/user-repository.ts:23", sym_ty="Struct", shape=box];
+    n20[label="UserRepository", full_path="$TMP/impl/user-repository.ts:9", sym_ty="Struct", shape=box];
+  }
+
+
+  n2 -> n20 [from="interface", to="implements"];
+  n12 -> n30 [from="interface", to="implements"];
+}

@@ -1,0 +1,42 @@
+===============================================================================
+simple-interface
+===============================================================================
+Test that a simple interface appears in the architecture graph.
+lang: typescript
+
+--- file: sample/src/lib.ts ---
+
+interface User {
+    name: string;
+    age: number;
+}
+
+interface Admin extends User {
+    role: string;
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_ts {
+    label="lib.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n2[label="User", full_path="$TMP/sample/src/lib.ts:2", sym_ty="Interface"];
+    n5[label="Admin", full_path="$TMP/sample/src/lib.ts:7", sym_ty="Interface"];
+  }
+
+
+  n2 -> n5 [from="base", to="extends"];
+}

@@ -54,35 +54,43 @@ pub struct GroupedUserGrids {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs))
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 types)
+  (module:3 containers)
+)
 
-(root:2 types ($TMP/sample/src/types.rs)
-  (class:3 Vec)
-  (class:4 User
-    (field:5 id @type u64)
-    (field:6 name @type String)
+(root:4 types ($TMP/sample/src/types.rs)
+  (class:5 Vec)
+  (class:6 User
+    (field:7 id @type u64)
+    (field:8 name @type String)
   )
-  (class:7 Order
-    (field:8 id @type u64)
-    (field:9 amount @type f64)
+  (class:9 Order
+    (field:10 id @type u64)
+    (field:11 amount @type f64)
   )
 )
 
-(root:10 containers ($TMP/sample/src/containers.rs)
-  (class:11 Matrix
-    (field:12 rows @type:3 Vec)
+(root:12 containers ($TMP/sample/src/containers.rs)
+  (class:13 Matrix
+    (field:14 rows @type:5 Vec)
+    (@tdep:5 Vec)
   )
-  (class:13 UserGrid
-    (field:14 users @type:3 Vec)
+  (class:15 UserGrid
+    (field:16 users @type:5 Vec)
+    (@tdep:5 Vec)
   )
-  (class:15 UserOrders
-    (field:16 orders @type:4 User)
+  (class:17 UserOrders
+    (field:18 orders @type:6 User)
+    (@tdep:6 User)
   )
-  (class:17 Cube
-    (field:18 data @type:3 Vec)
+  (class:19 Cube
+    (field:20 data @type:5 Vec)
+    (@tdep:5 Vec)
   )
-  (class:19 GroupedUserGrids
-    (field:20 grids @type:3 Vec)
+  (class:21 GroupedUserGrids
+    (field:22 grids @type:5 Vec)
+    (@tdep:5 Vec)
   )
 )
 
@@ -98,9 +106,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_sample {
     label="sample";
     style=rounded;
@@ -113,11 +118,11 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n13[label="UserGrid", full_path="$TMP/sample/src/containers.rs:10", sym_ty="Struct", shape=box];
-      n15[label="UserOrders", full_path="$TMP/sample/src/containers.rs:15", sym_ty="Struct", shape=box];
-      n17[label="Cube", full_path="$TMP/sample/src/containers.rs:20", sym_ty="Struct", shape=box];
-      n19[label="GroupedUserGrids", full_path="$TMP/sample/src/containers.rs:25", sym_ty="Struct", shape=box];
-      n11[label="Matrix", full_path="$TMP/sample/src/containers.rs:5", sym_ty="Struct", shape=box];
+      n15[label="UserGrid", full_path="$TMP/sample/src/containers.rs:10", sym_ty="Struct", shape=box];
+      n17[label="UserOrders", full_path="$TMP/sample/src/containers.rs:15", sym_ty="Struct", shape=box];
+      n19[label="Cube", full_path="$TMP/sample/src/containers.rs:20", sym_ty="Struct", shape=box];
+      n21[label="GroupedUserGrids", full_path="$TMP/sample/src/containers.rs:25", sym_ty="Struct", shape=box];
+      n13[label="Matrix", full_path="$TMP/sample/src/containers.rs:5", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_types_rs {
@@ -126,21 +131,26 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n3[label="Vec", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
-      n4[label="User", full_path="$TMP/sample/src/types.rs:3", sym_ty="Struct", shape=box];
-      n7[label="Order", full_path="$TMP/sample/src/types.rs:8", sym_ty="Struct", shape=box];
+      n5[label="Vec", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+      n6[label="User", full_path="$TMP/sample/src/types.rs:3", sym_ty="Struct", shape=box];
+      n9[label="Order", full_path="$TMP/sample/src/types.rs:8", sym_ty="Struct", shape=box];
     }
 
   }
 
 
-  n3 -> n11 [from="type_dep", to="struct"];
-  n3 -> n13 [from="type_dep", to="struct"];
-  n3 -> n15 [from="type_dep", to="struct"];
-  n3 -> n17 [from="type_dep", to="struct"];
-  n3 -> n19 [from="type_dep", to="struct"];
-  n4 -> n13 [from="type_dep", to="struct"];
-  n4 -> n15 [from="type_dep", to="struct"];
-  n4 -> n19 [from="type_dep", to="struct"];
-  n7 -> n15 [from="type_dep", to="struct"];
+  n5 -> n13 [from="interface", to="implements"];
+  n5 -> n13 [from="type_dep", to="struct"];
+  n5 -> n15 [from="interface", to="implements"];
+  n5 -> n15 [from="type_dep", to="struct"];
+  n5 -> n17 [from="type_dep", to="struct"];
+  n5 -> n19 [from="interface", to="implements"];
+  n5 -> n19 [from="type_dep", to="struct"];
+  n5 -> n21 [from="interface", to="implements"];
+  n5 -> n21 [from="type_dep", to="struct"];
+  n6 -> n15 [from="type_dep", to="struct"];
+  n6 -> n17 [from="interface", to="implements"];
+  n6 -> n17 [from="type_dep", to="struct"];
+  n6 -> n21 [from="type_dep", to="struct"];
+  n9 -> n17 [from="type_dep", to="struct"];
 }

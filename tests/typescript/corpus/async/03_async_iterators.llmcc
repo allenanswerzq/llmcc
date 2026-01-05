@@ -1,0 +1,29 @@
+===============================================================================
+async-iterators
+===============================================================================
+Async iterators and generators.
+lang: typescript
+
+--- file: src/lib.ts ---
+async function* asyncGenerator(): AsyncGenerator<number> {
+    yield 1;
+    yield 2;
+    yield 3;
+}
+
+async function consumeAsync(): Promise<void> {
+    for await (const value of asyncGenerator()) {
+        console.log(value);
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 asyncGenerator
+    (return:3 @type number)
+  )
+  (func:4 consumeAsync
+    (return:5 @type void)
+    (@fdep:2 asyncGenerator)
+  )
+)

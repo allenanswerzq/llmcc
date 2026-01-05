@@ -1,0 +1,26 @@
+===============================================================================
+type-guards
+===============================================================================
+Type guard function declarations.
+lang: typescript
+
+--- file: src/lib.ts ---
+function isString(value: unknown): value is string {
+    return typeof value === "string";
+}
+
+function isNumber(value: unknown): value is number {
+    return typeof value === "number";
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 isString
+    (parameter:3 value @type unknown)
+    (return:4 @type unknown)
+  )
+  (func:5 isNumber
+    (parameter:6 value @type unknown)
+    (return:7 @type unknown)
+  )
+)

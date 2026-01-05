@@ -1,0 +1,20 @@
+===============================================================================
+object-literals
+===============================================================================
+Object literal expressions.
+lang: typescript
+
+--- file: src/lib.ts ---
+const empty = {};
+const simple = { a: 1, b: 2 };
+const nested = { outer: { inner: 1 } };
+const withMethod = {
+    name: "test",
+    greet() { return "hello"; }
+};
+const computed = { ["key"]: "value" };
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (method:2 greet)
+)

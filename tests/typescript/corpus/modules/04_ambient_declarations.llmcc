@@ -1,0 +1,94 @@
+===============================================================================
+ambient-declarations
+===============================================================================
+Ambient declarations with declare keyword.
+lang: typescript
+
+--- file: src/lib.ts ---
+declare const API_KEY: string;
+declare let DEBUG: boolean;
+
+declare function fetch(url: string): Promise<Response>;
+declare function setTimeout(callback: () => void, ms: number): number;
+
+declare class Console {
+    log(...args: any[]): void;
+    error(...args: any[]): void;
+    warn(...args: any[]): void;
+}
+
+declare interface Window {
+    location: Location;
+    document: Document;
+}
+
+declare namespace NodeJS {
+    interface Process {
+        env: { [key: string]: string };
+        exit(code: number): void;
+    }
+}
+
+declare module "express" {
+    export function express(): Application;
+    export interface Application {
+        get(path: string, handler: () => void): void;
+        listen(port: number): void;
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 fetch
+    (parameter:3 url @type string)
+    (return:4 @type Promise)
+  )
+  (func:5 setTimeout
+    (parameter:6 callback @type void)
+    (parameter:7 ms @type number)
+    (return:8 @type number)
+  )
+  (class:9 Console
+    (method:10 log
+      (parameter:11 args @type any)
+      (return:12 @type void)
+    )
+    (method:13 error
+      (parameter:14 args @type any)
+      (return:15 @type void)
+    )
+    (method:16 warn
+      (parameter:17 args @type any)
+      (return:18 @type void)
+    )
+  )
+  (interface:19 Window
+    (field:20 location @type:20 location)
+    (field:21 document @type:21 document)
+  )
+  (module:22 NodeJS (inline)
+    (interface:23 Process
+      (field:24 env @type:24 env)
+      (method:25 exit
+        (parameter:26 code @type number)
+        (return:27 @type void)
+      )
+    )
+  )
+  (module:28  (inline)
+    (func:29 express
+      (return:30 @type:31 Application)
+    )
+    (interface:31 Application
+      (method:32 get
+        (parameter:33 path @type string)
+        (parameter:34 handler @type void)
+        (return:35 @type void)
+      )
+      (method:36 listen
+        (parameter:37 port @type number)
+        (return:38 @type void)
+      )
+    )
+  )
+)

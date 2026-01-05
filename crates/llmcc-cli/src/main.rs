@@ -12,6 +12,7 @@ use llmcc_cli::LlmccOptions;
 use llmcc_cli::run_main;
 use llmcc_dot::ComponentDepth;
 use llmcc_rust::LangRust;
+use llmcc_ts::LangTypeScript;
 
 #[derive(Parser, Debug)]
 #[command(
@@ -106,6 +107,7 @@ pub fn run(args: Cli) -> Result<()> {
 
     let result = match args.lang.as_str() {
         "rust" => run_main::<LangRust>(&opts),
+        "typescript" | "ts" => run_main::<LangTypeScript>(&opts),
         _ => Err(format!("Unknown language: {}", args.lang).into()),
     };
 

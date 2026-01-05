@@ -1,0 +1,53 @@
+===============================================================================
+interface-extends-multiple
+===============================================================================
+Test that an interface extending multiple interfaces creates edges to all of them.
+lang: typescript
+
+--- file: sample/src/lib.ts ---
+
+interface Named {
+    name: string;
+}
+
+interface Aged {
+    age: number;
+}
+
+interface Located {
+    location: string;
+}
+
+interface Person extends Named, Aged, Located {
+    email: string;
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_ts {
+    label="lib.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n6[label="Located", full_path="$TMP/sample/src/lib.ts:10", sym_ty="Interface"];
+    n8[label="Person", full_path="$TMP/sample/src/lib.ts:14", sym_ty="Interface"];
+    n2[label="Named", full_path="$TMP/sample/src/lib.ts:2", sym_ty="Interface"];
+    n4[label="Aged", full_path="$TMP/sample/src/lib.ts:6", sym_ty="Interface"];
+  }
+
+
+  n2 -> n8 [from="base", to="extends"];
+  n4 -> n8 [from="base", to="extends"];
+  n6 -> n8 [from="base", to="extends"];
+}

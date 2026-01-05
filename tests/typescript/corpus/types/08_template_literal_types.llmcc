@@ -1,0 +1,36 @@
+===============================================================================
+template-literal-types
+===============================================================================
+Template literal type declarations.
+lang: typescript
+
+--- file: src/lib.ts ---
+type Greeting = `Hello, ${string}`;
+type EventName = `on${string}`;
+type ClassName = `${string}Component`;
+
+type Direction = "top" | "bottom" | "left" | "right";
+type Margin = `margin-${Direction}`;
+type Padding = `padding-${Direction}`;
+
+type HTTPMethod = "GET" | "POST" | "PUT" | "DELETE";
+type APIRoute = `/${string}`;
+type Endpoint = `${HTTPMethod} ${APIRoute}`;
+
+type Digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
+type HexColor = `#${string}`;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (alias:2 Greeting)
+  (alias:3 EventName)
+  (alias:4 ClassName)
+  (alias:5 Direction)
+  (alias:6 Margin)
+  (alias:7 Padding)
+  (alias:8 HTTPMethod)
+  (alias:9 APIRoute)
+  (alias:10 Endpoint)
+  (alias:11 Digit)
+  (alias:12 HexColor)
+)

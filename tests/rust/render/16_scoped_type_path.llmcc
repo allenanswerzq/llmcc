@@ -21,14 +21,16 @@ pub struct Item {
 
 --- expect:block-graph ---
 (root:1 lib ($TMP/sample/src/lib.rs)
-  (class:2 Container
-    (field:3 item @type:5 Item)
+  (module:2 types)
+  (class:3 Container
+    (field:4 item @type:6 Item)
+    (@tdep:6 Item)
   )
 )
 
-(root:4 types ($TMP/sample/src/types.rs)
-  (class:5 Item
-    (field:6 id @type u32)
+(root:5 types ($TMP/sample/src/types.rs)
+  (class:6 Item
+    (field:7 id @type u32)
   )
 )
 
@@ -44,9 +46,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_sample {
     label="sample";
     style=rounded;
@@ -59,7 +58,7 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n2[label="Container", full_path="$TMP/sample/src/lib.rs:3", sym_ty="Struct", shape=box];
+      n3[label="Container", full_path="$TMP/sample/src/lib.rs:3", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_types_rs {
@@ -68,11 +67,12 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n5[label="Item", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+      n6[label="Item", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
     }
 
   }
 
 
-  n5 -> n2 [from="field_type", to="struct"];
+  n6 -> n3 [from="field_type", to="struct"];
+  n6 -> n3 [from="interface", to="implements"];
 }

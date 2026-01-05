@@ -1,0 +1,569 @@
+===============================================================================
+basic-functions
+===============================================================================
+Basic function declarations with primitive types.
+lang: typescript
+
+--- file: src/lib.ts ---
+function greet(name: string): string {
+    return "Hello, " + name;
+}
+
+function add(a: number, b: number): number {
+    return a + b;
+}
+
+function noReturn(): void {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 greet
+    (parameter:3 name @type string)
+    (return:4 @type string)
+  )
+  (func:5 add
+    (parameter:6 a @type number)
+    (parameter:7 b @type number)
+    (return:8 @type number)
+  )
+  (func:9 noReturn
+    (return:10 @type void)
+  )
+)
+
+
+===============================================================================
+optional-parameters
+===============================================================================
+Functions with optional parameters.
+lang: typescript
+
+--- file: src/lib.ts ---
+function optionalParam(name: string, age?: number): string {
+    return name;
+}
+
+function multiOptional(a: string, b?: number, c?: boolean): void {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 optionalParam
+    (parameter:3 name @type string)
+    (parameter:4 age @type number)
+    (return:5 @type string)
+  )
+  (func:6 multiOptional
+    (parameter:7 a @type string)
+    (parameter:8 b @type number)
+    (parameter:9 c @type boolean)
+    (return:10 @type void)
+  )
+)
+
+
+===============================================================================
+default-parameters
+===============================================================================
+Functions with default parameter values.
+lang: typescript
+
+--- file: src/lib.ts ---
+function defaultParam(count: number = 10): number {
+    return count;
+}
+
+function withDefaults(name: string = "test", size: number = 100): string {
+    return name;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 defaultParam
+    (parameter:3 count @type number)
+    (return:4 @type number)
+  )
+  (func:5 withDefaults
+    (parameter:6 name @type string)
+    (parameter:7 size @type number)
+    (return:8 @type string)
+  )
+)
+
+
+===============================================================================
+rest-parameters
+===============================================================================
+Functions with rest parameters.
+lang: typescript
+
+--- file: src/lib.ts ---
+function sum(...numbers: number[]): number {
+    return 0;
+}
+
+function concat(sep: string, ...parts: string[]): string {
+    return parts.join(sep);
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 sum
+    (parameter:3 numbers @type number)
+    (return:4 @type number)
+  )
+  (func:5 concat
+    (parameter:6 sep @type string)
+    (parameter:7 parts @type string)
+    (return:8 @type string)
+  )
+)
+
+
+===============================================================================
+interface-return-types
+===============================================================================
+Functions returning interface types.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface User {
+    id: number;
+    name: string;
+}
+
+function getUser(id: number): User {
+    return { id, name: "test" };
+}
+
+function createUser(name: string, id: number): User {
+    return { id, name };
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 User
+    (field:3 id @type number)
+    (field:4 name @type string)
+  )
+  (func:5 getUser
+    (parameter:6 id @type number)
+    (return:7 @type:2 User)
+  )
+  (func:8 createUser
+    (parameter:9 name @type string)
+    (parameter:10 id @type number)
+    (return:11 @type:2 User)
+  )
+)
+
+
+===============================================================================
+interface-parameters
+===============================================================================
+Functions with interface type parameters.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface User {
+    id: number;
+    name: string;
+}
+
+function processUser(user: User): void {}
+
+function mergeUsers(user1: User, user2: User): User {
+    return user1;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 User
+    (field:3 id @type number)
+    (field:4 name @type string)
+  )
+  (func:5 processUser
+    (parameter:6 user @type:2 User)
+    (return:7 @type void)
+  )
+  (func:8 mergeUsers
+    (parameter:9 user1 @type:2 User)
+    (parameter:10 user2 @type:2 User)
+    (return:11 @type:2 User)
+  )
+)
+
+
+===============================================================================
+union-type-parameters
+===============================================================================
+Functions with union type parameters.
+lang: typescript
+
+--- file: src/lib.ts ---
+function handleInput(input: string | number): string {
+    return String(input);
+}
+
+function process(value: string | number | boolean): void {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 handleInput
+    (parameter:3 input @type string)
+    (return:4 @type string)
+  )
+  (func:6 process
+    (parameter:7 value @type string)
+    (return:8 @type void)
+  )
+)
+
+
+===============================================================================
+array-parameters
+===============================================================================
+Functions with array type parameters.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface User {
+    id: number;
+    name: string;
+}
+
+function processUsers(users: User[]): number {
+    return users.length;
+}
+
+function processStrings(items: string[]): void {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 User
+    (field:3 id @type number)
+    (field:4 name @type string)
+  )
+  (func:5 processUsers
+    (parameter:6 users @type:2 User)
+    (return:7 @type number)
+  )
+  (func:8 processStrings
+    (parameter:9 items @type string)
+    (return:10 @type void)
+  )
+)
+
+
+===============================================================================
+generic-functions
+===============================================================================
+Functions with generic type parameters.
+lang: typescript
+
+--- file: src/lib.ts ---
+function identity<T>(value: T): T {
+    return value;
+}
+
+function first<T>(items: T[]): T {
+    return items[0];
+}
+
+function pair<K, V>(key: K, value: V): K {
+    return key;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 identity
+    (parameter:3 value @type T)
+    (return:4 @type T)
+  )
+  (func:5 first
+    (parameter:6 items @type T)
+    (return:7 @type T)
+  )
+  (func:8 pair
+    (parameter:9 key @type K)
+    (parameter:10 value @type V)
+    (return:11 @type K)
+  )
+)
+
+
+===============================================================================
+generic-constraints
+===============================================================================
+Functions with constrained generic types.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface HasLength {
+    length: number;
+}
+
+function getLength<T extends HasLength>(item: T): number {
+    return item.length;
+}
+
+function compare<T extends number>(a: T, b: T): boolean {
+    return a > b;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 HasLength
+    (field:3 length @type number)
+  )
+  (func:4 getLength
+    (parameter:5 item @type:2 HasLength)
+    (return:6 @type number)
+  )
+  (func:7 compare
+    (parameter:8 a @type number)
+    (parameter:9 b @type number)
+    (return:10 @type boolean)
+  )
+)
+
+
+===============================================================================
+generic-with-defaults
+===============================================================================
+Generic functions with default type parameters.
+lang: typescript
+
+--- file: src/lib.ts ---
+function createArray<T = string>(length: number): T[] {
+    return [];
+}
+
+function wrap<T = number, U = string>(first: T, second: U): T {
+    return first;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 createArray
+    (parameter:3 length @type number)
+    (return:4 @type T)
+  )
+  (func:5 wrap
+    (parameter:6 first @type T)
+    (parameter:7 second @type U)
+    (return:8 @type T)
+  )
+)
+
+
+===============================================================================
+nested-generic-types
+===============================================================================
+Functions with nested generic types like Promise, Map, etc.
+lang: typescript
+
+--- file: src/lib.ts ---
+function wrapInPromise<T>(value: T): Promise<T> {
+    return Promise.resolve(value);
+}
+
+function createMap<K, V>(key: K, value: V): Map<K, V> {
+    return new Map();
+}
+
+function wrapInArray<T>(value: T): Array<T> {
+    return [value];
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 wrapInPromise
+    (parameter:3 value @type T)
+    (return:4 @type T)
+  )
+  (func:6 createMap
+    (parameter:7 key @type K)
+    (parameter:8 value @type V)
+    (return:9 @type K)
+  )
+  (func:11 wrapInArray
+    (parameter:12 value @type T)
+    (return:13 @type T)
+  )
+)
+
+
+===============================================================================
+async-functions-with-types
+===============================================================================
+Async functions with complex return types.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface User {
+    id: number;
+    name: string;
+}
+
+async function fetchUser(id: number): Promise<User> {
+    return { id, name: "test" };
+}
+
+async function fetchUsers(): Promise<User[]> {
+    return [];
+}
+
+async function fetchOptional(id: number): Promise<User | null> {
+    return null;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 User
+    (field:3 id @type number)
+    (field:4 name @type string)
+  )
+  (func:5 fetchUser
+    (parameter:6 id @type number)
+    (return:7 @type:2 User)
+  )
+  (func:8 fetchUsers
+    (return:9 @type:2 User)
+  )
+  (func:10 fetchOptional
+    (parameter:11 id @type number)
+    (return:12 @type:2 User)
+  )
+)
+
+
+===============================================================================
+method-chaining-types
+===============================================================================
+Class methods with various return types.
+lang: typescript
+
+--- file: src/lib.ts ---
+class Builder {
+    value: string;
+
+    append(s: string): Builder {
+        this.value += s;
+        return this;
+    }
+
+    build(): string {
+        return this.value;
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 Builder
+    (field:3 value @type string)
+    (method:4 append
+      (parameter:5 s @type string)
+      (return:6 @type:2 Builder)
+      (@tdep:2 Builder)
+    )
+    (method:7 build
+      (return:8 @type string)
+    )
+  )
+)
+
+
+===============================================================================
+overloaded-functions
+===============================================================================
+Function with multiple signatures (overloads).
+lang: typescript
+
+--- file: src/lib.ts ---
+function process(x: string): string;
+function process(x: number): number;
+function process(x: string | number): string | number {
+    return x;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 process
+    (parameter:3 x @type string)
+    (return:4 @type string)
+  )
+  (func:5 process
+    (parameter:6 x @type string)
+    (return:7 @type number)
+  )
+  (func:8 process
+    (parameter:9 x @type string)
+    (return:10 @type string)
+  )
+)
+
+
+===============================================================================
+function-type-aliases
+===============================================================================
+Type aliases for function types used as parameter and return types.
+lang: typescript
+
+--- file: src/lib.ts ---
+type Callback = (value: string) => void;
+type Transformer = (input: number) => string;
+type Predicate = (item: string) => boolean;
+
+function registerCallback(cb: Callback): void {}
+
+function applyTransformer(value: number, fn: Transformer): string {
+    return "";
+}
+
+function findFirst(items: string[], pred: Predicate): string | undefined {
+    return undefined;
+}
+
+function createCallback(): Callback {
+    return null as any;
+}
+
+function createTransformer(): Transformer {
+    return null as any;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (alias:2 Callback
+    (parameter:3 value @type string)
+    (return:4 @type void)
+  )
+  (alias:5 Transformer
+    (parameter:6 input @type number)
+    (return:7 @type string)
+  )
+  (alias:8 Predicate
+    (parameter:9 item @type string)
+    (return:10 @type boolean)
+  )
+  (func:11 registerCallback
+    (parameter:12 cb @type:2 Callback)
+    (return:13 @type void)
+  )
+  (func:14 applyTransformer
+    (parameter:15 value @type number)
+    (parameter:16 fn @type:5 Transformer)
+    (return:17 @type string)
+  )
+  (func:18 findFirst
+    (parameter:19 items @type string)
+    (parameter:20 pred @type:8 Predicate)
+    (return:21 @type string)
+  )
+  (func:22 createCallback
+    (return:23 @type:2 Callback)
+  )
+  (func:24 createTransformer
+    (return:25 @type:5 Transformer)
+  )
+)

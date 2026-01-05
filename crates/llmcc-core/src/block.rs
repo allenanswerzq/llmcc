@@ -15,6 +15,7 @@ declare_arena!(BlockArena {
     blk_func: BlockFunc<'a>,
     blk_class: BlockClass<'a>,
     blk_trait: BlockTrait<'a>,
+    blk_interface: BlockInterface<'a>,
     blk_impl: BlockImpl<'a>,
     blk_call: BlockCall<'a>,
     blk_enum: BlockEnum<'a>,
@@ -40,6 +41,7 @@ pub enum BlockKind {
     Call,
     Class,
     Trait,
+    Interface,
     Enum,
     Const,
     Impl,
@@ -60,6 +62,7 @@ pub enum BasicBlock<'blk> {
     Enum(&'blk BlockEnum<'blk>),
     Class(&'blk BlockClass<'blk>),
     Trait(&'blk BlockTrait<'blk>),
+    Interface(&'blk BlockInterface<'blk>),
     Impl(&'blk BlockImpl<'blk>),
     Const(&'blk BlockConst<'blk>),
     Field(&'blk BlockField<'blk>),
@@ -79,6 +82,7 @@ impl<'blk> BasicBlock<'blk> {
             BasicBlock::Func(func) => func.format(unit),
             BasicBlock::Class(class) => class.format(),
             BasicBlock::Trait(trait_blk) => trait_blk.format(),
+            BasicBlock::Interface(iface) => iface.format(),
             BasicBlock::Impl(impl_blk) => impl_blk.format(),
             BasicBlock::Call(call) => call.format(),
             BasicBlock::Enum(enum_blk) => enum_blk.format(),
@@ -92,10 +96,11 @@ impl<'blk> BasicBlock<'blk> {
     }
 
     /// Format extra entries for dependencies (rendered as pseudo-children)
-    /// Only applicable to Func blocks, returns empty for others
+    /// Only applicable to Func and Class blocks, returns empty for others
     pub fn format_deps(&self, unit: CompileUnit<'blk>) -> Vec<String> {
         match self {
             BasicBlock::Func(func) => func.format_deps(unit),
+            BasicBlock::Class(class) => class.format_deps(unit),
             _ => Vec::new(),
         }
     }
@@ -119,6 +124,7 @@ impl<'blk> BasicBlock<'blk> {
             BasicBlock::Func(block) => Some(&block.base),
             BasicBlock::Class(block) => Some(&block.base),
             BasicBlock::Trait(block) => Some(&block.base),
+            BasicBlock::Interface(block) => Some(&block.base),
             BasicBlock::Impl(block) => Some(&block.base),
             BasicBlock::Call(block) => Some(&block.base),
             BasicBlock::Enum(block) => Some(&block.base),
@@ -206,6 +212,14 @@ impl<'blk> BasicBlock<'blk> {
     pub fn as_trait(&self) -> Option<&'blk BlockTrait<'blk>> {
         match self {
             BasicBlock::Trait(t) => Some(t),
+            _ => None,
+        }
+    }
+
+    /// Get the inner BlockInterface if this is an Interface block
+    pub fn as_interface(&self) -> Option<&'blk BlockInterface<'blk>> {
+        match self {
+            BasicBlock::Interface(i) => Some(i),
             _ => None,
         }
     }
@@ -338,6 +352,12 @@ pub enum BlockRelation {
     Uses,
     /// Is used by
     UsedBy,
+
+    // ========== Inheritance ==========
+    /// Trait/Interface extends another (TypeScript extends, Rust supertraits)
+    Extends,
+    /// Trait/Interface is extended by another
+    ExtendedBy,
 }
 
 #[derive(Debug)]
@@ -745,6 +765,9 @@ pub struct BlockClass<'blk> {
     pub name: String,
     pub fields: RwLock<Vec<BlockId>>,
     pub methods: RwLock<Vec<BlockId>>,
+    /// Extended class (for TypeScript/JavaScript class inheritance)
+    /// A class can only extend one other class (single inheritance)
+    pub extends: RwLock<Option<(String, Option<BlockId>)>>,
 }
 
 impl<'blk> BlockClass<'blk> {
@@ -771,6 +794,7 @@ impl<'blk> BlockClass<'blk> {
             name,
             fields: RwLock::new(Vec::new()),
             methods: RwLock::new(Vec::new()),
+            extends: RwLock::new(None),
         }
     }
 
@@ -790,8 +814,56 @@ impl<'blk> BlockClass<'blk> {
         self.methods.read().clone()
     }
 
+    /// Set the extended class
+    pub fn set_extends(&self, name: String, block_id: Option<BlockId>) {
+        *self.extends.write() = Some((name, block_id));
+    }
+
+    /// Get the extended class
+    pub fn get_extends(&self) -> Option<(String, Option<BlockId>)> {
+        self.extends.read().clone()
+    }
+
     pub fn format(&self) -> String {
-        format!("{}:{} {}", self.base.kind, self.base.id, self.name)
+        let extends = self.extends.read();
+        if let Some((name, id)) = extends.as_ref() {
+            if let Some(block_id) = id {
+                format!(
+                    "{}:{} {} @extends:{} {}",
+                    self.base.kind, self.base.id, self.name, block_id, name
+                )
+            } else {
+                format!(
+                    "{}:{} {} @extends {}",
+                    self.base.kind, self.base.id, self.name, name
+                )
+            }
+        } else {
+            format!("{}:{} {}", self.base.kind, self.base.id, self.name)
+        }
+    }
+
+    /// Format dependency entries as pseudo-children (to be rendered after real children)
+    /// Returns lines like "@tdep:3 Bar" for implemented interfaces
+    pub fn format_deps(&self, unit: CompileUnit<'blk>) -> Vec<String> {
+        let mut deps = Vec::new();
+
+        // Add type_deps (includes implemented interfaces)
+        let type_deps = self.base.get_type_deps();
+        if !type_deps.is_empty() {
+            let mut sorted: Vec<_> = type_deps.iter().collect();
+            sorted.sort();
+            for dep_id in sorted {
+                let dep_block = unit.bb(*dep_id);
+                let dep_name = dep_block
+                    .base()
+                    .and_then(|b| b.opt_get_name())
+                    .unwrap_or("");
+                deps.push(format!("@tdep:{} {}", dep_id, dep_name));
+            }
+        }
+
+        deps
     }
 }
 
@@ -838,6 +910,97 @@ impl<'blk> BlockTrait<'blk> {
 
     pub fn format(&self) -> String {
         format!("{}:{} {}", self.base.kind, self.base.id, self.name)
+    }
+}
+
+/// Block representing a TypeScript interface declaration
+#[derive(Debug)]
+pub struct BlockInterface<'blk> {
+    pub base: BlockBase<'blk>,
+    pub name: String,
+    pub methods: RwLock<Vec<BlockId>>,
+    pub fields: RwLock<Vec<BlockId>>,
+    /// Extended interfaces (for TypeScript extends)
+    pub extends: RwLock<Vec<(String, Option<BlockId>)>>,
+}
+
+impl<'blk> BlockInterface<'blk> {
+    pub fn new(
+        id: BlockId,
+        node: HirNode<'blk>,
+        parent: Option<BlockId>,
+        children: Vec<BlockId>,
+    ) -> Self {
+        Self::new_with_symbol(id, node, parent, children, None)
+    }
+
+    pub fn new_with_symbol(
+        id: BlockId,
+        node: HirNode<'blk>,
+        parent: Option<BlockId>,
+        children: Vec<BlockId>,
+        symbol: Option<&'blk Symbol>,
+    ) -> Self {
+        let base = BlockBase::with_symbol(id, node, BlockKind::Interface, parent, children, symbol);
+        let name = base.opt_get_name().unwrap_or("").to_string();
+        Self {
+            base,
+            name,
+            methods: RwLock::new(Vec::new()),
+            fields: RwLock::new(Vec::new()),
+            extends: RwLock::new(Vec::new()),
+        }
+    }
+
+    pub fn add_method(&self, method_id: BlockId) {
+        self.methods.write().push(method_id);
+    }
+
+    pub fn get_methods(&self) -> Vec<BlockId> {
+        self.methods.read().clone()
+    }
+
+    pub fn add_field(&self, field_id: BlockId) {
+        self.fields.write().push(field_id);
+    }
+
+    pub fn get_fields(&self) -> Vec<BlockId> {
+        self.fields.read().clone()
+    }
+
+    /// Add an extended interface
+    pub fn add_extends(&self, name: String, block_id: Option<BlockId>) {
+        self.extends.write().push((name, block_id));
+    }
+
+    /// Get extended interfaces
+    pub fn get_extends(&self) -> Vec<(String, Option<BlockId>)> {
+        self.extends.read().clone()
+    }
+
+    pub fn format(&self) -> String {
+        let extends = self.extends.read();
+        if extends.is_empty() {
+            format!("{}:{} {}", self.base.kind, self.base.id, self.name)
+        } else {
+            let extends_list: Vec<_> = extends
+                .iter()
+                .map(|(name, id)| {
+                    if let Some(block_id) = id {
+                        format!("@extends:{} {}", block_id, name)
+                    } else {
+                        format!("@extends {}", name)
+                    }
+                })
+                .collect();
+            format!(
+                "{}:{} {} {}",
+                self.base.kind,
+                self.base.id,
+                self.name,
+                extends_list.join(" ")
+            )
+        }
     }
 }
 

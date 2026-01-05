@@ -1,0 +1,43 @@
+===============================================================================
+multiple-implements
+===============================================================================
+Class implementing multiple interfaces.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface Printable {
+    print(): void;
+}
+
+interface Loggable {
+    log(): void;
+}
+
+class MultiImpl implements Printable, Loggable {
+    print(): void {}
+    log(): void {}
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 Printable
+    (method:3 print
+      (return:4 @type void)
+    )
+  )
+  (interface:5 Loggable
+    (method:6 log
+      (return:7 @type void)
+    )
+  )
+  (class:8 MultiImpl
+    (method:9 print
+      (return:10 @type void)
+    )
+    (method:11 log
+      (return:12 @type void)
+    )
+    (@tdep:2 Printable)
+    (@tdep:5 Loggable)
+  )
+)

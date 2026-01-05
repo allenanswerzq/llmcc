@@ -34,17 +34,20 @@ fn helper(s: Input) -> Output {
   (impl:5 Foo @type:4
     (method:6 new
       (return:7 @type:4 Foo)
+      (@tdep:4 Foo)
     )
   )
   (func:8 process_data
     (parameter:9 input @type:2 Input)
     (return:10 @type:3 Output)
+    (@tdep:3 Output)
     (@tdep:4 Foo)
     (@fdep:13 helper)
   )
   (func:13 helper
     (parameter:14 s @type:2 Input)
     (return:15 @type:3 Output)
+    (@tdep:3 Output)
   )
 )
 
@@ -59,9 +62,6 @@ digraph architecture {
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
-
-  label="architecture graph";
-  labelloc=t;
 
   subgraph cluster_sample {
     label="sample";

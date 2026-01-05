@@ -1,0 +1,28 @@
+===============================================================================
+override-modifier
+===============================================================================
+Override modifier in class inheritance.
+lang: typescript
+
+--- file: src/lib.ts ---
+class Base {
+    greet(): string { return "hello"; }
+}
+
+class Derived extends Base {
+    override greet(): string { return "hi"; }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 Base
+    (method:3 greet
+      (return:4 @type string)
+    )
+  )
+  (class:5 Derived @extends:2 Base
+    (method:6 greet
+      (return:7 @type string)
+    )
+  )
+)

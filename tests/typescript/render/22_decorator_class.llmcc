@@ -1,0 +1,73 @@
+===============================================================================
+decorator-class
+===============================================================================
+Test that decorators on classes create edges.
+lang: typescript
+
+--- file: sample/src/lib.ts ---
+
+function Component(name: string) {
+    return function(target: any) {
+        target.componentName = name;
+    };
+}
+
+function Injectable() {
+    return function(target: any) {};
+}
+
+@Component("app")
+@Injectable()
+class AppComponent {
+    title: string;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.ts)
+  (func:2 Component
+    (parameter:3 name @type string)
+    (func:4 function(target: any) {
+        target.componentName = name;
+    }
+      (parameter:5 target @type any)
+    )
+  )
+  (func:6 Injectable
+    (func:7 function(target: any) {}
+      (parameter:8 target @type any)
+    )
+  )
+  (class:9 AppComponent
+    (field:12 title @type string)
+    (@tdep:2 Component)
+    (@tdep:6 Injectable)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_ts {
+    label="lib.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n9[label="AppComponent", full_path="$TMP/sample/src/lib.ts:12", sym_ty="Struct", shape=box];
+    n2[label="Component", full_path="$TMP/sample/src/lib.ts:2", sym_ty="Function"];
+    n6[label="Injectable", full_path="$TMP/sample/src/lib.ts:8", sym_ty="Function"];
+  }
+
+
+  n2 -> n9 [from="decorator", to="decorates"];
+  n6 -> n9 [from="decorator", to="decorates"];
+}

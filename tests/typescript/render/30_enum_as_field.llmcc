@@ -1,0 +1,56 @@
+===============================================================================
+enum-as-field
+===============================================================================
+Test that enum types used as fields create edges.
+lang: typescript
+
+--- file: sample/src/lib.ts ---
+
+enum Priority {
+    Low,
+    Medium,
+    High,
+    Critical
+}
+
+enum Status {
+    Open,
+    InProgress,
+    Resolved,
+    Closed
+}
+
+class Ticket {
+    id: number;
+    title: string;
+    priority: Priority;
+    status: Status;
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_ts {
+    label="lib.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n4[label="Ticket", full_path="$TMP/sample/src/lib.ts:16", sym_ty="Struct", shape=box];
+    n2[label="Priority", full_path="$TMP/sample/src/lib.ts:2", sym_ty="Enum", shape=box];
+    n3[label="Status", full_path="$TMP/sample/src/lib.ts:9", sym_ty="Enum", shape=box];
+  }
+
+
+  n2 -> n4 [from="field_type", to="struct"];
+  n3 -> n4 [from="field_type", to="struct"];
+}

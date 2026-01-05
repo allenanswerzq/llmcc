@@ -51,43 +51,49 @@ pub struct ConfigResult {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs))
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 types)
+  (module:3 containers)
+)
 
-(root:2 types ($TMP/sample/src/types.rs)
-  (class:3 User
-    (field:4 id @type u64)
+(root:4 types ($TMP/sample/src/types.rs)
+  (class:5 User
+    (field:6 id @type u64)
   )
-  (class:5 Error
-    (field:6 code @type i32)
+  (class:7 Error
+    (field:8 code @type i32)
   )
-  (class:7 Config
-    (field:8 key @type String)
+  (class:9 Config
+    (field:10 key @type String)
   )
 )
 
-(root:9 containers ($TMP/sample/src/containers.rs)
-  (enum:10 Option
-    (field:11 Some @type:10 Some
-      (field:12 0 @type T)
+(root:11 containers ($TMP/sample/src/containers.rs)
+  (enum:12 Option
+    (field:13 Some
+      (field:14 0 @type T)
     )
-    (field:13 None @type:10 None)
+    (field:15 None)
   )
-  (enum:14 Result
-    (field:15 Ok @type:14 Ok
-      (field:16 0 @type T)
+  (enum:16 Result
+    (field:17 Ok
+      (field:18 0 @type T)
     )
-    (field:17 Err @type:14 Err
-      (field:18 0 @type E)
+    (field:19 Err
+      (field:20 0 @type E)
     )
   )
-  (class:19 UserOption
-    (field:20 user @type:10 Option)
+  (class:21 UserOption
+    (field:22 user @type:12 Option)
+    (@tdep:12 Option)
   )
-  (class:21 UserResult
-    (field:22 result @type:14 Result)
+  (class:23 UserResult
+    (field:24 result @type:16 Result)
+    (@tdep:16 Result)
   )
-  (class:23 ConfigResult
-    (field:24 config @type:14 Result)
+  (class:25 ConfigResult
+    (field:26 config @type:16 Result)
+    (@tdep:16 Result)
   )
 )
 
@@ -103,9 +109,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_sample {
     label="sample";
     style=rounded;
@@ -118,11 +121,11 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n19[label="UserOption", full_path="$TMP/sample/src/containers.rs:14", sym_ty="Struct", shape=box];
-      n21[label="UserResult", full_path="$TMP/sample/src/containers.rs:18", sym_ty="Struct", shape=box];
-      n23[label="ConfigResult", full_path="$TMP/sample/src/containers.rs:22", sym_ty="Struct", shape=box];
-      n10[label="Option", full_path="$TMP/sample/src/containers.rs:3", sym_ty="Enum", shape=box];
-      n14[label="Result", full_path="$TMP/sample/src/containers.rs:8", sym_ty="Enum", shape=box];
+      n21[label="UserOption", full_path="$TMP/sample/src/containers.rs:14", sym_ty="Struct", shape=box];
+      n23[label="UserResult", full_path="$TMP/sample/src/containers.rs:18", sym_ty="Struct", shape=box];
+      n25[label="ConfigResult", full_path="$TMP/sample/src/containers.rs:22", sym_ty="Struct", shape=box];
+      n12[label="Option", full_path="$TMP/sample/src/containers.rs:3", sym_ty="Enum", shape=box];
+      n16[label="Result", full_path="$TMP/sample/src/containers.rs:8", sym_ty="Enum", shape=box];
     }
 
     subgraph cluster_types_rs {
@@ -131,19 +134,22 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n3[label="User", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
-      n5[label="Error", full_path="$TMP/sample/src/types.rs:5", sym_ty="Struct", shape=box];
-      n7[label="Config", full_path="$TMP/sample/src/types.rs:9", sym_ty="Struct", shape=box];
+      n5[label="User", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+      n7[label="Error", full_path="$TMP/sample/src/types.rs:5", sym_ty="Struct", shape=box];
+      n9[label="Config", full_path="$TMP/sample/src/types.rs:9", sym_ty="Struct", shape=box];
     }
 
   }
 
 
-  n3 -> n10 [from="type_arg", to="generic"];
-  n3 -> n14 [from="type_arg", to="generic"];
-  n5 -> n14 [from="type_arg", to="generic"];
-  n7 -> n14 [from="type_arg", to="generic"];
-  n10 -> n19 [from="field_type", to="struct"];
-  n14 -> n21 [from="field_type", to="struct"];
-  n14 -> n23 [from="field_type", to="struct"];
+  n5 -> n12 [from="type_arg", to="generic"];
+  n5 -> n16 [from="type_arg", to="generic"];
+  n7 -> n16 [from="type_arg", to="generic"];
+  n9 -> n16 [from="type_arg", to="generic"];
+  n12 -> n21 [from="field_type", to="struct"];
+  n12 -> n21 [from="interface", to="implements"];
+  n16 -> n23 [from="field_type", to="struct"];
+  n16 -> n23 [from="interface", to="implements"];
+  n16 -> n25 [from="field_type", to="struct"];
+  n16 -> n25 [from="interface", to="implements"];
 }

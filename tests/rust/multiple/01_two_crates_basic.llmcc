@@ -49,31 +49,36 @@ pub fn create_user(name: String) -> User {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/common/src/lib.rs))
+(root:1 lib ($TMP/common/src/lib.rs)
+  (module:2 types)
+)
 
-(root:2 types ($TMP/common/src/types.rs)
-  (class:3 User
-    (field:4 id @type u64)
-    (field:5 name @type String)
+(root:3 types ($TMP/common/src/types.rs)
+  (class:4 User
+    (field:5 id @type u64)
+    (field:6 name @type String)
   )
-  (class:6 Error
-    (field:7 code @type i32)
-    (field:8 message @type String)
+  (class:7 Error
+    (field:8 code @type i32)
+    (field:9 message @type String)
   )
 )
 
-(root:9 lib ($TMP/app/src/lib.rs))
+(root:10 lib ($TMP/app/src/lib.rs)
+  (module:11 service)
+)
 
-(root:10 service ($TMP/app/src/service.rs)
-  (func:11 get_user
-    (parameter:12 id @type u64)
-    (return:13)
-    (@tdep:3 User)
-    (@tdep:6 Error)
+(root:12 service ($TMP/app/src/service.rs)
+  (func:13 get_user
+    (parameter:14 id @type u64)
+    (return:15)
+    (@tdep:4 User)
+    (@tdep:7 Error)
   )
-  (func:15 create_user
-    (parameter:16 name @type String)
-    (return:17 @type:3 User)
+  (func:17 create_user
+    (parameter:18 name @type String)
+    (return:19 @type:4 User)
+    (@tdep:4 User)
   )
 )
 
@@ -89,9 +94,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_app {
     label="app";
     style=rounded;
@@ -104,8 +106,8 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n11[label="get_user", full_path="$TMP/app/src/service.rs:3", sym_ty="Function"];
-      n15[label="create_user", full_path="$TMP/app/src/service.rs:7", sym_ty="Function"];
+      n13[label="get_user", full_path="$TMP/app/src/service.rs:3", sym_ty="Function"];
+      n17[label="create_user", full_path="$TMP/app/src/service.rs:7", sym_ty="Function"];
     }
 
   }
@@ -122,14 +124,14 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n3[label="User", full_path="$TMP/common/src/types.rs:1", sym_ty="Struct", shape=box];
-      n6[label="Error", full_path="$TMP/common/src/types.rs:6", sym_ty="Struct", shape=box];
+      n4[label="User", full_path="$TMP/common/src/types.rs:1", sym_ty="Struct", shape=box];
+      n7[label="Error", full_path="$TMP/common/src/types.rs:6", sym_ty="Struct", shape=box];
     }
 
   }
 
 
-  n11 -> n3 [from="func", to="type_dep"];
-  n11 -> n6 [from="func", to="type_dep"];
-  n15 -> n3 [from="func", to="output"];
+  n13 -> n4 [from="func", to="type_dep"];
+  n13 -> n7 [from="func", to="type_dep"];
+  n17 -> n4 [from="func", to="output"];
 }

@@ -80,66 +80,70 @@ pub fn create_default_config() -> impl Configurable {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs))
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 config)
+  (module:3 builder)
+)
 
-(root:2 config ($TMP/sample/src/config.rs)
-  (trait:3 Configurable
-    (method:4 validate
-      (parameter:5 self @type:3 Configurable)
-      (return:6 @type bool)
+(root:4 config ($TMP/sample/src/config.rs)
+  (trait:5 Configurable
+    (method:6 validate
+      (parameter:7 self @type:5 Configurable)
+      (return:8 @type bool)
     )
   )
-  (trait:7 Buildable
-    (alias:8 Output)
-    (method:9 build
-      (parameter:10 self @type:7 Buildable)
-      (return:11 @type:7 Buildable)
+  (trait:9 Buildable
+    (alias:10 Output)
+    (method:11 build
+      (parameter:12 self @type:9 Buildable)
+      (return:13 @type:9 Buildable)
     )
   )
-  (class:12 ServerConfig
-    (field:13 host @type String)
-    (field:14 port @type u16)
-    (field:15 timeout @type u32)
+  (class:14 ServerConfig
+    (field:15 host @type String)
+    (field:16 port @type u16)
+    (field:17 timeout @type u32)
   )
-  (impl:16 ServerConfig @type:12 @trait:3
-    (method:17 validate
-      (parameter:18 self @type:12 ServerConfig)
-      (return:19 @type bool)
+  (impl:18 ServerConfig @type:14 @trait:5
+    (method:19 validate
+      (parameter:20 self @type:14 ServerConfig)
+      (return:21 @type bool)
     )
   )
 )
 
-(root:20 builder ($TMP/sample/src/builder.rs)
-  (class:21 ConfigBuilder
-    (field:22 host @type Self)
-    (field:23 port @type Self)
-    (field:24 timeout @type u32)
+(root:22 builder ($TMP/sample/src/builder.rs)
+  (class:23 ConfigBuilder
+    (field:24 host @type Self)
+    (field:25 port @type Self)
+    (field:26 timeout @type u32)
   )
-  (impl:25 ConfigBuilder @type:21
-    (method:26 new
-      (return:27 @type:21 ConfigBuilder)
+  (impl:27 ConfigBuilder @type:23
+    (method:28 new
+      (return:29 @type:23 ConfigBuilder)
     )
-    (method:29 host
-      (parameter:30 self @type:21 ConfigBuilder)
-      (parameter:31 host @type String)
-      (return:32 @type:21 ConfigBuilder)
+    (method:31 host
+      (parameter:32 self @type:23 ConfigBuilder)
+      (parameter:33 host @type String)
+      (return:34 @type:23 ConfigBuilder)
     )
-    (method:33 port
-      (parameter:34 self @type:21 ConfigBuilder)
-      (parameter:35 port @type u16)
-      (return:36 @type:21 ConfigBuilder)
-    )
-  )
-  (impl:37 ConfigBuilder @type:21 @trait:7
-    (alias:38 Output)
-    (method:39 build
-      (parameter:40 self @type:21 ConfigBuilder)
-      (return:41 @type:12 ServerConfig)
+    (method:35 port
+      (parameter:36 self @type:23 ConfigBuilder)
+      (parameter:37 port @type u16)
+      (return:38 @type:23 ConfigBuilder)
     )
   )
-  (func:42 create_default_config
-    (return:43 @type:3 Configurable)
-    (@tdep:21 ConfigBuilder)
+  (impl:39 ConfigBuilder @type:23 @trait:9
+    (alias:40 Output)
+    (method:41 build
+      (parameter:42 self @type:23 ConfigBuilder)
+      (return:43 @type:14 ServerConfig)
+      (@tdep:14 ServerConfig)
+    )
+  )
+  (func:44 create_default_config
+    (return:45 @type:5 Configurable)
+    (@tdep:23 ConfigBuilder)
   )
 )
 
@@ -155,9 +159,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_sample {
     label="sample";
     style=rounded;
@@ -170,8 +171,8 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n21[label="ConfigBuilder", full_path="$TMP/sample/src/builder.rs:3", sym_ty="Struct", shape=box];
-      n42[label="create_default_config", full_path="$TMP/sample/src/builder.rs:41", sym_ty="Function"];
+      n23[label="ConfigBuilder", full_path="$TMP/sample/src/builder.rs:3", sym_ty="Struct", shape=box];
+      n44[label="create_default_config", full_path="$TMP/sample/src/builder.rs:41", sym_ty="Function"];
     }
 
     subgraph cluster_config_rs {
@@ -180,16 +181,16 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n3[label="Configurable", full_path="$TMP/sample/src/config.rs:1", sym_ty="Trait", shape=box];
-      n12[label="ServerConfig", full_path="$TMP/sample/src/config.rs:10", sym_ty="Struct", shape=box];
-      n7[label="Buildable", full_path="$TMP/sample/src/config.rs:5", sym_ty="Trait", shape=box];
+      n5[label="Configurable", full_path="$TMP/sample/src/config.rs:1", sym_ty="Trait", shape=box];
+      n14[label="ServerConfig", full_path="$TMP/sample/src/config.rs:10", sym_ty="Struct", shape=box];
+      n9[label="Buildable", full_path="$TMP/sample/src/config.rs:5", sym_ty="Trait", shape=box];
     }
 
   }
 
 
-  n3 -> n12 [from="trait", to="impl"];
-  n7 -> n21 [from="trait", to="impl"];
-  n42 -> n3 [from="func", to="output"];
-  n42 -> n21 [from="func", to="type_dep"];
+  n5 -> n14 [from="trait", to="impl"];
+  n9 -> n23 [from="trait", to="impl"];
+  n44 -> n5 [from="func", to="output"];
+  n44 -> n23 [from="func", to="type_dep"];
 }

@@ -15,6 +15,7 @@ use llmcc_dot::{ComponentDepth, render_graph};
 
 use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
 use llmcc_rust::LangRust;
+use llmcc_ts::LangTypeScript;
 use similar::TextDiff;
 use tempfile::TempDir;
 use walkdir::WalkDir;
@@ -436,6 +437,7 @@ fn build_pipeline_summary(
 
     let mut summary = match case.lang.as_str() {
         "rust" => collect_pipeline::<LangRust>(project.root(), &options)?,
+        "typescript" | "ts" => collect_pipeline::<LangTypeScript>(project.root(), &options)?,
         other => {
             return Err(anyhow!(
                 "unsupported lang '{}' requested by {}",

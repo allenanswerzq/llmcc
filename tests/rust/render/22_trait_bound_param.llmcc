@@ -24,21 +24,24 @@ pub fn format_item<T: Display>(item: T) -> String {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs))
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 display)
+  (module:3 formatter)
+)
 
-(root:2 display ($TMP/sample/src/display.rs)
-  (trait:3 Display
-    (method:4 display
-      (parameter:5 self @type:3 Display)
-      (return:6 @type String)
+(root:4 display ($TMP/sample/src/display.rs)
+  (trait:5 Display
+    (method:6 display
+      (parameter:7 self @type:5 Display)
+      (return:8 @type String)
     )
   )
 )
 
-(root:7 formatter ($TMP/sample/src/formatter.rs)
-  (func:8 format_item
-    (parameter:9 item @type:3 Display)
-    (return:10 @type String)
+(root:9 formatter ($TMP/sample/src/formatter.rs)
+  (func:10 format_item
+    (parameter:11 item @type:5 Display)
+    (return:12 @type String)
   )
 )
 
@@ -54,9 +57,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_sample {
     label="sample";
     style=rounded;
@@ -69,7 +69,7 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n3[label="Display", full_path="$TMP/sample/src/display.rs:1", sym_ty="Trait", shape=box];
+      n5[label="Display", full_path="$TMP/sample/src/display.rs:1", sym_ty="Trait", shape=box];
     }
 
     subgraph cluster_formatter_rs {
@@ -78,11 +78,12 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n8[label="format_item", full_path="$TMP/sample/src/formatter.rs:3", sym_ty="Function"];
+      n10[label="format_item", full_path="$TMP/sample/src/formatter.rs:3", sym_ty="Function"];
     }
 
   }
 
 
-  n3 -> n8 [from="input", to="func"];
+  n5 -> n10 [from="bound", to="generic", dir=both];
+  n5 -> n10 [from="input", to="func", dir=both];
 }

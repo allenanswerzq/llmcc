@@ -162,9 +162,18 @@ pub fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTr
             // 5. Trait implementations
             collect_impl_edges(project, block_id, node_set, &mut local_edges);
 
-            // 6. Trait bounds
-            if block_kind == Some(BlockKind::Trait) {
+            // 6. Trait bounds (type parameters with bounds)
+            // In Rust: Trait, in TypeScript: Interface can be used as type bounds
+            if block_kind == Some(BlockKind::Trait) || block_kind == Some(BlockKind::Interface) {
                 collect_bound_edges(project, block_id, node_set, &mut local_edges, get_kind);
+            }
+
+            // 6b. Inheritance (extends for classes/interfaces/traits)
+            if block_kind == Some(BlockKind::Trait)
+                || block_kind == Some(BlockKind::Interface)
+                || block_kind == Some(BlockKind::Class)
+            {
+                collect_extends_edges(project, block_id, node_set, &mut local_edges);
             }
 
             // 7. Type dependencies from function bodies
@@ -172,7 +181,7 @@ pub fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTr
                 collect_type_dep_edges(project, block_id, node_set, &mut local_edges, get_kind);
             }
 
-            // 8. Impl type arguments
+            // 8. Impl type arguments and decorators
             if block_kind == Some(BlockKind::Class) || block_kind == Some(BlockKind::Enum) {
                 collect_impl_type_arg_edges(
                     project,
@@ -181,6 +190,7 @@ pub fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTr
                     &mut local_edges,
                     get_kind,
                 );
+                collect_decorator_edges(project, block_id, node_set, &mut local_edges, get_kind);
             }
 
             local_edges
@@ -440,6 +450,7 @@ fn collect_impl_edges(
     node_set: &HashSet<BlockId>,
     edges: &mut BTreeSet<RenderEdge>,
 ) {
+    // Rust-style: struct -> impl block -> trait
     let impl_blocks = project
         .cc
         .related_map
@@ -460,6 +471,22 @@ fn collect_impl_edges(
             }
         }
     }
+
+    // TypeScript-style: class directly implements interface
+    let direct_implements = project
+        .cc
+        .related_map
+        .get_related(block_id, BlockRelation::Implements);
+    for trait_id in direct_implements {
+        if node_set.contains(&trait_id) && block_id != trait_id {
+            edges.insert(RenderEdge {
+                from_id: trait_id,
+                to_id: block_id,
+                from_label: "interface",
+                to_label: "implements",
+            });
+        }
+    }
 }
 
 fn collect_bound_edges<F>(
@@ -478,9 +505,12 @@ fn collect_bound_edges<F>(
     for user_id in used_by {
         if node_set.contains(&user_id) && block_id != user_id {
             let user_kind = get_kind(user_id);
+            // Funcs, Classes, Traits, and Interfaces can use traits/interfaces as type parameter bounds
+            // (trait inheritance via extends is handled by collect_extends_edges using Extends relation)
             if user_kind == Some(BlockKind::Func)
                 || user_kind == Some(BlockKind::Class)
                 || user_kind == Some(BlockKind::Trait)
+                || user_kind == Some(BlockKind::Interface)
             {
                 edges.insert(RenderEdge {
                     from_id: block_id,
@@ -489,6 +519,31 @@ fn collect_bound_edges<F>(
                     to_label: "generic",
                 });
             }
+        }
+    }
+}
+
+/// Collect edges for trait inheritance (e.g., `interface Admin extends User`)
+/// The edge goes from the child trait (Admin) to the parent trait (User).
+fn collect_extends_edges(
+    project: &ProjectGraph,
+    block_id: BlockId,
+    node_set: &HashSet<BlockId>,
+    edges: &mut BTreeSet<RenderEdge>,
+) {
+    // Extends relation points from child (Admin) to parent (User)
+    let extends = project
+        .cc
+        .related_map
+        .get_related(block_id, BlockRelation::Extends);
+    for parent_id in extends {
+        if node_set.contains(&parent_id) && block_id != parent_id {
+            edges.insert(RenderEdge {
+                from_id: parent_id,
+                to_id: block_id,
+                from_label: "base",
+                to_label: "extends",
+            });
         }
     }
 }
@@ -513,10 +568,11 @@ fn collect_type_dep_edges<F>(
                 || type_kind == Some(BlockKind::Enum)
                 || type_kind == Some(BlockKind::Trait)
             {
-                let has_existing_edge = edges
+                // Skip if there's already an output edge to this type (e.g., from return type)
+                let has_output_edge = edges
                     .iter()
-                    .any(|e| e.from_id == block_id && e.to_id == type_id);
-                if !has_existing_edge {
+                    .any(|e| e.from_id == block_id && e.to_id == type_id && e.to_label == "output");
+                if !has_output_edge {
                     edges.insert(RenderEdge {
                         from_id: block_id,
                         to_id: type_id,
@@ -561,6 +617,40 @@ fn collect_impl_type_arg_edges<F>(
                         to_label: "impl",
                     });
                 }
+            }
+        }
+    }
+}
+
+/// Collect decorator edges for classes
+/// When a class is decorated with @Component, @Injectable, etc., create edges
+/// from the decorator function to the decorated class.
+fn collect_decorator_edges<F>(
+    project: &ProjectGraph,
+    block_id: BlockId,
+    node_set: &HashSet<BlockId>,
+    edges: &mut BTreeSet<RenderEdge>,
+    get_kind: F,
+) where
+    F: Fn(BlockId) -> Option<BlockKind>,
+{
+    // Decorators are stored in type_deps for the class
+    // and have Uses/UsedBy relations
+    let uses = project
+        .cc
+        .related_map
+        .get_related(block_id, BlockRelation::Uses);
+    for decorator_id in uses {
+        if node_set.contains(&decorator_id) && block_id != decorator_id {
+            let decorator_kind = get_kind(decorator_id);
+            // Decorators are functions
+            if decorator_kind == Some(BlockKind::Func) {
+                edges.insert(RenderEdge {
+                    from_id: decorator_id,
+                    to_id: block_id,
+                    from_label: "decorator",
+                    to_label: "decorates",
+                });
             }
         }
     }

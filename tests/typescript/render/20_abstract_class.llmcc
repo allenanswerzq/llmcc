@@ -1,0 +1,60 @@
+===============================================================================
+abstract-class
+===============================================================================
+Test that abstract classes and their implementations create edges.
+lang: typescript
+
+--- file: sample/src/lib.ts ---
+
+abstract class Shape {
+    abstract getArea(): number;
+    
+    describe(): string {
+        return "I am a shape";
+    }
+}
+
+class Circle extends Shape {
+    radius: number;
+
+    getArea(): number {
+        return Math.PI * this.radius * this.radius;
+    }
+}
+
+class Rectangle extends Shape {
+    width: number;
+    height: number;
+
+    getArea(): number {
+        return this.width * this.height;
+    }
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_ts {
+    label="lib.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n7[label="Circle", full_path="$TMP/sample/src/lib.ts:10", sym_ty="Struct", shape=box];
+    n11[label="Rectangle", full_path="$TMP/sample/src/lib.ts:18", sym_ty="Struct", shape=box];
+    n2[label="Shape", full_path="$TMP/sample/src/lib.ts:2", sym_ty="Struct", shape=box];
+  }
+
+
+  n2 -> n7 [from="base", to="extends"];
+  n2 -> n11 [from="base", to="extends"];
+}

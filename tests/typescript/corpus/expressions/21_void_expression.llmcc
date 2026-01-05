@@ -1,0 +1,15 @@
+===============================================================================
+void-expression
+===============================================================================
+Void expression operator.
+lang: typescript
+
+--- file: src/lib.ts ---
+const nothing = void 0;
+const voidFn = void (function() {});
+const voidCall = void console.log("test");
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 function() {})
+)

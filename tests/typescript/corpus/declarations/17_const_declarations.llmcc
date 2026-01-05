@@ -1,0 +1,28 @@
+===============================================================================
+const-declarations
+===============================================================================
+Const and let declarations with types.
+lang: typescript
+
+--- file: src/lib.ts ---
+const PI: number = 3.14159;
+const APP_NAME: string = "MyApp";
+const IS_DEBUG: boolean = true;
+
+let counter: number = 0;
+let message: string;
+let isReady: boolean = false;
+
+const config: { host: string; port: number } = {
+    host: "localhost",
+    port: 8080
+};
+
+const numbers: number[] = [1, 2, 3];
+const matrix: number[][] = [[1, 2], [3, 4]];
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (field:2 host @type string)
+  (field:3 port @type number)
+)

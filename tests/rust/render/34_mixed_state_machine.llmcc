@@ -87,83 +87,92 @@ impl Transition<Idle> for Machine<Stopped> {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs))
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 states)
+  (module:3 machine)
+  (module:4 transitions)
+)
 
-(root:2 states ($TMP/sample/src/states.rs)
-  (class:3 Idle)
-  (class:4 Running)
-  (class:5 Stopped)
-  (trait:6 State
-    (method:7 name
-      (parameter:8 self @type:6 State)
-      (return:9 @type str)
+(root:5 states ($TMP/sample/src/states.rs)
+  (class:6 Idle)
+  (class:7 Running)
+  (class:8 Stopped)
+  (trait:9 State
+    (method:10 name
+      (parameter:11 self @type:9 State)
+      (return:12 @type str)
     )
   )
-  (impl:10 Idle @type:3 @trait:6
-    (method:11 name
-      (parameter:12 self @type:3 Idle)
-      (return:13 @type str)
+  (impl:13 Idle @type:6 @trait:9
+    (method:14 name
+      (parameter:15 self @type:6 Idle)
+      (return:16 @type str)
     )
   )
-  (impl:14 Running @type:4 @trait:6
-    (method:15 name
-      (parameter:16 self @type:4 Running)
-      (return:17 @type str)
+  (impl:17 Running @type:7 @trait:9
+    (method:18 name
+      (parameter:19 self @type:7 Running)
+      (return:20 @type str)
     )
   )
-  (impl:18 Stopped @type:5 @trait:6
-    (method:19 name
-      (parameter:20 self @type:5 Stopped)
-      (return:21 @type str)
+  (impl:21 Stopped @type:8 @trait:9
+    (method:22 name
+      (parameter:23 self @type:8 Stopped)
+      (return:24 @type str)
     )
   )
 )
 
-(root:22 machine ($TMP/sample/src/machine.rs)
-  (class:23 Machine
-    (field:24 state @type:6 State)
-    (field:25 data @type String)
+(root:25 machine ($TMP/sample/src/machine.rs)
+  (class:26 Machine
+    (field:27 state @type:9 State)
+    (field:28 data @type String)
+    (@tdep:6 Idle)
+    (@tdep:7 Running)
+    (@tdep:8 Stopped)
+    (@tdep:9 State)
   )
-  (impl:26 Machine @type:23
-    (method:27 new
-      (return:28 @type:23 Machine)
+  (impl:29 Machine @type:26
+    (method:30 new
+      (return:31 @type:26 Machine)
     )
   )
 )
 
-(root:30 transitions ($TMP/sample/src/transitions.rs)
-  (trait:31 Transition
-    (method:32 transition
-      (parameter:33 self @type:31 Transition)
-      (return:34 @type:23 Machine)
-      (@tdep:6 State)
+(root:33 transitions ($TMP/sample/src/transitions.rs)
+  (trait:34 Transition
+    (method:35 transition
+      (parameter:36 self @type:34 Transition)
+      (return:37 @type:26 Machine)
+      (@tdep:9 State)
+      (@tdep:26 Machine)
     )
   )
-  (impl:35 Machine @type:23 @trait:31
-    (method:36 transition
-      (parameter:37 self @type:23 Machine)
-      (return:38 @type:23 Machine)
-      (@tdep:3 Idle)
-      (@tdep:4 Running)
-      (@tdep:5 Stopped)
+  (impl:38 Machine @type:26 @trait:34
+    (method:39 transition
+      (parameter:40 self @type:26 Machine)
+      (return:41 @type:26 Machine)
+      (@tdep:6 Idle)
+      (@tdep:7 Running)
+      (@tdep:8 Stopped)
     )
   )
-  (impl:39 Machine @type:23 @trait:31
-    (method:40 transition
-      (parameter:41 self @type:23 Machine)
-      (return:42 @type:23 Machine)
-      (@tdep:3 Idle)
-      (@tdep:4 Running)
-      (@tdep:5 Stopped)
+  (impl:42 Machine @type:26 @trait:34
+    (method:43 transition
+      (parameter:44 self @type:26 Machine)
+      (return:45 @type:26 Machine)
+      (@tdep:6 Idle)
+      (@tdep:7 Running)
+      (@tdep:8 Stopped)
     )
   )
-  (impl:43 Machine @type:23 @trait:31
-    (method:44 transition
-      (parameter:45 self @type:23 Machine)
-      (return:46 @type:23 Machine)
-      (@tdep:3 Idle)
-      (@tdep:4 Running)
-      (@tdep:5 Stopped)
+  (impl:46 Machine @type:26 @trait:34
+    (method:47 transition
+      (parameter:48 self @type:26 Machine)
+      (return:49 @type:26 Machine)
+      (@tdep:6 Idle)
+      (@tdep:7 Running)
+      (@tdep:8 Stopped)
     )
   )
 )
@@ -180,9 +189,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_sample {
     label="sample";
     style=rounded;
@@ -195,7 +201,7 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n23[label="Machine", full_path="$TMP/sample/src/machine.rs:3", sym_ty="Struct", shape=box];
+      n26[label="Machine", full_path="$TMP/sample/src/machine.rs:3", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_states_rs {
@@ -204,10 +210,10 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n3[label="Idle", full_path="$TMP/sample/src/states.rs:1", sym_ty="Struct", shape=box];
-      n4[label="Running", full_path="$TMP/sample/src/states.rs:2", sym_ty="Struct", shape=box];
-      n5[label="Stopped", full_path="$TMP/sample/src/states.rs:3", sym_ty="Struct", shape=box];
-      n6[label="State", full_path="$TMP/sample/src/states.rs:5", sym_ty="Trait", shape=box];
+      n6[label="Idle", full_path="$TMP/sample/src/states.rs:1", sym_ty="Struct", shape=box];
+      n7[label="Running", full_path="$TMP/sample/src/states.rs:2", sym_ty="Struct", shape=box];
+      n8[label="Stopped", full_path="$TMP/sample/src/states.rs:3", sym_ty="Struct", shape=box];
+      n9[label="State", full_path="$TMP/sample/src/states.rs:5", sym_ty="Trait", shape=box];
     }
 
     subgraph cluster_transitions_rs {
@@ -216,19 +222,19 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n31[label="Transition", full_path="$TMP/sample/src/transitions.rs:4", sym_ty="Trait", shape=box];
+      n34[label="Transition", full_path="$TMP/sample/src/transitions.rs:4", sym_ty="Trait", shape=box];
     }
 
   }
 
 
-  n3 -> n23 [from="type_arg", to="impl"];
-  n4 -> n23 [from="type_arg", to="impl"];
-  n5 -> n23 [from="type_arg", to="impl"];
-  n6 -> n3 [from="trait", to="impl"];
-  n6 -> n4 [from="trait", to="impl"];
-  n6 -> n5 [from="trait", to="impl"];
-  n6 -> n23 [from="field_type", to="struct"];
-  n6 -> n31 [from="bound", to="generic"];
-  n31 -> n23 [from="trait", to="impl"];
+  n6 -> n26 [from="type_arg", to="impl"];
+  n7 -> n26 [from="type_arg", to="impl"];
+  n8 -> n26 [from="type_arg", to="impl"];
+  n9 -> n6 [from="trait", to="impl"];
+  n9 -> n7 [from="trait", to="impl"];
+  n9 -> n8 [from="trait", to="impl"];
+  n9 -> n26 [from="field_type", to="struct"];
+  n9 -> n34 [from="bound", to="generic"];
+  n34 -> n26 [from="trait", to="impl"];
 }

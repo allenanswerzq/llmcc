@@ -1,0 +1,102 @@
+===============================================================================
+edge-input-output
+===============================================================================
+Test that input/output edges create correct dependencies.
+Functions with parameters depend on parameter types.
+Functions with return types depend on return types.
+lang: typescript
+
+--- file: models/user.ts ---
+
+export interface User {
+    id: number;
+    name: string;
+}
+
+export interface Order {
+    orderId: number;
+    total: number;
+}
+
+--- file: services/user-service.ts ---
+
+import { User, Order } from "../models/user";
+
+export function getUser(id: number): User {
+    return { id, name: "" };
+}
+
+export function processUser(user: User): boolean {
+    return user.name.length > 0;
+}
+
+export function createOrder(user: User): Order {
+    return { orderId: 1, total: 0 };
+}
+
+--- expect:block-graph ---
+(root:1 user ($TMP/models/user.ts)
+  (interface:2 User
+    (field:3 id @type number)
+    (field:4 name @type string)
+  )
+  (interface:5 Order
+    (field:6 orderId @type number)
+    (field:7 total @type number)
+  )
+)
+
+(root:8 user-service ($TMP/services/user-service.ts)
+  (func:9 getUser
+    (parameter:10 id @type number)
+    (return:11 @type:2 User)
+  )
+  (func:12 processUser
+    (parameter:13 user @type:2 User)
+    (return:14 @type boolean)
+  )
+  (func:15 createOrder
+    (parameter:16 user @type:2 User)
+    (return:17 @type:5 Order)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_user_service_ts {
+    label="user-service.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n15[label="createOrder", full_path="$TMP/services/user-service.ts:12", sym_ty="Function"];
+    n9[label="getUser", full_path="$TMP/services/user-service.ts:4", sym_ty="Function"];
+    n12[label="processUser", full_path="$TMP/services/user-service.ts:8", sym_ty="Function"];
+  }
+
+  subgraph cluster_user_ts {
+    label="user.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n2[label="User", full_path="$TMP/models/user.ts:2", sym_ty="Interface"];
+    n5[label="Order", full_path="$TMP/models/user.ts:7", sym_ty="Interface"];
+  }
+
+
+  n2 -> n12 [from="input", to="func"];
+  n2 -> n15 [from="input", to="func"];
+  n9 -> n2 [from="func", to="output"];
+  n15 -> n5 [from="func", to="output"];
+}

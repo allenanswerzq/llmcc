@@ -1,0 +1,22 @@
+===============================================================================
+tagged-templates
+===============================================================================
+Tagged template expressions.
+lang: typescript
+
+--- file: src/lib.ts ---
+function tag(strings: TemplateStringsArray, ...values: unknown[]): string {
+    return strings.join("");
+}
+
+const name = "world";
+const result = tag`Hello, ${name}!`;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 tag
+    (parameter:3 strings @type strings)
+    (parameter:4 values @type unknown)
+    (return:5 @type string)
+  )
+)

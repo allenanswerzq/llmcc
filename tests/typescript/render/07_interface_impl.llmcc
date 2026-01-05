@@ -1,0 +1,45 @@
+===============================================================================
+interface-impl
+===============================================================================
+Test that classes implementing interfaces create edges.
+lang: typescript
+
+--- file: sample/src/lib.ts ---
+
+interface Printable {
+    print(): void;
+}
+
+class Document implements Printable {
+    content: string;
+
+    print(): void {
+        console.log(this.content);
+    }
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_ts {
+    label="lib.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n2[label="Printable", full_path="$TMP/sample/src/lib.ts:2", sym_ty="Interface"];
+    n5[label="Document", full_path="$TMP/sample/src/lib.ts:6", sym_ty="Struct", shape=box];
+  }
+
+
+  n2 -> n5 [from="interface", to="implements"];
+}

@@ -1,0 +1,100 @@
+===============================================================================
+edge-field-type
+===============================================================================
+Test that field->field_type edges create correct dependencies.
+Class/interface with field of another type depends on that type.
+lang: typescript
+
+--- file: types/common.ts ---
+
+export interface Address {
+    street: string;
+    city: string;
+    zipCode: string;
+}
+
+export interface Phone {
+    countryCode: string;
+    number: string;
+}
+
+--- file: types/user.ts ---
+
+import { Address, Phone } from "./common";
+
+export interface User {
+    id: number;
+    name: string;
+    address: Address;
+    phone: Phone;
+}
+
+export class UserProfile {
+    user: User;
+    primaryAddress: Address;
+}
+
+--- expect:block-graph ---
+(root:1 common ($TMP/types/common.ts)
+  (interface:2 Address
+    (field:3 street @type string)
+    (field:4 city @type string)
+    (field:5 zipCode @type string)
+  )
+  (interface:6 Phone
+    (field:7 countryCode @type string)
+    (field:8 number @type string)
+  )
+)
+
+(root:9 user ($TMP/types/user.ts)
+  (interface:10 User
+    (field:11 id @type number)
+    (field:12 name @type string)
+    (field:13 address @type:2 Address)
+    (field:14 phone @type:6 Phone)
+  )
+  (class:15 UserProfile
+    (field:16 user @type:10 User)
+    (field:17 primaryAddress @type:2 Address)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_common_ts {
+    label="common.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n2[label="Address", full_path="$TMP/types/common.ts:2", sym_ty="Interface"];
+    n6[label="Phone", full_path="$TMP/types/common.ts:8", sym_ty="Interface"];
+  }
+
+  subgraph cluster_user_ts {
+    label="user.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n15[label="UserProfile", full_path="$TMP/types/user.ts:11", sym_ty="Struct", shape=box];
+    n10[label="User", full_path="$TMP/types/user.ts:4", sym_ty="Interface"];
+  }
+
+
+  n2 -> n10 [from="field_type", to="struct"];
+  n2 -> n15 [from="field_type", to="struct"];
+  n6 -> n10 [from="field_type", to="struct"];
+  n10 -> n15 [from="field_type", to="struct"];
+}
