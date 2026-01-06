@@ -180,7 +180,6 @@ pub fn find_user(id: UserId) -> Result<User, StoreError> {
 
 --- expect:arch-graph ---
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.6;
   nodesep=0.3;
@@ -192,14 +191,10 @@ digraph architecture {
 
   subgraph cluster_auth {
     label="auth";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
+    bgcolor="#f8f8f8";
 
     subgraph cluster_auth_rs {
       label="auth.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n30[label="validate_session", full_path="$TMP/auth/src/auth.rs:12", sym_ty="Function", shape=ellipse];
@@ -211,14 +206,10 @@ digraph architecture {
 
   subgraph cluster_store {
     label="store";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
+    bgcolor="#f8f8f8";
 
     subgraph cluster_repository_rs {
       label="repository.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n50[label="find_user", full_path="$TMP/store/src/repository.rs:9", sym_ty="Function", shape=ellipse];
@@ -228,14 +219,10 @@ digraph architecture {
 
   subgraph cluster_types {
     label="types";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
+    bgcolor="#f8f8f8";
 
     subgraph cluster_common_rs {
       label="common.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n4[label="UserId", full_path="$TMP/types/src/common.rs:1", sym_ty="Struct", shape=box];

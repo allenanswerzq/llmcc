@@ -42,7 +42,6 @@ export function helper(): number {
 
 --- expect:arch-graph ---
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.6;
   nodesep=0.3;
@@ -54,14 +53,10 @@ digraph architecture {
 
   subgraph cluster_my_app {
     label="my-app";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
+    bgcolor="#f8f8f8";
 
     subgraph cluster_index_ts {
       label="index.ts";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n2[label="main", full_path="$TMP/src/index.ts:4", sym_ty="Function", shape=ellipse];
@@ -69,14 +64,10 @@ digraph architecture {
 
     subgraph cluster_utils {
       label="utils";
-      style=rounded;
-      color="#999999";
       bgcolor="#f5f5f5";
 
       subgraph cluster_helper_ts {
         label="helper.ts";
-        style=rounded;
-        color="#aaaaaa";
         bgcolor="#fafafa";
 
         n6[label="helper", full_path="$TMP/src/utils/helper.ts:2", sym_ty="Function", shape=ellipse];

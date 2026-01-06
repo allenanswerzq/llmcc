@@ -41,7 +41,6 @@ pub fn create_entity(entity: &Entity) -> Entity {
 
 --- expect:arch-graph ---
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.6;
   nodesep=0.3;
@@ -53,14 +52,10 @@ digraph architecture {
 
   subgraph cluster_app {
     label="app";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
+    bgcolor="#f8f8f8";
 
     subgraph cluster_lib_rs {
       label="lib.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n14[label="create_entity", full_path="$TMP/app/src/lib.rs:11", sym_ty="Function", shape=ellipse];
@@ -71,14 +66,10 @@ digraph architecture {
 
   subgraph cluster_core {
     label="core";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
+    bgcolor="#f8f8f8";
 
     subgraph cluster_lib_rs {
       label="lib.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n2[label="Entity", full_path="$TMP/core/src/lib.rs:1", sym_ty="Struct", shape=box];
@@ -94,7 +85,6 @@ digraph architecture {
 
 --- expect:arch-graph-depth-2 ---
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.8;
   nodesep=0.4;
@@ -106,7 +96,6 @@ digraph architecture {
 
   labelloc=t;
   fontsize=16;
-  fontname="Helvetica Bold";
 
   mod_app_lib[label="app::lib", folder="$TMP/app/src"];
   mod_core_lib[label="core::lib", folder="$TMP/core/src"];
@@ -116,7 +105,6 @@ digraph architecture {
 
 --- expect:arch-graph-depth-1 ---
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.8;
   nodesep=0.4;
@@ -128,7 +116,6 @@ digraph architecture {
 
   labelloc=t;
   fontsize=16;
-  fontname="Helvetica Bold";
 
   crate_app[label="app", folder="$TMP/app"];
   crate_core[label="core", folder="$TMP/core"];

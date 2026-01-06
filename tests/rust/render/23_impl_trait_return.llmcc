@@ -65,7 +65,6 @@ pub fn make_counter() -> impl Iterator {
 
 --- expect:arch-graph ---
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.6;
   nodesep=0.3;
@@ -77,14 +76,10 @@ digraph architecture {
 
   subgraph cluster_sample {
     label="sample";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
+    bgcolor="#f8f8f8";
 
     subgraph cluster_factory_rs {
       label="factory.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n17[label="make_counter", full_path="$TMP/sample/src/factory.rs:13", sym_ty="Function", shape=ellipse];
@@ -93,8 +88,6 @@ digraph architecture {
 
     subgraph cluster_iterator_rs {
       label="iterator.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n5[label="Iterator", full_path="$TMP/sample/src/iterator.rs:1", sym_ty="Trait", shape=box];

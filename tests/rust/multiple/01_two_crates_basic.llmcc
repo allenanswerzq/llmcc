@@ -84,7 +84,6 @@ pub fn create_user(name: String) -> User {
 
 --- expect:arch-graph ---
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.6;
   nodesep=0.3;
@@ -96,14 +95,10 @@ digraph architecture {
 
   subgraph cluster_app {
     label="app";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
+    bgcolor="#f8f8f8";
 
     subgraph cluster_service_rs {
       label="service.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n13[label="get_user", full_path="$TMP/app/src/service.rs:3", sym_ty="Function", shape=ellipse];
@@ -114,14 +109,10 @@ digraph architecture {
 
   subgraph cluster_common {
     label="common";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
+    bgcolor="#f8f8f8";
 
     subgraph cluster_types_rs {
       label="types.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n4[label="User", full_path="$TMP/common/src/types.rs:1", sym_ty="Struct", shape=box];

@@ -34,7 +34,6 @@ impl Processor for MyProcessor {
 
 --- expect:arch-graph-depth-3 ---
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.6;
   nodesep=0.3;
@@ -46,14 +45,10 @@ digraph architecture {
 
   subgraph cluster_app {
     label="app";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
+    bgcolor="#f8f8f8";
 
     subgraph cluster_lib_rs {
       label="lib.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n6[label="MyProcessor", full_path="$TMP/app/src/lib.rs:3", sym_ty="Struct", shape=box];
@@ -63,14 +58,10 @@ digraph architecture {
 
   subgraph cluster_traits {
     label="traits";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
+    bgcolor="#f8f8f8";
 
     subgraph cluster_lib_rs {
       label="lib.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n2[label="Processor", full_path="$TMP/traits/src/lib.rs:1", sym_ty="Trait", shape=box];
@@ -84,7 +75,6 @@ digraph architecture {
 
 --- expect:arch-graph-depth-2 ---
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.8;
   nodesep=0.4;
@@ -96,7 +86,6 @@ digraph architecture {
 
   labelloc=t;
   fontsize=16;
-  fontname="Helvetica Bold";
 
   mod_app_lib[label="app::lib", folder="$TMP/app/src"];
   mod_traits_lib[label="traits::lib", folder="$TMP/traits/src"];
@@ -106,7 +95,6 @@ digraph architecture {
 
 --- expect:arch-graph-depth-1 ---
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.8;
   nodesep=0.4;
@@ -118,7 +106,6 @@ digraph architecture {
 
   labelloc=t;
   fontsize=16;
-  fontname="Helvetica Bold";
 
   crate_app[label="app", folder="$TMP/app"];
   crate_traits[label="traits", folder="$TMP/traits"];

@@ -58,7 +58,6 @@ impl Render for Html {
 
 --- expect:arch-graph ---
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.6;
   nodesep=0.3;
@@ -70,14 +69,10 @@ digraph architecture {
 
   subgraph cluster_sample {
     label="sample";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
+    bgcolor="#f8f8f8";
 
     subgraph cluster_impls_rs {
       label="impls.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n10[label="Html", full_path="$TMP/sample/src/impls.rs:3", sym_ty="Struct", shape=box];
@@ -85,8 +80,6 @@ digraph architecture {
 
     subgraph cluster_traits_rs {
       label="traits.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n5[label="Render", full_path="$TMP/sample/src/traits.rs:1", sym_ty="Trait", shape=box];

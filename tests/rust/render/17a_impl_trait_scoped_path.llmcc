@@ -54,7 +54,6 @@ impl crate::animal::Animal for Dog {
 
 --- expect:arch-graph ---
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.6;
   nodesep=0.3;
@@ -66,14 +65,10 @@ digraph architecture {
 
   subgraph cluster_sample {
     label="sample";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
+    bgcolor="#f8f8f8";
 
     subgraph cluster_animal_rs {
       label="animal.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n5[label="Animal", full_path="$TMP/sample/src/animal.rs:1", sym_ty="Trait", shape=box];
@@ -81,8 +76,6 @@ digraph architecture {
 
     subgraph cluster_dog_rs {
       label="dog.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n9[label="Dog", full_path="$TMP/sample/src/dog.rs:1", sym_ty="Struct", shape=box];
