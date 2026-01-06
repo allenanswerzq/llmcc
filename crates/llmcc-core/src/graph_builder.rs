@@ -205,16 +205,35 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 {
                     use crate::symbol::SymKind;
 
-                    if let Some(crate_sym) = scope.find_parent_by_kind(SymKind::Crate)
-                        && let Some(name) = self.unit.cc.interner.resolve_owned(crate_sym.name)
-                    {
-                        block.set_crate_name(name);
+                    // Use unit_meta for package/module info
+                    let meta = self.unit.unit_meta();
+                    if let Some(ref pkg_name) = meta.package_name {
+                        block.set_crate_name(pkg_name.clone());
+                    }
+                    if let Some(ref pkg_root) = meta.package_root {
+                        block.set_crate_root(pkg_root.display().to_string());
+                    }
+                    if let Some(ref mod_name) = meta.module_name {
+                        block.set_module_path(mod_name.clone());
+                    }
+                    if let Some(ref mod_root) = meta.module_root {
+                        block.set_module_root(mod_root.display().to_string());
                     }
 
-                    if let Some(module_sym) = scope.find_parent_by_kind(SymKind::Module)
-                        && let Some(name) = self.unit.cc.interner.resolve_owned(module_sym.name)
-                    {
-                        block.set_module_path(name);
+                    // Fall back to scope chain if unit_meta is not populated
+                    if meta.package_name.is_none() {
+                        if let Some(crate_sym) = scope.find_parent_by_kind(SymKind::Crate)
+                            && let Some(name) = self.unit.cc.interner.resolve_owned(crate_sym.name)
+                        {
+                            block.set_crate_name(name);
+                        }
+                    }
+                    if meta.module_name.is_none() {
+                        if let Some(module_sym) = scope.find_parent_by_kind(SymKind::Module)
+                            && let Some(name) = self.unit.cc.interner.resolve_owned(module_sym.name)
+                        {
+                            block.set_module_path(name);
+                        }
                     }
                 }
 

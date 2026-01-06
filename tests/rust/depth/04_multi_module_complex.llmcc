@@ -58,6 +58,72 @@ pub fn handle_request<R: UserRepo>(service: &UserService<R>) -> Option<User> {
     None
 }
 
+--- expect:arch-graph-depth-3 ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_handlers_rs {
+      label="handlers.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n30[label="handle_request", full_path="$TMP/sample/src/handlers.rs:5", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_models_rs {
+      label="models.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n7[label="User", full_path="$TMP/sample/src/models.rs:1", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_repository_rs {
+      label="repository.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n14[label="UserRepo", full_path="$TMP/sample/src/repository.rs:3", sym_ty="Trait", shape=box];
+      n19[label="OrderRepo", full_path="$TMP/sample/src/repository.rs:7", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_services_rs {
+      label="services.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n25[label="UserService", full_path="$TMP/sample/src/services.rs:4", sym_ty="Struct", shape=box];
+      n27[label="OrderService", full_path="$TMP/sample/src/services.rs:8", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+
+  n14 -> n25 [from="field_type", to="struct"];
+  n14 -> n30 [from="bound", to="generic"];
+  n19 -> n27 [from="field_type", to="struct"];
+  n25 -> n30 [from="input", to="func"];
+  n30 -> n7 [from="func", to="type_dep"];
+}
+
 --- expect:arch-graph-depth-2 ---
 digraph architecture {
   // Layout settings
@@ -74,13 +140,32 @@ digraph architecture {
   fontsize=16;
   fontname="Helvetica Bold";
 
-  mod_sample_handlers[label="sample::handlers"];
-  mod_sample_models[label="sample::models"];
-  mod_sample_repository[label="sample::repository"];
-  mod_sample_services[label="sample::services"];
+  mod_sample_handlers[label="sample::handlers", folder="$TMP/sample/src"];
+  mod_sample_models[label="sample::models", folder="$TMP/sample/src"];
+  mod_sample_repository[label="sample::repository", folder="$TMP/sample/src"];
+  mod_sample_services[label="sample::services", folder="$TMP/sample/src"];
 
   mod_sample_handlers -> mod_sample_models;
-  mod_sample_handlers -> mod_sample_repository [dir=both]; // dir best-effort not accurate
+  mod_sample_handlers -> mod_sample_repository;
   mod_sample_handlers -> mod_sample_services;
   mod_sample_services -> mod_sample_repository;
+}
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+
 }

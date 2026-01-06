@@ -472,22 +472,25 @@ def count_files(src_dir: Path, language: str = "rust") -> int:
     return count
 
 
-def count_loc(src_dir: Path, use_estimate: bool = False) -> int:
+def count_loc(src_dir: Path, language: str = "rust") -> int:
     """
-    Count lines of code in Rust files.
+    Count lines of code in source files for a given language.
     Excludes blank lines and comment-only lines.
 
     Args:
         src_dir: Directory to count
-        use_estimate: If True, use file count * 200 as quick estimate
+        language: Language to count (rust, typescript, python)
     """
     if not src_dir.exists():
         return 0
 
-    # Quick estimate mode
-    if use_estimate:
-        file_count = count_rust_files(src_dir)
-        return file_count * 200  # ~200 lines per file average
+    # Language-specific tokei type names
+    tokei_types = {
+        "rust": "Rust",
+        "typescript": "TypeScript",
+        "python": "Python",
+    }
+    tokei_type = tokei_types.get(language, "Rust")
 
     # Install tokei if not available (cargo must exist for Rust projects)
     if not shutil.which("tokei"):
@@ -504,22 +507,39 @@ def count_loc(src_dir: Path, use_estimate: bool = False) -> int:
     if shutil.which("tokei"):
         try:
             result = subprocess.run(
-                ["tokei", str(src_dir), "-t", "Rust", "-o", "json"],
+                ["tokei", str(src_dir), "-t", tokei_type, "-o", "json"],
                 capture_output=True, text=True, timeout=30
             )
             import json
             data = json.loads(result.stdout)
-            if "Rust" in data:
-                return data["Rust"].get("code", 0)
+            if tokei_type in data:
+                return data[tokei_type].get("code", 0)
         except Exception:
             pass
+
+    # Language-specific extensions for fallback
+    extensions = {
+        "rust": [".rs"],
+        "typescript": [".ts", ".tsx"],
+        "python": [".py"],
+    }
+    exts = extensions.get(language, [".rs"])
+
+    # Directories to skip
+    skip_dirs = {
+        "node_modules", "tests", "test", "__tests__",
+        "baselines", "fixtures", "examples", "dist", "build",
+        ".git", "target", "__pycache__", ".tox", "venv",
+    }
 
     # Fallback: count lines manually (excludes comments and blank lines)
     total_lines = 0
     in_block_comment = False
-    for root, _, files in os.walk(src_dir):
+    for root, dirs, files in os.walk(src_dir):
+        # Skip unwanted directories
+        dirs[:] = [d for d in dirs if d not in skip_dirs]
         for f in files:
-            if f.endswith('.rs'):
+            if any(f.endswith(ext) for ext in exts):
                 try:
                     filepath = Path(root) / f
                     with open(filepath, 'r', encoding='utf-8', errors='ignore') as fp:

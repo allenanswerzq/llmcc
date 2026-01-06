@@ -72,24 +72,32 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_common_ts {
-    label="common.ts";
+  subgraph cluster_types {
+    label="types";
     style=rounded;
-    color="#aaaaaa";
-    bgcolor="#fafafa";
+    color="#999999";
+    bgcolor="#f5f5f5";
 
-    n2[label="Address", full_path="$TMP/types/common.ts:2", sym_ty="Interface"];
-    n6[label="Phone", full_path="$TMP/types/common.ts:8", sym_ty="Interface"];
-  }
+    subgraph cluster_common_ts {
+      label="common.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
 
-  subgraph cluster_user_ts {
-    label="user.ts";
-    style=rounded;
-    color="#aaaaaa";
-    bgcolor="#fafafa";
+      n2[label="Address", full_path="$TMP/types/common.ts:2", sym_ty="Interface", shape=box];
+      n6[label="Phone", full_path="$TMP/types/common.ts:8", sym_ty="Interface", shape=box];
+    }
 
-    n15[label="UserProfile", full_path="$TMP/types/user.ts:11", sym_ty="Struct", shape=box];
-    n10[label="User", full_path="$TMP/types/user.ts:4", sym_ty="Interface"];
+    subgraph cluster_user_ts {
+      label="user.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n15[label="UserProfile", full_path="$TMP/types/user.ts:11", sym_ty="Struct", shape=box];
+      n10[label="User", full_path="$TMP/types/user.ts:4", sym_ty="Interface", shape=box];
+    }
+
   }
 
 

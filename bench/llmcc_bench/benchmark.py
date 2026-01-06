@@ -188,13 +188,13 @@ def benchmark_project(
 
     # Count files and LoC
     result.file_count = count_files(src_dir, project.language)
-    result.loc = count_loc(src_dir)
+    result.loc = count_loc(src_dir, language=project.language)
 
     config.benchmark_logs_dir.mkdir(parents=True, exist_ok=True)
 
     # Run full graph benchmark
     if verbose:
-        print(f"  Running depth={config.depth} benchmark...")
+        print(f"  Running depth={config.depth} benchmark...", flush=True)
 
     full_dot = config.benchmark_logs_dir / f"{name}_depth{config.depth}.dot"
     log_file, _ = run_llmcc(config, src_dir, full_dot, depth=config.depth, language=project.language)
@@ -208,7 +208,7 @@ def benchmark_project(
 
     # Run PageRank benchmark
     if verbose:
-        print(f"  Running depth={config.depth} benchmark with PageRank top-{config.top_k}...")
+        print(f"  Running depth={config.depth} benchmark with PageRank top-{config.top_k}...", flush=True)
 
     pr_dot = config.benchmark_logs_dir / f"{name}_pagerank_depth{config.depth}.dot"
     log_file, _ = run_llmcc(config, src_dir, pr_dot, depth=config.depth, pagerank_top_k=config.top_k, language=project.language)
@@ -242,33 +242,34 @@ def benchmark_all(
 
     to_benchmark = projects if projects else list(PROJECTS.keys())
 
-    # First, count files to sort by size
+    # First, count LoC to sort by size (largest first)
     if verbose:
-        print("Counting files in projects...")
+        print("Counting lines of code in projects...", flush=True)
 
-    file_counts: Dict[str, int] = {}
+    loc_counts: Dict[str, int] = {}
     for name in to_benchmark:
         if name not in PROJECTS:
-            file_counts[name] = 0
+            loc_counts[name] = 0
             continue
         project = PROJECTS[name]
         src_dir = config.project_repo_path(project)
         if src_dir.exists():
-            count = count_files(src_dir, project.language)
-            file_counts[name] = count
+            # Use accurate tokei count to match displayed values
+            loc = count_loc(src_dir, language=project.language)
+            loc_counts[name] = loc
             if verbose:
-                print(f"  {name}: {count} files")
+                print(f"  {name}: ~{format_loc(loc)}")
         else:
-            file_counts[name] = 0
+            loc_counts[name] = 0
 
-    # Sort by file count descending
-    sorted_projects = sorted(to_benchmark, key=lambda n: file_counts.get(n, 0), reverse=True)
+    # Sort by LoC descending (largest first)
+    sorted_projects = sorted(to_benchmark, key=lambda n: loc_counts.get(n, 0), reverse=True)
 
     results = []
     for name in sorted_projects:
         if verbose:
-            print()
-            print(f"=== Benchmarking {name} ===")
+            print(flush=True)
+            print(f"=== Benchmarking {name} ===", flush=True)
 
         result = benchmark_project(name, config, verbose=verbose)
         if result:

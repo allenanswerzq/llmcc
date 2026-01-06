@@ -20,7 +20,7 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_ruff_commands[label="commands"];
+    mod_ruff_commands[label="commands", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff/src/commands"];
   }
 
   subgraph cluster_ruff_db {
@@ -30,9 +30,9 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_ruff_db_diagnostic[label="diagnostic"];
-    mod_ruff_db_lib[label="lib"];
-    mod_ruff_db_system[label="system"];
+    mod_ruff_db_diagnostic[label="diagnostic", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_db/src/diagnostic"];
+    mod_ruff_db_files[label="files", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_db/src"];
+    mod_ruff_db_system[label="system", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_db/src/system"];
   }
 
   subgraph cluster_ruff_formatter {
@@ -42,9 +42,12 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_ruff_formatter_builders[label="builders"];
-    mod_ruff_formatter_format_element[label="format_element"];
-    mod_ruff_formatter_lib[label="lib"];
+    mod_ruff_formatter_buffer[label="buffer", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_formatter/src"];
+    mod_ruff_formatter_builders[label="builders", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_formatter/src"];
+    mod_ruff_formatter_format_element[label="format_element", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_formatter/src/format_element"];
+    mod_ruff_formatter_formatter[label="formatter", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_formatter/src"];
+    mod_ruff_formatter_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_formatter/src"];
+    mod_ruff_formatter_printer[label="printer", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_formatter/src/printer"];
   }
 
   subgraph cluster_ruff_linter {
@@ -54,13 +57,14 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_ruff_linter_analyze[label="analyze"];
-    mod_ruff_linter_ast[label="ast"];
-    mod_ruff_linter_isort[label="isort"];
-    mod_ruff_linter_logical_lines[label="logical_lines"];
-    mod_ruff_linter_rules[label="rules"];
-    mod_ruff_linter_settings[label="settings"];
-    mod_ruff_linter_violation[label="violation"];
+    mod_ruff_linter_analyze[label="analyze", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_linter/src/checkers/ast/analyze"];
+    mod_ruff_linter_ast[label="ast", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_linter/src/checkers/ast"];
+    mod_ruff_linter_isort[label="isort", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_linter/src/rules/isort"];
+    mod_ruff_linter_logical_lines[label="logical_lines", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_linter/src/rules/pycodestyle/rules/logical_lines"];
+    mod_ruff_linter_preview[label="preview", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_linter/src"];
+    mod_ruff_linter_rules[label="rules", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_linter/src/rules/flake8_bugbear/rules"];
+    mod_ruff_linter_settings[label="settings", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_linter/src/settings"];
+    mod_ruff_linter_violation[label="violation", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_linter/src"];
   }
 
   subgraph cluster_ruff_python_ast {
@@ -70,11 +74,11 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_ruff_python_ast_comparable[label="comparable"];
-    mod_ruff_python_ast_generated[label="generated"];
-    mod_ruff_python_ast_helpers[label="helpers"];
-    mod_ruff_python_ast_nodes[label="nodes"];
-    mod_ruff_python_ast_visitor[label="visitor"];
+    mod_ruff_python_ast_comparable[label="comparable", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_ast/src"];
+    mod_ruff_python_ast_generated[label="generated", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_ast/src"];
+    mod_ruff_python_ast_helpers[label="helpers", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_ast/src"];
+    mod_ruff_python_ast_nodes[label="nodes", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_ast/src"];
+    mod_ruff_python_ast_visitor[label="visitor", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_ast/src/visitor"];
   }
 
   subgraph cluster_ruff_python_formatter {
@@ -84,9 +88,12 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_ruff_python_formatter_comments[label="comments"];
-    mod_ruff_python_formatter_expression[label="expression"];
-    mod_ruff_python_formatter_statement[label="statement"];
+    mod_ruff_python_formatter_comments[label="comments", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_formatter/src/comments"];
+    mod_ruff_python_formatter_db[label="db", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_formatter/src"];
+    mod_ruff_python_formatter_expression[label="expression", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_formatter/src/expression"];
+    mod_ruff_python_formatter_other[label="other", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_formatter/src/other"];
+    mod_ruff_python_formatter_statement[label="statement", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_formatter/src/statement"];
+    mod_ruff_python_formatter_string[label="string", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_formatter/src/string"];
   }
 
   subgraph cluster_ruff_python_literal {
@@ -96,7 +103,7 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_ruff_python_literal_float[label="float"];
+    mod_ruff_python_literal_float[label="float", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_literal/src"];
   }
 
   subgraph cluster_ruff_python_parser {
@@ -106,7 +113,7 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_ruff_python_parser_parser[label="parser"];
+    mod_ruff_python_parser_parser[label="parser", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_parser/src/parser"];
   }
 
   subgraph cluster_ruff_python_semantic {
@@ -116,7 +123,8 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_ruff_python_semantic_analyze[label="analyze"];
+    mod_ruff_python_semantic_analyze[label="analyze", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_semantic/src/analyze"];
+    mod_ruff_python_semantic_model[label="model", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_semantic/src/model"];
   }
 
   subgraph cluster_ruff_server {
@@ -126,7 +134,7 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_ruff_server_session[label="session"];
+    mod_ruff_server_session[label="session", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_server/src/session"];
   }
 
   subgraph cluster_ruff_text_size {
@@ -136,8 +144,18 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_ruff_text_size_range[label="range"];
-    mod_ruff_text_size_size[label="size"];
+    mod_ruff_text_size_range[label="range", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_text_size/src"];
+    mod_ruff_text_size_size[label="size", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_text_size/src"];
+  }
+
+  subgraph cluster_ty_ide {
+    label="ty_ide";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_ty_ide_completion[label="completion", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ty_ide/src"];
   }
 
   subgraph cluster_ty_module_resolver {
@@ -147,7 +165,7 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_ty_module_resolver_resolve[label="resolve"];
+    mod_ty_module_resolver_resolve[label="resolve", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ty_module_resolver/src"];
   }
 
   subgraph cluster_ty_project {
@@ -157,7 +175,7 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_ty_project_metadata[label="metadata"];
+    mod_ty_project_metadata[label="metadata", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ty_project/src/metadata"];
   }
 
   subgraph cluster_ty_python_semantic {
@@ -167,12 +185,13 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_ty_python_semantic_call[label="call"];
-    mod_ty_python_semantic_infer[label="infer"];
-    mod_ty_python_semantic_place[label="place"];
-    mod_ty_python_semantic_semantic_index[label="semantic_index"];
-    mod_ty_python_semantic_semantic_model[label="semantic_model"];
-    mod_ty_python_semantic_types[label="types"];
+    mod_ty_python_semantic_call[label="call", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ty_python_semantic/src/types/call"];
+    mod_ty_python_semantic_db[label="db", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ty_python_semantic/src"];
+    mod_ty_python_semantic_infer[label="infer", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ty_python_semantic/src/types/infer"];
+    mod_ty_python_semantic_place[label="place", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ty_python_semantic/src"];
+    mod_ty_python_semantic_property_tests[label="property_tests", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ty_python_semantic/src/types/property_tests"];
+    mod_ty_python_semantic_semantic_index[label="semantic_index", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ty_python_semantic/src"];
+    mod_ty_python_semantic_types[label="types", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ty_python_semantic/src/types"];
   }
 
   subgraph cluster_ty_server {
@@ -182,7 +201,17 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_ty_server_session[label="session"];
+    mod_ty_server_session[label="session", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ty_server/src/session"];
+  }
+
+  subgraph cluster_ty_test {
+    label="ty_test";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_ty_test_db[label="db", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ty_test/src"];
   }
 
   subgraph cluster_ty_wasm {
@@ -192,121 +221,180 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_ty_wasm_lib[label="lib"];
+    mod_ty_wasm_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/ruff/crates/ty_wasm/src"];
   }
 
 
-  mod_ruff_commands -> mod_ruff_formatter_lib;
   mod_ruff_commands -> mod_ruff_linter_settings;
-  mod_ruff_commands -> mod_ruff_python_formatter_comments [dir=both]; // dir best-effort not accurate
+  mod_ruff_db_diagnostic -> mod_ruff_db_files;
+  mod_ruff_db_diagnostic -> mod_ruff_python_formatter_db;
   mod_ruff_db_diagnostic -> mod_ruff_text_size_size;
-  mod_ruff_formatter_builders -> mod_ruff_formatter_format_element [dir=both]; // dir best-effort not accurate
+  mod_ruff_db_diagnostic -> mod_ty_wasm_lib;
+  mod_ruff_db_files -> mod_ruff_db_system;
+  mod_ruff_formatter_buffer -> mod_ruff_formatter_format_element;
+  mod_ruff_formatter_builders -> mod_ruff_formatter_format_element;
   mod_ruff_formatter_builders -> mod_ruff_formatter_lib;
-  mod_ruff_formatter_builders -> mod_ruff_linter_rules [dir=both]; // dir best-effort not accurate
+  mod_ruff_formatter_builders -> mod_ruff_linter_rules;
   mod_ruff_formatter_builders -> mod_ty_python_semantic_call;
+  mod_ruff_formatter_format_element -> mod_ruff_formatter_builders;
   mod_ruff_formatter_format_element -> mod_ruff_formatter_lib;
-  mod_ruff_formatter_lib -> mod_ty_wasm_lib;
+  mod_ruff_formatter_formatter -> mod_ruff_formatter_buffer;
+  mod_ruff_formatter_lib -> mod_ruff_text_size_range;
+  mod_ruff_formatter_printer -> mod_ruff_formatter_format_element;
   mod_ruff_linter_analyze -> mod_ruff_linter_ast;
-  mod_ruff_linter_analyze -> mod_ruff_linter_rules [dir=both]; // dir best-effort not accurate
   mod_ruff_linter_analyze -> mod_ruff_python_ast_generated;
-  mod_ruff_linter_analyze -> mod_ty_python_semantic_types [dir=both]; // dir best-effort not accurate
   mod_ruff_linter_ast -> mod_ruff_linter_settings;
-  mod_ruff_linter_isort -> mod_ruff_linter_rules [dir=both]; // dir best-effort not accurate
+  mod_ruff_linter_ast -> mod_ruff_python_semantic_model;
+  mod_ruff_linter_ast -> mod_ty_wasm_lib;
+  mod_ruff_linter_isort -> mod_ruff_linter_settings;
   mod_ruff_linter_isort -> mod_ruff_python_ast_generated;
   mod_ruff_linter_logical_lines -> mod_ruff_formatter_builders;
   mod_ruff_linter_logical_lines -> mod_ruff_linter_ast;
   mod_ruff_linter_logical_lines -> mod_ruff_linter_violation;
-  mod_ruff_linter_logical_lines -> mod_ruff_text_size_range;
   mod_ruff_linter_logical_lines -> mod_ruff_text_size_size;
-  mod_ruff_linter_rules -> mod_ruff_formatter_lib;
+  mod_ruff_linter_logical_lines -> mod_ty_python_semantic_semantic_index;
+  mod_ruff_linter_preview -> mod_ruff_linter_settings;
+  mod_ruff_linter_rules -> mod_ruff_formatter_builders;
+  mod_ruff_linter_rules -> mod_ruff_formatter_printer;
+  mod_ruff_linter_rules -> mod_ruff_linter_analyze;
   mod_ruff_linter_rules -> mod_ruff_linter_ast;
+  mod_ruff_linter_rules -> mod_ruff_linter_isort;
+  mod_ruff_linter_rules -> mod_ruff_linter_logical_lines;
+  mod_ruff_linter_rules -> mod_ruff_linter_preview;
   mod_ruff_linter_rules -> mod_ruff_linter_settings;
   mod_ruff_linter_rules -> mod_ruff_linter_violation;
   mod_ruff_linter_rules -> mod_ruff_python_ast_comparable;
   mod_ruff_linter_rules -> mod_ruff_python_ast_generated;
-  mod_ruff_linter_rules -> mod_ruff_python_ast_helpers [dir=both]; // dir best-effort not accurate
-  mod_ruff_linter_rules -> mod_ruff_python_ast_nodes [dir=both]; // dir best-effort not accurate
-  mod_ruff_linter_rules -> mod_ruff_python_ast_visitor [dir=both]; // dir best-effort not accurate
-  mod_ruff_linter_rules -> mod_ruff_python_formatter_expression [dir=both]; // dir best-effort not accurate
-  mod_ruff_linter_rules -> mod_ruff_python_formatter_statement [dir=both]; // dir best-effort not accurate
+  mod_ruff_linter_rules -> mod_ruff_python_ast_helpers;
+  mod_ruff_linter_rules -> mod_ruff_python_ast_nodes;
+  mod_ruff_linter_rules -> mod_ruff_python_ast_visitor;
   mod_ruff_linter_rules -> mod_ruff_python_literal_float;
-  mod_ruff_linter_rules -> mod_ruff_python_semantic_analyze [dir=both]; // dir best-effort not accurate
+  mod_ruff_linter_rules -> mod_ruff_python_semantic_analyze;
+  mod_ruff_linter_rules -> mod_ruff_python_semantic_model;
   mod_ruff_linter_rules -> mod_ruff_text_size_range;
   mod_ruff_linter_rules -> mod_ruff_text_size_size;
-  mod_ruff_linter_rules -> mod_ty_python_semantic_semantic_index [dir=both]; // dir best-effort not accurate
-  mod_ruff_linter_rules -> mod_ty_python_semantic_semantic_model;
-  mod_ruff_linter_rules -> mod_ty_python_semantic_types [dir=both]; // dir best-effort not accurate
+  mod_ruff_linter_rules -> mod_ty_python_semantic_semantic_index;
+  mod_ruff_linter_rules -> mod_ty_python_semantic_types;
   mod_ruff_linter_rules -> mod_ty_wasm_lib;
-  mod_ruff_python_ast_comparable -> mod_ruff_python_ast_generated [dir=both]; // dir best-effort not accurate
-  mod_ruff_python_ast_comparable -> mod_ruff_python_ast_nodes [dir=both]; // dir best-effort not accurate
-  mod_ruff_python_ast_comparable -> mod_ruff_python_formatter_expression [dir=both]; // dir best-effort not accurate
-  mod_ruff_python_ast_generated -> mod_ruff_python_ast_nodes [dir=both]; // dir best-effort not accurate
-  mod_ruff_python_ast_helpers -> mod_ruff_python_ast_comparable;
+  mod_ruff_python_ast_comparable -> mod_ruff_python_ast_generated;
+  mod_ruff_python_ast_comparable -> mod_ruff_python_ast_nodes;
+  mod_ruff_python_ast_comparable -> mod_ruff_python_formatter_expression;
+  mod_ruff_python_ast_generated -> mod_ruff_python_ast_comparable;
+  mod_ruff_python_ast_generated -> mod_ruff_python_ast_nodes;
+  mod_ruff_python_ast_generated -> mod_ty_python_semantic_types;
+  mod_ruff_python_ast_helpers -> mod_ruff_linter_rules;
   mod_ruff_python_ast_helpers -> mod_ruff_python_ast_generated;
   mod_ruff_python_ast_helpers -> mod_ruff_python_ast_visitor;
-  mod_ruff_python_ast_nodes -> mod_ruff_python_parser_parser [dir=both]; // dir best-effort not accurate
+  mod_ruff_python_ast_nodes -> mod_ruff_linter_rules;
+  mod_ruff_python_ast_nodes -> mod_ruff_python_ast_comparable;
+  mod_ruff_python_ast_nodes -> mod_ruff_python_ast_generated;
   mod_ruff_python_ast_nodes -> mod_ruff_text_size_range;
   mod_ruff_python_ast_visitor -> mod_ruff_linter_analyze;
+  mod_ruff_python_ast_visitor -> mod_ruff_linter_rules;
   mod_ruff_python_ast_visitor -> mod_ruff_python_ast_generated;
   mod_ruff_python_ast_visitor -> mod_ruff_python_ast_nodes;
   mod_ruff_python_ast_visitor -> mod_ty_python_semantic_types;
+  mod_ruff_python_formatter_comments -> mod_ruff_commands;
   mod_ruff_python_formatter_comments -> mod_ruff_formatter_lib;
   mod_ruff_python_formatter_comments -> mod_ruff_linter_analyze;
   mod_ruff_python_formatter_comments -> mod_ruff_python_ast_generated;
-  mod_ruff_python_formatter_comments -> mod_ruff_python_ast_nodes;
   mod_ruff_python_formatter_comments -> mod_ruff_python_ast_visitor;
-  mod_ruff_python_formatter_comments -> mod_ruff_python_formatter_expression [dir=both]; // dir best-effort not accurate
   mod_ruff_python_formatter_comments -> mod_ruff_text_size_range;
-  mod_ruff_python_formatter_comments -> mod_ty_wasm_lib;
+  mod_ruff_python_formatter_comments -> mod_ty_python_semantic_types;
   mod_ruff_python_formatter_expression -> mod_ruff_commands;
   mod_ruff_python_formatter_expression -> mod_ruff_formatter_builders;
   mod_ruff_python_formatter_expression -> mod_ruff_formatter_lib;
+  mod_ruff_python_formatter_expression -> mod_ruff_python_ast_comparable;
   mod_ruff_python_formatter_expression -> mod_ruff_python_ast_generated;
+  mod_ruff_python_formatter_expression -> mod_ruff_python_ast_nodes;
+  mod_ruff_python_formatter_expression -> mod_ruff_python_formatter_comments;
+  mod_ruff_python_formatter_other -> mod_ruff_formatter_lib;
+  mod_ruff_python_formatter_other -> mod_ruff_python_ast_generated;
+  mod_ruff_python_formatter_other -> mod_ruff_python_ast_nodes;
+  mod_ruff_python_formatter_other -> mod_ruff_text_size_range;
+  mod_ruff_python_formatter_other -> mod_ty_python_semantic_types;
   mod_ruff_python_formatter_statement -> mod_ruff_commands;
   mod_ruff_python_formatter_statement -> mod_ruff_formatter_builders;
   mod_ruff_python_formatter_statement -> mod_ruff_formatter_lib;
+  mod_ruff_python_formatter_statement -> mod_ruff_linter_rules;
   mod_ruff_python_formatter_statement -> mod_ruff_python_ast_comparable;
   mod_ruff_python_formatter_statement -> mod_ruff_python_ast_generated;
   mod_ruff_python_formatter_statement -> mod_ruff_python_ast_nodes;
   mod_ruff_python_formatter_statement -> mod_ruff_python_formatter_comments;
+  mod_ruff_python_formatter_statement -> mod_ruff_text_size_range;
   mod_ruff_python_formatter_statement -> mod_ty_python_semantic_call;
-  mod_ruff_python_formatter_statement -> mod_ty_wasm_lib;
+  mod_ruff_python_formatter_string -> mod_ruff_formatter_builders;
+  mod_ruff_python_formatter_string -> mod_ruff_formatter_lib;
+  mod_ruff_python_formatter_string -> mod_ruff_linter_rules;
+  mod_ruff_python_formatter_string -> mod_ruff_python_ast_nodes;
+  mod_ruff_python_formatter_string -> mod_ruff_text_size_size;
   mod_ruff_python_parser_parser -> mod_ruff_python_ast_generated;
+  mod_ruff_python_parser_parser -> mod_ruff_python_ast_nodes;
   mod_ruff_python_parser_parser -> mod_ruff_text_size_range;
   mod_ruff_python_semantic_analyze -> mod_ruff_linter_analyze;
+  mod_ruff_python_semantic_analyze -> mod_ruff_linter_rules;
   mod_ruff_python_semantic_analyze -> mod_ruff_python_ast_comparable;
   mod_ruff_python_semantic_analyze -> mod_ruff_python_ast_generated;
   mod_ruff_python_semantic_analyze -> mod_ruff_python_ast_helpers;
   mod_ruff_python_semantic_analyze -> mod_ruff_python_ast_nodes;
-  mod_ruff_python_semantic_analyze -> mod_ty_python_semantic_semantic_model;
-  mod_ruff_server_session -> mod_ty_server_session [dir=both]; // dir best-effort not accurate
-  mod_ruff_text_size_range -> mod_ty_wasm_lib [dir=both]; // dir best-effort not accurate
-  mod_ty_module_resolver_resolve -> mod_ruff_db_lib;
+  mod_ruff_python_semantic_analyze -> mod_ruff_python_semantic_model;
+  mod_ruff_python_semantic_model -> mod_ruff_text_size_range;
+  mod_ruff_python_semantic_model -> mod_ty_python_semantic_semantic_index;
+  mod_ruff_server_session -> mod_ty_server_session;
+  mod_ty_ide_completion -> mod_ruff_db_files;
+  mod_ty_ide_completion -> mod_ruff_python_semantic_model;
+  mod_ty_ide_completion -> mod_ruff_text_size_size;
+  mod_ty_ide_completion -> mod_ty_python_semantic_types;
+  mod_ty_ide_completion -> mod_ty_test_db;
+  mod_ty_module_resolver_resolve -> mod_ruff_db_files;
   mod_ty_module_resolver_resolve -> mod_ruff_db_system;
   mod_ty_module_resolver_resolve -> mod_ruff_linter_analyze;
   mod_ty_module_resolver_resolve -> mod_ruff_linter_rules;
-  mod_ty_project_metadata -> mod_ruff_db_diagnostic;
+  mod_ty_module_resolver_resolve -> mod_ty_python_semantic_db;
   mod_ty_project_metadata -> mod_ruff_db_system;
-  mod_ty_python_semantic_call -> mod_ty_python_semantic_types [dir=both]; // dir best-effort not accurate
-  mod_ty_python_semantic_infer -> mod_ruff_db_lib;
+  mod_ty_project_metadata -> mod_ty_wasm_lib;
+  mod_ty_python_semantic_call -> mod_ruff_linter_rules;
+  mod_ty_python_semantic_call -> mod_ruff_python_formatter_db;
+  mod_ty_python_semantic_call -> mod_ty_python_semantic_types;
+  mod_ty_python_semantic_infer -> mod_ruff_db_files;
+  mod_ty_python_semantic_infer -> mod_ruff_linter_rules;
   mod_ty_python_semantic_infer -> mod_ty_python_semantic_semantic_index;
-  mod_ty_python_semantic_infer -> mod_ty_python_semantic_types [dir=both]; // dir best-effort not accurate
-  mod_ty_python_semantic_place -> mod_ruff_db_lib;
+  mod_ty_python_semantic_infer -> mod_ty_python_semantic_types;
+  mod_ty_python_semantic_place -> mod_ruff_db_files;
+  mod_ty_python_semantic_place -> mod_ruff_linter_rules;
   mod_ty_python_semantic_place -> mod_ty_module_resolver_resolve;
-  mod_ty_python_semantic_place -> mod_ty_python_semantic_semantic_index [dir=both]; // dir best-effort not accurate
-  mod_ty_python_semantic_place -> mod_ty_python_semantic_types [dir=both]; // dir best-effort not accurate
-  mod_ty_python_semantic_semantic_index -> mod_ruff_db_lib;
+  mod_ty_python_semantic_place -> mod_ty_python_semantic_db;
+  mod_ty_python_semantic_place -> mod_ty_python_semantic_semantic_index;
+  mod_ty_python_semantic_place -> mod_ty_python_semantic_types;
+  mod_ty_python_semantic_property_tests -> mod_ruff_linter_rules;
+  mod_ty_python_semantic_property_tests -> mod_ty_python_semantic_types;
+  mod_ty_python_semantic_semantic_index -> mod_ruff_db_files;
+  mod_ty_python_semantic_semantic_index -> mod_ruff_linter_rules;
+  mod_ty_python_semantic_semantic_index -> mod_ruff_python_ast_comparable;
   mod_ty_python_semantic_semantic_index -> mod_ruff_python_ast_visitor;
-  mod_ty_python_semantic_semantic_index -> mod_ty_python_semantic_types [dir=both]; // dir best-effort not accurate
-  mod_ty_python_semantic_semantic_model -> mod_ty_python_semantic_types [dir=both]; // dir best-effort not accurate
+  mod_ty_python_semantic_semantic_index -> mod_ruff_python_formatter_db;
+  mod_ty_python_semantic_semantic_index -> mod_ty_python_semantic_types;
   mod_ty_python_semantic_types -> mod_ruff_db_diagnostic;
-  mod_ty_python_semantic_types -> mod_ruff_db_lib;
+  mod_ty_python_semantic_types -> mod_ruff_db_files;
+  mod_ty_python_semantic_types -> mod_ruff_linter_analyze;
+  mod_ty_python_semantic_types -> mod_ruff_linter_rules;
   mod_ty_python_semantic_types -> mod_ruff_python_ast_generated;
-  mod_ty_python_semantic_types -> mod_ruff_python_ast_helpers;
   mod_ty_python_semantic_types -> mod_ruff_python_ast_nodes;
-  mod_ty_python_semantic_types -> mod_ruff_python_semantic_analyze;
+  mod_ty_python_semantic_types -> mod_ruff_python_formatter_db;
+  mod_ty_python_semantic_types -> mod_ruff_python_semantic_model;
   mod_ty_python_semantic_types -> mod_ruff_text_size_range;
   mod_ty_python_semantic_types -> mod_ty_module_resolver_resolve;
+  mod_ty_python_semantic_types -> mod_ty_python_semantic_call;
+  mod_ty_python_semantic_types -> mod_ty_python_semantic_db;
+  mod_ty_python_semantic_types -> mod_ty_python_semantic_infer;
+  mod_ty_python_semantic_types -> mod_ty_python_semantic_place;
+  mod_ty_python_semantic_types -> mod_ty_python_semantic_property_tests;
+  mod_ty_python_semantic_types -> mod_ty_python_semantic_semantic_index;
+  mod_ty_python_semantic_types -> mod_ty_test_db;
   mod_ty_python_semantic_types -> mod_ty_wasm_lib;
   mod_ty_server_session -> mod_ruff_db_system;
+  mod_ty_server_session -> mod_ruff_linter_rules;
+  mod_ty_server_session -> mod_ruff_server_session;
+  mod_ty_test_db -> mod_ruff_db_system;
+  mod_ty_wasm_lib -> mod_ruff_db_files;
 }

@@ -92,34 +92,58 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_order_ts {
-    label="order.ts";
+  subgraph cluster_orders {
+    label="orders";
     style=rounded;
-    color="#aaaaaa";
-    bgcolor="#fafafa";
+    color="#999999";
+    bgcolor="#f5f5f5";
 
-    n18[label="Order", full_path="$TMP/orders/order.ts:4", sym_ty="Interface"];
-    n21[label="findOrder", full_path="$TMP/orders/order.ts:9", sym_ty="Function"];
+    subgraph cluster_order_ts {
+      label="order.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n18[label="Order", full_path="$TMP/orders/order.ts:4", sym_ty="Interface", shape=box];
+      n21[label="findOrder", full_path="$TMP/orders/order.ts:9", sym_ty="Function", shape=ellipse];
+    }
+
   }
 
-  subgraph cluster_types_ts {
-    label="types.ts";
+  subgraph cluster_shared {
+    label="shared";
     style=rounded;
-    color="#aaaaaa";
-    bgcolor="#fafafa";
+    color="#999999";
+    bgcolor="#f5f5f5";
 
-    n2[label="Entity", full_path="$TMP/shared/types.ts:2", sym_ty="Interface"];
-    n6[label="Result", full_path="$TMP/shared/types.ts:8", sym_ty="Interface"];
+    subgraph cluster_types_ts {
+      label="types.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2[label="Entity", full_path="$TMP/shared/types.ts:2", sym_ty="Interface", shape=box];
+      n6[label="Result", full_path="$TMP/shared/types.ts:8", sym_ty="Interface", shape=box];
+    }
+
   }
 
-  subgraph cluster_user_ts {
-    label="user.ts";
+  subgraph cluster_users {
+    label="users";
     style=rounded;
-    color="#aaaaaa";
-    bgcolor="#fafafa";
+    color="#999999";
+    bgcolor="#f5f5f5";
 
-    n11[label="User", full_path="$TMP/users/user.ts:4", sym_ty="Interface"];
-    n14[label="findUser", full_path="$TMP/users/user.ts:9", sym_ty="Function"];
+    subgraph cluster_user_ts {
+      label="user.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n11[label="User", full_path="$TMP/users/user.ts:4", sym_ty="Interface", shape=box];
+      n14[label="findUser", full_path="$TMP/users/user.ts:9", sym_ty="Function", shape=ellipse];
+    }
+
   }
 
 

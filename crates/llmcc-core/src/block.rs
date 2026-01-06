@@ -467,8 +467,12 @@ pub struct BlockRoot<'blk> {
     pub file_name: Option<String>,
     /// Crate name from Cargo.toml [package] name
     pub crate_name: RwLock<Option<String>>,
+    /// Crate/package root directory path
+    pub crate_root: RwLock<Option<String>>,
     /// Module path relative to crate root (e.g., "utils::helpers")
     pub module_path: RwLock<Option<String>>,
+    /// Module root directory path
+    pub module_root: RwLock<Option<String>>,
 }
 
 impl<'blk> BlockRoot<'blk> {
@@ -495,7 +499,9 @@ impl<'blk> BlockRoot<'blk> {
             base,
             file_name,
             crate_name: RwLock::new(None),
+            crate_root: RwLock::new(None),
             module_path: RwLock::new(None),
+            module_root: RwLock::new(None),
         }
     }
 
@@ -507,12 +513,28 @@ impl<'blk> BlockRoot<'blk> {
         self.crate_name.read().clone()
     }
 
+    pub fn set_crate_root(&self, root: String) {
+        *self.crate_root.write() = Some(root);
+    }
+
+    pub fn get_crate_root(&self) -> Option<String> {
+        self.crate_root.read().clone()
+    }
+
     pub fn set_module_path(&self, path: String) {
         *self.module_path.write() = Some(path);
     }
 
     pub fn get_module_path(&self) -> Option<String> {
         self.module_path.read().clone()
+    }
+
+    pub fn set_module_root(&self, root: String) {
+        *self.module_root.write() = Some(root);
+    }
+
+    pub fn get_module_root(&self) -> Option<String> {
+        self.module_root.read().clone()
     }
 
     pub fn format(&self) -> String {

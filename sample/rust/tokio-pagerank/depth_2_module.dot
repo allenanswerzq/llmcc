@@ -20,28 +20,27 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_tokio_blocking[label="blocking"];
-    mod_tokio_context[label="context"];
-    mod_tokio_current_thread[label="current_thread"];
-    mod_tokio_fs[label="fs"];
-    mod_tokio_io[label="io"];
-    mod_tokio_metrics[label="metrics"];
-    mod_tokio_mpsc[label="mpsc"];
-    mod_tokio_multi_thread[label="multi_thread"];
-    mod_tokio_process[label="process"];
-    mod_tokio_runtime[label="runtime"];
-    mod_tokio_rwlock[label="rwlock"];
-    mod_tokio_signal[label="signal"];
-    mod_tokio_std[label="std"];
-    mod_tokio_sync[label="sync"];
-    mod_tokio_task[label="task"];
-    mod_tokio_time[label="time"];
-    mod_tokio_time_alt[label="time_alt"];
-    mod_tokio_trace[label="trace"];
-    mod_tokio_unix[label="unix"];
-    mod_tokio_util[label="util"];
-    mod_tokio_wheel[label="wheel"];
-    mod_tokio_windows[label="windows"];
+    mod_tokio_context[label="context", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/runtime/context"];
+    mod_tokio_current_thread[label="current_thread", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/runtime/scheduler/current_thread"];
+    mod_tokio_fs[label="fs", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/fs"];
+    mod_tokio_io[label="io", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/io"];
+    mod_tokio_metrics[label="metrics", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/runtime/metrics"];
+    mod_tokio_mpsc[label="mpsc", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/sync/mpsc"];
+    mod_tokio_multi_thread[label="multi_thread", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/runtime/scheduler/multi_thread"];
+    mod_tokio_process[label="process", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/process"];
+    mod_tokio_runtime[label="runtime", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/runtime"];
+    mod_tokio_rwlock[label="rwlock", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/sync/rwlock"];
+    mod_tokio_scheduler[label="scheduler", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/runtime/scheduler"];
+    mod_tokio_signal[label="signal", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/signal"];
+    mod_tokio_std[label="std", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/loom/std"];
+    mod_tokio_sync[label="sync", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/sync"];
+    mod_tokio_task[label="task", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/runtime/task"];
+    mod_tokio_time[label="time", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/runtime/time"];
+    mod_tokio_time_alt[label="time_alt", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/runtime/time_alt"];
+    mod_tokio_trace[label="trace", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/runtime/task/trace"];
+    mod_tokio_unix[label="unix", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/process/unix"];
+    mod_tokio_util[label="util", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/util"];
+    mod_tokio_windows[label="windows", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/net/windows"];
   }
 
   subgraph cluster_tokio_stream {
@@ -51,7 +50,7 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_tokio_stream_wrappers[label="wrappers"];
+    mod_tokio_stream_wrappers[label="wrappers", folder="/home/yibai/llmcc/sample/repos/tokio/tokio-stream/src/wrappers"];
   }
 
   subgraph cluster_tokio_util {
@@ -61,61 +60,60 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_tokio_util_io[label="io"];
-    mod_tokio_util_sync[label="sync"];
-    mod_tokio_util_task[label="task"];
+    mod_tokio_util_sync[label="sync", folder="/home/yibai/llmcc/sample/repos/tokio/tokio-util/src/sync"];
+    mod_tokio_util_task[label="task", folder="/home/yibai/llmcc/sample/repos/tokio/tokio-util/src/task"];
   }
 
 
-  mod_tokio_blocking -> mod_tokio_sync [dir=both]; // dir best-effort not accurate
-  mod_tokio_context -> mod_tokio_task [dir=both]; // dir best-effort not accurate
+  mod_tokio_context -> mod_tokio_task;
   mod_tokio_current_thread -> mod_tokio_metrics;
-  mod_tokio_current_thread -> mod_tokio_runtime [dir=both]; // dir best-effort not accurate
-  mod_tokio_current_thread -> mod_tokio_task [dir=both]; // dir best-effort not accurate
-  mod_tokio_current_thread -> mod_tokio_util [dir=both]; // dir best-effort not accurate
+  mod_tokio_current_thread -> mod_tokio_runtime;
   mod_tokio_fs -> mod_tokio_io;
-  mod_tokio_fs -> mod_tokio_unix [dir=both]; // dir best-effort not accurate
-  mod_tokio_fs -> mod_tokio_util [dir=both]; // dir best-effort not accurate
-  mod_tokio_io -> mod_tokio_process [dir=both]; // dir best-effort not accurate
-  mod_tokio_io -> mod_tokio_std [dir=both]; // dir best-effort not accurate
-  mod_tokio_io -> mod_tokio_util [dir=both]; // dir best-effort not accurate
-  mod_tokio_metrics -> mod_tokio_time;
+  mod_tokio_io -> mod_tokio_std;
   mod_tokio_metrics -> mod_tokio_util;
-  mod_tokio_mpsc -> mod_tokio_std [dir=both]; // dir best-effort not accurate
+  mod_tokio_mpsc -> mod_tokio_std;
   mod_tokio_mpsc -> mod_tokio_time;
-  mod_tokio_mpsc -> mod_tokio_util [dir=both]; // dir best-effort not accurate
   mod_tokio_multi_thread -> mod_tokio_metrics;
-  mod_tokio_multi_thread -> mod_tokio_runtime [dir=both]; // dir best-effort not accurate
+  mod_tokio_multi_thread -> mod_tokio_runtime;
   mod_tokio_multi_thread -> mod_tokio_std;
-  mod_tokio_multi_thread -> mod_tokio_sync [dir=both]; // dir best-effort not accurate
-  mod_tokio_multi_thread -> mod_tokio_time_alt;
-  mod_tokio_multi_thread -> mod_tokio_util [dir=both]; // dir best-effort not accurate
-  mod_tokio_runtime -> mod_tokio_std [dir=both]; // dir best-effort not accurate
-  mod_tokio_runtime -> mod_tokio_task [dir=both]; // dir best-effort not accurate
-  mod_tokio_rwlock -> mod_tokio_mpsc;
+  mod_tokio_multi_thread -> mod_tokio_time;
+  mod_tokio_multi_thread -> mod_tokio_util;
+  mod_tokio_process -> mod_tokio_io;
+  mod_tokio_runtime -> mod_tokio_multi_thread;
+  mod_tokio_runtime -> mod_tokio_std;
+  mod_tokio_runtime -> mod_tokio_task;
   mod_tokio_rwlock -> mod_tokio_std;
-  mod_tokio_signal -> mod_tokio_runtime;
+  mod_tokio_rwlock -> mod_tokio_sync;
   mod_tokio_signal -> mod_tokio_sync;
-  mod_tokio_signal -> mod_tokio_windows [dir=both]; // dir best-effort not accurate
-  mod_tokio_std -> mod_tokio_sync [dir=both]; // dir best-effort not accurate
-  mod_tokio_std -> mod_tokio_task [dir=both]; // dir best-effort not accurate
-  mod_tokio_std -> mod_tokio_util [dir=both]; // dir best-effort not accurate
+  mod_tokio_signal -> mod_tokio_windows;
+  mod_tokio_std -> mod_tokio_io;
+  mod_tokio_std -> mod_tokio_multi_thread;
+  mod_tokio_std -> mod_tokio_sync;
+  mod_tokio_std -> mod_tokio_task;
+  mod_tokio_std -> mod_tokio_util;
   mod_tokio_stream_wrappers -> mod_tokio_signal;
   mod_tokio_stream_wrappers -> mod_tokio_time_alt;
+  mod_tokio_sync -> mod_tokio_std;
   mod_tokio_sync -> mod_tokio_time;
-  mod_tokio_sync -> mod_tokio_time_alt [dir=both]; // dir best-effort not accurate
-  mod_tokio_sync -> mod_tokio_util [dir=both]; // dir best-effort not accurate
-  mod_tokio_task -> mod_tokio_trace [dir=both]; // dir best-effort not accurate
-  mod_tokio_task -> mod_tokio_util [dir=both]; // dir best-effort not accurate
+  mod_tokio_sync -> mod_tokio_util;
+  mod_tokio_task -> mod_tokio_runtime;
+  mod_tokio_task -> mod_tokio_std;
+  mod_tokio_task -> mod_tokio_util;
   mod_tokio_time -> mod_tokio_std;
-  mod_tokio_time_alt -> mod_tokio_util [dir=both]; // dir best-effort not accurate
+  mod_tokio_trace -> mod_tokio_runtime;
+  mod_tokio_trace -> mod_tokio_task;
+  mod_tokio_unix -> mod_tokio_fs;
   mod_tokio_unix -> mod_tokio_io;
   mod_tokio_unix -> mod_tokio_process;
-  mod_tokio_unix -> mod_tokio_util [dir=both]; // dir best-effort not accurate
-  mod_tokio_util -> mod_tokio_wheel;
-  mod_tokio_util_io -> mod_tokio_io;
+  mod_tokio_util -> mod_tokio_io;
+  mod_tokio_util -> mod_tokio_scheduler;
+  mod_tokio_util -> mod_tokio_std;
+  mod_tokio_util -> mod_tokio_sync;
+  mod_tokio_util -> mod_tokio_task;
+  mod_tokio_util -> mod_tokio_time_alt;
   mod_tokio_util_sync -> mod_tokio_mpsc;
-  mod_tokio_util_sync -> mod_tokio_time_alt;
+  mod_tokio_util_sync -> mod_tokio_sync;
   mod_tokio_util_task -> mod_tokio_std;
   mod_tokio_windows -> mod_tokio_io;
+  mod_tokio_windows -> mod_tokio_signal;
 }

@@ -1322,8 +1322,8 @@ fn materialize_case(case: &CorpusCase, keep_temps: bool) -> Result<MaterializedP
             .unwrap_or_default()
             .to_string_lossy();
 
-        // Don't add prefix to Cargo.toml - it needs to be findable by parse_crate_name
-        let final_path = if file_name_str == "Cargo.toml" {
+        // Don't add prefix to Cargo.toml or package.json - they need to be findable by parse_crate_name/parse_package_name
+        let final_path = if file_name_str == "Cargo.toml" || file_name_str == "package.json" {
             original_path.to_path_buf()
         } else {
             // Add numeric prefix to filename to preserve declaration order after WalkDir + sort

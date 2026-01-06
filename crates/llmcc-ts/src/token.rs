@@ -70,6 +70,14 @@ impl LanguageTraitImpl for LangTypeScript {
         &["ts", "mts", "cts"]
     }
 
+    fn manifest_name_impl() -> &'static str {
+        "package.json"
+    }
+
+    fn container_dirs_impl() -> &'static [&'static str] {
+        &["src", "lib", "dist", "build", "out", "source"]
+    }
+
     /// Check if the given parse node is a TypeScript test attribute.
     /// Detects: @test, describe(), it(), test(), etc.
     fn is_test_attribute_impl(node: &dyn ParseNode, source: &[u8]) -> bool {

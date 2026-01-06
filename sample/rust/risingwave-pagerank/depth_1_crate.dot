@@ -13,101 +13,129 @@ digraph architecture {
   fontsize=16;
   fontname="Helvetica Bold";
 
-  crate_pgwire[label="pgwire"];
-  crate_risedev[label="risedev"];
-  crate_risingwave_batch[label="risingwave_batch"];
-  crate_risingwave_batch_executors[label="risingwave_batch_executors"];
-  crate_risingwave_common[label="risingwave_common"];
-  crate_risingwave_connector[label="risingwave_connector"];
-  crate_risingwave_ctl[label="risingwave_ctl"];
-  crate_risingwave_expr[label="risingwave_expr"];
-  crate_risingwave_expr_impl[label="risingwave_expr_impl"];
-  crate_risingwave_expr_macro[label="risingwave_expr_macro"];
-  crate_risingwave_frontend[label="risingwave_frontend"];
-  crate_risingwave_hummock_sdk[label="risingwave_hummock_sdk"];
-  crate_risingwave_hummock_test[label="risingwave_hummock_test"];
-  crate_risingwave_hummock_trace[label="risingwave_hummock_trace"];
-  crate_risingwave_jni_core[label="risingwave_jni_core"];
-  crate_risingwave_meta[label="risingwave_meta"];
-  crate_risingwave_meta_model[label="risingwave_meta_model"];
-  crate_risingwave_meta_model_migration[label="risingwave_meta_model_migration"];
-  crate_risingwave_object_store[label="risingwave_object_store"];
-  crate_risingwave_rpc_client[label="risingwave_rpc_client"];
-  crate_risingwave_sqlparser[label="risingwave_sqlparser"];
-  crate_risingwave_storage[label="risingwave_storage"];
-  crate_risingwave_stream[label="risingwave_stream"];
+  crate_pgwire[label="pgwire", folder="/home/yibai/llmcc/sample/repos/risingwave/src/utils/pgwire"];
+  crate_risedev[label="risedev", folder="/home/yibai/llmcc/sample/repos/risingwave/src/risedevtool"];
+  crate_risingwave_batch[label="risingwave_batch", folder="/home/yibai/llmcc/sample/repos/risingwave/src/batch"];
+  crate_risingwave_batch_executors[label="risingwave_batch_executors", folder="/home/yibai/llmcc/sample/repos/risingwave/src/batch/executors"];
+  crate_risingwave_common[label="risingwave_common", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common"];
+  crate_risingwave_common_metrics[label="risingwave_common_metrics", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/metrics"];
+  crate_risingwave_connector[label="risingwave_connector", folder="/home/yibai/llmcc/sample/repos/risingwave/src/connector"];
+  crate_risingwave_ctl[label="risingwave_ctl", folder="/home/yibai/llmcc/sample/repos/risingwave/src/ctl"];
+  crate_risingwave_expr[label="risingwave_expr", folder="/home/yibai/llmcc/sample/repos/risingwave/src/expr/core"];
+  crate_risingwave_expr_impl[label="risingwave_expr_impl", folder="/home/yibai/llmcc/sample/repos/risingwave/src/expr/impl"];
+  crate_risingwave_expr_macro[label="risingwave_expr_macro", folder="/home/yibai/llmcc/sample/repos/risingwave/src/expr/macro"];
+  crate_risingwave_fields_derive[label="risingwave-fields-derive", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/fields-derive"];
+  crate_risingwave_frontend[label="risingwave_frontend", folder="/home/yibai/llmcc/sample/repos/risingwave/src/frontend"];
+  crate_risingwave_hummock_sdk[label="risingwave_hummock_sdk", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk"];
+  crate_risingwave_hummock_trace[label="risingwave_hummock_trace", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_trace"];
+  crate_risingwave_jni_core[label="risingwave_jni_core", folder="/home/yibai/llmcc/sample/repos/risingwave/src/jni_core"];
+  crate_risingwave_meta[label="risingwave_meta", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta"];
+  crate_risingwave_meta_model[label="risingwave_meta_model", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model"];
+  crate_risingwave_meta_model_migration[label="risingwave_meta_model_migration", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration"];
+  crate_risingwave_object_store[label="risingwave_object_store", folder="/home/yibai/llmcc/sample/repos/risingwave/src/object_store"];
+  crate_risingwave_rpc_client[label="risingwave_rpc_client", folder="/home/yibai/llmcc/sample/repos/risingwave/src/rpc_client"];
+  crate_risingwave_sqlparser[label="risingwave_sqlparser", folder="/home/yibai/llmcc/sample/repos/risingwave/src/sqlparser"];
+  crate_risingwave_storage[label="risingwave_storage", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage"];
+  crate_risingwave_stream[label="risingwave_stream", folder="/home/yibai/llmcc/sample/repos/risingwave/src/stream"];
 
-  crate_pgwire -> crate_risingwave_connector [dir=both]; // dir best-effort not accurate
-  crate_pgwire -> crate_risingwave_storage [dir=both]; // dir best-effort not accurate
-  crate_risedev -> crate_risingwave_meta [dir=both]; // dir best-effort not accurate
+  crate_pgwire -> crate_risingwave_common;
+  crate_risedev -> crate_risingwave_meta;
   crate_risingwave_batch -> crate_risingwave_common;
-  crate_risingwave_batch -> crate_risingwave_frontend [dir=both]; // dir best-effort not accurate
-  crate_risingwave_batch -> crate_risingwave_stream [dir=both]; // dir best-effort not accurate
   crate_risingwave_batch_executors -> crate_risingwave_batch;
-  crate_risingwave_batch_executors -> crate_risingwave_common [dir=both]; // dir best-effort not accurate
+  crate_risingwave_batch_executors -> crate_risingwave_common;
   crate_risingwave_batch_executors -> crate_risingwave_expr;
   crate_risingwave_batch_executors -> crate_risingwave_meta_model_migration;
-  crate_risingwave_common -> crate_risingwave_connector [dir=both]; // dir best-effort not accurate
-  crate_risingwave_common -> crate_risingwave_ctl [dir=both]; // dir best-effort not accurate
-  crate_risingwave_common -> crate_risingwave_expr [dir=both]; // dir best-effort not accurate
-  crate_risingwave_common -> crate_risingwave_expr_impl [dir=both]; // dir best-effort not accurate
-  crate_risingwave_common -> crate_risingwave_frontend [dir=both]; // dir best-effort not accurate
-  crate_risingwave_common -> crate_risingwave_hummock_trace [dir=both]; // dir best-effort not accurate
-  crate_risingwave_common -> crate_risingwave_meta [dir=both]; // dir best-effort not accurate
-  crate_risingwave_common -> crate_risingwave_meta_model_migration [dir=both]; // dir best-effort not accurate
-  crate_risingwave_common -> crate_risingwave_object_store [dir=both]; // dir best-effort not accurate
-  crate_risingwave_common -> crate_risingwave_sqlparser [dir=both]; // dir best-effort not accurate
-  crate_risingwave_common -> crate_risingwave_storage [dir=both]; // dir best-effort not accurate
-  crate_risingwave_common -> crate_risingwave_stream [dir=both]; // dir best-effort not accurate
-  crate_risingwave_connector -> crate_risingwave_expr [dir=both]; // dir best-effort not accurate
-  crate_risingwave_connector -> crate_risingwave_expr_impl [dir=both]; // dir best-effort not accurate
-  crate_risingwave_connector -> crate_risingwave_frontend [dir=both]; // dir best-effort not accurate
-  crate_risingwave_connector -> crate_risingwave_meta [dir=both]; // dir best-effort not accurate
+  crate_risingwave_common -> crate_risingwave_connector;
+  crate_risingwave_common -> crate_risingwave_expr_impl;
+  crate_risingwave_common -> crate_risingwave_frontend;
+  crate_risingwave_common -> crate_risingwave_meta_model_migration;
+  crate_risingwave_common -> crate_risingwave_sqlparser;
+  crate_risingwave_common -> crate_risingwave_storage;
+  crate_risingwave_common -> crate_risingwave_stream;
+  crate_risingwave_common_metrics -> crate_risingwave_connector;
+  crate_risingwave_connector -> crate_risingwave_common;
+  crate_risingwave_connector -> crate_risingwave_expr_impl;
+  crate_risingwave_connector -> crate_risingwave_fields_derive;
+  crate_risingwave_connector -> crate_risingwave_frontend;
   crate_risingwave_connector -> crate_risingwave_meta_model_migration;
   crate_risingwave_connector -> crate_risingwave_object_store;
-  crate_risingwave_connector -> crate_risingwave_sqlparser [dir=both]; // dir best-effort not accurate
-  crate_risingwave_connector -> crate_risingwave_storage [dir=both]; // dir best-effort not accurate
-  crate_risingwave_connector -> crate_risingwave_stream [dir=both]; // dir best-effort not accurate
-  crate_risingwave_ctl -> crate_risingwave_expr_impl [dir=both]; // dir best-effort not accurate
-  crate_risingwave_ctl -> crate_risingwave_frontend [dir=both]; // dir best-effort not accurate
+  crate_risingwave_connector -> crate_risingwave_sqlparser;
+  crate_risingwave_connector -> crate_risingwave_storage;
+  crate_risingwave_connector -> crate_risingwave_stream;
+  crate_risingwave_ctl -> crate_risingwave_common;
+  crate_risingwave_ctl -> crate_risingwave_expr_impl;
+  crate_risingwave_ctl -> crate_risingwave_frontend;
   crate_risingwave_ctl -> crate_risingwave_hummock_sdk;
-  crate_risingwave_ctl -> crate_risingwave_storage [dir=both]; // dir best-effort not accurate
-  crate_risingwave_expr -> crate_risingwave_expr_impl [dir=both]; // dir best-effort not accurate
-  crate_risingwave_expr -> crate_risingwave_frontend [dir=both]; // dir best-effort not accurate
-  crate_risingwave_expr_impl -> crate_risingwave_frontend [dir=both]; // dir best-effort not accurate
-  crate_risingwave_expr_impl -> crate_risingwave_storage [dir=both]; // dir best-effort not accurate
-  crate_risingwave_expr_impl -> crate_risingwave_stream [dir=both]; // dir best-effort not accurate
-  crate_risingwave_expr_macro -> crate_risingwave_sqlparser [dir=both]; // dir best-effort not accurate
+  crate_risingwave_ctl -> crate_risingwave_sqlparser;
+  crate_risingwave_ctl -> crate_risingwave_storage;
+  crate_risingwave_expr -> crate_risingwave_common;
+  crate_risingwave_expr -> crate_risingwave_connector;
+  crate_risingwave_expr_impl -> crate_risingwave_common;
+  crate_risingwave_expr_impl -> crate_risingwave_connector;
+  crate_risingwave_expr_impl -> crate_risingwave_ctl;
+  crate_risingwave_expr_impl -> crate_risingwave_expr;
+  crate_risingwave_expr_impl -> crate_risingwave_frontend;
+  crate_risingwave_expr_impl -> crate_risingwave_storage;
+  crate_risingwave_expr_impl -> crate_risingwave_stream;
+  crate_risingwave_expr_macro -> crate_risingwave_sqlparser;
   crate_risingwave_frontend -> crate_pgwire;
-  crate_risingwave_frontend -> crate_risingwave_meta [dir=both]; // dir best-effort not accurate
-  crate_risingwave_frontend -> crate_risingwave_meta_model [dir=both]; // dir best-effort not accurate
-  crate_risingwave_frontend -> crate_risingwave_meta_model_migration [dir=both]; // dir best-effort not accurate
-  crate_risingwave_frontend -> crate_risingwave_sqlparser [dir=both]; // dir best-effort not accurate
-  crate_risingwave_frontend -> crate_risingwave_storage [dir=both]; // dir best-effort not accurate
-  crate_risingwave_frontend -> crate_risingwave_stream [dir=both]; // dir best-effort not accurate
+  crate_risingwave_frontend -> crate_risingwave_batch;
+  crate_risingwave_frontend -> crate_risingwave_common;
+  crate_risingwave_frontend -> crate_risingwave_connector;
+  crate_risingwave_frontend -> crate_risingwave_expr;
+  crate_risingwave_frontend -> crate_risingwave_expr_impl;
+  crate_risingwave_frontend -> crate_risingwave_expr_macro;
+  crate_risingwave_frontend -> crate_risingwave_meta;
+  crate_risingwave_frontend -> crate_risingwave_meta_model;
+  crate_risingwave_frontend -> crate_risingwave_meta_model_migration;
+  crate_risingwave_frontend -> crate_risingwave_rpc_client;
+  crate_risingwave_frontend -> crate_risingwave_sqlparser;
+  crate_risingwave_frontend -> crate_risingwave_storage;
+  crate_risingwave_frontend -> crate_risingwave_stream;
   crate_risingwave_hummock_sdk -> crate_risingwave_common;
-  crate_risingwave_hummock_sdk -> crate_risingwave_storage [dir=both]; // dir best-effort not accurate
-  crate_risingwave_hummock_test -> crate_risingwave_common;
-  crate_risingwave_hummock_test -> crate_risingwave_hummock_trace [dir=both]; // dir best-effort not accurate
-  crate_risingwave_hummock_test -> crate_risingwave_meta;
-  crate_risingwave_hummock_test -> crate_risingwave_storage [dir=both]; // dir best-effort not accurate
-  crate_risingwave_hummock_trace -> crate_risingwave_meta [dir=both]; // dir best-effort not accurate
+  crate_risingwave_hummock_sdk -> crate_risingwave_expr_impl;
+  crate_risingwave_hummock_trace -> crate_risingwave_common;
   crate_risingwave_jni_core -> crate_risingwave_common;
+  crate_risingwave_meta -> crate_risingwave_common;
+  crate_risingwave_meta -> crate_risingwave_connector;
   crate_risingwave_meta -> crate_risingwave_expr_impl;
+  crate_risingwave_meta -> crate_risingwave_frontend;
   crate_risingwave_meta -> crate_risingwave_hummock_sdk;
+  crate_risingwave_meta -> crate_risingwave_hummock_trace;
   crate_risingwave_meta -> crate_risingwave_meta_model;
   crate_risingwave_meta -> crate_risingwave_meta_model_migration;
-  crate_risingwave_meta -> crate_risingwave_sqlparser [dir=both]; // dir best-effort not accurate
-  crate_risingwave_meta -> crate_risingwave_storage [dir=both]; // dir best-effort not accurate
-  crate_risingwave_meta -> crate_risingwave_stream [dir=both]; // dir best-effort not accurate
+  crate_risingwave_meta -> crate_risingwave_object_store;
+  crate_risingwave_meta -> crate_risingwave_sqlparser;
+  crate_risingwave_meta -> crate_risingwave_storage;
+  crate_risingwave_meta -> crate_risingwave_stream;
   crate_risingwave_meta_model -> crate_risingwave_common;
+  crate_risingwave_meta_model -> crate_risingwave_hummock_sdk;
   crate_risingwave_meta_model -> crate_risingwave_meta_model_migration;
+  crate_risingwave_object_store -> crate_risingwave_common;
   crate_risingwave_rpc_client -> crate_risingwave_common;
-  crate_risingwave_sqlparser -> crate_risingwave_stream [dir=both]; // dir best-effort not accurate
+  crate_risingwave_sqlparser -> crate_risingwave_common;
+  crate_risingwave_sqlparser -> crate_risingwave_connector;
+  crate_risingwave_sqlparser -> crate_risingwave_frontend;
+  crate_risingwave_sqlparser -> crate_risingwave_stream;
+  crate_risingwave_storage -> crate_pgwire;
+  crate_risingwave_storage -> crate_risingwave_common;
+  crate_risingwave_storage -> crate_risingwave_connector;
+  crate_risingwave_storage -> crate_risingwave_expr_impl;
+  crate_risingwave_storage -> crate_risingwave_frontend;
+  crate_risingwave_storage -> crate_risingwave_hummock_sdk;
   crate_risingwave_storage -> crate_risingwave_hummock_trace;
   crate_risingwave_storage -> crate_risingwave_rpc_client;
-  crate_risingwave_storage -> crate_risingwave_stream [dir=both]; // dir best-effort not accurate
+  crate_risingwave_storage -> crate_risingwave_stream;
+  crate_risingwave_stream -> crate_pgwire;
+  crate_risingwave_stream -> crate_risingwave_batch;
+  crate_risingwave_stream -> crate_risingwave_common;
+  crate_risingwave_stream -> crate_risingwave_common_metrics;
+  crate_risingwave_stream -> crate_risingwave_connector;
   crate_risingwave_stream -> crate_risingwave_expr;
+  crate_risingwave_stream -> crate_risingwave_expr_impl;
+  crate_risingwave_stream -> crate_risingwave_frontend;
   crate_risingwave_stream -> crate_risingwave_hummock_sdk;
   crate_risingwave_stream -> crate_risingwave_meta_model_migration;
+  crate_risingwave_stream -> crate_risingwave_sqlparser;
+  crate_risingwave_stream -> crate_risingwave_storage;
 }

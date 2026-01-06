@@ -376,17 +376,21 @@ impl<'tcx> ProjectGraph<'tcx> {
                         // Add as type_dep
                         class.base.add_type_dep(type_block_id);
 
-                        // For Rust Traits (from dyn Trait): create Uses/UsedBy for bound edges
-                        // For TypeScript Interfaces: only Implements relation (to avoid duplicate bounds)
-                        if type_sym.kind() == crate::symbol::SymKind::Trait {
-                            // Rust: dyn Trait creates Uses/UsedBy for bound edges
+                        // Only create Implements relation for Trait/Interface, not regular types
+                        // In Rust, nested_types may include field types which are not implementations
+                        let is_trait = type_sym.kind() == crate::symbol::SymKind::Trait;
+                        let is_interface = type_sym.kind() == crate::symbol::SymKind::Interface;
+
+                        if is_trait {
+                            // For Rust Traits (from dyn Trait): create Uses/UsedBy for bound edges
+                            // Don't create Implements relation here - Rust impl blocks handle that
                             self.add_relation(block_id, BlockRelation::Uses, type_block_id);
                             self.add_relation(type_block_id, BlockRelation::UsedBy, block_id);
+                        } else if is_interface {
+                            // TypeScript Interfaces: create Implements relation for interface -> implements edges
+                            self.add_relation(block_id, BlockRelation::Implements, type_block_id);
+                            self.add_relation(type_block_id, BlockRelation::ImplementedBy, block_id);
                         }
-
-                        // Add Implements relation for architecture graph edges
-                        self.add_relation(block_id, BlockRelation::Implements, type_block_id);
-                        self.add_relation(type_block_id, BlockRelation::ImplementedBy, block_id);
                     }
                 }
             }

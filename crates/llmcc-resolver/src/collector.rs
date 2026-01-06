@@ -210,6 +210,32 @@ impl<'a> CollectorScopes<'a> {
     pub fn lookup_symbol(&self, name: &str, kind_filters: SymKindSet) -> Option<&'a Symbol> {
         let symbols = self.lookup_symbols(name, kind_filters)?;
         if symbols.len() > 1 {
+            // 1. Prefer symbols from the current unit (same file)
+            if let Some(local_sym) = symbols
+                .iter()
+                .find(|s| s.unit_index() == Some(self.unit_index))
+            {
+                return Some(*local_sym);
+            }
+
+            // 2. Prefer symbols from the same crate (same package root)
+            let current_crate_root = self.cc.unit_metas.get(self.unit_index).and_then(|m| m.package_root.as_ref());
+            if let Some(current_root) = current_crate_root {
+                if let Some(same_crate_sym) = symbols.iter().find(|s| {
+                    s.unit_index()
+                        .and_then(|idx| self.cc.unit_metas.get(idx))
+                        .and_then(|meta| meta.package_root.as_ref())
+                        .is_some_and(|r| r == current_root)
+                }) {
+                    tracing::trace!(
+                        "preferring same-crate symbol for '{}' from crate root '{:?}'",
+                        name,
+                        current_root
+                    );
+                    return Some(*same_crate_sym);
+                }
+            }
+
             tracing::warn!(
                 "multiple symbols found for '{}', returning the last one",
                 name

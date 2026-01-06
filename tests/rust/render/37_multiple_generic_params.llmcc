@@ -139,7 +139,7 @@ digraph architecture {
       n21[label="UserErrorPair", full_path="$TMP/sample/src/services.rs:21", sym_ty="Struct", shape=box];
       n23[label="Triple", full_path="$TMP/sample/src/services.rs:26", sym_ty="Struct", shape=box];
       n27[label="AllThree", full_path="$TMP/sample/src/services.rs:33", sym_ty="Struct", shape=box];
-      n13[label="get_user", full_path="$TMP/sample/src/services.rs:5", sym_ty="Function"];
+      n13[label="get_user", full_path="$TMP/sample/src/services.rs:5", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_types_rs {
@@ -156,7 +156,6 @@ digraph architecture {
   }
 
 
-  n5 -> n16 [from="interface", to="implements"];
   n5 -> n16 [from="type_dep", to="struct"];
   n5 -> n18 [from="type_arg", to="generic"];
   n5 -> n23 [from="type_arg", to="generic"];
@@ -167,7 +166,5 @@ digraph architecture {
   n13 -> n5 [from="func", to="type_dep"];
   n13 -> n7 [from="func", to="type_dep"];
   n18 -> n21 [from="field_type", to="struct"];
-  n18 -> n21 [from="interface", to="implements"];
   n23 -> n27 [from="field_type", to="struct"];
-  n23 -> n27 [from="interface", to="implements"];
 }

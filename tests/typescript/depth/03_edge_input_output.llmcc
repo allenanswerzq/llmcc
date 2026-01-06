@@ -73,25 +73,41 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_user_service_ts {
-    label="user-service.ts";
+  subgraph cluster_models {
+    label="models";
     style=rounded;
-    color="#aaaaaa";
-    bgcolor="#fafafa";
+    color="#999999";
+    bgcolor="#f5f5f5";
 
-    n15[label="createOrder", full_path="$TMP/services/user-service.ts:12", sym_ty="Function"];
-    n9[label="getUser", full_path="$TMP/services/user-service.ts:4", sym_ty="Function"];
-    n12[label="processUser", full_path="$TMP/services/user-service.ts:8", sym_ty="Function"];
+    subgraph cluster_user_ts {
+      label="user.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2[label="User", full_path="$TMP/models/user.ts:2", sym_ty="Interface", shape=box];
+      n5[label="Order", full_path="$TMP/models/user.ts:7", sym_ty="Interface", shape=box];
+    }
+
   }
 
-  subgraph cluster_user_ts {
-    label="user.ts";
+  subgraph cluster_services {
+    label="services";
     style=rounded;
-    color="#aaaaaa";
-    bgcolor="#fafafa";
+    color="#999999";
+    bgcolor="#f5f5f5";
 
-    n2[label="User", full_path="$TMP/models/user.ts:2", sym_ty="Interface"];
-    n5[label="Order", full_path="$TMP/models/user.ts:7", sym_ty="Interface"];
+    subgraph cluster_user_service_ts {
+      label="user-service.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n15[label="createOrder", full_path="$TMP/services/user-service.ts:12", sym_ty="Function", shape=ellipse];
+      n9[label="getUser", full_path="$TMP/services/user-service.ts:4", sym_ty="Function", shape=ellipse];
+      n12[label="processUser", full_path="$TMP/services/user-service.ts:8", sym_ty="Function", shape=ellipse];
+    }
+
   }
 
 

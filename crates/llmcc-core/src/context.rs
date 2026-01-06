@@ -12,6 +12,7 @@ use uuid::Uuid;
 use crate::block::{BasicBlock, BlockArena, BlockId, reset_block_id_counter};
 use crate::block_rel::{BlockIndexMaps, BlockRelationMap};
 use crate::file::File;
+use crate::meta::{UnitMeta, UnitMetaBuilder};
 
 /// Controls how files are ordered after parallel reading.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -149,6 +150,12 @@ impl<'tcx> CompileUnit<'tcx> {
 
     pub fn file_path(&self) -> Option<&str> {
         self.cc.file_path(self.index)
+    }
+
+    /// Get the module metadata for this compilation unit.
+    /// Contains package/module/file names and roots.
+    pub fn unit_meta(&self) -> &UnitMeta {
+        &self.cc.unit_metas[self.index]
     }
 
     /// Reserve a new block ID
@@ -293,6 +300,8 @@ pub struct CompileCtxt<'tcx> {
     pub arena: Arena<'tcx>,
     pub interner: InternPool,
     pub files: Vec<File>,
+    /// Per-file metadata: package/module/file names and roots.
+    pub unit_metas: Vec<UnitMeta>,
     /// Generic parse trees from language-specific parsers
     pub parse_trees: Vec<Option<Box<dyn ParseTree>>>,
     pub hir_root_ids: RwLock<Vec<Option<HirId>>>,
@@ -386,11 +395,15 @@ impl<'tcx> CompileCtxt<'tcx> {
         let (parse_trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files);
         metrics.file_read_seconds = file_read_seconds;
 
-        let count = files.len();
+        // Build unit metadata using UnitMetaBuilder
+        let unit_metas = Self::build_unit_metas::<L>(&files);
+        let count = unit_metas.len();
+
         Ok(Self {
             arena: Arena::default(),
             interner: InternPool::default(),
             files,
+            unit_metas,
             parse_trees,
             hir_root_ids: RwLock::new(vec![None; count]),
             block_arena: BlockArena::default(),
@@ -446,11 +459,15 @@ impl<'tcx> CompileCtxt<'tcx> {
         let (parse_trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files);
         metrics.file_read_seconds = file_read_seconds;
 
-        let count = files.len();
+        // Build unit metadata using UnitMetaBuilder
+        let unit_metas = Self::build_unit_metas::<L>(&files);
+        let count = unit_metas.len();
+
         Ok(Self {
             arena: Arena::default(),
             interner: InternPool::default(),
             files,
+            unit_metas,
             parse_trees,
             hir_root_ids: RwLock::new(vec![None; count]),
             block_arena: BlockArena::default(),
@@ -458,6 +475,72 @@ impl<'tcx> CompileCtxt<'tcx> {
             block_indexes: BlockIndexMaps::new(),
             build_metrics: metrics,
         })
+    }
+
+    /// Build unit metadata for all files using UnitMetaBuilder.
+    fn build_unit_metas<L: LanguageTrait>(files: &[File]) -> Vec<UnitMeta> {
+        if files.is_empty() {
+            return Vec::new();
+        }
+
+        // Collect file paths
+        let file_paths: Vec<std::path::PathBuf> = files
+            .iter()
+            .filter_map(|f| f.path().map(|p| std::path::PathBuf::from(p)))
+            .collect();
+
+        if file_paths.is_empty() {
+            return vec![UnitMeta::default(); files.len()];
+        }
+
+        // Compute project root as common ancestor of all file paths
+        let project_root = Self::compute_common_ancestor(&file_paths);
+
+        // Build the detector
+        let builder = UnitMetaBuilder::from_lang_trait::<L>(&file_paths, &project_root);
+
+        // Generate metadata for each file
+        files
+            .iter()
+            .map(|f| {
+                if let Some(path) = f.path() {
+                    builder.get_module_info(std::path::Path::new(path))
+                } else {
+                    UnitMeta::default()
+                }
+            })
+            .collect()
+    }
+
+    /// Compute the common ancestor directory of all file paths.
+    fn compute_common_ancestor(paths: &[std::path::PathBuf]) -> std::path::PathBuf {
+        if paths.is_empty() {
+            return std::path::PathBuf::new();
+        }
+
+        let first = &paths[0];
+        let mut common: Vec<_> = first.components().collect();
+
+        for path in &paths[1..] {
+            let components: Vec<_> = path.components().collect();
+            let mut new_common = Vec::new();
+            for (a, b) in common.iter().zip(components.iter()) {
+                if a == b {
+                    new_common.push(*a);
+                } else {
+                    break;
+                }
+            }
+            common = new_common;
+        }
+
+        // The common prefix might include part of a filename, so ensure we get a directory
+        let result: std::path::PathBuf = common.iter().collect();
+        if result.is_file() {
+            result.parent().unwrap_or(&result).to_path_buf()
+        } else {
+            result
+        }
     }
 
     fn parse_files_with_metrics<L: LanguageTrait>(

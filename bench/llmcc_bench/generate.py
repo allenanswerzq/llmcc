@@ -138,6 +138,7 @@ def generate_graphs(
             "--graph",
             "--depth", str(depth),
             "-o", str(dot_file),
+            "--lang", project.language,
         ]
 
         # Add PageRank filtering for pagerank mode
@@ -195,7 +196,7 @@ def generate_all(
 
     # Calculate LoC for all projects (use fast estimate)
     if verbose:
-        print("=== Calculating LoC for all projects ===")
+        print("=== Calculating LoC for all projects ===", flush=True)
 
     project_loc = {}
     for name in to_generate:
@@ -205,8 +206,8 @@ def generate_all(
         project = PROJECTS[name]
         src_dir = config.project_repo_path(project)
         if src_dir.exists():
-            # Use estimate for speed (file_count * 200)
-            loc = count_loc(src_dir, use_estimate=True)
+            # Use accurate tokei count to match displayed values in reports
+            loc = count_loc(src_dir, language=project.language)
             project_loc[name] = loc
             if verbose:
                 print(f"  {name}: {format_loc(loc)}")
@@ -217,8 +218,8 @@ def generate_all(
     sorted_projects = sorted(to_generate, key=lambda n: project_loc.get(n, 0), reverse=True)
 
     if verbose:
-        print()
-        print("=== Generating graphs ===")
+        print(flush=True)
+        print("=== Generating graphs ===", flush=True)
 
     failed = 0
     for name in sorted_projects:
@@ -230,21 +231,21 @@ def generate_all(
             continue
 
         if verbose:
-            print()
-            print(f"=== {name} ({format_loc(loc)}) ===")
+            print(flush=True)
+            print(f"=== {name} ({format_loc(loc)}) ===", flush=True)
 
         project = PROJECTS[name]
 
         # Full graphs (no PageRank filtering)
         if verbose:
-            print("  [Full graphs]")
+            print("  [Full graphs]", flush=True)
         full_dir = config.project_output_dir(project)
         if not generate_graphs(name, config, full_dir, use_pagerank=False, loc=loc, skip_svg=skip_svg, verbose=verbose):
             failed += 1
 
         # PageRank filtered
         if verbose:
-            print("  [PageRank filtered]")
+            print("  [PageRank filtered]", flush=True)
         pr_dir = config.project_output_dir(project, suffix="-pagerank")
         if not generate_graphs(name, config, pr_dir, use_pagerank=True, loc=loc, skip_svg=skip_svg, verbose=verbose):
             failed += 1

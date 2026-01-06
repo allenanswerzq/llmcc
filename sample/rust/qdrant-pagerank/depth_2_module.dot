@@ -20,8 +20,8 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_api_grpc[label="grpc"];
-    mod_api_rest[label="rest"];
+    mod_api_grpc[label="grpc", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/grpc"];
+    mod_api_rest[label="rest", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/rest"];
   }
 
   subgraph cluster_collection {
@@ -31,10 +31,11 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_collection_common[label="common"];
-    mod_collection_operations[label="operations"];
-    mod_collection_shards[label="shards"];
-    mod_collection_verification[label="verification"];
+    mod_collection_common[label="common", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/common"];
+    mod_collection_operations[label="operations", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/operations"];
+    mod_collection_shards[label="shards", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/shards"];
+    mod_collection_transfer[label="transfer", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/shards/transfer"];
+    mod_collection_verification[label="verification", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/operations/verification"];
   }
 
   subgraph cluster_common {
@@ -44,7 +45,7 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_common_counter[label="counter"];
+    mod_common_counter[label="counter", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/common/common/src/counter"];
   }
 
   subgraph cluster_qdrant {
@@ -54,10 +55,10 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_qdrant_actix[label="actix"];
-    mod_qdrant_api[label="api"];
-    mod_qdrant_common[label="common"];
-    mod_qdrant_inference[label="inference"];
+    mod_qdrant_actix[label="actix", folder="/home/yibai/llmcc/sample/repos/qdrant/src/actix"];
+    mod_qdrant_api[label="api", folder="/home/yibai/llmcc/sample/repos/qdrant/src/actix/api"];
+    mod_qdrant_common[label="common", folder="/home/yibai/llmcc/sample/repos/qdrant/src/common"];
+    mod_qdrant_inference[label="inference", folder="/home/yibai/llmcc/sample/repos/qdrant/src/common/inference"];
   }
 
   subgraph cluster_qdrant_edge_py {
@@ -67,8 +68,9 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_qdrant_edge_py_filter[label="filter"];
-    mod_qdrant_edge_py_types[label="types"];
+    mod_qdrant_edge_py_config[label="config", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src/config"];
+    mod_qdrant_edge_py_filter[label="filter", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src/types/filter"];
+    mod_qdrant_edge_py_types[label="types", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src/types"];
   }
 
   subgraph cluster_segment {
@@ -78,20 +80,25 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_segment_common[label="common"];
-    mod_segment_data_types[label="data_types"];
-    mod_segment_dense[label="dense"];
-    mod_segment_field_index[label="field_index"];
-    mod_segment_hnsw_index[label="hnsw_index"];
-    mod_segment_id_tracker[label="id_tracker"];
-    mod_segment_index[label="index"];
-    mod_segment_inverted_index[label="inverted_index"];
-    mod_segment_numeric_index[label="numeric_index"];
-    mod_segment_payload_storage[label="payload_storage"];
-    mod_segment_quantized[label="quantized"];
-    mod_segment_segment_constructor[label="segment_constructor"];
-    mod_segment_types[label="types"];
-    mod_segment_vector_storage[label="vector_storage"];
+    mod_segment_common[label="common", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/common"];
+    mod_segment_data_types[label="data_types", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/data_types"];
+    mod_segment_dense[label="dense", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/vector_storage/dense"];
+    mod_segment_field_index[label="field_index", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/field_index"];
+    mod_segment_fixtures[label="fixtures", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/fixtures"];
+    mod_segment_gpu[label="gpu", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/hnsw_index/gpu"];
+    mod_segment_gpu_vector_storage[label="gpu_vector_storage", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/hnsw_index/gpu/gpu_vector_storage"];
+    mod_segment_hnsw_index[label="hnsw_index", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/hnsw_index"];
+    mod_segment_id_tracker[label="id_tracker", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/id_tracker"];
+    mod_segment_index[label="index", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index"];
+    mod_segment_multi_dense[label="multi_dense", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/vector_storage/multi_dense"];
+    mod_segment_numeric_index[label="numeric_index", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/field_index/numeric_index"];
+    mod_segment_payload_storage[label="payload_storage", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/payload_storage"];
+    mod_segment_quantized[label="quantized", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/vector_storage/quantized"];
+    mod_segment_query_optimization[label="query_optimization", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/query_optimization"];
+    mod_segment_segment_constructor[label="segment_constructor", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/segment_constructor"];
+    mod_segment_spaces[label="spaces", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/spaces"];
+    mod_segment_types[label="types", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src"];
+    mod_segment_vector_storage[label="vector_storage", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/vector_storage"];
   }
 
   subgraph cluster_shard {
@@ -101,8 +108,9 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_shard_operations[label="operations"];
-    mod_shard_query[label="query"];
+    mod_shard_operations[label="operations", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/operations"];
+    mod_shard_query[label="query", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/query"];
+    mod_shard_update[label="update", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src"];
   }
 
   subgraph cluster_storage {
@@ -112,30 +120,31 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_storage_content_manager[label="content_manager"];
+    mod_storage_content_manager[label="content_manager", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/content_manager"];
+    mod_storage_rbac[label="rbac", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/rbac"];
   }
 
 
-  mod_api_grpc -> mod_api_rest [dir=both]; // dir best-effort not accurate
-  mod_api_grpc -> mod_collection_operations [dir=both]; // dir best-effort not accurate
-  mod_api_grpc -> mod_qdrant_edge_py_types [dir=both]; // dir best-effort not accurate
-  mod_api_grpc -> mod_segment_data_types [dir=both]; // dir best-effort not accurate
-  mod_api_grpc -> mod_segment_field_index [dir=both]; // dir best-effort not accurate
-  mod_api_grpc -> mod_segment_payload_storage [dir=both]; // dir best-effort not accurate
-  mod_api_grpc -> mod_segment_types [dir=both]; // dir best-effort not accurate
-  mod_api_grpc -> mod_segment_vector_storage [dir=both]; // dir best-effort not accurate
-  mod_api_rest -> mod_collection_verification [dir=both]; // dir best-effort not accurate
-  mod_api_rest -> mod_segment_data_types [dir=both]; // dir best-effort not accurate
+  mod_api_grpc -> mod_api_rest;
+  mod_api_grpc -> mod_collection_operations;
+  mod_api_grpc -> mod_segment_payload_storage;
+  mod_api_grpc -> mod_segment_types;
+  mod_api_rest -> mod_api_grpc;
   mod_api_rest -> mod_segment_types;
-  mod_collection_common -> mod_collection_operations [dir=both]; // dir best-effort not accurate
+  mod_collection_common -> mod_collection_operations;
+  mod_collection_operations -> mod_api_grpc;
   mod_collection_operations -> mod_api_rest;
-  mod_collection_operations -> mod_collection_shards [dir=both]; // dir best-effort not accurate
-  mod_collection_operations -> mod_segment_types [dir=both]; // dir best-effort not accurate
+  mod_collection_operations -> mod_segment_hnsw_index;
+  mod_collection_operations -> mod_segment_types;
   mod_collection_operations -> mod_segment_vector_storage;
-  mod_collection_operations -> mod_shard_operations [dir=both]; // dir best-effort not accurate
   mod_collection_shards -> mod_api_grpc;
+  mod_collection_shards -> mod_collection_operations;
   mod_collection_shards -> mod_shard_operations;
+  mod_collection_transfer -> mod_api_grpc;
+  mod_collection_transfer -> mod_collection_common;
+  mod_collection_transfer -> mod_collection_shards;
   mod_collection_verification -> mod_api_grpc;
+  mod_collection_verification -> mod_api_rest;
   mod_collection_verification -> mod_segment_data_types;
   mod_qdrant_actix -> mod_api_rest;
   mod_qdrant_actix -> mod_storage_content_manager;
@@ -145,67 +154,101 @@ digraph architecture {
   mod_qdrant_api -> mod_collection_operations;
   mod_qdrant_api -> mod_collection_verification;
   mod_qdrant_api -> mod_qdrant_actix;
-  mod_qdrant_api -> mod_qdrant_common [dir=both]; // dir best-effort not accurate
-  mod_qdrant_api -> mod_qdrant_inference [dir=both]; // dir best-effort not accurate
+  mod_qdrant_api -> mod_qdrant_common;
+  mod_qdrant_api -> mod_qdrant_inference;
   mod_qdrant_api -> mod_segment_vector_storage;
+  mod_qdrant_api -> mod_shard_operations;
   mod_qdrant_api -> mod_storage_content_manager;
+  mod_qdrant_api -> mod_storage_rbac;
   mod_qdrant_common -> mod_api_grpc;
   mod_qdrant_common -> mod_api_rest;
   mod_qdrant_common -> mod_collection_operations;
   mod_qdrant_common -> mod_collection_verification;
   mod_qdrant_common -> mod_common_counter;
   mod_qdrant_common -> mod_qdrant_inference;
+  mod_qdrant_common -> mod_segment_spaces;
   mod_qdrant_common -> mod_shard_operations;
   mod_qdrant_common -> mod_storage_content_manager;
+  mod_qdrant_common -> mod_storage_rbac;
+  mod_qdrant_edge_py_config -> mod_api_grpc;
+  mod_qdrant_edge_py_config -> mod_segment_types;
   mod_qdrant_edge_py_filter -> mod_api_grpc;
   mod_qdrant_edge_py_filter -> mod_segment_types;
+  mod_qdrant_edge_py_types -> mod_api_grpc;
   mod_qdrant_edge_py_types -> mod_segment_data_types;
   mod_qdrant_edge_py_types -> mod_shard_operations;
   mod_qdrant_inference -> mod_api_grpc;
   mod_qdrant_inference -> mod_api_rest;
+  mod_qdrant_inference -> mod_qdrant_api;
   mod_qdrant_inference -> mod_segment_vector_storage;
   mod_qdrant_inference -> mod_shard_operations;
   mod_qdrant_inference -> mod_storage_content_manager;
   mod_segment_common -> mod_api_grpc;
   mod_segment_common -> mod_segment_data_types;
-  mod_segment_common -> mod_segment_hnsw_index [dir=both]; // dir best-effort not accurate
+  mod_segment_common -> mod_segment_hnsw_index;
   mod_segment_common -> mod_segment_types;
-  mod_segment_data_types -> mod_segment_dense [dir=both]; // dir best-effort not accurate
-  mod_segment_data_types -> mod_segment_types [dir=both]; // dir best-effort not accurate
-  mod_segment_data_types -> mod_segment_vector_storage [dir=both]; // dir best-effort not accurate
-  mod_segment_data_types -> mod_shard_operations [dir=both]; // dir best-effort not accurate
-  mod_segment_data_types -> mod_shard_query [dir=both]; // dir best-effort not accurate
+  mod_segment_data_types -> mod_api_grpc;
   mod_segment_dense -> mod_api_grpc;
+  mod_segment_dense -> mod_segment_data_types;
   mod_segment_dense -> mod_segment_types;
-  mod_segment_dense -> mod_segment_vector_storage [dir=both]; // dir best-effort not accurate
-  mod_segment_field_index -> mod_segment_numeric_index [dir=both]; // dir best-effort not accurate
-  mod_segment_hnsw_index -> mod_segment_index [dir=both]; // dir best-effort not accurate
-  mod_segment_hnsw_index -> mod_segment_quantized [dir=both]; // dir best-effort not accurate
+  mod_segment_dense -> mod_segment_vector_storage;
+  mod_segment_field_index -> mod_api_grpc;
+  mod_segment_field_index -> mod_segment_numeric_index;
+  mod_segment_fixtures -> mod_api_grpc;
+  mod_segment_fixtures -> mod_common_counter;
+  mod_segment_fixtures -> mod_segment_data_types;
+  mod_segment_gpu -> mod_segment_hnsw_index;
+  mod_segment_gpu_vector_storage -> mod_api_grpc;
+  mod_segment_gpu_vector_storage -> mod_segment_data_types;
+  mod_segment_gpu_vector_storage -> mod_segment_fixtures;
+  mod_segment_gpu_vector_storage -> mod_segment_gpu;
+  mod_segment_gpu_vector_storage -> mod_segment_vector_storage;
+  mod_segment_hnsw_index -> mod_segment_index;
   mod_segment_hnsw_index -> mod_segment_vector_storage;
   mod_segment_index -> mod_api_grpc;
   mod_segment_index -> mod_segment_field_index;
+  mod_segment_index -> mod_segment_hnsw_index;
   mod_segment_index -> mod_segment_quantized;
-  mod_segment_inverted_index -> mod_api_rest;
+  mod_segment_multi_dense -> mod_api_grpc;
+  mod_segment_multi_dense -> mod_segment_types;
+  mod_segment_multi_dense -> mod_segment_vector_storage;
   mod_segment_numeric_index -> mod_common_counter;
   mod_segment_numeric_index -> mod_qdrant_actix;
   mod_segment_numeric_index -> mod_segment_common;
+  mod_segment_numeric_index -> mod_segment_field_index;
+  mod_segment_payload_storage -> mod_api_grpc;
   mod_segment_payload_storage -> mod_segment_common;
   mod_segment_quantized -> mod_common_counter;
   mod_segment_quantized -> mod_segment_types;
-  mod_segment_quantized -> mod_segment_vector_storage [dir=both]; // dir best-effort not accurate
+  mod_segment_quantized -> mod_segment_vector_storage;
+  mod_segment_query_optimization -> mod_api_grpc;
+  mod_segment_query_optimization -> mod_common_counter;
+  mod_segment_query_optimization -> mod_segment_field_index;
   mod_segment_segment_constructor -> mod_common_counter;
   mod_segment_segment_constructor -> mod_segment_dense;
   mod_segment_segment_constructor -> mod_segment_id_tracker;
   mod_segment_segment_constructor -> mod_segment_index;
+  mod_segment_segment_constructor -> mod_segment_multi_dense;
   mod_segment_segment_constructor -> mod_segment_payload_storage;
   mod_segment_segment_constructor -> mod_segment_types;
   mod_segment_segment_constructor -> mod_segment_vector_storage;
+  mod_segment_spaces -> mod_api_grpc;
+  mod_segment_types -> mod_api_grpc;
+  mod_segment_types -> mod_segment_data_types;
   mod_segment_vector_storage -> mod_common_counter;
+  mod_segment_vector_storage -> mod_segment_data_types;
+  mod_segment_vector_storage -> mod_segment_dense;
   mod_shard_operations -> mod_api_grpc;
   mod_shard_operations -> mod_api_rest;
+  mod_shard_operations -> mod_segment_data_types;
   mod_shard_query -> mod_api_grpc;
+  mod_shard_query -> mod_segment_data_types;
   mod_shard_query -> mod_segment_types;
+  mod_shard_update -> mod_api_grpc;
+  mod_shard_update -> mod_common_counter;
+  mod_shard_update -> mod_shard_operations;
   mod_storage_content_manager -> mod_api_grpc;
   mod_storage_content_manager -> mod_collection_operations;
   mod_storage_content_manager -> mod_collection_verification;
+  mod_storage_content_manager -> mod_storage_rbac;
 }

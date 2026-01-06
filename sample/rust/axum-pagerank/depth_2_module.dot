@@ -13,67 +13,26 @@ digraph architecture {
   fontsize=16;
   fontname="Helvetica Bold";
 
-  subgraph cluster_axum {
-    label="axum";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+  mod_axum_boxed[label="axum::boxed", folder="/home/yibai/llmcc/sample/repos/axum/axum/src"];
+  mod_axum_core_extract[label="axum-core::extract", folder="/home/yibai/llmcc/sample/repos/axum/axum-core/src/extract"];
+  mod_axum_core_response[label="axum-core::response", folder="/home/yibai/llmcc/sample/repos/axum/axum-core/src/response"];
+  mod_axum_extra_cookie[label="axum-extra::cookie", folder="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/extract/cookie"];
+  mod_axum_extra_extract[label="axum-extra::extract", folder="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/extract"];
+  mod_axum_extra_response[label="axum-extra::response", folder="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/response"];
+  mod_axum_extra_routing[label="axum-extra::routing", folder="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/routing"];
+  mod_axum_extract[label="axum::extract", folder="/home/yibai/llmcc/sample/repos/axum/axum/src/extract"];
+  mod_axum_macros_typed_path[label="axum-macros::typed_path", folder="/home/yibai/llmcc/sample/repos/axum/axum-macros/src"];
+  mod_axum_path[label="axum::path", folder="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/path"];
+  mod_axum_response[label="axum::response", folder="/home/yibai/llmcc/sample/repos/axum/axum/src/response"];
+  mod_axum_routing[label="axum::routing", folder="/home/yibai/llmcc/sample/repos/axum/axum/src/routing"];
 
-    mod_axum_boxed[label="boxed"];
-    mod_axum_extract[label="extract"];
-    mod_axum_path[label="path"];
-    mod_axum_response[label="response"];
-    mod_axum_routing[label="routing"];
-  }
-
-  subgraph cluster_axum_core {
-    label="axum-core";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
-
-    mod_axum_core_extract[label="extract"];
-    mod_axum_core_response[label="response"];
-  }
-
-  subgraph cluster_axum_extra {
-    label="axum-extra";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
-
-    mod_axum_extra_cookie[label="cookie"];
-    mod_axum_extra_extract[label="extract"];
-    mod_axum_extra_response[label="response"];
-    mod_axum_extra_routing[label="routing"];
-    mod_axum_extra_typed_header[label="typed_header"];
-  }
-
-  subgraph cluster_axum_macros {
-    label="axum-macros";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
-
-    mod_axum_macros_attr_parsing[label="attr_parsing"];
-    mod_axum_macros_from_request[label="from_request"];
-    mod_axum_macros_typed_path[label="typed_path"];
-  }
-
-
-  mod_axum_boxed -> mod_axum_routing [dir=both]; // dir best-effort not accurate
+  mod_axum_boxed -> mod_axum_routing;
   mod_axum_extra_cookie -> mod_axum_core_extract;
   mod_axum_extra_cookie -> mod_axum_core_response;
   mod_axum_extra_extract -> mod_axum_core_extract;
   mod_axum_extra_response -> mod_axum_core_response;
-  mod_axum_extra_routing -> mod_axum_routing [dir=both]; // dir best-effort not accurate
-  mod_axum_extra_typed_header -> mod_axum_core_response;
+  mod_axum_extra_routing -> mod_axum_routing;
   mod_axum_extract -> mod_axum_core_extract;
-  mod_axum_macros_from_request -> mod_axum_macros_attr_parsing;
   mod_axum_macros_typed_path -> mod_axum_routing;
   mod_axum_path -> mod_axum_core_extract;
   mod_axum_response -> mod_axum_core_response;

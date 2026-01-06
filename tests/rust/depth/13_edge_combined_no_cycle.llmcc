@@ -79,6 +79,106 @@ pub fn run() {
     let _ = handle_request(&req);
 }
 
+--- expect:arch-graph-depth-3 ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_app {
+    label="app";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n30[label="run", full_path="$TMP/app/src/lib.rs:5", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_service {
+    label="service";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n25[label="handle_request", full_path="$TMP/service/src/lib.rs:20", sym_ty="Function", shape=ellipse];
+      n15[label="Service", full_path="$TMP/service/src/lib.rs:4", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_types {
+    label="types";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2[label="Request", full_path="$TMP/types/src/lib.rs:1", sym_ty="Struct", shape=box];
+      n11[label="validate", full_path="$TMP/types/src/lib.rs:13", sym_ty="Function", shape=ellipse];
+      n4[label="Response", full_path="$TMP/types/src/lib.rs:5", sym_ty="Struct", shape=box];
+      n6[label="Processor", full_path="$TMP/types/src/lib.rs:9", sym_ty="Trait", shape=box];
+    }
+
+  }
+
+
+  n2 -> n11 [from="input", to="func"];
+  n2 -> n15 [from="type_dep", to="struct"];
+  n2 -> n25 [from="input", to="func"];
+  n6 -> n15 [from="trait", to="impl"];
+  n25 -> n4 [from="func", to="output"];
+  n30 -> n25 [from="caller", to="callee"];
+}
+
+--- expect:arch-graph-depth-2 ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  mod_app_lib[label="app::lib", folder="$TMP/app/src"];
+  mod_service_lib[label="service::lib", folder="$TMP/service/src"];
+  mod_types_lib[label="types::lib", folder="$TMP/types/src"];
+
+  mod_app_lib -> mod_service_lib;
+  mod_service_lib -> mod_types_lib;
+}
+
 --- expect:arch-graph-depth-1 ---
 digraph architecture {
   // Layout settings
@@ -95,10 +195,10 @@ digraph architecture {
   fontsize=16;
   fontname="Helvetica Bold";
 
-  crate_app[label="app"];
-  crate_service[label="service"];
-  crate_types[label="types"];
+  crate_app[label="app", folder="$TMP/app"];
+  crate_service[label="service", folder="$TMP/service"];
+  crate_types[label="types", folder="$TMP/types"];
 
   crate_app -> crate_service;
-  crate_service -> crate_types [dir=both]; // dir best-effort not accurate
+  crate_service -> crate_types;
 }

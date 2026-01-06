@@ -150,44 +150,68 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_handlers_ts {
-    label="handlers.ts";
+  subgraph cluster_api {
+    label="api";
     style=rounded;
-    color="#aaaaaa";
-    bgcolor="#fafafa";
+    color="#999999";
+    bgcolor="#f5f5f5";
 
-    n37[label="handleGetUser", full_path="$TMP/api/handlers.ts:11", sym_ty="Function"];
-    n41[label="handleOrder", full_path="$TMP/api/handlers.ts:16", sym_ty="Function"];
-    n34[label="ApiResponse", full_path="$TMP/api/handlers.ts:6", sym_ty="Interface"];
+    subgraph cluster_handlers_ts {
+      label="handlers.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n37[label="handleGetUser", full_path="$TMP/api/handlers.ts:11", sym_ty="Function", shape=ellipse];
+      n41[label="handleOrder", full_path="$TMP/api/handlers.ts:16", sym_ty="Function", shape=ellipse];
+      n34[label="ApiResponse", full_path="$TMP/api/handlers.ts:6", sym_ty="Interface", shape=box];
+    }
+
   }
 
-  subgraph cluster_models_ts {
-    label="models.ts";
+  subgraph cluster_domain {
+    label="domain";
     style=rounded;
-    color="#aaaaaa";
-    bgcolor="#fafafa";
+    color="#999999";
+    bgcolor="#f5f5f5";
 
-    n9[label="OrderStatus", full_path="$TMP/domain/models.ts:13", sym_ty="Enum", shape=box];
-    n2[label="User", full_path="$TMP/domain/models.ts:2", sym_ty="Interface"];
-    n5[label="Order", full_path="$TMP/domain/models.ts:7", sym_ty="Interface"];
+    subgraph cluster_models_ts {
+      label="models.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n9[label="OrderStatus", full_path="$TMP/domain/models.ts:13", sym_ty="Enum", shape=box];
+      n2[label="User", full_path="$TMP/domain/models.ts:2", sym_ty="Interface", shape=box];
+      n5[label="Order", full_path="$TMP/domain/models.ts:7", sym_ty="Interface", shape=box];
+    }
+
   }
 
-  subgraph cluster_order_service_ts {
-    label="order-service.ts";
+  subgraph cluster_service {
+    label="service";
     style=rounded;
-    color="#aaaaaa";
-    bgcolor="#fafafa";
+    color="#999999";
+    bgcolor="#f5f5f5";
 
-    n30[label="processOrder", full_path="$TMP/service/order-service.ts:9", sym_ty="Function"];
-  }
+    subgraph cluster_order_service_ts {
+      label="order-service.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
 
-  subgraph cluster_user_service_ts {
-    label="user-service.ts";
-    style=rounded;
-    color="#aaaaaa";
-    bgcolor="#fafafa";
+      n30[label="processOrder", full_path="$TMP/service/order-service.ts:9", sym_ty="Function", shape=ellipse];
+    }
 
-    n18[label="getUser", full_path="$TMP/service/user-service.ts:9", sym_ty="Function"];
+    subgraph cluster_user_service_ts {
+      label="user-service.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n18[label="getUser", full_path="$TMP/service/user-service.ts:9", sym_ty="Function", shape=ellipse];
+    }
+
   }
 
 

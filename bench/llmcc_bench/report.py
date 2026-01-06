@@ -59,12 +59,13 @@ def generate_timing_table(
             continue
 
         loc_str = format_loc(r.loc) if r.loc > 0 else "-"
-        parse = format_time(t.parse) if t.parse > 0 else "-"
-        ir_sym = format_time(t.ir_symbols) if t.ir_symbols > 0 else "-"
-        binding = format_time(t.binding) if t.binding > 0 else "-"
-        graph = format_time(t.graph) if t.graph > 0 else "-"
-        link = format_time(t.link) if t.link > 0 else "-"
-        total = format_time(t.total) if t.total > 0 else "-"
+        # Always show timing values when we have a valid result (even if 0.00s)
+        parse = format_time(t.parse)
+        ir_sym = format_time(t.ir_symbols)
+        binding = format_time(t.binding)
+        graph = format_time(t.graph)
+        link = format_time(t.link)
+        total = format_time(t.total)
 
         lines.append(
             f"| {r.name} | {lang} | {t.files} | {loc_str} | {parse} | {ir_sym} | {binding} | {graph} | {link} | {total} |"
@@ -148,12 +149,13 @@ def generate_scaling_table(
 
     for r in results:
         t = r.timing
-        parse = format_time(t.parse) if t.parse > 0 else "-"
-        ir_sym = format_time(t.ir_symbols) if t.ir_symbols > 0 else "-"
-        binding = format_time(t.binding) if t.binding > 0 else "-"
-        graph = format_time(t.graph) if t.graph > 0 else "-"
-        link = format_time(t.link) if t.link > 0 else "-"
-        total = format_time(t.total) if t.total > 0 else "-"
+        # Always show timing values when we have a valid result (even if 0.00s)
+        parse = format_time(t.parse)
+        ir_sym = format_time(t.ir_symbols)
+        binding = format_time(t.binding)
+        graph = format_time(t.graph)
+        link = format_time(t.link)
+        total = format_time(t.total)
         speedup = f"{r.speedup:.2f}x" if r.threads > 1 else "-"
 
         lines.append(

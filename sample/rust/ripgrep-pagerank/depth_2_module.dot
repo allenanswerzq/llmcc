@@ -13,40 +13,44 @@ digraph architecture {
   fontsize=16;
   fontname="Helvetica Bold";
 
-  mod_globset_lib[label="globset::lib"];
-  mod_grep_cli_decompress[label="grep-cli::decompress"];
-  mod_grep_cli_process[label="grep-cli::process"];
-  mod_grep_matcher_lib[label="grep-matcher::lib"];
-  mod_grep_printer_color[label="grep-printer::color"];
-  mod_grep_printer_hyperlink[label="grep-printer::hyperlink"];
-  mod_grep_printer_standard[label="grep-printer::standard"];
-  mod_grep_printer_util[label="grep-printer::util"];
-  mod_grep_searcher_searcher[label="grep-searcher::searcher"];
-  mod_grep_searcher_testutil[label="grep-searcher::testutil"];
-  mod_ignore_dir[label="ignore::dir"];
-  mod_ignore_gitignore[label="ignore::gitignore"];
-  mod_ignore_lib[label="ignore::lib"];
-  mod_ignore_walk[label="ignore::walk"];
-  mod_ripgrep_core[label="ripgrep::core"];
-  mod_ripgrep_flags[label="ripgrep::flags"];
-  mod_ripgrep_main[label="ripgrep::main"];
+  mod_globset_lib[label="globset::lib", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/globset/src"];
+  mod_grep_cli_decompress[label="grep-cli::decompress", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/cli/src"];
+  mod_grep_cli_process[label="grep-cli::process", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/cli/src"];
+  mod_grep_matcher_lib[label="grep-matcher::lib", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/matcher/src"];
+  mod_grep_printer_color[label="grep-printer::color", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/printer/src"];
+  mod_grep_printer_hyperlink[label="grep-printer::hyperlink", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/printer/src/hyperlink"];
+  mod_grep_printer_standard[label="grep-printer::standard", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/printer/src"];
+  mod_grep_printer_util[label="grep-printer::util", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/printer/src"];
+  mod_grep_searcher_line_buffer[label="grep-searcher::line_buffer", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/searcher/src"];
+  mod_grep_searcher_searcher[label="grep-searcher::searcher", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/searcher/src/searcher"];
+  mod_grep_searcher_sink[label="grep-searcher::sink", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/searcher/src"];
+  mod_grep_searcher_testutil[label="grep-searcher::testutil", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/searcher/src"];
+  mod_ignore_dir[label="ignore::dir", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/ignore/src"];
+  mod_ignore_gitignore[label="ignore::gitignore", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/ignore/src"];
+  mod_ignore_lib[label="ignore::lib", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/ignore/src"];
+  mod_ignore_walk[label="ignore::walk", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/ignore/src"];
+  mod_ripgrep_core[label="ripgrep::core", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/core"];
+  mod_ripgrep_flags[label="ripgrep::flags", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/core/flags"];
+  mod_ripgrep_main[label="ripgrep::main", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/core"];
 
   mod_grep_cli_decompress -> mod_grep_cli_process;
-  mod_grep_printer_color -> mod_ripgrep_flags [dir=both]; // dir best-effort not accurate
   mod_grep_printer_standard -> mod_grep_printer_util;
   mod_grep_printer_util -> mod_grep_matcher_lib;
   mod_grep_printer_util -> mod_grep_searcher_searcher;
   mod_grep_printer_util -> mod_ignore_lib;
   mod_grep_searcher_searcher -> mod_grep_matcher_lib;
+  mod_grep_searcher_searcher -> mod_grep_searcher_line_buffer;
+  mod_grep_searcher_searcher -> mod_grep_searcher_sink;
   mod_grep_searcher_testutil -> mod_grep_matcher_lib;
-  mod_grep_searcher_testutil -> mod_grep_searcher_searcher;
   mod_ignore_dir -> mod_ignore_gitignore;
   mod_ignore_gitignore -> mod_globset_lib;
   mod_ignore_walk -> mod_globset_lib;
   mod_ignore_walk -> mod_grep_cli_process;
   mod_ignore_walk -> mod_ignore_dir;
-  mod_ignore_walk -> mod_ripgrep_flags [dir=both]; // dir best-effort not accurate
+  mod_ignore_walk -> mod_ripgrep_flags;
   mod_ripgrep_core -> mod_grep_matcher_lib;
+  mod_ripgrep_flags -> mod_grep_printer_color;
   mod_ripgrep_flags -> mod_grep_printer_hyperlink;
+  mod_ripgrep_flags -> mod_ignore_walk;
   mod_ripgrep_main -> mod_ripgrep_flags;
 }

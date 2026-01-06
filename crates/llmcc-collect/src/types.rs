@@ -110,8 +110,12 @@ pub struct RenderNode {
     pub location: Option<String>,
     /// Crate name from Cargo.toml (e.g., "sample")
     pub crate_name: Option<String>,
+    /// Crate/package root folder path
+    pub crate_root: Option<String>,
     /// Module path (e.g., "utils::helpers")
     pub module_path: Option<String>,
+    /// Module root folder path
+    pub module_root: Option<String>,
     /// File name (e.g., "lib.rs")
     pub file_name: Option<String>,
     /// Symbol kind (Struct, Trait, Enum, Function, Method)
@@ -176,6 +180,8 @@ pub struct AggregatedNode {
     pub node_count: usize,
     /// Crate name (for clustering modules by crate)
     pub crate_name: Option<String>,
+    /// Folder path for this component (for code agents to explore)
+    pub folder: Option<String>,
 }
 
 #[cfg(test)]

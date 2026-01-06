@@ -35,19 +35,103 @@ impl Repository for SqlRepository {
     }
 }
 
-pub fn create_entity() -> Entity {
+pub fn create_entity(entity: &Entity) -> Entity {
     Entity { id: 1 }
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_app {
+    label="app";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n14[label="create_entity", full_path="$TMP/app/src/lib.rs:11", sym_ty="Function", shape=ellipse];
+      n9[label="SqlRepository", full_path="$TMP/app/src/lib.rs:3", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_core {
+    label="core";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2[label="Entity", full_path="$TMP/core/src/lib.rs:1", sym_ty="Struct", shape=box];
+      n4[label="Repository", full_path="$TMP/core/src/lib.rs:5", sym_ty="Trait", shape=box];
+    }
+
+  }
+
+  n2 -> n14 [from="input", to="func"];
+  n4 -> n9 [from="trait", to="impl"];
+  n14 -> n2 [from="func", to="output"];
+}
+
+--- expect:arch-graph-depth-2 ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  mod_app_lib[label="app::lib", folder="$TMP/app/src"];
+  mod_core_lib[label="core::lib", folder="$TMP/core/src"];
+
+  mod_app_lib -> mod_core_lib;
 }
 
 --- expect:arch-graph-depth-1 ---
 digraph architecture {
-  node [shape=box];
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
 
-  label="crate graph";
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
   labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
 
-  crate_app[label="app"];
-  crate_core[label="core"];
+  crate_app[label="app", folder="$TMP/app"];
+  crate_core[label="core", folder="$TMP/core"];
 
   crate_app -> crate_core;
 }

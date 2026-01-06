@@ -39,6 +39,7 @@ fn parse_cargo_toml(cargo_dir: &Path) -> Option<String> {
 
 /// Parse the crate name from Cargo.toml by walking up the directory tree.
 /// Results are cached to avoid repeated file I/O and TOML parsing.
+/// Also registers the crate root in the global package registry.
 pub fn parse_crate_name(file_path: &str) -> Option<String> {
     let mut dir = Path::new(file_path).parent();
 
@@ -57,6 +58,7 @@ pub fn parse_crate_name(file_path: &str) -> Option<String> {
 
             // Slow path: parse and cache with write lock
             let crate_name = parse_cargo_toml(current_dir);
+
             {
                 let mut cache = get_cache().write();
                 cache.insert(dir_path, crate_name.clone());

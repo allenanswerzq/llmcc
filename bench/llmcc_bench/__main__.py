@@ -70,7 +70,8 @@ def cmd_benchmark(args, config: Config) -> int:
     # Use explicit projects if given, otherwise use language-filtered projects
     projects = args.projects if args.projects else filtered_projects
 
-    verbose = getattr(args, 'verbose', False)
+    # Default to verbose output unless explicitly disabled
+    verbose = not getattr(args, 'quiet', False)
 
     print("=== LLMCC Benchmark ===")
     print(f"Binary: {config.llmcc_path}")
@@ -113,16 +114,30 @@ def cmd_generate(args, config: Config) -> int:
     """Generate architecture graphs."""
     from .generate import generate_all
 
+    # Filter projects by language if specified
+    if args.lang:
+        filtered_projects = [
+            name for name, p in PROJECTS.items()
+            if p.language == args.lang
+        ]
+        if not filtered_projects:
+            print(f"Error: No projects found for language '{args.lang}'")
+            return 1
+    else:
+        filtered_projects = None
+
     # Check if any repos exist
+    projects_to_check = filtered_projects if filtered_projects else list(PROJECTS.keys())
     has_repos = any(
-        config.project_repo_path(p).exists()
-        for p in PROJECTS.values()
+        config.project_repo_path(PROJECTS[name]).exists()
+        for name in projects_to_check
     )
     if not has_repos:
         print("Error: No repositories found. Run 'llmcc-bench fetch' first.")
         return 1
 
-    projects = args.projects if args.projects else None
+    # Use explicit projects if given, otherwise use language-filtered projects
+    projects = args.projects if args.projects else filtered_projects
     failed = generate_all(config, projects=projects, skip_svg=not args.svg)
 
     return 1 if failed > 0 else 0
@@ -134,8 +149,7 @@ def cmd_clean(args, config: Config) -> int:
 
     clean_sample_dir(
         config,
-        remove_logs=args.all,
-        remove_results=args.all,
+        remove_all=args.all,
         dry_run=args.dry_run,
     )
     return 0
@@ -252,9 +266,9 @@ def main() -> int:
         help="Filter projects by language (rust, typescript)",
     )
     bench_parser.add_argument(
-        "-v", "--verbose",
+        "-q", "--quiet",
         action="store_true",
-        help="Verbose output",
+        help="Suppress progress output",
     )
     bench_parser.add_argument(
         "projects",
@@ -270,6 +284,12 @@ def main() -> int:
         help="Also generate SVG files (requires Graphviz)",
     )
     gen_parser.add_argument(
+        "--lang",
+        type=str,
+        default=None,
+        help="Filter projects by language (rust, typescript)",
+    )
+    gen_parser.add_argument(
         "projects",
         nargs="*",
         help="Specific projects to process (default: all)",
@@ -280,7 +300,7 @@ def main() -> int:
     clean_parser.add_argument(
         "-a", "--all",
         action="store_true",
-        help="Also remove benchmark_logs/ and benchmark_results*.md",
+        help="Remove everything including repos/, benchmark_logs/, and results",
     )
     clean_parser.add_argument(
         "-n", "--dry-run",

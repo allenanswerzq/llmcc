@@ -20,11 +20,11 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_lance_dataset[label="dataset"];
-    mod_lance_exec[label="exec"];
-    mod_lance_index[label="index"];
-    mod_lance_vector[label="vector"];
-    mod_lance_write[label="write"];
+    mod_lance_dataset[label="dataset", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset"];
+    mod_lance_exec[label="exec", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/io/exec"];
+    mod_lance_index[label="index", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/index"];
+    mod_lance_vector[label="vector", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/index/vector"];
+    mod_lance_write[label="write", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/write"];
   }
 
   subgraph cluster_lance_core {
@@ -34,8 +34,8 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_lance_core_datatypes[label="datatypes"];
-    mod_lance_core_utils[label="utils"];
+    mod_lance_core_datatypes[label="datatypes", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/datatypes"];
+    mod_lance_core_utils[label="utils", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/utils"];
   }
 
   subgraph cluster_lance_datagen {
@@ -45,7 +45,7 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_lance_datagen_generator[label="generator"];
+    mod_lance_datagen_generator[label="generator", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-datagen/src"];
   }
 
   subgraph cluster_lance_encoding {
@@ -55,11 +55,13 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_lance_encoding_data[label="data"];
-    mod_lance_encoding_decoder[label="decoder"];
-    mod_lance_encoding_logical[label="logical"];
-    mod_lance_encoding_physical[label="physical"];
-    mod_lance_encoding_testing[label="testing"];
+    mod_lance_encoding_data[label="data", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
+    mod_lance_encoding_decoder[label="decoder", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
+    mod_lance_encoding_encoder[label="encoder", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
+    mod_lance_encoding_logical[label="logical", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/previous/encodings/logical"];
+    mod_lance_encoding_physical[label="physical", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/previous/encodings/physical"];
+    mod_lance_encoding_previous[label="previous", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/previous"];
+    mod_lance_encoding_testing[label="testing", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
   }
 
   subgraph cluster_lance_file {
@@ -69,7 +71,8 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_lance_file_writer[label="writer"];
+    mod_lance_file_previous[label="previous", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/previous"];
+    mod_lance_file_writer[label="writer", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src"];
   }
 
   subgraph cluster_lance_index {
@@ -79,9 +82,10 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_lance_index_inverted[label="inverted"];
-    mod_lance_index_scalar[label="scalar"];
-    mod_lance_index_vector[label="vector"];
+    mod_lance_index_inverted[label="inverted", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted"];
+    mod_lance_index_pq[label="pq", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/pq"];
+    mod_lance_index_scalar[label="scalar", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src"];
+    mod_lance_index_vector[label="vector", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector"];
   }
 
   subgraph cluster_lance_io {
@@ -91,7 +95,8 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_lance_io_object_store[label="object_store"];
+    mod_lance_io_object_store[label="object_store", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src"];
+    mod_lance_io_scheduler[label="scheduler", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src"];
   }
 
   subgraph cluster_lance_jni {
@@ -101,8 +106,8 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_lance_jni_blocking_dataset[label="blocking_dataset"];
-    mod_lance_jni_namespace[label="namespace"];
+    mod_lance_jni_blocking_dataset[label="blocking_dataset", folder="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
+    mod_lance_jni_namespace[label="namespace", folder="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
   }
 
   subgraph cluster_lance_linalg {
@@ -112,7 +117,7 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_lance_linalg_distance[label="distance"];
+    mod_lance_linalg_distance[label="distance", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-linalg/src/distance"];
   }
 
   subgraph cluster_lance_namespace_impls {
@@ -122,7 +127,7 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_lance_namespace_impls_rest_adapter[label="rest_adapter"];
+    mod_lance_namespace_impls_rest_adapter[label="rest_adapter", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src"];
   }
 
   subgraph cluster_lance_table {
@@ -132,9 +137,9 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_lance_table_format[label="format"];
-    mod_lance_table_io[label="io"];
-    mod_lance_table_rowids[label="rowids"];
+    mod_lance_table_format[label="format", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/format"];
+    mod_lance_table_io[label="io", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/io"];
+    mod_lance_table_rowids[label="rowids", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/rowids"];
   }
 
   subgraph cluster_pylance {
@@ -144,45 +149,57 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_pylance_dataset[label="dataset"];
+    mod_pylance_dataset[label="dataset", folder="/home/yibai/llmcc/sample/repos/lance/python/src/dataset"];
+    mod_pylance_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/lance/python/src"];
   }
 
 
-  mod_lance_core_utils -> mod_lance_index_inverted [dir=both]; // dir best-effort not accurate
-  mod_lance_core_utils -> mod_lance_table_rowids [dir=both]; // dir best-effort not accurate
   mod_lance_datagen_generator -> mod_lance_core_datatypes;
   mod_lance_dataset -> mod_lance_core_datatypes;
   mod_lance_dataset -> mod_lance_core_utils;
   mod_lance_dataset -> mod_lance_index_scalar;
   mod_lance_dataset -> mod_lance_io_object_store;
   mod_lance_dataset -> mod_lance_table_format;
-  mod_lance_dataset -> mod_lance_table_io [dir=both]; // dir best-effort not accurate
+  mod_lance_dataset -> mod_lance_table_io;
   mod_lance_dataset -> mod_lance_table_rowids;
-  mod_lance_dataset -> mod_lance_write [dir=both]; // dir best-effort not accurate
+  mod_lance_dataset -> mod_pylance_dataset;
   mod_lance_encoding_decoder -> mod_lance_core_datatypes;
-  mod_lance_encoding_decoder -> mod_lance_encoding_logical [dir=both]; // dir best-effort not accurate
+  mod_lance_encoding_decoder -> mod_lance_encoding_logical;
+  mod_lance_encoding_encoder -> mod_lance_encoding_decoder;
   mod_lance_encoding_logical -> mod_lance_core_datatypes;
   mod_lance_encoding_logical -> mod_lance_encoding_data;
+  mod_lance_encoding_logical -> mod_lance_encoding_decoder;
+  mod_lance_encoding_logical -> mod_lance_encoding_encoder;
+  mod_lance_encoding_logical -> mod_lance_encoding_previous;
   mod_lance_encoding_physical -> mod_lance_encoding_data;
   mod_lance_encoding_physical -> mod_lance_encoding_decoder;
+  mod_lance_encoding_physical -> mod_lance_encoding_previous;
   mod_lance_encoding_testing -> mod_lance_core_datatypes;
   mod_lance_encoding_testing -> mod_lance_encoding_decoder;
+  mod_lance_encoding_testing -> mod_lance_encoding_encoder;
   mod_lance_exec -> mod_lance_core_datatypes;
   mod_lance_exec -> mod_lance_core_utils;
   mod_lance_exec -> mod_lance_dataset;
   mod_lance_exec -> mod_lance_index_inverted;
   mod_lance_exec -> mod_lance_index_scalar;
   mod_lance_exec -> mod_lance_index_vector;
+  mod_lance_exec -> mod_lance_io_scheduler;
   mod_lance_exec -> mod_lance_table_format;
+  mod_lance_exec -> mod_lance_write;
   mod_lance_exec -> mod_pylance_dataset;
+  mod_lance_file_previous -> mod_lance_core_datatypes;
   mod_lance_file_writer -> mod_lance_core_datatypes;
+  mod_lance_file_writer -> mod_lance_encoding_encoder;
   mod_lance_index -> mod_lance_core_utils;
   mod_lance_index -> mod_lance_dataset;
-  mod_lance_index -> mod_lance_index_scalar [dir=both]; // dir best-effort not accurate
-  mod_lance_index -> mod_lance_index_vector [dir=both]; // dir best-effort not accurate
+  mod_lance_index -> mod_lance_index_pq;
+  mod_lance_index -> mod_lance_index_scalar;
+  mod_lance_index -> mod_lance_index_vector;
   mod_lance_index -> mod_lance_table_format;
-  mod_lance_index -> mod_lance_vector [dir=both]; // dir best-effort not accurate
-  mod_lance_index_inverted -> mod_lance_index_scalar [dir=both]; // dir best-effort not accurate
+  mod_lance_index -> mod_lance_vector;
+  mod_lance_index_inverted -> mod_lance_index_scalar;
+  mod_lance_index_pq -> mod_lance_index_vector;
+  mod_lance_index_pq -> mod_lance_linalg_distance;
   mod_lance_index_scalar -> mod_lance_core_datatypes;
   mod_lance_index_scalar -> mod_lance_core_utils;
   mod_lance_index_scalar -> mod_lance_io_object_store;
@@ -190,19 +207,24 @@ digraph architecture {
   mod_lance_jni_blocking_dataset -> mod_lance_core_datatypes;
   mod_lance_jni_blocking_dataset -> mod_lance_dataset;
   mod_lance_jni_namespace -> mod_lance_namespace_impls_rest_adapter;
-  mod_lance_table_format -> mod_lance_table_rowids [dir=both]; // dir best-effort not accurate
-  mod_lance_table_format -> mod_pylance_dataset [dir=both]; // dir best-effort not accurate
+  mod_lance_namespace_impls_rest_adapter -> mod_lance_io_scheduler;
   mod_lance_table_io -> mod_lance_io_object_store;
   mod_lance_table_io -> mod_lance_table_format;
-  mod_lance_table_io -> mod_pylance_dataset [dir=both]; // dir best-effort not accurate
+  mod_lance_table_rowids -> mod_lance_table_format;
   mod_lance_vector -> mod_lance_core_datatypes;
-  mod_lance_vector -> mod_lance_dataset;
+  mod_lance_vector -> mod_lance_index_pq;
   mod_lance_vector -> mod_lance_index_vector;
+  mod_lance_vector -> mod_lance_io_object_store;
   mod_lance_vector -> mod_lance_linalg_distance;
+  mod_lance_vector -> mod_pylance_dataset;
   mod_lance_write -> mod_lance_core_datatypes;
   mod_lance_write -> mod_lance_core_utils;
+  mod_lance_write -> mod_lance_dataset;
   mod_lance_write -> mod_lance_io_object_store;
   mod_lance_write -> mod_lance_table_format;
   mod_lance_write -> mod_lance_table_io;
+  mod_lance_write -> mod_pylance_dataset;
   mod_pylance_dataset -> mod_lance_dataset;
+  mod_pylance_dataset -> mod_lance_table_io;
+  mod_pylance_dataset -> mod_pylance_lib;
 }

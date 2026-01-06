@@ -110,24 +110,40 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_repository_ts {
-    label="repository.ts";
+  subgraph cluster_contracts {
+    label="contracts";
     style=rounded;
-    color="#aaaaaa";
-    bgcolor="#fafafa";
+    color="#999999";
+    bgcolor="#f5f5f5";
 
-    n2[label="Repository", full_path="$TMP/contracts/repository.ts:2", sym_ty="Interface"];
-    n12[label="Validator", full_path="$TMP/contracts/repository.ts:8", sym_ty="Interface"];
+    subgraph cluster_repository_ts {
+      label="repository.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2[label="Repository", full_path="$TMP/contracts/repository.ts:2", sym_ty="Interface", shape=box];
+      n12[label="Validator", full_path="$TMP/contracts/repository.ts:8", sym_ty="Interface", shape=box];
+    }
+
   }
 
-  subgraph cluster_user_repository_ts {
-    label="user-repository.ts";
+  subgraph cluster_impl {
+    label="impl";
     style=rounded;
-    color="#aaaaaa";
-    bgcolor="#fafafa";
+    color="#999999";
+    bgcolor="#f5f5f5";
 
-    n30[label="UserValidator", full_path="$TMP/impl/user-repository.ts:23", sym_ty="Struct", shape=box];
-    n20[label="UserRepository", full_path="$TMP/impl/user-repository.ts:9", sym_ty="Struct", shape=box];
+    subgraph cluster_user_repository_ts {
+      label="user-repository.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n30[label="UserValidator", full_path="$TMP/impl/user-repository.ts:23", sym_ty="Struct", shape=box];
+      n20[label="UserRepository", full_path="$TMP/impl/user-repository.ts:9", sym_ty="Struct", shape=box];
+    }
+
   }
 
 

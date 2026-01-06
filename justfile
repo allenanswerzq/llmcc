@@ -7,6 +7,20 @@ root := justfile_directory()
 test-all *ARGS:
     cargo run -p llmcc-test -- run-all {{ARGS}}
 
+# Run benchmark for a specific language (rust or typescript)
+bench lang:
+    cd {{root}}/bench && python3 -m llmcc_bench benchmark --lang {{lang}}
+
+# Generate benchmark graphs for a specific language (rust or typescript)
+gen lang:
+    cd {{root}}/bench && python3 -m llmcc_bench generate --lang {{lang}} --svg
+
+clean:
+    cd {{root}}/bench && python3 -m llmcc_bench clean --all
+
+fetch:
+    cd {{root}}/bench && python3 -m llmcc_bench fetch
+
 uv-sync:
     PIP_NO_BINARY="mypy" uv sync --extra dev
 
@@ -44,6 +58,9 @@ clippy:
 
 qtest: cargo-test
     cargo run -p llmcc-test -- run-all
+
+update: cargo-test
+    cargo run -p llmcc-test -- run-all --update
 
 # Install cargo-llvm-cov (auto-confirm prompts)
 install-coverage:

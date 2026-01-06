@@ -73,25 +73,41 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_entity_ts {
-    label="entity.ts";
+  subgraph cluster_base {
+    label="base";
     style=rounded;
-    color="#aaaaaa";
-    bgcolor="#fafafa";
+    color="#999999";
+    bgcolor="#f5f5f5";
 
-    n8[label="BaseModel", full_path="$TMP/base/entity.ts:12", sym_ty="Struct", shape=box];
-    n2[label="Entity", full_path="$TMP/base/entity.ts:2", sym_ty="Interface"];
-    n5[label="Timestamped", full_path="$TMP/base/entity.ts:7", sym_ty="Interface"];
+    subgraph cluster_entity_ts {
+      label="entity.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n8[label="BaseModel", full_path="$TMP/base/entity.ts:12", sym_ty="Struct", shape=box];
+      n2[label="Entity", full_path="$TMP/base/entity.ts:2", sym_ty="Interface", shape=box];
+      n5[label="Timestamped", full_path="$TMP/base/entity.ts:7", sym_ty="Interface", shape=box];
+    }
+
   }
 
-  subgraph cluster_user_ts {
-    label="user.ts";
+  subgraph cluster_models {
+    label="models";
     style=rounded;
-    color="#aaaaaa";
-    bgcolor="#fafafa";
+    color="#999999";
+    bgcolor="#f5f5f5";
 
-    n11[label="User", full_path="$TMP/models/user.ts:4", sym_ty="Interface"];
-    n14[label="UserModel", full_path="$TMP/models/user.ts:9", sym_ty="Struct", shape=box];
+    subgraph cluster_user_ts {
+      label="user.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n11[label="User", full_path="$TMP/models/user.ts:4", sym_ty="Interface", shape=box];
+      n14[label="UserModel", full_path="$TMP/models/user.ts:9", sym_ty="Struct", shape=box];
+    }
+
   }
 
 

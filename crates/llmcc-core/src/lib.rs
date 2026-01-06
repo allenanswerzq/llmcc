@@ -10,6 +10,7 @@ pub mod ir;
 pub mod ir_builder;
 #[macro_use]
 pub mod lang_def;
+pub mod meta;
 pub mod pagerank;
 pub mod printer;
 pub mod query;
@@ -28,6 +29,7 @@ pub use ir_builder::{
     reset_ir_build_counters,
 };
 pub use lang_def::{ChildWithFieldId, LanguageTrait, LanguageTraitImpl};
+pub use meta::{ArchDepth, UnitMeta, UnitMetaBuilder};
 pub use paste;
 pub use printer::{PrintConfig, PrintFormat, print_llmcc_graph, print_llmcc_ir, render_llmcc_ir};
 // TODO: Re-enable after ProjectGraph query methods are implemented

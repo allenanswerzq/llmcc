@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirId, HirIdent, HirNode, HirScope};
 use llmcc_core::next_hir_id;
@@ -5,18 +7,8 @@ use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{ScopeId, SymKind, SymKindSet, Symbol};
 use llmcc_resolver::{CollectorScopes, ResolverOption};
 
-use std::collections::HashMap;
-
 use crate::LangTypeScript;
 use crate::token::AstVisitorTypeScript;
-
-/// Parse the file name from a path like "src/lib.ts"
-fn parse_file_name(path: &str) -> Option<String> {
-    let file_name = std::path::Path::new(path)
-        .file_stem()
-        .and_then(|s| s.to_str())?;
-    Some(file_name.to_string())
-}
 
 /// Check if a node is exported at the top level (parent is export_statement at file level)
 /// Exports inside namespaces are not considered global exports.
@@ -179,12 +171,40 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectorScopes<'tcx>> for CollectorVisito
 
         let depth = scopes.scope_depth();
         let sn = node.as_scope();
+        let meta = unit.unit_meta();
+
+        // Track package scope for parent relationships
+        let mut package_scope: Option<&'tcx Scope<'tcx>> = None;
+
+        // Set up package (crate) scope from unit metadata
+        if let Some(ref package_name) = meta.package_name
+            && let Some(symbol) =
+                scopes.lookup_or_insert_global(package_name, node, SymKind::Crate)
+        {
+            tracing::trace!("insert package symbol in globals '{}'", package_name);
+            scopes.push_scope_with(node, Some(symbol));
+            package_scope = scopes.top();
+        }
+
+        // For files in subdirectories, create a module scope for proper hierarchy traversal
+        let mut module_wrapper_scope: Option<&'tcx Scope<'tcx>> = None;
+        if let Some(ref module_name) = meta.module_name
+            && let Some(module_sym) =
+                scopes.lookup_or_insert_global(module_name, node, SymKind::Module)
+        {
+            tracing::trace!("insert module symbol in globals '{}'", module_name);
+            let mod_scope = self.alloc_scope(unit, module_sym);
+            if let Some(pkg_s) = package_scope {
+                mod_scope.add_parent(pkg_s);
+            }
+            module_wrapper_scope = Some(mod_scope);
+        }
 
         // Create file symbol and scope
-        if let Some(file_name) = parse_file_name(file_path) {
-            let file_sym = scopes.lookup_or_insert(&file_name, node, SymKind::File);
+        if let Some(ref file_name) = meta.file_name {
+            let file_sym = scopes.lookup_or_insert(file_name, node, SymKind::File);
             if let Some(file_sym) = file_sym {
-                let arena_name = unit.cc.arena().alloc_str(&file_name);
+                let arena_name = unit.cc.arena().alloc_str(file_name);
                 let ident = unit
                     .cc
                     .alloc_file_ident(next_hir_id(), arena_name, file_sym);
@@ -192,6 +212,16 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectorScopes<'tcx>> for CollectorVisito
 
                 let file_scope = self.alloc_scope(unit, file_sym);
                 file_sym.set_scope(file_scope.id());
+
+                // Set up parent relationships for hierarchy traversal
+                // Add package scope first (if any)
+                if let Some(pkg_scope) = package_scope {
+                    file_scope.add_parent(pkg_scope);
+                }
+                // Add module scope (if any)
+                if let Some(mod_scope) = module_wrapper_scope {
+                    file_scope.add_parent(mod_scope);
+                }
 
                 // Set the scope on the HirScope node
                 if let Some(sn) = sn {

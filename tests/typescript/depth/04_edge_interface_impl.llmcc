@@ -123,31 +123,47 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_local_storage_ts {
-    label="local-storage.ts";
+  subgraph cluster_contracts {
+    label="contracts";
     style=rounded;
-    color="#aaaaaa";
-    bgcolor="#fafafa";
+    color="#999999";
+    bgcolor="#f5f5f5";
 
-    n31[label="LocalStorage", full_path="$TMP/impl/local-storage.ts:4", sym_ty="Struct", shape=box];
+    subgraph cluster_storage_ts {
+      label="storage.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2[label="Storage", full_path="$TMP/contracts/storage.ts:2", sym_ty="Interface", shape=box];
+    }
+
   }
 
-  subgraph cluster_memory_storage_ts {
-    label="memory-storage.ts";
+  subgraph cluster_impl {
+    label="impl";
     style=rounded;
-    color="#aaaaaa";
-    bgcolor="#fafafa";
+    color="#999999";
+    bgcolor="#f5f5f5";
 
-    n14[label="MemoryStorage", full_path="$TMP/impl/memory-storage.ts:4", sym_ty="Struct", shape=box];
-  }
+    subgraph cluster_local_storage_ts {
+      label="local-storage.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
 
-  subgraph cluster_storage_ts {
-    label="storage.ts";
-    style=rounded;
-    color="#aaaaaa";
-    bgcolor="#fafafa";
+      n31[label="LocalStorage", full_path="$TMP/impl/local-storage.ts:4", sym_ty="Struct", shape=box];
+    }
 
-    n2[label="Storage", full_path="$TMP/contracts/storage.ts:2", sym_ty="Interface"];
+    subgraph cluster_memory_storage_ts {
+      label="memory-storage.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n14[label="MemoryStorage", full_path="$TMP/impl/memory-storage.ts:4", sym_ty="Struct", shape=box];
+    }
+
   }
 
 

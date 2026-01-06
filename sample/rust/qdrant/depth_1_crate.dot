@@ -13,29 +13,37 @@ digraph architecture {
   fontsize=16;
   fontname="Helvetica Bold";
 
-  crate_api[label="api"];
-  crate_collection[label="collection"];
-  crate_common[label="common"];
-  crate_qdrant[label="qdrant"];
-  crate_qdrant_edge_py[label="qdrant-edge-py"];
-  crate_segment[label="segment"];
-  crate_shard[label="shard"];
-  crate_storage[label="storage"];
+  crate_api[label="api", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/api"];
+  crate_collection[label="collection", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/collection"];
+  crate_common[label="common", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/common/common"];
+  crate_gridstore[label="gridstore", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/gridstore"];
+  crate_qdrant[label="qdrant", folder="/home/yibai/llmcc/sample/repos/qdrant"];
+  crate_qdrant_edge_py[label="qdrant-edge-py", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python"];
+  crate_segment[label="segment", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment"];
+  crate_shard[label="shard", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/shard"];
+  crate_storage[label="storage", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/storage"];
 
-  crate_api -> crate_collection [dir=both]; // dir best-effort not accurate
-  crate_api -> crate_qdrant_edge_py [dir=both]; // dir best-effort not accurate
-  crate_api -> crate_segment [dir=both]; // dir best-effort not accurate
-  crate_api -> crate_shard [dir=both]; // dir best-effort not accurate
-  crate_collection -> crate_common [dir=both]; // dir best-effort not accurate
-  crate_collection -> crate_qdrant [dir=both]; // dir best-effort not accurate
-  crate_collection -> crate_segment [dir=both]; // dir best-effort not accurate
-  crate_collection -> crate_shard [dir=both]; // dir best-effort not accurate
-  crate_collection -> crate_storage [dir=both]; // dir best-effort not accurate
-  crate_common -> crate_segment [dir=both]; // dir best-effort not accurate
+  crate_api -> crate_segment;
+  crate_collection -> crate_api;
+  crate_collection -> crate_common;
+  crate_collection -> crate_segment;
+  crate_collection -> crate_shard;
   crate_qdrant -> crate_api;
-  crate_qdrant -> crate_segment [dir=both]; // dir best-effort not accurate
-  crate_qdrant -> crate_shard [dir=both]; // dir best-effort not accurate
+  crate_qdrant -> crate_collection;
+  crate_qdrant -> crate_common;
+  crate_qdrant -> crate_segment;
+  crate_qdrant -> crate_shard;
   crate_qdrant -> crate_storage;
+  crate_qdrant_edge_py -> crate_api;
   crate_qdrant_edge_py -> crate_segment;
-  crate_segment -> crate_shard [dir=both]; // dir best-effort not accurate
+  crate_qdrant_edge_py -> crate_shard;
+  crate_segment -> crate_api;
+  crate_segment -> crate_common;
+  crate_segment -> crate_gridstore;
+  crate_shard -> crate_api;
+  crate_shard -> crate_collection;
+  crate_shard -> crate_common;
+  crate_shard -> crate_segment;
+  crate_storage -> crate_api;
+  crate_storage -> crate_collection;
 }
