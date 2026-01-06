@@ -1,0 +1,1206 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_babel_plugin_react_compiler {
+    label="babel-plugin-react-compiler";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_CompilerError_ts {
+      label="CompilerError.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n77[label="CompilerDiagnostic", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/CompilerError.ts:122", sym_ty="Struct", shape=box];
+      n161[label="CompilerErrorDetail", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/CompilerError.ts:229", sym_ty="Struct", shape=box];
+      n284[label="CompilerError", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/CompilerError.ts:302", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_Entrypoint {
+      label="Entrypoint";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_Imports_ts {
+        label="Imports.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n6563[label="ProgramContext", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Entrypoint/Imports.ts:64", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_Options_ts {
+        label="Options.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3581[label="parsePluginOptions", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Entrypoint/Options.ts:333", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_Pipeline_ts {
+        label="Pipeline.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4073[label="run", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Entrypoint/Pipeline.ts:117", sym_ty="Function", shape=ellipse];
+        n4237[label="runWithEnvironment", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Entrypoint/Pipeline.ts:154", sym_ty="Function", shape=ellipse];
+        n7044[label="compileFn", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Entrypoint/Pipeline.ts:600", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_Program_ts {
+        label="Program.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n12809[label="getComponentOrHookLike", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Entrypoint/Program.ts:1196", sym_ty="Function", shape=ellipse];
+        n7268[label="handleError", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Entrypoint/Program.ts:206", sym_ty="Function", shape=ellipse];
+        n7793[label="compileProgram", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Entrypoint/Program.ts:370", sym_ty="Function", shape=ellipse];
+        n8122[label="findFunctionsToCompile", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Entrypoint/Program.ts:517", sym_ty="Function", shape=ellipse];
+        n8364[label="processFn", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Entrypoint/Program.ts:597", sym_ty="Function", shape=ellipse];
+        n8766[label="retryCompileFunction", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Entrypoint/Program.ts:768", sym_ty="Function", shape=ellipse];
+        n8851[label="applyCompiledFunctions", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Entrypoint/Program.ts:812", sym_ty="Function", shape=ellipse];
+        n9153[label="validateNoDynamicallyCreatedComponentsOrHooks", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Entrypoint/Program.ts:897", sym_ty="Function", shape=ellipse];
+        n9416[label="getReactFunctionType", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Entrypoint/Program.ts:958", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_Flood {
+      label="Flood";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_Types_ts {
+        label="Types.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4985[label="printConcrete", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Flood/Types.ts:218", sym_ty="Function", shape=ellipse];
+        n5116[label="printType", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Flood/Types.ts:286", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_HIR {
+      label="HIR";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_BuildHIR_ts {
+        label="BuildHIR.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n6656[label="lowerObjectMethod", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/BuildHIR.ts:1543", sym_ty="Function", shape=ellipse];
+        n6788[label="lowerExpression", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/BuildHIR.ts:1597", sym_ty="Function", shape=ellipse];
+        n3492[label="lowerStatement", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/BuildHIR.ts:267", sym_ty="Function", shape=ellipse];
+        n14971[label="isReorderableExpression", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/BuildHIR.ts:3055", sym_ty="Function", shape=ellipse];
+        n15634[label="lowerFunction", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/BuildHIR.ts:3584", sym_ty="Function", shape=ellipse];
+        n15665[label="lowerExpressionToTemporary", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/BuildHIR.ts:3622", sym_ty="Function", shape=ellipse];
+        n15676[label="lowerValueToTemporary", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/BuildHIR.ts:3630", sym_ty="Function", shape=ellipse];
+        n15741[label="buildTemporaryPlace", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/BuildHIR.ts:3687", sym_ty="Function", shape=ellipse];
+        n15810[label="lowerAssignment", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/BuildHIR.ts:3760", sym_ty="Function", shape=ellipse];
+        n15960[label="gatherCapturedContext", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/BuildHIR.ts:4349", sym_ty="Function", shape=ellipse];
+        n38[label="lower", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/BuildHIR.ts:72", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_BuildReactiveScopeTerminalsHIR_ts {
+        label="BuildReactiveScopeTerminalsHIR.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n10918[label="buildReactiveScopeTerminalsHIR", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/BuildReactiveScopeTerminalsHIR.ts:78", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_CollectHoistablePropertyLoads_ts {
+        label="CollectHoistablePropertyLoads.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n10939[label="collectHoistablePropertyLoadsInInnerFn", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/CollectHoistablePropertyLoads.ts:132", sym_ty="Function", shape=ellipse];
+        n11125[label="collectHoistablePropertyLoadsImpl", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/CollectHoistablePropertyLoads.ts:177", sym_ty="Function", shape=ellipse];
+        n11908[label="collectNonNullsInBlocks", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/CollectHoistablePropertyLoads.ts:387", sym_ty="Function", shape=ellipse];
+        n12264[label="propagateNonNull", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/CollectHoistablePropertyLoads.ts:494", sym_ty="Function", shape=ellipse];
+        n12365[label="recursivelyPropagateNonNull", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/CollectHoistablePropertyLoads.ts:516", sym_ty="Function", shape=ellipse];
+        n10827[label="collectHoistablePropertyLoads", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/CollectHoistablePropertyLoads.ts:98", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_Dominator_ts {
+        label="Dominator.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n11805[label="computePostDominatorTree", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/Dominator.ts:35", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_Environment_ts {
+        label="Environment.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1393[label="Environment", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/Environment.ts:750", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_FindContextIdentifiers_ts {
+        label="FindContextIdentifiers.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3165[label="handleAssignment", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/FindContextIdentifiers.ts:138", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_Globals_ts {
+        label="Globals.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3728[label="installTypeConfig", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/Globals.ts:967", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_HIR_ts {
+        label="HIR.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n14850[label="validateIdentifierName", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/HIR.ts:1318", sym_ty="Function", shape=ellipse];
+        n14963[label="promoteTemporary", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/HIR.ts:1372", sym_ty="Function", shape=ellipse];
+        n15068[label="ValueReason", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/HIR.ts:1434", sym_ty="Enum", shape=box];
+        n15135[label="ValueKind", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/HIR.ts:1492", sym_ty="Enum", shape=box];
+        n15457[label="getPlaceScope", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/HIR.ts:1715", sym_ty="Function", shape=ellipse];
+        n15592[label="makeInstructionId", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/HIR.ts:1829", sym_ty="Function", shape=ellipse];
+        n15688[label="isUseRefType", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/HIR.ts:1881", sym_ty="Function", shape=ellipse];
+        n15795[label="isStableType", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/HIR.ts:1964", sym_ty="Function", shape=ellipse];
+        n15857[label="getHookKind", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/HIR.ts:2040", sym_ty="Function", shape=ellipse];
+        n15871[label="getHookKindForType", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/HIR.ts:2050", sym_ty="Function", shape=ellipse];
+        n11696[label="InstructionKind", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/HIR.ts:741", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_HIRBuilder_ts {
+        label="HIRBuilder.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n6254[label="HIRBuilder", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/HIRBuilder.ts:104", sym_ty="Struct", shape=box];
+        n10049[label="getReversePostorderedBlocks", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/HIRBuilder.ts:779", sym_ty="Function", shape=ellipse];
+        n10800[label="createTemporaryPlace", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/HIRBuilder.ts:982", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_MergeConsecutiveBlocks_ts {
+        label="MergeConsecutiveBlocks.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n18[label="mergeConsecutiveBlocks", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/MergeConsecutiveBlocks.ts:30", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_MergeOverlappingReactiveScopesHIR_ts {
+        label="MergeOverlappingReactiveScopesHIR.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n9403[label="mergeOverlappingReactiveScopesHIR", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/MergeOverlappingReactiveScopesHIR.ts:105", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_ObjectShape_ts {
+        label="ObjectShape.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5553[label="parseAliasingSignatureConfig", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/ObjectShape.ts:112", sym_ty="Function", shape=ellipse];
+        n5686[label="addObject", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/ObjectShape.ts:253", sym_ty="Function", shape=ellipse];
+        n5725[label="addShape", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/ObjectShape.ts:266", sym_ty="Function", shape=ellipse];
+        n5393[label="createAnonId", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/ObjectShape.ts:49", sym_ty="Function", shape=ellipse];
+        n5405[label="addFunction", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/ObjectShape.ts:58", sym_ty="Function", shape=ellipse];
+        n5486[label="addHook", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/ObjectShape.ts:90", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_PrintHIR_ts {
+        label="PrintHIR.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1873[label="printInstructionValue", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/PrintHIR.ts:353", sym_ty="Function", shape=ellipse];
+        n3311[label="printPlace", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/PrintHIR.ts:840", sym_ty="Function", shape=ellipse];
+        n3711[label="printAliasingEffect", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/PrintHIR.ts:945", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_PropagateScopeDependenciesHIR_ts {
+        label="PropagateScopeDependenciesHIR.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5863[label="findTemporariesUsedOutsideDeclaringScope", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/PropagateScopeDependenciesHIR.ts:127", sym_ty="Function", shape=ellipse];
+        n5745[label="propagateScopeDependenciesHIR", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/PropagateScopeDependenciesHIR.ts:52", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_ScopeDependencyUtils_ts {
+        label="ScopeDependencyUtils.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2410[label="buildDependencyInstructions", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/ScopeDependencyUtils.ts:25", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_visitors_ts {
+        label="visitors.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1850[label="terminalFallthrough", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/visitors.ts:1009", sym_ty="Function", shape=ellipse];
+        n952[label="mapInstructionValueOperands", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/visitors.ts:453", sym_ty="Function", shape=ellipse];
+        n1789[label="terminalHasFallthrough", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR/visitors.ts:962", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_Inference {
+      label="Inference";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_AnalyseFunctions_ts {
+        label="AnalyseFunctions.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1388[label="analyseFunctions", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Inference/AnalyseFunctions.ts:17", sym_ty="Function", shape=ellipse];
+        n1440[label="lowerWithMutationAliasing", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Inference/AnalyseFunctions.ts:48", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_ControlDominators_ts {
+        label="ControlDominators.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4933[label="createControlDominators", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Inference/ControlDominators.ts:17", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_DropManualMemoization_ts {
+        label="DropManualMemoization.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2350[label="dropManualMemoization", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Inference/DropManualMemoization.ts:389", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_InferEffectDependencies_ts {
+        label="InferEffectDependencies.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n6005[label="inferMinimalDependencies", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Inference/InferEffectDependencies.ts:569", sym_ty="Function", shape=ellipse];
+        n4797[label="inferEffectDependencies", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Inference/InferEffectDependencies.ts:67", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_InferMutationAliasingEffects_ts {
+        label="InferMutationAliasingEffects.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n16248[label="InferenceState", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Inference/InferMutationAliasingEffects.ts:1368", sym_ty="Struct", shape=box];
+        n16385[label="conditionallyMutateIterator", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Inference/InferMutationAliasingEffects.ts:1801", sym_ty="Function", shape=ellipse];
+        n16470[label="computeEffectsForLegacySignature", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Inference/InferMutationAliasingEffects.ts:2420", sym_ty="Function", shape=ellipse];
+        n16115[label="inferBlock", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Inference/InferMutationAliasingEffects.ts:500", sym_ty="Function", shape=ellipse];
+        n16152[label="applyEffect", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Inference/InferMutationAliasingEffects.ts:701", sym_ty="Function", shape=ellipse];
+        n15992[label="inferMutationAliasingEffects", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Inference/InferMutationAliasingEffects.ts:98", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_InferReactivePlaces_ts {
+        label="InferReactivePlaces.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4295[label="inferReactivePlaces", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Inference/InferReactivePlaces.ts:205", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_InlineImmediatelyInvokedFunctionExpressions_ts {
+        label="InlineImmediatelyInvokedFunctionExpressions.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n31[label="inlineImmediatelyInvokedFunctionExpressions", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Inference/InlineImmediatelyInvokedFunctionExpressions.ts:83", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_Optimization {
+      label="Optimization";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_ConstantPropagation_ts {
+        label="ConstantPropagation.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2258[label="applyConstantPropagation", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Optimization/ConstantPropagation.ts:106", sym_ty="Function", shape=ellipse];
+        n2534[label="evaluateInstruction", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Optimization/ConstantPropagation.ts:239", sym_ty="Function", shape=ellipse];
+        n36[label="constantPropagation", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Optimization/ConstantPropagation.ts:58", sym_ty="Function", shape=ellipse];
+        n2115[label="constantPropagationImpl", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Optimization/ConstantPropagation.ts:63", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_DeadCodeElimination_ts {
+        label="DeadCodeElimination.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3177[label="findReferencedIdentifiers", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Optimization/DeadCodeElimination.ts:114", sym_ty="Function", shape=ellipse];
+        n2910[label="deadCodeElimination", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Optimization/DeadCodeElimination.ts:32", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_InlineJsxTransform_ts {
+        label="InlineJsxTransform.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n668[label="inlineJsxTransform", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Optimization/InlineJsxTransform.ts:66", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_InstructionReordering_ts {
+        label="InstructionReordering.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n7839[label="reorderBlock", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Optimization/InstructionReordering.ts:170", sym_ty="Function", shape=ellipse];
+        n7254[label="instructionReordering", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Optimization/InstructionReordering.ts:72", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_LowerContextAccess_ts {
+        label="LowerContextAccess.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1293[label="emitSelectorFn", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Optimization/LowerContextAccess.ts:219", sym_ty="Function", shape=ellipse];
+        n958[label="lowerContextAccess", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Optimization/LowerContextAccess.ts:36", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_OptimizeForSSR_ts {
+        label="OptimizeForSSR.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n11344[label="optimizeForSSR", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Optimization/OptimizeForSSR.ts:42", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_OutlineJsx_ts {
+        label="OutlineJsx.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4343[label="process", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Optimization/OutlineJsx.ts:185", sym_ty="Function", shape=ellipse];
+        n5001[label="emitOutlinedFn", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Optimization/OutlineJsx.ts:321", sym_ty="Function", shape=ellipse];
+        n3877[label="outlineJSX", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Optimization/OutlineJsx.ts:34", sym_ty="Function", shape=ellipse];
+        n3906[label="outlineJsxImpl", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Optimization/OutlineJsx.ts:52", sym_ty="Function", shape=ellipse];
+        n3917[label="processAndOutlineJSX", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Optimization/OutlineJsx.ts:58", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_PruneMaybeThrows_ts {
+        label="PruneMaybeThrows.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5455[label="pruneMaybeThrows", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Optimization/PruneMaybeThrows.ts:33", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_ReactiveScopes {
+      label="ReactiveScopes";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_AlignReactiveScopesToBlockScopesHIR_ts {
+        label="AlignReactiveScopesToBlockScopesHIR.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n7790[label="alignReactiveScopesToBlockScopesHIR", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/AlignReactiveScopesToBlockScopesHIR.ts:70", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_BuildReactiveFunction_ts {
+        label="BuildReactiveFunction.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n12292[label="buildReactiveFunction", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/BuildReactiveFunction.ts:40", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_CodegenReactiveFunction_ts {
+        label="CodegenReactiveFunction.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n16623[label="codegenFunction", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/CodegenReactiveFunction.ts:116", sym_ty="Function", shape=ellipse];
+        n16873[label="codegenInstructionNullable", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/CodegenReactiveFunction.ts:1330", sym_ty="Function", shape=ellipse];
+        n17031[label="codegenInstructionValueToExpression", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/CodegenReactiveFunction.ts:1878", sym_ty="Function", shape=ellipse];
+        n17037[label="codegenInstructionValue", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/CodegenReactiveFunction.ts:1886", sym_ty="Function", shape=ellipse];
+        n17245[label="convertIdentifier", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/CodegenReactiveFunction.ts:2933", sym_ty="Function", shape=ellipse];
+        n16658[label="codegenReactiveFunction", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/CodegenReactiveFunction.ts:355", sym_ty="Function", shape=ellipse];
+        n16697[label="Context", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/CodegenReactiveFunction.ts:442", sym_ty="Struct", shape=box];
+        n16739[label="codegenBlock", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/CodegenReactiveFunction.ts:499", sym_ty="Function", shape=ellipse];
+        n16747[label="codegenBlockNoReset", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/CodegenReactiveFunction.ts:534", sym_ty="Function", shape=ellipse];
+        n16828[label="codegenTerminal", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/CodegenReactiveFunction.ts:981", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_InferReactiveScopeVariables_ts {
+        label="InferReactiveScopeVariables.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5124[label="isMutable", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/InferReactiveScopeVariables.ts:204", sym_ty="Function", shape=ellipse];
+        n5140[label="inRange", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/InferReactiveScopeVariables.ts:208", sym_ty="Function", shape=ellipse];
+        n5326[label="findDisjointMutableValues", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/InferReactiveScopeVariables.ts:278", sym_ty="Function", shape=ellipse];
+        n5026[label="inferReactiveScopeVariables", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/InferReactiveScopeVariables.ts:86", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_MemoizeFbtAndMacroOperandsInSameScope_ts {
+        label="MemoizeFbtAndMacroOperandsInSameScope.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n13619[label="memoizeFbtAndMacroOperandsInSameScope", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/MemoizeFbtAndMacroOperandsInSameScope.ts:73", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_PrintReactiveFunction_ts {
+        label="PrintReactiveFunction.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n6415[label="writeReactiveInstructions", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/PrintReactiveFunction.ts:127", sym_ty="Function", shape=ellipse];
+        n6442[label="writeReactiveInstruction", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/PrintReactiveFunction.ts:138", sym_ty="Function", shape=ellipse];
+        n7819[label="Writer", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/PrintReactiveFunction.ts:416", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_PromoteUsedTemporaries_ts {
+        label="PromoteUsedTemporaries.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n578[label="promoteIdentifier", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/PromoteUsedTemporaries.ts:459", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_PruneNonEscapingScopes_ts {
+        label="PruneNonEscapingScopes.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3926[label="pruneNonEscapingScopes", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/PruneNonEscapingScopes.ts:112", sym_ty="Function", shape=ellipse];
+        n4499[label="computeMemoizedIdentifiers", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/PruneNonEscapingScopes.ts:286", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_RenameVariables_ts {
+        label="RenameVariables.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n12031[label="Scopes", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/RenameVariables.ts:124", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_visitors_ts {
+        label="visitors.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2514[label="visitReactiveFunction", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes/visitors.ts:29", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_SSA {
+      label="SSA";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_EnterSSA_ts {
+        label="EnterSSA.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n14308[label="enterSSA", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/SSA/EnterSSA.ts:247", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_Transform {
+      label="Transform";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_TransformFire_ts {
+        label="TransformFire.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1725[label="transformFire", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Transform/TransformFire.ts:51", sym_ty="Function", shape=ellipse];
+        n1755[label="replaceFireFunctions", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Transform/TransformFire.ts:60", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_TypeInference {
+      label="TypeInference";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_InferTypes_ts {
+        label="InferTypes.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n9603[label="equation", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/TypeInference/InferTypes.ts:105", sym_ty="Function", shape=ellipse];
+        n9666[label="generate", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/TypeInference/InferTypes.ts:112", sym_ty="Function", shape=ellipse];
+        n9996[label="generateInstructionTypes", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/TypeInference/InferTypes.ts:173", sym_ty="Function", shape=ellipse];
+        n9325[label="inferTypes", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/TypeInference/InferTypes.ts:65", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_Utils {
+      label="Utils";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_DisjointSet_ts {
+        label="DisjointSet.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3266[label="DisjointSet", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Utils/DisjointSet.ts:11", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_Result_ts {
+        label="Result.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n9749[label="Err", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Utils/Result.ts:166", sym_ty="Function", shape=ellipse];
+        n9784[label="ErrImpl", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Utils/Result.ts:170", sym_ty="Struct", shape=box];
+        n9091[label="Ok", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Utils/Result.ts:88", sym_ty="Function", shape=ellipse];
+        n8742[label="Result", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Utils/Result.ts:9", sym_ty="Interface", shape=box];
+        n9123[label="OkImpl", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Utils/Result.ts:92", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_TestUtils_ts {
+        label="TestUtils.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n11315[label="parseConfigPragmaForTests", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Utils/TestUtils.ts:175", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_utils_ts {
+        label="utils.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2800[label="hasNode", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Utils/utils.ts:170", sym_ty="Function", shape=ellipse];
+        n1779[label="retainWhere", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Utils/utils.ts:34", sym_ty="Function", shape=ellipse];
+        n1926[label="getOrInsertWith", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Utils/utils.ts:59", sym_ty="Function", shape=ellipse];
+        n1965[label="getOrInsertDefault", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Utils/utils.ts:73", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_Validation {
+      label="Validation";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_ValidateExhaustiveDependencies_ts {
+        label="ValidateExhaustiveDependencies.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n7269[label="onFinishMemoize", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Validation/ValidateExhaustiveDependencies.ts:122", sym_ty="Function", shape=ellipse];
+        n7430[label="validateDependencies", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Validation/ValidateExhaustiveDependencies.ts:221", sym_ty="Function", shape=ellipse];
+        n8402[label="collectDependencies", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Validation/ValidateExhaustiveDependencies.ts:571", sym_ty="Function", shape=ellipse];
+        n7128[label="validateExhaustiveDependencies", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Validation/ValidateExhaustiveDependencies.ts:89", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_ValidateHooksUsage_ts {
+        label="ValidateHooksUsage.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n9639[label="Kind", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Validation/ValidateHooksUsage.ts:36", sym_ty="Enum", shape=box];
+        n9814[label="validateHooksUsage", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Validation/ValidateHooksUsage.ts:91", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_ValidateNoDerivedComputationsInEffects_exp_ts {
+        label="ValidateNoDerivedComputationsInEffects_exp.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n12924[label="validateNoDerivedComputationsInEffects_exp", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Validation/ValidateNoDerivedComputationsInEffects_exp.ts:183", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_ValidateNoFreezingKnownMutableFunctions_ts {
+        label="ValidateNoFreezingKnownMutableFunctions.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n12108[label="validateNoFreezingKnownMutableFunctions", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Validation/ValidateNoFreezingKnownMutableFunctions.ts:46", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_ValidateNoRefAccessInRender_ts {
+        label="ValidateNoRefAccessInRender.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2827[label="validateNoRefAccessInRender", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Validation/ValidateNoRefAccessInRender.ts:132", sym_ty="Function", shape=ellipse];
+        n3373[label="validateNoRefAccessInRenderImpl", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Validation/ValidateNoRefAccessInRender.ts:347", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_ValidateNoSetStateInEffects_ts {
+        label="ValidateNoSetStateInEffects.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5662[label="getSetStateCall", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Validation/ValidateNoSetStateInEffects.ts:188", sym_ty="Function", shape=ellipse];
+        n5421[label="validateNoSetStateInEffects", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Validation/ValidateNoSetStateInEffects.ts:45", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_ValidateUseMemo_ts {
+        label="ValidateUseMemo.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n12851[label="validateUseMemo", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Validation/ValidateUseMemo.ts:25", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_scripts {
+      label="scripts";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_babel_plugin_annotate_react_code_ts {
+        label="babel-plugin-annotate-react-code.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n13716[label="isComponentOrHookLike", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/scripts/babel-plugin-annotate-react-code.ts:101", sym_ty="Function", shape=ellipse];
+        n13421[label="annotate", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/scripts/babel-plugin-annotate-react-code.ts:25", sym_ty="Function", shape=ellipse];
+        n13445[label="traverseFn", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/scripts/babel-plugin-annotate-react-code.ts:26", sym_ty="Function", shape=ellipse];
+        n13523[label="shouldVisit", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/scripts/babel-plugin-annotate-react-code.ts:46", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_eslint_plugin_react_hooks {
+    label="eslint-plugin-react-hooks";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_shared {
+      label="shared";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_RunReactCompiler_ts {
+        label="RunReactCompiler.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n12268[label="runReactCompiler", full_path="/home/yibai/llmcc/sample/repos/react/packages/eslint-plugin-react-hooks/src/shared/RunReactCompiler.ts:205", sym_ty="Function", shape=ellipse];
+        n11836[label="runReactCompilerImpl", full_path="/home/yibai/llmcc/sample/repos/react/packages/eslint-plugin-react-hooks/src/shared/RunReactCompiler.ts:85", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_playground {
+    label="playground";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_compilation_ts {
+      label="compilation.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n11931[label="parseOptions", full_path="/home/yibai/llmcc/sample/repos/react/compiler/apps/playground/lib/compilation.ts:129", sym_ty="Function", shape=ellipse];
+      n12082[label="compile", full_path="/home/yibai/llmcc/sample/repos/react/compiler/apps/playground/lib/compilation.ts:183", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_react_mcp_server {
+    label="react-mcp-server";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_utils {
+      label="utils";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_assertExhaustive_ts {
+        label="assertExhaustive.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5689[label="assertExhaustive", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/react-mcp-server/src/utils/assertExhaustive.ts:11", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_snap {
+    label="snap";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_compiler_ts {
+      label="compiler.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2469[label="transformFixtureInput", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/snap/src/compiler.ts:215", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_runner_worker_ts {
+      label="runner-worker.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n4847[label="transformFixture", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/snap/src/runner-worker.ts:166", sym_ty="Function", shape=ellipse];
+      n4395[label="compile", full_path="/home/yibai/llmcc/sample/repos/react/compiler/packages/snap/src/runner-worker.ts:46", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+
+  n18 -> n1789 [from="caller", to="callee"];
+  n18 -> n1850 [from="caller", to="callee"];
+  n31 -> n18 [from="caller", to="callee"];
+  n31 -> n1779 [from="caller", to="callee"];
+  n31 -> n14963 [from="caller", to="callee"];
+  n36 -> n2115 [from="caller", to="callee"];
+  n38 -> n2800 [from="caller", to="callee"];
+  n38 -> n3492 [from="caller", to="callee"];
+  n38 -> n6254 [from="func", to="type_dep"];
+  n38 -> n8742 [from="func", to="output"];
+  n38 -> n9091 [from="caller", to="callee"];
+  n38 -> n9749 [from="caller", to="callee"];
+  n38 -> n14850 [from="caller", to="callee"];
+  n161 -> n284 [from="field_type", to="struct"];
+  n284 -> n6254 [from="field_type", to="struct"];
+  n284 -> n6563 [from="field_type", to="struct"];
+  n284 -> n16697 [from="field_type", to="struct"];
+  n578 -> n14963 [from="caller", to="callee"];
+  n668 -> n952 [from="caller", to="callee"];
+  n668 -> n10800 [from="caller", to="callee"];
+  n668 -> n14963 [from="caller", to="callee"];
+  n952 -> n5689 [from="caller", to="callee"];
+  n958 -> n1293 [from="caller", to="callee"];
+  n958 -> n9325 [from="caller", to="callee"];
+  n1293 -> n9325 [from="caller", to="callee"];
+  n1293 -> n10800 [from="caller", to="callee"];
+  n1293 -> n14308 [from="caller", to="callee"];
+  n1293 -> n14963 [from="caller", to="callee"];
+  n1388 -> n1440 [from="caller", to="callee"];
+  n1393 -> n38 [from="input", to="func"];
+  n1393 -> n1293 [from="input", to="func"];
+  n1393 -> n2410 [from="input", to="func"];
+  n1393 -> n4237 [from="input", to="func"];
+  n1393 -> n5001 [from="input", to="func"];
+  n1393 -> n5421 [from="input", to="func"];
+  n1393 -> n5662 [from="input", to="func"];
+  n1393 -> n6254 [from="field_type", to="struct"];
+  n1393 -> n7839 [from="input", to="func"];
+  n1393 -> n9996 [from="input", to="func"];
+  n1393 -> n10800 [from="input", to="func"];
+  n1393 -> n15857 [from="input", to="func"];
+  n1393 -> n15871 [from="input", to="func"];
+  n1393 -> n16248 [from="field_type", to="struct"];
+  n1393 -> n16697 [from="field_type", to="struct"];
+  n1440 -> n1388 [from="caller", to="callee"];
+  n1440 -> n2910 [from="caller", to="callee"];
+  n1440 -> n5026 [from="caller", to="callee"];
+  n1440 -> n5689 [from="caller", to="callee"];
+  n1440 -> n15992 [from="caller", to="callee"];
+  n1725 -> n1755 [from="caller", to="callee"];
+  n1789 -> n5689 [from="caller", to="callee"];
+  n1850 -> n1789 [from="caller", to="callee"];
+  n1873 -> n3311 [from="caller", to="callee"];
+  n1873 -> n5116 [from="caller", to="callee"];
+  n1873 -> n5689 [from="caller", to="callee"];
+  n2115 -> n18 [from="caller", to="callee"];
+  n2115 -> n2258 [from="caller", to="callee"];
+  n2258 -> n2534 [from="caller", to="callee"];
+  n2350 -> n284 [from="func", to="type_dep"];
+  n2350 -> n8742 [from="func", to="output"];
+  n2410 -> n6254 [from="func", to="type_dep"];
+  n2534 -> n2115 [from="caller", to="callee"];
+  n2827 -> n3373 [from="caller", to="callee"];
+  n2827 -> n8742 [from="func", to="output"];
+  n2910 -> n1779 [from="caller", to="callee"];
+  n2910 -> n3177 [from="caller", to="callee"];
+  n3165 -> n1965 [from="caller", to="callee"];
+  n3373 -> n284 [from="func", to="type_dep"];
+  n3373 -> n1779 [from="caller", to="callee"];
+  n3373 -> n8742 [from="func", to="output"];
+  n3373 -> n9091 [from="caller", to="callee"];
+  n3373 -> n9749 [from="caller", to="callee"];
+  n3373 -> n15688 [from="caller", to="callee"];
+  n3373 -> n15871 [from="caller", to="callee"];
+  n3492 -> n2800 [from="caller", to="callee"];
+  n3492 -> n5689 [from="caller", to="callee"];
+  n3492 -> n14963 [from="caller", to="callee"];
+  n3492 -> n15665 [from="caller", to="callee"];
+  n3492 -> n15676 [from="caller", to="callee"];
+  n3492 -> n15810 [from="caller", to="callee"];
+  n3711 -> n5689 [from="caller", to="callee"];
+  n3728 -> n5405 [from="caller", to="callee"];
+  n3728 -> n5486 [from="caller", to="callee"];
+  n3728 -> n5686 [from="caller", to="callee"];
+  n3728 -> n5689 [from="caller", to="callee"];
+  n3877 -> n3906 [from="caller", to="callee"];
+  n3906 -> n2910 [from="caller", to="callee"];
+  n3906 -> n3917 [from="caller", to="callee"];
+  n3906 -> n4343 [from="caller", to="callee"];
+  n3906 -> n5689 [from="caller", to="callee"];
+  n3917 -> n4343 [from="caller", to="callee"];
+  n3926 -> n2514 [from="caller", to="callee"];
+  n3926 -> n4499 [from="caller", to="callee"];
+  n4073 -> n1393 [from="func", to="type_dep"];
+  n4073 -> n4237 [from="caller", to="callee"];
+  n4237 -> n18 [from="caller", to="callee"];
+  n4237 -> n31 [from="caller", to="callee"];
+  n4237 -> n36 [from="caller", to="callee"];
+  n4237 -> n38 [from="caller", to="callee"];
+  n4237 -> n668 [from="caller", to="callee"];
+  n4237 -> n958 [from="caller", to="callee"];
+  n4237 -> n1388 [from="caller", to="callee"];
+  n4237 -> n1725 [from="caller", to="callee"];
+  n4237 -> n2350 [from="caller", to="callee"];
+  n4237 -> n2827 [from="caller", to="callee"];
+  n4237 -> n2910 [from="caller", to="callee"];
+  n4237 -> n3877 [from="caller", to="callee"];
+  n4237 -> n3926 [from="caller", to="callee"];
+  n4237 -> n4295 [from="caller", to="callee"];
+  n4237 -> n4797 [from="caller", to="callee"];
+  n4237 -> n5026 [from="caller", to="callee"];
+  n4237 -> n5455 [from="caller", to="callee"];
+  n4237 -> n5745 [from="caller", to="callee"];
+  n4237 -> n7128 [from="caller", to="callee"];
+  n4237 -> n7254 [from="caller", to="callee"];
+  n4237 -> n7790 [from="caller", to="callee"];
+  n4237 -> n9325 [from="caller", to="callee"];
+  n4237 -> n9403 [from="caller", to="callee"];
+  n4237 -> n9814 [from="caller", to="callee"];
+  n4237 -> n10918 [from="caller", to="callee"];
+  n4237 -> n11344 [from="caller", to="callee"];
+  n4237 -> n12108 [from="caller", to="callee"];
+  n4237 -> n12292 [from="caller", to="callee"];
+  n4237 -> n12851 [from="caller", to="callee"];
+  n4237 -> n13619 [from="caller", to="callee"];
+  n4237 -> n14308 [from="caller", to="callee"];
+  n4237 -> n15992 [from="caller", to="callee"];
+  n4237 -> n16623 [from="caller", to="callee"];
+  n4295 -> n4933 [from="caller", to="callee"];
+  n4295 -> n5124 [from="caller", to="callee"];
+  n4295 -> n5689 [from="caller", to="callee"];
+  n4295 -> n15857 [from="caller", to="callee"];
+  n4343 -> n5001 [from="caller", to="callee"];
+  n4395 -> n2469 [from="caller", to="callee"];
+  n4797 -> n1926 [from="caller", to="callee"];
+  n4797 -> n2410 [from="caller", to="callee"];
+  n4797 -> n2910 [from="caller", to="callee"];
+  n4797 -> n6005 [from="caller", to="callee"];
+  n4797 -> n10800 [from="caller", to="callee"];
+  n4797 -> n15688 [from="caller", to="callee"];
+  n4847 -> n4395 [from="caller", to="callee"];
+  n4933 -> n11805 [from="caller", to="callee"];
+  n4985 -> n5116 [from="caller", to="callee"];
+  n4985 -> n5689 [from="caller", to="callee"];
+  n5001 -> n10800 [from="caller", to="callee"];
+  n5001 -> n14963 [from="caller", to="callee"];
+  n5026 -> n5326 [from="caller", to="callee"];
+  n5026 -> n15592 [from="caller", to="callee"];
+  n5116 -> n4985 [from="caller", to="callee"];
+  n5116 -> n5689 [from="caller", to="callee"];
+  n5124 -> n5140 [from="caller", to="callee"];
+  n5326 -> n3266 [from="func", to="output"];
+  n5326 -> n5124 [from="caller", to="callee"];
+  n5405 -> n5393 [from="caller", to="callee"];
+  n5405 -> n5553 [from="caller", to="callee"];
+  n5405 -> n5725 [from="caller", to="callee"];
+  n5421 -> n284 [from="func", to="type_dep"];
+  n5421 -> n5662 [from="caller", to="callee"];
+  n5421 -> n8742 [from="func", to="output"];
+  n5455 -> n18 [from="caller", to="callee"];
+  n5486 -> n5393 [from="caller", to="callee"];
+  n5486 -> n5553 [from="caller", to="callee"];
+  n5486 -> n5725 [from="caller", to="callee"];
+  n5662 -> n4933 [from="caller", to="callee"];
+  n5662 -> n5124 [from="caller", to="callee"];
+  n5662 -> n5689 [from="caller", to="callee"];
+  n5662 -> n15688 [from="caller", to="callee"];
+  n5686 -> n5393 [from="caller", to="callee"];
+  n5686 -> n5725 [from="caller", to="callee"];
+  n5745 -> n5863 [from="caller", to="callee"];
+  n6005 -> n10939 [from="caller", to="callee"];
+  n6254 -> n3492 [from="input", to="func"];
+  n6254 -> n6656 [from="input", to="func"];
+  n6254 -> n6788 [from="input", to="func"];
+  n6254 -> n14971 [from="input", to="func"];
+  n6254 -> n15634 [from="input", to="func"];
+  n6254 -> n15665 [from="input", to="func"];
+  n6254 -> n15676 [from="input", to="func"];
+  n6254 -> n15741 [from="input", to="func"];
+  n6254 -> n15810 [from="input", to="func"];
+  n6442 -> n5689 [from="caller", to="callee"];
+  n6563 -> n1393 [from="field_type", to="struct"];
+  n6563 -> n4073 [from="input", to="func"];
+  n6563 -> n7044 [from="input", to="func"];
+  n6563 -> n8122 [from="input", to="func"];
+  n6563 -> n8364 [from="input", to="func"];
+  n6563 -> n8766 [from="input", to="func"];
+  n6563 -> n8851 [from="input", to="func"];
+  n6563 -> n9153 [from="input", to="func"];
+  n6563 -> n12031 [from="field_type", to="struct"];
+  n6656 -> n15634 [from="caller", to="callee"];
+  n6788 -> n6656 [from="caller", to="callee"];
+  n6788 -> n15665 [from="caller", to="callee"];
+  n6788 -> n15676 [from="caller", to="callee"];
+  n6788 -> n15741 [from="caller", to="callee"];
+  n6788 -> n15810 [from="caller", to="callee"];
+  n7044 -> n4073 [from="caller", to="callee"];
+  n7128 -> n284 [from="func", to="type_dep"];
+  n7128 -> n7269 [from="caller", to="callee"];
+  n7128 -> n7430 [from="caller", to="callee"];
+  n7128 -> n8402 [from="caller", to="callee"];
+  n7128 -> n8742 [from="func", to="output"];
+  n7254 -> n7839 [from="caller", to="callee"];
+  n7269 -> n7430 [from="caller", to="callee"];
+  n7430 -> n77 [from="func", to="output"];
+  n7430 -> n1779 [from="caller", to="callee"];
+  n7430 -> n15795 [from="caller", to="callee"];
+  n7790 -> n1850 [from="caller", to="callee"];
+  n7790 -> n15457 [from="caller", to="callee"];
+  n7790 -> n15592 [from="caller", to="callee"];
+  n7793 -> n284 [from="func", to="type_dep"];
+  n7793 -> n6563 [from="func", to="type_dep"];
+  n7793 -> n7268 [from="caller", to="callee"];
+  n7793 -> n8122 [from="caller", to="callee"];
+  n7793 -> n8364 [from="caller", to="callee"];
+  n7793 -> n8851 [from="caller", to="callee"];
+  n7819 -> n6415 [from="input", to="func"];
+  n7819 -> n6442 [from="input", to="func"];
+  n7839 -> n1926 [from="caller", to="callee"];
+  n8122 -> n9153 [from="caller", to="callee"];
+  n8122 -> n9416 [from="caller", to="callee"];
+  n8364 -> n7268 [from="caller", to="callee"];
+  n8364 -> n8766 [from="caller", to="callee"];
+  n8402 -> n15688 [from="caller", to="callee"];
+  n8742 -> n9123 [from="interface", to="implements"];
+  n8742 -> n9784 [from="interface", to="implements"];
+  n8766 -> n7044 [from="caller", to="callee"];
+  n9091 -> n9123 [from="func", to="output"];
+  n9153 -> n9416 [from="caller", to="callee"];
+  n9325 -> n9666 [from="caller", to="callee"];
+  n9416 -> n5689 [from="caller", to="callee"];
+  n9416 -> n12809 [from="caller", to="callee"];
+  n9666 -> n9603 [from="caller", to="callee"];
+  n9666 -> n9996 [from="caller", to="callee"];
+  n9749 -> n9784 [from="func", to="output"];
+  n9814 -> n284 [from="func", to="type_dep"];
+  n9814 -> n5689 [from="caller", to="callee"];
+  n9814 -> n8742 [from="func", to="output"];
+  n9814 -> n9639 [from="func", to="type_dep"];
+  n9814 -> n15857 [from="caller", to="callee"];
+  n9996 -> n5689 [from="caller", to="callee"];
+  n9996 -> n9603 [from="caller", to="callee"];
+  n9996 -> n9666 [from="caller", to="callee"];
+  n10049 -> n1850 [from="caller", to="callee"];
+  n10827 -> n11125 [from="caller", to="callee"];
+  n10939 -> n11125 [from="caller", to="callee"];
+  n11125 -> n11908 [from="caller", to="callee"];
+  n11125 -> n12264 [from="caller", to="callee"];
+  n11315 -> n3581 [from="caller", to="callee"];
+  n11344 -> n1779 [from="caller", to="callee"];
+  n11344 -> n15857 [from="caller", to="callee"];
+  n11696 -> n15810 [from="input", to="func"];
+  n11836 -> n3581 [from="caller", to="callee"];
+  n11908 -> n11125 [from="caller", to="callee"];
+  n11931 -> n3581 [from="caller", to="callee"];
+  n11931 -> n11315 [from="caller", to="callee"];
+  n12082 -> n284 [from="func", to="type_dep"];
+  n12082 -> n11931 [from="caller", to="callee"];
+  n12108 -> n284 [from="func", to="type_dep"];
+  n12108 -> n8742 [from="func", to="output"];
+  n12264 -> n1965 [from="caller", to="callee"];
+  n12264 -> n12365 [from="caller", to="callee"];
+  n12268 -> n11836 [from="caller", to="callee"];
+  n12851 -> n284 [from="func", to="type_dep"];
+  n12851 -> n8742 [from="func", to="output"];
+  n12924 -> n284 [from="func", to="type_dep"];
+  n13421 -> n13445 [from="caller", to="callee"];
+  n13421 -> n13523 [from="caller", to="callee"];
+  n13445 -> n13523 [from="caller", to="callee"];
+  n13523 -> n13716 [from="caller", to="callee"];
+  n14850 -> n284 [from="func", to="type_dep"];
+  n14850 -> n8742 [from="func", to="output"];
+  n14850 -> n9091 [from="caller", to="callee"];
+  n14850 -> n9749 [from="caller", to="callee"];
+  n15068 -> n2469 [from="input", to="func"];
+  n15135 -> n2469 [from="input", to="func"];
+  n15634 -> n38 [from="caller", to="callee"];
+  n15634 -> n15960 [from="caller", to="callee"];
+  n15665 -> n6788 [from="caller", to="callee"];
+  n15665 -> n15676 [from="caller", to="callee"];
+  n15676 -> n15741 [from="caller", to="callee"];
+  n15795 -> n15688 [from="caller", to="callee"];
+  n15810 -> n14963 [from="caller", to="callee"];
+  n15810 -> n15665 [from="caller", to="callee"];
+  n15810 -> n15676 [from="caller", to="callee"];
+  n15810 -> n15741 [from="caller", to="callee"];
+  n15857 -> n15871 [from="caller", to="callee"];
+  n15992 -> n8742 [from="func", to="output"];
+  n15992 -> n9091 [from="caller", to="callee"];
+  n15992 -> n16115 [from="caller", to="callee"];
+  n15992 -> n16248 [from="func", to="type_dep"];
+  n16152 -> n77 [from="func", to="type_dep"];
+  n16152 -> n5689 [from="caller", to="callee"];
+  n16152 -> n16385 [from="caller", to="callee"];
+  n16152 -> n16470 [from="caller", to="callee"];
+  n16248 -> n16115 [from="input", to="func"];
+  n16248 -> n16152 [from="input", to="func"];
+  n16248 -> n16470 [from="input", to="func"];
+  n16470 -> n284 [from="func", to="type_dep"];
+  n16470 -> n16385 [from="caller", to="callee"];
+  n16623 -> n8742 [from="func", to="output"];
+  n16623 -> n12292 [from="caller", to="callee"];
+  n16623 -> n16658 [from="caller", to="callee"];
+  n16623 -> n16697 [from="func", to="type_dep"];
+  n16658 -> n2514 [from="caller", to="callee"];
+  n16658 -> n8742 [from="func", to="output"];
+  n16658 -> n9091 [from="caller", to="callee"];
+  n16658 -> n9749 [from="caller", to="callee"];
+  n16658 -> n16739 [from="caller", to="callee"];
+  n16697 -> n16658 [from="input", to="func"];
+  n16697 -> n16739 [from="input", to="func"];
+  n16697 -> n16747 [from="input", to="func"];
+  n16697 -> n16828 [from="input", to="func"];
+  n16697 -> n16873 [from="input", to="func"];
+  n16697 -> n17031 [from="input", to="func"];
+  n16697 -> n17037 [from="input", to="func"];
+  n16739 -> n16747 [from="caller", to="callee"];
+  n16747 -> n5689 [from="caller", to="callee"];
+  n16747 -> n16828 [from="caller", to="callee"];
+  n16747 -> n16873 [from="caller", to="callee"];
+  n16828 -> n5689 [from="caller", to="callee"];
+  n16828 -> n16739 [from="caller", to="callee"];
+  n16828 -> n17031 [from="caller", to="callee"];
+  n16828 -> n17245 [from="caller", to="callee"];
+  n16873 -> n5689 [from="caller", to="callee"];
+  n16873 -> n17037 [from="caller", to="callee"];
+  n17031 -> n17037 [from="caller", to="callee"];
+  n17037 -> n5689 [from="caller", to="callee"];
+  n17037 -> n12292 [from="caller", to="callee"];
+  n17037 -> n15857 [from="caller", to="callee"];
+  n17037 -> n16658 [from="caller", to="callee"];
+  n17037 -> n16747 [from="caller", to="callee"];
+  n17037 -> n17031 [from="caller", to="callee"];
+}

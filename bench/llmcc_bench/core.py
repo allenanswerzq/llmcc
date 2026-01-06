@@ -111,11 +111,12 @@ class Config:
     def benchmark_logs_dir(self) -> Path:
         return self.sample_dir / "benchmark_logs"
 
-    def benchmark_file(self, suffix: str = "") -> Path:
+    def benchmark_file(self, suffix: str = "", language: str = "") -> Path:
         import platform
         cores = get_cpu_info()[1]  # physical cores
         os_name = platform.system().lower()
-        name = f"benchmark_results_{cores}_{os_name}{suffix}.md"
+        lang_suffix = f"_{language}" if language else ""
+        name = f"benchmark_results_{cores}_{os_name}{lang_suffix}{suffix}.md"
         return self.sample_dir / name
 
     def language_dir(self, language: str) -> Path:
@@ -275,8 +276,8 @@ def get_memory_info() -> Tuple[str, str]:
                         key = parts[0].strip()
                         value = parts[1].strip().split()[0]
                         meminfo[key] = int(value) * 1024  # Convert from kB
-                total = format_bytes(meminfo.get("MemTotal", 0))
-                available = format_bytes(meminfo.get("MemAvailable", 0))
+            total = format_bytes(meminfo.get("MemTotal", 0))
+            available = format_bytes(meminfo.get("MemAvailable", 0))
         elif system == "Darwin":
             result = subprocess.run(
                 ["sysctl", "-n", "hw.memsize"],
@@ -436,32 +437,60 @@ def get_system_info() -> SystemInfo:
 
 def count_rust_files(src_dir: Path) -> int:
     """Count number of .rs files in a directory."""
+    return count_files(src_dir, "rust")
+
+
+def count_files(src_dir: Path, language: str = "rust") -> int:
+    """Count number of source files in a directory for a given language.
+
+    Excludes common non-source directories like node_modules, tests, etc.
+    """
     if not src_dir.exists():
         return 0
+
+    extensions = {
+        "rust": [".rs"],
+        "typescript": [".ts", ".tsx"],
+        "python": [".py"],
+    }
+
+    # Directories to skip (common non-source directories)
+    skip_dirs = {
+        "node_modules", "tests", "test", "__tests__",
+        "baselines", "fixtures", "examples", "dist", "build",
+        ".git", "target", "__pycache__", ".tox", "venv",
+    }
+
+    exts = extensions.get(language, [".rs"])
     count = 0
-    for root, _, files in os.walk(src_dir):
+    for root, dirs, files in os.walk(src_dir):
+        # Modify dirs in-place to skip unwanted directories
+        dirs[:] = [d for d in dirs if d not in skip_dirs]
         for f in files:
-            if f.endswith('.rs'):
+            if any(f.endswith(ext) for ext in exts):
                 count += 1
     return count
 
 
-def count_loc(src_dir: Path, use_estimate: bool = False) -> int:
+def count_loc(src_dir: Path, language: str = "rust") -> int:
     """
-    Count lines of code in Rust files.
+    Count lines of code in source files for a given language.
     Excludes blank lines and comment-only lines.
 
     Args:
         src_dir: Directory to count
-        use_estimate: If True, use file count * 200 as quick estimate
+        language: Language to count (rust, typescript, python)
     """
     if not src_dir.exists():
         return 0
 
-    # Quick estimate mode
-    if use_estimate:
-        file_count = count_rust_files(src_dir)
-        return file_count * 200  # ~200 lines per file average
+    # Language-specific tokei type names
+    tokei_types = {
+        "rust": "Rust",
+        "typescript": "TypeScript",
+        "python": "Python",
+    }
+    tokei_type = tokei_types.get(language, "Rust")
 
     # Install tokei if not available (cargo must exist for Rust projects)
     if not shutil.which("tokei"):
@@ -478,22 +507,39 @@ def count_loc(src_dir: Path, use_estimate: bool = False) -> int:
     if shutil.which("tokei"):
         try:
             result = subprocess.run(
-                ["tokei", str(src_dir), "-t", "Rust", "-o", "json"],
+                ["tokei", str(src_dir), "-t", tokei_type, "-o", "json"],
                 capture_output=True, text=True, timeout=30
             )
             import json
             data = json.loads(result.stdout)
-            if "Rust" in data:
-                return data["Rust"].get("code", 0)
+            if tokei_type in data:
+                return data[tokei_type].get("code", 0)
         except Exception:
             pass
+
+    # Language-specific extensions for fallback
+    extensions = {
+        "rust": [".rs"],
+        "typescript": [".ts", ".tsx"],
+        "python": [".py"],
+    }
+    exts = extensions.get(language, [".rs"])
+
+    # Directories to skip
+    skip_dirs = {
+        "node_modules", "tests", "test", "__tests__",
+        "baselines", "fixtures", "examples", "dist", "build",
+        ".git", "target", "__pycache__", ".tox", "venv",
+    }
 
     # Fallback: count lines manually (excludes comments and blank lines)
     total_lines = 0
     in_block_comment = False
-    for root, _, files in os.walk(src_dir):
+    for root, dirs, files in os.walk(src_dir):
+        # Skip unwanted directories
+        dirs[:] = [d for d in dirs if d not in skip_dirs]
         for f in files:
-            if f.endswith('.rs'):
+            if any(f.endswith(ext) for ext in exts):
                 try:
                     filepath = Path(root) / f
                     with open(filepath, 'r', encoding='utf-8', errors='ignore') as fp:

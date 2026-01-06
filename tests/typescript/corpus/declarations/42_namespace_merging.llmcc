@@ -1,0 +1,41 @@
+===============================================================================
+namespace-merging
+===============================================================================
+Namespace and class/function merging.
+lang: typescript
+
+--- file: src/lib.ts ---
+function buildLabel(name: string): string {
+    return name;
+}
+
+namespace buildLabel {
+    export const suffix = "!";
+}
+
+class Album {
+    label: string = "";
+}
+
+namespace Album {
+    export interface Track {
+        name: string;
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 buildLabel
+    (parameter:3 name @type string)
+    (return:4 @type string)
+  )
+  (module:5 buildLabel)
+  (class:6 Album
+    (field:7 label @type string)
+  )
+  (module:8 Album (inline)
+    (interface:9 Track
+      (field:10 name @type string)
+    )
+  )
+)

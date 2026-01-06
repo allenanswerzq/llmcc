@@ -1,0 +1,104 @@
+===============================================================================
+two-packages-basic
+===============================================================================
+Basic test with two packages where one imports from the other.
+lang: typescript
+
+--- file: common/src/types.ts ---
+
+export interface User {
+    id: number;
+    name: string;
+}
+
+export interface ApiError {
+    code: number;
+    message: string;
+}
+
+--- file: app/src/service.ts ---
+
+import { User, ApiError } from "../../common/src/types";
+
+export function getUser(id: number): User | ApiError {
+    return { id, name: "" };
+}
+
+export function createUser(name: string): User {
+    return { id: 1, name };
+}
+
+--- expect:block-graph ---
+(root:1 types ($TMP/common/src/types.ts)
+  (interface:2 User
+    (field:3 id @type number)
+    (field:4 name @type string)
+  )
+  (interface:5 ApiError
+    (field:6 code @type number)
+    (field:7 message @type string)
+  )
+)
+
+(root:8 service ($TMP/app/src/service.ts)
+  (func:9 getUser
+    (parameter:10 id @type number)
+    (return:11 @type:2 User)
+  )
+  (func:12 createUser
+    (parameter:13 name @type string)
+    (return:14 @type:2 User)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_app {
+    label="app";
+    style=rounded;
+    color="#999999";
+    bgcolor="#f5f5f5";
+
+    subgraph cluster_service_ts {
+      label="service.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n9[label="getUser", full_path="$TMP/app/src/service.ts:4", sym_ty="Function", shape=ellipse];
+      n12[label="createUser", full_path="$TMP/app/src/service.ts:8", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_common {
+    label="common";
+    style=rounded;
+    color="#999999";
+    bgcolor="#f5f5f5";
+
+    subgraph cluster_types_ts {
+      label="types.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2[label="User", full_path="$TMP/common/src/types.ts:2", sym_ty="Interface", shape=box];
+    }
+
+  }
+
+
+  n9 -> n2 [from="func", to="output"];
+  n12 -> n2 [from="func", to="output"];
+}

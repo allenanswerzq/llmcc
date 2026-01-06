@@ -1,0 +1,40 @@
+===============================================================================
+generic-interfaces
+===============================================================================
+Interfaces with type parameters.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface Container<T> {
+    value: T;
+    getValue(): T;
+}
+
+interface KeyValue<K, V> {
+    key: K;
+    value: V;
+}
+
+interface Comparable<T extends Comparable<T>> {
+    compareTo(other: T): number;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 Container
+    (field:3 value @type T)
+    (method:4 getValue
+      (return:5 @type T)
+    )
+  )
+  (interface:6 KeyValue
+    (field:7 key @type K)
+    (field:8 value @type V)
+  )
+  (interface:9 Comparable
+    (method:10 compareTo
+      (parameter:11 other @type:9 Comparable)
+      (return:12 @type number)
+    )
+  )
+)

@@ -1,0 +1,27 @@
+===============================================================================
+assertion-signature
+===============================================================================
+Assertion signature functions.
+lang: typescript
+
+--- file: src/lib.ts ---
+function assert(condition: unknown, message?: string): asserts condition {
+    if (!condition) throw new Error(message);
+}
+
+function assertDefined<T>(value: T | undefined): asserts value is T {
+    if (value === undefined) throw new Error("Value is undefined");
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 assert
+    (parameter:3 condition @type unknown)
+    (parameter:4 message @type string)
+    (return:5 @type unknown)
+  )
+  (func:7 assertDefined
+    (parameter:8 value @type T)
+    (return:9 @type T)
+  )
+)

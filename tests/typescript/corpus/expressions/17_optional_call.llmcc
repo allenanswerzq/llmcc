@@ -1,0 +1,36 @@
+===============================================================================
+optional-call
+===============================================================================
+Optional chaining with function calls.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface API {
+    fetch?: () => string;
+    nested?: {
+        call?: () => number;
+    };
+}
+
+function use(api: API): void {
+    const result = api.fetch?.();
+    const nested = api.nested?.call?.();
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 API
+    (field:3 fetch @type string
+      (return:4 @type string)
+    )
+    (field:5 nested @type:5 nested
+      (field:6 call @type number
+        (return:7 @type number)
+      )
+    )
+  )
+  (func:8 use
+    (parameter:9 api @type:2 API)
+    (return:10 @type void)
+  )
+)

@@ -1,0 +1,19 @@
+===============================================================================
+call-expressions
+===============================================================================
+Function call expressions.
+lang: typescript
+
+--- file: src/lib.ts ---
+function greet(name: string): string { return name; }
+const result = greet("world");
+const called = greet.call(null, "test");
+const applied = greet.apply(null, ["test"]);
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 greet
+    (parameter:3 name @type string)
+    (return:4 @type string)
+  )
+)

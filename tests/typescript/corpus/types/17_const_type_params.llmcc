@@ -1,0 +1,21 @@
+===============================================================================
+const-type-parameters
+===============================================================================
+Const type parameters.
+lang: typescript
+
+--- file: src/lib.ts ---
+function asConst<const T>(value: T): T {
+    return value;
+}
+
+const arr = asConst([1, 2, 3]);
+const obj = asConst({ x: 10, y: 20 });
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 asConst
+    (parameter:3 value @type T)
+    (return:4 @type T)
+  )
+)

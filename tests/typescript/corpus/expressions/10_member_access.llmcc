@@ -1,0 +1,16 @@
+===============================================================================
+member-access
+===============================================================================
+Member access expressions including optional chaining.
+lang: typescript
+
+--- file: src/lib.ts ---
+const obj = { a: { b: 1 } };
+const prop = obj.a;
+const nested = obj.a.b;
+const dynamic = obj["a"];
+const optional = obj?.a;
+const optChain = obj?.a?.b;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts))

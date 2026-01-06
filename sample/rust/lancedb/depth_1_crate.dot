@@ -13,11 +13,13 @@ digraph architecture {
   fontsize=16;
   fontname="Helvetica Bold";
 
-  crate_lancedb[label="lancedb"];
-  crate_lancedb_nodejs[label="lancedb-nodejs"];
-  crate_lancedb_python[label="lancedb-python"];
+  crate_lancedb[label="lancedb", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb"];
+  crate_lancedb_nodejs[label="lancedb-nodejs", folder="/home/yibai/llmcc/sample/repos/lancedb/nodejs"];
+  crate_lancedb_python[label="lancedb-python", folder="/home/yibai/llmcc/sample/repos/lancedb/python"];
 
-  crate_lancedb -> crate_lancedb_nodejs [dir=both]; // dir best-effort not accurate
-  crate_lancedb -> crate_lancedb_python [dir=both]; // dir best-effort not accurate
-  crate_lancedb_python -> crate_lancedb_nodejs;
+  crate_lancedb -> crate_lancedb_nodejs;
+  crate_lancedb -> crate_lancedb_python;
+  crate_lancedb_nodejs -> crate_lancedb;
+  crate_lancedb_nodejs -> crate_lancedb_python;
+  crate_lancedb_python -> crate_lancedb;
 }

@@ -1,0 +1,67 @@
+===============================================================================
+async-functions
+===============================================================================
+Async function declarations.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface Response {
+    json(): any;
+}
+
+async function fetchData(): Promise<string> {
+    return "data";
+}
+
+async function getData(url: string): Promise<Response> {
+    return await fetch(url);
+}
+
+async function processItems(items: string[]): Promise<void> {
+    for (const item of items) {
+        await process(item);
+    }
+}
+
+class ApiClient {
+    async get(url: string): Promise<any> {
+        const response = await fetch(url);
+        return response.json();
+    }
+    
+    async post(url: string, data: any): Promise<any> {
+        const response = await fetch(url, { method: "POST", body: JSON.stringify(data) });
+        return response.json();
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 Response
+    (method:3 json
+      (return:4 @type any)
+    )
+  )
+  (func:5 fetchData
+    (return:6 @type string)
+  )
+  (func:7 getData
+    (parameter:8 url @type string)
+    (return:9 @type:2 Response)
+  )
+  (func:11 processItems
+    (parameter:12 items @type string)
+    (return:13 @type void)
+  )
+  (class:15 ApiClient
+    (method:16 get
+      (parameter:17 url @type string)
+      (return:18 @type any)
+    )
+    (method:21 post
+      (parameter:22 url @type string)
+      (parameter:23 data @type any)
+      (return:24 @type any)
+    )
+  )
+)

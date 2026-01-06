@@ -1,0 +1,26 @@
+===============================================================================
+object-types
+===============================================================================
+Object and object type usage.
+lang: typescript
+
+--- file: src/lib.ts ---
+type Obj = object;
+type ObjLiteral = {};
+
+function acceptsObject(o: object): void {}
+function acceptsAny(o: {}): void {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (alias:2 Obj)
+  (alias:3 ObjLiteral)
+  (func:4 acceptsObject
+    (parameter:5 o @type object)
+    (return:6 @type void)
+  )
+  (func:7 acceptsAny
+    (parameter:8 o @type o)
+    (return:9 @type void)
+  )
+)

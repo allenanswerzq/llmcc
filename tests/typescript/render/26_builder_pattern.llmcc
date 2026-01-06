@@ -1,0 +1,66 @@
+===============================================================================
+builder-pattern
+===============================================================================
+Test builder pattern with method chaining and type references.
+lang: typescript
+
+--- file: sample/src/lib.ts ---
+
+class Config {
+    host: string;
+    port: number;
+    timeout: number;
+}
+
+class ConfigBuilder {
+    config: Config;
+
+    constructor() {
+        this.config = new Config();
+    }
+
+    setHost(host: string): ConfigBuilder {
+        this.config.host = host;
+        return this;
+    }
+
+    setPort(port: number): ConfigBuilder {
+        this.config.port = port;
+        return this;
+    }
+
+    setTimeout(timeout: number): ConfigBuilder {
+        this.config.timeout = timeout;
+        return this;
+    }
+
+    build(): Config {
+        return this.config;
+    }
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_ts {
+    label="lib.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n2[label="Config", full_path="$TMP/sample/src/lib.ts:2", sym_ty="Struct", shape=box];
+    n6[label="ConfigBuilder", full_path="$TMP/sample/src/lib.ts:8", sym_ty="Struct", shape=box];
+  }
+
+
+  n2 -> n6 [from="field_type", to="struct"];
+}

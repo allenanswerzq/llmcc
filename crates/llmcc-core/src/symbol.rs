@@ -83,13 +83,14 @@ pub enum SymKind {
     Const = 14,
     Static = 15,
     Trait = 16,
-    Impl = 17,
-    EnumVariant = 18,
-    Primitive = 19,
-    TypeAlias = 20,
-    TypeParameter = 21,
-    GenericType = 22,
-    CompositeType = 23,
+    Interface = 17,
+    Impl = 18,
+    EnumVariant = 19,
+    Primitive = 20,
+    TypeAlias = 21,
+    TypeParameter = 22,
+    GenericType = 23,
+    CompositeType = 24,
 }
 
 /// A bitset representing a set of SymKind values for efficient O(1) containment checks.
@@ -107,8 +108,8 @@ impl SymKindSet {
     /// Create a set containing all kinds.
     #[inline]
     pub const fn all() -> Self {
-        // Set bits 0-23 (all current SymKind values)
-        Self(0x00FFFFFF)
+        // Set bits 0-24 (all current SymKind values)
+        Self(0x01FFFFFF)
     }
 
     /// Create a set from a single kind.
@@ -144,6 +145,7 @@ pub const SYM_KIND_TYPES: SymKindSet = SymKindSet::empty()
     .with(SymKind::Struct)
     .with(SymKind::Enum)
     .with(SymKind::Trait)
+    .with(SymKind::Interface)
     .with(SymKind::Function)
     .with(SymKind::Const)
     .with(SymKind::Static)
@@ -183,7 +185,11 @@ impl SymKind {
     pub fn is_defined_type(&self) -> bool {
         matches!(
             self,
-            SymKind::Struct | SymKind::Enum | SymKind::Trait | SymKind::TypeAlias
+            SymKind::Struct
+                | SymKind::Enum
+                | SymKind::Trait
+                | SymKind::TypeAlias
+                | SymKind::Interface
         )
     }
 
@@ -300,6 +306,9 @@ pub struct Symbol {
     /// Examples: enum variant's FieldOf is the enum; struct field's FieldOf is the struct;
     /// tuple field (by index) FieldOf is the tuple/value being accessed.
     pub field_of: AtomicUsize, // 0 = None, n = Some(SymId(n-1))
+    /// For classes/functions, tracks decorator function symbols applied to this symbol.
+    /// Used primarily in TypeScript/JavaScript for @decorator syntax.
+    pub decorators: RwLock<Vec<SymId>>,
 }
 
 impl Clone for Symbol {
@@ -319,6 +328,7 @@ impl Clone for Symbol {
             previous: RwLock::new(*self.previous.read()),
             nested_types: RwLock::new(self.nested_types.read().clone()),
             field_of: AtomicUsize::new(self.field_of.load(Ordering::Relaxed)),
+            decorators: RwLock::new(self.decorators.read().clone()),
         }
     }
 }
@@ -350,6 +360,7 @@ impl Symbol {
             previous: RwLock::new(None),
             nested_types: RwLock::new(Vec::new()),
             field_of: AtomicUsize::new(0),
+            decorators: RwLock::new(Vec::new()),
         }
     }
 
@@ -554,5 +565,22 @@ impl Symbol {
     #[inline]
     pub fn set_field_of(&self, owner: SymId) {
         self.field_of.store(owner.0 + 1, Ordering::Relaxed);
+    }
+
+    /// Gets the decorators applied to this symbol (for TypeScript/JavaScript @decorator syntax).
+    #[inline]
+    pub fn decorators(&self) -> Option<Vec<SymId>> {
+        let decorators = self.decorators.read();
+        if decorators.is_empty() {
+            None
+        } else {
+            Some(decorators.clone())
+        }
+    }
+
+    /// Adds a decorator to this symbol.
+    #[inline]
+    pub fn add_decorator(&self, decorator: SymId) {
+        self.decorators.write().push(decorator);
     }
 }

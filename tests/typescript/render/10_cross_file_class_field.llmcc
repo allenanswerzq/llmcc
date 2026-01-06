@@ -1,0 +1,55 @@
+===============================================================================
+cross-file-class-field
+===============================================================================
+Test that cross-file class field types create edges.
+lang: typescript
+
+--- file: sample/src/models.ts ---
+
+export class Product {
+    id: number;
+    name: string;
+    price: number;
+}
+
+--- file: sample/src/cart.ts ---
+import { Product } from './models';
+
+export class CartItem {
+    product: Product;
+    quantity: number;
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_cart_ts {
+    label="cart.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n7[label="CartItem", full_path="$TMP/sample/src/cart.ts:3", sym_ty="Struct", shape=box];
+  }
+
+  subgraph cluster_models_ts {
+    label="models.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n2[label="Product", full_path="$TMP/sample/src/models.ts:2", sym_ty="Struct", shape=box];
+  }
+
+
+  n2 -> n7 [from="field_type", to="struct"];
+}

@@ -13,18 +13,23 @@ digraph architecture {
   fontsize=16;
   fontname="Helvetica Bold";
 
-  crate_grep_cli[label="grep-cli"];
-  crate_grep_matcher[label="grep-matcher"];
-  crate_grep_printer[label="grep-printer"];
-  crate_grep_regex[label="grep-regex"];
-  crate_grep_searcher[label="grep-searcher"];
-  crate_ignore[label="ignore"];
-  crate_ripgrep[label="ripgrep"];
+  crate_globset[label="globset", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/globset"];
+  crate_grep_cli[label="grep-cli", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/cli"];
+  crate_grep_matcher[label="grep-matcher", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/matcher"];
+  crate_grep_printer[label="grep-printer", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/printer"];
+  crate_grep_regex[label="grep-regex", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/regex"];
+  crate_grep_searcher[label="grep-searcher", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/searcher"];
+  crate_ignore[label="ignore", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/ignore"];
+  crate_ripgrep[label="ripgrep", folder="/home/yibai/llmcc/sample/repos/ripgrep"];
 
-  crate_grep_cli -> crate_ripgrep [dir=both]; // dir best-effort not accurate
-  crate_grep_matcher -> crate_grep_regex [dir=both]; // dir best-effort not accurate
-  crate_grep_printer -> crate_grep_searcher [dir=both]; // dir best-effort not accurate
-  crate_grep_regex -> crate_ignore [dir=both]; // dir best-effort not accurate
+  crate_grep_cli -> crate_ripgrep;
+  crate_grep_printer -> crate_grep_searcher;
+  crate_grep_regex -> crate_grep_matcher;
   crate_grep_searcher -> crate_grep_matcher;
-  crate_ignore -> crate_ripgrep [dir=both]; // dir best-effort not accurate
+  crate_ignore -> crate_globset;
+  crate_ignore -> crate_grep_cli;
+  crate_ignore -> crate_ripgrep;
+  crate_ripgrep -> crate_grep_matcher;
+  crate_ripgrep -> crate_grep_printer;
+  crate_ripgrep -> crate_ignore;
 }

@@ -13,37 +13,39 @@ digraph architecture {
   fontsize=16;
   fontname="Helvetica Bold";
 
-  mod_lancedb_arrow[label="lancedb::arrow"];
-  mod_lancedb_connection[label="lancedb::connection"];
-  mod_lancedb_data[label="lancedb::data"];
-  mod_lancedb_database[label="lancedb::database"];
-  mod_lancedb_embeddings[label="lancedb::embeddings"];
-  mod_lancedb_index[label="lancedb::index"];
-  mod_lancedb_lib[label="lancedb::lib"];
-  mod_lancedb_nodejs_connection[label="lancedb-nodejs::connection"];
-  mod_lancedb_nodejs_table[label="lancedb-nodejs::table"];
-  mod_lancedb_python_connection[label="lancedb-python::connection"];
-  mod_lancedb_python_index[label="lancedb-python::index"];
-  mod_lancedb_python_table[label="lancedb-python::table"];
-  mod_lancedb_query[label="lancedb::query"];
-  mod_lancedb_remote[label="lancedb::remote"];
-  mod_lancedb_table[label="lancedb::table"];
-  mod_lancedb_test_utils[label="lancedb::test_utils"];
+  mod_lancedb_arrow[label="lancedb::arrow", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
+  mod_lancedb_connection[label="lancedb::connection", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
+  mod_lancedb_data[label="lancedb::data", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/data"];
+  mod_lancedb_database[label="lancedb::database", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
+  mod_lancedb_dataloader[label="lancedb::dataloader", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/dataloader"];
+  mod_lancedb_embeddings[label="lancedb::embeddings", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/embeddings"];
+  mod_lancedb_index[label="lancedb::index", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/index"];
+  mod_lancedb_lib[label="lancedb::lib", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
+  mod_lancedb_nodejs_table[label="lancedb-nodejs::table", folder="/home/yibai/llmcc/sample/repos/lancedb/nodejs/src"];
+  mod_lancedb_python_connection[label="lancedb-python::connection", folder="/home/yibai/llmcc/sample/repos/lancedb/python/src"];
+  mod_lancedb_python_index[label="lancedb-python::index", folder="/home/yibai/llmcc/sample/repos/lancedb/python/src"];
+  mod_lancedb_python_table[label="lancedb-python::table", folder="/home/yibai/llmcc/sample/repos/lancedb/python/src"];
+  mod_lancedb_query[label="lancedb::query", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
+  mod_lancedb_remote[label="lancedb::remote", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/remote"];
+  mod_lancedb_rerankers[label="lancedb::rerankers", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
+  mod_lancedb_table[label="lancedb::table", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
+  mod_lancedb_test_utils[label="lancedb::test_utils", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/test_utils"];
 
-  mod_lancedb_arrow -> mod_lancedb_data [dir=both]; // dir best-effort not accurate
-  mod_lancedb_arrow -> mod_lancedb_table [dir=both]; // dir best-effort not accurate
   mod_lancedb_connection -> mod_lancedb_database;
   mod_lancedb_connection -> mod_lancedb_embeddings;
-  mod_lancedb_database -> mod_lancedb_table [dir=both]; // dir best-effort not accurate
+  mod_lancedb_data -> mod_lancedb_arrow;
+  mod_lancedb_dataloader -> mod_lancedb_table;
   mod_lancedb_embeddings -> mod_lancedb_arrow;
   mod_lancedb_index -> mod_lancedb_lib;
-  mod_lancedb_nodejs_table -> mod_lancedb_table [dir=both]; // dir best-effort not accurate
+  mod_lancedb_index -> mod_lancedb_table;
+  mod_lancedb_nodejs_table -> mod_lancedb_table;
   mod_lancedb_python_index -> mod_lancedb_index;
   mod_lancedb_python_table -> mod_lancedb_table;
-  mod_lancedb_query -> mod_lancedb_table [dir=both]; // dir best-effort not accurate
+  mod_lancedb_query -> mod_lancedb_rerankers;
+  mod_lancedb_query -> mod_lancedb_table;
   mod_lancedb_remote -> mod_lancedb_python_connection;
   mod_lancedb_remote -> mod_lancedb_table;
+  mod_lancedb_table -> mod_lancedb_arrow;
   mod_lancedb_table -> mod_lancedb_embeddings;
-  mod_lancedb_test_utils -> mod_lancedb_nodejs_connection;
-  mod_lancedb_test_utils -> mod_lancedb_python_connection;
+  mod_lancedb_test_utils -> mod_lancedb_connection;
 }

@@ -1,0 +1,30 @@
+===============================================================================
+parameter-decorators
+===============================================================================
+Parameter decorators.
+lang: typescript
+
+--- file: src/lib.ts ---
+function inject(target: any, key: string, index: number): void {}
+
+class Controller {
+    handle(@inject req: string): void {}
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 inject
+    (parameter:3 target @type any)
+    (parameter:4 key @type string)
+    (parameter:5 index @type number)
+    (return:6 @type void)
+  )
+  (class:7 Controller
+    (method:8 handle
+      (parameter:9 req @type string)
+      (return:10 @type void)
+      (@tdep:2 inject)
+      (@fdep:2 inject)
+    )
+  )
+)

@@ -1,0 +1,35 @@
+===============================================================================
+binary-expressions
+===============================================================================
+Binary arithmetic expressions.
+lang: typescript
+
+--- file: src/lib.ts ---
+function add(): number { return 1 + 2; }
+function subtract(): number { return 5 - 3; }
+function multiply(): number { return 4 * 2; }
+function divide(): number { return 10 / 2; }
+function modulo(): number { return 7 % 3; }
+function power(): number { return 2 ** 3; }
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 add
+    (return:3 @type number)
+  )
+  (func:4 subtract
+    (return:5 @type number)
+  )
+  (func:6 multiply
+    (return:7 @type number)
+  )
+  (func:8 divide
+    (return:9 @type number)
+  )
+  (func:10 modulo
+    (return:11 @type number)
+  )
+  (func:12 power
+    (return:13 @type number)
+  )
+)

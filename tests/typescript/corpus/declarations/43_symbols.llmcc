@@ -1,0 +1,18 @@
+===============================================================================
+symbols
+===============================================================================
+Symbol declarations and usage.
+lang: typescript
+
+--- file: src/lib.ts ---
+const sym1 = Symbol();
+const sym2 = Symbol("description");
+const sym3 = Symbol.for("global");
+
+const obj = {
+    [sym1]: "value1",
+    [Symbol.toStringTag]: "MyObject"
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts))

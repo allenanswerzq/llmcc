@@ -1,0 +1,93 @@
+===============================================================================
+type-alias-resolution
+===============================================================================
+Test that type aliases resolve correctly when there are same-named types.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod internal;
+mod public;
+
+pub use public::Result;
+
+--- file: sample/src/internal.rs ---
+
+pub struct Error {
+    pub internal_code: i32,
+}
+
+pub type Result<T> = std::result::Result<T, Error>;
+
+--- file: sample/src/public.rs ---
+
+pub struct Error {
+    pub user_message: String,
+}
+
+// Public Result uses public::Error
+pub type Result<T> = std::result::Result<T, Error>;
+
+pub struct Api {
+    pub last_error: Error,
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 internal)
+  (module:3 public)
+)
+
+(root:4 internal ($TMP/sample/src/internal.rs)
+  (class:5 Error
+    (field:6 internal_code @type i32)
+  )
+  (alias:7 Result)
+)
+
+(root:8 public ($TMP/sample/src/public.rs)
+  (class:9 Error
+    (field:10 user_message @type String)
+  )
+  (alias:11 Result)
+  (class:12 Api
+    (field:13 last_error @type:9 Error)
+    (@tdep:9 Error)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_public_rs {
+      label="public.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n9[label="Error", full_path="$TMP/sample/src/public.rs:2", sym_ty="Struct", shape=box];
+      n12[label="Api", full_path="$TMP/sample/src/public.rs:9", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+
+  n9 -> n12 [from="field_type", to="struct"];
+}

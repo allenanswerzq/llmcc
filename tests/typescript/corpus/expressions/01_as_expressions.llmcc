@@ -1,0 +1,34 @@
+===============================================================================
+as-expressions
+===============================================================================
+Type assertions with 'as' keyword.
+lang: typescript
+
+--- file: src/lib.ts ---
+const x = "hello" as string;
+const y = 42 as number;
+const z = null as unknown as string;
+
+function getValue(): unknown {
+    return "test";
+}
+
+const value = getValue() as string;
+const element = document.getElementById("id") as HTMLElement;
+
+interface User {
+    name: string;
+}
+
+const data = {} as User;
+const user = { name: "John" } as User;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 getValue
+    (return:3 @type unknown)
+  )
+  (interface:6 User
+    (field:7 name @type string)
+  )
+)

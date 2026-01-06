@@ -19,13 +19,14 @@ pub fn helper() {
 
 --- expect:block-graph ---
 (root:1 lib ($TMP/src/lib.rs)
-  (func:2 main
-    (@fdep:5 helper)
+  (module:2 utils)
+  (func:3 main
+    (@fdep:6 helper)
   )
 )
 
-(root:4 utils ($TMP/src/utils.rs)
-  (func:5 helper
+(root:5 utils ($TMP/src/utils.rs)
+  (func:6 helper
   )
 )
 
@@ -51,17 +52,18 @@ pub fn add(a: i32, b: i32) -> i32 {
 
 --- expect:block-graph ---
 (root:1 lib ($TMP/src/lib.rs)
-  (func:2 compute
-    (return:3 @type i32)
-    (@fdep:6 add)
+  (module:2 math)
+  (func:3 compute
+    (return:4 @type i32)
+    (@fdep:7 add)
   )
 )
 
-(root:5 math ($TMP/src/math.rs)
-  (func:6 add
-    (parameter:7 a @type i32)
-    (parameter:8 b @type i32)
-    (return:9 @type i32)
+(root:6 math ($TMP/src/math.rs)
+  (func:7 add
+    (parameter:8 a @type i32)
+    (parameter:9 b @type i32)
+    (return:10 @type i32)
   )
 )
 
@@ -88,15 +90,17 @@ pub struct Point {
 
 --- expect:block-graph ---
 (root:1 lib ($TMP/src/lib.rs)
-  (func:2 make_point
-    (return:3 @type:5 Point)
+  (module:2 types)
+  (func:3 make_point
+    (return:4 @type:6 Point)
+    (@tdep:6 Point)
   )
 )
 
-(root:4 types ($TMP/src/types.rs)
-  (class:5 Point
-    (field:6 x @type i32)
-    (field:7 y @type i32)
+(root:5 types ($TMP/src/types.rs)
+  (class:6 Point
+    (field:7 x @type i32)
+    (field:8 y @type i32)
   )
 )
 
@@ -133,21 +137,22 @@ impl Counter {
 
 --- expect:block-graph ---
 (root:1 lib ($TMP/src/lib.rs)
-  (func:2 use_counter
-    (@tdep:6 Counter)
+  (module:2 models)
+  (func:3 use_counter
+    (@tdep:7 Counter)
   )
 )
 
-(root:5 models ($TMP/src/models.rs)
-  (class:6 Counter
-    (field:7 value @type i32)
+(root:6 models ($TMP/src/models.rs)
+  (class:7 Counter
+    (field:8 value @type i32)
   )
-  (impl:8 Counter @type:6
-    (method:9 new
-      (return:10 @type:6 Counter)
+  (impl:9 Counter @type:7
+    (method:10 new
+      (return:11 @type:7 Counter)
     )
-    (method:11 increment
-      (parameter:12 self @type:6 Counter)
+    (method:12 increment
+      (parameter:13 self @type:7 Counter)
     )
   )
 )

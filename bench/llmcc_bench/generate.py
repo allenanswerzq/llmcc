@@ -69,6 +69,9 @@ def generate_svg(
     """
     Generate SVG from DOT file using Graphviz.
 
+    If the initial attempt fails (e.g., segfault with splines=ortho),
+    retries with splines=polyline as a fallback.
+
     Returns: True if successful
     """
     if not shutil.which("dot"):
@@ -79,19 +82,42 @@ def generate_svg(
         svg_file.write_text(f"<!-- SVG skipped: {dot_file.stat().st_size} bytes -->")
         return False
 
+    def try_generate(input_file: Path) -> bool:
+        try:
+            result = subprocess.run(
+                ["dot", "-Tsvg", str(input_file), "-o", str(svg_file)],
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+            )
+            return result.returncode == 0
+        except subprocess.TimeoutExpired:
+            return False
+        except Exception:
+            return False
+
+    # First attempt with original file
+    if try_generate(dot_file):
+        return True
+
+    # Fallback: try with splines=polyline instead of splines=ortho
+    # Graphviz can segfault with splines=ortho on some complex graphs
     try:
-        result = subprocess.run(
-            ["dot", "-Tsvg", str(dot_file), "-o", str(svg_file)],
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-        )
-        return result.returncode == 0
-    except subprocess.TimeoutExpired:
-        svg_file.write_text(f"<!-- SVG timeout: {timeout}s -->")
-        return False
+        content = dot_file.read_text()
+        if "splines=ortho" in content:
+            modified_content = content.replace("splines=ortho", "splines=polyline")
+            temp_file = dot_file.with_suffix(".tmp.dot")
+            temp_file.write_text(modified_content)
+            try:
+                if try_generate(temp_file):
+                    return True
+            finally:
+                temp_file.unlink(missing_ok=True)
     except Exception:
-        return False
+        pass
+
+    svg_file.write_text(f"<!-- SVG generation failed -->")
+    return False
 
 
 def generate_graphs(
@@ -138,6 +164,7 @@ def generate_graphs(
             "--graph",
             "--depth", str(depth),
             "-o", str(dot_file),
+            "--lang", project.language,
         ]
 
         # Add PageRank filtering for pagerank mode
@@ -195,7 +222,7 @@ def generate_all(
 
     # Calculate LoC for all projects (use fast estimate)
     if verbose:
-        print("=== Calculating LoC for all projects ===")
+        print("=== Calculating LoC for all projects ===", flush=True)
 
     project_loc = {}
     for name in to_generate:
@@ -205,8 +232,8 @@ def generate_all(
         project = PROJECTS[name]
         src_dir = config.project_repo_path(project)
         if src_dir.exists():
-            # Use estimate for speed (file_count * 200)
-            loc = count_loc(src_dir, use_estimate=True)
+            # Use accurate tokei count to match displayed values in reports
+            loc = count_loc(src_dir, language=project.language)
             project_loc[name] = loc
             if verbose:
                 print(f"  {name}: {format_loc(loc)}")
@@ -217,8 +244,8 @@ def generate_all(
     sorted_projects = sorted(to_generate, key=lambda n: project_loc.get(n, 0), reverse=True)
 
     if verbose:
-        print()
-        print("=== Generating graphs ===")
+        print(flush=True)
+        print("=== Generating graphs ===", flush=True)
 
     failed = 0
     for name in sorted_projects:
@@ -230,21 +257,21 @@ def generate_all(
             continue
 
         if verbose:
-            print()
-            print(f"=== {name} ({format_loc(loc)}) ===")
+            print(flush=True)
+            print(f"=== {name} ({format_loc(loc)}) ===", flush=True)
 
         project = PROJECTS[name]
 
         # Full graphs (no PageRank filtering)
         if verbose:
-            print("  [Full graphs]")
+            print("  [Full graphs]", flush=True)
         full_dir = config.project_output_dir(project)
         if not generate_graphs(name, config, full_dir, use_pagerank=False, loc=loc, skip_svg=skip_svg, verbose=verbose):
             failed += 1
 
         # PageRank filtered
         if verbose:
-            print("  [PageRank filtered]")
+            print("  [PageRank filtered]", flush=True)
         pr_dir = config.project_output_dir(project, suffix="-pagerank")
         if not generate_graphs(name, config, pr_dir, use_pagerank=True, loc=loc, skip_svg=skip_svg, verbose=verbose):
             failed += 1

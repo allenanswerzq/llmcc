@@ -1,0 +1,172 @@
+===============================================================================
+edge-interface-impl
+===============================================================================
+Test that class implementing interface creates correct edge.
+Class depends on the interface it implements.
+lang: typescript
+
+--- file: contracts/storage.ts ---
+
+export interface Storage {
+    get(key: string): string | null;
+    set(key: string, value: string): void;
+    delete(key: string): boolean;
+}
+
+--- file: impl/memory-storage.ts ---
+
+import { Storage } from "../contracts/storage";
+
+export class MemoryStorage implements Storage {
+    private data: Map<string, string> = new Map();
+
+    get(key: string): string | null {
+        return this.data.get(key) || null;
+    }
+
+    set(key: string, value: string): void {
+        this.data.set(key, value);
+    }
+
+    delete(key: string): boolean {
+        return this.data.delete(key);
+    }
+}
+
+--- file: impl/local-storage.ts ---
+
+import { Storage } from "../contracts/storage";
+
+export class LocalStorage implements Storage {
+    get(key: string): string | null {
+        return localStorage.getItem(key);
+    }
+
+    set(key: string, value: string): void {
+        localStorage.setItem(key, value);
+    }
+
+    delete(key: string): boolean {
+        localStorage.removeItem(key);
+        return true;
+    }
+}
+
+--- expect:block-graph ---
+(root:1 storage ($TMP/contracts/storage.ts)
+  (interface:2 Storage
+    (method:3 get
+      (parameter:4 key @type string)
+      (return:5 @type string)
+    )
+    (method:6 set
+      (parameter:7 key @type string)
+      (parameter:8 value @type string)
+      (return:9 @type void)
+    )
+    (method:10 delete
+      (parameter:11 key @type string)
+      (return:12 @type boolean)
+    )
+  )
+)
+
+(root:13 memory-storage ($TMP/impl/memory-storage.ts)
+  (class:14 MemoryStorage
+    (field:15 data @type string
+    )
+    (method:17 get
+      (parameter:18 key @type string)
+      (return:19 @type string)
+    )
+    (method:21 set
+      (parameter:22 key @type string)
+      (parameter:23 value @type string)
+      (return:24 @type void)
+    )
+    (method:26 delete
+      (parameter:27 key @type string)
+      (return:28 @type boolean)
+    )
+    (@tdep:2 Storage)
+  )
+)
+
+(root:30 local-storage ($TMP/impl/local-storage.ts)
+  (class:31 LocalStorage
+    (method:32 get
+      (parameter:33 key @type string)
+      (return:34 @type string)
+    )
+    (method:36 set
+      (parameter:37 key @type string)
+      (parameter:38 value @type string)
+      (return:39 @type void)
+    )
+    (method:41 delete
+      (parameter:42 key @type string)
+      (return:43 @type boolean)
+    )
+    (@tdep:2 Storage)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_contracts {
+    label="contracts";
+    style=rounded;
+    color="#999999";
+    bgcolor="#f5f5f5";
+
+    subgraph cluster_storage_ts {
+      label="storage.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2[label="Storage", full_path="$TMP/contracts/storage.ts:2", sym_ty="Interface", shape=box];
+    }
+
+  }
+
+  subgraph cluster_impl {
+    label="impl";
+    style=rounded;
+    color="#999999";
+    bgcolor="#f5f5f5";
+
+    subgraph cluster_local_storage_ts {
+      label="local-storage.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n31[label="LocalStorage", full_path="$TMP/impl/local-storage.ts:4", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_memory_storage_ts {
+      label="memory-storage.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n14[label="MemoryStorage", full_path="$TMP/impl/memory-storage.ts:4", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+
+  n2 -> n14 [from="interface", to="implements"];
+  n2 -> n31 [from="interface", to="implements"];
+}

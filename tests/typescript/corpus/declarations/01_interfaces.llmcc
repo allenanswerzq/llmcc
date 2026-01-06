@@ -1,0 +1,55 @@
+===============================================================================
+interfaces
+===============================================================================
+Basic interface declarations.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface User {
+    name: string;
+    age: number;
+}
+
+interface Admin extends User {
+    role: string;
+}
+
+interface Empty {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 User
+    (field:3 name @type string)
+    (field:4 age @type number)
+  )
+  (interface:5 Admin @extends:2 User
+    (field:6 role @type string)
+  )
+  (interface:7 Empty)
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_ts {
+    label="lib.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n2[label="User", full_path="$TMP/src/lib.ts:1", sym_ty="Interface", shape=box];
+    n5[label="Admin", full_path="$TMP/src/lib.ts:6", sym_ty="Interface", shape=box];
+  }
+
+
+  n2 -> n5 [from="base", to="extends"];
+}

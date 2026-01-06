@@ -1,0 +1,30 @@
+===============================================================================
+async-class-methods
+===============================================================================
+Async methods in classes.
+lang: typescript
+
+--- file: src/lib.ts ---
+class DataService {
+    async fetch(): Promise<string> {
+        return "data";
+    }
+    
+    async update(data: string): Promise<boolean> {
+        console.log(data);
+        return true;
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 DataService
+    (method:3 fetch
+      (return:4 @type string)
+    )
+    (method:5 update
+      (parameter:6 data @type string)
+      (return:7 @type boolean)
+    )
+  )
+)

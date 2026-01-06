@@ -30,15 +30,98 @@ pub struct User {
     pub name: UserName,
 }
 
+--- expect:arch-graph-depth-3 ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_app {
+    label="app";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n7[label="User", full_path="$TMP/app/src/lib.rs:4", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_types {
+    label="types";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2[label="UserId", full_path="$TMP/types/src/lib.rs:1", sym_ty="Struct", shape=box];
+      n4[label="UserName", full_path="$TMP/types/src/lib.rs:3", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+
+  n2 -> n7 [from="field_type", to="struct"];
+  n4 -> n7 [from="field_type", to="struct"];
+}
+
+--- expect:arch-graph-depth-2 ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  mod_app_lib[label="app::lib", folder="$TMP/app/src"];
+  mod_types_lib[label="types::lib", folder="$TMP/types/src"];
+
+  mod_app_lib -> mod_types_lib;
+}
+
 --- expect:arch-graph-depth-1 ---
 digraph architecture {
-  node [shape=box];
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
 
-  label="crate graph";
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
   labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
 
-  crate_app[label="app"];
-  crate_types[label="types"];
+  crate_app[label="app", folder="$TMP/app"];
+  crate_types[label="types", folder="$TMP/types"];
 
   crate_app -> crate_types;
 }

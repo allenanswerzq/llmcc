@@ -1,0 +1,38 @@
+===============================================================================
+conditional-types
+===============================================================================
+Conditional type declarations.
+lang: typescript
+
+--- file: src/lib.ts ---
+type IsString<T> = T extends string ? true : false;
+type IsNumber<T> = T extends number ? true : false;
+
+type NonNullable<T> = T extends null | undefined ? never : T;
+type Extract<T, U> = T extends U ? T : never;
+type Exclude<T, U> = T extends U ? never : T;
+
+type ReturnType<T> = T extends (...args: any[]) => infer R ? R : never;
+type Parameters<T> = T extends (...args: infer P) => any ? P : never;
+
+type Flatten<T> = T extends Array<infer U> ? U : T;
+type UnwrapPromise<T> = T extends Promise<infer U> ? U : T;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (alias:2 IsString)
+  (alias:3 IsNumber)
+  (alias:4 NonNullable)
+  (alias:5 Extract)
+  (alias:6 Exclude)
+  (alias:7 ReturnType
+    (parameter:8 args @type any)
+    (return:9)
+  )
+  (alias:10 Parameters
+    (parameter:11 args @type args)
+    (return:12 @type any)
+  )
+  (alias:13 Flatten)
+  (alias:14 UnwrapPromise)
+)

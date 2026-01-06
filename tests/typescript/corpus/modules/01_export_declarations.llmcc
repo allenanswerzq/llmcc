@@ -1,0 +1,58 @@
+===============================================================================
+export-declarations
+===============================================================================
+Export declarations.
+lang: typescript
+
+--- file: src/lib.ts ---
+export const VERSION = "1.0.0";
+export let counter = 0;
+
+export function greet(name: string): string {
+    return `Hello, ${name}`;
+}
+
+export class User {
+    constructor(public name: string) {}
+}
+
+export interface Config {
+    debug: boolean;
+}
+
+export type ID = string | number;
+
+export enum Status {
+    Active = 1,
+    Inactive = 0
+}
+
+export default class App {
+    run(): void {}
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 greet
+    (parameter:3 name @type string)
+    (return:4 @type string)
+  )
+  (class:5 User
+    (method:6 constructor
+      (parameter:7 name @type string)
+    )
+  )
+  (interface:8 Config
+    (field:9 debug @type boolean)
+  )
+  (alias:10 ID)
+  (enum:11 Status
+    (field:12 Active)
+    (field:13 Inactive)
+  )
+  (class:14 App
+    (method:15 run
+      (return:16 @type void)
+    )
+  )
+)

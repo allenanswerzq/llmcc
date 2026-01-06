@@ -1,0 +1,91 @@
+===============================================================================
+same-name-different-kinds
+===============================================================================
+Test resolution when same name exists as different kinds (struct, trait, fn).
+Type context should resolve to struct/trait, value context to fn.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+
+// Config as a struct
+pub struct Config {
+    pub value: i32,
+}
+
+// Config as a trait
+pub trait Config {
+    fn configure(&self);
+}
+
+// Holder uses Config as a type (should resolve to struct)
+pub struct Holder {
+    pub config: Config,
+}
+
+// Implementor implements Config trait
+pub struct Implementor;
+
+impl Config for Implementor {
+    fn configure(&self) {}
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (class:2 Config
+    (field:3 value @type i32)
+  )
+  (trait:4 Config
+    (method:5 configure
+      (parameter:6 self @type:4 Config)
+    )
+  )
+  (class:7 Holder
+    (field:8 config @type:4 Config)
+    (@tdep:4 Config)
+  )
+  (class:9 Implementor)
+  (impl:10 Implementor @type:9 @trait:4
+    (method:11 configure
+      (parameter:12 self @type:9 Implementor)
+    )
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n7[label="Holder", full_path="$TMP/sample/src/lib.rs:13", sym_ty="Struct", shape=box];
+      n9[label="Implementor", full_path="$TMP/sample/src/lib.rs:18", sym_ty="Struct", shape=box];
+      n4[label="Config", full_path="$TMP/sample/src/lib.rs:8", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+
+  n4 -> n7 [from="field_type", to="struct"];
+  n4 -> n9 [from="trait", to="impl"];
+}

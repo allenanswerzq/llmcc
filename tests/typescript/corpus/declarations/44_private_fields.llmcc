@@ -1,0 +1,31 @@
+===============================================================================
+private-fields
+===============================================================================
+ECMAScript private class fields.
+lang: typescript
+
+--- file: src/lib.ts ---
+class Counter {
+    #count = 0;
+    
+    increment(): void {
+        this.#count++;
+    }
+    
+    get value(): number {
+        return this.#count;
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 Counter
+    (field:3 #count @type:3 #count)
+    (method:4 increment
+      (return:5 @type void)
+    )
+    (method:6 value
+      (return:7 @type number)
+    )
+  )
+)

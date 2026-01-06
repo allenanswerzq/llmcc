@@ -1,0 +1,96 @@
+===============================================================================
+class-implements
+===============================================================================
+Classes implementing interfaces.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface Printable {
+    print(): string;
+}
+
+interface Serializable {
+    serialize(): string;
+}
+
+class Document implements Printable {
+    title: string;
+
+    print(): string {
+        return this.title;
+    }
+}
+
+class Report implements Printable, Serializable {
+    data: string;
+
+    print(): string {
+        return this.data;
+    }
+
+    serialize(): string {
+        return JSON.stringify(this.data);
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 Printable
+    (method:3 print
+      (return:4 @type string)
+    )
+  )
+  (interface:5 Serializable
+    (method:6 serialize
+      (return:7 @type string)
+    )
+  )
+  (class:8 Document
+    (field:9 title @type string)
+    (method:10 print
+      (return:11 @type string)
+    )
+    (@tdep:2 Printable)
+  )
+  (class:12 Report
+    (field:13 data @type string)
+    (method:14 print
+      (return:15 @type string)
+    )
+    (method:16 serialize
+      (return:17 @type string)
+    )
+    (@tdep:2 Printable)
+    (@tdep:5 Serializable)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_ts {
+    label="lib.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n2[label="Printable", full_path="$TMP/src/lib.ts:1", sym_ty="Interface", shape=box];
+    n12[label="Report", full_path="$TMP/src/lib.ts:17", sym_ty="Struct", shape=box];
+    n5[label="Serializable", full_path="$TMP/src/lib.ts:5", sym_ty="Interface", shape=box];
+    n8[label="Document", full_path="$TMP/src/lib.ts:9", sym_ty="Struct", shape=box];
+  }
+
+
+  n2 -> n8 [from="interface", to="implements"];
+  n2 -> n12 [from="interface", to="implements"];
+  n5 -> n12 [from="interface", to="implements"];
+}

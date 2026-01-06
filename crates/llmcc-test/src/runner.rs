@@ -15,6 +15,7 @@ use llmcc_dot::{ComponentDepth, render_graph};
 
 use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
 use llmcc_rust::LangRust;
+use llmcc_ts::LangTypeScript;
 use similar::TextDiff;
 use tempfile::TempDir;
 use walkdir::WalkDir;
@@ -436,6 +437,7 @@ fn build_pipeline_summary(
 
     let mut summary = match case.lang.as_str() {
         "rust" => collect_pipeline::<LangRust>(project.root(), &options)?,
+        "typescript" | "ts" => collect_pipeline::<LangTypeScript>(project.root(), &options)?,
         other => {
             return Err(anyhow!(
                 "unsupported lang '{}' requested by {}",
@@ -1320,8 +1322,8 @@ fn materialize_case(case: &CorpusCase, keep_temps: bool) -> Result<MaterializedP
             .unwrap_or_default()
             .to_string_lossy();
 
-        // Don't add prefix to Cargo.toml - it needs to be findable by parse_crate_name
-        let final_path = if file_name_str == "Cargo.toml" {
+        // Don't add prefix to Cargo.toml or package.json - they need to be findable by parse_crate_name/parse_package_name
+        let final_path = if file_name_str == "Cargo.toml" || file_name_str == "package.json" {
             original_path.to_path_buf()
         } else {
             // Add numeric prefix to filename to preserve declaration order after WalkDir + sort

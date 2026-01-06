@@ -13,18 +13,12 @@ digraph architecture {
   fontsize=16;
   fontname="Helvetica Bold";
 
-  crate_tests_integration[label="tests-integration"];
-  crate_tokio[label="tokio"];
-  crate_tokio_macros[label="tokio-macros"];
-  crate_tokio_stream[label="tokio-stream"];
-  crate_tokio_test[label="tokio-test"];
-  crate_tokio_util[label="tokio-util"];
+  crate_tokio[label="tokio", folder="/home/yibai/llmcc/sample/repos/tokio/tokio"];
+  crate_tokio_stream[label="tokio-stream", folder="/home/yibai/llmcc/sample/repos/tokio/tokio-stream"];
+  crate_tokio_test[label="tokio-test", folder="/home/yibai/llmcc/sample/repos/tokio/tokio-test"];
+  crate_tokio_util[label="tokio-util", folder="/home/yibai/llmcc/sample/repos/tokio/tokio-util"];
 
-  crate_tests_integration -> crate_tokio;
-  crate_tokio -> crate_tokio_macros [dir=both]; // dir best-effort not accurate
-  crate_tokio -> crate_tokio_stream [dir=both]; // dir best-effort not accurate
-  crate_tokio -> crate_tokio_test [dir=both]; // dir best-effort not accurate
-  crate_tokio -> crate_tokio_util [dir=both]; // dir best-effort not accurate
-  crate_tokio_stream -> crate_tokio_test [dir=both]; // dir best-effort not accurate
-  crate_tokio_stream -> crate_tokio_util;
+  crate_tokio_stream -> crate_tokio;
+  crate_tokio_test -> crate_tokio;
+  crate_tokio_util -> crate_tokio;
 }

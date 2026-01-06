@@ -1,0 +1,28 @@
+===============================================================================
+yield-expression
+===============================================================================
+Yield expressions in generators.
+lang: typescript
+
+--- file: src/lib.ts ---
+function* gen(): Generator<number> {
+    yield 1;
+    yield 2;
+    const result = yield 3;
+}
+
+function* genDelegate(): Generator<number> {
+    yield* [1, 2, 3];
+    yield* gen();
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 gen
+    (return:3 @type number)
+  )
+  (func:4 genDelegate
+    (return:5 @type number)
+    (@fdep:2 gen)
+  )
+)

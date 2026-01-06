@@ -1,0 +1,36 @@
+===============================================================================
+strict-function-types
+===============================================================================
+Strict function type checking.
+lang: typescript
+
+--- file: src/lib.ts ---
+type Handler = (event: Event) => void;
+type SpecificHandler = (event: MouseEvent) => void;
+
+interface Handlers {
+    onClick: (e: MouseEvent) => void;
+    onKeyDown: (e: KeyboardEvent) => void;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (alias:2 Handler
+    (parameter:3 event @type event)
+    (return:4 @type void)
+  )
+  (alias:5 SpecificHandler
+    (parameter:6 event @type event)
+    (return:7 @type void)
+  )
+  (interface:8 Handlers
+    (field:9 onClick @type void
+      (parameter:10 e @type e)
+      (return:11 @type void)
+    )
+    (field:12 onKeyDown @type void
+      (parameter:13 e @type e)
+      (return:14 @type void)
+    )
+  )
+)

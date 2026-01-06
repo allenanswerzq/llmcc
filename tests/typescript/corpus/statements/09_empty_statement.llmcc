@@ -1,0 +1,19 @@
+===============================================================================
+empty-statement
+===============================================================================
+Empty statements.
+lang: typescript
+
+--- file: src/lib.ts ---
+;
+const x = 1;;
+function empty(): void {
+    ;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 empty
+    (return:3 @type void)
+  )
+)

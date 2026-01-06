@@ -8,6 +8,16 @@ use walkdir::WalkDir;
 const CASE_BANNER: &str =
     "===============================================================================";
 
+/// Detect language from the suite path (e.g., "rust/render/01_test" -> "rust")
+fn detect_language(suite: &str) -> String {
+    if suite.starts_with("typescript/") || suite.starts_with("ts/") {
+        "typescript".to_string()
+    } else {
+        // Default to rust for backward compatibility
+        "rust".to_string()
+    }
+}
+
 fn slugify_case_name(raw: &str) -> String {
     let mut slug = String::new();
     let mut pending_dash = false;
@@ -245,6 +255,7 @@ pub struct CorpusCaseExpectation {
 }
 
 fn parse_corpus_file(suite: &str, path: &Path, content: &str) -> Result<Vec<CorpusCase>> {
+    let lang = detect_language(suite);
     let mut cases = Vec::new();
     let mut current: Option<CorpusCase> = None;
     let mut pending_section: Option<SectionHeader> = None;
@@ -294,7 +305,7 @@ fn parse_corpus_file(suite: &str, path: &Path, content: &str) -> Result<Vec<Corp
             current = Some(CorpusCase {
                 suite: suite.to_string(),
                 name: slugify_case_name(trimmed),
-                lang: "rust".to_string(),
+                lang: lang.clone(),
                 args: Vec::new(),
                 files: Vec::new(),
                 expectations: Vec::new(),
@@ -324,7 +335,7 @@ fn parse_corpus_file(suite: &str, path: &Path, content: &str) -> Result<Vec<Corp
             current = Some(CorpusCase {
                 suite: suite.to_string(),
                 name: header,
-                lang: "rust".to_string(),
+                lang: lang.clone(),
                 args: Vec::new(),
                 files: Vec::new(),
                 expectations: Vec::new(),

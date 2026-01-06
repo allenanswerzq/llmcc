@@ -1,0 +1,22 @@
+===============================================================================
+labeled-statements
+===============================================================================
+Labeled statements with break/continue.
+lang: typescript
+
+--- file: src/lib.ts ---
+function nested(): void {
+    outer: for (let i = 0; i < 10; i++) {
+        for (let j = 0; j < 10; j++) {
+            if (i === j) continue outer;
+            if (i + j > 15) break outer;
+        }
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 nested
+    (return:3 @type void)
+  )
+)

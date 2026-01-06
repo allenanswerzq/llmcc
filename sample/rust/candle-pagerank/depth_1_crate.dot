@@ -13,29 +13,29 @@ digraph architecture {
   fontsize=16;
   fontname="Helvetica Bold";
 
-  crate_candle_core[label="candle-core"];
-  crate_candle_examples[label="candle-examples"];
-  crate_candle_flash_attn[label="candle-flash-attn"];
-  crate_candle_flash_attn_v3[label="candle-flash-attn-v3"];
-  crate_candle_metal_kernels[label="candle-metal-kernels"];
-  crate_candle_nn[label="candle-nn"];
-  crate_candle_onnx[label="candle-onnx"];
-  crate_candle_pyo3[label="candle-pyo3"];
-  crate_candle_transformers[label="candle-transformers"];
-  crate_candle_wasm_example_yolo[label="candle-wasm-example-yolo"];
+  crate_candle_core[label="candle-core", folder="/home/yibai/llmcc/sample/repos/candle/candle-core"];
+  crate_candle_examples[label="candle-examples", folder="/home/yibai/llmcc/sample/repos/candle/candle-examples"];
+  crate_candle_flash_attn[label="candle-flash-attn", folder="/home/yibai/llmcc/sample/repos/candle/candle-flash-attn"];
+  crate_candle_flash_attn_v3[label="candle-flash-attn-v3", folder="/home/yibai/llmcc/sample/repos/candle/candle-flash-attn-v3"];
+  crate_candle_metal_kernels[label="candle-metal-kernels", folder="/home/yibai/llmcc/sample/repos/candle/candle-metal-kernels"];
+  crate_candle_nn[label="candle-nn", folder="/home/yibai/llmcc/sample/repos/candle/candle-nn"];
+  crate_candle_pyo3[label="candle-pyo3", folder="/home/yibai/llmcc/sample/repos/candle/candle-pyo3"];
+  crate_candle_transformers[label="candle-transformers", folder="/home/yibai/llmcc/sample/repos/candle/candle-transformers"];
+  crate_candle_wasm_example_yolo[label="candle-wasm-example-yolo", folder="/home/yibai/llmcc/sample/repos/candle/candle-wasm-examples/yolo"];
 
-  crate_candle_core -> crate_candle_examples [dir=both]; // dir best-effort not accurate
-  crate_candle_core -> crate_candle_metal_kernels [dir=both]; // dir best-effort not accurate
-  crate_candle_core -> crate_candle_nn [dir=both]; // dir best-effort not accurate
-  crate_candle_core -> crate_candle_onnx [dir=both]; // dir best-effort not accurate
-  crate_candle_core -> crate_candle_pyo3 [dir=both]; // dir best-effort not accurate
-  crate_candle_core -> crate_candle_transformers [dir=both]; // dir best-effort not accurate
-  crate_candle_examples -> crate_candle_pyo3 [dir=both]; // dir best-effort not accurate
+  crate_candle_core -> crate_candle_metal_kernels;
+  crate_candle_core -> crate_candle_nn;
+  crate_candle_examples -> crate_candle_core;
   crate_candle_flash_attn -> crate_candle_core;
   crate_candle_flash_attn_v3 -> crate_candle_core;
+  crate_candle_metal_kernels -> crate_candle_core;
+  crate_candle_nn -> crate_candle_core;
   crate_candle_nn -> crate_candle_pyo3;
-  crate_candle_nn -> crate_candle_transformers [dir=both]; // dir best-effort not accurate
-  crate_candle_pyo3 -> crate_candle_transformers [dir=both]; // dir best-effort not accurate
+  crate_candle_nn -> crate_candle_transformers;
+  crate_candle_pyo3 -> crate_candle_core;
+  crate_candle_transformers -> crate_candle_core;
   crate_candle_transformers -> crate_candle_metal_kernels;
+  crate_candle_transformers -> crate_candle_nn;
+  crate_candle_transformers -> crate_candle_pyo3;
   crate_candle_wasm_example_yolo -> crate_candle_core;
 }

@@ -1,0 +1,83 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  crate_dev_env[label="dev-env", folder="/home/yibai/llmcc/sample/repos/prisma"];
+  crate_prisma[label="prisma", folder="/home/yibai/llmcc/sample/repos/prisma/packages/cli"];
+  crate_prisma_adapter_better_sqlite3[label="prisma_adapter-better-sqlite3", folder="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-better-sqlite3"];
+  crate_prisma_adapter_d1[label="prisma_adapter-d1", folder="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-d1"];
+  crate_prisma_adapter_libsql[label="prisma_adapter-libsql", folder="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-libsql"];
+  crate_prisma_adapter_mariadb[label="prisma_adapter-mariadb", folder="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-mariadb"];
+  crate_prisma_adapter_mssql[label="prisma_adapter-mssql", folder="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-mssql"];
+  crate_prisma_adapter_neon[label="prisma_adapter-neon", folder="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-neon"];
+  crate_prisma_adapter_pg[label="prisma_adapter-pg", folder="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-pg"];
+  crate_prisma_adapter_planetscale[label="prisma_adapter-planetscale", folder="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-planetscale"];
+  crate_prisma_adapter_ppg[label="prisma_adapter-ppg", folder="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-ppg"];
+  crate_prisma_client[label="prisma_client", folder="/home/yibai/llmcc/sample/repos/prisma/packages/client"];
+  crate_prisma_client_common[label="prisma_client-common", folder="/home/yibai/llmcc/sample/repos/prisma/packages/client-common"];
+  crate_prisma_client_engine_runtime[label="prisma_client-engine-runtime", folder="/home/yibai/llmcc/sample/repos/prisma/packages/client-engine-runtime"];
+  crate_prisma_client_generator_js[label="prisma_client-generator-js", folder="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js"];
+  crate_prisma_client_generator_ts[label="prisma_client-generator-ts", folder="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-ts"];
+  crate_prisma_client_runtime_utils[label="prisma_client-runtime-utils", folder="/home/yibai/llmcc/sample/repos/prisma/packages/client-runtime-utils"];
+  crate_prisma_config[label="prisma_config", folder="/home/yibai/llmcc/sample/repos/prisma/packages/config"];
+  crate_prisma_driver_adapter_utils[label="prisma_driver-adapter-utils", folder="/home/yibai/llmcc/sample/repos/prisma/packages/driver-adapter-utils"];
+  crate_prisma_fetch_engine[label="prisma_fetch-engine", folder="/home/yibai/llmcc/sample/repos/prisma/packages/fetch-engine"];
+  crate_prisma_generator[label="prisma_generator", folder="/home/yibai/llmcc/sample/repos/prisma/packages/generator"];
+  crate_prisma_get_platform[label="prisma_get-platform", folder="/home/yibai/llmcc/sample/repos/prisma/packages/get-platform"];
+  crate_prisma_instrumentation_contract[label="prisma_instrumentation-contract", folder="/home/yibai/llmcc/sample/repos/prisma/packages/instrumentation-contract"];
+  crate_prisma_internals[label="prisma_internals", folder="/home/yibai/llmcc/sample/repos/prisma/packages/internals"];
+  crate_prisma_migrate[label="prisma_migrate", folder="/home/yibai/llmcc/sample/repos/prisma/packages/migrate"];
+  crate_prisma_query_plan_executor[label="prisma_query-plan-executor", folder="/home/yibai/llmcc/sample/repos/prisma/packages/query-plan-executor"];
+  crate_prisma_sqlcommenter[label="prisma_sqlcommenter", folder="/home/yibai/llmcc/sample/repos/prisma/packages/sqlcommenter"];
+  crate_prisma_ts_builders[label="prisma_ts-builders", folder="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders"];
+
+  crate_dev_env -> crate_prisma_internals;
+  crate_prisma -> crate_prisma_internals;
+  crate_prisma -> crate_prisma_query_plan_executor;
+  crate_prisma_adapter_better_sqlite3 -> crate_prisma_driver_adapter_utils;
+  crate_prisma_adapter_d1 -> crate_prisma_driver_adapter_utils;
+  crate_prisma_adapter_libsql -> crate_prisma_driver_adapter_utils;
+  crate_prisma_adapter_mariadb -> crate_prisma_driver_adapter_utils;
+  crate_prisma_adapter_mssql -> crate_prisma_driver_adapter_utils;
+  crate_prisma_adapter_neon -> crate_prisma_driver_adapter_utils;
+  crate_prisma_adapter_pg -> crate_prisma_driver_adapter_utils;
+  crate_prisma_adapter_planetscale -> crate_prisma_driver_adapter_utils;
+  crate_prisma_adapter_ppg -> crate_prisma_driver_adapter_utils;
+  crate_prisma_client -> crate_prisma_client_common;
+  crate_prisma_client -> crate_prisma_client_runtime_utils;
+  crate_prisma_client -> crate_prisma_instrumentation_contract;
+  crate_prisma_client -> crate_prisma_internals;
+  crate_prisma_client -> crate_prisma_sqlcommenter;
+  crate_prisma_client -> crate_prisma_ts_builders;
+  crate_prisma_client_engine_runtime -> crate_prisma_driver_adapter_utils;
+  crate_prisma_client_engine_runtime -> crate_prisma_internals;
+  crate_prisma_client_engine_runtime -> crate_prisma_sqlcommenter;
+  crate_prisma_client_generator_js -> crate_prisma_client_common;
+  crate_prisma_client_generator_js -> crate_prisma_client_generator_ts;
+  crate_prisma_client_generator_js -> crate_prisma_internals;
+  crate_prisma_client_generator_js -> crate_prisma_ts_builders;
+  crate_prisma_client_generator_ts -> crate_prisma_client_common;
+  crate_prisma_client_generator_ts -> crate_prisma_client_generator_js;
+  crate_prisma_client_generator_ts -> crate_prisma_generator;
+  crate_prisma_client_generator_ts -> crate_prisma_internals;
+  crate_prisma_client_generator_ts -> crate_prisma_ts_builders;
+  crate_prisma_config -> crate_prisma_query_plan_executor;
+  crate_prisma_fetch_engine -> crate_prisma_query_plan_executor;
+  crate_prisma_internals -> crate_prisma_fetch_engine;
+  crate_prisma_internals -> crate_prisma_generator;
+  crate_prisma_internals -> crate_prisma_get_platform;
+  crate_prisma_internals -> crate_prisma_query_plan_executor;
+  crate_prisma_migrate -> crate_prisma_internals;
+  crate_prisma_migrate -> crate_prisma_query_plan_executor;
+}

@@ -1,0 +1,45 @@
+===============================================================================
+interface-callable
+===============================================================================
+Callable and newable interfaces.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface Callable {
+    (x: number): string;
+}
+
+interface Constructable {
+    new (name: string): object;
+}
+
+interface Hybrid {
+    (x: number): number;
+    new (x: number): object;
+    property: string;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 Callable
+    (func:3 (x: number): string
+      (parameter:4 x @type number)
+      (return:5 @type string)
+    )
+  )
+  (interface:6 Constructable
+    (func:7 new (name: string): object
+      (parameter:8 name @type string)
+    )
+  )
+  (interface:9 Hybrid
+    (func:10 (x: number): number
+      (parameter:11 x @type number)
+      (return:12 @type number)
+    )
+    (func:13 new (x: number): object
+      (parameter:14 x @type number)
+    )
+    (field:15 property @type string)
+  )
+)

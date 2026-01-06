@@ -1,0 +1,53 @@
+===============================================================================
+cross-file-func-param
+===============================================================================
+Test that cross-file function parameter types create edges.
+lang: typescript
+
+--- file: sample/src/request.ts ---
+
+export class Request {
+    url: string;
+    method: string;
+}
+
+--- file: sample/src/handler.ts ---
+import { Request } from './request';
+
+export function handleRequest(req: Request): void {
+    console.log(req.url);
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_handler_ts {
+    label="handler.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n6[label="handleRequest", full_path="$TMP/sample/src/handler.ts:3", sym_ty="Function", shape=ellipse];
+  }
+
+  subgraph cluster_request_ts {
+    label="request.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n2[label="Request", full_path="$TMP/sample/src/request.ts:2", sym_ty="Struct", shape=box];
+  }
+
+
+  n2 -> n6 [from="input", to="func"];
+}

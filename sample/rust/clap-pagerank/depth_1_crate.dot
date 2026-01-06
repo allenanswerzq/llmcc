@@ -13,20 +13,14 @@ digraph architecture {
   fontsize=16;
   fontname="Helvetica Bold";
 
-  crate_clap[label="clap"];
-  crate_clap_builder[label="clap_builder"];
-  crate_clap_complete[label="clap_complete"];
-  crate_clap_complete_nushell[label="clap_complete_nushell"];
-  crate_clap_derive[label="clap_derive"];
-  crate_clap_lex[label="clap_lex"];
-  crate_clap_mangen[label="clap_mangen"];
+  crate_clap_builder[label="clap_builder", folder="/home/yibai/llmcc/sample/repos/clap/clap_builder"];
+  crate_clap_complete[label="clap_complete", folder="/home/yibai/llmcc/sample/repos/clap/clap_complete"];
+  crate_clap_complete_nushell[label="clap_complete_nushell", folder="/home/yibai/llmcc/sample/repos/clap/clap_complete_nushell"];
+  crate_clap_lex[label="clap_lex", folder="/home/yibai/llmcc/sample/repos/clap/clap_lex"];
+  crate_clap_mangen[label="clap_mangen", folder="/home/yibai/llmcc/sample/repos/clap/clap_mangen"];
 
-  crate_clap -> crate_clap_builder;
-  crate_clap_builder -> crate_clap_complete [dir=both]; // dir best-effort not accurate
-  crate_clap_builder -> crate_clap_derive [dir=both]; // dir best-effort not accurate
-  crate_clap_builder -> crate_clap_lex [dir=both]; // dir best-effort not accurate
-  crate_clap_complete -> crate_clap_derive [dir=both]; // dir best-effort not accurate
+  crate_clap_complete -> crate_clap_builder;
   crate_clap_complete_nushell -> crate_clap_builder;
-  crate_clap_complete_nushell -> crate_clap_complete;
+  crate_clap_lex -> crate_clap_builder;
   crate_clap_mangen -> crate_clap_builder;
 }

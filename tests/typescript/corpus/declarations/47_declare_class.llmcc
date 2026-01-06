@@ -1,0 +1,21 @@
+===============================================================================
+declare-class
+===============================================================================
+Declare class statements.
+lang: typescript
+
+--- file: src/lib.ts ---
+declare class ExternalClass {
+    prop: string;
+    method(): void;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 ExternalClass
+    (field:3 prop @type string)
+    (method:4 method
+      (return:5 @type void)
+    )
+  )
+)

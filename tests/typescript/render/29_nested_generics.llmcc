@@ -1,0 +1,37 @@
+===============================================================================
+nested-generics
+===============================================================================
+Test nested generic types.
+lang: typescript
+
+--- file: sample/src/lib.ts ---
+
+class User {
+    id: number;
+    name: string;
+}
+
+class Response<T> {
+    data: T;
+    error: string | null;
+}
+
+class PagedResponse<T> {
+    items: T[];
+    total: number;
+    page: number;
+}
+
+class ApiService {
+    getUser(): Response<User> {
+        return new Response<User>();
+    }
+
+    getUsers(): Response<PagedResponse<User>> {
+        return new Response<PagedResponse<User>>();
+    }
+}
+
+--- expect:arch-graph ---
+digraph G {
+}

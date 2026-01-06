@@ -1,0 +1,633 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_hono {
+    label="hono";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_adapter {
+      label="adapter";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_handler_ts {
+        label="handler.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n6317[label="EventProcessor", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/aws-lambda/handler.ts:268", sym_ty="Struct", shape=box];
+        n5275[label="LatticeProxyEventV2", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/aws-lambda/handler.ts:29", sym_ty="Interface", shape=box];
+        n6892[label="EventV2Processor", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/aws-lambda/handler.ts:390", sym_ty="Struct", shape=box];
+        n5361[label="APIGatewayProxyEventV2", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/aws-lambda/handler.ts:41", sym_ty="Interface", shape=box];
+        n7251[label="EventV1Processor", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/aws-lambda/handler.ts:429", sym_ty="Struct", shape=box];
+        n7390[label="ALBProcessor", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/aws-lambda/handler.ts:501", sym_ty="Struct", shape=box];
+        n7633[label="LatticeV2Processor", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/aws-lambda/handler.ts:583", sym_ty="Struct", shape=box];
+        n5698[label="APIGatewayProxyEvent", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/aws-lambda/handler.ts:64", sym_ty="Interface", shape=box];
+        n5810[label="ALBProxyEvent", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/aws-lambda/handler.ts:85", sym_ty="Interface", shape=box];
+        n808[label="CloudFrontRequest", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/lambda-edge/handler.ts:41", sym_ty="Interface", shape=box];
+        n850[label="CloudFrontResponse", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/lambda-edge/handler.ts:56", sym_ty="Interface", shape=box];
+        n865[label="CloudFrontConfig", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/lambda-edge/handler.ts:62", sym_ty="Interface", shape=box];
+        n887[label="CloudFrontEvent", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/lambda-edge/handler.ts:69", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_types_ts {
+        label="types.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2511[label="ApiGatewayRequestContextV2", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/aws-lambda/types.ts:119", sym_ty="Interface", shape=box];
+        n2582[label="ALBRequestContext", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/aws-lambda/types.ts:140", sym_ty="Interface", shape=box];
+        n2603[label="LatticeRequestContextV2", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/aws-lambda/types.ts:146", sym_ty="Interface", shape=box];
+        n2019[label="ClientContextClient", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/aws-lambda/types.ts:15", sym_ty="Interface", shape=box];
+        n2041[label="ClientContextEnv", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/aws-lambda/types.ts:23", sym_ty="Interface", shape=box];
+        n1982[label="CognitoIdentity", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/aws-lambda/types.ts:3", sym_ty="Interface", shape=box];
+        n2065[label="LambdaContext", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/aws-lambda/types.ts:35", sym_ty="Interface", shape=box];
+        n2003[label="ClientContext", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/aws-lambda/types.ts:8", sym_ty="Interface", shape=box];
+        n2293[label="ApiGatewayRequestContext", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/aws-lambda/types.ts:85", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_websocket_ts {
+        label="websocket.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3446[label="BunWebSocketHandler", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/bun/websocket.ts:15", sym_ty="Interface", shape=box];
+        n3566[label="CreateWebSocket", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/bun/websocket.ts:20", sym_ty="Interface", shape=box];
+        n3587[label="BunWebSocketData", full_path="/home/yibai/llmcc/sample/repos/hono/src/adapter/bun/websocket.ts:24", sym_ty="Interface", shape=box];
+      }
+
+    }
+
+    subgraph cluster_client {
+      label="client";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_fetch_result_please_ts {
+        label="fetch-result-please.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3155[label="fetchRP", full_path="/home/yibai/llmcc/sample/repos/hono/src/client/fetch-result-please.ts:14", sym_ty="Function", shape=ellipse];
+        n3296[label="DetailedError", full_path="/home/yibai/llmcc/sample/repos/hono/src/client/fetch-result-please.ts:46", sym_ty="Struct", shape=box];
+        n3443[label="detectResponseType", full_path="/home/yibai/llmcc/sample/repos/hono/src/client/fetch-result-please.ts:80", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_types_ts {
+        label="types.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2975[label="Response", full_path="/home/yibai/llmcc/sample/repos/hono/src/client/types.ts:186", sym_ty="Interface", shape=box];
+        n2268[label="ClientResponse", full_path="/home/yibai/llmcc/sample/repos/hono/src/client/types.ts:86", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_utils_ts {
+        label="utils.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1921[label="parseResponse", full_path="/home/yibai/llmcc/sample/repos/hono/src/client/utils.ts:92", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_compose_ts {
+      label="compose.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1373[label="dispatch", full_path="/home/yibai/llmcc/sample/repos/hono/src/compose.ts:32", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_context_ts {
+      label="context.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n6076[label="<T extends Data, U extends ContentfulStatusCode>(\n    data: T,\n    status?: U,\n    headers?: HeaderRecord\n  ): Response & TypedResponse<T, U, 'body'>\n  <T extends Data, U extends ContentfulStatusCode>(\n    data: T,\n    init?: ResponseOrInit<U>\n  ): Response & TypedResponse<T, U, 'body'>\n  <T extends null, U extends StatusCode>(\n    data: T,\n    status?: U,\n    headers?: HeaderRecord\n  ): Response & TypedResponse<null, U, 'body'>\n  <T extends null, U extends StatusCode>(\n    data: T,\n    init?: ResponseOrInit<U>\n  ): Response & TypedResponse<null, U, 'body'>", full_path="/home/yibai/llmcc/sample/repos/hono/src/context.ts:118"];
+      n6139[label="<T extends string, U extends ContentfulStatusCode = ContentfulStatusCode>(\n    text: T,\n    status?: U,\n    headers?: HeaderRecord\n  ): Response & TypedResponse<T, U, 'text'>\n  <T extends string, U extends ContentfulStatusCode = ContentfulStatusCode>(\n    text: T,\n    init?: ResponseOrInit<U>\n  ): Response & TypedResponse<T, U, 'text'>", full_path="/home/yibai/llmcc/sample/repos/hono/src/context.ts:152"];
+      n6662[label="Context", full_path="/home/yibai/llmcc/sample/repos/hono/src/context.ts:283", sym_ty="Struct", shape=box];
+      n5723[label="ExecutionContext", full_path="/home/yibai/llmcc/sample/repos/hono/src/context.ts:31", sym_ty="Interface", shape=box];
+      n5769[label="ContextVariableMap", full_path="/home/yibai/llmcc/sample/repos/hono/src/context.ts:52", sym_ty="Interface", shape=box];
+    }
+
+    subgraph cluster_helper {
+      label="helper";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_accepts_ts {
+        label="accepts.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n7025[label="acceptsConfig", full_path="/home/yibai/llmcc/sample/repos/hono/src/helper/accepts/accepts.ts:11", sym_ty="Interface", shape=box];
+        n7063[label="acceptsOptions", full_path="/home/yibai/llmcc/sample/repos/hono/src/helper/accepts/accepts.ts:17", sym_ty="Interface", shape=box];
+        n6993[label="Accept", full_path="/home/yibai/llmcc/sample/repos/hono/src/helper/accepts/accepts.ts:5", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_index_ts {
+        label="index.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n89[label="ProxyRequestInit", full_path="/home/yibai/llmcc/sample/repos/hono/src/helper/proxy/index.ts:24", sym_ty="Interface", shape=box];
+        n2201[label="WSEvents", full_path="/home/yibai/llmcc/sample/repos/hono/src/helper/websocket/index.ts:14", sym_ty="Interface", shape=box];
+        n2315[label="UpgradeWebSocket", full_path="/home/yibai/llmcc/sample/repos/hono/src/helper/websocket/index.ts:24", sym_ty="Interface", shape=box];
+        n2434[label="WSContextInit", full_path="/home/yibai/llmcc/sample/repos/hono/src/helper/websocket/index.ts:50", sym_ty="Interface", shape=box];
+        n2536[label="WSContext", full_path="/home/yibai/llmcc/sample/repos/hono/src/helper/websocket/index.ts:70", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_sse_ts {
+        label="sse.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3405[label="SSEStreamingApi", full_path="/home/yibai/llmcc/sample/repos/hono/src/helper/streaming/sse.ts:13", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_ssg_ts {
+        label="ssg.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2939[label="SSGPlugin", full_path="/home/yibai/llmcc/sample/repos/hono/src/helper/ssg/ssg.ts:163", sym_ty="Interface", shape=box];
+        n2992[label="ToSSGOptions", full_path="/home/yibai/llmcc/sample/repos/hono/src/helper/ssg/ssg.ts:169", sym_ty="Interface", shape=box];
+      }
+
+    }
+
+    subgraph cluster_hono_base_ts {
+      label="hono-base.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n419[label="Hono", full_path="/home/yibai/llmcc/sample/repos/hono/src/hono-base.ts:98", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_http_exception_ts {
+      label="http-exception.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n470[label="HTTPException", full_path="/home/yibai/llmcc/sample/repos/hono/src/http-exception.ts:46", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_jsx {
+      label="jsx";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_base_ts {
+        label="base.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4190[label="JSXNode", full_path="/home/yibai/llmcc/sample/repos/hono/src/jsx/base.ts:130", sym_ty="Struct", shape=box];
+        n4740[label="JSXFunctionNode", full_path="/home/yibai/llmcc/sample/repos/hono/src/jsx/base.ts:244", sym_ty="Struct", shape=box];
+        n4903[label="JSXFragmentNode", full_path="/home/yibai/llmcc/sample/repos/hono/src/jsx/base.ts:288", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_css_ts {
+        label="css.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n7410[label="CssType", full_path="/home/yibai/llmcc/sample/repos/hono/src/jsx/dom/css.ts:140", sym_ty="Interface", shape=box];
+        n7434[label="CxType", full_path="/home/yibai/llmcc/sample/repos/hono/src/jsx/dom/css.ts:144", sym_ty="Interface", shape=box];
+        n7453[label="KeyframesType", full_path="/home/yibai/llmcc/sample/repos/hono/src/jsx/dom/css.ts:148", sym_ty="Interface", shape=box];
+        n7486[label="ViewTransitionType", full_path="/home/yibai/llmcc/sample/repos/hono/src/jsx/dom/css.ts:152", sym_ty="Interface", shape=box];
+        n7552[label="DefaultContextType", full_path="/home/yibai/llmcc/sample/repos/hono/src/jsx/dom/css.ts:158", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_jsx_dev_runtime_ts {
+        label="jsx-dev-runtime.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3757[label="jsxDEV", full_path="/home/yibai/llmcc/sample/repos/hono/src/jsx/jsx-dev-runtime.ts:12", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_middleware {
+      label="middleware";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_index_test_ts {
+        label="index.test.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1575[label="Context", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/cache/index.test.ts:6", sym_ty="Struct", shape=box];
+        n4134[label="decompressResponse", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/compress/index.test.ts:219", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_index_ts {
+        label="index.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3438[label="async function basicAuth(ctx, next) {\n    const requestUser = auth(ctx.req.raw)\n    if (requestUser) {\n      if (verifyUserInOptions) {\n        if (await options.verifyUser(requestUser.username, requestUser.password, ctx)) {\n          await next()\n          return\n        }\n      } else {\n        for (const user of users) {\n          const [usernameEqual, passwordEqual] = await Promise.all([\n            timingSafeEqual(user.username, requestUser.username, options.hashFunction),\n            timingSafeEqual(user.password, requestUser.password, options.hashFunction),\n          ])\n          if (usernameEqual && passwordEqual) {\n            await next()\n            return\n          }\n        }\n      }\n    }\n    // Invalid user.\n    const status = 401\n    const headers = {\n      'WWW-Authenticate': 'Basic realm=\"' + options.realm?.replace(/\"/g, '\\\\\"') + '\"',\n    }\n    const responseMessage =\n      typeof options.invalidUserMessage === 'function'\n        ? await options.invalidUserMessage(ctx)\n        : options.invalidUserMessage\n    const res =\n      typeof responseMessage === 'string'\n        ? new Response(responseMessage, { status, headers })\n        : new Response(JSON.stringify(responseMessage), {\n            status,\n            headers: {\n              ...headers,\n              'content-type': 'application/json',\n            },\n          })\n    throw new HTTPException(status, { res })\n  }", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/basic-auth/index.ts:86"];
+        n3341[label="set", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/cors/index.ts:100", sym_ty="Function", shape=ellipse];
+        n3321[label="async function cors(c, next) {\n    function set(key: string, value: string) {\n      c.res.headers.set(key, value)\n    }\n\n    const allowOrigin = await findAllowOrigin(c.req.header('origin') || '', c)\n    if (allowOrigin) {\n      set('Access-Control-Allow-Origin', allowOrigin)\n    }\n\n    if (opts.credentials) {\n      set('Access-Control-Allow-Credentials', 'true')\n    }\n\n    if (opts.exposeHeaders?.length) {\n      set('Access-Control-Expose-Headers', opts.exposeHeaders.join(','))\n    }\n\n    if (c.req.method === 'OPTIONS') {\n      if (opts.origin !== '*') {\n        set('Vary', 'Origin')\n      }\n\n      if (opts.maxAge != null) {\n        set('Access-Control-Max-Age', opts.maxAge.toString())\n      }\n\n      const allowMethods = await findAllowMethods(c.req.header('origin') || '', c)\n      if (allowMethods.length) {\n        set('Access-Control-Allow-Methods', allowMethods.join(','))\n      }\n\n      let headers = opts.allowHeaders\n      if (!headers?.length) {\n        const requestHeaders = c.req.header('Access-Control-Request-Headers')\n        if (requestHeaders) {\n          headers = requestHeaders.split(/\\s*,\\s*/)\n        }\n      }\n      if (headers?.length) {\n        set('Access-Control-Allow-Headers', headers.join(','))\n        c.res.headers.append('Vary', 'Access-Control-Request-Headers')\n      }\n\n      c.res.headers.delete('Content-Length')\n      c.res.headers.delete('Content-Type')\n\n      return new Response(null, {\n        headers: c.res.headers,\n        status: 204,\n        statusText: 'No Content',\n      })\n    }\n    await next()\n\n    // Suppose the server sends a response with an Access-Control-Allow-Origin value with an explicit origin (rather than the \"*\" wildcard).\n    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin\n    if (opts.origin !== '*') {\n      c.header('Vary', 'Origin', { append: true })\n    }\n  }", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/cors/index.ts:99"];
+        n2354[label="async function csrf(c, next) {\n    if (\n      !isSafeMethodRe.test(c.req.method) &&\n      isRequestedByFormElementRe.test(c.req.header('content-type') || 'text/plain') &&\n      !(await isAllowedSecFetchSite(c.req.header('sec-fetch-site'), c)) &&\n      !(await isAllowedOrigin(c.req.header('origin'), c))\n    ) {\n      const res = new Response('Forbidden', { status: 403 })\n      throw new HTTPException(403, { res })\n    }\n\n    await next()\n  }", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/csrf/index.ts:138"];
+        n4194[label="ContextVariableMap", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/language/index.ts:11", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_jwk_ts {
+        label="jwk.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n164[label="async function jwk(ctx, next) {\n    const headerName = options.headerName || 'Authorization'\n\n    const credentials = ctx.req.raw.headers.get(headerName)\n    let token\n    if (credentials) {\n      const parts = credentials.split(/\\s+/)\n      if (parts.length !== 2) {\n        const errDescription = 'invalid credentials structure'\n        throw new HTTPException(401, {\n          message: errDescription,\n          res: unauthorizedResponse({\n            ctx,\n            error: 'invalid_request',\n            errDescription,\n          }),\n        })\n      } else {\n        token = parts[1]\n      }\n    } else if (options.cookie) {\n      if (typeof options.cookie == 'string') {\n        token = getCookie(ctx, options.cookie)\n      } else if (options.cookie.secret) {\n        if (options.cookie.prefixOptions) {\n          token = await getSignedCookie(\n            ctx,\n            options.cookie.secret,\n            options.cookie.key,\n            options.cookie.prefixOptions\n          )\n        } else {\n          token = await getSignedCookie(ctx, options.cookie.secret, options.cookie.key)\n        }\n      } else {\n        if (options.cookie.prefixOptions) {\n          token = getCookie(ctx, options.cookie.key, options.cookie.prefixOptions)\n        } else {\n          token = getCookie(ctx, options.cookie.key)\n        }\n      }\n    }\n\n    if (!token) {\n      if (options.allow_anon) {\n        return next()\n      }\n      const errDescription = 'no authorization included in request'\n      throw new HTTPException(401, {\n        message: errDescription,\n        res: unauthorizedResponse({\n          ctx,\n          error: 'invalid_request',\n          errDescription,\n        }),\n      })\n    }\n\n    let payload\n    let cause\n    try {\n      const keys = typeof options.keys === 'function' ? await options.keys(ctx) : options.keys\n      const jwks_uri =\n        typeof options.jwks_uri === 'function' ? await options.jwks_uri(ctx) : options.jwks_uri\n      payload = await Jwt.verifyWithJwks(token, { keys, jwks_uri, verification: verifyOpts }, init)\n    } catch (e) {\n      cause = e\n    }\n\n    if (!payload) {\n      if (cause instanceof Error && cause.constructor === Error) {\n        throw cause\n      }\n      throw new HTTPException(401, {\n        message: 'Unauthorized',\n        res: unauthorizedResponse({\n          ctx,\n          error: 'invalid_token',\n          statusText: 'Unauthorized',\n          errDescription: 'token verification failure',\n        }),\n        cause,\n      })\n    }\n\n    ctx.set('jwtPayload', payload)\n\n    await next()\n  }", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/jwk/jwk.ts:71"];
+      }
+
+      subgraph cluster_jwt_ts {
+        label="jwt.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2650[label="async function jwt(ctx, next) {\n    const headerName = options.headerName || 'Authorization'\n\n    const credentials = ctx.req.raw.headers.get(headerName)\n    let token\n    if (credentials) {\n      const parts = credentials.split(/\\s+/)\n      if (parts.length !== 2) {\n        const errDescription = 'invalid credentials structure'\n        throw new HTTPException(401, {\n          message: errDescription,\n          res: unauthorizedResponse({\n            ctx,\n            error: 'invalid_request',\n            errDescription,\n          }),\n        })\n      } else {\n        token = parts[1]\n      }\n    } else if (options.cookie) {\n      if (typeof options.cookie == 'string') {\n        token = getCookie(ctx, options.cookie)\n      } else if (options.cookie.secret) {\n        if (options.cookie.prefixOptions) {\n          token = await getSignedCookie(\n            ctx,\n            options.cookie.secret,\n            options.cookie.key,\n            options.cookie.prefixOptions\n          )\n        } else {\n          token = await getSignedCookie(ctx, options.cookie.secret, options.cookie.key)\n        }\n      } else {\n        if (options.cookie.prefixOptions) {\n          token = getCookie(ctx, options.cookie.key, options.cookie.prefixOptions)\n        } else {\n          token = getCookie(ctx, options.cookie.key)\n        }\n      }\n    }\n\n    if (!token) {\n      const errDescription = 'no authorization included in request'\n      throw new HTTPException(401, {\n        message: errDescription,\n        res: unauthorizedResponse({\n          ctx,\n          error: 'invalid_request',\n          errDescription,\n        }),\n      })\n    }\n\n    let payload\n    let cause\n    try {\n      payload = await Jwt.verify(token, options.secret, {\n        alg: options.alg,\n        ...verifyOpts,\n      })\n    } catch (e) {\n      cause = e\n    }\n    if (!payload) {\n      throw new HTTPException(401, {\n        message: 'Unauthorized',\n        res: unauthorizedResponse({\n          ctx,\n          error: 'invalid_token',\n          statusText: 'Unauthorized',\n          errDescription: 'token verification failure',\n        }),\n        cause,\n      })\n    }\n\n    ctx.set('jwtPayload', payload)\n\n    await next()\n  }", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/jwt/jwt.ts:71"];
+      }
+
+      subgraph cluster_language_ts {
+        label="language.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4677[label="DetectorOptions", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/language/language.ts:13", sym_ty="Interface", shape=box];
+        n5000[label="detectFromHeader", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/language/language.ts:137", sym_ty="Function", shape=ellipse];
+        n5071[label="detectFromPath", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/language/language.ts:160", sym_ty="Function", shape=ellipse];
+        n5187[label="validateOptions", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/language/language.ts:192", sym_ty="Function", shape=ellipse];
+        n5256[label="cacheLanguage", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/language/language.ts:209", sym_ty="Function", shape=ellipse];
+        n4796[label="LanguageVariables", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/language/language.ts:47", sym_ty="Interface", shape=box];
+        n4812[label="parseAcceptLanguage", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/language/language.ts:74", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_secure_headers_ts {
+        label="secure-headers.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3711[label="ContentSecurityPolicyOptions", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/secure-headers/secure-headers.ts:18", sym_ty="Interface", shape=box];
+        n4876[label="getFilteredHeaders", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/secure-headers/secure-headers.ts:231", sym_ty="Function", shape=ellipse];
+        n4901[label="getCSPDirectives", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/secure-headers/secure-headers.ts:240", sym_ty="Function", shape=ellipse];
+        n5085[label="getReportingEndpoints", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/secure-headers/secure-headers.ts:320", sym_ty="Function", shape=ellipse];
+        n5116[label="getReportToOptions", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/secure-headers/secure-headers.ts:326", sym_ty="Function", shape=ellipse];
+        n5157[label="setHeaders", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/secure-headers/secure-headers.ts:330", sym_ty="Function", shape=ellipse];
+        n3952[label="ReportToOptions", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/secure-headers/secure-headers.ts:46", sym_ty="Interface", shape=box];
+        n3977[label="ReportToEndpoint", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/secure-headers/secure-headers.ts:52", sym_ty="Interface", shape=box];
+        n3997[label="ReportingEndpointOptions", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/secure-headers/secure-headers.ts:56", sym_ty="Interface", shape=box];
+        n4055[label="SecureHeadersOptions", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/secure-headers/secure-headers.ts:69", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_timing_ts {
+        label="timing.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5344[label="TimingOptions", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/timing/timing.ts:22", sym_ty="Interface", shape=box];
+        n6004[label="wrapTime", full_path="/home/yibai/llmcc/sample/repos/hono/src/middleware/timing/timing.ts:242", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_preset {
+      label="preset";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_tiny_ts {
+        label="tiny.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3989[label="Hono", full_path="/home/yibai/llmcc/sample/repos/hono/src/preset/tiny.ts:11", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_request_ts {
+      label="request.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n4101[label="HonoRequest", full_path="/home/yibai/llmcc/sample/repos/hono/src/request.ts:36", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_router {
+      label="router";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_matcher_ts {
+        label="matcher.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n6233[label="match", full_path="/home/yibai/llmcc/sample/repos/hono/src/router/reg-exp-router/matcher.ts:10", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_node_ts {
+        label="node.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n426[label="Node", full_path="/home/yibai/llmcc/sample/repos/hono/src/router/reg-exp-router/node.ts:45", sym_ty="Struct", shape=box];
+        n343[label="Context", full_path="/home/yibai/llmcc/sample/repos/hono/src/router/reg-exp-router/node.ts:7", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_prepared_router_ts {
+        label="prepared-router.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1339[label="PreparedRegExpRouter", full_path="/home/yibai/llmcc/sample/repos/hono/src/router/reg-exp-router/prepared-router.ts:9", sym_ty="Struct", shape=box];
+        n1609[label="class<T> extends RegExpRouter<T> {\n    buildAndExportAllMatchers() {\n      return this.buildAllMatchers()\n    }\n  }", full_path="/home/yibai/llmcc/sample/repos/hono/src/router/reg-exp-router/prepared-router.ts:98"];
+      }
+
+      subgraph cluster_router_ts {
+        label="router.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1870[label="LinearRouter", full_path="/home/yibai/llmcc/sample/repos/hono/src/router/linear-router/router.ts:11", sym_ty="Struct", shape=box];
+        n5485[label="PatternRouter", full_path="/home/yibai/llmcc/sample/repos/hono/src/router/pattern-router/router.ts:8", sym_ty="Struct", shape=box];
+        n5308[label="findMiddleware", full_path="/home/yibai/llmcc/sample/repos/hono/src/router/reg-exp-router/router.ts:105", sym_ty="Function", shape=ellipse];
+        n5390[label="RegExpRouter", full_path="/home/yibai/llmcc/sample/repos/hono/src/router/reg-exp-router/router.ts:122", sym_ty="Struct", shape=box];
+        n4965[label="buildWildcardRegExp", full_path="/home/yibai/llmcc/sample/repos/hono/src/router/reg-exp-router/router.ts:20", sym_ty="Function", shape=ellipse];
+        n5007[label="buildMatcherFromPreprocessedRoutes", full_path="/home/yibai/llmcc/sample/repos/hono/src/router/reg-exp-router/router.ts:34", sym_ty="Function", shape=ellipse];
+        n5757[label="SmartRouter", full_path="/home/yibai/llmcc/sample/repos/hono/src/router/smart-router/router.ts:4", sym_ty="Struct", shape=box];
+        n1958[label="TrieRouter", full_path="/home/yibai/llmcc/sample/repos/hono/src/router/trie-router/router.ts:5", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_trie_ts {
+        label="trie.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3518[label="Trie", full_path="/home/yibai/llmcc/sample/repos/hono/src/router/reg-exp-router/trie.ts:6", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_router_ts {
+      label="router.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n4293[label="UnsupportedPathError", full_path="/home/yibai/llmcc/sample/repos/hono/src/router.ts:103", sym_ty="Struct", shape=box];
+      n4136[label="Router", full_path="/home/yibai/llmcc/sample/repos/hono/src/router.ts:29", sym_ty="Interface", shape=box];
+    }
+
+    subgraph cluster_runtime_tests {
+      label="runtime-tests";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_index_test_ts {
+        label="index.test.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4492[label="createAgent", full_path="/home/yibai/llmcc/sample/repos/hono/runtime-tests/node/index.test.ts:280", sym_ty="Function", shape=ellipse];
+        n4517[label="getOrigin", full_path="/home/yibai/llmcc/sample/repos/hono/runtime-tests/node/index.test.ts:292", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_utils {
+      label="utils";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_body_ts {
+        label="body.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5498[label="parseFormData", full_path="/home/yibai/llmcc/sample/repos/hono/src/utils/body.ts:121", sym_ty="Function", shape=ellipse];
+        n5580[label="convertFormDataToBodyData", full_path="/home/yibai/llmcc/sample/repos/hono/src/utils/body.ts:142", sym_ty="Function", shape=ellipse];
+        n5316[label="<Options extends Partial<ParseBodyOptions>, T extends BodyData<Options>>(\n    request: HonoRequest | Request,\n    options?: Options\n  ): Promise<T>", full_path="/home/yibai/llmcc/sample/repos/hono/src/utils/body.ts:85"];
+      }
+
+      subgraph cluster_color_ts {
+        label="color.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5319[label="getColorEnabled", full_path="/home/yibai/llmcc/sample/repos/hono/src/utils/color.ts:14", sym_ty="Function", shape=ellipse];
+        n5378[label="getColorEnabledAsync", full_path="/home/yibai/llmcc/sample/repos/hono/src/utils/color.ts:36", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_jws_ts {
+        label="jws.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n6005[label="exportPublicJwkFrom", full_path="/home/yibai/llmcc/sample/repos/hono/src/utils/jwt/jws.ts:108", sym_ty="Function", shape=ellipse];
+        n6080[label="getKeyAlgorithm", full_path="/home/yibai/llmcc/sample/repos/hono/src/utils/jwt/jws.ts:122", sym_ty="Function", shape=ellipse];
+        n6199[label="isCryptoKey", full_path="/home/yibai/llmcc/sample/repos/hono/src/utils/jwt/jws.ts:226", sym_ty="Function", shape=ellipse];
+        n5617[label="signing", full_path="/home/yibai/llmcc/sample/repos/hono/src/utils/jwt/jws.ts:29", sym_ty="Function", shape=ellipse];
+        n5687[label="verifying", full_path="/home/yibai/llmcc/sample/repos/hono/src/utils/jwt/jws.ts:39", sym_ty="Function", shape=ellipse];
+        n5765[label="importPrivateKey", full_path="/home/yibai/llmcc/sample/repos/hono/src/utils/jwt/jws.ts:54", sym_ty="Function", shape=ellipse];
+        n5870[label="importPublicKey", full_path="/home/yibai/llmcc/sample/repos/hono/src/utils/jwt/jws.ts:78", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_stream_ts {
+        label="stream.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1856[label="StreamingApi", full_path="/home/yibai/llmcc/sample/repos/hono/src/utils/stream.ts:6", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_types_ts {
+        label="types.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2738[label="JwtAlgorithmNotImplemented", full_path="/home/yibai/llmcc/sample/repos/hono/src/utils/jwt/types.ts:6", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n2869[label="HandlerInterface", full_path="/home/yibai/llmcc/sample/repos/hono/src/types.ts:128", sym_ty="Interface", shape=box];
+  n2631[label="RouterRoute", full_path="/home/yibai/llmcc/sample/repos/hono/src/types.ts:58", sym_ty="Interface", shape=box];
+
+  n164 -> n470 [from="func", to="type_dep"];
+  n343 -> n3518 [from="field_type", to="struct"];
+  n343 -> n4901 [from="input", to="func"];
+  n343 -> n5000 [from="input", to="func"];
+  n343 -> n5071 [from="input", to="func"];
+  n343 -> n5157 [from="input", to="func"];
+  n343 -> n5256 [from="input", to="func"];
+  n343 -> n5344 [from="field_type", to="struct"];
+  n343 -> n6004 [from="input", to="func"];
+  n426 -> n1958 [from="field_type", to="struct"];
+  n426 -> n3518 [from="field_type", to="struct"];
+  n808 -> n887 [from="field_type", to="struct"];
+  n850 -> n887 [from="field_type", to="struct"];
+  n865 -> n887 [from="field_type", to="struct"];
+  n1373 -> n343 [from="func", to="output"];
+  n1856 -> n3405 [from="base", to="extends"];
+  n1921 -> n3155 [from="caller", to="callee"];
+  n1982 -> n2065 [from="field_type", to="struct"];
+  n2003 -> n2065 [from="field_type", to="struct"];
+  n2019 -> n2003 [from="field_type", to="struct"];
+  n2041 -> n2003 [from="field_type", to="struct"];
+  n2201 -> n3587 [from="field_type", to="struct"];
+  n2268 -> n1921 [from="bound", to="generic"];
+  n2268 -> n2975 [from="base", to="extends"];
+  n2293 -> n5698 [from="field_type", to="struct"];
+  n2315 -> n3566 [from="field_type", to="struct"];
+  n2354 -> n470 [from="func", to="type_dep"];
+  n2434 -> n2536 [from="field_type", to="struct"];
+  n2511 -> n5361 [from="field_type", to="struct"];
+  n2536 -> n2201 [from="field_type", to="struct"];
+  n2582 -> n5810 [from="field_type", to="struct"];
+  n2603 -> n5275 [from="field_type", to="struct"];
+  n2631 -> n419 [from="field_type", to="struct"];
+  n2650 -> n470 [from="func", to="type_dep"];
+  n2869 -> n419 [from="field_type", to="struct"];
+  n2939 -> n2992 [from="field_type", to="struct"];
+  n2975 -> n89 [from="field_type", to="struct"];
+  n2975 -> n419 [from="field_type", to="struct"];
+  n2975 -> n470 [from="field_type", to="struct"];
+  n2975 -> n3155 [from="input", to="func"];
+  n2975 -> n3443 [from="input", to="func"];
+  n2975 -> n4134 [from="input", to="func"];
+  n2975 -> n6662 [from="field_type", to="struct"];
+  n3155 -> n3296 [from="func", to="type_dep"];
+  n3155 -> n3443 [from="caller", to="callee"];
+  n3321 -> n3341 [from="caller", to="callee"];
+  n3438 -> n470 [from="func", to="type_dep"];
+  n3446 -> n3566 [from="field_type", to="struct"];
+  n3711 -> n4055 [from="field_type", to="struct"];
+  n3711 -> n4901 [from="input", to="func"];
+  n3757 -> n4190 [from="func", to="output"];
+  n3952 -> n4055 [from="field_type", to="struct"];
+  n3977 -> n3952 [from="field_type", to="struct"];
+  n3989 -> n4492 [from="input", to="func"];
+  n3997 -> n4055 [from="field_type", to="struct"];
+  n4055 -> n4876 [from="input", to="func"];
+  n4055 -> n5085 [from="input", to="func"];
+  n4055 -> n5116 [from="input", to="func"];
+  n4101 -> n5316 [from="input", to="func"];
+  n4101 -> n5498 [from="input", to="func"];
+  n4101 -> n6662 [from="field_type", to="struct"];
+  n4136 -> n419 [from="field_type", to="struct"];
+  n4136 -> n1339 [from="interface", to="implements"];
+  n4136 -> n1609 [from="interface", to="implements"];
+  n4136 -> n1870 [from="interface", to="implements"];
+  n4136 -> n1958 [from="interface", to="implements"];
+  n4136 -> n5390 [from="interface", to="implements"];
+  n4136 -> n5485 [from="interface", to="implements"];
+  n4136 -> n5757 [from="field_type", to="struct"];
+  n4136 -> n5757 [from="interface", to="implements"];
+  n4136 -> n6233 [from="bound", to="generic"];
+  n4136 -> n6233 [from="input", to="func"];
+  n4190 -> n4740 [from="base", to="extends"];
+  n4190 -> n4903 [from="base", to="extends"];
+  n4492 -> n4517 [from="caller", to="callee"];
+  n4677 -> n5000 [from="input", to="func"];
+  n4677 -> n5071 [from="input", to="func"];
+  n4677 -> n5187 [from="input", to="func"];
+  n4677 -> n5256 [from="input", to="func"];
+  n4796 -> n4194 [from="base", to="extends"];
+  n5000 -> n4812 [from="caller", to="callee"];
+  n5007 -> n3518 [from="func", to="type_dep"];
+  n5007 -> n4293 [from="func", to="type_dep"];
+  n5308 -> n4965 [from="caller", to="callee"];
+  n5378 -> n5319 [from="caller", to="callee"];
+  n5498 -> n5580 [from="caller", to="callee"];
+  n5617 -> n5765 [from="caller", to="callee"];
+  n5617 -> n6080 [from="caller", to="callee"];
+  n5687 -> n5870 [from="caller", to="callee"];
+  n5687 -> n6080 [from="caller", to="callee"];
+  n5723 -> n419 [from="field_type", to="struct"];
+  n5723 -> n1575 [from="interface", to="implements"];
+  n5723 -> n6662 [from="field_type", to="struct"];
+  n5765 -> n6199 [from="caller", to="callee"];
+  n5769 -> n6662 [from="field_type", to="struct"];
+  n5870 -> n6005 [from="caller", to="callee"];
+  n5870 -> n6199 [from="caller", to="callee"];
+  n6076 -> n2975 [from="func", to="output"];
+  n6080 -> n2738 [from="func", to="type_dep"];
+  n6139 -> n2975 [from="func", to="output"];
+  n6233 -> n1339 [from="field_type", to="struct"];
+  n6233 -> n5390 [from="field_type", to="struct"];
+  n6317 -> n6892 [from="base", to="extends"];
+  n6317 -> n7251 [from="base", to="extends"];
+  n6317 -> n7390 [from="base", to="extends"];
+  n6317 -> n7633 [from="base", to="extends"];
+  n6993 -> n7063 [from="field_type", to="struct"];
+  n7025 -> n7063 [from="base", to="extends"];
+  n7025 -> n7063 [from="field_type", to="struct"];
+  n7410 -> n7552 [from="field_type", to="struct"];
+  n7434 -> n7552 [from="field_type", to="struct"];
+  n7453 -> n7552 [from="field_type", to="struct"];
+  n7486 -> n7552 [from="field_type", to="struct"];
+}

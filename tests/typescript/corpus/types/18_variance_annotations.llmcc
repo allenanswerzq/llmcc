@@ -1,0 +1,39 @@
+===============================================================================
+variance-annotations
+===============================================================================
+Variance annotations for type parameters.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface Producer<out T> {
+    produce(): T;
+}
+
+interface Consumer<in T> {
+    consume(value: T): void;
+}
+
+interface Both<in out T> {
+    process(value: T): T;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 Producer
+    (method:3 produce
+      (return:4)
+    )
+  )
+  (interface:5 Consumer
+    (method:6 consume
+      (parameter:7 value @type value)
+      (return:8 @type void)
+    )
+  )
+  (interface:9 Both
+    (method:10 process
+      (parameter:11 value @type value)
+      (return:12)
+    )
+  )
+)

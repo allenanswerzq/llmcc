@@ -1,0 +1,108 @@
+===============================================================================
+prefer-import-over-global
+===============================================================================
+Test that explicitly imported types are preferred over same-named types
+that might be available through other means.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod v1;
+mod v2;
+mod consumer;
+
+--- file: sample/src/v1.rs ---
+
+pub struct Response {
+    pub data: String,
+    pub version: u32,
+}
+
+--- file: sample/src/v2.rs ---
+
+pub struct Response {
+    pub payload: Vec<u8>,
+    pub status: i32,
+}
+
+--- file: sample/src/consumer.rs ---
+
+// Explicitly import v2::Response
+use crate::v2::Response;
+
+pub struct Client {
+    // Should resolve to v2::Response due to explicit import
+    pub last_response: Response,
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 v1)
+  (module:3 v2)
+  (module:4 consumer)
+)
+
+(root:5 v1 ($TMP/sample/src/v1.rs)
+  (class:6 Response
+    (field:7 data @type String)
+    (field:8 version @type u32)
+  )
+)
+
+(root:9 v2 ($TMP/sample/src/v2.rs)
+  (class:10 Response
+    (field:11 payload @type payload)
+    (field:12 status @type i32)
+  )
+)
+
+(root:13 consumer ($TMP/sample/src/consumer.rs)
+  (class:14 Client
+    (field:15 last_response @type:6 Response)
+    (@tdep:6 Response)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_consumer_rs {
+      label="consumer.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n14[label="Client", full_path="$TMP/sample/src/consumer.rs:5", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_v1_rs {
+      label="v1.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n6[label="Response", full_path="$TMP/sample/src/v1.rs:2", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+
+  n6 -> n14 [from="field_type", to="struct"];
+}

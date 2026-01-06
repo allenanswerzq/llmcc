@@ -1,0 +1,104 @@
+===============================================================================
+decorators
+===============================================================================
+Class and method decorators.
+lang: typescript
+
+--- file: src/lib.ts ---
+function Component(config: any) {
+    return function(target: any) {};
+}
+
+function Injectable() {
+    return function(target: any) {};
+}
+
+function Log(target: any, key: string) {}
+
+@Component({ selector: "app-root" })
+class AppComponent {
+    @Log
+    title: string = "App";
+
+    @Log
+    greet(): string {
+        return this.title;
+    }
+}
+
+@Injectable()
+class UserService {
+    getUsers(): User[] {
+        return [];
+    }
+}
+
+interface User {
+    id: number;
+    name: string;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 Component
+    (parameter:3 config @type any)
+    (func:4 function(target: any) {}
+      (parameter:5 target @type any)
+    )
+  )
+  (func:6 Injectable
+    (func:7 function(target: any) {}
+      (parameter:8 target @type any)
+    )
+  )
+  (func:9 Log
+    (parameter:10 target @type any)
+    (parameter:11 key @type string)
+  )
+  (class:12 AppComponent
+    (field:14 title @type string)
+    (method:15 greet
+      (return:16 @type string)
+    )
+    (@tdep:2 Component)
+  )
+  (class:17 UserService
+    (method:19 getUsers
+      (return:20 @type:21 User)
+    )
+    (@tdep:6 Injectable)
+  )
+  (interface:21 User
+    (field:22 id @type number)
+    (field:23 name @type string)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_ts {
+    label="lib.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n2[label="Component", full_path="$TMP/src/lib.ts:1", sym_ty="Function", shape=ellipse];
+    n12[label="AppComponent", full_path="$TMP/src/lib.ts:11", sym_ty="Struct", shape=box];
+    n17[label="UserService", full_path="$TMP/src/lib.ts:22", sym_ty="Struct", shape=box];
+    n6[label="Injectable", full_path="$TMP/src/lib.ts:5", sym_ty="Function", shape=ellipse];
+  }
+
+
+  n2 -> n12 [from="decorator", to="decorates"];
+  n6 -> n17 [from="decorator", to="decorates"];
+}

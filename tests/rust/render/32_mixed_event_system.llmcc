@@ -63,63 +63,68 @@ impl EventDispatcher {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs))
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 events)
+  (module:3 handlers)
+  (module:4 dispatcher)
+)
 
-(root:2 events ($TMP/sample/src/events.rs)
-  (enum:3 Event
-    (field:4 Click @type:3 Click
-      (field:5 x @type i32)
-      (field:6 y @type i32)
+(root:5 events ($TMP/sample/src/events.rs)
+  (enum:6 Event
+    (field:7 Click
+      (field:8 x @type i32)
+      (field:9 y @type i32)
     )
-    (field:7 KeyPress @type:3 KeyPress
-      (field:8 code @type u32)
+    (field:10 KeyPress
+      (field:11 code @type u32)
     )
-    (field:9 Resize @type:3 Resize
-      (field:10 width @type u32)
-      (field:11 height @type u32)
+    (field:12 Resize
+      (field:13 width @type u32)
+      (field:14 height @type u32)
     )
   )
-  (trait:12 EventHandler
-    (method:13 handle
-      (parameter:14 self @type:12 EventHandler)
-      (parameter:15 event @type:3 Event)
+  (trait:15 EventHandler
+    (method:16 handle
+      (parameter:17 self @type:15 EventHandler)
+      (parameter:18 event @type:6 Event)
     )
   )
 )
 
-(root:16 handlers ($TMP/sample/src/handlers.rs)
-  (class:17 ClickHandler
-    (field:18 name @type String)
+(root:19 handlers ($TMP/sample/src/handlers.rs)
+  (class:20 ClickHandler
+    (field:21 name @type String)
   )
-  (class:19 KeyHandler
-    (field:20 buffer @type String)
+  (class:22 KeyHandler
+    (field:23 buffer @type String)
   )
-  (impl:21 ClickHandler @type:17 @trait:12
-    (method:22 handle
-      (parameter:23 self @type:17 ClickHandler)
-      (parameter:24 event @type:3 Event)
+  (impl:24 ClickHandler @type:20 @trait:15
+    (method:25 handle
+      (parameter:26 self @type:20 ClickHandler)
+      (parameter:27 event @type:6 Event)
     )
   )
-  (impl:25 KeyHandler @type:19 @trait:12
-    (method:26 handle
-      (parameter:27 self @type:19 KeyHandler)
-      (parameter:28 event @type:3 Event)
+  (impl:28 KeyHandler @type:22 @trait:15
+    (method:29 handle
+      (parameter:30 self @type:22 KeyHandler)
+      (parameter:31 event @type:6 Event)
     )
   )
 )
 
-(root:29 dispatcher ($TMP/sample/src/dispatcher.rs)
-  (class:30 EventDispatcher
-    (field:31 handlers @type:12 EventHandler)
+(root:32 dispatcher ($TMP/sample/src/dispatcher.rs)
+  (class:33 EventDispatcher
+    (field:34 handlers @type:15 EventHandler)
+    (@tdep:15 EventHandler)
   )
-  (impl:32 EventDispatcher @type:30
-    (method:33 dispatch
-      (parameter:34 self @type:30 EventDispatcher)
-      (parameter:35 event @type:3 Event)
+  (impl:35 EventDispatcher @type:33
+    (method:36 dispatch
+      (parameter:37 self @type:33 EventDispatcher)
+      (parameter:38 event @type:6 Event)
     )
-    (method:37 add_handler
-      (parameter:38 self @type:30 EventDispatcher)
-      (parameter:39 handler @type:12 EventHandler)
+    (method:40 add_handler
+      (parameter:41 self @type:33 EventDispatcher)
+      (parameter:42 handler @type:15 EventHandler)
     )
   )
 )
@@ -136,9 +141,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_sample {
     label="sample";
     style=rounded;
@@ -151,7 +153,7 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n30[label="EventDispatcher", full_path="$TMP/sample/src/dispatcher.rs:3", sym_ty="Struct", shape=box];
+      n33[label="EventDispatcher", full_path="$TMP/sample/src/dispatcher.rs:3", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_events_rs {
@@ -160,7 +162,7 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n12[label="EventHandler", full_path="$TMP/sample/src/events.rs:7", sym_ty="Trait", shape=box];
+      n15[label="EventHandler", full_path="$TMP/sample/src/events.rs:7", sym_ty="Trait", shape=box];
     }
 
     subgraph cluster_handlers_rs {
@@ -169,14 +171,15 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n17[label="ClickHandler", full_path="$TMP/sample/src/handlers.rs:3", sym_ty="Struct", shape=box];
-      n19[label="KeyHandler", full_path="$TMP/sample/src/handlers.rs:7", sym_ty="Struct", shape=box];
+      n20[label="ClickHandler", full_path="$TMP/sample/src/handlers.rs:3", sym_ty="Struct", shape=box];
+      n22[label="KeyHandler", full_path="$TMP/sample/src/handlers.rs:7", sym_ty="Struct", shape=box];
     }
 
   }
 
 
-  n12 -> n17 [from="trait", to="impl"];
-  n12 -> n19 [from="trait", to="impl"];
-  n12 -> n30 [from="field_type", to="struct"];
+  n15 -> n20 [from="trait", to="impl"];
+  n15 -> n22 [from="trait", to="impl"];
+  n15 -> n33 [from="bound", to="generic"];
+  n15 -> n33 [from="field_type", to="struct"];
 }
