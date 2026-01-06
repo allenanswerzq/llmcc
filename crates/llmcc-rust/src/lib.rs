@@ -6,7 +6,6 @@ mod collect;
 mod infer;
 mod pattern;
 pub mod token;
-mod util;
 
 pub const RUST_PRIMITIVES: &[&str] = &[
     // Numeric types
