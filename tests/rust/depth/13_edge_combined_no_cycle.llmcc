@@ -92,43 +92,49 @@ digraph architecture {
 
   subgraph cluster_app {
     label="app";
-    bgcolor="#f8f8f8";
+    style=rounded;
+        bgcolor="#f8f8f8";
 
     subgraph cluster_lib_rs {
       label="lib.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n30[label="run", full_path="$TMP/app/src/lib.rs:5", sym_ty="Function", shape=ellipse];
+      n30[label="run", path="$TMP/app/src/lib.rs:5", sym_ty="Function", shape=ellipse];
     }
 
   }
 
   subgraph cluster_service {
     label="service";
-    bgcolor="#f8f8f8";
+    style=rounded;
+        bgcolor="#f8f8f8";
 
     subgraph cluster_lib_rs {
       label="lib.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n25[label="handle_request", full_path="$TMP/service/src/lib.rs:20", sym_ty="Function", shape=ellipse];
-      n15[label="Service", full_path="$TMP/service/src/lib.rs:4", sym_ty="Struct", shape=box];
+      n25[label="handle_request", path="$TMP/service/src/lib.rs:20", sym_ty="Function", shape=ellipse];
+      n15[label="Service", path="$TMP/service/src/lib.rs:4", sym_ty="Struct", shape=box];
     }
 
   }
 
   subgraph cluster_types {
     label="types";
-    bgcolor="#f8f8f8";
+    style=rounded;
+        bgcolor="#f8f8f8";
 
     subgraph cluster_lib_rs {
       label="lib.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n2[label="Request", full_path="$TMP/types/src/lib.rs:1", sym_ty="Struct", shape=box];
-      n11[label="validate", full_path="$TMP/types/src/lib.rs:13", sym_ty="Function", shape=ellipse];
-      n4[label="Response", full_path="$TMP/types/src/lib.rs:5", sym_ty="Struct", shape=box];
-      n6[label="Processor", full_path="$TMP/types/src/lib.rs:9", sym_ty="Trait", shape=box];
+      n2[label="Request", path="$TMP/types/src/lib.rs:1", sym_ty="Struct", shape=box];
+      n11[label="validate", path="$TMP/types/src/lib.rs:13", sym_ty="Function", shape=ellipse];
+      n4[label="Response", path="$TMP/types/src/lib.rs:5", sym_ty="Struct", shape=box];
+      n6[label="Processor", path="$TMP/types/src/lib.rs:9", sym_ty="Trait", shape=box];
     }
 
   }
@@ -151,14 +157,14 @@ digraph architecture {
   concentrate=true;
 
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#666666", arrowsize=0.7];
+  edge [color="#888888", arrowsize=0.7];
 
   labelloc=t;
   fontsize=16;
 
-  mod_app_lib[label="app::lib", folder="$TMP/app/src"];
-  mod_service_lib[label="service::lib", folder="$TMP/service/src"];
-  mod_types_lib[label="types::lib", folder="$TMP/types/src"];
+  mod_app_lib[label="app::lib", path="$TMP/app/src"];
+  mod_service_lib[label="service::lib", path="$TMP/service/src"];
+  mod_types_lib[label="types::lib", path="$TMP/types/src"];
 
   mod_app_lib -> mod_service_lib;
   mod_service_lib -> mod_types_lib;
@@ -173,14 +179,14 @@ digraph architecture {
   concentrate=true;
 
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#666666", arrowsize=0.7];
+  edge [color="#888888", arrowsize=0.7];
 
   labelloc=t;
   fontsize=16;
 
-  crate_app[label="app", folder="$TMP/app"];
-  crate_service[label="service", folder="$TMP/service"];
-  crate_types[label="types", folder="$TMP/types"];
+  crate_app[label="app", path="$TMP/app"];
+  crate_service[label="service", path="$TMP/service"];
+  crate_types[label="types", path="$TMP/types"];
 
   crate_app -> crate_service;
   crate_service -> crate_types;

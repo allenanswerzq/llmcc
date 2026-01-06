@@ -53,6 +53,7 @@ digraph architecture {
 
     mod_prisma_adapter_d1_d1_http[label="d1-http", path="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-d1/src"];
     mod_prisma_adapter_d1_d1_worker[label="d1-worker", path="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-d1/src"];
+    mod_prisma_adapter_d1_errors[label="errors", path="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-d1/src"];
   }
 
   subgraph cluster_prisma_adapter_libsql {
@@ -77,7 +78,6 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_prisma_adapter_mssql_conversion[label="conversion", path="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-mssql/src"];
-    mod_prisma_adapter_mssql_errors[label="errors", path="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-mssql/src"];
     mod_prisma_adapter_mssql_mssql[label="mssql", path="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-mssql/src"];
   }
 
@@ -291,6 +291,7 @@ digraph architecture {
     mod_prisma_migrate_SchemaEngineWasm[label="SchemaEngineWasm", path="/home/yibai/llmcc/sample/repos/prisma/packages/migrate/src"];
     mod_prisma_migrate___tests__[label="__tests__", path="/home/yibai/llmcc/sample/repos/prisma/packages/migrate/src/__tests__"];
     mod_prisma_migrate_commands[label="commands", path="/home/yibai/llmcc/sample/repos/prisma/packages/migrate/src/commands"];
+    mod_prisma_migrate_types[label="types", path="/home/yibai/llmcc/sample/repos/prisma/packages/migrate/src"];
     mod_prisma_migrate_utils[label="utils", path="/home/yibai/llmcc/sample/repos/prisma/packages/migrate/src/utils"];
   }
 
@@ -388,14 +389,13 @@ digraph architecture {
   mod_prisma_adapter_neon_neon -> mod_prisma_driver_adapter_utils_types;
   mod_prisma_adapter_pg_pg -> mod_prisma_driver_adapter_utils_types;
   mod_prisma_adapter_planetscale_planetscale -> mod_prisma_driver_adapter_utils_types;
-  mod_prisma_adapter_ppg_ppg -> mod_prisma_adapter_mssql_errors;
+  mod_prisma_adapter_ppg_ppg -> mod_prisma_adapter_d1_errors;
   mod_prisma_adapter_ppg_ppg -> mod_prisma_adapter_ppg_conversion;
   mod_prisma_adapter_ppg_ppg -> mod_prisma_driver_adapter_utils_types;
   mod_prisma_bin -> mod_prisma_utils;
   mod_prisma_client___tests__ -> mod_prisma_client_scripts;
   mod_prisma_client_engine_runtime_interpreter -> mod_prisma_client_engine_runtime_query_plan;
   mod_prisma_client_engine_runtime_interpreter -> mod_prisma_client_engine_runtime_utils;
-  mod_prisma_client_engine_runtime_interpreter -> mod_prisma_client_runtime;
   mod_prisma_client_engine_runtime_interpreter -> mod_prisma_driver_adapter_utils_types;
   mod_prisma_client_engine_runtime_json_protocol -> mod_prisma_client_engine_runtime_utils;
   mod_prisma_client_engine_runtime_sql_commenter -> mod_prisma_sqlcommenter_index;
@@ -414,6 +414,7 @@ digraph architecture {
   mod_prisma_client_generator_js_TSClient -> mod_prisma_ts_builders_Property;
   mod_prisma_client_generator_js_TSClient -> mod_prisma_ts_builders_TypeBuilder;
   mod_prisma_client_generator_js_generateClient -> mod_prisma_client_generator_js_TSClient;
+  mod_prisma_client_generator_js_generateClient -> mod_prisma_client_generator_ts_generateClient;
   mod_prisma_client_generator_js_generateClient -> mod_prisma_generator_configuration;
   mod_prisma_client_generator_js_resolvePrismaClient -> mod_prisma_query_plan_executor_log;
   mod_prisma_client_generator_js_typedSql -> mod_prisma_client_generator_ts_typedSql;
@@ -422,8 +423,7 @@ digraph architecture {
   mod_prisma_client_generator_js_typedSql -> mod_prisma_ts_builders_Writer;
   mod_prisma_client_generator_js_utils -> mod_prisma_client_common_casing;
   mod_prisma_client_generator_js_utils -> mod_prisma_client_common_runtimeDataModel;
-  mod_prisma_client_generator_js_utils -> mod_prisma_client_generator_ts_TSClient;
-  mod_prisma_client_generator_js_utils -> mod_prisma_client_generator_ts_utils;
+  mod_prisma_client_generator_js_utils -> mod_prisma_client_generator_js_TSClient;
   mod_prisma_client_generator_ts_TSClient -> mod_prisma_client_generator_js_GenericsArgsInfo;
   mod_prisma_client_generator_ts_TSClient -> mod_prisma_client_generator_js_TSClient;
   mod_prisma_client_generator_ts_TSClient -> mod_prisma_client_generator_js_dmmf;
@@ -434,12 +434,12 @@ digraph architecture {
   mod_prisma_client_generator_ts_TSClient -> mod_prisma_ts_builders_ObjectType;
   mod_prisma_client_generator_ts_TSClient -> mod_prisma_ts_builders_Property;
   mod_prisma_client_generator_ts_TSClient -> mod_prisma_ts_builders_TypeBuilder;
-  mod_prisma_client_generator_ts_generateClient -> mod_prisma_client_generator_js_generateClient;
   mod_prisma_client_generator_ts_generateClient -> mod_prisma_client_generator_ts_file_extensions;
   mod_prisma_client_generator_ts_typedSql -> mod_prisma_ts_builders_File;
   mod_prisma_client_generator_ts_utils -> mod_prisma_client_common_casing;
   mod_prisma_client_generator_ts_utils -> mod_prisma_client_common_runtimeDataModel;
-  mod_prisma_client_generator_ts_utils -> mod_prisma_client_generator_js_generateClient;
+  mod_prisma_client_generator_ts_utils -> mod_prisma_client_generator_js_utils;
+  mod_prisma_client_generator_ts_utils -> mod_prisma_migrate_types;
   mod_prisma_client_generator_ts_utils -> mod_prisma_query_plan_executor_log;
   mod_prisma_client_runtime -> mod_prisma_client_common_Cache;
   mod_prisma_client_runtime -> mod_prisma_client_engine_runtime_tracing;
@@ -493,12 +493,12 @@ digraph architecture {
   mod_prisma_migrate_Migrate -> mod_prisma_migrate_SchemaEngine;
   mod_prisma_migrate_SchemaEngineWasm -> mod_prisma_driver_adapter_utils_types;
   mod_prisma_migrate_commands -> mod_prisma_internals_cli;
-  mod_prisma_migrate_utils -> mod_prisma_client_generator_js_generateClient;
   mod_prisma_migrate_utils -> mod_prisma_internals_convertCredentials;
   mod_prisma_migrate_utils -> mod_prisma_internals_schemaEngineCommands;
   mod_prisma_migrate_utils -> mod_prisma_internals_types;
   mod_prisma_migrate_utils -> mod_prisma_internals_utils;
   mod_prisma_migrate_utils -> mod_prisma_migrate___tests__;
+  mod_prisma_migrate_utils -> mod_prisma_migrate_types;
   mod_prisma_migrate_utils -> mod_prisma_query_plan_executor_log;
   mod_prisma_platform -> mod_prisma_internals_cli;
   mod_prisma_query_plan_executor_logic -> mod_prisma_driver_adapter_utils_types;

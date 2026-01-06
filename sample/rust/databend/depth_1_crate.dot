@@ -17,6 +17,7 @@ digraph architecture {
   crate_databend_common_base[label="databend-common-base", path="/home/yibai/llmcc/sample/repos/databend/src/common/base"];
   crate_databend_common_cache[label="databend-common-cache", path="/home/yibai/llmcc/sample/repos/databend/src/common/cache"];
   crate_databend_common_catalog[label="databend-common-catalog", path="/home/yibai/llmcc/sample/repos/databend/src/query/catalog"];
+  crate_databend_common_cloud_control[label="databend-common-cloud-control", path="/home/yibai/llmcc/sample/repos/databend/src/common/cloud_control"];
   crate_databend_common_column[label="databend-common-column", path="/home/yibai/llmcc/sample/repos/databend/src/common/column"];
   crate_databend_common_config[label="databend-common-config", path="/home/yibai/llmcc/sample/repos/databend/src/query/config"];
   crate_databend_common_datavalues[label="databend-common-datavalues", path="/home/yibai/llmcc/sample/repos/databend/src/query/datavalues"];
@@ -45,7 +46,6 @@ digraph architecture {
   crate_databend_common_sql[label="databend-common-sql", path="/home/yibai/llmcc/sample/repos/databend/src/query/sql"];
   crate_databend_common_storage[label="databend-common-storage", path="/home/yibai/llmcc/sample/repos/databend/src/common/storage"];
   crate_databend_common_storages_basic[label="databend-common-storages-basic", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/basic"];
-  crate_databend_common_storages_delta[label="databend-common-storages-delta", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/delta"];
   crate_databend_common_storages_fuse[label="databend-common-storages-fuse", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/fuse"];
   crate_databend_common_storages_hive[label="databend-common-storages-hive", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/hive/hive"];
   crate_databend_common_storages_iceberg[label="databend-common-storages-iceberg", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/iceberg"];
@@ -62,7 +62,6 @@ digraph architecture {
   crate_databend_functions_scalar_datetime[label="databend-functions-scalar-datetime", path="/home/yibai/llmcc/sample/repos/databend/src/query/functions/src/scalars/timestamp"];
   crate_databend_functions_scalar_decimal[label="databend-functions-scalar-decimal", path="/home/yibai/llmcc/sample/repos/databend/src/query/functions/src/scalars/decimal"];
   crate_databend_functions_scalar_geo[label="databend-functions-scalar-geo", path="/home/yibai/llmcc/sample/repos/databend/src/query/functions/src/scalars/geographic"];
-  crate_databend_functions_scalar_numeric_basic_arithmetic[label="databend-functions-scalar-numeric-basic-arithmetic", path="/home/yibai/llmcc/sample/repos/databend/src/query/functions/src/scalars/numeric_basic_arithmetic"];
   crate_databend_meta[label="databend-meta", path="/home/yibai/llmcc/sample/repos/databend/src/meta/service"];
   crate_databend_meta_binaries[label="databend-meta-binaries", path="/home/yibai/llmcc/sample/repos/databend/src/meta/binaries"];
   crate_databend_query[label="databend-query", path="/home/yibai/llmcc/sample/repos/databend/src/query/service"];
@@ -77,17 +76,20 @@ digraph architecture {
 
   crate_databend_binaries -> crate_databend_common_tracing;
   crate_databend_binaries -> crate_databend_query;
-  crate_databend_codegen -> crate_databend_common_expression;
+  crate_databend_codegen -> crate_databend_storages_common_table_meta;
   crate_databend_common_ast -> crate_databend_common_expression;
   crate_databend_common_ast -> crate_databend_common_meta_client;
   crate_databend_common_ast -> crate_databend_common_meta_kvapi;
   crate_databend_common_ast -> crate_databend_query;
+  crate_databend_common_base -> crate_databend_common_ast;
   crate_databend_common_base -> crate_databend_common_meta_client;
   crate_databend_common_catalog -> crate_databend_common_ast;
   crate_databend_common_catalog -> crate_databend_common_expression;
   crate_databend_common_catalog -> crate_databend_common_meta_app;
+  crate_databend_common_catalog -> crate_databend_common_sql;
   crate_databend_common_catalog -> crate_databend_common_storage;
   crate_databend_common_catalog -> crate_databend_common_storages_fuse;
+  crate_databend_common_catalog -> crate_databend_query;
   crate_databend_common_column -> crate_databend_common_meta_client;
   crate_databend_common_column -> crate_databend_query;
   crate_databend_common_expression -> crate_databend_common_ast;
@@ -133,12 +135,14 @@ digraph architecture {
   crate_databend_common_native -> crate_databend_common_expression;
   crate_databend_common_native -> crate_databend_common_meta_client;
   crate_databend_common_native -> crate_databend_common_meta_raft_store;
+  crate_databend_common_native -> crate_databend_storages_common_table_meta;
   crate_databend_common_pipeline -> crate_databend_common_base;
   crate_databend_common_pipeline -> crate_databend_common_expression;
   crate_databend_common_pipeline_transforms -> crate_databend_common_column;
   crate_databend_common_pipeline_transforms -> crate_databend_common_datavalues;
   crate_databend_common_pipeline_transforms -> crate_databend_common_expression;
   crate_databend_common_pipeline_transforms -> crate_databend_common_pipeline;
+  crate_databend_common_pipeline_transforms -> crate_databend_common_sql;
   crate_databend_common_pipeline_transforms -> crate_databend_common_storages_stream;
   crate_databend_common_script -> crate_databend_common_expression;
   crate_databend_common_sql -> crate_databend_common_ast;
@@ -151,13 +155,13 @@ digraph architecture {
   crate_databend_common_sql -> crate_databend_common_pipeline;
   crate_databend_common_sql -> crate_databend_common_storage;
   crate_databend_common_sql -> crate_databend_query;
+  crate_databend_common_sql -> crate_databend_storages_common_table_meta;
   crate_databend_common_storage -> crate_databend_common_base;
   crate_databend_common_storage -> crate_databend_common_meta_app_storage;
   crate_databend_common_storage -> crate_databend_common_pipeline_transforms;
   crate_databend_common_storage -> crate_databend_common_sql;
-  crate_databend_common_storages_basic -> crate_databend_common_base;
+  crate_databend_common_storages_basic -> crate_databend_common_catalog;
   crate_databend_common_storages_basic -> crate_databend_common_expression;
-  crate_databend_common_storages_delta -> crate_databend_common_expression;
   crate_databend_common_storages_fuse -> crate_databend_common_ast;
   crate_databend_common_storages_fuse -> crate_databend_common_base;
   crate_databend_common_storages_fuse -> crate_databend_common_catalog;
@@ -166,7 +170,6 @@ digraph architecture {
   crate_databend_common_storages_fuse -> crate_databend_common_meta_app;
   crate_databend_common_storages_fuse -> crate_databend_common_meta_app_storage;
   crate_databend_common_storages_fuse -> crate_databend_common_meta_client;
-  crate_databend_common_storages_fuse -> crate_databend_common_meta_kvapi;
   crate_databend_common_storages_fuse -> crate_databend_common_metrics;
   crate_databend_common_storages_fuse -> crate_databend_common_native;
   crate_databend_common_storages_fuse -> crate_databend_common_pipeline;
@@ -181,9 +184,10 @@ digraph architecture {
   crate_databend_common_storages_fuse -> crate_databend_storages_common_table_meta;
   crate_databend_common_storages_hive -> crate_databend_common_catalog;
   crate_databend_common_storages_hive -> crate_databend_common_expression;
+  crate_databend_common_storages_hive -> crate_databend_common_meta_app;
   crate_databend_common_storages_hive -> crate_databend_common_sql;
   crate_databend_common_storages_iceberg -> crate_databend_common_catalog;
-  crate_databend_common_storages_iceberg -> crate_databend_common_expression;
+  crate_databend_common_storages_iceberg -> crate_databend_common_meta_app;
   crate_databend_common_storages_orc -> crate_databend_common_catalog;
   crate_databend_common_storages_orc -> crate_databend_common_expression;
   crate_databend_common_storages_orc -> crate_databend_common_sql;
@@ -195,6 +199,7 @@ digraph architecture {
   crate_databend_common_storages_parquet -> crate_databend_common_sql;
   crate_databend_common_storages_parquet -> crate_databend_common_storage;
   crate_databend_common_storages_parquet -> crate_databend_storages_common_index;
+  crate_databend_common_storages_parquet -> crate_databend_storages_common_table_meta;
   crate_databend_common_storages_stage -> crate_databend_common_catalog;
   crate_databend_common_storages_stage -> crate_databend_common_expression;
   crate_databend_common_storages_stage -> crate_databend_common_formats;
@@ -203,6 +208,7 @@ digraph architecture {
   crate_databend_common_storages_stage -> crate_databend_common_pipeline_transforms;
   crate_databend_common_storages_stage -> crate_databend_common_sql;
   crate_databend_common_storages_stage -> crate_databend_storages_common_stage;
+  crate_databend_common_storages_stream -> crate_databend_common_catalog;
   crate_databend_common_storages_system -> crate_databend_common_catalog;
   crate_databend_common_storages_system -> crate_databend_common_expression;
   crate_databend_common_storages_system -> crate_databend_common_meta_app;
@@ -218,6 +224,7 @@ digraph architecture {
   crate_databend_functions_scalar_datetime -> crate_databend_common_column;
   crate_databend_functions_scalar_datetime -> crate_databend_common_datavalues;
   crate_databend_functions_scalar_datetime -> crate_databend_common_expression;
+  crate_databend_functions_scalar_datetime -> crate_databend_common_meta_raft_store;
   crate_databend_functions_scalar_decimal -> crate_databend_common_datavalues;
   crate_databend_functions_scalar_decimal -> crate_databend_common_expression;
   crate_databend_functions_scalar_decimal -> crate_databend_common_io;
@@ -226,12 +233,10 @@ digraph architecture {
   crate_databend_functions_scalar_decimal -> crate_databend_storages_common_table_meta;
   crate_databend_functions_scalar_geo -> crate_databend_common_expression;
   crate_databend_functions_scalar_geo -> crate_databend_common_meta_client;
-  crate_databend_functions_scalar_numeric_basic_arithmetic -> crate_databend_common_expression;
   crate_databend_meta -> crate_databend_common_base;
   crate_databend_meta -> crate_databend_common_meta_client;
   crate_databend_meta -> crate_databend_common_meta_types;
   crate_databend_meta -> crate_databend_common_storages_system;
-  crate_databend_meta_binaries -> crate_databend_common_base;
   crate_databend_meta_binaries -> crate_databend_common_meta_client;
   crate_databend_meta_binaries -> crate_databend_common_meta_control;
   crate_databend_meta_binaries -> crate_databend_common_meta_types;
@@ -240,6 +245,7 @@ digraph architecture {
   crate_databend_query -> crate_databend_common_base;
   crate_databend_query -> crate_databend_common_cache;
   crate_databend_query -> crate_databend_common_catalog;
+  crate_databend_query -> crate_databend_common_cloud_control;
   crate_databend_query -> crate_databend_common_column;
   crate_databend_query -> crate_databend_common_config;
   crate_databend_query -> crate_databend_common_datavalues;
@@ -261,15 +267,17 @@ digraph architecture {
   crate_databend_query -> crate_databend_meta_binaries;
   crate_databend_query -> crate_databend_storages_common_io;
   crate_databend_query -> crate_databend_storages_common_table_meta;
-  crate_databend_storages_common_blocks -> crate_databend_common_expression;
+  crate_databend_storages_common_blocks -> crate_databend_storages_common_table_meta;
   crate_databend_storages_common_cache -> crate_databend_common_meta_client;
   crate_databend_storages_common_cache -> crate_databend_storages_common_index;
   crate_databend_storages_common_cache -> crate_databend_storages_common_table_meta;
   crate_databend_storages_common_index -> crate_databend_common_column;
+  crate_databend_storages_common_index -> crate_databend_common_datavalues;
   crate_databend_storages_common_index -> crate_databend_common_expression;
   crate_databend_storages_common_index -> crate_databend_storages_common_table_meta;
   crate_databend_storages_common_session -> crate_databend_common_meta_app;
   crate_databend_storages_common_stage -> crate_databend_common_expression;
   crate_databend_storages_common_table_meta -> crate_databend_common_expression;
   crate_databend_storages_common_table_meta -> crate_databend_common_pipeline_transforms;
+  crate_databend_storages_common_table_meta -> crate_databend_common_sql;
 }

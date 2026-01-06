@@ -1,0 +1,147 @@
+===============================================================================
+prefer-same-crate-qualified
+===============================================================================
+Test that qualified path resolution (crate::module::Type) prefers types
+from the same crate when multiple crates have the same module/type names.
+This tests the scenario where two crates (crate_a and crate_b) both have:
+- A module named "custom_terminal"
+- A struct named "Frame" inside that module
+When crate_a/consumer.rs references crate::custom_terminal::Frame,
+it should resolve to crate_a's Frame, not crate_b's Frame.
+
+--- file: crate_a/Cargo.toml ---
+[package]
+name = "crate_a"
+
+--- file: crate_a/src/lib.rs ---
+pub mod custom_terminal;
+pub mod consumer;
+
+--- file: crate_a/src/custom_terminal.rs ---
+/// Frame struct defined in crate_a
+pub struct Frame {
+    pub width: u32,
+}
+
+--- file: crate_a/src/consumer.rs ---
+/// Uses Frame from same crate via qualified path
+pub fn render(frame: &mut crate::custom_terminal::Frame) {
+    // Should reference crate_a's Frame (id 5), NOT crate_b's Frame (id 11)
+}
+
+--- file: crate_b/Cargo.toml ---
+[package]
+name = "crate_b"
+
+--- file: crate_b/src/lib.rs ---
+pub mod custom_terminal;
+pub mod consumer;
+
+--- file: crate_b/src/custom_terminal.rs ---
+/// Frame struct defined in crate_b (same name as crate_a)
+pub struct Frame {
+    pub buffer: Vec<u8>,
+}
+
+--- file: crate_b/src/consumer.rs ---
+/// Uses Frame from same crate via qualified path
+pub fn render(frame: &mut crate::custom_terminal::Frame) {
+    // Should reference crate_b's Frame (id 11), NOT crate_a's Frame (id 5)
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/crate_a/src/lib.rs)
+  (module:2 custom_terminal)
+  (module:3 consumer)
+)
+
+(root:4 custom_terminal ($TMP/crate_a/src/custom_terminal.rs)
+  (class:5 Frame
+    (field:6 width @type u32)
+  )
+)
+
+(root:7 consumer ($TMP/crate_a/src/consumer.rs)
+  (func:8 render
+    (parameter:9 frame @type:5 Frame)
+  )
+)
+
+(root:10 lib ($TMP/crate_b/src/lib.rs)
+  (module:11 custom_terminal)
+  (module:12 consumer)
+)
+
+(root:13 custom_terminal ($TMP/crate_b/src/custom_terminal.rs)
+  (class:14 Frame
+    (field:15 buffer @type buffer)
+  )
+)
+
+(root:16 consumer ($TMP/crate_b/src/consumer.rs)
+  (func:17 render
+    (parameter:18 frame @type:14 Frame)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_crate_a {
+    label="crate_a";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_consumer_rs {
+      label="consumer.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n8[label="render", path="$TMP/crate_a/src/consumer.rs:2", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_custom_terminal_rs {
+      label="custom_terminal.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n5[label="Frame", path="$TMP/crate_a/src/custom_terminal.rs:2", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_crate_b {
+    label="crate_b";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_consumer_rs {
+      label="consumer.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n17[label="render", path="$TMP/crate_b/src/consumer.rs:2", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_custom_terminal_rs {
+      label="custom_terminal.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n14[label="Frame", path="$TMP/crate_b/src/custom_terminal.rs:2", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+
+  n5 -> n8 [from="input", to="func"];
+  n14 -> n17 [from="input", to="func"];
+}

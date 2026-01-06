@@ -33,6 +33,7 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_pgwire_net[label="net", path="/home/yibai/llmcc/sample/repos/risingwave/src/utils/pgwire/src"];
     mod_pgwire_pg_field_descriptor[label="pg_field_descriptor", path="/home/yibai/llmcc/sample/repos/risingwave/src/utils/pgwire/src"];
     mod_pgwire_pg_protocol[label="pg_protocol", path="/home/yibai/llmcc/sample/repos/risingwave/src/utils/pgwire/src"];
     mod_pgwire_pg_response[label="pg_response", path="/home/yibai/llmcc/sample/repos/risingwave/src/utils/pgwire/src"];
@@ -350,7 +351,6 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_risingwave_hummock_trace_collector[label="collector", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_trace/src"];
-    mod_risingwave_hummock_trace_lib[label="lib", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_trace/src"];
     mod_risingwave_hummock_trace_opts[label="opts", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_trace/src"];
     mod_risingwave_hummock_trace_record[label="record", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_trace/src"];
     mod_risingwave_hummock_trace_replay[label="replay", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_trace/src/replay"];
@@ -361,7 +361,6 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_risingwave_java_binding_bin[label="bin", path="/home/yibai/llmcc/sample/repos/risingwave/src/java_binding/src/bin"];
     mod_risingwave_java_binding_hummock_iterator[label="hummock_iterator", path="/home/yibai/llmcc/sample/repos/risingwave/src/java_binding/src"];
     mod_risingwave_java_binding_lib[label="lib", path="/home/yibai/llmcc/sample/repos/risingwave/src/java_binding/src"];
   }
@@ -400,7 +399,9 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_risingwave_meta_model_fragment[label="fragment", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/src"];
+    mod_risingwave_meta_model_hummock_version_stats[label="hummock_version_stats", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/src"];
     mod_risingwave_meta_model_lib[label="lib", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/src"];
+    mod_risingwave_meta_model_object[label="object", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/src"];
     mod_risingwave_meta_model_streaming_job[label="streaming_job", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/src"];
     mod_risingwave_meta_model_table[label="table", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/src"];
     mod_risingwave_meta_model_worker[label="worker", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/src"];
@@ -419,6 +420,7 @@ digraph architecture {
     mod_risingwave_meta_model_migration_m20250514_114514_dispatcher_type_mapping[label="m20250514_114514_dispatcher_type_mapping", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src"];
     mod_risingwave_meta_model_migration_m20250528_064717_barrier_interval_per_database[label="m20250528_064717_barrier_interval_per_database", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src"];
     mod_risingwave_meta_model_migration_m20250603_084830_default_privilege[label="m20250603_084830_default_privilege", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src"];
+    mod_risingwave_meta_model_migration_m20250905_144810_deprecate_table_incoming_sinks[label="m20250905_144810_deprecate_table_incoming_sinks", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src"];
   }
 
   subgraph cluster_risingwave_meta_node {
@@ -535,7 +537,7 @@ digraph architecture {
   }
 
 
-  mod_lints_format_error -> mod_risingwave_sqlparser_ast;
+  mod_lints_format_error -> mod_risingwave_frontend_expr;
   mod_pgwire_pg_server -> mod_pgwire_pg_protocol;
   mod_pgwire_pg_server -> mod_risingwave_connector_sink;
   mod_pgwire_pg_server -> mod_risingwave_expr_impl_scalar;
@@ -559,10 +561,8 @@ digraph architecture {
   mod_risingwave_batch_executors_executor -> mod_risingwave_common_catalog;
   mod_risingwave_batch_executors_executor -> mod_risingwave_common_memory;
   mod_risingwave_batch_executors_executor -> mod_risingwave_common_row;
-  mod_risingwave_batch_executors_executor -> mod_risingwave_common_types;
   mod_risingwave_batch_executors_executor -> mod_risingwave_common_util;
   mod_risingwave_batch_executors_executor -> mod_risingwave_connector_source;
-  mod_risingwave_batch_executors_executor -> mod_risingwave_frontend_scheduler;
   mod_risingwave_batch_executors_executor -> mod_risingwave_meta_model_migration_m20250603_084830_default_privilege;
   mod_risingwave_batch_executors_executor -> mod_risingwave_sqlparser_ast;
   mod_risingwave_batch_executors_join -> mod_risingwave_batch_executor;
@@ -589,7 +589,9 @@ digraph architecture {
   mod_risingwave_common_array -> mod_risingwave_expr_impl_scalar;
   mod_risingwave_common_array -> mod_risingwave_frontend_session;
   mod_risingwave_common_catalog -> mod_risingwave_common_types;
+  mod_risingwave_common_config -> mod_risingwave_meta_model_migration_m20250905_144810_deprecate_table_incoming_sinks;
   mod_risingwave_common_config -> mod_risingwave_sqlparser_ast;
+  mod_risingwave_common_config -> mod_risingwave_storage_hummock;
   mod_risingwave_common_estimate_size_collections -> mod_risingwave_common_estimate_size_lib;
   mod_risingwave_common_hash -> mod_risingwave_common_bitmap;
   mod_risingwave_common_hash -> mod_risingwave_common_estimate_size_lib;
@@ -604,6 +606,7 @@ digraph architecture {
   mod_risingwave_common_types -> mod_risingwave_common_estimate_size_lib;
   mod_risingwave_common_types -> mod_risingwave_common_hash;
   mod_risingwave_common_types -> mod_risingwave_common_range;
+  mod_risingwave_common_types -> mod_risingwave_common_test_utils;
   mod_risingwave_common_types -> mod_risingwave_connector_sink;
   mod_risingwave_common_types -> mod_risingwave_expr_impl_scalar;
   mod_risingwave_common_util -> mod_risingwave_common_array;
@@ -612,11 +615,10 @@ digraph architecture {
   mod_risingwave_common_util -> mod_risingwave_common_types;
   mod_risingwave_common_util -> mod_risingwave_connector_sink;
   mod_risingwave_common_util -> mod_risingwave_expr_impl_scalar;
-  mod_risingwave_common_util -> mod_risingwave_frontend_handler;
+  mod_risingwave_common_util -> mod_risingwave_frontend_optimizer;
   mod_risingwave_common_util -> mod_risingwave_frontend_stream_fragmenter;
   mod_risingwave_common_util -> mod_risingwave_storage_hummock;
   mod_risingwave_common_util -> mod_risingwave_storage_row_serde;
-  mod_risingwave_common_vector -> mod_risingwave_common_types;
   mod_risingwave_common_vnode_mapping -> mod_risingwave_common_hash;
   mod_risingwave_compactor_server -> mod_risingwave_common_config;
   mod_risingwave_compactor_server -> mod_risingwave_compactor_lib;
@@ -660,6 +662,8 @@ digraph architecture {
   mod_risingwave_connector_sink -> mod_risingwave_object_store_sim;
   mod_risingwave_connector_sink -> mod_risingwave_sqlparser_ast;
   mod_risingwave_connector_sink -> mod_risingwave_storage_hummock;
+  mod_risingwave_connector_sink -> mod_risingwave_stream_executor;
+  mod_risingwave_connector_source -> mod_pgwire_net;
   mod_risingwave_connector_source -> mod_risingwave_common_catalog;
   mod_risingwave_connector_source -> mod_risingwave_common_range;
   mod_risingwave_connector_source -> mod_risingwave_common_types;
@@ -702,19 +706,21 @@ digraph architecture {
   mod_risingwave_expr_impl_aggregate -> mod_risingwave_common_estimate_size_lib;
   mod_risingwave_expr_impl_aggregate -> mod_risingwave_connector_sink;
   mod_risingwave_expr_impl_aggregate -> mod_risingwave_expr_aggregate;
+  mod_risingwave_expr_impl_aggregate -> mod_risingwave_frontend_catalog;
+  mod_risingwave_expr_impl_aggregate -> mod_risingwave_frontend_datafusion;
   mod_risingwave_expr_impl_aggregate -> mod_risingwave_frontend_expr;
   mod_risingwave_expr_impl_scalar -> mod_lints_utils;
-  mod_risingwave_expr_impl_scalar -> mod_pgwire_types;
   mod_risingwave_expr_impl_scalar -> mod_risingwave_common_array;
   mod_risingwave_expr_impl_scalar -> mod_risingwave_common_row;
   mod_risingwave_expr_impl_scalar -> mod_risingwave_common_types;
   mod_risingwave_expr_impl_scalar -> mod_risingwave_common_util;
+  mod_risingwave_expr_impl_scalar -> mod_risingwave_compactor_lib;
   mod_risingwave_expr_impl_scalar -> mod_risingwave_connector_sink;
-  mod_risingwave_expr_impl_scalar -> mod_risingwave_ctl_lib;
   mod_risingwave_expr_impl_scalar -> mod_risingwave_ctl_table;
   mod_risingwave_expr_impl_scalar -> mod_risingwave_expr_error;
   mod_risingwave_expr_impl_scalar -> mod_risingwave_expr_expr;
   mod_risingwave_expr_impl_scalar -> mod_risingwave_expr_impl_aggregate;
+  mod_risingwave_expr_impl_scalar -> mod_risingwave_frontend_catalog;
   mod_risingwave_expr_impl_scalar -> mod_risingwave_frontend_session;
   mod_risingwave_expr_impl_scalar -> mod_risingwave_sqlparser_ast;
   mod_risingwave_expr_impl_scalar -> mod_risingwave_storage_hummock;
@@ -801,10 +807,9 @@ digraph architecture {
   mod_risingwave_frontend_handler -> mod_risingwave_frontend_utils;
   mod_risingwave_frontend_handler -> mod_risingwave_meta_model_table;
   mod_risingwave_frontend_handler -> mod_risingwave_sqlparser_ast;
-  mod_risingwave_frontend_handler -> mod_risingwave_sqlparser_parser_v2;
   mod_risingwave_frontend_handler -> mod_risingwave_sqlparser_test_utils;
-  mod_risingwave_frontend_handler -> mod_risingwave_stream_executor;
   mod_risingwave_frontend_optimizer -> mod_risingwave_batch_executors_executor;
+  mod_risingwave_frontend_optimizer -> mod_risingwave_batch_executors_join;
   mod_risingwave_frontend_optimizer -> mod_risingwave_common_catalog;
   mod_risingwave_frontend_optimizer -> mod_risingwave_common_types;
   mod_risingwave_frontend_optimizer -> mod_risingwave_common_util;
@@ -869,10 +874,8 @@ digraph architecture {
   mod_risingwave_hummock_test_sync_point_tests -> mod_risingwave_storage_hummock;
   mod_risingwave_hummock_test_test_utils -> mod_risingwave_meta_hummock;
   mod_risingwave_hummock_test_test_utils -> mod_risingwave_storage_hummock;
-  mod_risingwave_hummock_trace_collector -> mod_risingwave_dml_txn_channel;
-  mod_risingwave_hummock_trace_lib -> mod_risingwave_stream_executor;
+  mod_risingwave_hummock_trace_collector -> mod_risingwave_stream_executor;
   mod_risingwave_hummock_trace_record -> mod_risingwave_hummock_trace_opts;
-  mod_risingwave_java_binding_bin -> mod_risingwave_common_array;
   mod_risingwave_java_binding_hummock_iterator -> mod_risingwave_common_util;
   mod_risingwave_java_binding_hummock_iterator -> mod_risingwave_storage_hummock;
   mod_risingwave_java_binding_lib -> mod_risingwave_jni_core_lib;
@@ -888,8 +891,10 @@ digraph architecture {
   mod_risingwave_meta_barrier -> mod_risingwave_common_bitmap;
   mod_risingwave_meta_barrier -> mod_risingwave_hummock_trace_replay;
   mod_risingwave_meta_barrier -> mod_risingwave_meta_controller;
+  mod_risingwave_meta_barrier -> mod_risingwave_meta_hummock;
   mod_risingwave_meta_barrier -> mod_risingwave_meta_manager;
   mod_risingwave_meta_barrier -> mod_risingwave_meta_model;
+  mod_risingwave_meta_barrier -> mod_risingwave_meta_model_lib;
   mod_risingwave_meta_barrier -> mod_risingwave_meta_model_migration_m20231008_020431_hummock;
   mod_risingwave_meta_barrier -> mod_risingwave_meta_stream;
   mod_risingwave_meta_barrier -> mod_risingwave_storage_hummock;
@@ -907,7 +912,9 @@ digraph architecture {
   mod_risingwave_meta_controller -> mod_risingwave_meta_model_migration_m20240617_070131_index_column_properties;
   mod_risingwave_meta_controller -> mod_risingwave_meta_model_migration_m20250514_114514_dispatcher_type_mapping;
   mod_risingwave_meta_controller -> mod_risingwave_meta_model_migration_m20250528_064717_barrier_interval_per_database;
+  mod_risingwave_meta_controller -> mod_risingwave_meta_model_object;
   mod_risingwave_meta_controller -> mod_risingwave_meta_model_streaming_job;
+  mod_risingwave_meta_controller -> mod_risingwave_meta_stream;
   mod_risingwave_meta_controller -> mod_risingwave_sqlparser_ast;
   mod_risingwave_meta_controller -> mod_risingwave_sqlparser_parser;
   mod_risingwave_meta_controller -> mod_risingwave_sqlparser_test_utils;
@@ -933,7 +940,6 @@ digraph architecture {
   mod_risingwave_meta_manager -> mod_risingwave_connector_sink;
   mod_risingwave_meta_manager -> mod_risingwave_dml_txn_channel;
   mod_risingwave_meta_manager -> mod_risingwave_stream_executor;
-  mod_risingwave_meta_model_migration_m20231008_020431_hummock -> mod_risingwave_meta_model;
   mod_risingwave_meta_model_streaming_job -> mod_risingwave_meta_model_lib;
   mod_risingwave_meta_node_server -> mod_risingwave_common_session_config;
   mod_risingwave_meta_node_server -> mod_risingwave_common_telemetry;
@@ -948,7 +954,6 @@ digraph architecture {
   mod_risingwave_meta_stream -> mod_risingwave_common_catalog;
   mod_risingwave_meta_stream -> mod_risingwave_connector_sink;
   mod_risingwave_meta_stream -> mod_risingwave_connector_source;
-  mod_risingwave_meta_stream -> mod_risingwave_frontend_handler;
   mod_risingwave_meta_stream -> mod_risingwave_frontend_optimizer;
   mod_risingwave_meta_stream -> mod_risingwave_hummock_trace_replay;
   mod_risingwave_meta_stream -> mod_risingwave_meta_barrier;
@@ -987,6 +992,7 @@ digraph architecture {
   mod_risingwave_storage_hummock -> mod_risingwave_hummock_sdk_table_stats;
   mod_risingwave_storage_hummock -> mod_risingwave_hummock_sdk_table_watermark;
   mod_risingwave_storage_hummock -> mod_risingwave_hummock_sdk_vector_index;
+  mod_risingwave_storage_hummock -> mod_risingwave_meta_model_hummock_version_stats;
   mod_risingwave_storage_hummock -> mod_risingwave_rpc_client_hummock_meta_client;
   mod_risingwave_storage_hummock -> mod_risingwave_storage_monitor;
   mod_risingwave_storage_hummock -> mod_risingwave_storage_opts;
@@ -1022,6 +1028,7 @@ digraph architecture {
   mod_risingwave_stream_common -> mod_risingwave_common_util;
   mod_risingwave_stream_common -> mod_risingwave_connector_sink;
   mod_risingwave_stream_common -> mod_risingwave_hummock_sdk_key;
+  mod_risingwave_stream_common -> mod_risingwave_storage_hummock;
   mod_risingwave_stream_common -> mod_risingwave_storage_row_serde;
   mod_risingwave_stream_common -> mod_risingwave_storage_store;
   mod_risingwave_stream_common -> mod_risingwave_stream_executor;

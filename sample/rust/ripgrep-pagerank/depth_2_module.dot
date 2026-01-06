@@ -15,11 +15,12 @@ digraph architecture {
   mod_grep_cli_decompress[label="grep-cli::decompress", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/cli/src"];
   mod_grep_cli_process[label="grep-cli::process", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/cli/src"];
   mod_grep_matcher_lib[label="grep-matcher::lib", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/matcher/src"];
+  mod_grep_printer_color[label="grep-printer::color", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/printer/src"];
+  mod_grep_printer_hyperlink[label="grep-printer::hyperlink", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/printer/src/hyperlink"];
   mod_grep_printer_standard[label="grep-printer::standard", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/printer/src"];
   mod_grep_printer_util[label="grep-printer::util", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/printer/src"];
   mod_grep_searcher_line_buffer[label="grep-searcher::line_buffer", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/searcher/src"];
   mod_grep_searcher_searcher[label="grep-searcher::searcher", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/searcher/src/searcher"];
-  mod_grep_searcher_sink[label="grep-searcher::sink", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/searcher/src"];
   mod_grep_searcher_testutil[label="grep-searcher::testutil", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/searcher/src"];
   mod_ignore_dir[label="ignore::dir", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/ignore/src"];
   mod_ignore_gitignore[label="ignore::gitignore", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/ignore/src"];
@@ -33,9 +34,7 @@ digraph architecture {
   mod_grep_printer_util -> mod_grep_searcher_searcher;
   mod_grep_searcher_searcher -> mod_grep_matcher_lib;
   mod_grep_searcher_searcher -> mod_grep_searcher_line_buffer;
-  mod_grep_searcher_searcher -> mod_grep_searcher_sink;
   mod_grep_searcher_testutil -> mod_grep_matcher_lib;
-  mod_grep_searcher_testutil -> mod_grep_searcher_searcher;
   mod_ignore_dir -> mod_ignore_gitignore;
   mod_ignore_dir -> mod_ignore_lib;
   mod_ignore_gitignore -> mod_globset_lib;
@@ -43,5 +42,9 @@ digraph architecture {
   mod_ignore_walk -> mod_ignore_dir;
   mod_ignore_walk -> mod_ignore_lib;
   mod_ignore_walk -> mod_ripgrep_crates;
+  mod_ripgrep_crates -> mod_grep_cli_process;
   mod_ripgrep_crates -> mod_grep_matcher_lib;
+  mod_ripgrep_crates -> mod_grep_printer_color;
+  mod_ripgrep_crates -> mod_grep_printer_hyperlink;
+  mod_ripgrep_crates -> mod_ignore_walk;
 }

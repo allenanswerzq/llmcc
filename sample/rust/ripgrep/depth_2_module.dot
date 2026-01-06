@@ -53,12 +53,11 @@ digraph architecture {
   mod_grep_regex_matcher -> mod_grep_regex_config;
   mod_grep_regex_non_matching -> mod_grep_matcher_lib;
   mod_grep_regex_strip -> mod_grep_regex_error;
-  mod_grep_searcher_lines -> mod_grep_printer_jsont;
+  mod_grep_searcher_lines -> mod_grep_matcher_lib;
   mod_grep_searcher_searcher -> mod_grep_matcher_lib;
   mod_grep_searcher_searcher -> mod_grep_searcher_line_buffer;
   mod_grep_searcher_searcher -> mod_grep_searcher_sink;
   mod_grep_searcher_testutil -> mod_grep_matcher_lib;
-  mod_grep_searcher_testutil -> mod_grep_searcher_searcher;
   mod_ignore_dir -> mod_ignore_gitignore;
   mod_ignore_dir -> mod_ignore_lib;
   mod_ignore_dir -> mod_ignore_overrides;
@@ -73,7 +72,7 @@ digraph architecture {
   mod_ripgrep_crates -> mod_grep_matcher_lib;
   mod_ripgrep_crates -> mod_grep_printer_color;
   mod_ripgrep_crates -> mod_grep_printer_hyperlink;
+  mod_ripgrep_crates -> mod_ignore_dir;
   mod_ripgrep_crates -> mod_ignore_overrides;
   mod_ripgrep_crates -> mod_ignore_types;
-  mod_ripgrep_crates -> mod_ignore_walk;
 }

@@ -135,42 +135,39 @@ impl<'a> BinderScopes<'a> {
     #[inline]
     pub fn lookup_symbol(&self, name: &str, kind_filters: SymKindSet) -> Option<&'a Symbol> {
         let symbols = self.lookup_symbols(name, kind_filters)?;
-        let current_unit = self.unit.index;
-        tracing::trace!(
-            "lookup_symbol '{}' found {} symbols (current_unit={}): {:?}",
-            name,
-            symbols.len(),
-            current_unit,
-            symbols
-                .iter()
-                .map(|s| (s.id(), s.unit_index()))
-                .collect::<Vec<_>>()
-        );
         if symbols.len() > 1 {
+            let current_unit = self.unit.index;
+            let current_crate_index = self.unit.unit_meta().crate_index;
+
             // 1. Prefer symbols from the current unit (same file)
             if let Some(local_sym) = symbols
                 .iter()
                 .find(|s| s.unit_index() == Some(current_unit))
             {
+                tracing::trace!(
+                    "lookup_symbol: multiple found for '{}', preferring local symbol {:?}",
+                    name,
+                    local_sym.id()
+                );
                 return Some(*local_sym);
             }
 
-            // 2. Prefer symbols from the same crate (same package root)
-            let current_crate_root = self.unit.unit_meta().package_root.as_ref();
-            if let Some(current_root) = current_crate_root
-                && let Some(same_crate_sym) = symbols.iter().find(|s| {
-                    s.unit_index()
-                        .and_then(|idx| self.unit.cc.unit_metas.get(idx))
-                        .and_then(|meta| meta.package_root.as_ref())
-                        .is_some_and(|r| r == current_root)
-                })
-            {
+            // 2. Prefer symbols from the same crate over cross-crate symbols
+            // Only filter if there are actually cross-crate symbols
+            let same_crate_symbols: Vec<_> = symbols
+                .iter()
+                .filter(|s| s.crate_index() == Some(current_crate_index))
+                .copied()
+                .collect();
+
+            if !same_crate_symbols.is_empty() && same_crate_symbols.len() < symbols.len() {
+                // There are both same-crate and cross-crate symbols, prefer same-crate
                 tracing::trace!(
-                    "preferring same-crate symbol for '{}' from crate root '{:?}'",
+                    "lookup_symbol: multiple found for '{}', preferring same-crate symbol {:?}",
                     name,
-                    current_root
+                    same_crate_symbols.last().map(|s| s.id())
                 );
-                return Some(*same_crate_sym);
+                return same_crate_symbols.last().copied();
             }
 
             tracing::warn!(
@@ -288,6 +285,54 @@ impl<'a> BinderScopes<'a> {
         }
         let symbols = self.scopes.lookup_qualified(qualified_name, options)?;
         Some(symbols)
+    }
+
+    /// Look up a qualified path and apply same-crate preference for multi-crate scenarios.
+    pub fn lookup_qualified_symbol(
+        &self,
+        qualified_name: &[&str],
+        kind_filters: SymKindSet,
+    ) -> Option<&'a Symbol> {
+        let symbols = self.lookup_qualified(qualified_name, kind_filters)?;
+        let current_unit = self.unit.index;
+
+        tracing::trace!(
+            "lookup_qualified_symbol: '{:?}' found {} symbols, current_unit={}: {:?}",
+            qualified_name,
+            symbols.len(),
+            current_unit,
+            symbols.iter().map(|s| (s.id(), s.unit_index())).collect::<Vec<_>>()
+        );
+
+        if symbols.len() > 1 {
+            // 1. Prefer symbols from the current unit (same file)
+            if let Some(local_sym) = symbols
+                .iter()
+                .find(|s| s.unit_index() == Some(current_unit))
+            {
+                tracing::trace!("  -> preferring local symbol {:?}", local_sym.id());
+                return Some(*local_sym);
+            }
+
+            // 2. Prefer symbols from the same crate using crate_index (O(1) check)
+            let current_crate_index = self.unit.unit_meta().crate_index;
+            if let Some(same_crate_sym) = symbols.iter().find(|s| {
+                s.crate_index() == Some(current_crate_index)
+            }) {
+                tracing::trace!(
+                    "preferring same-crate symbol for qualified '{:?}' crate_index={}",
+                    qualified_name,
+                    current_crate_index
+                );
+                return Some(*same_crate_sym);
+            }
+
+            tracing::warn!(
+                "multiple symbols found for qualified '{:?}', returning the last one",
+                qualified_name
+            );
+        }
+        symbols.last().copied()
     }
 }
 

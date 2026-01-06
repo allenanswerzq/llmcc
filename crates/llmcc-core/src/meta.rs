@@ -72,6 +72,10 @@ pub struct UnitMeta {
     pub module_root: Option<PathBuf>,
     pub file_name: Option<String>,
     pub file_path: Option<PathBuf>,
+    /// Unique index for the crate/package this file belongs to.
+    /// All files in the same crate share the same crate_index.
+    /// Used for efficient same-crate preference during symbol lookup.
+    pub crate_index: usize,
 }
 
 impl UnitMeta {

@@ -42,26 +42,30 @@ digraph architecture {
 
   subgraph cluster_app {
     label="app";
-    bgcolor="#f8f8f8";
+    style=rounded;
+        bgcolor="#f8f8f8";
 
     subgraph cluster_lib_rs {
       label="lib.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n5[label="main_logic", full_path="$TMP/app/src/lib.rs:4", sym_ty="Function", shape=ellipse];
+      n5[label="main_logic", path="$TMP/app/src/lib.rs:4", sym_ty="Function", shape=ellipse];
     }
 
   }
 
   subgraph cluster_utils {
     label="utils";
-    bgcolor="#f8f8f8";
+    style=rounded;
+        bgcolor="#f8f8f8";
 
     subgraph cluster_lib_rs {
       label="lib.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n2[label="helper", full_path="$TMP/utils/src/lib.rs:1", sym_ty="Function", shape=ellipse];
+      n2[label="helper", path="$TMP/utils/src/lib.rs:1", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -79,13 +83,13 @@ digraph architecture {
   concentrate=true;
 
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#666666", arrowsize=0.7];
+  edge [color="#888888", arrowsize=0.7];
 
   labelloc=t;
   fontsize=16;
 
-  mod_app_lib[label="app::lib", folder="$TMP/app/src"];
-  mod_utils_lib[label="utils::lib", folder="$TMP/utils/src"];
+  mod_app_lib[label="app::lib", path="$TMP/app/src"];
+  mod_utils_lib[label="utils::lib", path="$TMP/utils/src"];
 
   mod_app_lib -> mod_utils_lib;
 }
@@ -99,13 +103,13 @@ digraph architecture {
   concentrate=true;
 
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#666666", arrowsize=0.7];
+  edge [color="#888888", arrowsize=0.7];
 
   labelloc=t;
   fontsize=16;
 
-  crate_app[label="app", folder="$TMP/app"];
-  crate_utils[label="utils", folder="$TMP/utils"];
+  crate_app[label="app", path="$TMP/app"];
+  crate_utils[label="utils", path="$TMP/utils"];
 
   crate_app -> crate_utils;
 }

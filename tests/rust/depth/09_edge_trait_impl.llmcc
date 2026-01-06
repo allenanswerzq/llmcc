@@ -45,26 +45,30 @@ digraph architecture {
 
   subgraph cluster_app {
     label="app";
-    bgcolor="#f8f8f8";
+    style=rounded;
+        bgcolor="#f8f8f8";
 
     subgraph cluster_lib_rs {
       label="lib.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n6[label="MyProcessor", full_path="$TMP/app/src/lib.rs:3", sym_ty="Struct", shape=box];
+      n6[label="MyProcessor", path="$TMP/app/src/lib.rs:3", sym_ty="Struct", shape=box];
     }
 
   }
 
   subgraph cluster_traits {
     label="traits";
-    bgcolor="#f8f8f8";
+    style=rounded;
+        bgcolor="#f8f8f8";
 
     subgraph cluster_lib_rs {
       label="lib.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n2[label="Processor", full_path="$TMP/traits/src/lib.rs:1", sym_ty="Trait", shape=box];
+      n2[label="Processor", path="$TMP/traits/src/lib.rs:1", sym_ty="Trait", shape=box];
     }
 
   }
@@ -82,13 +86,13 @@ digraph architecture {
   concentrate=true;
 
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#666666", arrowsize=0.7];
+  edge [color="#888888", arrowsize=0.7];
 
   labelloc=t;
   fontsize=16;
 
-  mod_app_lib[label="app::lib", folder="$TMP/app/src"];
-  mod_traits_lib[label="traits::lib", folder="$TMP/traits/src"];
+  mod_app_lib[label="app::lib", path="$TMP/app/src"];
+  mod_traits_lib[label="traits::lib", path="$TMP/traits/src"];
 
   mod_app_lib -> mod_traits_lib;
 }
@@ -102,13 +106,13 @@ digraph architecture {
   concentrate=true;
 
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#666666", arrowsize=0.7];
+  edge [color="#888888", arrowsize=0.7];
 
   labelloc=t;
   fontsize=16;
 
-  crate_app[label="app", folder="$TMP/app"];
-  crate_traits[label="traits", folder="$TMP/traits"];
+  crate_app[label="app", path="$TMP/app"];
+  crate_traits[label="traits", path="$TMP/traits"];
 
   crate_app -> crate_traits;
 }

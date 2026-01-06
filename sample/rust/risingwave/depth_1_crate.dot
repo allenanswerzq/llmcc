@@ -21,7 +21,6 @@ digraph architecture {
   crate_risingwave_cmd[label="risingwave_cmd", path="/home/yibai/llmcc/sample/repos/risingwave/src/cmd"];
   crate_risingwave_common[label="risingwave_common", path="/home/yibai/llmcc/sample/repos/risingwave/src/common"];
   crate_risingwave_common_estimate_size[label="risingwave_common_estimate_size", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/estimate_size"];
-  crate_risingwave_common_metrics[label="risingwave_common_metrics", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/metrics"];
   crate_risingwave_common_proc_macro[label="risingwave_common_proc_macro", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/proc_macro"];
   crate_risingwave_common_rate_limit[label="risingwave_common_rate_limit", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/rate_limit"];
   crate_risingwave_common_secret[label="risingwave_common_secret", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/secret"];
@@ -67,9 +66,7 @@ digraph architecture {
   crate_risingwave_common -> crate_risingwave_connector;
   crate_risingwave_common -> crate_risingwave_expr_impl;
   crate_risingwave_common -> crate_risingwave_frontend;
-  crate_risingwave_common -> crate_risingwave_meta_model_migration;
   crate_risingwave_common -> crate_risingwave_storage;
-  crate_risingwave_common_metrics -> crate_risingwave_connector;
   crate_risingwave_common_proc_macro -> crate_risingwave_sqlparser;
   crate_risingwave_compactor -> crate_risingwave_common;
   crate_risingwave_compute -> crate_risingwave_common;
@@ -87,15 +84,12 @@ digraph architecture {
   crate_risingwave_connector_codec -> crate_risingwave_sqlparser;
   crate_risingwave_ctl -> crate_risingwave_common;
   crate_risingwave_ctl -> crate_risingwave_expr_impl;
-  crate_risingwave_ctl -> crate_risingwave_frontend;
   crate_risingwave_ctl -> crate_risingwave_hummock_sdk;
-  crate_risingwave_ctl -> crate_risingwave_sqlparser;
   crate_risingwave_ctl -> crate_risingwave_storage;
   crate_risingwave_expr -> crate_risingwave_common;
   crate_risingwave_expr -> crate_risingwave_connector;
   crate_risingwave_expr -> crate_risingwave_sqlparser;
   crate_risingwave_expr_impl -> crate_lints;
-  crate_risingwave_expr_impl -> crate_pgwire;
   crate_risingwave_expr_impl -> crate_risingwave_common;
   crate_risingwave_expr_impl -> crate_risingwave_common_estimate_size;
   crate_risingwave_expr_impl -> crate_risingwave_connector;
@@ -107,6 +101,7 @@ digraph architecture {
   crate_risingwave_expr_macro -> crate_risingwave_sqlparser;
   crate_risingwave_frontend -> crate_pgwire;
   crate_risingwave_frontend -> crate_risingwave_batch;
+  crate_risingwave_frontend -> crate_risingwave_batch_executors;
   crate_risingwave_frontend -> crate_risingwave_common;
   crate_risingwave_frontend -> crate_risingwave_common_secret;
   crate_risingwave_frontend -> crate_risingwave_connector;
@@ -117,7 +112,6 @@ digraph architecture {
   crate_risingwave_frontend -> crate_risingwave_meta_model_migration;
   crate_risingwave_frontend -> crate_risingwave_rpc_client;
   crate_risingwave_frontend -> crate_risingwave_sqlparser;
-  crate_risingwave_frontend -> crate_risingwave_storage;
   crate_risingwave_frontend -> crate_risingwave_stream;
   crate_risingwave_hummock_sdk -> crate_risingwave_common;
   crate_risingwave_hummock_sdk -> crate_risingwave_expr_impl;
@@ -125,9 +119,7 @@ digraph architecture {
   crate_risingwave_hummock_test -> crate_risingwave_hummock_trace;
   crate_risingwave_hummock_test -> crate_risingwave_meta;
   crate_risingwave_hummock_test -> crate_risingwave_storage;
-  crate_risingwave_hummock_trace -> crate_risingwave_common;
   crate_risingwave_java_binding -> crate_risingwave_common;
-  crate_risingwave_java_binding -> crate_risingwave_jni_core;
   crate_risingwave_jni_core -> crate_risingwave_common;
   crate_risingwave_meta -> crate_risingwave_backup;
   crate_risingwave_meta -> crate_risingwave_common;
@@ -142,7 +134,6 @@ digraph architecture {
   crate_risingwave_meta -> crate_risingwave_storage;
   crate_risingwave_meta -> crate_risingwave_stream;
   crate_risingwave_meta_model -> crate_risingwave_common;
-  crate_risingwave_meta_model -> crate_risingwave_hummock_sdk;
   crate_risingwave_meta_model -> crate_risingwave_meta_model_migration;
   crate_risingwave_meta_node -> crate_risingwave_common;
   crate_risingwave_meta_node -> crate_risingwave_meta;
@@ -153,20 +144,16 @@ digraph architecture {
   crate_risingwave_rpc_client -> crate_risingwave_common_service;
   crate_risingwave_sqlparser -> crate_risingwave_connector;
   crate_risingwave_sqlparser -> crate_risingwave_stream;
-  crate_risingwave_storage -> crate_pgwire;
   crate_risingwave_storage -> crate_risingwave_common;
   crate_risingwave_storage -> crate_risingwave_connector;
-  crate_risingwave_storage -> crate_risingwave_expr_impl;
   crate_risingwave_storage -> crate_risingwave_frontend;
   crate_risingwave_storage -> crate_risingwave_hummock_sdk;
   crate_risingwave_storage -> crate_risingwave_hummock_trace;
   crate_risingwave_storage -> crate_risingwave_rpc_client;
-  crate_risingwave_storage -> crate_risingwave_stream;
   crate_risingwave_stream -> crate_delta_btree_map;
   crate_risingwave_stream -> crate_risingwave_batch;
   crate_risingwave_stream -> crate_risingwave_common;
   crate_risingwave_stream -> crate_risingwave_common_estimate_size;
-  crate_risingwave_stream -> crate_risingwave_common_metrics;
   crate_risingwave_stream -> crate_risingwave_common_rate_limit;
   crate_risingwave_stream -> crate_risingwave_connector;
   crate_risingwave_stream -> crate_risingwave_expr;

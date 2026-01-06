@@ -15,7 +15,10 @@ use strum_macros::EnumIter;
 use crate::graph_builder::BlockId;
 use crate::interner::InternedStr;
 use crate::ir::HirId;
-use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU32, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU32, AtomicU64, AtomicUsize, Ordering};
+
+/// Sentinel value for "not set" in unit/crate index.
+pub const INDEX_NONE: u32 = u32::MAX;
 
 /// Global atomic counter for assigning unique symbol IDs.
 /// Incremented on each new symbol creation to ensure uniqueness.
@@ -261,11 +264,11 @@ pub struct Symbol {
     /// Interned key for the symbol name, used for fast lookup and comparison.
     /// Interned names allow O(1) equality checks.
     pub name: InternedStr,
-    /// Which compile unit this symbol is defined in.
-    /// May be updated during compilation if the symbol spans multiple files.
-    /// NOTE: compile unit doesn't mean a single file, it can be multiple files combined.
-    /// Unit index (usize::MAX = None)
-    pub unit_index: AtomicUsize,
+    /// Packed unit_index (low 32 bits) and crate_index (high 32 bits).
+    /// - unit_index: which compile unit (file) this symbol is defined in
+    /// - crate_index: which crate/package this symbol belongs to
+    /// Both use INDEX_NONE (u32::MAX) to indicate "not set".
+    unit_crate_index: AtomicU64,
     /// Owning HIR node that introduces the symbol (e.g. function def, struct def).
     /// Immutable once set; represents the primary definition location.
     pub owner: RwLock<HirId>,
@@ -317,7 +320,7 @@ impl Clone for Symbol {
             id: self.id,
             owner: RwLock::new(*self.owner.read()),
             name: self.name,
-            unit_index: AtomicUsize::new(self.unit_index.load(Ordering::Relaxed)),
+            unit_crate_index: AtomicU64::new(self.unit_crate_index.load(Ordering::Relaxed)),
             defining: RwLock::new(self.defining.read().clone()),
             scope: AtomicUsize::new(self.scope.load(Ordering::Relaxed)),
             parent_scope: RwLock::new(*self.parent_scope.read()),
@@ -340,6 +343,25 @@ impl fmt::Debug for Symbol {
 }
 
 impl Symbol {
+    /// Pack unit_index and crate_index into a single u64.
+    /// Layout: [crate_index: u32 (high)][unit_index: u32 (low)]
+    #[inline]
+    const fn pack_indices(unit_index: u32, crate_index: u32) -> u64 {
+        ((crate_index as u64) << 32) | (unit_index as u64)
+    }
+
+    /// Unpack unit_index from the combined u64.
+    #[inline]
+    const fn unpack_unit_index(packed: u64) -> u32 {
+        packed as u32
+    }
+
+    /// Unpack crate_index from the combined u64.
+    #[inline]
+    const fn unpack_crate_index(packed: u64) -> u32 {
+        (packed >> 32) as u32
+    }
+
     /// Creates a new symbol with the given HIR node owner and interned name.
     pub fn new(owner: HirId, name_key: InternedStr) -> Self {
         let id = NEXT_SYMBOL_ID.fetch_add(1, Ordering::Relaxed);
@@ -349,7 +371,7 @@ impl Symbol {
             id: sym_id,
             owner: RwLock::new(owner),
             name: name_key,
-            unit_index: AtomicUsize::new(usize::MAX),
+            unit_crate_index: AtomicU64::new(Self::pack_indices(INDEX_NONE, INDEX_NONE)),
             defining: RwLock::new(Vec::new()),
             scope: AtomicUsize::new(0),
             parent_scope: RwLock::new(None),
@@ -457,23 +479,80 @@ impl Symbol {
     /// Gets the compile unit index this symbol is defined in.
     #[inline]
     pub fn unit_index(&self) -> Option<usize> {
-        match self.unit_index.load(Ordering::Relaxed) {
-            usize::MAX => None,
-            v => Some(v),
+        let packed = self.unit_crate_index.load(Ordering::Relaxed);
+        match Self::unpack_unit_index(packed) {
+            INDEX_NONE => None,
+            v => Some(v as usize),
         }
     }
 
     /// Sets the compile unit index, but only if not already set.
     /// Prevents overwriting the original definition location.
     #[inline]
-    pub fn set_unit_index(&self, file: usize) {
-        // Only set if not already set (usize::MAX = None)
-        let _ = self.unit_index.compare_exchange(
-            usize::MAX,
-            file,
-            Ordering::Relaxed,
-            Ordering::Relaxed,
-        );
+    pub fn set_unit_index(&self, unit_idx: usize) {
+        debug_assert!(unit_idx <= u32::MAX as usize, "unit_index exceeds u32::MAX");
+        let unit_idx = unit_idx as u32;
+        
+        loop {
+            let current = self.unit_crate_index.load(Ordering::Relaxed);
+            let current_unit = Self::unpack_unit_index(current);
+            
+            // Only set if not already set
+            if current_unit != INDEX_NONE {
+                return;
+            }
+            
+            let crate_idx = Self::unpack_crate_index(current);
+            let new_packed = Self::pack_indices(unit_idx, crate_idx);
+            
+            if self.unit_crate_index.compare_exchange(
+                current,
+                new_packed,
+                Ordering::Relaxed,
+                Ordering::Relaxed,
+            ).is_ok() {
+                return;
+            }
+        }
+    }
+
+    /// Gets the crate/package index this symbol belongs to.
+    #[inline]
+    pub fn crate_index(&self) -> Option<usize> {
+        let packed = self.unit_crate_index.load(Ordering::Relaxed);
+        match Self::unpack_crate_index(packed) {
+            INDEX_NONE => None,
+            v => Some(v as usize),
+        }
+    }
+
+    /// Sets the crate index, but only if not already set.
+    #[inline]
+    pub fn set_crate_index(&self, crate_idx: usize) {
+        debug_assert!(crate_idx <= u32::MAX as usize, "crate_index exceeds u32::MAX");
+        let crate_idx = crate_idx as u32;
+        
+        loop {
+            let current = self.unit_crate_index.load(Ordering::Relaxed);
+            let current_crate = Self::unpack_crate_index(current);
+            
+            // Only set if not already set
+            if current_crate != INDEX_NONE {
+                return;
+            }
+            
+            let unit_idx = Self::unpack_unit_index(current);
+            let new_packed = Self::pack_indices(unit_idx, crate_idx);
+            
+            if self.unit_crate_index.compare_exchange(
+                current,
+                new_packed,
+                Ordering::Relaxed,
+                Ordering::Relaxed,
+            ).is_ok() {
+                return;
+            }
+        }
     }
 
     /// Checks if this symbol is globally visible/exported.

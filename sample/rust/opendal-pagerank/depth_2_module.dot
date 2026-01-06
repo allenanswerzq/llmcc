@@ -45,9 +45,7 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_opendal_java_async_operator[label="async_operator", path="/home/yibai/llmcc/sample/repos/opendal/bindings/java/src"];
-    mod_opendal_java_convert[label="convert", path="/home/yibai/llmcc/sample/repos/opendal/bindings/java/src"];
     mod_opendal_java_executor[label="executor", path="/home/yibai/llmcc/sample/repos/opendal/bindings/java/src"];
-    mod_opendal_java_operator[label="operator", path="/home/yibai/llmcc/sample/repos/opendal/bindings/java/src"];
   }
 
   subgraph cluster_opendal_layer_observe_metrics_common {
@@ -90,12 +88,28 @@ digraph architecture {
     mod_opendal_ocaml_operator[label="operator", path="/home/yibai/llmcc/sample/repos/opendal/bindings/ocaml/src/operator"];
   }
 
+  subgraph cluster_opendal_python {
+    label="opendal-python";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_opendal_python_operator[label="operator", path="/home/yibai/llmcc/sample/repos/opendal/bindings/python/src"];
+  }
+
   subgraph cluster_opendal_service_aliyun_drive {
     label="opendal-service-aliyun-drive";
     style=rounded;
     bgcolor="#f8f8f8";
 
     mod_opendal_service_aliyun_drive_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/aliyun-drive/src"];
+  }
+
+  subgraph cluster_opendal_service_azure_common {
+    label="opendal-service-azure-common";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_opendal_service_azure_common_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azure-common/src"];
   }
 
   subgraph cluster_opendal_service_b2 {
@@ -112,6 +126,14 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_opendal_service_dropbox_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dropbox/src"];
+  }
+
+  subgraph cluster_opendal_service_ipfs {
+    label="opendal-service-ipfs";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_opendal_service_ipfs_ipld[label="ipld", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ipfs/src"];
   }
 
   subgraph cluster_opendal_service_oss {
@@ -135,26 +157,27 @@ digraph architecture {
   mod_object_store_opendal_service -> mod_opendal_core_types;
   mod_opendal_core_blocking -> mod_opendal_core_raw;
   mod_opendal_core_blocking -> mod_opendal_core_types;
+  mod_opendal_core_blocking -> mod_opendal_python_operator;
   mod_opendal_core_layers -> mod_opendal_core_raw;
   mod_opendal_core_layers -> mod_opendal_core_types;
   mod_opendal_core_raw -> mod_opendal_core_types;
   mod_opendal_core_types -> mod_opendal_core_raw;
   mod_opendal_hs_lib -> mod_opendal_hs_result;
   mod_opendal_hs_lib -> mod_opendal_ocaml_operator;
-  mod_opendal_java_async_operator -> mod_opendal_core_types;
-  mod_opendal_java_async_operator -> mod_opendal_java_convert;
+  mod_opendal_java_async_operator -> mod_opendal_core_raw;
   mod_opendal_java_async_operator -> mod_opendal_java_executor;
-  mod_opendal_java_async_operator -> mod_opendal_ocaml_operator;
-  mod_opendal_java_convert -> mod_opendal_lua_lib;
-  mod_opendal_java_operator -> mod_opendal_java_convert;
+  mod_opendal_java_async_operator -> mod_opendal_python_operator;
   mod_opendal_layer_observe_metrics_common_lib -> mod_opendal_core_raw;
   mod_opendal_layer_observe_metrics_common_lib -> mod_opendal_core_types;
   mod_opendal_layer_tail_cut_lib -> mod_opendal_core_raw;
   mod_opendal_lua_lib -> mod_opendal_ocaml_operator;
   mod_opendal_nodejs_lib -> mod_opendal_core_types;
   mod_opendal_nodejs_lib -> mod_opendal_lua_lib;
+  mod_opendal_python_operator -> mod_opendal_core_blocking;
   mod_opendal_service_aliyun_drive_core -> mod_opendal_core_raw;
+  mod_opendal_service_azure_common_lib -> mod_opendal_core_types;
   mod_opendal_service_b2_core -> mod_opendal_core_raw;
+  mod_opendal_service_b2_core -> mod_opendal_service_ipfs_ipld;
   mod_opendal_service_dropbox_core -> mod_opendal_core_raw;
   mod_opendal_service_oss_core -> mod_opendal_core_raw;
   mod_opendal_service_s3_core -> mod_opendal_core_raw;

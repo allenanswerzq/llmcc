@@ -1,0 +1,153 @@
+===============================================================================
+prefer-same-crate-use
+===============================================================================
+Test that use statement resolution (use module::function) prefers symbols
+from the same crate when multiple crates have the same module/function names.
+This tests the scenario where two crates (crate_a and crate_b) both have:
+- A module named "utils"
+- A function named "helper" inside that module
+When crate_a/consumer.rs uses `use utils::helper`, and then calls helper(),
+it should call crate_a's helper, not crate_b's helper.
+
+--- file: crate_a/Cargo.toml ---
+[package]
+name = "crate_a"
+
+--- file: crate_a/src/lib.rs ---
+pub mod utils;
+pub mod consumer;
+
+--- file: crate_a/src/utils.rs ---
+/// Helper function defined in crate_a
+pub fn helper() -> i32 {
+    42
+}
+
+--- file: crate_a/src/consumer.rs ---
+use utils::helper;
+
+/// Uses helper from same crate via use statement
+pub fn process() -> i32 {
+    helper()  // Should call crate_a's helper (id 5), NOT crate_b's helper (id 12)
+}
+
+--- file: crate_b/Cargo.toml ---
+[package]
+name = "crate_b"
+
+--- file: crate_b/src/lib.rs ---
+pub mod utils;
+pub mod consumer;
+
+--- file: crate_b/src/utils.rs ---
+/// Helper function defined in crate_b (same name as crate_a)
+pub fn helper() -> String {
+    String::from("hello")
+}
+
+--- file: crate_b/src/consumer.rs ---
+use utils::helper;
+
+/// Uses helper from same crate via use statement
+pub fn process() -> String {
+    helper()  // Should call crate_b's helper (id 12), NOT crate_a's helper (id 5)
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/crate_a/src/lib.rs)
+  (module:2 utils)
+  (module:3 consumer)
+)
+
+(root:4 utils ($TMP/crate_a/src/utils.rs)
+  (func:5 helper
+    (return:6 @type i32)
+  )
+)
+
+(root:7 consumer ($TMP/crate_a/src/consumer.rs)
+  (func:8 process
+    (return:9 @type i32)
+    (@fdep:5 helper)
+  )
+)
+
+(root:11 lib ($TMP/crate_b/src/lib.rs)
+  (module:12 utils)
+  (module:13 consumer)
+)
+
+(root:14 utils ($TMP/crate_b/src/utils.rs)
+  (func:15 helper
+    (return:16 @type String)
+  )
+)
+
+(root:18 consumer ($TMP/crate_b/src/consumer.rs)
+  (func:19 process
+    (return:20 @type String)
+    (@fdep:15 helper)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_crate_a {
+    label="crate_a";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_consumer_rs {
+      label="consumer.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n8[label="process", path="$TMP/crate_a/src/consumer.rs:4", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_utils_rs {
+      label="utils.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n5[label="helper", path="$TMP/crate_a/src/utils.rs:2", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_crate_b {
+    label="crate_b";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_consumer_rs {
+      label="consumer.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n19[label="process", path="$TMP/crate_b/src/consumer.rs:4", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_utils_rs {
+      label="utils.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n15[label="helper", path="$TMP/crate_b/src/utils.rs:2", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+
+  n8 -> n5 [from="caller", to="callee"];
+  n19 -> n15 [from="caller", to="callee"];
+}

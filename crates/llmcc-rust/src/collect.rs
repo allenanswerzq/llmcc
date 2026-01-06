@@ -375,8 +375,10 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             // For top-level files (not lib.rs or main.rs), create a module symbol
             // in the crate scope that links to this file's scope.
             // This enables paths like `crate::models::Config` to resolve.
+            // Use insert_in_global to create a NEW symbol for each crate's module,
+            // even if another crate has a module with the same name.
             if file_name != "lib" && file_name != "main" && module_wrapper_scope.is_none()
-                && let Some(mod_sym) = scopes.lookup_or_insert_global(file_name, node, SymKind::Module)
+                && let Some(mod_sym) = scopes.insert_in_global(file_name, node, SymKind::Module)
             {
                 tracing::trace!("link file '{}' as module in crate scope", file_name);
                 mod_sym.set_scope(scope.id());

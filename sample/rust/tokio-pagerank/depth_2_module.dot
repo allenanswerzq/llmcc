@@ -16,7 +16,6 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_tokio_fs[label="fs", path="/home/yibai/llmcc/sample/repos/tokio/tokio/src/fs"];
     mod_tokio_io[label="io", path="/home/yibai/llmcc/sample/repos/tokio/tokio/src/io"];
     mod_tokio_loom[label="loom", path="/home/yibai/llmcc/sample/repos/tokio/tokio/src/loom"];
     mod_tokio_net[label="net", path="/home/yibai/llmcc/sample/repos/tokio/tokio/src/net"];
@@ -37,47 +36,38 @@ digraph architecture {
     mod_tokio_macros_lib[label="lib", path="/home/yibai/llmcc/sample/repos/tokio/tokio-macros/src"];
   }
 
-  subgraph cluster_tokio_stream {
-    label="tokio-stream";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_tokio_stream_wrappers[label="wrappers", path="/home/yibai/llmcc/sample/repos/tokio/tokio-stream/src/wrappers"];
-  }
-
   subgraph cluster_tokio_util {
     label="tokio-util";
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_tokio_util_either[label="either", path="/home/yibai/llmcc/sample/repos/tokio/tokio-util/src"];
     mod_tokio_util_io[label="io", path="/home/yibai/llmcc/sample/repos/tokio/tokio-util/src/io"];
-    mod_tokio_util_sync[label="sync", path="/home/yibai/llmcc/sample/repos/tokio/tokio-util/src/sync"];
   }
 
 
-  mod_tokio_fs -> mod_tokio_util;
   mod_tokio_io -> mod_tokio_runtime;
+  mod_tokio_loom -> mod_tokio_runtime;
   mod_tokio_loom -> mod_tokio_sync;
+  mod_tokio_loom -> mod_tokio_util;
   mod_tokio_macros_lib -> mod_tokio_util;
   mod_tokio_net -> mod_tokio_io;
   mod_tokio_process -> mod_tokio_io;
-  mod_tokio_process -> mod_tokio_sync;
   mod_tokio_runtime -> mod_tokio_io;
   mod_tokio_runtime -> mod_tokio_loom;
+  mod_tokio_runtime -> mod_tokio_net;
   mod_tokio_runtime -> mod_tokio_sync;
   mod_tokio_runtime -> mod_tokio_time;
   mod_tokio_runtime -> mod_tokio_util;
   mod_tokio_signal -> mod_tokio_runtime;
   mod_tokio_signal -> mod_tokio_sync;
-  mod_tokio_stream_wrappers -> mod_tokio_signal;
   mod_tokio_sync -> mod_tokio_loom;
-  mod_tokio_sync -> mod_tokio_runtime;
   mod_tokio_sync -> mod_tokio_time;
   mod_tokio_sync -> mod_tokio_util;
   mod_tokio_task -> mod_tokio_runtime;
   mod_tokio_util -> mod_tokio_loom;
   mod_tokio_util -> mod_tokio_runtime;
   mod_tokio_util -> mod_tokio_sync;
+  mod_tokio_util_either -> mod_tokio_io;
   mod_tokio_util_io -> mod_tokio_io;
-  mod_tokio_util_sync -> mod_tokio_sync;
 }
