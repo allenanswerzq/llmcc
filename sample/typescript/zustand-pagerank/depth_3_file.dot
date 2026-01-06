@@ -1,5 +1,4 @@
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.6;
   nodesep=0.3;
@@ -12,25 +11,22 @@ digraph architecture {
   subgraph cluster_zustand {
     label="zustand";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
+        bgcolor="#f8f8f8";
 
     subgraph cluster_middleware {
       label="middleware";
       style=rounded;
-      color="#999999";
-      bgcolor="#f5f5f5";
+            bgcolor="#f5f5f5";
 
       subgraph cluster_persist_ts {
         label="persist.ts";
         style=rounded;
-        color="#aaaaaa";
-        bgcolor="#fafafa";
+                bgcolor="#fafafa";
 
-        n448[label="PersistStorage", full_path="/home/yibai/llmcc/sample/repos/zustand/src/middleware/persist.ts:18", sym_ty="Interface", shape=box];
-        n468[label="createJSONStorage", full_path="/home/yibai/llmcc/sample/repos/zustand/src/middleware/persist.ts:31", sym_ty="Function", shape=ellipse];
-        n473[label="PersistOptions", full_path="/home/yibai/llmcc/sample/repos/zustand/src/middleware/persist.ts:63", sym_ty="Interface", shape=box];
-        n9[label="StateStorage", full_path="/home/yibai/llmcc/sample/repos/zustand/src/middleware/persist.ts:7", sym_ty="Interface", shape=box];
+        n116[label="PersistStorage", path="/home/yibai/llmcc/sample/repos/zustand/src/middleware/persist.ts:18", sym_ty="Interface", shape=box];
+        n156[label="createJSONStorage", path="/home/yibai/llmcc/sample/repos/zustand/src/middleware/persist.ts:31", sym_ty="Function", shape=ellipse];
+        n169[label="PersistOptions", path="/home/yibai/llmcc/sample/repos/zustand/src/middleware/persist.ts:63", sym_ty="Interface", shape=box];
+        n5[label="StateStorage", path="/home/yibai/llmcc/sample/repos/zustand/src/middleware/persist.ts:7", sym_ty="Interface", shape=box];
       }
 
     }
@@ -38,16 +34,14 @@ digraph architecture {
     subgraph cluster_react {
       label="react";
       style=rounded;
-      color="#999999";
-      bgcolor="#f5f5f5";
+            bgcolor="#f5f5f5";
 
       subgraph cluster_shallow_ts {
         label="shallow.ts";
         style=rounded;
-        color="#aaaaaa";
-        bgcolor="#fafafa";
+                bgcolor="#fafafa";
 
-        n81[label="useShallow", full_path="/home/yibai/llmcc/sample/repos/zustand/src/react/shallow.ts:4", sym_ty="Function", shape=ellipse];
+        n42[label="useShallow", path="/home/yibai/llmcc/sample/repos/zustand/src/react/shallow.ts:4", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -55,16 +49,14 @@ digraph architecture {
     subgraph cluster_vanilla {
       label="vanilla";
       style=rounded;
-      color="#999999";
-      bgcolor="#f5f5f5";
+            bgcolor="#f5f5f5";
 
       subgraph cluster_shallow_ts {
         label="shallow.ts";
         style=rounded;
-        color="#aaaaaa";
-        bgcolor="#fafafa";
+                bgcolor="#fafafa";
 
-        n391[label="shallow", full_path="/home/yibai/llmcc/sample/repos/zustand/src/vanilla/shallow.ts:48", sym_ty="Function", shape=ellipse];
+        n527[label="shallow", path="/home/yibai/llmcc/sample/repos/zustand/src/vanilla/shallow.ts:48", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -72,8 +64,8 @@ digraph architecture {
   }
 
 
-  n9 -> n468 [from="input", to="func"];
-  n81 -> n391 [from="caller", to="callee"];
-  n448 -> n473 [from="field_type", to="struct"];
-  n468 -> n448 [from="func", to="output"];
+  n5 -> n156 [from="input", to="func"];
+  n42 -> n527 [from="caller", to="callee"];
+  n116 -> n169 [from="field_type", to="struct"];
+  n156 -> n116 [from="func", to="output"];
 }

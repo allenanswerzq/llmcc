@@ -48,8 +48,6 @@ pub fn render_dot(
 
     output.push_str("digraph architecture {\n");
 
-    // Graph layout attributes for cleaner visualization
-    output.push_str("  // Layout settings\n");
     output.push_str("  rankdir=TB;\n");
     output.push_str("  ranksep=0.6;\n");
     output.push_str("  nodesep=0.3;\n");
@@ -105,17 +103,14 @@ fn render_tree_recursive(
         write_indent(output, indent_level + 1);
         match level_type.as_str() {
             "crate" => {
-                output.push_str("color=\"#888888\";\n");
                 write_indent(output, indent_level + 1);
-                output.push_str("bgcolor=\"#f0f0f0\";\n");
+                output.push_str("bgcolor=\"#f8f8f8\";\n");
             }
             "module" => {
-                output.push_str("color=\"#999999\";\n");
                 write_indent(output, indent_level + 1);
                 output.push_str("bgcolor=\"#f5f5f5\";\n");
             }
             _ => {
-                output.push_str("color=\"#aaaaaa\";\n");
                 write_indent(output, indent_level + 1);
                 output.push_str("bgcolor=\"#fafafa\";\n");
             }
@@ -159,7 +154,7 @@ fn render_node(output: &mut String, node: &RenderNode, indent_level: usize) {
     );
 
     if let Some(location) = &node.location {
-        let _ = write!(output, ", full_path=\"{}\"", escape_label(location));
+        let _ = write!(output, ", path=\"{}\"", escape_label(location));
     }
 
     if let Some(sym_kind) = &node.sym_kind {

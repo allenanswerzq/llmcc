@@ -1,5 +1,4 @@
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.8;
   nodesep=0.4;
@@ -7,140 +6,121 @@ digraph architecture {
   concentrate=true;
 
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#666666", arrowsize=0.7];
+  edge [color="#888888", arrowsize=0.7];
 
   labelloc=t;
   fontsize=16;
-  fontname="Helvetica Bold";
 
   subgraph cluster_api {
     label="api";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_api_grpc[label="grpc", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/grpc"];
-    mod_api_rest[label="rest", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/rest"];
+    mod_api_grpc[label="grpc", path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/grpc"];
+    mod_api_rest[label="rest", path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/rest"];
   }
 
   subgraph cluster_collection {
     label="collection";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_collection_collection[label="collection", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/collection"];
-    mod_collection_collection_manager[label="collection_manager", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/collection_manager"];
-    mod_collection_common[label="common", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/common"];
-    mod_collection_operations[label="operations", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/operations"];
-    mod_collection_shards[label="shards", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/shards"];
+    mod_collection_collection[label="collection", path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/collection"];
+    mod_collection_collection_manager[label="collection_manager", path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/collection_manager"];
+    mod_collection_common[label="common", path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/common"];
+    mod_collection_operations[label="operations", path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/operations"];
+    mod_collection_shards[label="shards", path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/shards"];
   }
 
   subgraph cluster_common {
     label="common";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_common_counter[label="counter", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/common/common/src/counter"];
+    mod_common_counter[label="counter", path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/common/src/counter"];
   }
 
   subgraph cluster_qdrant {
     label="qdrant";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_qdrant_actix[label="actix", folder="/home/yibai/llmcc/sample/repos/qdrant/src/actix"];
-    mod_qdrant_common[label="common", folder="/home/yibai/llmcc/sample/repos/qdrant/src/common"];
-    mod_qdrant_settings[label="settings", folder="/home/yibai/llmcc/sample/repos/qdrant/src"];
-    mod_qdrant_tonic[label="tonic", folder="/home/yibai/llmcc/sample/repos/qdrant/src/tonic"];
-    mod_qdrant_tracing[label="tracing", folder="/home/yibai/llmcc/sample/repos/qdrant/src/tracing"];
+    mod_qdrant_actix[label="actix", path="/home/yibai/llmcc/sample/repos/qdrant/src/actix"];
+    mod_qdrant_common[label="common", path="/home/yibai/llmcc/sample/repos/qdrant/src/common"];
+    mod_qdrant_settings[label="settings", path="/home/yibai/llmcc/sample/repos/qdrant/src"];
+    mod_qdrant_tonic[label="tonic", path="/home/yibai/llmcc/sample/repos/qdrant/src/tonic"];
+    mod_qdrant_tracing[label="tracing", path="/home/yibai/llmcc/sample/repos/qdrant/src/tracing"];
   }
 
   subgraph cluster_qdrant_edge_py {
     label="qdrant-edge-py";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_qdrant_edge_py_config[label="config", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src/config"];
-    mod_qdrant_edge_py_filter[label="filter", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src/types/filter"];
-    mod_qdrant_edge_py_query[label="query", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src"];
-    mod_qdrant_edge_py_search[label="search", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src"];
-    mod_qdrant_edge_py_types[label="types", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src/types"];
+    mod_qdrant_edge_py_config[label="config", path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src/config"];
+    mod_qdrant_edge_py_filter[label="filter", path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src/types/filter"];
+    mod_qdrant_edge_py_query[label="query", path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src"];
+    mod_qdrant_edge_py_search[label="search", path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src"];
+    mod_qdrant_edge_py_types[label="types", path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src/types"];
   }
 
   subgraph cluster_segment {
     label="segment";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_segment_common[label="common", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/common"];
-    mod_segment_data_types[label="data_types", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/data_types"];
-    mod_segment_fixtures[label="fixtures", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/fixtures"];
-    mod_segment_id_tracker[label="id_tracker", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/id_tracker"];
-    mod_segment_index[label="index", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index"];
-    mod_segment_json_path[label="json_path", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/json_path"];
-    mod_segment_payload_storage[label="payload_storage", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/payload_storage"];
-    mod_segment_segment[label="segment", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/segment"];
-    mod_segment_segment_constructor[label="segment_constructor", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/segment_constructor"];
-    mod_segment_spaces[label="spaces", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/spaces"];
-    mod_segment_types[label="types", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src"];
-    mod_segment_vector_storage[label="vector_storage", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/vector_storage"];
+    mod_segment_common[label="common", path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/common"];
+    mod_segment_data_types[label="data_types", path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/data_types"];
+    mod_segment_fixtures[label="fixtures", path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/fixtures"];
+    mod_segment_id_tracker[label="id_tracker", path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/id_tracker"];
+    mod_segment_index[label="index", path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index"];
+    mod_segment_json_path[label="json_path", path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/json_path"];
+    mod_segment_payload_storage[label="payload_storage", path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/payload_storage"];
+    mod_segment_segment[label="segment", path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/segment"];
+    mod_segment_segment_constructor[label="segment_constructor", path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/segment_constructor"];
+    mod_segment_spaces[label="spaces", path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/spaces"];
+    mod_segment_types[label="types", path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src"];
+    mod_segment_vector_storage[label="vector_storage", path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/vector_storage"];
   }
 
   subgraph cluster_shard {
     label="shard";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_shard_operations[label="operations", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/operations"];
-    mod_shard_query[label="query", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/query"];
-    mod_shard_update[label="update", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src"];
+    mod_shard_operations[label="operations", path="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/operations"];
+    mod_shard_query[label="query", path="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/query"];
+    mod_shard_update[label="update", path="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src"];
   }
 
   subgraph cluster_sparse {
     label="sparse";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_sparse_common[label="common", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/sparse/src/common"];
-    mod_sparse_index[label="index", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/sparse/src/index"];
+    mod_sparse_common[label="common", path="/home/yibai/llmcc/sample/repos/qdrant/lib/sparse/src/common"];
+    mod_sparse_index[label="index", path="/home/yibai/llmcc/sample/repos/qdrant/lib/sparse/src/index"];
   }
 
   subgraph cluster_storage {
     label="storage";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_storage_content_manager[label="content_manager", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/content_manager"];
-    mod_storage_rbac[label="rbac", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/rbac"];
-    mod_storage_toc[label="toc", folder="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/content_manager/toc"];
+    mod_storage_content_manager[label="content_manager", path="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/content_manager"];
+    mod_storage_rbac[label="rbac", path="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/rbac"];
+    mod_storage_toc[label="toc", path="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/content_manager/toc"];
   }
 
 
   mod_api_grpc -> mod_api_rest;
   mod_api_grpc -> mod_collection_operations;
   mod_api_grpc -> mod_qdrant_edge_py_config;
-  mod_api_grpc -> mod_segment_data_types;
   mod_api_grpc -> mod_segment_types;
   mod_api_rest -> mod_api_grpc;
   mod_api_rest -> mod_segment_json_path;
   mod_api_rest -> mod_segment_types;
+  mod_collection_collection -> mod_api_grpc;
   mod_collection_collection -> mod_shard_query;
   mod_collection_collection_manager -> mod_api_grpc;
   mod_collection_collection_manager -> mod_common_counter;
@@ -161,7 +141,6 @@ digraph architecture {
   mod_collection_shards -> mod_api_grpc;
   mod_collection_shards -> mod_collection_common;
   mod_collection_shards -> mod_collection_operations;
-  mod_collection_shards -> mod_segment_types;
   mod_collection_shards -> mod_shard_operations;
   mod_qdrant_actix -> mod_api_grpc;
   mod_qdrant_actix -> mod_api_rest;
@@ -171,6 +150,7 @@ digraph architecture {
   mod_qdrant_actix -> mod_qdrant_settings;
   mod_qdrant_actix -> mod_qdrant_tonic;
   mod_qdrant_actix -> mod_segment_vector_storage;
+  mod_qdrant_actix -> mod_shard_operations;
   mod_qdrant_actix -> mod_storage_content_manager;
   mod_qdrant_actix -> mod_storage_rbac;
   mod_qdrant_actix -> mod_storage_toc;
@@ -192,7 +172,6 @@ digraph architecture {
   mod_qdrant_edge_py_config -> mod_segment_types;
   mod_qdrant_edge_py_filter -> mod_api_grpc;
   mod_qdrant_edge_py_filter -> mod_segment_types;
-  mod_qdrant_edge_py_query -> mod_api_grpc;
   mod_qdrant_edge_py_query -> mod_segment_data_types;
   mod_qdrant_edge_py_query -> mod_segment_vector_storage;
   mod_qdrant_edge_py_query -> mod_shard_query;
@@ -215,6 +194,7 @@ digraph architecture {
   mod_segment_data_types -> mod_api_grpc;
   mod_segment_data_types -> mod_segment_types;
   mod_segment_data_types -> mod_segment_vector_storage;
+  mod_segment_data_types -> mod_sparse_common;
   mod_segment_fixtures -> mod_api_grpc;
   mod_segment_fixtures -> mod_common_counter;
   mod_segment_fixtures -> mod_segment_data_types;

@@ -1,5 +1,4 @@
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.8;
   nodesep=0.4;
@@ -7,225 +6,201 @@ digraph architecture {
   concentrate=true;
 
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#666666", arrowsize=0.7];
+  edge [color="#888888", arrowsize=0.7];
 
   labelloc=t;
   fontsize=16;
-  fontname="Helvetica Bold";
+
+  subgraph cluster_fsst {
+    label="fsst";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_fsst_fsst[label="fsst", path="/home/yibai/llmcc/sample/repos/lance/rust/compression/fsst/src"];
+  }
 
   subgraph cluster_lance {
     label="lance";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_lance_arrow[label="arrow", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/arrow"];
-    mod_lance_dataset[label="dataset", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset"];
-    mod_lance_index[label="index", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/index"];
-    mod_lance_io[label="io", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/io"];
-    mod_lance_session[label="session", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/session"];
+    mod_lance_arrow[label="arrow", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/arrow"];
+    mod_lance_dataset[label="dataset", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset"];
+    mod_lance_index[label="index", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/index"];
+    mod_lance_io[label="io", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/io"];
+    mod_lance_session[label="session", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/session"];
   }
 
   subgraph cluster_lance_arrow {
     label="lance-arrow";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_lance_arrow_floats[label="floats", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-arrow/src"];
+    mod_lance_arrow_floats[label="floats", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-arrow/src"];
   }
 
   subgraph cluster_lance_core {
     label="lance-core";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_lance_core_cache[label="cache", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src"];
-    mod_lance_core_datatypes[label="datatypes", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/datatypes"];
-    mod_lance_core_traits[label="traits", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src"];
-    mod_lance_core_utils[label="utils", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/utils"];
+    mod_lance_core_cache[label="cache", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src"];
+    mod_lance_core_datatypes[label="datatypes", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/datatypes"];
+    mod_lance_core_traits[label="traits", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src"];
+    mod_lance_core_utils[label="utils", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/utils"];
   }
 
   subgraph cluster_lance_datafusion {
     label="lance-datafusion";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_lance_datafusion_chunker[label="chunker", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-datafusion/src"];
-    mod_lance_datafusion_projection[label="projection", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-datafusion/src"];
-    mod_lance_datafusion_spill[label="spill", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-datafusion/src"];
+    mod_lance_datafusion_chunker[label="chunker", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-datafusion/src"];
+    mod_lance_datafusion_projection[label="projection", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-datafusion/src"];
+    mod_lance_datafusion_spill[label="spill", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-datafusion/src"];
   }
 
   subgraph cluster_lance_datagen {
     label="lance-datagen";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_lance_datagen_generator[label="generator", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-datagen/src"];
+    mod_lance_datagen_generator[label="generator", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-datagen/src"];
   }
 
   subgraph cluster_lance_encoding {
     label="lance-encoding";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_lance_encoding_buffer[label="buffer", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
-    mod_lance_encoding_compression[label="compression", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
-    mod_lance_encoding_compression_config[label="compression_config", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
-    mod_lance_encoding_data[label="data", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
-    mod_lance_encoding_decoder[label="decoder", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
-    mod_lance_encoding_encoder[label="encoder", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
-    mod_lance_encoding_encodings[label="encodings", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/encodings"];
-    mod_lance_encoding_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
-    mod_lance_encoding_previous[label="previous", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/previous"];
-    mod_lance_encoding_testing[label="testing", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
-    mod_lance_encoding_version[label="version", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
+    mod_lance_encoding_buffer[label="buffer", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
+    mod_lance_encoding_compression[label="compression", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
+    mod_lance_encoding_compression_config[label="compression_config", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
+    mod_lance_encoding_data[label="data", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
+    mod_lance_encoding_decoder[label="decoder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
+    mod_lance_encoding_encoder[label="encoder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
+    mod_lance_encoding_encodings[label="encodings", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/encodings"];
+    mod_lance_encoding_lib[label="lib", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
+    mod_lance_encoding_previous[label="previous", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/previous"];
+    mod_lance_encoding_testing[label="testing", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
+    mod_lance_encoding_version[label="version", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
   }
 
   subgraph cluster_lance_file {
     label="lance-file";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_lance_file_datatypes[label="datatypes", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src"];
-    mod_lance_file_previous[label="previous", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/previous"];
-    mod_lance_file_reader[label="reader", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src"];
-    mod_lance_file_testing[label="testing", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src"];
-    mod_lance_file_writer[label="writer", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src"];
+    mod_lance_file_datatypes[label="datatypes", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src"];
+    mod_lance_file_previous[label="previous", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/previous"];
+    mod_lance_file_reader[label="reader", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src"];
+    mod_lance_file_testing[label="testing", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src"];
+    mod_lance_file_writer[label="writer", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src"];
   }
 
   subgraph cluster_lance_index {
     label="lance-index";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_lance_index_frag_reuse[label="frag_reuse", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src"];
-    mod_lance_index_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src"];
-    mod_lance_index_mem_wal[label="mem_wal", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src"];
-    mod_lance_index_optimize[label="optimize", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src"];
-    mod_lance_index_scalar[label="scalar", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src"];
-    mod_lance_index_vector[label="vector", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector"];
+    mod_lance_index_frag_reuse[label="frag_reuse", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src"];
+    mod_lance_index_lib[label="lib", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src"];
+    mod_lance_index_mem_wal[label="mem_wal", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src"];
+    mod_lance_index_optimize[label="optimize", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src"];
+    mod_lance_index_scalar[label="scalar", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src"];
+    mod_lance_index_vector[label="vector", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector"];
   }
 
   subgraph cluster_lance_io {
     label="lance-io";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_lance_io_encodings[label="encodings", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src"];
-    mod_lance_io_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src"];
-    mod_lance_io_object_store[label="object_store", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/object_store"];
-    mod_lance_io_object_writer[label="object_writer", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src"];
-    mod_lance_io_scheduler[label="scheduler", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src"];
-    mod_lance_io_stream[label="stream", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src"];
-    mod_lance_io_traits[label="traits", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src"];
-    mod_lance_io_utils[label="utils", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src"];
+    mod_lance_io_encodings[label="encodings", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src"];
+    mod_lance_io_lib[label="lib", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src"];
+    mod_lance_io_object_store[label="object_store", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/object_store"];
+    mod_lance_io_object_writer[label="object_writer", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src"];
+    mod_lance_io_scheduler[label="scheduler", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src"];
+    mod_lance_io_stream[label="stream", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src"];
+    mod_lance_io_traits[label="traits", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src"];
+    mod_lance_io_utils[label="utils", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src"];
   }
 
   subgraph cluster_lance_jni {
     label="lance-jni";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_lance_jni_blocking_dataset[label="blocking_dataset", folder="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
-    mod_lance_jni_fragment[label="fragment", folder="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
-    mod_lance_jni_merge_insert[label="merge_insert", folder="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
-    mod_lance_jni_namespace[label="namespace", folder="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
-    mod_lance_jni_optimize[label="optimize", folder="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
-    mod_lance_jni_traits[label="traits", folder="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
-    mod_lance_jni_transaction[label="transaction", folder="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
-    mod_lance_jni_utils[label="utils", folder="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
+    mod_lance_jni_blocking_dataset[label="blocking_dataset", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
+    mod_lance_jni_fragment[label="fragment", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
+    mod_lance_jni_merge_insert[label="merge_insert", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
+    mod_lance_jni_namespace[label="namespace", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
+    mod_lance_jni_optimize[label="optimize", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
+    mod_lance_jni_traits[label="traits", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
+    mod_lance_jni_transaction[label="transaction", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
+    mod_lance_jni_utils[label="utils", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
   }
 
   subgraph cluster_lance_linalg {
     label="lance-linalg";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_lance_linalg_distance[label="distance", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-linalg/src/distance"];
-    mod_lance_linalg_kernels[label="kernels", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-linalg/src"];
+    mod_lance_linalg_distance[label="distance", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-linalg/src/distance"];
+    mod_lance_linalg_kernels[label="kernels", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-linalg/src"];
   }
 
   subgraph cluster_lance_namespace_impls {
     label="lance-namespace-impls";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_lance_namespace_impls_dir[label="dir", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src/dir"];
-    mod_lance_namespace_impls_rest_adapter[label="rest_adapter", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src"];
+    mod_lance_namespace_impls_dir[label="dir", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src/dir"];
+    mod_lance_namespace_impls_rest_adapter[label="rest_adapter", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src"];
   }
 
   subgraph cluster_lance_table {
     label="lance-table";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_lance_table_format[label="format", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/format"];
-    mod_lance_table_io[label="io", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/io"];
-    mod_lance_table_rowids[label="rowids", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/rowids"];
+    mod_lance_table_format[label="format", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/format"];
+    mod_lance_table_io[label="io", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/io"];
+    mod_lance_table_rowids[label="rowids", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/rowids"];
   }
 
   subgraph cluster_lance_test_macros {
     label="lance-test-macros";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_lance_test_macros_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-test-macros/src"];
+    mod_lance_test_macros_lib[label="lib", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-test-macros/src"];
   }
 
   subgraph cluster_lance_testing {
     label="lance-testing";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_lance_testing_datagen[label="datagen", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-testing/src"];
+    mod_lance_testing_datagen[label="datagen", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-testing/src"];
   }
 
   subgraph cluster_pylance {
     label="pylance";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_pylance_dataset[label="dataset", folder="/home/yibai/llmcc/sample/repos/lance/python/src/dataset"];
-    mod_pylance_fragment[label="fragment", folder="/home/yibai/llmcc/sample/repos/lance/python/src"];
-    mod_pylance_indices[label="indices", folder="/home/yibai/llmcc/sample/repos/lance/python/src"];
-    mod_pylance_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/lance/python/src"];
-    mod_pylance_schema[label="schema", folder="/home/yibai/llmcc/sample/repos/lance/python/src"];
-    mod_pylance_session[label="session", folder="/home/yibai/llmcc/sample/repos/lance/python/src"];
-    mod_pylance_transaction[label="transaction", folder="/home/yibai/llmcc/sample/repos/lance/python/src"];
+    mod_pylance_dataset[label="dataset", path="/home/yibai/llmcc/sample/repos/lance/python/src/dataset"];
+    mod_pylance_fragment[label="fragment", path="/home/yibai/llmcc/sample/repos/lance/python/src"];
+    mod_pylance_indices[label="indices", path="/home/yibai/llmcc/sample/repos/lance/python/src"];
+    mod_pylance_lib[label="lib", path="/home/yibai/llmcc/sample/repos/lance/python/src"];
+    mod_pylance_schema[label="schema", path="/home/yibai/llmcc/sample/repos/lance/python/src"];
+    mod_pylance_session[label="session", path="/home/yibai/llmcc/sample/repos/lance/python/src"];
+    mod_pylance_transaction[label="transaction", path="/home/yibai/llmcc/sample/repos/lance/python/src"];
   }
 
 
+  mod_fsst_fsst -> mod_lance_encoding_lib;
   mod_lance_core_datatypes -> mod_lance_arrow;
   mod_lance_datafusion_projection -> mod_lance_core_datatypes;
   mod_lance_datafusion_spill -> mod_lance_core_datatypes;
@@ -254,7 +229,6 @@ digraph architecture {
   mod_lance_encoding_data -> mod_lance_encoding_buffer;
   mod_lance_encoding_decoder -> mod_lance_core_cache;
   mod_lance_encoding_decoder -> mod_lance_core_datatypes;
-  mod_lance_encoding_decoder -> mod_lance_encoding_encodings;
   mod_lance_encoding_decoder -> mod_lance_encoding_lib;
   mod_lance_encoding_decoder -> mod_lance_encoding_previous;
   mod_lance_encoding_encoder -> mod_lance_encoding_buffer;

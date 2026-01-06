@@ -1,5 +1,4 @@
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.8;
   nodesep=0.4;
@@ -7,30 +6,27 @@ digraph architecture {
   concentrate=true;
 
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#666666", arrowsize=0.7];
+  edge [color="#888888", arrowsize=0.7];
 
   labelloc=t;
   fontsize=16;
-  fontname="Helvetica Bold";
 
   subgraph cluster_typescript {
     label="typescript";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_typescript_compiler[label="compiler", folder="/home/yibai/llmcc/sample/repos/typescript/src/compiler"];
-    mod_typescript_harness[label="harness", folder="/home/yibai/llmcc/sample/repos/typescript/src/harness"];
-    mod_typescript_server[label="server", folder="/home/yibai/llmcc/sample/repos/typescript/src/server"];
-    mod_typescript_services[label="services", folder="/home/yibai/llmcc/sample/repos/typescript/src/services"];
-    mod_typescript_testRunner[label="testRunner", folder="/home/yibai/llmcc/sample/repos/typescript/src/testRunner"];
+    mod_typescript_compiler[label="compiler", path="/home/yibai/llmcc/sample/repos/typescript/src/compiler"];
+    mod_typescript_harness[label="harness", path="/home/yibai/llmcc/sample/repos/typescript/src/harness"];
+    mod_typescript_server[label="server", path="/home/yibai/llmcc/sample/repos/typescript/src/server"];
+    mod_typescript_services[label="services", path="/home/yibai/llmcc/sample/repos/typescript/src/services"];
+    mod_typescript_testRunner[label="testRunner", path="/home/yibai/llmcc/sample/repos/typescript/src/testRunner"];
   }
 
 
   mod_typescript_compiler -> mod_typescript_harness;
-  mod_typescript_compiler -> mod_typescript_server;
   mod_typescript_server -> mod_typescript_compiler;
+  mod_typescript_server -> mod_typescript_harness;
   mod_typescript_server -> mod_typescript_services;
   mod_typescript_services -> mod_typescript_compiler;
   mod_typescript_services -> mod_typescript_harness;

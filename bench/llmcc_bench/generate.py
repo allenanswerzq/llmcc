@@ -82,7 +82,7 @@ def generate_svg(
         svg_file.write_text(f"<!-- SVG skipped: {dot_file.stat().st_size} bytes -->")
         return False
 
-    def try_generate(input_file: Path) -> bool:
+    def try_generate(input_file: Path) -> tuple[bool, str]:
         try:
             result = subprocess.run(
                 ["dot", "-Tsvg", str(input_file), "-o", str(svg_file)],
@@ -90,33 +90,23 @@ def generate_svg(
                 text=True,
                 timeout=timeout,
             )
-            return result.returncode == 0
+            if result.returncode == 0:
+                return True, ""
+            else:
+                error_msg = result.stderr.strip() if result.stderr else f"exit code {result.returncode}"
+                return False, error_msg
         except subprocess.TimeoutExpired:
-            return False
-        except Exception:
-            return False
+            return False, f"timeout after {timeout}s"
+        except Exception as e:
+            return False, str(e)
 
     # First attempt with original file
-    if try_generate(dot_file):
+    success, error = try_generate(dot_file)
+    if success:
         return True
-
-    # Fallback: try with splines=polyline instead of splines=ortho
-    # Graphviz can segfault with splines=ortho on some complex graphs
-    try:
-        content = dot_file.read_text()
-        if "splines=ortho" in content:
-            modified_content = content.replace("splines=ortho", "splines=polyline")
-            temp_file = dot_file.with_suffix(".tmp.dot")
-            temp_file.write_text(modified_content)
-            try:
-                if try_generate(temp_file):
-                    return True
-            finally:
-                temp_file.unlink(missing_ok=True)
-    except Exception:
-        pass
-
-    svg_file.write_text(f"<!-- SVG generation failed -->")
+    else:
+        print(f"  SVG generation failed for {dot_file.name}: {error}")
+        svg_file.write_text(f"<!-- SVG generation failed: {error} -->")
     return False
 
 

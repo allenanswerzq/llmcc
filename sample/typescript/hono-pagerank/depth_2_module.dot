@@ -1,5 +1,4 @@
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.8;
   nodesep=0.4;
@@ -7,28 +6,25 @@ digraph architecture {
   concentrate=true;
 
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#666666", arrowsize=0.7];
+  edge [color="#888888", arrowsize=0.7];
 
   labelloc=t;
   fontsize=16;
-  fontname="Helvetica Bold";
 
-  mod_hono_adapter[label="hono::adapter", folder="/home/yibai/llmcc/sample/repos/hono/src/adapter"];
-  mod_hono_client[label="hono::client", folder="/home/yibai/llmcc/sample/repos/hono/src/client"];
-  mod_hono_context[label="hono::context", folder="/home/yibai/llmcc/sample/repos/hono/src"];
-  mod_hono_helper[label="hono::helper", folder="/home/yibai/llmcc/sample/repos/hono/src/helper"];
-  mod_hono_hono_base[label="hono::hono-base", folder="/home/yibai/llmcc/sample/repos/hono/src"];
-  mod_hono_http_exception[label="hono::http-exception", folder="/home/yibai/llmcc/sample/repos/hono/src"];
-  mod_hono_jsx[label="hono::jsx", folder="/home/yibai/llmcc/sample/repos/hono/src/jsx"];
-  mod_hono_middleware[label="hono::middleware", folder="/home/yibai/llmcc/sample/repos/hono/src/middleware"];
-  mod_hono_request[label="hono::request", folder="/home/yibai/llmcc/sample/repos/hono/src"];
-  mod_hono_utils[label="hono::utils", folder="/home/yibai/llmcc/sample/repos/hono/src/utils"];
-  mod_unknown_unknown[label="unknown::unknown", folder="/home/yibai/llmcc/sample/repos/hono/src"];
+  mod_hono_adapter[label="hono::adapter", path="/home/yibai/llmcc/sample/repos/hono/src/adapter"];
+  mod_hono_client[label="hono::client", path="/home/yibai/llmcc/sample/repos/hono/src/client"];
+  mod_hono_context[label="hono::context", path="/home/yibai/llmcc/sample/repos/hono/src"];
+  mod_hono_helper[label="hono::helper", path="/home/yibai/llmcc/sample/repos/hono/src/helper"];
+  mod_hono_hono_base[label="hono::hono-base", path="/home/yibai/llmcc/sample/repos/hono/src"];
+  mod_hono_http_exception[label="hono::http-exception", path="/home/yibai/llmcc/sample/repos/hono/src"];
+  mod_hono_middleware[label="hono::middleware", path="/home/yibai/llmcc/sample/repos/hono/src/middleware"];
+  mod_hono_request[label="hono::request", path="/home/yibai/llmcc/sample/repos/hono/src"];
+  mod_hono_utils[label="hono::utils", path="/home/yibai/llmcc/sample/repos/hono/src/utils"];
+  mod_unknown_unknown[label="unknown::unknown", path="/home/yibai/llmcc/sample/repos/hono/src"];
 
   mod_hono_adapter -> mod_hono_helper;
   mod_hono_context -> mod_hono_client;
   mod_hono_hono_base -> mod_unknown_unknown;
   mod_hono_middleware -> mod_hono_http_exception;
-  mod_hono_middleware -> mod_hono_jsx;
   mod_hono_utils -> mod_hono_request;
 }

@@ -1,5 +1,4 @@
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.8;
   nodesep=0.4;
@@ -7,29 +6,27 @@ digraph architecture {
   concentrate=true;
 
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#666666", arrowsize=0.7];
+  edge [color="#888888", arrowsize=0.7];
 
   labelloc=t;
   fontsize=16;
-  fontname="Helvetica Bold";
 
-  crate_opendal_core[label="opendal-core", folder="/home/yibai/llmcc/sample/repos/opendal/core/core"];
-  crate_opendal_java[label="opendal-java", folder="/home/yibai/llmcc/sample/repos/opendal/bindings/java"];
-  crate_opendal_nodejs[label="opendal-nodejs", folder="/home/yibai/llmcc/sample/repos/opendal/bindings/nodejs"];
-  crate_opendal_ocaml[label="opendal-ocaml", folder="/home/yibai/llmcc/sample/repos/opendal/bindings/ocaml"];
-  crate_opendal_python[label="opendal-python", folder="/home/yibai/llmcc/sample/repos/opendal/bindings/python"];
-  crate_opendal_ruby[label="opendal-ruby", folder="/home/yibai/llmcc/sample/repos/opendal/bindings/ruby"];
-  crate_opendal_service_aliyun_drive[label="opendal-service-aliyun-drive", folder="/home/yibai/llmcc/sample/repos/opendal/core/services/aliyun-drive"];
-  crate_opendal_service_memcached[label="opendal-service-memcached", folder="/home/yibai/llmcc/sample/repos/opendal/core/services/memcached"];
-  crate_opendal_service_oss[label="opendal-service-oss", folder="/home/yibai/llmcc/sample/repos/opendal/core/services/oss"];
-  crate_opendal_service_s3[label="opendal-service-s3", folder="/home/yibai/llmcc/sample/repos/opendal/core/services/s3"];
+  crate_opendal_core[label="opendal-core", path="/home/yibai/llmcc/sample/repos/opendal/core/core"];
+  crate_opendal_java[label="opendal-java", path="/home/yibai/llmcc/sample/repos/opendal/bindings/java"];
+  crate_opendal_ocaml[label="opendal-ocaml", path="/home/yibai/llmcc/sample/repos/opendal/bindings/ocaml"];
+  crate_opendal_python[label="opendal-python", path="/home/yibai/llmcc/sample/repos/opendal/bindings/python"];
+  crate_opendal_ruby[label="opendal-ruby", path="/home/yibai/llmcc/sample/repos/opendal/bindings/ruby"];
+  crate_opendal_service_aliyun_drive[label="opendal-service-aliyun-drive", path="/home/yibai/llmcc/sample/repos/opendal/core/services/aliyun-drive"];
+  crate_opendal_service_memcached[label="opendal-service-memcached", path="/home/yibai/llmcc/sample/repos/opendal/core/services/memcached"];
+  crate_opendal_service_oss[label="opendal-service-oss", path="/home/yibai/llmcc/sample/repos/opendal/core/services/oss"];
+  crate_opendal_service_s3[label="opendal-service-s3", path="/home/yibai/llmcc/sample/repos/opendal/core/services/s3"];
 
-  crate_opendal_core -> crate_opendal_nodejs;
+  crate_opendal_core -> crate_opendal_python;
   crate_opendal_java -> crate_opendal_core;
-  crate_opendal_java -> crate_opendal_nodejs;
-  crate_opendal_ocaml -> crate_opendal_ruby;
+  crate_opendal_ocaml -> crate_opendal_python;
   crate_opendal_python -> crate_opendal_core;
   crate_opendal_ruby -> crate_opendal_core;
+  crate_opendal_ruby -> crate_opendal_java;
   crate_opendal_service_aliyun_drive -> crate_opendal_core;
   crate_opendal_service_memcached -> crate_opendal_core;
   crate_opendal_service_oss -> crate_opendal_core;

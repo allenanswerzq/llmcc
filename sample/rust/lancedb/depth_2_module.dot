@@ -1,5 +1,4 @@
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.8;
   nodesep=0.4;
@@ -7,29 +6,29 @@ digraph architecture {
   concentrate=true;
 
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#666666", arrowsize=0.7];
+  edge [color="#888888", arrowsize=0.7];
 
   labelloc=t;
   fontsize=16;
-  fontname="Helvetica Bold";
 
-  mod_lancedb_arrow[label="lancedb::arrow", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
-  mod_lancedb_connection[label="lancedb::connection", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
-  mod_lancedb_data[label="lancedb::data", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/data"];
-  mod_lancedb_database[label="lancedb::database", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
-  mod_lancedb_dataloader[label="lancedb::dataloader", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/dataloader"];
-  mod_lancedb_embeddings[label="lancedb::embeddings", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/embeddings"];
-  mod_lancedb_index[label="lancedb::index", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/index"];
-  mod_lancedb_lib[label="lancedb::lib", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
-  mod_lancedb_nodejs_table[label="lancedb-nodejs::table", folder="/home/yibai/llmcc/sample/repos/lancedb/nodejs/src"];
-  mod_lancedb_python_connection[label="lancedb-python::connection", folder="/home/yibai/llmcc/sample/repos/lancedb/python/src"];
-  mod_lancedb_python_index[label="lancedb-python::index", folder="/home/yibai/llmcc/sample/repos/lancedb/python/src"];
-  mod_lancedb_python_table[label="lancedb-python::table", folder="/home/yibai/llmcc/sample/repos/lancedb/python/src"];
-  mod_lancedb_query[label="lancedb::query", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
-  mod_lancedb_remote[label="lancedb::remote", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/remote"];
-  mod_lancedb_rerankers[label="lancedb::rerankers", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
-  mod_lancedb_table[label="lancedb::table", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
-  mod_lancedb_test_utils[label="lancedb::test_utils", folder="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/test_utils"];
+  mod_lancedb_arrow[label="lancedb::arrow", path="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
+  mod_lancedb_connection[label="lancedb::connection", path="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
+  mod_lancedb_data[label="lancedb::data", path="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/data"];
+  mod_lancedb_database[label="lancedb::database", path="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
+  mod_lancedb_dataloader[label="lancedb::dataloader", path="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/dataloader"];
+  mod_lancedb_embeddings[label="lancedb::embeddings", path="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/embeddings"];
+  mod_lancedb_index[label="lancedb::index", path="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/index"];
+  mod_lancedb_lib[label="lancedb::lib", path="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
+  mod_lancedb_nodejs_remote[label="lancedb-nodejs::remote", path="/home/yibai/llmcc/sample/repos/lancedb/nodejs/src"];
+  mod_lancedb_nodejs_table[label="lancedb-nodejs::table", path="/home/yibai/llmcc/sample/repos/lancedb/nodejs/src"];
+  mod_lancedb_python_connection[label="lancedb-python::connection", path="/home/yibai/llmcc/sample/repos/lancedb/python/src"];
+  mod_lancedb_python_index[label="lancedb-python::index", path="/home/yibai/llmcc/sample/repos/lancedb/python/src"];
+  mod_lancedb_python_table[label="lancedb-python::table", path="/home/yibai/llmcc/sample/repos/lancedb/python/src"];
+  mod_lancedb_query[label="lancedb::query", path="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
+  mod_lancedb_remote[label="lancedb::remote", path="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/remote"];
+  mod_lancedb_rerankers[label="lancedb::rerankers", path="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
+  mod_lancedb_table[label="lancedb::table", path="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
+  mod_lancedb_test_utils[label="lancedb::test_utils", path="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/test_utils"];
 
   mod_lancedb_connection -> mod_lancedb_database;
   mod_lancedb_connection -> mod_lancedb_embeddings;
@@ -38,12 +37,12 @@ digraph architecture {
   mod_lancedb_embeddings -> mod_lancedb_arrow;
   mod_lancedb_index -> mod_lancedb_lib;
   mod_lancedb_index -> mod_lancedb_table;
+  mod_lancedb_nodejs_remote -> mod_lancedb_python_connection;
   mod_lancedb_nodejs_table -> mod_lancedb_table;
   mod_lancedb_python_index -> mod_lancedb_index;
   mod_lancedb_python_table -> mod_lancedb_table;
   mod_lancedb_query -> mod_lancedb_rerankers;
   mod_lancedb_query -> mod_lancedb_table;
-  mod_lancedb_remote -> mod_lancedb_python_connection;
   mod_lancedb_remote -> mod_lancedb_table;
   mod_lancedb_table -> mod_lancedb_arrow;
   mod_lancedb_table -> mod_lancedb_embeddings;
