@@ -221,19 +221,17 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                     }
 
                     // Fall back to scope chain if unit_meta is not populated
-                    if meta.package_name.is_none() {
-                        if let Some(crate_sym) = scope.find_parent_by_kind(SymKind::Crate)
-                            && let Some(name) = self.unit.cc.interner.resolve_owned(crate_sym.name)
-                        {
-                            block.set_crate_name(name);
-                        }
+                    if meta.package_name.is_none()
+                        && let Some(crate_sym) = scope.find_parent_by_kind(SymKind::Crate)
+                        && let Some(name) = self.unit.cc.interner.resolve_owned(crate_sym.name)
+                    {
+                        block.set_crate_name(name);
                     }
-                    if meta.module_name.is_none() {
-                        if let Some(module_sym) = scope.find_parent_by_kind(SymKind::Module)
-                            && let Some(name) = self.unit.cc.interner.resolve_owned(module_sym.name)
-                        {
-                            block.set_module_path(name);
-                        }
+                    if meta.module_name.is_none()
+                        && let Some(module_sym) = scope.find_parent_by_kind(SymKind::Module)
+                        && let Some(name) = self.unit.cc.interner.resolve_owned(module_sym.name)
+                    {
+                        block.set_module_path(name);
                     }
                 }
 

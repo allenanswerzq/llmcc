@@ -1,0 +1,51 @@
+===============================================================================
+function-param-return-same-name
+===============================================================================
+Test resolution when function parameter type and return type have
+the same name but come from different modules via import aliases.
+lang: typescript
+
+--- file: src/input.ts ---
+
+export interface Data {
+    raw: string;
+}
+
+--- file: src/output.ts ---
+
+export interface Data {
+    processed: string;
+}
+
+--- file: src/processor.ts ---
+
+import { Data as InputData } from "./input";
+import { Data as OutputData } from "./output";
+
+export function process(input: InputData): OutputData {
+    return { processed: "" };
+}
+
+--- expect:block-graph ---
+(root:1 input ($TMP/src/input.ts)
+  (interface:2 Data
+    (field:3 raw @type string)
+  )
+)
+
+(root:4 output ($TMP/src/output.ts)
+  (interface:5 Data
+    (field:6 processed @type string)
+  )
+)
+
+(root:7 processor ($TMP/src/processor.ts)
+  (func:8 process
+    (parameter:9 input @type input)
+    (return:10)
+  )
+)
+
+--- expect:arch-graph ---
+digraph G {
+}

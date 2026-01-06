@@ -27,7 +27,6 @@ digraph architecture {
   crate_opendal_lua[label="opendal-lua", folder="/home/yibai/llmcc/sample/repos/opendal/bindings/lua"];
   crate_opendal_nodejs[label="opendal-nodejs", folder="/home/yibai/llmcc/sample/repos/opendal/bindings/nodejs"];
   crate_opendal_ocaml[label="opendal-ocaml", folder="/home/yibai/llmcc/sample/repos/opendal/bindings/ocaml"];
-  crate_opendal_php[label="opendal-php", folder="/home/yibai/llmcc/sample/repos/opendal/bindings/php"];
   crate_opendal_python[label="opendal-python", folder="/home/yibai/llmcc/sample/repos/opendal/bindings/python"];
   crate_opendal_ruby[label="opendal-ruby", folder="/home/yibai/llmcc/sample/repos/opendal/bindings/ruby"];
   crate_opendal_service_aliyun_drive[label="opendal-service-aliyun-drive", folder="/home/yibai/llmcc/sample/repos/opendal/core/services/aliyun-drive"];
@@ -69,6 +68,7 @@ digraph architecture {
   crate_opendal_service_s3[label="opendal-service-s3", folder="/home/yibai/llmcc/sample/repos/opendal/core/services/s3"];
   crate_opendal_service_seafile[label="opendal-service-seafile", folder="/home/yibai/llmcc/sample/repos/opendal/core/services/seafile"];
   crate_opendal_service_sftp[label="opendal-service-sftp", folder="/home/yibai/llmcc/sample/repos/opendal/core/services/sftp"];
+  crate_opendal_service_surrealdb[label="opendal-service-surrealdb", folder="/home/yibai/llmcc/sample/repos/opendal/core/services/surrealdb"];
   crate_opendal_service_swift[label="opendal-service-swift", folder="/home/yibai/llmcc/sample/repos/opendal/core/services/swift"];
   crate_opendal_service_upyun[label="opendal-service-upyun", folder="/home/yibai/llmcc/sample/repos/opendal/core/services/upyun"];
   crate_opendal_service_vercel_artifacts[label="opendal-service-vercel-artifacts", folder="/home/yibai/llmcc/sample/repos/opendal/core/services/vercel-artifacts"];
@@ -80,12 +80,11 @@ digraph architecture {
 
   crate_dav_server_opendalfs -> crate_opendal_core;
   crate_object_store_opendal -> crate_opendal_core;
-  crate_object_store_opendal -> crate_opendal_nodejs;
   crate_odev -> crate_opendal_service_azdls;
-  crate_opendal_core -> crate_opendal_java;
-  crate_opendal_core -> crate_opendal_python;
+  crate_opendal_core -> crate_opendal_nodejs;
   crate_opendal_fuzz -> crate_opendal_testkit;
-  crate_opendal_java -> crate_opendal_nodejs;
+  crate_opendal_java -> crate_opendal_core;
+  crate_opendal_java -> crate_opendal_python;
   crate_opendal_layer_capability_check -> crate_opendal_core;
   crate_opendal_layer_logging -> crate_opendal_core;
   crate_opendal_layer_mime_guess -> crate_opendal_core;
@@ -93,10 +92,6 @@ digraph architecture {
   crate_opendal_layer_timeout -> crate_opendal_core;
   crate_opendal_lua -> crate_opendal_ocaml;
   crate_opendal_nodejs -> crate_opendal_lua;
-  crate_opendal_ocaml -> crate_opendal_core;
-  crate_opendal_ocaml -> crate_opendal_nodejs;
-  crate_opendal_ocaml -> crate_opendal_php;
-  crate_opendal_ocaml -> crate_opendal_ruby;
   crate_opendal_python -> crate_opendal_core;
   crate_opendal_ruby -> crate_opendal_java;
   crate_opendal_service_aliyun_drive -> crate_opendal_core;
@@ -138,6 +133,7 @@ digraph architecture {
   crate_opendal_service_s3 -> crate_opendal_core;
   crate_opendal_service_seafile -> crate_opendal_core;
   crate_opendal_service_sftp -> crate_opendal_core;
+  crate_opendal_service_surrealdb -> crate_opendal_core;
   crate_opendal_service_swift -> crate_opendal_core;
   crate_opendal_service_upyun -> crate_opendal_core;
   crate_opendal_service_vercel_artifacts -> crate_opendal_core;

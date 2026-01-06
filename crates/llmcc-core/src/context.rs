@@ -486,7 +486,7 @@ impl<'tcx> CompileCtxt<'tcx> {
         // Collect file paths
         let file_paths: Vec<std::path::PathBuf> = files
             .iter()
-            .filter_map(|f| f.path().map(|p| std::path::PathBuf::from(p)))
+            .filter_map(|f| f.path().map(std::path::PathBuf::from))
             .collect();
 
         if file_paths.is_empty() {

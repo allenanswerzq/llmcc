@@ -20,7 +20,9 @@ digraph architecture {
   crate_datafusion_common[label="datafusion-common", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/common"];
   crate_datafusion_datasource[label="datafusion-datasource", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/datasource"];
   crate_datafusion_datasource_arrow[label="datafusion-datasource-arrow", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/datasource-arrow"];
+  crate_datafusion_datasource_avro[label="datafusion-datasource-avro", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/datasource-avro"];
   crate_datafusion_datasource_csv[label="datafusion-datasource-csv", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/datasource-csv"];
+  crate_datafusion_datasource_json[label="datafusion-datasource-json", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/datasource-json"];
   crate_datafusion_datasource_parquet[label="datafusion-datasource-parquet", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/datasource-parquet"];
   crate_datafusion_execution[label="datafusion-execution", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/execution"];
   crate_datafusion_expr[label="datafusion-expr", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr"];
@@ -54,10 +56,14 @@ digraph architecture {
   crate_datafusion_common -> crate_datafusion_proto;
   crate_datafusion_datasource -> crate_datafusion_common;
   crate_datafusion_datasource -> crate_datafusion_physical_expr_common;
+  crate_datafusion_datasource -> crate_datafusion_physical_plan;
   crate_datafusion_datasource -> crate_datafusion_proto;
   crate_datafusion_datasource_arrow -> crate_datafusion_datasource;
+  crate_datafusion_datasource_avro -> crate_datafusion_proto;
   crate_datafusion_datasource_csv -> crate_datafusion_datasource;
+  crate_datafusion_datasource_json -> crate_datafusion_datasource;
   crate_datafusion_datasource_parquet -> crate_datafusion_common;
+  crate_datafusion_datasource_parquet -> crate_datafusion_datasource;
   crate_datafusion_datasource_parquet -> crate_datafusion_execution;
   crate_datafusion_datasource_parquet -> crate_datafusion_physical_expr_common;
   crate_datafusion_datasource_parquet -> crate_datafusion_proto;
@@ -68,6 +74,7 @@ digraph architecture {
   crate_datafusion_expr_common -> crate_datafusion_common;
   crate_datafusion_expr_common -> crate_datafusion_expr;
   crate_datafusion_expr_common -> crate_datafusion_functions;
+  crate_datafusion_expr_common -> crate_datafusion_proto;
   crate_datafusion_ffi -> crate_datafusion_catalog;
   crate_datafusion_ffi -> crate_datafusion_expr;
   crate_datafusion_ffi -> crate_datafusion_expr_common;
@@ -87,7 +94,7 @@ digraph architecture {
   crate_datafusion_optimizer -> crate_datafusion_expr;
   crate_datafusion_optimizer -> crate_datafusion_expr_common;
   crate_datafusion_optimizer -> crate_datafusion_functions;
-  crate_datafusion_optimizer -> crate_datafusion_proto;
+  crate_datafusion_optimizer -> crate_datafusion_physical_expr;
   crate_datafusion_physical_expr -> crate_datafusion_common;
   crate_datafusion_physical_expr -> crate_datafusion_expr;
   crate_datafusion_physical_expr -> crate_datafusion_expr_common;

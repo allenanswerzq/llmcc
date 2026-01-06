@@ -1,0 +1,26 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  crate_trpc_client[label="trpc_client", folder="/home/yibai/llmcc/sample/repos/trpc/packages/client"];
+  crate_trpc_next[label="trpc_next", folder="/home/yibai/llmcc/sample/repos/trpc/packages/next"];
+  crate_trpc_react_query[label="trpc_react-query", folder="/home/yibai/llmcc/sample/repos/trpc/packages/react-query"];
+  crate_trpc_server[label="trpc_server", folder="/home/yibai/llmcc/sample/repos/trpc/packages/server"];
+  crate_trpc_tanstack_react_query[label="trpc_tanstack-react-query", folder="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query"];
+
+  crate_trpc_client -> crate_trpc_server;
+  crate_trpc_next -> crate_trpc_client;
+  crate_trpc_next -> crate_trpc_server;
+  crate_trpc_tanstack_react_query -> crate_trpc_react_query;
+}

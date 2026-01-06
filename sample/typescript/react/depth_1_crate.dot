@@ -1,0 +1,30 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  crate_babel_plugin_react_compiler[label="babel-plugin-react-compiler", folder="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler"];
+  crate_eslint_plugin_react_compiler[label="eslint-plugin-react-compiler", folder="/home/yibai/llmcc/sample/repos/react/compiler/packages/eslint-plugin-react-compiler"];
+  crate_eslint_plugin_react_hooks[label="eslint-plugin-react-hooks", folder="/home/yibai/llmcc/sample/repos/react/packages/eslint-plugin-react-hooks"];
+  crate_playground[label="playground", folder="/home/yibai/llmcc/sample/repos/react/compiler/apps/playground"];
+  crate_react_mcp_server[label="react-mcp-server", folder="/home/yibai/llmcc/sample/repos/react/compiler/packages/react-mcp-server"];
+  crate_snap[label="snap", folder="/home/yibai/llmcc/sample/repos/react/compiler/packages/snap"];
+
+  crate_babel_plugin_react_compiler -> crate_react_mcp_server;
+  crate_babel_plugin_react_compiler -> crate_snap;
+  crate_eslint_plugin_react_compiler -> crate_babel_plugin_react_compiler;
+  crate_eslint_plugin_react_compiler -> crate_eslint_plugin_react_hooks;
+  crate_eslint_plugin_react_hooks -> crate_babel_plugin_react_compiler;
+  crate_playground -> crate_babel_plugin_react_compiler;
+  crate_snap -> crate_babel_plugin_react_compiler;
+}

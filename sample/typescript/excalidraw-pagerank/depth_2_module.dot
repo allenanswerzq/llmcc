@@ -1,0 +1,84 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  subgraph cluster_excalidraw_element {
+    label="excalidraw_element";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_excalidraw_element_Scene[label="Scene", folder="/home/yibai/llmcc/sample/repos/excalidraw/packages/element/src"];
+    mod_excalidraw_element_linearElementEditor[label="linearElementEditor", folder="/home/yibai/llmcc/sample/repos/excalidraw/packages/element/src"];
+    mod_excalidraw_element_store[label="store", folder="/home/yibai/llmcc/sample/repos/excalidraw/packages/element/src"];
+    mod_excalidraw_element_utils[label="utils", folder="/home/yibai/llmcc/sample/repos/excalidraw/packages/element/src"];
+  }
+
+  subgraph cluster_excalidraw_excalidraw {
+    label="excalidraw_excalidraw";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_excalidraw_excalidraw_data[label="data", folder="/home/yibai/llmcc/sample/repos/excalidraw/packages/excalidraw/data"];
+    mod_excalidraw_excalidraw_fonts[label="fonts", folder="/home/yibai/llmcc/sample/repos/excalidraw/packages/excalidraw/fonts"];
+    mod_excalidraw_excalidraw_history[label="history", folder="/home/yibai/llmcc/sample/repos/excalidraw/packages/excalidraw"];
+    mod_excalidraw_excalidraw_types[label="types", folder="/home/yibai/llmcc/sample/repos/excalidraw/packages/excalidraw"];
+  }
+
+  subgraph cluster_excalidraw_math {
+    label="excalidraw_math";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_excalidraw_math_curve[label="curve", folder="/home/yibai/llmcc/sample/repos/excalidraw/packages/math/src"];
+    mod_excalidraw_math_ellipse[label="ellipse", folder="/home/yibai/llmcc/sample/repos/excalidraw/packages/math/src"];
+    mod_excalidraw_math_point[label="point", folder="/home/yibai/llmcc/sample/repos/excalidraw/packages/math/src"];
+    mod_excalidraw_math_polygon[label="polygon", folder="/home/yibai/llmcc/sample/repos/excalidraw/packages/math/src"];
+    mod_excalidraw_math_rectangle[label="rectangle", folder="/home/yibai/llmcc/sample/repos/excalidraw/packages/math/src"];
+    mod_excalidraw_math_segment[label="segment", folder="/home/yibai/llmcc/sample/repos/excalidraw/packages/math/src"];
+    mod_excalidraw_math_vector[label="vector", folder="/home/yibai/llmcc/sample/repos/excalidraw/packages/math/src"];
+  }
+
+  subgraph cluster_excalidraw_utils {
+    label="excalidraw_utils";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_excalidraw_utils_bbox[label="bbox", folder="/home/yibai/llmcc/sample/repos/excalidraw/packages/utils/src"];
+  }
+
+
+  mod_excalidraw_element_Scene -> mod_excalidraw_excalidraw_types;
+  mod_excalidraw_element_store -> mod_excalidraw_excalidraw_history;
+  mod_excalidraw_element_utils -> mod_excalidraw_math_point;
+  mod_excalidraw_element_utils -> mod_excalidraw_math_rectangle;
+  mod_excalidraw_element_utils -> mod_excalidraw_math_segment;
+  mod_excalidraw_excalidraw_data -> mod_excalidraw_excalidraw_types;
+  mod_excalidraw_excalidraw_fonts -> mod_excalidraw_element_Scene;
+  mod_excalidraw_excalidraw_types -> mod_excalidraw_element_linearElementEditor;
+  mod_excalidraw_excalidraw_types -> mod_excalidraw_element_store;
+  mod_excalidraw_math_curve -> mod_excalidraw_math_point;
+  mod_excalidraw_math_curve -> mod_excalidraw_math_vector;
+  mod_excalidraw_math_ellipse -> mod_excalidraw_math_point;
+  mod_excalidraw_math_ellipse -> mod_excalidraw_math_vector;
+  mod_excalidraw_math_polygon -> mod_excalidraw_math_point;
+  mod_excalidraw_utils_bbox -> mod_excalidraw_math_vector;
+}

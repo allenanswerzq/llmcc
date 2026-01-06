@@ -1,0 +1,31 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  crate_nest_typescript_starter[label="nest-typescript-starter", folder="/home/yibai/llmcc/sample/repos/nest/sample/28-sse"];
+  crate_nestjs_common[label="nestjs_common", folder="/home/yibai/llmcc/sample/repos/nest/packages/common"];
+  crate_nestjs_core[label="nestjs_core", folder="/home/yibai/llmcc/sample/repos/nest"];
+  crate_nestjs_microservices[label="nestjs_microservices", folder="/home/yibai/llmcc/sample/repos/nest/packages/microservices"];
+  crate_nestjs_platform_express[label="nestjs_platform-express", folder="/home/yibai/llmcc/sample/repos/nest/packages/platform-express"];
+  crate_nestjs_websockets[label="nestjs_websockets", folder="/home/yibai/llmcc/sample/repos/nest/packages/websockets"];
+
+  crate_nest_typescript_starter -> crate_nestjs_common;
+  crate_nest_typescript_starter -> crate_nestjs_core;
+  crate_nestjs_common -> crate_nestjs_core;
+  crate_nestjs_core -> crate_nestjs_common;
+  crate_nestjs_core -> crate_nestjs_microservices;
+  crate_nestjs_microservices -> crate_nestjs_common;
+  crate_nestjs_platform_express -> crate_nestjs_common;
+  crate_nestjs_websockets -> crate_nestjs_common;
+}

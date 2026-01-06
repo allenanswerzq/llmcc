@@ -157,20 +157,20 @@ impl<'a> BinderScopes<'a> {
 
             // 2. Prefer symbols from the same crate (same package root)
             let current_crate_root = self.unit.unit_meta().package_root.as_ref();
-            if let Some(current_root) = current_crate_root {
-                if let Some(same_crate_sym) = symbols.iter().find(|s| {
+            if let Some(current_root) = current_crate_root
+                && let Some(same_crate_sym) = symbols.iter().find(|s| {
                     s.unit_index()
                         .and_then(|idx| self.unit.cc.unit_metas.get(idx))
                         .and_then(|meta| meta.package_root.as_ref())
                         .is_some_and(|r| r == current_root)
-                }) {
-                    tracing::trace!(
-                        "preferring same-crate symbol for '{}' from crate root '{:?}'",
-                        name,
-                        current_root
-                    );
-                    return Some(*same_crate_sym);
-                }
+                })
+            {
+                tracing::trace!(
+                    "preferring same-crate symbol for '{}' from crate root '{:?}'",
+                    name,
+                    current_root
+                );
+                return Some(*same_crate_sym);
             }
 
             tracing::warn!(

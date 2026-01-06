@@ -1,0 +1,79 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_zustand {
+    label="zustand";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_middleware {
+      label="middleware";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_persist_ts {
+        label="persist.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n448[label="PersistStorage", full_path="/home/yibai/llmcc/sample/repos/zustand/src/middleware/persist.ts:18", sym_ty="Interface", shape=box];
+        n468[label="createJSONStorage", full_path="/home/yibai/llmcc/sample/repos/zustand/src/middleware/persist.ts:31", sym_ty="Function", shape=ellipse];
+        n473[label="PersistOptions", full_path="/home/yibai/llmcc/sample/repos/zustand/src/middleware/persist.ts:63", sym_ty="Interface", shape=box];
+        n9[label="StateStorage", full_path="/home/yibai/llmcc/sample/repos/zustand/src/middleware/persist.ts:7", sym_ty="Interface", shape=box];
+      }
+
+    }
+
+    subgraph cluster_react {
+      label="react";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_shallow_ts {
+        label="shallow.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n81[label="useShallow", full_path="/home/yibai/llmcc/sample/repos/zustand/src/react/shallow.ts:4", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_vanilla {
+      label="vanilla";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_shallow_ts {
+        label="shallow.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n391[label="shallow", full_path="/home/yibai/llmcc/sample/repos/zustand/src/vanilla/shallow.ts:48", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+  }
+
+
+  n9 -> n468 [from="input", to="func"];
+  n81 -> n391 [from="caller", to="callee"];
+  n448 -> n473 [from="field_type", to="struct"];
+  n468 -> n448 [from="func", to="output"];
+}

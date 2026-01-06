@@ -69,6 +69,9 @@ def generate_svg(
     """
     Generate SVG from DOT file using Graphviz.
 
+    If the initial attempt fails (e.g., segfault with splines=ortho),
+    retries with splines=polyline as a fallback.
+
     Returns: True if successful
     """
     if not shutil.which("dot"):
@@ -79,19 +82,42 @@ def generate_svg(
         svg_file.write_text(f"<!-- SVG skipped: {dot_file.stat().st_size} bytes -->")
         return False
 
+    def try_generate(input_file: Path) -> bool:
+        try:
+            result = subprocess.run(
+                ["dot", "-Tsvg", str(input_file), "-o", str(svg_file)],
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+            )
+            return result.returncode == 0
+        except subprocess.TimeoutExpired:
+            return False
+        except Exception:
+            return False
+
+    # First attempt with original file
+    if try_generate(dot_file):
+        return True
+
+    # Fallback: try with splines=polyline instead of splines=ortho
+    # Graphviz can segfault with splines=ortho on some complex graphs
     try:
-        result = subprocess.run(
-            ["dot", "-Tsvg", str(dot_file), "-o", str(svg_file)],
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-        )
-        return result.returncode == 0
-    except subprocess.TimeoutExpired:
-        svg_file.write_text(f"<!-- SVG timeout: {timeout}s -->")
-        return False
+        content = dot_file.read_text()
+        if "splines=ortho" in content:
+            modified_content = content.replace("splines=ortho", "splines=polyline")
+            temp_file = dot_file.with_suffix(".tmp.dot")
+            temp_file.write_text(modified_content)
+            try:
+                if try_generate(temp_file):
+                    return True
+            finally:
+                temp_file.unlink(missing_ok=True)
     except Exception:
-        return False
+        pass
+
+    svg_file.write_text(f"<!-- SVG generation failed -->")
+    return False
 
 
 def generate_graphs(

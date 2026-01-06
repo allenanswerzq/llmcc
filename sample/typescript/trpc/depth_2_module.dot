@@ -1,0 +1,47 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  mod_trpc_client_TRPCClientError[label="trpc_client::TRPCClientError", folder="/home/yibai/llmcc/sample/repos/trpc/packages/client/src"];
+  mod_trpc_client___tests__[label="trpc_client::__tests__", folder="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/__tests__"];
+  mod_trpc_client_createTRPCClient[label="trpc_client::createTRPCClient", folder="/home/yibai/llmcc/sample/repos/trpc/packages/client/src"];
+  mod_trpc_client_internals[label="trpc_client::internals", folder="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/internals"];
+  mod_trpc_client_links[label="trpc_client::links", folder="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links"];
+  mod_trpc_next_app_dir[label="trpc_next::app-dir", folder="/home/yibai/llmcc/sample/repos/trpc/packages/next/src/app-dir"];
+  mod_trpc_react_query_internals[label="trpc_react-query::internals", folder="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/internals"];
+  mod_trpc_react_query_shared[label="trpc_react-query::shared", folder="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared"];
+  mod_trpc_server___tests__[label="trpc_server::__tests__", folder="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/__tests__"];
+  mod_trpc_server_adapters[label="trpc_server::adapters", folder="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters"];
+  mod_trpc_server_observable[label="trpc_server::observable", folder="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/observable"];
+  mod_trpc_server_unstable_core_do_not_import[label="trpc_server::unstable-core-do-not-import", folder="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import"];
+  mod_trpc_tanstack_react_query_internals[label="trpc_tanstack-react-query::internals", folder="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals"];
+
+  mod_trpc_client_TRPCClientError -> mod_trpc_server_unstable_core_do_not_import;
+  mod_trpc_client___tests__ -> mod_trpc_client_links;
+  mod_trpc_client_createTRPCClient -> mod_trpc_client_internals;
+  mod_trpc_client_internals -> mod_trpc_client_links;
+  mod_trpc_client_links -> mod_trpc_client_internals;
+  mod_trpc_client_links -> mod_trpc_server_observable;
+  mod_trpc_client_links -> mod_trpc_server_unstable_core_do_not_import;
+  mod_trpc_next_app_dir -> mod_trpc_client_internals;
+  mod_trpc_next_app_dir -> mod_trpc_client_links;
+  mod_trpc_next_app_dir -> mod_trpc_server_unstable_core_do_not_import;
+  mod_trpc_react_query_internals -> mod_trpc_tanstack_react_query_internals;
+  mod_trpc_react_query_shared -> mod_trpc_client_createTRPCClient;
+  mod_trpc_server___tests__ -> mod_trpc_server_adapters;
+  mod_trpc_server___tests__ -> mod_trpc_server_unstable_core_do_not_import;
+  mod_trpc_server_adapters -> mod_trpc_server_unstable_core_do_not_import;
+  mod_trpc_tanstack_react_query_internals -> mod_trpc_react_query_shared;
+  mod_trpc_tanstack_react_query_internals -> mod_trpc_server_unstable_core_do_not_import;
+}

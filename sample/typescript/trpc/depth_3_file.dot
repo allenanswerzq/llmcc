@@ -1,0 +1,1988 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_trpc_client {
+    label="trpc_client";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_TRPCClientError_ts {
+      label="TRPCClientError.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3074[label="TRPCClientErrorBase", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/TRPCClientError.ts:14", sym_ty="Interface", shape=box];
+      n3142[label="isTRPCErrorResponse", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/TRPCClientError.ts:28", sym_ty="Function", shape=ellipse];
+      n3190[label="getMessageFromUnknownError", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/TRPCClientError.ts:37", sym_ty="Function", shape=ellipse];
+      n3236[label="TRPCClientError", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/TRPCClientError.ts:47", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster___tests__ {
+      label="__tests__";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_testClientResource_ts {
+        label="testClientResource.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3717[label="TestServerAndClientResourceOpts", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/__tests__/testClientResource.ts:39", sym_ty="Interface", shape=box];
+        n3770[label="testServerAndClientResource", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/__tests__/testClientResource.ts:59", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_createTRPCClient_ts {
+      label="createTRPCClient.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n4400[label="createTRPCClientProxy", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/createTRPCClient.ts:139", sym_ty="Function", shape=ellipse];
+      n4427[label="createTRPCClient", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/createTRPCClient.ts:158", sym_ty="Function", shape=ellipse];
+      n4457[label="getUntypedClient", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/createTRPCClient.ts:170", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_createTRPCUntypedClient_ts {
+      label="createTRPCUntypedClient.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2428[label="createTRPCUntypedClient", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/createTRPCUntypedClient.ts:5", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_getFetch_ts {
+      label="getFetch.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2341[label="getFetch", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/getFetch.ts:7", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_internals {
+      label="internals";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_TRPCUntypedClient_ts {
+        label="TRPCUntypedClient.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4121[label="TRPCRequestOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/internals/TRPCUntypedClient.ts:24", sym_ty="Interface", shape=box];
+        n4273[label="TRPCUntypedClient", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/internals/TRPCUntypedClient.ts:47", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_dataLoader_ts {
+        label="dataLoader.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1608[label="load", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/internals/dataLoader.ts:135", sym_ty="Function", shape=ellipse];
+        n1462[label="dataLoader", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/internals/dataLoader.ts:32", sym_ty="Function", shape=ellipse];
+        n1500[label="groupItems", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/internals/dataLoader.ts:47", sym_ty="Function", shape=ellipse];
+        n1573[label="dispatch", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/internals/dataLoader.ts:86", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_transformer_ts {
+        label="transformer.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1669[label="getTransformer", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/internals/transformer.ts:49", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_types_ts {
+        label="types.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3564[label="ResponseEsque", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/internals/types.ts:74", sym_ty="Interface", shape=box];
+      }
+
+    }
+
+    subgraph cluster_links {
+      label="links";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_contentTypes_ts {
+        label="contentTypes.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1899[label="isOctetType", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/internals/contentTypes.ts:1", sym_ty="Function", shape=ellipse];
+        n1922[label="isNonJsonSerializable", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/internals/contentTypes.ts:15", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_createChain_ts {
+        label="createChain.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n829[label="createChain", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/internals/createChain.ts:10", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_createWsClient_ts {
+        label="createWsClient.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n584[label="createWSClient", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/wsLink/createWsClient.ts:4", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_dedupeLink_ts {
+        label="dedupeLink.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1136[label="dedupeLink", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/internals/dedupeLink.ts:11", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_httpBatchLink_ts {
+        label="httpBatchLink.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n21[label="httpBatchLink", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/httpBatchLink.ts:21", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_httpBatchStreamLink_ts {
+        label="httpBatchStreamLink.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1171[label="httpBatchStreamLink", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/httpBatchStreamLink.ts:23", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_httpLink_ts {
+        label="httpLink.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4346[label="httpLink", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/httpLink.ts:75", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_httpSubscriptionLink_ts {
+        label="httpSubscriptionLink.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2781[label="urlWithConnectionParams", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/httpSubscriptionLink.ts:26", sym_ty="Function", shape=ellipse];
+        n2882[label="httpSubscriptionLink", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/httpSubscriptionLink.ts:65", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_httpUtils_ts {
+        label="httpUtils.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2320[label="fetchHTTPResponse", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/internals/httpUtils.ts:195", sym_ty="Function", shape=ellipse];
+        n2360[label="httpRequest", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/internals/httpUtils.ts:226", sym_ty="Function", shape=ellipse];
+        n1762[label="ResolvedHTTPLinkOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/internals/httpUtils.ts:38", sym_ty="Interface", shape=box];
+        n1782[label="resolveHTTPLinkOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/internals/httpUtils.ts:45", sym_ty="Function", shape=ellipse];
+        n1793[label="arrayToDict", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/internals/httpUtils.ts:57", sym_ty="Function", shape=ellipse];
+        n1812[label="HTTPResult", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/internals/httpUtils.ts:72", sym_ty="Interface", shape=box];
+        n2012[label="getInput", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/internals/httpUtils.ts:84", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_localLink_test_ts {
+        label="localLink.test.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2235[label="localLinkClient", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/localLink.test.ts:40", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_localLink_ts {
+        label="localLink.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n871[label="unstable_localLink", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/localLink.ts:40", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_loggerLink_ts {
+        label="loggerLink.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n474[label="loggerLink", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/loggerLink.ts:214", sym_ty="Function", shape=ellipse];
+        n350[label="LoggerLinkOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/loggerLink.ts:61", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_options_ts {
+        label="options.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2488[label="WebSocketClientOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/wsLink/wsClient/options.ts:3", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_retryLink_ts {
+        label="retryLink.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3105[label="RetryLinkOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/retryLink.ts:10", sym_ty="Interface", shape=box];
+        n3146[label="RetryFnOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/retryLink.ts:21", sym_ty="Interface", shape=box];
+        n3176[label="retryLink", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/retryLink.ts:39", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_splitLink_ts {
+        label="splitLink.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n470[label="asArray", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/splitLink.ts:6", sym_ty="Function", shape=ellipse];
+        n479[label="splitLink", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/splitLink.ts:9", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_subscriptions_ts {
+        label="subscriptions.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1520[label="ConnectionStateBase", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/internals/subscriptions.ts:1", sym_ty="Interface", shape=box];
+        n1815[label="ConnectionConnectingState", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/internals/subscriptions.ts:11", sym_ty="Interface", shape=box];
+        n1826[label="ConnectionPendingState", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/internals/subscriptions.ts:16", sym_ty="Interface", shape=box];
+        n1803[label="ConnectionIdleState", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/internals/subscriptions.ts:7", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_types_ts {
+        label="types.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2814[label="OperationContext", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/types.ts:21", sym_ty="Interface", shape=box];
+        n2957[label="TRPCClientRuntime", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/types.ts:55", sym_ty="Interface", shape=box];
+        n2968[label="OperationResultEnvelope", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/types.ts:62", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_urlWithConnectionParams_ts {
+        label="urlWithConnectionParams.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n919[label="UrlOptionsWithConnectionParams", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/internals/urlWithConnectionParams.ts:21", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_utils_ts {
+        label="utils.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2108[label="ResettableTimeout", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/wsLink/wsClient/utils.ts:25", sym_ty="Struct", shape=box];
+        n2155[label="withResolvers", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/wsLink/wsClient/utils.ts:56", sym_ty="Function", shape=ellipse];
+        n2181[label="prepareUrl", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/wsLink/wsClient/utils.ts:73", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_wsClient_ts {
+        label="wsClient.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n522[label="WsClient", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/wsLink/wsClient/wsClient.ts:30", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_wsConnection_ts {
+        label="wsConnection.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n11[label="asyncWsOpen", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/wsLink/wsClient/wsConnection.ts:10", sym_ty="Function", shape=ellipse];
+        n528[label="backwardCompatibility", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/wsLink/wsClient/wsConnection.ts:217", sym_ty="Function", shape=ellipse];
+        n272[label="PingPongOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/wsLink/wsClient/wsConnection.ts:22", sym_ty="Interface", shape=box];
+        n284[label="setupPingInterval", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/wsLink/wsClient/wsConnection.ts:46", sym_ty="Function", shape=ellipse];
+        n300[label="start", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/wsLink/wsClient/wsConnection.ts:53", sym_ty="Function", shape=ellipse];
+        n306[label="reset", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/wsLink/wsClient/wsConnection.ts:62", sym_ty="Function", shape=ellipse];
+        n312[label="pong", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/wsLink/wsClient/wsConnection.ts:67", sym_ty="Function", shape=ellipse];
+        n359[label="WebSocketConnectionOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/wsLink/wsClient/wsConnection.ts:87", sym_ty="Interface", shape=box];
+        n376[label="WsConnection", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/wsLink/wsClient/wsConnection.ts:99", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_wsLink_ts {
+        label="wsLink.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n996[label="wsLink", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/links/wsLink/wsLink.ts:19", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_trpc_next {
+    label="trpc_next";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_app_dir {
+      label="app-dir";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_client_ts {
+        label="client.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1308[label="experimental_createTRPCNextAppDirClient", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/next/src/app-dir/client.ts:26", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_nextCache_ts {
+        label="nextCache.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1737[label="experimental_nextCacheLink", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/next/src/app-dir/links/nextCache.ts:27", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_nextHttp_ts {
+        label="nextHttp.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2576[label="experimental_nextHttpLink", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/next/src/app-dir/links/nextHttp.ts:29", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_server_ts {
+        label="server.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2458[label="experimental_createTRPCNextAppDirServer", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/next/src/app-dir/server.ts:41", sym_ty="Function", shape=ellipse];
+        n2505[label="experimental_createServerActionHandler", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/next/src/app-dir/server.ts:81", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_shared_ts {
+        label="shared.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4566[label="generateCacheTag", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/next/src/app-dir/shared.ts:102", sym_ty="Function", shape=ellipse];
+        n4572[label="isFormData", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/next/src/app-dir/shared.ts:108", sym_ty="Function", shape=ellipse];
+        n4019[label="createUseProxy", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/next/src/app-dir/shared.ts:42", sym_ty="Function", shape=ellipse];
+        n4563[label="CreateTRPCNextAppRouterOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/next/src/app-dir/shared.ts:95", sym_ty="Interface", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_trpc_react_query {
+    label="trpc_react-query";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_internals {
+      label="internals";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_getQueryKey_ts {
+        label="getQueryKey.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2657[label="getQueryKey", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/internals/getQueryKey.ts:109", sym_ty="Function", shape=ellipse];
+        n2741[label="getMutationKey", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/internals/getQueryKey.ts:132", sym_ty="Function", shape=ellipse];
+        n2495[label="getQueryKeyInternal", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/internals/getQueryKey.ts:28", sym_ty="Function", shape=ellipse];
+        n2587[label="getMutationKeyInternal", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/internals/getQueryKey.ts:76", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_trpcResult_ts {
+        label="trpcResult.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n204[label="useHookResult", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/internals/trpcResult.ts:20", sym_ty="Function", shape=ellipse];
+        n197[label="createTRPCOptionsResult", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/internals/trpcResult.ts:7", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_server {
+      label="server";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_ssgProxy_ts {
+        label="ssgProxy.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n693[label="_dehydrate", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/server/ssgProxy.ts:122", sym_ty="Function", shape=ellipse];
+        n649[label="createServerSideHelpers", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/server/ssgProxy.ts:82", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_shared {
+      label="shared";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_types_ts {
+        label="types.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n884[label="UseTRPCInfiniteQueryOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/hooks/types.ts:109", sym_ty="Interface", shape=box];
+        n924[label="UseTRPCSuspenseInfiniteQueryOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/hooks/types.ts:139", sym_ty="Interface", shape=box];
+        n935[label="UseTRPCMutationOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/hooks/types.ts:154", sym_ty="Interface", shape=box];
+        n1005[label="TRPCSubscriptionBaseResult", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/hooks/types.ts:187", sym_ty="Interface", shape=box];
+        n1047[label="TRPCSubscriptionIdleResult", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/hooks/types.ts:197", sym_ty="Interface", shape=box];
+        n1331[label="TRPCSubscriptionConnectingResult", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/hooks/types.ts:204", sym_ty="Interface", shape=box];
+        n1352[label="TRPCSubscriptionPendingResult", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/hooks/types.ts:211", sym_ty="Interface", shape=box];
+        n1373[label="TRPCSubscriptionErrorResult", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/hooks/types.ts:218", sym_ty="Interface", shape=box];
+        n2056[label="TRPCHookResult", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/hooks/types.ts:311", sym_ty="Interface", shape=box];
+        n804[label="TRPCReactRequestOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/hooks/types.ts:41", sym_ty="Interface", shape=box];
+        n822[label="TRPCUseQueryBaseOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/hooks/types.ts:54", sym_ty="Interface", shape=box];
+        n826[label="UseTRPCQueryOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/hooks/types.ts:61", sym_ty="Interface", shape=box];
+        n836[label="UseTRPCSuspenseQueryOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/hooks/types.ts:72", sym_ty="Interface", shape=box];
+        n841[label="UseTRPCPrefetchQueryOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/hooks/types.ts:79", sym_ty="Interface", shape=box];
+        n860[label="TRPCQueryOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/hooks/types.ts:99", sym_ty="Interface", shape=box];
+        n154[label="UndefinedTRPCInfiniteQueryOptionsIn", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/types.ts:115", sym_ty="Interface", shape=box];
+        n172[label="UndefinedTRPCInfiniteQueryOptionsOut", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/types.ts:134", sym_ty="Interface", shape=box];
+        n187[label="DefinedTRPCInfiniteQueryOptionsIn", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/types.ts:154", sym_ty="Interface", shape=box];
+        n195[label="DefinedTRPCInfiniteQueryOptionsOut", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/types.ts:173", sym_ty="Interface", shape=box];
+        n211[label="UnusedSkipTokenTRPCInfiniteQueryOptionsIn", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/types.ts:193", sym_ty="Interface", shape=box];
+        n104[label="TRPCQueryBaseOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/types.ts:21", sym_ty="Interface", shape=box];
+        n219[label="UnusedSkipTokenTRPCInfiniteQueryOptionsOut", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/types.ts:212", sym_ty="Interface", shape=box];
+        n232[label="UseMutationOverride", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/types.ts:235", sym_ty="Interface", shape=box];
+        n247[label="CreateTRPCReactOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/types.ts:252", sym_ty="Interface", shape=box];
+        n108[label="TRPCQueryOptionsResult", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/types.ts:28", sym_ty="Interface", shape=box];
+        n118[label="UndefinedTRPCQueryOptionsIn", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/types.ts:40", sym_ty="Interface", shape=box];
+        n122[label="UndefinedTRPCQueryOptionsOut", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/types.ts:52", sym_ty="Interface", shape=box];
+        n127[label="DefinedTRPCQueryOptionsIn", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/types.ts:63", sym_ty="Interface", shape=box];
+        n134[label="DefinedTRPCQueryOptionsOut", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/types.ts:75", sym_ty="Interface", shape=box];
+        n140[label="UnusedSkipTokenTRPCQueryOptionsIn", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/types.ts:86", sym_ty="Interface", shape=box];
+        n149[label="UnusedSkipTokenTRPCQueryOptionsOut", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/types.ts:98", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_useQueriesProxy_ts {
+        label="useQueriesProxy.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3853[label="createUseQueries", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/proxy/useQueriesProxy.ts:93", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_utilsProxy_ts {
+        label="utilsProxy.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3867[label="createRecursiveUtilsProxy", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/proxy/utilsProxy.ts:465", sym_ty="Function", shape=ellipse];
+        n3885[label="createReactQueryUtils", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/proxy/utilsProxy.ts:522", sym_ty="Function", shape=ellipse];
+        n3933[label="createQueryUtilsProxy", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/shared/proxy/utilsProxy.ts:549", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_utils {
+      label="utils";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_createUtilityFunctions_ts {
+        label="createUtilityFunctions.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2806[label="CreateQueryUtilsOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/utils/createUtilityFunctions.ts:22", sym_ty="Interface", shape=box];
+        n2838[label="createUtilityFunctions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/react-query/src/utils/createUtilityFunctions.ts:39", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_trpc_server {
+    label="trpc_server";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster___tests__ {
+      label="__tests__";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_fakeTimersResource_ts {
+        label="fakeTimersResource.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n510[label="fakeTimersResource", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/__tests__/fakeTimersResource.ts:3", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_fetchServerResource_ts {
+        label="fetchServerResource.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1937[label="fetchServerResource", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/__tests__/fetchServerResource.ts:10", sym_ty="Function", shape=ellipse];
+        n2300[label="forceClose", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/__tests__/fetchServerResource.ts:52", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_trpcServerResource_ts {
+        label="trpcServerResource.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1658[label="TRPCServerResourceOpts", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/__tests__/trpcServerResource.ts:15", sym_ty="Interface", shape=box];
+        n1686[label="trpcServerResource", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/__tests__/trpcServerResource.ts:30", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_adapters {
+      label="adapters";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_fastifyRequestHandler_ts {
+        label="fastifyRequestHandler.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4115[label="fastifyRequestHandler", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/fastify/fastifyRequestHandler.ts:43", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_fastifyTRPCPlugin_ts {
+        label="fastifyTRPCPlugin.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2261[label="FastifyTRPCPluginOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/fastify/fastifyTRPCPlugin.ts:25", sym_ty="Interface", shape=box];
+        n2285[label="fastifyTRPCPlugin", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/fastify/fastifyTRPCPlugin.ts:36", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_fetchRequestHandler_ts {
+        label="fetchRequestHandler.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3983[label="fetchRequestHandler", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/fetch/fetchRequestHandler.ts:24", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_getPlanner_ts {
+        label="getPlanner.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2099[label="determinePayloadFormat", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/aws-lambda/getPlanner.ts:17", sym_ty="Function", shape=ellipse];
+        n2222[label="getPlanner", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/aws-lambda/getPlanner.ts:217", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_incomingMessageToRequest_ts {
+        label="incomingMessageToRequest.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3857[label="incomingMessageToRequest", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/node-http/incomingMessageToRequest.ts:121", sym_ty="Function", shape=ellipse];
+        n3649[label="createBody", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/node-http/incomingMessageToRequest.ts:6", sym_ty="Function", shape=ellipse];
+        n3732[label="createURL", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/node-http/incomingMessageToRequest.ts:73", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_index_ts {
+        label="index.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1605[label="awsLambdaRequestHandler", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/aws-lambda/index.ts:53", sym_ty="Function", shape=ellipse];
+        n1650[label="awsLambdaStreamingRequestHandler", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/aws-lambda/index.ts:86", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_nextAppDirCaller_ts {
+        label="nextAppDirCaller.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2821[label="nextAppDirCaller", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/next-app-dir/nextAppDirCaller.ts:23", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_nodeHTTPRequestHandler_ts {
+        label="nodeHTTPRequestHandler.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3441[label="internal_exceptionHandler", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:33", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_redirect_ts {
+        label="redirect.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n361[label="TRPCRedirectError", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/next-app-dir/redirect.ts:7", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_standalone_ts {
+        label="standalone.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3389[label="createHTTP2Handler", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/standalone.ts:119", sym_ty="Function", shape=ellipse];
+        n3312[label="createHandler", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/standalone.ts:55", sym_ty="Function", shape=ellipse];
+        n3337[label="createHTTPHandler", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/standalone.ts:94", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_writeResponse_ts {
+        label="writeResponse.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4031[label="writeResponseBody", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/node-http/writeResponse.ts:35", sym_ty="Function", shape=ellipse];
+        n4105[label="writeResponse", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/node-http/writeResponse.ts:64", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_ws_ts {
+        label="ws.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3017[label="getWSConnectionHandler", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/ws.ts:103", sym_ty="Function", shape=ellipse];
+        n3104[label="respond", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/ws.ts:121", sym_ty="Function", shape=ellipse];
+        n3120[label="createCtxPromise", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/ws.ts:129", sym_ty="Function", shape=ellipse];
+        n3214[label="handleRequest", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/ws.ts:199", sym_ty="Function", shape=ellipse];
+        n3321[label="handleKeepAlive", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/ws.ts:539", sym_ty="Function", shape=ellipse];
+        n3383[label="applyWSSHandler", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/adapters/ws.ts:577", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_observable {
+      label="observable";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_behaviorSubject_ts {
+        label="behaviorSubject.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1547[label="behaviorSubject", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/observable/behaviorSubject.ts:18", sym_ty="Function", shape=ellipse];
+        n1521[label="BehaviorSubject", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/observable/behaviorSubject.ts:4", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_observable_ts {
+        label="observable.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3494[label="observableToReadableStream", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/observable/observable.ts:128", sym_ty="Function", shape=ellipse];
+        n3640[label="observableToAsyncIterable", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/observable/observable.ts:168", sym_ty="Function", shape=ellipse];
+        n3287[label="observable", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/observable/observable.ts:21", sym_ty="Function", shape=ellipse];
+        n3459[label="observableToPromise", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/observable/observable.ts:91", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_operators_test_ts {
+        label="operators.test.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2645[label="CustomEventEmitter", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/observable/operators.test.ts:14", sym_ty="Interface", shape=box];
+        n2749[label="CustomEventEmitter", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/observable/operators.test.ts:30", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_operators_ts {
+        label="operators.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3576[label="distinctUntilChanged", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/observable/operators.ts:117", sym_ty="Function", shape=ellipse];
+        n3703[label="distinctUntilDeepChanged", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/observable/operators.ts:156", sym_ty="Function", shape=ellipse];
+        n3396[label="ShareConfig", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/observable/operators.ts:31", sym_ty="Interface", shape=box];
+        n3402[label="share", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/observable/operators.ts:32", sym_ty="Function", shape=ellipse];
+        n3443[label="startIfNeeded", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/observable/operators.ts:41", sym_ty="Function", shape=ellipse];
+        n3464[label="resetIfNeeded", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/observable/operators.ts:63", sym_ty="Function", shape=ellipse];
+        n3082[label="map", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/observable/operators.ts:9", sym_ty="Function", shape=ellipse];
+        n3508[label="tap", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/observable/operators.ts:93", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_types_ts {
+        label="types.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4006[label="Unsubscribable", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/observable/types.ts:1", sym_ty="Interface", shape=box];
+        n4440[label="Observer", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/observable/types.ts:49", sym_ty="Interface", shape=box];
+        n4085[label="Observable", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/observable/types.ts:8", sym_ty="Interface", shape=box];
+      }
+
+    }
+
+    subgraph cluster_unstable_core_do_not_import {
+      label="unstable-core-do-not-import";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_TRPCError_ts {
+        label="TRPCError.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1841[label="getTRPCErrorFromUnknown", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/error/TRPCError.ts:31", sym_ty="Function", shape=ellipse];
+        n1854[label="TRPCError", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/error/TRPCError.ts:53", sym_ty="Struct", shape=box];
+        n1807[label="getCauseFromUnknown", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/error/TRPCError.ts:7", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_abortError_ts {
+        label="abortError.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n557[label="isAbortError", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/abortError.ts:3", sym_ty="Function", shape=ellipse];
+        n570[label="throwAbortError", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/abortError.ts:9", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_asyncIterable_ts {
+        label="asyncIterable.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2382[label="takeWithGrace", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/utils/asyncIterable.ts:27", sym_ty="Function", shape=ellipse];
+        n2346[label="iteratorResource", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/utils/asyncIterable.ts:6", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_contentType_ts {
+        label="contentType.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n716[label="getContentTypeHandler", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/contentType.ts:268", sym_ty="Function", shape=ellipse];
+        n738[label="getRequestInfo", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/contentType.ts:287", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_createDeferred_ts {
+        label="createDeferred.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2060[label="createDeferred", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/utils/createDeferred.ts:2", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_disposable_ts {
+        label="disposable.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1351[label="makeResource", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/utils/disposable.ts:16", sym_ty="Function", shape=ellipse];
+        n1416[label="makeAsyncResource", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/utils/disposable.ts:38", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_envelopes_ts {
+        label="envelopes.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4488[label="TRPCResultMessage", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/rpc/envelopes.ts:111", sym_ty="Interface", shape=box];
+        n4543[label="TRPCConnectionParamsMessage", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/rpc/envelopes.ts:150", sym_ty="Interface", shape=box];
+        n4305[label="ErrorResponse", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/rpc/envelopes.ts:43", sym_ty="Interface", shape=box];
+        n4416[label="TRPCErrorResponse", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/rpc/envelopes.ts:76", sym_ty="Interface", shape=box];
+        n4172[label="TRPCErrorShape", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/rpc/envelopes.ts:9", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_formDataToObject_ts {
+        label="formDataToObject.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n453[label="formDataToObject", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/formDataToObject.ts:38", sym_ty="Function", shape=ellipse];
+        n405[label="set", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/formDataToObject.ts:7", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_formatter_ts {
+        label="formatter.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1026[label="DefaultErrorShape", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/error/formatter.ts:40", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_getErrorShape_ts {
+        label="getErrorShape.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n564[label="getErrorShape", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/error/getErrorShape.ts:11", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_getHTTPStatusCode_ts {
+        label="getHTTPStatusCode.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2387[label="getStatusCodeFromKey", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/getHTTPStatusCode.ts:59", sym_ty="Function", shape=ellipse];
+        n2420[label="getHTTPStatusCode", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/getHTTPStatusCode.ts:71", sym_ty="Function", shape=ellipse];
+        n2453[label="getHTTPStatusCodeFromError", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/getHTTPStatusCode.ts:96", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_initTRPC_ts {
+        label="initTRPC.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n819[label="RuntimeConfigOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/initTRPC.ts:31", sym_ty="Interface", shape=box];
+        n852[label="TRPCRootObject", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/initTRPC.ts:54", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_jsonl_test_ts {
+        label="jsonl.test.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n77[label="serverResourceForStream", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.test.ts:236", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_jsonl_ts {
+        label="jsonl.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3241[label="isPromise", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts:100", sym_ty="Function", shape=ellipse];
+        n3505[label="JSONLProducerOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts:116", sym_ty="Interface", shape=box];
+        n3589[label="MaxDepthError", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts:130", sym_ty="Struct", shape=box];
+        n3632[label="createBatchStreamProducer", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts:136", sym_ty="Function", shape=ellipse];
+        n3670[label="registerAsync", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts:144", sym_ty="Function", shape=ellipse];
+        n3709[label="encodePromise", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts:155", sym_ty="Function", shape=ellipse];
+        n3737[label="encodeAsyncIterable", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts:179", sym_ty="Function", shape=ellipse];
+        n3773[label="checkMaxDepth", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts:210", sym_ty="Function", shape=ellipse];
+        n3809[label="encodeAsync", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts:216", sym_ty="Function", shape=ellipse];
+        n3850[label="encode", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts:234", sym_ty="Function", shape=ellipse];
+        n4022[label="jsonlStreamProducer", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts:282", sym_ty="Function", shape=ellipse];
+        n4147[label="createLineAccumulator", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts:343", sym_ty="Function", shape=ellipse];
+        n4225[label="createConsumerStream", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts:381", sym_ty="Function", shape=ellipse];
+        n4259[label="createStreamsManager", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts:406", sym_ty="Function", shape=ellipse];
+        n4277[label="isEmpty", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts:415", sym_ty="Function", shape=ellipse];
+        n4290[label="createStreamController", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts:422", sym_ty="Function", shape=ellipse];
+        n4311[label="clear", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts:456", sym_ty="Function", shape=ellipse];
+        n4327[label="getOrCreate", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts:478", sym_ty="Function", shape=ellipse];
+        n4373[label="cancelAll", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts:490", sym_ty="Function", shape=ellipse];
+        n4406[label="jsonlStreamConsumer", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts:506", sym_ty="Function", shape=ellipse];
+        n4482[label="decodeChunkDefinition", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts:532", sym_ty="Function", shape=ellipse];
+        n4509[label="decode", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/jsonl.ts:578", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_mergeAsyncIterables_ts {
+        label="mergeAsyncIterables.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4139[label="cleanup", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/utils/mergeAsyncIterables.ts:15", sym_ty="Function", shape=ellipse];
+        n4160[label="pull", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/utils/mergeAsyncIterables.ts:22", sym_ty="Function", shape=ellipse];
+        n4209[label="MergedAsyncIterables", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/utils/mergeAsyncIterables.ts:58", sym_ty="Interface", shape=box];
+        n4251[label="mergeAsyncIterables", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/utils/mergeAsyncIterables.ts:74", sym_ty="Function", shape=ellipse];
+        n3290[label="createManagedIterator", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/utils/mergeAsyncIterables.ts:8", sym_ty="Function", shape=ellipse];
+        n4356[label="initIterable", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/utils/mergeAsyncIterables.ts:97", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_middleware_ts {
+        label="middleware.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1587[label="createMiddlewareFactory", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/middleware.ts:123", sym_ty="Function", shape=ellipse];
+        n1591[label="createMiddlewareInner", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/middleware.ts:128", sym_ty="Function", shape=ellipse];
+        n1413[label="MiddlewareResultBase", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/middleware.ts:13", sym_ty="Interface", shape=box];
+        n1607[label="createMiddleware", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/middleware.ts:144", sym_ty="Function", shape=ellipse];
+        n1636[label="createInputMiddleware", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/middleware.ts:182", sym_ty="Function", shape=ellipse];
+        n1642[label="async function inputValidatorMiddleware(opts) {\n      let parsedInput: ReturnType<typeof parse>;\n\n      const rawInput = await opts.getRawInput();\n      try {\n        parsedInput = await parse(rawInput);\n      } catch (cause) {\n        throw new TRPCError({\n          code: 'BAD_REQUEST',\n          cause,\n        });\n      }\n\n      // Multiple input parsers\n      const combinedInput =\n        isObject(opts.input) && isObject(parsedInput)\n          ? {\n              ...opts.input,\n              ...parsedInput,\n            }\n          : parsedInput;\n\n      return opts.next({ input: combinedInput });\n    }", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/middleware.ts:184"];
+        n1428[label="MiddlewareOKResult", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/middleware.ts:21", sym_ty="Interface", shape=box];
+        n1689[label="createOutputMiddleware", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/middleware.ts:215", sym_ty="Function", shape=ellipse];
+        n1695[label="async function outputValidatorMiddleware({ next }) {\n      const result = await next();\n      if (!result.ok) {\n        // pass through failures without validating\n        return result;\n      }\n      try {\n        const data = await parse(result.data);\n        return {\n          ...result,\n          data,\n        };\n      } catch (cause) {\n        throw new TRPCError({\n          message: 'Output validation failed',\n          code: 'INTERNAL_SERVER_ERROR',\n          cause,\n        });\n      }\n    }", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/middleware.ts:217"];
+        n1449[label="MiddlewareErrorResult", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/middleware.ts:27", sym_ty="Interface", shape=box];
+        n1475[label="MiddlewareBuilder", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/middleware.ts:43", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_parseConnectionParams_ts {
+        label="parseConnectionParams.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2196[label="parseConnectionParamsFromString", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/parseConnectionParams.ts:35", sym_ty="Function", shape=ellipse];
+        n2131[label="parseConnectionParamsFromUnknown", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/parseConnectionParams.ts:5", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_parseTRPCMessage_ts {
+        label="parseTRPCMessage.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4222[label="assertIsProcedureType", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/rpc/parseTRPCMessage.ts:14", sym_ty="Function", shape=ellipse];
+        n4254[label="assertIsRequestId", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/rpc/parseTRPCMessage.ts:21", sym_ty="Function", shape=ellipse];
+        n4295[label="assertIsString", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/rpc/parseTRPCMessage.ts:35", sym_ty="Function", shape=ellipse];
+        n4320[label="assertIsJSONRPC2OrUndefined", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/rpc/parseTRPCMessage.ts:42", sym_ty="Function", shape=ellipse];
+        n4357[label="parseTRPCMessage", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/rpc/parseTRPCMessage.ts:51", sym_ty="Function", shape=ellipse];
+        n4099[label="assertIsObject", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/rpc/parseTRPCMessage.ts:7", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_procedure_ts {
+        label="procedure.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2669[label="BuiltProcedureDef", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/procedure.ts:11", sym_ty="Interface", shape=box];
+        n2689[label="Procedure", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/procedure.ts:21", sym_ty="Interface", shape=box];
+        n2773[label="QueryProcedure", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/procedure.ts:54", sym_ty="Interface", shape=box];
+        n2784[label="MutationProcedure", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/procedure.ts:57", sym_ty="Interface", shape=box];
+        n2798[label="SubscriptionProcedure", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/procedure.ts:60", sym_ty="Interface", shape=box];
+        n2809[label="LegacyObservableSubscriptionProcedure", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/procedure.ts:66", sym_ty="Interface", shape=box];
+        n2924[label="ErrorHandlerOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/procedure.ts:97", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_procedureBuilder_ts {
+        label="procedureBuilder.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1080[label="ProcedureBuilder", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/procedureBuilder.ts:182", sym_ty="Interface", shape=box];
+        n1286[label="createNewBuilder", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/procedureBuilder.ts:466", sym_ty="Function", shape=ellipse];
+        n1376[label="createBuilder", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/procedureBuilder.ts:481", sym_ty="Function", shape=ellipse];
+        n1405[label="createResolver", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/procedureBuilder.ts:563", sym_ty="Function", shape=ellipse];
+        n1465[label="ProcedureCallOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/procedureBuilder.ts:610", sym_ty="Interface", shape=box];
+        n1497[label="callRecursive", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/procedureBuilder.ts:625", sym_ty="Function", shape=ellipse];
+        n1523[label="createProcedureCaller", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/procedureBuilder.ts:665", sym_ty="Function", shape=ellipse];
+        n1532[label="procedure", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/procedureBuilder.ts:666", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_readableStreamFrom_ts {
+        label="readableStreamFrom.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2565[label="readableStreamFrom", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/utils/readableStreamFrom.ts:7", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_resolveResponse_ts {
+        label="resolveResponse.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2337[label="caughtErrorToData", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/resolveResponse.ts:152", sym_ty="Function", shape=ellipse];
+        n2441[label="isDataStream", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/resolveResponse.ts:202", sym_ty="Function", shape=ellipse];
+        n2519[label="resolveResponse", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/resolveResponse.ts:218", sym_ty="Function", shape=ellipse];
+        n2648[label="ContextManager", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/resolveResponse.ts:258", sym_ty="Interface", shape=box];
+        n30[label="errorToAsyncIterable", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/resolveResponse.ts:32", sym_ty="Function", shape=ellipse];
+        n1944[label="combinedAbortController", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/resolveResponse.ts:46", sym_ty="Function", shape=ellipse];
+        n1954[label="ResolveHTTPRequestOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/resolveResponse.ts:70", sym_ty="Interface", shape=box];
+        n1967[label="initResponse", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/resolveResponse.ts:81", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_rootConfig_ts {
+        label="rootConfig.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3003[label="RootTypes", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/rootConfig.ts:10", sym_ty="Interface", shape=box];
+        n3095[label="RootConfig", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/rootConfig.ts:32", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_router_ts {
+        label="router.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n521[label="lazy", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/router.ts:105", sym_ty="Function", shape=ellipse];
+        n532[label="resolve", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/router.ts:113", sym_ty="Function", shape=ellipse];
+        n574[label="isLazy", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/router.ts:137", sym_ty="Function", shape=ellipse];
+        n585[label="RouterDef", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/router.ts:144", sym_ty="Interface", shape=box];
+        n614[label="Router", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/router.ts:156", sym_ty="Interface", shape=box];
+        n638[label="RouterBuilder", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/router.ts:172", sym_ty="Interface", shape=box];
+        n792[label="isRouter", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/router.ts:190", sym_ty="Function", shape=ellipse];
+        n15[label="RouterRecord", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/router.ts:23", sym_ty="Interface", shape=box];
+        n863[label="createRouterFactory", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/router.ts:252", sym_ty="Function", shape=ellipse];
+        n878[label="createRouterInner", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/router.ts:255", sym_ty="Function", shape=ellipse];
+        n920[label="createLazyLoader", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/router.ts:271", sym_ty="Function", shape=ellipse];
+        n933[label="step", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/router.ts:306", sym_ty="Function", shape=ellipse];
+        n1072[label="isProcedure", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/router.ts:364", sym_ty="Function", shape=ellipse];
+        n1091[label="getProcedureAtPath", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/router.ts:373", sym_ty="Function", shape=ellipse];
+        n1139[label="callProcedure", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/router.ts:401", sym_ty="Function", shape=ellipse];
+        n1199[label="RouterCallerFactory", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/router.ts:435", sym_ty="Interface", shape=box];
+        n1206[label="<TRecord extends RouterRecord>(\n    router: Pick<Router<TRoot, TRecord>, '_def'>,\n  ): RouterCaller<TRoot, TRecord>", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/router.ts:436"];
+        n1233[label="createCallerFactory", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/router.ts:441", sym_ty="Function", shape=ellipse];
+        n1372[label="mergeRouters", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/router.ts:509", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_sse_ts {
+        label="sse.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1077[label="generator", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/sse.ts:106", sym_ty="Function", shape=ellipse];
+        n1116[label="generatorWithErrorHandling", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/sse.ts:152", sym_ty="Function", shape=ellipse];
+        n1144[label="ConsumerStreamResultBase", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/sse.ts:201", sym_ty="Interface", shape=box];
+        n1151[label="ConsumerStreamResultData", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/sse.ts:205", sym_ty="Interface", shape=box];
+        n1167[label="ConsumerStreamResultError", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/sse.ts:211", sym_ty="Interface", shape=box];
+        n1184[label="ConsumerStreamResultConnecting", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/sse.ts:217", sym_ty="Interface", shape=box];
+        n1197[label="ConsumerStreamResultTimeout", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/sse.ts:222", sym_ty="Interface", shape=box];
+        n1214[label="ConsumerStreamResultPing", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/sse.ts:227", sym_ty="Interface", shape=box];
+        n1223[label="ConsumerStreamResultConnected", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/sse.ts:232", sym_ty="Interface", shape=box];
+        n960[label="SSEPingOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/sse.ts:24", sym_ty="Interface", shape=box];
+        n1279[label="SSEStreamConsumerOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/sse.ts:246", sym_ty="Interface", shape=box];
+        n1310[label="ConsumerConfig", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/sse.ts:256", sym_ty="Interface", shape=box];
+        n1323[label="withTimeout", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/sse.ts:262", sym_ty="Function", shape=ellipse];
+        n1364[label="sseStreamConsumer", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/sse.ts:279", sym_ty="Function", shape=ellipse];
+        n972[label="SSEClientOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/sse.ts:37", sym_ty="Interface", shape=box];
+        n1445[label="dispose", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/sse.ts:390", sym_ty="Function", shape=ellipse];
+        n983[label="SSEStreamProducerOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/sse.ts:45", sym_ty="Interface", shape=box];
+        n1041[label="SSEvent", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/sse.ts:75", sym_ty="Interface", shape=box];
+        n1058[label="sseStreamProducer", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/sse.ts:85", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_timerResource_ts {
+        label="timerResource.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2276[label="timerResource", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/utils/timerResource.ts:5", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_tracked_ts {
+        label="tracked.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1811[label="sse", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/tracked.ts:22", sym_ty="Function", shape=ellipse];
+        n1829[label="isTrackedEnvelope", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/tracked.ts:26", sym_ty="Function", shape=ellipse];
+        n2020[label="tracked", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/tracked.ts:35", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_transformer_ts {
+        label="transformer.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3689[label="transformTRPCResponse", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/transformer.ts:113", sym_ty="Function", shape=ellipse];
+        n3728[label="transformResultInner", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/transformer.ts:129", sym_ty="Function", shape=ellipse];
+        n3445[label="DataTransformer", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/transformer.ts:13", sym_ty="Interface", shape=box];
+        n3793[label="TransformResultError", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/transformer.ts:158", sym_ty="Struct", shape=box];
+        n3810[label="transformResult", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/transformer.ts:168", sym_ty="Function", shape=ellipse];
+        n3476[label="InputDataTransformer", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/transformer.ts:18", sym_ty="Interface", shape=box];
+        n3519[label="OutputDataTransformer", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/transformer.ts:29", sym_ty="Interface", shape=box];
+        n3562[label="CombinedDataTransformer", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/transformer.ts:43", sym_ty="Interface", shape=box];
+        n3620[label="getDataTransformer", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/transformer.ts:70", sym_ty="Function", shape=ellipse];
+        n3638[label="transformTRPCResponseItem", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/transformer.ts:87", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_types_ts {
+        label="types.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4016[label="HTTPErrorHandlerOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/types.ts:120", sym_ty="Interface", shape=box];
+        n4074[label="BaseHandlerOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/types.ts:135", sym_ty="Interface", shape=box];
+        n3846[label="HTTPBaseHandlerOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/types.ts:48", sym_ty="Interface", shape=box];
+        n3879[label="TRPCRequestInfoProcedureCall", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/types.ts:60", sym_ty="Interface", shape=box];
+        n3920[label="TRPCRequestInfo", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/http/types.ts:81", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_utils_ts {
+        label="utils.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1805[label="mergeWithoutOverrides", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/utils.ts:10", sym_ty="Function", shape=ellipse];
+        n1948[label="trigger", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/utils.ts:111", sym_ty="Function", shape=ellipse];
+        n1847[label="isObject", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/utils.ts:31", sym_ty="Function", shape=ellipse];
+        n1872[label="isFunction", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/utils.ts:36", sym_ty="Function", shape=ellipse];
+        n1881[label="emptyObject", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/utils.ts:44", sym_ty="Function", shape=ellipse];
+        n1887[label="isAsyncIterable", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/utils.ts:51", sym_ty="Function", shape=ellipse];
+        n1935[label="abortSignalsAnyPonyfill", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/utils.ts:94", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_withPing_ts {
+        label="withPing.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n130[label="withPing", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import/stream/utils/withPing.ts:11", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_trpc_tanstack_react_query {
+    label="trpc_tanstack-react-query";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_internals {
+      label="internals";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_createOptionsProxy_ts {
+        label="createOptionsProxy.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3753[label="DecorateQueryProcedure", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/createOptionsProxy.ts:156", sym_ty="Interface", shape=box];
+        n3877[label="DecorateMutationProcedure", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/createOptionsProxy.ts:215", sym_ty="Interface", shape=box];
+        n3917[label="DecorateSubscriptionProcedure", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/createOptionsProxy.ts:232", sym_ty="Interface", shape=box];
+        n4343[label="TRPCOptionsProxyOptionsExternal", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/createOptionsProxy.ts:311", sym_ty="Interface", shape=box];
+        n4421[label="createTRPCOptionsProxy", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/createOptionsProxy.ts:338", sym_ty="Function", shape=ellipse];
+        n49[label="DecorateRouterKeyable", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/createOptionsProxy.ts:51", sym_ty="Interface", shape=box];
+        n3510[label="TypeHelper", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/createOptionsProxy.ts:74", sym_ty="Interface", shape=box];
+        n3626[label="DecorateInfiniteQueryProcedure", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/createOptionsProxy.ts:99", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_infiniteQueryOptions_ts {
+        label="infiniteQueryOptions.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n325[label="UnusedSkipTokenTRPCInfiniteQueryOptionsIn", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/infiniteQueryOptions.ts:121", sym_ty="Interface", shape=box];
+        n335[label="UnusedSkipTokenTRPCInfiniteQueryOptionsOut", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/infiniteQueryOptions.ts:141", sym_ty="Interface", shape=box];
+        n349[label="TRPCInfiniteQueryOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/infiniteQueryOptions.ts:166", sym_ty="Interface", shape=box];
+        n351[label="<TQueryFnData extends TDef['output'], TData = TQueryFnData>(\n    input: TDef['input'] | SkipToken,\n    opts: DefinedTRPCInfiniteQueryOptionsIn<\n      TDef['input'],\n      TQueryFnData,\n      TData,\n      TRPCClientErrorLike<{\n        transformer: TDef['transformer'];\n        errorShape: TDef['errorShape'];\n      }>,\n      TDef['featureFlags']\n    >,\n  ): DefinedTRPCInfiniteQueryOptionsOut<\n    TDef['input'],\n    TQueryFnData,\n    TData,\n    TRPCClientErrorLike<{\n      transformer: TDef['transformer'];\n      errorShape: TDef['errorShape'];\n    }>,\n    TDef['featureFlags']\n  >", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/infiniteQueryOptions.ts:167"];
+        n377[label="<TQueryFnData extends TDef['output'], TData = TQueryFnData>(\n    input: TDef['input'],\n    opts: UnusedSkipTokenTRPCInfiniteQueryOptionsIn<\n      TDef['input'],\n      TQueryFnData,\n      TData,\n      TRPCClientErrorLike<{\n        transformer: TDef['transformer'];\n        errorShape: TDef['errorShape'];\n      }>,\n      TDef['featureFlags']\n    >,\n  ): UnusedSkipTokenTRPCInfiniteQueryOptionsOut<\n    TDef['input'],\n    TQueryFnData,\n    TData,\n    TRPCClientErrorLike<{\n      transformer: TDef['transformer'];\n      errorShape: TDef['errorShape'];\n    }>,\n    TDef['featureFlags']\n  >", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/infiniteQueryOptions.ts:189"];
+        n402[label="<TQueryFnData extends TDef['output'], TData = TQueryFnData>(\n    input: TDef['input'] | SkipToken,\n    opts?: UndefinedTRPCInfiniteQueryOptionsIn<\n      TDef['input'],\n      TQueryFnData,\n      TData,\n      TRPCClientErrorLike<{\n        transformer: TDef['transformer'];\n        errorShape: TDef['errorShape'];\n      }>,\n      TDef['featureFlags']\n    >,\n  ): UndefinedTRPCInfiniteQueryOptionsOut<\n    TDef['input'],\n    TQueryFnData,\n    TData,\n    TRPCClientErrorLike<{\n      transformer: TDef['transformer'];\n      errorShape: TDef['errorShape'];\n    }>,\n    TDef['featureFlags']\n  >", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/infiniteQueryOptions.ts:211"];
+        n256[label="UndefinedTRPCInfiniteQueryOptionsIn", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/infiniteQueryOptions.ts:31", sym_ty="Interface", shape=box];
+        n266[label="UndefinedTRPCInfiniteQueryOptionsOut", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/infiniteQueryOptions.ts:51", sym_ty="Interface", shape=box];
+        n294[label="DefinedTRPCInfiniteQueryOptionsIn", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/infiniteQueryOptions.ts:76", sym_ty="Interface", shape=box];
+        n307[label="DefinedTRPCInfiniteQueryOptionsOut", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/infiniteQueryOptions.ts:96", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_mutationOptions_ts {
+        label="mutationOptions.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2651[label="trpcMutationOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/mutationOptions.ts:100", sym_ty="Function", shape=ellipse];
+        n2485[label="TRPCMutationOptionsOut", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/mutationOptions.ts:42", sym_ty="Interface", shape=box];
+        n2524[label="TRPCMutationOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/mutationOptions.ts:53", sym_ty="Interface", shape=box];
+        n2544[label="<TContext = unknown>(\n    opts?: TRPCMutationOptionsIn<\n      TDef['input'],\n      TRPCClientErrorLike<TDef>,\n      TDef['output'],\n      TContext,\n      TFeatureFlags\n    >,\n  ): TRPCMutationOptionsOut<\n    TDef['input'],\n    TRPCClientErrorLike<TDef>,\n    TDef['output'],\n    TContext,\n    TFeatureFlags\n  >", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/mutationOptions.ts:57"];
+      }
+
+      subgraph cluster_queryOptions_ts {
+        label="queryOptions.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4586[label="UnusedSkipTokenTRPCQueryOptionsIn", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/queryOptions.ts:104", sym_ty="Interface", shape=box];
+        n4588[label="UnusedSkipTokenTRPCQueryOptionsOut", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/queryOptions.ts:120", sym_ty="Interface", shape=box];
+        n4590[label="TRPCQueryOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/queryOptions.ts:139", sym_ty="Interface", shape=box];
+        n4591[label="<TQueryFnData extends TDef['output'], TData = TQueryFnData>(\n    input: TDef['input'] | SkipToken,\n    opts: DefinedTRPCQueryOptionsIn<\n      TQueryFnData,\n      TData,\n      TRPCClientErrorLike<{\n        transformer: TDef['transformer'];\n        errorShape: TDef['errorShape'];\n      }>,\n      TFeatureFlags\n    >,\n  ): DefinedTRPCQueryOptionsOut<\n    TQueryFnData,\n    TData,\n    TRPCClientErrorLike<{\n      transformer: TDef['transformer'];\n      errorShape: TDef['errorShape'];\n    }>,\n    TFeatureFlags\n  >", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/queryOptions.ts:143"];
+        n4595[label="<TQueryFnData extends TDef['output'], TData = TQueryFnData>(\n    input: TDef['input'],\n    opts?: UnusedSkipTokenTRPCQueryOptionsIn<\n      TQueryFnData,\n      TData,\n      TRPCClientErrorLike<{\n        transformer: TDef['transformer'];\n        errorShape: TDef['errorShape'];\n      }>,\n      TFeatureFlags\n    >,\n  ): UnusedSkipTokenTRPCQueryOptionsOut<\n    TQueryFnData,\n    TData,\n    TRPCClientErrorLike<{\n      transformer: TDef['transformer'];\n      errorShape: TDef['errorShape'];\n    }>,\n    TFeatureFlags\n  >", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/queryOptions.ts:163"];
+        n4599[label="<TQueryFnData extends TDef['output'], TData = TQueryFnData>(\n    input: TDef['input'] | SkipToken,\n    opts?: UndefinedTRPCQueryOptionsIn<\n      TQueryFnData,\n      TData,\n      TRPCClientErrorLike<{\n        transformer: TDef['transformer'];\n        errorShape: TDef['errorShape'];\n      }>,\n      TFeatureFlags\n    >,\n  ): UndefinedTRPCQueryOptionsOut<\n    TQueryFnData,\n    TData,\n    TRPCClientErrorLike<{\n      transformer: TDef['transformer'];\n      errorShape: TDef['errorShape'];\n    }>,\n    TFeatureFlags\n  >", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/queryOptions.ts:183"];
+        n4605[label="trpcQueryOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/queryOptions.ts:220", sym_ty="Function", shape=ellipse];
+        n4561[label="UndefinedTRPCQueryOptionsIn", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/queryOptions.ts:34", sym_ty="Interface", shape=box];
+        n4567[label="UndefinedTRPCQueryOptionsOut", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/queryOptions.ts:50", sym_ty="Interface", shape=box];
+        n4576[label="DefinedTRPCQueryOptionsIn", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/queryOptions.ts:69", sym_ty="Interface", shape=box];
+        n4581[label="DefinedTRPCQueryOptionsOut", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/queryOptions.ts:85", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_subscriptionOptions_ts {
+        label="subscriptionOptions.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n120[label="TRPCSubscriptionPendingResult", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/subscriptionOptions.ts:102", sym_ty="Interface", shape=box];
+        n126[label="TRPCSubscriptionErrorResult", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/subscriptionOptions.ts:109", sym_ty="Interface", shape=box];
+        n163[label="useSubscription", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/subscriptionOptions.ts:159", sym_ty="Function", shape=ellipse];
+        n47[label="UnusedSkipTokenTRPCSubscriptionOptionsIn", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/subscriptionOptions.ts:25", sym_ty="Interface", shape=box];
+        n67[label="TRPCSubscriptionOptionsOut", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/subscriptionOptions.ts:32", sym_ty="Interface", shape=box];
+        n74[label="TRPCSubscriptionOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/subscriptionOptions.ts:45", sym_ty="Interface", shape=box];
+        n106[label="TRPCSubscriptionIdleResult", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/subscriptionOptions.ts:88", sym_ty="Interface", shape=box];
+        n113[label="TRPCSubscriptionConnectingResult", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/subscriptionOptions.ts:95", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_types_ts {
+        label="types.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3108[label="TRPCReactRequestOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/types.ts:47", sym_ty="Interface", shape=box];
+        n3131[label="TRPCQueryBaseOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/types.ts:63", sym_ty="Interface", shape=box];
+        n3186[label="TRPCQueryOptionsResult", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/types.ts:73", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_utils_ts {
+        label="utils.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3718[label="getQueryKeyInternal", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/utils.ts:121", sym_ty="Function", shape=ellipse];
+        n3764[label="getMutationKeyInternal", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/utils.ts:183", sym_ty="Function", shape=ellipse];
+        n3804[label="unwrapLazyArg", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/utils.ts:201", sym_ty="Function", shape=ellipse];
+        n3483[label="createTRPCOptionsResult", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/utils.ts:22", sym_ty="Function", shape=ellipse];
+        n3524[label="isPrefixedQueryKey", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/utils.ts:32", sym_ty="Function", shape=ellipse];
+        n3557[label="readQueryKey", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/utils.ts:38", sym_ty="Function", shape=ellipse];
+        n3580[label="getClientArgs", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/utils.ts:59", sym_ty="Function", shape=ellipse];
+        n3641[label="buildQueryFromAsyncIterable", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals/utils.ts:85", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_trpc_upgrade {
+    label="trpc_upgrade";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_ast {
+      label="ast";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_scanners_ts {
+        label="scanners.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3365[label="findSourceAndImportName", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/upgrade/src/lib/ast/scanners.ts:34", sym_ty="Function", shape=ellipse];
+        n3400[label="findTRPCImportReferences", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/upgrade/src/lib/ast/scanners.ts:81", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_pkgmgr_ts {
+      label="pkgmgr.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n695[label="installPackage", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/upgrade/src/lib/pkgmgr.ts:12", sym_ty="Function", shape=ellipse];
+      n730[label="uninstallPackage", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/upgrade/src/lib/pkgmgr.ts:26", sym_ty="Function", shape=ellipse];
+      n666[label="getPackageManager", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/upgrade/src/lib/pkgmgr.ts:4", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_transforms {
+      label="transforms";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_hooksToOptions_ts {
+        label="hooksToOptions.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1596[label="ensureUseTRPCCall", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/upgrade/src/transforms/hooksToOptions.ts:113", sym_ty="Function", shape=ellipse];
+        n1644[label="updateTRPCImport", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/upgrade/src/transforms/hooksToOptions.ts:137", sym_ty="Function", shape=ellipse];
+        n1787[label="ensureImported", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/upgrade/src/transforms/hooksToOptions.ts:147", sym_ty="Function", shape=ellipse];
+        n1822[label="replaceHooksWithOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/upgrade/src/transforms/hooksToOptions.ts:169", sym_ty="Function", shape=ellipse];
+        n1495[label="TransformOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/upgrade/src/transforms/hooksToOptions.ts:17", sym_ty="Interface", shape=box];
+        n1844[label="migrateUseUtils", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/upgrade/src/transforms/hooksToOptions.ts:207", sym_ty="Function", shape=ellipse];
+        n1857[label="removeSuspenseDestructuring", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/upgrade/src/transforms/hooksToOptions.ts:377", sym_ty="Function", shape=ellipse];
+        n1518[label="transform", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/upgrade/src/transforms/hooksToOptions.ts:63", sym_ty="Function", shape=ellipse];
+        n1571[label="isDeclarationInScope", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/upgrade/src/transforms/hooksToOptions.ts:97", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_provider_ts {
+        label="provider.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1230[label="TransformOptions", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/upgrade/src/transforms/provider.ts:3", sym_ty="Interface", shape=box];
+        n1242[label="transform", full_path="/home/yibai/llmcc/sample/repos/trpc/packages/upgrade/src/transforms/provider.ts:7", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_www {
+    label="www";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_components {
+      label="components";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_script_pull_ts {
+        label="script.pull.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2318[label="ensureHttpAndAddRef", full_path="/home/yibai/llmcc/sample/repos/trpc/www/src/components/sponsors/script.pull.ts:19", sym_ty="Function", shape=ellipse];
+        n2377[label="flattenSponsor", full_path="/home/yibai/llmcc/sample/repos/trpc/www/src/components/sponsors/script.pull.ts:31", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_script_ts {
+        label="script.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2351[label="getTweets", full_path="/home/yibai/llmcc/sample/repos/trpc/www/src/components/TwitterWall/script.ts:108", sym_ty="Function", shape=ellipse];
+        n2384[label="main", full_path="/home/yibai/llmcc/sample/repos/trpc/www/src/components/TwitterWall/script.ts:120", sym_ty="Function", shape=ellipse];
+        n1986[label="req", full_path="/home/yibai/llmcc/sample/repos/trpc/www/src/components/TwitterWall/script.ts:68", sym_ty="Function", shape=ellipse];
+        n2316[label="getCollection", full_path="/home/yibai/llmcc/sample/repos/trpc/www/src/components/TwitterWall/script.ts:91", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_script_types_ts {
+        label="script.types.ts";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2449[label="Tier", full_path="/home/yibai/llmcc/sample/repos/trpc/www/src/components/sponsors/script.types.ts:17", sym_ty="Interface", shape=box];
+        n2469[label="Node", full_path="/home/yibai/llmcc/sample/repos/trpc/www/src/components/sponsors/script.types.ts:22", sym_ty="Interface", shape=box];
+        n2500[label="Edge", full_path="/home/yibai/llmcc/sample/repos/trpc/www/src/components/sponsors/script.types.ts:29", sym_ty="Interface", shape=box];
+        n2403[label="PageInfo", full_path="/home/yibai/llmcc/sample/repos/trpc/www/src/components/sponsors/script.types.ts:3", sym_ty="Interface", shape=box];
+        n2518[label="SponsorshipsAsMaintainer", full_path="/home/yibai/llmcc/sample/repos/trpc/www/src/components/sponsors/script.types.ts:33", sym_ty="Interface", shape=box];
+        n2547[label="SponsorEsque", full_path="/home/yibai/llmcc/sample/repos/trpc/www/src/components/sponsors/script.types.ts:38", sym_ty="Interface", shape=box];
+        n2417[label="SponsorEntity", full_path="/home/yibai/llmcc/sample/repos/trpc/www/src/components/sponsors/script.types.ts:8", sym_ty="Interface", shape=box];
+      }
+
+    }
+
+  }
+
+
+  n11 -> n2155 [from="caller", to="callee"];
+  n15 -> n585 [from="bound", to="generic"];
+  n15 -> n585 [from="field_type", to="struct"];
+  n15 -> n614 [from="bound", to="generic"];
+  n21 -> n1462 [from="caller", to="callee"];
+  n21 -> n1782 [from="caller", to="callee"];
+  n21 -> n3287 [from="caller", to="callee"];
+  n47 -> n67 [from="base", to="extends"];
+  n47 -> n67 [from="field_type", to="struct"];
+  n49 -> n3753 [from="base", to="extends"];
+  n67 -> n163 [from="input", to="func"];
+  n74 -> n3917 [from="field_type", to="struct"];
+  n77 -> n1937 [from="caller", to="callee"];
+  n130 -> n2276 [from="caller", to="callee"];
+  n130 -> n2346 [from="caller", to="callee"];
+  n197 -> n108 [from="func", to="output"];
+  n204 -> n2056 [from="func", to="output"];
+  n204 -> n3483 [from="caller", to="callee"];
+  n232 -> n247 [from="field_type", to="struct"];
+  n256 -> n402 [from="input", to="func"];
+  n272 -> n359 [from="field_type", to="struct"];
+  n284 -> n300 [from="caller", to="callee"];
+  n284 -> n306 [from="caller", to="callee"];
+  n284 -> n312 [from="caller", to="callee"];
+  n294 -> n351 [from="input", to="func"];
+  n325 -> n377 [from="input", to="func"];
+  n349 -> n3626 [from="field_type", to="struct"];
+  n350 -> n474 [from="input", to="func"];
+  n351 -> n307 [from="func", to="output"];
+  n359 -> n376 [from="field_type", to="struct"];
+  n376 -> n522 [from="field_type", to="struct"];
+  n376 -> n528 [from="input", to="func"];
+  n377 -> n335 [from="func", to="output"];
+  n402 -> n266 [from="func", to="output"];
+  n405 -> n1881 [from="caller", to="callee"];
+  n453 -> n405 [from="caller", to="callee"];
+  n453 -> n1881 [from="caller", to="callee"];
+  n474 -> n3287 [from="caller", to="callee"];
+  n479 -> n470 [from="caller", to="callee"];
+  n479 -> n3287 [from="caller", to="callee"];
+  n510 -> n1351 [from="caller", to="callee"];
+  n521 -> n532 [from="caller", to="callee"];
+  n521 -> n792 [from="caller", to="callee"];
+  n532 -> n792 [from="caller", to="callee"];
+  n557 -> n1847 [from="caller", to="callee"];
+  n584 -> n522 [from="func", to="type_dep"];
+  n585 -> n614 [from="field_type", to="struct"];
+  n614 -> n1091 [from="input", to="func"];
+  n614 -> n1206 [from="input", to="func"];
+  n638 -> n852 [from="field_type", to="struct"];
+  n649 -> n693 [from="caller", to="callee"];
+  n649 -> n1669 [from="caller", to="callee"];
+  n695 -> n666 [from="caller", to="callee"];
+  n716 -> n1854 [from="func", to="type_dep"];
+  n730 -> n666 [from="caller", to="callee"];
+  n738 -> n716 [from="caller", to="callee"];
+  n738 -> n3920 [from="func", to="output"];
+  n792 -> n1847 [from="caller", to="callee"];
+  n804 -> n822 [from="field_type", to="struct"];
+  n819 -> n852 [from="bound", to="generic"];
+  n822 -> n826 [from="base", to="extends"];
+  n822 -> n836 [from="base", to="extends"];
+  n822 -> n841 [from="base", to="extends"];
+  n822 -> n860 [from="base", to="extends"];
+  n822 -> n884 [from="base", to="extends"];
+  n822 -> n924 [from="base", to="extends"];
+  n822 -> n935 [from="base", to="extends"];
+  n822 -> n4590 [from="base", to="extends"];
+  n829 -> n3287 [from="caller", to="callee"];
+  n860 -> n3753 [from="field_type", to="struct"];
+  n863 -> n574 [from="caller", to="callee"];
+  n863 -> n792 [from="caller", to="callee"];
+  n863 -> n878 [from="caller", to="callee"];
+  n863 -> n920 [from="caller", to="callee"];
+  n863 -> n933 [from="caller", to="callee"];
+  n863 -> n1072 [from="caller", to="callee"];
+  n863 -> n1881 [from="caller", to="callee"];
+  n871 -> n1669 [from="caller", to="callee"];
+  n871 -> n3287 [from="caller", to="callee"];
+  n878 -> n574 [from="caller", to="callee"];
+  n878 -> n792 [from="caller", to="callee"];
+  n878 -> n920 [from="caller", to="callee"];
+  n878 -> n933 [from="caller", to="callee"];
+  n878 -> n1072 [from="caller", to="callee"];
+  n878 -> n1881 [from="caller", to="callee"];
+  n919 -> n359 [from="field_type", to="struct"];
+  n919 -> n376 [from="field_type", to="struct"];
+  n919 -> n2181 [from="input", to="func"];
+  n919 -> n2488 [from="base", to="extends"];
+  n919 -> n2781 [from="input", to="func"];
+  n933 -> n574 [from="caller", to="callee"];
+  n933 -> n792 [from="caller", to="callee"];
+  n933 -> n1072 [from="caller", to="callee"];
+  n933 -> n1881 [from="caller", to="callee"];
+  n960 -> n983 [from="field_type", to="struct"];
+  n972 -> n983 [from="field_type", to="struct"];
+  n972 -> n1223 [from="field_type", to="struct"];
+  n983 -> n1058 [from="input", to="func"];
+  n983 -> n3095 [from="field_type", to="struct"];
+  n996 -> n1669 [from="caller", to="callee"];
+  n996 -> n3287 [from="caller", to="callee"];
+  n1005 -> n106 [from="base", to="extends"];
+  n1005 -> n113 [from="base", to="extends"];
+  n1005 -> n120 [from="base", to="extends"];
+  n1005 -> n126 [from="base", to="extends"];
+  n1005 -> n1047 [from="base", to="extends"];
+  n1005 -> n1331 [from="base", to="extends"];
+  n1005 -> n1352 [from="base", to="extends"];
+  n1005 -> n1373 [from="base", to="extends"];
+  n1026 -> n852 [from="field_type", to="struct"];
+  n1026 -> n3003 [from="field_type", to="struct"];
+  n1026 -> n3074 [from="bound", to="generic"];
+  n1058 -> n557 [from="caller", to="callee"];
+  n1058 -> n1077 [from="caller", to="callee"];
+  n1058 -> n1116 [from="caller", to="callee"];
+  n1058 -> n1829 [from="caller", to="callee"];
+  n1058 -> n1841 [from="caller", to="callee"];
+  n1058 -> n2565 [from="caller", to="callee"];
+  n1077 -> n1041 [from="func", to="output"];
+  n1077 -> n1829 [from="caller", to="callee"];
+  n1080 -> n852 [from="field_type", to="struct"];
+  n1116 -> n557 [from="caller", to="callee"];
+  n1116 -> n1041 [from="func", to="output"];
+  n1116 -> n1841 [from="caller", to="callee"];
+  n1136 -> n3287 [from="caller", to="callee"];
+  n1139 -> n1072 [from="caller", to="callee"];
+  n1139 -> n1091 [from="caller", to="callee"];
+  n1139 -> n1854 [from="func", to="type_dep"];
+  n1144 -> n1151 [from="base", to="extends"];
+  n1144 -> n1167 [from="base", to="extends"];
+  n1144 -> n1184 [from="base", to="extends"];
+  n1144 -> n1197 [from="base", to="extends"];
+  n1144 -> n1214 [from="base", to="extends"];
+  n1144 -> n1223 [from="base", to="extends"];
+  n1171 -> n1462 [from="caller", to="callee"];
+  n1171 -> n1782 [from="caller", to="callee"];
+  n1171 -> n3287 [from="caller", to="callee"];
+  n1199 -> n852 [from="field_type", to="struct"];
+  n1230 -> n1242 [from="input", to="func"];
+  n1233 -> n1199 [from="func", to="output"];
+  n1279 -> n1364 [from="input", to="func"];
+  n1286 -> n1376 [from="caller", to="callee"];
+  n1308 -> n2428 [from="caller", to="callee"];
+  n1310 -> n1144 [from="bound", to="generic"];
+  n1310 -> n1151 [from="bound", to="generic"];
+  n1310 -> n1167 [from="bound", to="generic"];
+  n1310 -> n1184 [from="bound", to="generic"];
+  n1310 -> n1197 [from="bound", to="generic"];
+  n1310 -> n1214 [from="bound", to="generic"];
+  n1310 -> n1223 [from="bound", to="generic"];
+  n1310 -> n1279 [from="bound", to="generic"];
+  n1310 -> n1364 [from="bound", to="generic"];
+  n1323 -> n2276 [from="caller", to="callee"];
+  n1364 -> n1416 [from="caller", to="callee"];
+  n1364 -> n1445 [from="caller", to="callee"];
+  n1364 -> n1881 [from="caller", to="callee"];
+  n1372 -> n863 [from="caller", to="callee"];
+  n1372 -> n1805 [from="caller", to="callee"];
+  n1376 -> n1080 [from="func", to="output"];
+  n1405 -> n1286 [from="caller", to="callee"];
+  n1405 -> n1523 [from="caller", to="callee"];
+  n1413 -> n1428 [from="base", to="extends"];
+  n1413 -> n1449 [from="base", to="extends"];
+  n1462 -> n1500 [from="caller", to="callee"];
+  n1462 -> n1573 [from="caller", to="callee"];
+  n1462 -> n1608 [from="caller", to="callee"];
+  n1465 -> n1139 [from="input", to="func"];
+  n1465 -> n1497 [from="input", to="func"];
+  n1465 -> n1532 [from="input", to="func"];
+  n1475 -> n852 [from="field_type", to="struct"];
+  n1495 -> n1518 [from="input", to="func"];
+  n1518 -> n1571 [from="caller", to="callee"];
+  n1518 -> n1596 [from="caller", to="callee"];
+  n1518 -> n1644 [from="caller", to="callee"];
+  n1518 -> n1787 [from="caller", to="callee"];
+  n1518 -> n1822 [from="caller", to="callee"];
+  n1518 -> n1844 [from="caller", to="callee"];
+  n1518 -> n1857 [from="caller", to="callee"];
+  n1520 -> n1803 [from="base", to="extends"];
+  n1520 -> n1815 [from="base", to="extends"];
+  n1520 -> n1826 [from="base", to="extends"];
+  n1521 -> n522 [from="field_type", to="struct"];
+  n1523 -> n1497 [from="caller", to="callee"];
+  n1523 -> n1532 [from="caller", to="callee"];
+  n1523 -> n1854 [from="func", to="type_dep"];
+  n1532 -> n1497 [from="caller", to="callee"];
+  n1532 -> n1854 [from="func", to="type_dep"];
+  n1547 -> n1521 [from="func", to="output"];
+  n1547 -> n3287 [from="caller", to="callee"];
+  n1587 -> n1591 [from="caller", to="callee"];
+  n1587 -> n1607 [from="caller", to="callee"];
+  n1605 -> n2222 [from="caller", to="callee"];
+  n1605 -> n2519 [from="caller", to="callee"];
+  n1607 -> n1475 [from="func", to="output"];
+  n1636 -> n1847 [from="caller", to="callee"];
+  n1636 -> n1854 [from="func", to="type_dep"];
+  n1642 -> n1847 [from="caller", to="callee"];
+  n1642 -> n1854 [from="func", to="type_dep"];
+  n1650 -> n2222 [from="caller", to="callee"];
+  n1650 -> n2519 [from="caller", to="callee"];
+  n1658 -> n1686 [from="input", to="func"];
+  n1658 -> n3717 [from="base", to="extends"];
+  n1669 -> n3562 [from="func", to="output"];
+  n1686 -> n1416 [from="caller", to="callee"];
+  n1686 -> n3337 [from="caller", to="callee"];
+  n1686 -> n3383 [from="caller", to="callee"];
+  n1689 -> n1854 [from="func", to="type_dep"];
+  n1695 -> n1854 [from="func", to="type_dep"];
+  n1737 -> n1669 [from="caller", to="callee"];
+  n1737 -> n3287 [from="caller", to="callee"];
+  n1782 -> n1762 [from="func", to="output"];
+  n1807 -> n1847 [from="caller", to="callee"];
+  n1811 -> n2020 [from="caller", to="callee"];
+  n1841 -> n1854 [from="func", to="type_dep"];
+  n1854 -> n30 [from="input", to="func"];
+  n1854 -> n361 [from="base", to="extends"];
+  n1854 -> n1449 [from="field_type", to="struct"];
+  n1854 -> n1954 [from="field_type", to="struct"];
+  n1854 -> n2453 [from="input", to="func"];
+  n1854 -> n2924 [from="field_type", to="struct"];
+  n1887 -> n1847 [from="caller", to="callee"];
+  n1922 -> n1899 [from="caller", to="callee"];
+  n1922 -> n4572 [from="caller", to="callee"];
+  n1935 -> n1948 [from="caller", to="callee"];
+  n1937 -> n1416 [from="caller", to="callee"];
+  n1937 -> n2300 [from="caller", to="callee"];
+  n1944 -> n1935 [from="caller", to="callee"];
+  n1954 -> n2519 [from="input", to="func"];
+  n1967 -> n2420 [from="caller", to="callee"];
+  n2012 -> n1793 [from="caller", to="callee"];
+  n2108 -> n522 [from="field_type", to="struct"];
+  n2131 -> n1847 [from="caller", to="callee"];
+  n2131 -> n1854 [from="func", to="type_dep"];
+  n2131 -> n3920 [from="func", to="output"];
+  n2196 -> n1854 [from="func", to="type_dep"];
+  n2196 -> n2131 [from="caller", to="callee"];
+  n2196 -> n3920 [from="func", to="output"];
+  n2222 -> n2099 [from="caller", to="callee"];
+  n2235 -> n4427 [from="caller", to="callee"];
+  n2261 -> n2285 [from="input", to="func"];
+  n2276 -> n1351 [from="caller", to="callee"];
+  n2285 -> n3017 [from="caller", to="callee"];
+  n2316 -> n1986 [from="caller", to="callee"];
+  n2320 -> n2341 [from="caller", to="callee"];
+  n2337 -> n1841 [from="caller", to="callee"];
+  n2337 -> n3689 [from="caller", to="callee"];
+  n2341 -> n1872 [from="caller", to="callee"];
+  n2346 -> n1416 [from="caller", to="callee"];
+  n2351 -> n1986 [from="caller", to="callee"];
+  n2360 -> n1812 [from="func", to="output"];
+  n2360 -> n2320 [from="caller", to="callee"];
+  n2377 -> n2318 [from="caller", to="callee"];
+  n2382 -> n570 [from="caller", to="callee"];
+  n2382 -> n2276 [from="caller", to="callee"];
+  n2382 -> n2346 [from="caller", to="callee"];
+  n2384 -> n2316 [from="caller", to="callee"];
+  n2384 -> n2351 [from="caller", to="callee"];
+  n2403 -> n2518 [from="field_type", to="struct"];
+  n2417 -> n2469 [from="field_type", to="struct"];
+  n2428 -> n4273 [from="func", to="output"];
+  n2441 -> n1847 [from="caller", to="callee"];
+  n2441 -> n1887 [from="caller", to="callee"];
+  n2449 -> n2469 [from="field_type", to="struct"];
+  n2453 -> n2387 [from="caller", to="callee"];
+  n2469 -> n2377 [from="input", to="func"];
+  n2469 -> n2500 [from="field_type", to="struct"];
+  n2488 -> n522 [from="field_type", to="struct"];
+  n2488 -> n584 [from="input", to="func"];
+  n2488 -> n3717 [from="field_type", to="struct"];
+  n2495 -> n1847 [from="caller", to="callee"];
+  n2500 -> n2518 [from="field_type", to="struct"];
+  n2505 -> n453 [from="caller", to="callee"];
+  n2505 -> n564 [from="caller", to="callee"];
+  n2505 -> n1841 [from="caller", to="callee"];
+  n2505 -> n1854 [from="func", to="type_dep"];
+  n2505 -> n3689 [from="caller", to="callee"];
+  n2505 -> n4572 [from="caller", to="callee"];
+  n2518 -> n2547 [from="field_type", to="struct"];
+  n2519 -> n1058 [from="caller", to="callee"];
+  n2519 -> n1854 [from="func", to="type_dep"];
+  n2519 -> n1967 [from="caller", to="callee"];
+  n2519 -> n2337 [from="caller", to="callee"];
+  n2519 -> n2441 [from="caller", to="callee"];
+  n2519 -> n4022 [from="caller", to="callee"];
+  n2524 -> n3877 [from="field_type", to="struct"];
+  n2544 -> n2485 [from="func", to="output"];
+  n2576 -> n21 [from="caller", to="callee"];
+  n2576 -> n4346 [from="caller", to="callee"];
+  n2576 -> n4566 [from="caller", to="callee"];
+  n2587 -> n3718 [from="caller", to="callee"];
+  n2651 -> n3764 [from="caller", to="callee"];
+  n2651 -> n3804 [from="caller", to="callee"];
+  n2657 -> n3718 [from="caller", to="callee"];
+  n2669 -> n2689 [from="bound", to="generic"];
+  n2669 -> n2689 [from="field_type", to="struct"];
+  n2669 -> n2773 [from="bound", to="generic"];
+  n2669 -> n2784 [from="bound", to="generic"];
+  n2669 -> n2798 [from="bound", to="generic"];
+  n2669 -> n2809 [from="bound", to="generic"];
+  n2689 -> n2773 [from="base", to="extends"];
+  n2689 -> n2784 [from="base", to="extends"];
+  n2689 -> n2798 [from="base", to="extends"];
+  n2741 -> n3764 [from="caller", to="callee"];
+  n2749 -> n2645 [from="base", to="extends"];
+  n2798 -> n2809 [from="base", to="extends"];
+  n2806 -> n2838 [from="input", to="func"];
+  n2814 -> n2968 [from="field_type", to="struct"];
+  n2814 -> n4121 [from="field_type", to="struct"];
+  n2821 -> n453 [from="caller", to="callee"];
+  n2821 -> n1841 [from="caller", to="callee"];
+  n2821 -> n1854 [from="func", to="type_dep"];
+  n2838 -> n4457 [from="caller", to="callee"];
+  n2882 -> n1669 [from="caller", to="callee"];
+  n2882 -> n3287 [from="caller", to="callee"];
+  n2924 -> n4016 [from="base", to="extends"];
+  n2957 -> n4273 [from="field_type", to="struct"];
+  n3003 -> n3095 [from="bound", to="generic"];
+  n3003 -> n3095 [from="field_type", to="struct"];
+  n3017 -> n1841 [from="caller", to="callee"];
+  n3017 -> n1847 [from="caller", to="callee"];
+  n3017 -> n3104 [from="caller", to="callee"];
+  n3017 -> n3120 [from="caller", to="callee"];
+  n3017 -> n3214 [from="caller", to="callee"];
+  n3017 -> n3321 [from="caller", to="callee"];
+  n3017 -> n3732 [from="caller", to="callee"];
+  n3074 -> n3236 [from="interface", to="implements"];
+  n3082 -> n3287 [from="caller", to="callee"];
+  n3095 -> n585 [from="field_type", to="struct"];
+  n3095 -> n852 [from="field_type", to="struct"];
+  n3095 -> n863 [from="input", to="func"];
+  n3095 -> n3638 [from="input", to="func"];
+  n3095 -> n3689 [from="input", to="func"];
+  n3105 -> n3176 [from="input", to="func"];
+  n3108 -> n104 [from="field_type", to="struct"];
+  n3108 -> n3131 [from="field_type", to="struct"];
+  n3120 -> n1841 [from="caller", to="callee"];
+  n3131 -> n118 [from="base", to="extends"];
+  n3131 -> n127 [from="base", to="extends"];
+  n3131 -> n140 [from="base", to="extends"];
+  n3131 -> n154 [from="base", to="extends"];
+  n3131 -> n187 [from="base", to="extends"];
+  n3131 -> n211 [from="base", to="extends"];
+  n3131 -> n256 [from="base", to="extends"];
+  n3131 -> n294 [from="base", to="extends"];
+  n3131 -> n325 [from="base", to="extends"];
+  n3131 -> n4561 [from="base", to="extends"];
+  n3131 -> n4576 [from="base", to="extends"];
+  n3131 -> n4586 [from="base", to="extends"];
+  n3142 -> n1847 [from="caller", to="callee"];
+  n3146 -> n3105 [from="field_type", to="struct"];
+  n3176 -> n3287 [from="caller", to="callee"];
+  n3186 -> n67 [from="base", to="extends"];
+  n3186 -> n122 [from="base", to="extends"];
+  n3186 -> n134 [from="base", to="extends"];
+  n3186 -> n149 [from="base", to="extends"];
+  n3186 -> n172 [from="base", to="extends"];
+  n3186 -> n195 [from="base", to="extends"];
+  n3186 -> n219 [from="base", to="extends"];
+  n3186 -> n266 [from="base", to="extends"];
+  n3186 -> n307 [from="base", to="extends"];
+  n3186 -> n335 [from="base", to="extends"];
+  n3186 -> n2485 [from="base", to="extends"];
+  n3186 -> n4567 [from="base", to="extends"];
+  n3186 -> n4581 [from="base", to="extends"];
+  n3186 -> n4588 [from="base", to="extends"];
+  n3190 -> n1847 [from="caller", to="callee"];
+  n3214 -> n1841 [from="caller", to="callee"];
+  n3214 -> n1847 [from="caller", to="callee"];
+  n3236 -> n3146 [from="field_type", to="struct"];
+  n3241 -> n1847 [from="caller", to="callee"];
+  n3241 -> n1872 [from="caller", to="callee"];
+  n3287 -> n4085 [from="func", to="output"];
+  n3290 -> n4139 [from="caller", to="callee"];
+  n3290 -> n4160 [from="caller", to="callee"];
+  n3337 -> n3312 [from="caller", to="callee"];
+  n3383 -> n3017 [from="caller", to="callee"];
+  n3389 -> n3312 [from="caller", to="callee"];
+  n3396 -> n3402 [from="input", to="func"];
+  n3400 -> n3365 [from="caller", to="callee"];
+  n3402 -> n3287 [from="caller", to="callee"];
+  n3402 -> n3443 [from="caller", to="callee"];
+  n3402 -> n3464 [from="caller", to="callee"];
+  n3441 -> n564 [from="caller", to="callee"];
+  n3441 -> n1841 [from="caller", to="callee"];
+  n3441 -> n3689 [from="caller", to="callee"];
+  n3445 -> n3476 [from="base", to="extends"];
+  n3445 -> n3519 [from="base", to="extends"];
+  n3445 -> n3728 [from="input", to="func"];
+  n3445 -> n3810 [from="input", to="func"];
+  n3476 -> n3562 [from="field_type", to="struct"];
+  n3483 -> n3186 [from="func", to="output"];
+  n3505 -> n3095 [from="field_type", to="struct"];
+  n3505 -> n3632 [from="input", to="func"];
+  n3505 -> n4022 [from="input", to="func"];
+  n3508 -> n3287 [from="caller", to="callee"];
+  n3510 -> n3626 [from="base", to="extends"];
+  n3510 -> n3753 [from="base", to="extends"];
+  n3510 -> n3877 [from="base", to="extends"];
+  n3510 -> n3917 [from="base", to="extends"];
+  n3519 -> n3562 [from="field_type", to="struct"];
+  n3557 -> n3524 [from="caller", to="callee"];
+  n3562 -> n1762 [from="field_type", to="struct"];
+  n3562 -> n3095 [from="field_type", to="struct"];
+  n3562 -> n4357 [from="input", to="func"];
+  n3564 -> n1812 [from="field_type", to="struct"];
+  n3576 -> n3287 [from="caller", to="callee"];
+  n3580 -> n3557 [from="caller", to="callee"];
+  n3620 -> n3562 [from="func", to="output"];
+  n3632 -> n1881 [from="caller", to="callee"];
+  n3632 -> n1887 [from="caller", to="callee"];
+  n3632 -> n3241 [from="caller", to="callee"];
+  n3632 -> n3589 [from="func", to="type_dep"];
+  n3632 -> n3670 [from="caller", to="callee"];
+  n3632 -> n3709 [from="caller", to="callee"];
+  n3632 -> n3737 [from="caller", to="callee"];
+  n3632 -> n3773 [from="caller", to="callee"];
+  n3632 -> n3809 [from="caller", to="callee"];
+  n3632 -> n3850 [from="caller", to="callee"];
+  n3632 -> n4251 [from="caller", to="callee"];
+  n3640 -> n3494 [from="caller", to="callee"];
+  n3689 -> n3638 [from="caller", to="callee"];
+  n3703 -> n3576 [from="caller", to="callee"];
+  n3717 -> n3770 [from="input", to="func"];
+  n3732 -> n1854 [from="func", to="type_dep"];
+  n3770 -> n584 [from="caller", to="callee"];
+  n3770 -> n1686 [from="caller", to="callee"];
+  n3770 -> n4427 [from="caller", to="callee"];
+  n3773 -> n3589 [from="func", to="type_dep"];
+  n3804 -> n1872 [from="caller", to="callee"];
+  n3809 -> n1887 [from="caller", to="callee"];
+  n3809 -> n3241 [from="caller", to="callee"];
+  n3810 -> n1847 [from="caller", to="callee"];
+  n3810 -> n3728 [from="caller", to="callee"];
+  n3810 -> n3793 [from="func", to="type_dep"];
+  n3846 -> n1954 [from="base", to="extends"];
+  n3850 -> n1881 [from="caller", to="callee"];
+  n3853 -> n4457 [from="caller", to="callee"];
+  n3857 -> n3649 [from="caller", to="callee"];
+  n3857 -> n3732 [from="caller", to="callee"];
+  n3879 -> n3920 [from="field_type", to="struct"];
+  n3885 -> n3867 [from="caller", to="callee"];
+  n3885 -> n4400 [from="caller", to="callee"];
+  n3920 -> n2648 [from="field_type", to="struct"];
+  n3920 -> n3120 [from="input", to="func"];
+  n3920 -> n4543 [from="field_type", to="struct"];
+  n3933 -> n3867 [from="caller", to="callee"];
+  n3983 -> n2519 [from="caller", to="callee"];
+  n4006 -> n67 [from="field_type", to="struct"];
+  n4019 -> n4457 [from="caller", to="callee"];
+  n4022 -> n2565 [from="caller", to="callee"];
+  n4031 -> n557 [from="caller", to="callee"];
+  n4074 -> n3846 [from="base", to="extends"];
+  n4085 -> n1521 [from="base", to="extends"];
+  n4085 -> n1521 [from="field_type", to="struct"];
+  n4085 -> n3459 [from="input", to="func"];
+  n4085 -> n3494 [from="input", to="func"];
+  n4085 -> n3640 [from="input", to="func"];
+  n4099 -> n1847 [from="caller", to="callee"];
+  n4105 -> n4031 [from="caller", to="callee"];
+  n4115 -> n2519 [from="caller", to="callee"];
+  n4115 -> n3857 [from="caller", to="callee"];
+  n4172 -> n1026 [from="base", to="extends"];
+  n4172 -> n4305 [from="bound", to="generic"];
+  n4172 -> n4305 [from="field_type", to="struct"];
+  n4172 -> n4416 [from="bound", to="generic"];
+  n4225 -> n4147 [from="caller", to="callee"];
+  n4251 -> n2060 [from="caller", to="callee"];
+  n4251 -> n3290 [from="caller", to="callee"];
+  n4251 -> n4209 [from="func", to="output"];
+  n4251 -> n4356 [from="caller", to="callee"];
+  n4259 -> n4277 [from="caller", to="callee"];
+  n4259 -> n4290 [from="caller", to="callee"];
+  n4259 -> n4311 [from="caller", to="callee"];
+  n4259 -> n4327 [from="caller", to="callee"];
+  n4259 -> n4373 [from="caller", to="callee"];
+  n4273 -> n3853 [from="input", to="func"];
+  n4273 -> n4019 [from="input", to="func"];
+  n4273 -> n4343 [from="field_type", to="struct"];
+  n4273 -> n4400 [from="input", to="func"];
+  n4290 -> n4311 [from="caller", to="callee"];
+  n4346 -> n1782 [from="caller", to="callee"];
+  n4346 -> n3287 [from="caller", to="callee"];
+  n4356 -> n3290 [from="caller", to="callee"];
+  n4357 -> n4099 [from="caller", to="callee"];
+  n4357 -> n4222 [from="caller", to="callee"];
+  n4357 -> n4254 [from="caller", to="callee"];
+  n4357 -> n4295 [from="caller", to="callee"];
+  n4357 -> n4320 [from="caller", to="callee"];
+  n4406 -> n2060 [from="caller", to="callee"];
+  n4406 -> n4225 [from="caller", to="callee"];
+  n4406 -> n4259 [from="caller", to="callee"];
+  n4406 -> n4482 [from="caller", to="callee"];
+  n4406 -> n4509 [from="caller", to="callee"];
+  n4421 -> n4457 [from="caller", to="callee"];
+  n4427 -> n4273 [from="func", to="type_dep"];
+  n4427 -> n4400 [from="caller", to="callee"];
+  n4440 -> n3508 [from="input", to="func"];
+  n4457 -> n4273 [from="func", to="output"];
+  n4488 -> n2968 [from="field_type", to="struct"];
+  n4561 -> n4599 [from="input", to="func"];
+  n4563 -> n1308 [from="input", to="func"];
+  n4563 -> n2458 [from="input", to="func"];
+  n4576 -> n4591 [from="input", to="func"];
+  n4586 -> n4595 [from="input", to="func"];
+  n4591 -> n4581 [from="func", to="output"];
+  n4595 -> n4588 [from="func", to="output"];
+  n4599 -> n4567 [from="func", to="output"];
+  n4605 -> n1887 [from="caller", to="callee"];
+  n4605 -> n3641 [from="caller", to="callee"];
+  n4605 -> n3804 [from="caller", to="callee"];
+}

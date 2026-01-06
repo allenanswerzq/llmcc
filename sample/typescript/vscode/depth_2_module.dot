@@ -1,0 +1,590 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  subgraph cluster_builtin_notebook_renderers {
+    label="builtin-notebook-renderers";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_builtin_notebook_renderers_ansi[label="ansi", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/notebook-renderers/src"];
+    mod_builtin_notebook_renderers_color[label="color", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/notebook-renderers/src"];
+    mod_builtin_notebook_renderers_index[label="index", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/notebook-renderers/src"];
+    mod_builtin_notebook_renderers_rendererTypes[label="rendererTypes", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/notebook-renderers/src"];
+    mod_builtin_notebook_renderers_textHelper[label="textHelper", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/notebook-renderers/src"];
+  }
+
+  subgraph cluster_code_oss_dev {
+    label="code-oss-dev";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_code_oss_dev_base[label="base", folder="/home/yibai/llmcc/sample/repos/vscode/src/vs/base"];
+    mod_code_oss_dev_bootstrap_import[label="bootstrap-import", folder="/home/yibai/llmcc/sample/repos/vscode/src"];
+    mod_code_oss_dev_code[label="code", folder="/home/yibai/llmcc/sample/repos/vscode/src/vs/code"];
+    mod_code_oss_dev_editor[label="editor", folder="/home/yibai/llmcc/sample/repos/vscode/src/vs/editor"];
+    mod_code_oss_dev_main[label="main", folder="/home/yibai/llmcc/sample/repos/vscode/src"];
+    mod_code_oss_dev_platform[label="platform", folder="/home/yibai/llmcc/sample/repos/vscode/src/vs/platform"];
+    mod_code_oss_dev_server[label="server", folder="/home/yibai/llmcc/sample/repos/vscode/src/vs/server"];
+    mod_code_oss_dev_typings[label="typings", folder="/home/yibai/llmcc/sample/repos/vscode/src/typings"];
+    mod_code_oss_dev_vs[label="vs", folder="/home/yibai/llmcc/sample/repos/vscode/src/vs"];
+    mod_code_oss_dev_vscode_dts[label="vscode-dts", folder="/home/yibai/llmcc/sample/repos/vscode/src/vscode-dts"];
+    mod_code_oss_dev_workbench[label="workbench", folder="/home/yibai/llmcc/sample/repos/vscode/src/vs/workbench"];
+  }
+
+  subgraph cluster_configuration_editing {
+    label="configuration-editing";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_configuration_editing_configurationEditingMain[label="configurationEditingMain", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/configuration-editing/src"];
+  }
+
+  subgraph cluster_css_language_features {
+    label="css-language-features";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_css_language_features_client[label="client", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/css-language-features/client"];
+  }
+
+  subgraph cluster_emmet {
+    label="emmet";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_emmet_abbreviationActions[label="abbreviationActions", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/emmet/src"];
+    mod_emmet_balance[label="balance", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/emmet/src"];
+    mod_emmet_emmetCommon[label="emmetCommon", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/emmet/src"];
+    mod_emmet_matchTag[label="matchTag", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/emmet/src"];
+    mod_emmet_mergeLines[label="mergeLines", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/emmet/src"];
+    mod_emmet_parseDocument[label="parseDocument", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/emmet/src"];
+    mod_emmet_removeTag[label="removeTag", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/emmet/src"];
+    mod_emmet_selectItemHTML[label="selectItemHTML", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/emmet/src"];
+    mod_emmet_selectItemStylesheet[label="selectItemStylesheet", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/emmet/src"];
+    mod_emmet_splitJoinTag[label="splitJoinTag", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/emmet/src"];
+    mod_emmet_toggleComment[label="toggleComment", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/emmet/src"];
+    mod_emmet_typings[label="typings", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/emmet/src/typings"];
+    mod_emmet_updateImageSize[label="updateImageSize", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/emmet/src"];
+    mod_emmet_util[label="util", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/emmet/src"];
+  }
+
+  subgraph cluster_extension_editing {
+    label="extension-editing";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_extension_editing_extensionEngineValidation[label="extensionEngineValidation", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/extension-editing/src"];
+  }
+
+  subgraph cluster_git {
+    label="git";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_git_api[label="api", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/git/src/api"];
+    mod_git_blame[label="blame", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/git/src"];
+    mod_git_cache[label="cache", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/git/src"];
+    mod_git_commands[label="commands", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/git/src"];
+    mod_git_decorationProvider[label="decorationProvider", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/git/src"];
+    mod_git_diagnostics[label="diagnostics", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/git/src"];
+    mod_git_git[label="git", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/git/src"];
+    mod_git_historyItemDetailsProvider[label="historyItemDetailsProvider", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/git/src"];
+    mod_git_hover[label="hover", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/git/src"];
+    mod_git_ipc[label="ipc", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/git/src/ipc"];
+    mod_git_main[label="main", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/git/src"];
+    mod_git_model[label="model", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/git/src"];
+    mod_git_remoteSource[label="remoteSource", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/git/src"];
+    mod_git_repository[label="repository", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/git/src"];
+    mod_git_staging[label="staging", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/git/src"];
+    mod_git_statusbar[label="statusbar", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/git/src"];
+    mod_git_typings[label="typings", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/git/src/typings"];
+    mod_git_util[label="util", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/git/src"];
+  }
+
+  subgraph cluster_git_base {
+    label="git-base";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_git_base_model[label="model", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/git-base/src"];
+    mod_git_base_remoteSource[label="remoteSource", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/git-base/src"];
+    mod_git_base_util[label="util", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/git-base/src"];
+  }
+
+  subgraph cluster_github {
+    label="github";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_github_commands[label="commands", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/github/src"];
+    mod_github_extension[label="extension", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/github/src"];
+    mod_github_links[label="links", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/github/src"];
+    mod_github_typings[label="typings", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/github/src/typings"];
+    mod_github_util[label="util", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/github/src"];
+  }
+
+  subgraph cluster_github_authentication {
+    label="github-authentication";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_github_authentication_common[label="common", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/github-authentication/src/common"];
+    mod_github_authentication_extension[label="extension", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/github-authentication/src"];
+    mod_github_authentication_github[label="github", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/github-authentication/src"];
+    mod_github_authentication_node[label="node", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/github-authentication/src/node"];
+  }
+
+  subgraph cluster_html_language_features {
+    label="html-language-features";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_html_language_features_client[label="client", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/html-language-features/client"];
+  }
+
+  subgraph cluster_ipynb {
+    label="ipynb";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_ipynb_common[label="common", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/ipynb/src"];
+    mod_ipynb_deserializers[label="deserializers", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/ipynb/src"];
+    mod_ipynb_helper[label="helper", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/ipynb/src"];
+    mod_ipynb_serializers[label="serializers", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/ipynb/src"];
+  }
+
+  subgraph cluster_json_language_features {
+    label="json-language-features";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_json_language_features_client[label="client", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/json-language-features/client"];
+  }
+
+  subgraph cluster_markdown_language_features {
+    label="markdown-language-features";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_markdown_language_features_client[label="client", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/markdown-language-features/src/client"];
+    mod_markdown_language_features_commandManager[label="commandManager", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/markdown-language-features/src"];
+    mod_markdown_language_features_commands[label="commands", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/markdown-language-features/src/commands"];
+    mod_markdown_language_features_extension_shared[label="extension.shared", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/markdown-language-features/src"];
+    mod_markdown_language_features_languageFeatures[label="languageFeatures", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/markdown-language-features/src/languageFeatures"];
+    mod_markdown_language_features_logging[label="logging", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/markdown-language-features/src"];
+    mod_markdown_language_features_markdownEngine[label="markdownEngine", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/markdown-language-features/src"];
+    mod_markdown_language_features_preview[label="preview", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/markdown-language-features/src/preview"];
+    mod_markdown_language_features_slugify[label="slugify", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/markdown-language-features/src"];
+    mod_markdown_language_features_telemetryReporter[label="telemetryReporter", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/markdown-language-features/src"];
+    mod_markdown_language_features_types[label="types", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/markdown-language-features/types"];
+    mod_markdown_language_features_util[label="util", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/markdown-language-features/src/util"];
+  }
+
+  subgraph cluster_microsoft_authentication {
+    label="microsoft-authentication";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_microsoft_authentication_common[label="common", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/microsoft-authentication/src/common"];
+    mod_microsoft_authentication_node[label="node", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/microsoft-authentication/src/node"];
+  }
+
+  subgraph cluster_npm {
+    label="npm";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_npm_commands[label="commands", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/npm/src"];
+    mod_npm_features[label="features", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/npm/src/features"];
+    mod_npm_npmMain[label="npmMain", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/npm/src"];
+    mod_npm_npmView[label="npmView", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/npm/src"];
+    mod_npm_tasks[label="tasks", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/npm/src"];
+  }
+
+  subgraph cluster_php_language_features {
+    label="php-language-features";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_php_language_features_features[label="features", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/php-language-features/src/features"];
+  }
+
+  subgraph cluster_references_view {
+    label="references-view";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_references_view_calls[label="calls", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/references-view/src/calls"];
+    mod_references_view_extension[label="extension", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/references-view/src"];
+    mod_references_view_references[label="references", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/references-view/src/references"];
+    mod_references_view_references_view_d[label="references-view.d", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/references-view/src"];
+    mod_references_view_types[label="types", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/references-view/src/types"];
+  }
+
+  subgraph cluster_simple_browser {
+    label="simple-browser";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_simple_browser_dispose[label="dispose", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/simple-browser/src"];
+  }
+
+  subgraph cluster_terminal_suggest {
+    label="terminal-suggest";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_terminal_suggest_fig[label="fig", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/terminal-suggest/src/fig"];
+    mod_terminal_suggest_helpers[label="helpers", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/terminal-suggest/src/helpers"];
+    mod_terminal_suggest_shell[label="shell", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/terminal-suggest/src/shell"];
+    mod_terminal_suggest_terminalSuggestMain[label="terminalSuggestMain", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/terminal-suggest/src"];
+    mod_terminal_suggest_types[label="types", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/terminal-suggest/src"];
+  }
+
+  subgraph cluster_typescript_language_features {
+    label="typescript-language-features";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_typescript_language_features_configuration[label="configuration", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/typescript-language-features/src/configuration"];
+    mod_typescript_language_features_extension[label="extension", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/typescript-language-features/src"];
+    mod_typescript_language_features_languageFeatures[label="languageFeatures", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/typescript-language-features/src/languageFeatures"];
+    mod_typescript_language_features_logging[label="logging", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/typescript-language-features/src/logging"];
+    mod_typescript_language_features_tsServer[label="tsServer", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/typescript-language-features/src/tsServer"];
+    mod_typescript_language_features_tsconfig[label="tsconfig", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/typescript-language-features/src"];
+    mod_typescript_language_features_typescriptService[label="typescriptService", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/typescript-language-features/src"];
+    mod_typescript_language_features_typescriptServiceClient[label="typescriptServiceClient", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/typescript-language-features/src"];
+    mod_typescript_language_features_ui[label="ui", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/typescript-language-features/src/ui"];
+    mod_typescript_language_features_utils[label="utils", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/typescript-language-features/src/utils"];
+    mod_typescript_language_features_web[label="web", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/typescript-language-features/web"];
+  }
+
+  subgraph cluster_vscode_api_tests {
+    label="vscode-api-tests";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_vscode_api_tests_singlefolder_tests[label="singlefolder-tests", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/vscode-api-tests/src/singlefolder-tests"];
+    mod_vscode_api_tests_utils[label="utils", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/vscode-api-tests/src"];
+  }
+
+  subgraph cluster_vscode_css_languageserver {
+    label="vscode-css-languageserver";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_vscode_css_languageserver_cssServer[label="cssServer", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/css-language-features/server/src"];
+    mod_vscode_css_languageserver_utils[label="utils", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/css-language-features/server/src/utils"];
+  }
+
+  subgraph cluster_vscode_html_languageserver {
+    label="vscode-html-languageserver";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_vscode_html_languageserver_htmlServer[label="htmlServer", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/html-language-features/server/src"];
+    mod_vscode_html_languageserver_modes[label="modes", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/html-language-features/server/src/modes"];
+    mod_vscode_html_languageserver_utils[label="utils", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/html-language-features/server/src/utils"];
+  }
+
+  subgraph cluster_vscode_json_languageserver {
+    label="vscode-json-languageserver";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_vscode_json_languageserver_jsonServer[label="jsonServer", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/json-language-features/server/src"];
+    mod_vscode_json_languageserver_languageModelCache[label="languageModelCache", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/json-language-features/server/src"];
+    mod_vscode_json_languageserver_utils[label="utils", folder="/home/yibai/llmcc/sample/repos/vscode/extensions/json-language-features/server/src/utils"];
+  }
+
+
+  mod_builtin_notebook_renderers_ansi -> mod_builtin_notebook_renderers_color;
+  mod_builtin_notebook_renderers_index -> mod_builtin_notebook_renderers_rendererTypes;
+  mod_builtin_notebook_renderers_index -> mod_builtin_notebook_renderers_textHelper;
+  mod_builtin_notebook_renderers_index -> mod_git_util;
+  mod_code_oss_dev_base -> mod_builtin_notebook_renderers_rendererTypes;
+  mod_code_oss_dev_base -> mod_code_oss_dev_bootstrap_import;
+  mod_code_oss_dev_base -> mod_code_oss_dev_editor;
+  mod_code_oss_dev_base -> mod_code_oss_dev_platform;
+  mod_code_oss_dev_base -> mod_code_oss_dev_typings;
+  mod_code_oss_dev_base -> mod_code_oss_dev_vs;
+  mod_code_oss_dev_base -> mod_code_oss_dev_workbench;
+  mod_code_oss_dev_base -> mod_emmet_typings;
+  mod_code_oss_dev_base -> mod_git_base_util;
+  mod_code_oss_dev_base -> mod_git_util;
+  mod_code_oss_dev_base -> mod_github_util;
+  mod_code_oss_dev_base -> mod_ipynb_helper;
+  mod_code_oss_dev_base -> mod_markdown_language_features_util;
+  mod_code_oss_dev_base -> mod_typescript_language_features_utils;
+  mod_code_oss_dev_base -> mod_vscode_html_languageserver_modes;
+  mod_code_oss_dev_code -> mod_code_oss_dev_base;
+  mod_code_oss_dev_code -> mod_code_oss_dev_platform;
+  mod_code_oss_dev_editor -> mod_builtin_notebook_renderers_color;
+  mod_code_oss_dev_editor -> mod_builtin_notebook_renderers_rendererTypes;
+  mod_code_oss_dev_editor -> mod_code_oss_dev_base;
+  mod_code_oss_dev_editor -> mod_code_oss_dev_platform;
+  mod_code_oss_dev_editor -> mod_code_oss_dev_vs;
+  mod_code_oss_dev_editor -> mod_code_oss_dev_workbench;
+  mod_code_oss_dev_editor -> mod_emmet_typings;
+  mod_code_oss_dev_editor -> mod_git_base_util;
+  mod_code_oss_dev_editor -> mod_git_util;
+  mod_code_oss_dev_editor -> mod_github_util;
+  mod_code_oss_dev_editor -> mod_markdown_language_features_commandManager;
+  mod_code_oss_dev_editor -> mod_markdown_language_features_util;
+  mod_code_oss_dev_editor -> mod_php_language_features_features;
+  mod_code_oss_dev_editor -> mod_references_view_references_view_d;
+  mod_code_oss_dev_editor -> mod_typescript_language_features_utils;
+  mod_code_oss_dev_main -> mod_code_oss_dev_platform;
+  mod_code_oss_dev_platform -> mod_builtin_notebook_renderers_rendererTypes;
+  mod_code_oss_dev_platform -> mod_code_oss_dev_base;
+  mod_code_oss_dev_platform -> mod_code_oss_dev_editor;
+  mod_code_oss_dev_platform -> mod_code_oss_dev_server;
+  mod_code_oss_dev_platform -> mod_code_oss_dev_vs;
+  mod_code_oss_dev_platform -> mod_code_oss_dev_vscode_dts;
+  mod_code_oss_dev_platform -> mod_code_oss_dev_workbench;
+  mod_code_oss_dev_platform -> mod_extension_editing_extensionEngineValidation;
+  mod_code_oss_dev_platform -> mod_git_base_util;
+  mod_code_oss_dev_platform -> mod_git_util;
+  mod_code_oss_dev_platform -> mod_github_util;
+  mod_code_oss_dev_platform -> mod_ipynb_helper;
+  mod_code_oss_dev_platform -> mod_typescript_language_features_utils;
+  mod_code_oss_dev_platform -> mod_typescript_language_features_web;
+  mod_code_oss_dev_server -> mod_code_oss_dev_base;
+  mod_code_oss_dev_server -> mod_code_oss_dev_platform;
+  mod_code_oss_dev_vs -> mod_code_oss_dev_base;
+  mod_code_oss_dev_vs -> mod_code_oss_dev_editor;
+  mod_code_oss_dev_vs -> mod_code_oss_dev_platform;
+  mod_code_oss_dev_vs -> mod_code_oss_dev_workbench;
+  mod_code_oss_dev_vs -> mod_git_base_util;
+  mod_code_oss_dev_vs -> mod_git_util;
+  mod_code_oss_dev_vscode_dts -> mod_code_oss_dev_base;
+  mod_code_oss_dev_vscode_dts -> mod_code_oss_dev_editor;
+  mod_code_oss_dev_vscode_dts -> mod_code_oss_dev_platform;
+  mod_code_oss_dev_vscode_dts -> mod_code_oss_dev_workbench;
+  mod_code_oss_dev_vscode_dts -> mod_markdown_language_features_commandManager;
+  mod_code_oss_dev_vscode_dts -> mod_simple_browser_dispose;
+  mod_code_oss_dev_vscode_dts -> mod_typescript_language_features_configuration;
+  mod_code_oss_dev_workbench -> mod_builtin_notebook_renderers_color;
+  mod_code_oss_dev_workbench -> mod_builtin_notebook_renderers_rendererTypes;
+  mod_code_oss_dev_workbench -> mod_code_oss_dev_base;
+  mod_code_oss_dev_workbench -> mod_code_oss_dev_code;
+  mod_code_oss_dev_workbench -> mod_code_oss_dev_editor;
+  mod_code_oss_dev_workbench -> mod_code_oss_dev_platform;
+  mod_code_oss_dev_workbench -> mod_code_oss_dev_server;
+  mod_code_oss_dev_workbench -> mod_code_oss_dev_vs;
+  mod_code_oss_dev_workbench -> mod_code_oss_dev_vscode_dts;
+  mod_code_oss_dev_workbench -> mod_git_base_util;
+  mod_code_oss_dev_workbench -> mod_git_cache;
+  mod_code_oss_dev_workbench -> mod_git_util;
+  mod_code_oss_dev_workbench -> mod_github_util;
+  mod_code_oss_dev_workbench -> mod_ipynb_helper;
+  mod_code_oss_dev_workbench -> mod_markdown_language_features_commandManager;
+  mod_code_oss_dev_workbench -> mod_markdown_language_features_logging;
+  mod_code_oss_dev_workbench -> mod_markdown_language_features_preview;
+  mod_code_oss_dev_workbench -> mod_markdown_language_features_util;
+  mod_code_oss_dev_workbench -> mod_microsoft_authentication_common;
+  mod_code_oss_dev_workbench -> mod_npm_features;
+  mod_code_oss_dev_workbench -> mod_npm_npmView;
+  mod_code_oss_dev_workbench -> mod_php_language_features_features;
+  mod_code_oss_dev_workbench -> mod_terminal_suggest_terminalSuggestMain;
+  mod_code_oss_dev_workbench -> mod_typescript_language_features_languageFeatures;
+  mod_code_oss_dev_workbench -> mod_typescript_language_features_tsServer;
+  mod_code_oss_dev_workbench -> mod_typescript_language_features_ui;
+  mod_code_oss_dev_workbench -> mod_typescript_language_features_utils;
+  mod_code_oss_dev_workbench -> mod_typescript_language_features_web;
+  mod_configuration_editing_configurationEditingMain -> mod_code_oss_dev_workbench;
+  mod_css_language_features_client -> mod_code_oss_dev_workbench;
+  mod_emmet_abbreviationActions -> mod_code_oss_dev_editor;
+  mod_emmet_abbreviationActions -> mod_emmet_util;
+  mod_emmet_balance -> mod_emmet_util;
+  mod_emmet_emmetCommon -> mod_emmet_util;
+  mod_emmet_matchTag -> mod_emmet_util;
+  mod_emmet_mergeLines -> mod_emmet_util;
+  mod_emmet_removeTag -> mod_emmet_util;
+  mod_emmet_selectItemHTML -> mod_emmet_util;
+  mod_emmet_selectItemStylesheet -> mod_code_oss_dev_base;
+  mod_emmet_selectItemStylesheet -> mod_emmet_util;
+  mod_emmet_splitJoinTag -> mod_emmet_util;
+  mod_emmet_toggleComment -> mod_code_oss_dev_base;
+  mod_emmet_toggleComment -> mod_emmet_util;
+  mod_emmet_typings -> mod_code_oss_dev_base;
+  mod_emmet_typings -> mod_code_oss_dev_editor;
+  mod_emmet_updateImageSize -> mod_code_oss_dev_base;
+  mod_emmet_updateImageSize -> mod_code_oss_dev_editor;
+  mod_emmet_updateImageSize -> mod_code_oss_dev_workbench;
+  mod_emmet_updateImageSize -> mod_emmet_parseDocument;
+  mod_emmet_updateImageSize -> mod_emmet_util;
+  mod_git_api -> mod_code_oss_dev_base;
+  mod_git_api -> mod_git_base_model;
+  mod_git_api -> mod_github_typings;
+  mod_git_base_remoteSource -> mod_git_base_model;
+  mod_git_base_remoteSource -> mod_git_typings;
+  mod_git_blame -> mod_git_util;
+  mod_git_commands -> mod_git_api;
+  mod_git_decorationProvider -> mod_code_oss_dev_base;
+  mod_git_decorationProvider -> mod_code_oss_dev_workbench;
+  mod_git_diagnostics -> mod_code_oss_dev_workbench;
+  mod_git_git -> mod_code_oss_dev_base;
+  mod_git_git -> mod_git_api;
+  mod_git_historyItemDetailsProvider -> mod_git_api;
+  mod_git_hover -> mod_code_oss_dev_base;
+  mod_git_ipc -> mod_code_oss_dev_base;
+  mod_git_main -> mod_git_git;
+  mod_git_model -> mod_git_api;
+  mod_git_remoteSource -> mod_git_typings;
+  mod_git_repository -> mod_code_oss_dev_base;
+  mod_git_repository -> mod_code_oss_dev_workbench;
+  mod_git_repository -> mod_git_api;
+  mod_git_repository -> mod_git_util;
+  mod_git_staging -> mod_code_oss_dev_base;
+  mod_git_statusbar -> mod_simple_browser_dispose;
+  mod_git_util -> mod_code_oss_dev_base;
+  mod_git_util -> mod_code_oss_dev_editor;
+  mod_git_util -> mod_code_oss_dev_platform;
+  mod_git_util -> mod_code_oss_dev_vs;
+  mod_git_util -> mod_code_oss_dev_workbench;
+  mod_github_authentication_common -> mod_code_oss_dev_base;
+  mod_github_authentication_extension -> mod_github_authentication_github;
+  mod_github_authentication_github -> mod_github_authentication_common;
+  mod_github_authentication_node -> mod_github_authentication_common;
+  mod_github_commands -> mod_github_links;
+  mod_github_extension -> mod_github_util;
+  mod_github_links -> mod_git_git;
+  mod_github_typings -> mod_code_oss_dev_base;
+  mod_github_typings -> mod_git_git;
+  mod_github_util -> mod_code_oss_dev_workbench;
+  mod_github_util -> mod_git_git;
+  mod_html_language_features_client -> mod_code_oss_dev_base;
+  mod_html_language_features_client -> mod_code_oss_dev_workbench;
+  mod_html_language_features_client -> mod_css_language_features_client;
+  mod_ipynb_deserializers -> mod_code_oss_dev_workbench;
+  mod_ipynb_serializers -> mod_code_oss_dev_workbench;
+  mod_ipynb_serializers -> mod_ipynb_common;
+  mod_json_language_features_client -> mod_code_oss_dev_base;
+  mod_json_language_features_client -> mod_code_oss_dev_workbench;
+  mod_json_language_features_client -> mod_simple_browser_dispose;
+  mod_markdown_language_features_commands -> mod_markdown_language_features_preview;
+  mod_markdown_language_features_extension_shared -> mod_markdown_language_features_preview;
+  mod_markdown_language_features_languageFeatures -> mod_markdown_language_features_client;
+  mod_markdown_language_features_languageFeatures -> mod_markdown_language_features_commandManager;
+  mod_markdown_language_features_languageFeatures -> mod_markdown_language_features_markdownEngine;
+  mod_markdown_language_features_languageFeatures -> mod_markdown_language_features_types;
+  mod_markdown_language_features_languageFeatures -> mod_markdown_language_features_util;
+  mod_markdown_language_features_markdownEngine -> mod_markdown_language_features_slugify;
+  mod_microsoft_authentication_common -> mod_code_oss_dev_base;
+  mod_microsoft_authentication_common -> mod_code_oss_dev_workbench;
+  mod_microsoft_authentication_node -> mod_code_oss_dev_workbench;
+  mod_microsoft_authentication_node -> mod_microsoft_authentication_common;
+  mod_npm_commands -> mod_npm_tasks;
+  mod_npm_npmMain -> mod_npm_tasks;
+  mod_npm_npmView -> mod_code_oss_dev_workbench;
+  mod_npm_tasks -> mod_code_oss_dev_base;
+  mod_npm_tasks -> mod_code_oss_dev_platform;
+  mod_npm_tasks -> mod_code_oss_dev_workbench;
+  mod_php_language_features_features -> mod_code_oss_dev_editor;
+  mod_references_view_calls -> mod_references_view_references_view_d;
+  mod_references_view_extension -> mod_references_view_references_view_d;
+  mod_references_view_references -> mod_references_view_references_view_d;
+  mod_references_view_types -> mod_references_view_references_view_d;
+  mod_terminal_suggest_fig -> mod_terminal_suggest_helpers;
+  mod_terminal_suggest_shell -> mod_terminal_suggest_types;
+  mod_terminal_suggest_terminalSuggestMain -> mod_terminal_suggest_types;
+  mod_typescript_language_features_extension -> mod_typescript_language_features_tsServer;
+  mod_typescript_language_features_languageFeatures -> mod_code_oss_dev_base;
+  mod_typescript_language_features_languageFeatures -> mod_markdown_language_features_commandManager;
+  mod_typescript_language_features_languageFeatures -> mod_markdown_language_features_telemetryReporter;
+  mod_typescript_language_features_languageFeatures -> mod_typescript_language_features_configuration;
+  mod_typescript_language_features_languageFeatures -> mod_typescript_language_features_tsServer;
+  mod_typescript_language_features_languageFeatures -> mod_typescript_language_features_typescriptService;
+  mod_typescript_language_features_languageFeatures -> mod_typescript_language_features_utils;
+  mod_typescript_language_features_tsServer -> mod_code_oss_dev_base;
+  mod_typescript_language_features_tsconfig -> mod_typescript_language_features_configuration;
+  mod_typescript_language_features_tsconfig -> mod_typescript_language_features_tsServer;
+  mod_typescript_language_features_typescriptService -> mod_typescript_language_features_tsServer;
+  mod_typescript_language_features_typescriptServiceClient -> mod_typescript_language_features_logging;
+  mod_typescript_language_features_typescriptServiceClient -> mod_typescript_language_features_tsServer;
+  mod_typescript_language_features_ui -> mod_typescript_language_features_typescriptService;
+  mod_typescript_language_features_utils -> mod_git_util;
+  mod_typescript_language_features_web -> mod_code_oss_dev_base;
+  mod_typescript_language_features_web -> mod_markdown_language_features_client;
+  mod_typescript_language_features_web -> mod_typescript_language_features_logging;
+  mod_vscode_api_tests_singlefolder_tests -> mod_code_oss_dev_base;
+  mod_vscode_api_tests_singlefolder_tests -> mod_vscode_api_tests_utils;
+  mod_vscode_css_languageserver_cssServer -> mod_code_oss_dev_base;
+  mod_vscode_css_languageserver_cssServer -> mod_code_oss_dev_workbench;
+  mod_vscode_css_languageserver_utils -> mod_code_oss_dev_base;
+  mod_vscode_html_languageserver_htmlServer -> mod_code_oss_dev_base;
+  mod_vscode_html_languageserver_htmlServer -> mod_code_oss_dev_workbench;
+  mod_vscode_html_languageserver_htmlServer -> mod_vscode_html_languageserver_modes;
+  mod_vscode_html_languageserver_modes -> mod_code_oss_dev_base;
+  mod_vscode_html_languageserver_modes -> mod_code_oss_dev_editor;
+  mod_vscode_html_languageserver_modes -> mod_code_oss_dev_workbench;
+  mod_vscode_html_languageserver_modes -> mod_vscode_html_languageserver_utils;
+  mod_vscode_html_languageserver_modes -> mod_vscode_json_languageserver_languageModelCache;
+  mod_vscode_html_languageserver_utils -> mod_code_oss_dev_base;
+  mod_vscode_json_languageserver_jsonServer -> mod_code_oss_dev_base;
+  mod_vscode_json_languageserver_jsonServer -> mod_code_oss_dev_workbench;
+  mod_vscode_json_languageserver_utils -> mod_code_oss_dev_base;
+}

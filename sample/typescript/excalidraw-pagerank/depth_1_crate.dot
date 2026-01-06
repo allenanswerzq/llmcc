@@ -1,0 +1,30 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  crate_excalidraw_common[label="excalidraw_common", folder="/home/yibai/llmcc/sample/repos/excalidraw/packages/common"];
+  crate_excalidraw_element[label="excalidraw_element", folder="/home/yibai/llmcc/sample/repos/excalidraw/packages/element"];
+  crate_excalidraw_excalidraw[label="excalidraw_excalidraw", folder="/home/yibai/llmcc/sample/repos/excalidraw/packages/excalidraw"];
+  crate_excalidraw_math[label="excalidraw_math", folder="/home/yibai/llmcc/sample/repos/excalidraw/packages/math"];
+  crate_excalidraw_utils[label="excalidraw_utils", folder="/home/yibai/llmcc/sample/repos/excalidraw/packages/utils"];
+
+  crate_excalidraw_common -> crate_excalidraw_math;
+  crate_excalidraw_element -> crate_excalidraw_common;
+  crate_excalidraw_element -> crate_excalidraw_excalidraw;
+  crate_excalidraw_element -> crate_excalidraw_math;
+  crate_excalidraw_excalidraw -> crate_excalidraw_common;
+  crate_excalidraw_excalidraw -> crate_excalidraw_element;
+  crate_excalidraw_math -> crate_excalidraw_common;
+  crate_excalidraw_utils -> crate_excalidraw_math;
+}
