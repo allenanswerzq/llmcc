@@ -389,7 +389,11 @@ impl<'tcx> ProjectGraph<'tcx> {
                         } else if is_interface {
                             // TypeScript Interfaces: create Implements relation for interface -> implements edges
                             self.add_relation(block_id, BlockRelation::Implements, type_block_id);
-                            self.add_relation(type_block_id, BlockRelation::ImplementedBy, block_id);
+                            self.add_relation(
+                                type_block_id,
+                                BlockRelation::ImplementedBy,
+                                block_id,
+                            );
                         }
                     }
                 }

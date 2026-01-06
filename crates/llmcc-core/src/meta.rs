@@ -146,6 +146,9 @@ struct PackageInfo {
     root: PathBuf,
     trie: TrieNode,
     total_files: usize,
+    /// True if this package was detected from an actual manifest file,
+    /// false if it's a synthetic fallback package.
+    has_manifest: bool,
 }
 
 // ============================================================================
@@ -164,20 +167,19 @@ pub struct UnitMetaBuilder {
 impl UnitMetaBuilder {
     /// Create a detector using LanguageTrait configuration.
     /// This is the preferred way to create a UnitMetaBuilder from a language type.
-    pub fn from_lang_trait<L: crate::lang_def::LanguageTrait>(
-        files: &[PathBuf],
-        project_root: &Path,
-    ) -> Self {
-        Self::with_lang_config(files, project_root, L::manifest_name(), L::container_dirs())
+    /// Automatically computes the project root from file paths.
+    pub fn from_lang_trait<L: crate::lang_def::LanguageTrait>(files: &[PathBuf]) -> Self {
+        Self::with_lang_config(files, L::manifest_name(), L::container_dirs())
     }
 
     /// Create a detector with explicit language configuration.
+    /// Automatically computes the project root from file paths.
     pub fn with_lang_config(
         files: &[PathBuf],
-        project_root: &Path,
         manifest_name: &'static str,
         container_dirs: &'static [&'static str],
     ) -> Self {
+        let project_root = Self::compute_project_root(files);
         let project_name = project_root
             .file_name()
             .and_then(|n| n.to_str())
@@ -187,15 +189,62 @@ impl UnitMetaBuilder {
         let mut detector = Self {
             manifest_name,
             container_dirs,
-            project_root: project_root.to_path_buf(),
+            project_root,
             project_name,
             packages: Vec::new(),
         };
 
         detector.detect_packages(files);
+
+        // If no packages were detected, use the project root as a fallback "package"
+        // This ensures module detection works even without manifest files
+        if detector.packages.is_empty() {
+            detector.packages.push(PackageInfo {
+                name: detector.project_name.clone(),
+                root: detector.project_root.clone(),
+                trie: TrieNode::new(),
+                total_files: 0,
+                has_manifest: false, // Synthetic fallback, no actual manifest
+            });
+        }
+
         detector.build_tries(files);
 
         detector
+    }
+
+    /// Compute the project root as the common ancestor directory of all file paths.
+    /// Optimized O(n) implementation with early termination.
+    fn compute_project_root(paths: &[PathBuf]) -> PathBuf {
+        if paths.is_empty() {
+            return PathBuf::new();
+        }
+
+        // Start with first file's parent
+        let first = match paths[0].parent() {
+            Some(p) => p,
+            None => return PathBuf::new(),
+        };
+        let mut common: Vec<_> = first.components().collect();
+
+        // Shrink common prefix with each file - early exit if empty
+        for path in &paths[1..] {
+            if common.is_empty() {
+                break;
+            }
+            let parent = path.parent().unwrap_or(path);
+            let mut match_len = 0;
+            for (a, b) in common.iter().zip(parent.components()) {
+                if *a == b {
+                    match_len += 1;
+                } else {
+                    break;
+                }
+            }
+            common.truncate(match_len);
+        }
+
+        common.iter().collect()
     }
 
     fn is_container(&self, name: &str) -> bool {
@@ -217,10 +266,6 @@ impl UnitMetaBuilder {
         for file in files {
             let mut dir = file.parent();
             while let Some(current) = dir {
-                if !current.starts_with(&self.project_root) {
-                    break;
-                }
-
                 let manifest = current.join(self.manifest_name);
                 if manifest.exists() && !seen.contains(current) {
                     seen.insert(current.to_path_buf());
@@ -231,6 +276,7 @@ impl UnitMetaBuilder {
                             root: current.to_path_buf(),
                             trie: TrieNode::new(),
                             total_files: 0,
+                            has_manifest: true, // Real package from manifest file
                         });
                     }
                     break;
@@ -281,7 +327,9 @@ impl UnitMetaBuilder {
             None
         } else {
             // Unknown manifest format - use directory name
-            dir.file_name().and_then(|n| n.to_str()).map(|s| s.to_string())
+            dir.file_name()
+                .and_then(|n| n.to_str())
+                .map(|s| s.to_string())
         }
     }
 
@@ -315,12 +363,7 @@ impl UnitMetaBuilder {
         }
     }
 
-    fn insert_file(
-        trie: &mut TrieNode,
-        file: &Path,
-        pkg_root: &Path,
-        container_dirs: &[&str],
-    ) {
+    fn insert_file(trie: &mut TrieNode, file: &Path, pkg_root: &Path, container_dirs: &[&str]) {
         let rel_path = match file.strip_prefix(pkg_root) {
             Ok(p) => p,
             Err(_) => return,
@@ -438,8 +481,12 @@ impl UnitMetaBuilder {
             return info;
         };
 
-        info.package_name = Some(pkg.name.clone());
-        info.package_root = Some(pkg.root.clone());
+        // Only set package_name if this is a real package with a manifest file
+        // Synthetic fallback packages should not create a package cluster
+        if pkg.has_manifest {
+            info.package_name = Some(pkg.name.clone());
+            info.package_root = Some(pkg.root.clone());
+        }
 
         // Get path components (excluding containers)
         let rel_path = match file.strip_prefix(&pkg.root) {

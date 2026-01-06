@@ -63,23 +63,39 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_service_ts {
-    label="service.ts";
+  subgraph cluster_app {
+    label="app";
     style=rounded;
-    color="#aaaaaa";
-    bgcolor="#fafafa";
+    color="#999999";
+    bgcolor="#f5f5f5";
 
-    n9[label="getUser", full_path="$TMP/app/src/service.ts:4", sym_ty="Function", shape=ellipse];
-    n12[label="createUser", full_path="$TMP/app/src/service.ts:8", sym_ty="Function", shape=ellipse];
+    subgraph cluster_service_ts {
+      label="service.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n9[label="getUser", full_path="$TMP/app/src/service.ts:4", sym_ty="Function", shape=ellipse];
+      n12[label="createUser", full_path="$TMP/app/src/service.ts:8", sym_ty="Function", shape=ellipse];
+    }
+
   }
 
-  subgraph cluster_types_ts {
-    label="types.ts";
+  subgraph cluster_common {
+    label="common";
     style=rounded;
-    color="#aaaaaa";
-    bgcolor="#fafafa";
+    color="#999999";
+    bgcolor="#f5f5f5";
 
-    n2[label="User", full_path="$TMP/common/src/types.ts:2", sym_ty="Interface", shape=box];
+    subgraph cluster_types_ts {
+      label="types.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2[label="User", full_path="$TMP/common/src/types.ts:2", sym_ty="Interface", shape=box];
+    }
+
   }
 
 

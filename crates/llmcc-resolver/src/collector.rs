@@ -219,7 +219,11 @@ impl<'a> CollectorScopes<'a> {
             }
 
             // 2. Prefer symbols from the same crate (same package root)
-            let current_crate_root = self.cc.unit_metas.get(self.unit_index).and_then(|m| m.package_root.as_ref());
+            let current_crate_root = self
+                .cc
+                .unit_metas
+                .get(self.unit_index)
+                .and_then(|m| m.package_root.as_ref());
             if let Some(current_root) = current_crate_root {
                 if let Some(same_crate_sym) = symbols.iter().find(|s| {
                     s.unit_index()

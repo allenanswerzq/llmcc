@@ -127,7 +127,6 @@ impl DotBuilder {
         self
     }
 
-
     /// Start a subgraph cluster.
     pub fn start_cluster(&mut self, id: &str, label: &str) -> &mut Self {
         write_indent(&mut self.output, self.indent);

@@ -13,7 +13,6 @@ use crate::infer::infer_type;
 use crate::pattern::bind_pattern_types;
 use crate::token::AstVisitorRust;
 use crate::token::LangRust;
-use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
 
 type ScopeEnterFn<'tcx> =
     Box<dyn FnOnce(&CompileUnit<'tcx>, &'tcx HirScope<'tcx>, &mut BinderScopes<'tcx>) + 'tcx>;
@@ -90,29 +89,30 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     ) {
         let file_path = unit.file_path().unwrap();
         let depth = scopes.scope_depth();
+        let meta = unit.unit_meta();
 
         tracing::trace!("binding source_file: {}", file_path);
-        if let Some(crate_name) = parse_crate_name(file_path)
+        if let Some(ref crate_name) = meta.package_name
             && let Some(symbol) =
-                scopes.lookup_symbol(&crate_name, SymKindSet::from_kind(SymKind::Crate))
+                scopes.lookup_symbol(crate_name, SymKindSet::from_kind(SymKind::Crate))
             && let Some(scope_id) = symbol.opt_scope()
         {
             tracing::trace!("pushing crate scope {:?}", scope_id);
             scopes.push_scope(scope_id);
         }
 
-        if let Some(module_name) = parse_module_name(file_path)
+        if let Some(ref module_name) = meta.module_name
             && let Some(symbol) =
-                scopes.lookup_symbol(&module_name, SymKindSet::from_kind(SymKind::Module))
+                scopes.lookup_symbol(module_name, SymKindSet::from_kind(SymKind::Module))
             && let Some(scope_id) = symbol.opt_scope()
         {
             tracing::trace!("pushing module scope {:?}", scope_id);
             scopes.push_scope(scope_id);
         }
 
-        if let Some(file_name) = parse_file_name(file_path)
+        if let Some(ref file_name) = meta.file_name
             && let Some(file_sym) =
-                scopes.lookup_symbol(&file_name, SymKindSet::from_kind(SymKind::File))
+                scopes.lookup_symbol(file_name, SymKindSet::from_kind(SymKind::File))
             && let Some(scope_id) = file_sym.opt_scope()
         {
             tracing::trace!("pushing file scope {} {:?}", file_path, scope_id);

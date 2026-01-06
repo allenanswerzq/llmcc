@@ -178,8 +178,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectorScopes<'tcx>> for CollectorVisito
 
         // Set up package (crate) scope from unit metadata
         if let Some(ref package_name) = meta.package_name
-            && let Some(symbol) =
-                scopes.lookup_or_insert_global(package_name, node, SymKind::Crate)
+            && let Some(symbol) = scopes.lookup_or_insert_global(package_name, node, SymKind::Crate)
         {
             tracing::trace!("insert package symbol in globals '{}'", package_name);
             scopes.push_scope_with(node, Some(symbol));

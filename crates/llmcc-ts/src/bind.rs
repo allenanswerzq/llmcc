@@ -181,27 +181,43 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
     ) {
         let file_path = unit.file_path().unwrap();
         let depth = scopes.scope_depth();
+        let meta = unit.unit_meta();
 
         tracing::trace!("binding program: {}", file_path);
 
-        // Parse file name and push file scope
-        if let Some(file_name) = std::path::Path::new(file_path)
-            .file_stem()
-            .and_then(|s| s.to_str())
+        // Push package scope if present
+        if let Some(ref package_name) = meta.package_name
+            && let Some(symbol) =
+                scopes.lookup_symbol(package_name, SymKindSet::from_kind(SymKind::Crate))
+            && let Some(scope_id) = symbol.opt_scope()
         {
-            if let Some(file_sym) =
-                scopes.lookup_symbol(file_name, SymKindSet::from_kind(SymKind::File))
-            {
-                if let Some(scope_id) = file_sym.opt_scope() {
-                    tracing::trace!("pushing file scope {} {:?}", file_path, scope_id);
-                    scopes.push_scope(scope_id);
+            tracing::trace!("pushing package scope {:?}", scope_id);
+            scopes.push_scope(scope_id);
+        }
 
-                    let file_scope = unit.get_scope(scope_id);
-                    self.visit_children(unit, node, scopes, file_scope, Some(file_sym));
-                    scopes.pop_until(depth);
-                    return;
-                }
-            }
+        // Push module scope if present
+        if let Some(ref module_name) = meta.module_name
+            && let Some(symbol) =
+                scopes.lookup_symbol(module_name, SymKindSet::from_kind(SymKind::Module))
+            && let Some(scope_id) = symbol.opt_scope()
+        {
+            tracing::trace!("pushing module scope {:?}", scope_id);
+            scopes.push_scope(scope_id);
+        }
+
+        // Push file scope
+        if let Some(ref file_name) = meta.file_name
+            && let Some(file_sym) =
+                scopes.lookup_symbol(file_name, SymKindSet::from_kind(SymKind::File))
+            && let Some(scope_id) = file_sym.opt_scope()
+        {
+            tracing::trace!("pushing file scope {} {:?}", file_path, scope_id);
+            scopes.push_scope(scope_id);
+
+            let file_scope = unit.get_scope(scope_id);
+            self.visit_children(unit, node, scopes, file_scope, Some(file_sym));
+            scopes.pop_until(depth);
+            return;
         }
 
         self.visit_children(unit, node, scopes, scopes.top(), None);

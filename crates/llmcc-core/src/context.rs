@@ -493,11 +493,8 @@ impl<'tcx> CompileCtxt<'tcx> {
             return vec![UnitMeta::default(); files.len()];
         }
 
-        // Compute project root as common ancestor of all file paths
-        let project_root = Self::compute_common_ancestor(&file_paths);
-
-        // Build the detector
-        let builder = UnitMetaBuilder::from_lang_trait::<L>(&file_paths, &project_root);
+        // Build the detector (computes project root internally)
+        let builder = UnitMetaBuilder::from_lang_trait::<L>(&file_paths);
 
         // Generate metadata for each file
         files
@@ -510,37 +507,6 @@ impl<'tcx> CompileCtxt<'tcx> {
                 }
             })
             .collect()
-    }
-
-    /// Compute the common ancestor directory of all file paths.
-    fn compute_common_ancestor(paths: &[std::path::PathBuf]) -> std::path::PathBuf {
-        if paths.is_empty() {
-            return std::path::PathBuf::new();
-        }
-
-        let first = &paths[0];
-        let mut common: Vec<_> = first.components().collect();
-
-        for path in &paths[1..] {
-            let components: Vec<_> = path.components().collect();
-            let mut new_common = Vec::new();
-            for (a, b) in common.iter().zip(components.iter()) {
-                if a == b {
-                    new_common.push(*a);
-                } else {
-                    break;
-                }
-            }
-            common = new_common;
-        }
-
-        // The common prefix might include part of a filename, so ensure we get a directory
-        let result: std::path::PathBuf = common.iter().collect();
-        if result.is_file() {
-            result.parent().unwrap_or(&result).to_path_buf()
-        } else {
-            result
-        }
     }
 
     fn parse_files_with_metrics<L: LanguageTrait>(
