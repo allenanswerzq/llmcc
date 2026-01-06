@@ -1,5 +1,4 @@
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.8;
   nodesep=0.4;
@@ -7,239 +6,198 @@ digraph architecture {
   concentrate=true;
 
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#666666", arrowsize=0.7];
+  edge [color="#888888", arrowsize=0.7];
 
   labelloc=t;
   fontsize=16;
-  fontname="Helvetica Bold";
 
   subgraph cluster_datafusion {
     label="datafusion";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_datafusion_execution[label="execution", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/core/src/execution"];
+    mod_datafusion_execution[label="execution", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/core/src/execution"];
   }
 
   subgraph cluster_datafusion_cli {
     label="datafusion-cli";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_datafusion_cli_object_storage[label="object_storage", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion-cli/src"];
+    mod_datafusion_cli_object_storage[label="object_storage", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion-cli/src"];
   }
 
   subgraph cluster_datafusion_common {
     label="datafusion-common";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_datafusion_common_cast[label="cast", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/common/src"];
-    mod_datafusion_common_config[label="config", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/common/src"];
-    mod_datafusion_common_dfschema[label="dfschema", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/common/src"];
-    mod_datafusion_common_error[label="error", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/common/src"];
-    mod_datafusion_common_scalar[label="scalar", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/common/src/scalar"];
-    mod_datafusion_common_utils[label="utils", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/common/src/utils"];
+    mod_datafusion_common_cast[label="cast", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/common/src"];
+    mod_datafusion_common_config[label="config", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/common/src"];
+    mod_datafusion_common_dfschema[label="dfschema", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/common/src"];
+    mod_datafusion_common_error[label="error", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/common/src"];
+    mod_datafusion_common_scalar[label="scalar", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/common/src/scalar"];
+    mod_datafusion_common_tree_node[label="tree_node", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/common/src"];
+    mod_datafusion_common_utils[label="utils", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/common/src/utils"];
   }
 
   subgraph cluster_datafusion_expr {
     label="datafusion-expr";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_datafusion_expr_expr[label="expr", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr/src"];
-    mod_datafusion_expr_expr_fn[label="expr_fn", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr/src"];
-    mod_datafusion_expr_logical_plan[label="logical_plan", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr/src/logical_plan"];
-    mod_datafusion_expr_type_coercion[label="type_coercion", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr/src/type_coercion"];
-    mod_datafusion_expr_udaf[label="udaf", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr/src"];
-    mod_datafusion_expr_udf[label="udf", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr/src"];
-    mod_datafusion_expr_utils[label="utils", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr/src"];
+    mod_datafusion_expr_expr[label="expr", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr/src"];
+    mod_datafusion_expr_expr_fn[label="expr_fn", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr/src"];
+    mod_datafusion_expr_logical_plan[label="logical_plan", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr/src/logical_plan"];
+    mod_datafusion_expr_type_coercion[label="type_coercion", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr/src/type_coercion"];
+    mod_datafusion_expr_udaf[label="udaf", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr/src"];
+    mod_datafusion_expr_udf[label="udf", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr/src"];
+    mod_datafusion_expr_utils[label="utils", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr/src"];
   }
 
   subgraph cluster_datafusion_expr_common {
     label="datafusion-expr-common";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_datafusion_expr_common_columnar_value[label="columnar_value", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr-common/src"];
-    mod_datafusion_expr_common_interval_arithmetic[label="interval_arithmetic", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr-common/src"];
-    mod_datafusion_expr_common_signature[label="signature", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr-common/src"];
-    mod_datafusion_expr_common_type_coercion[label="type_coercion", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr-common/src/type_coercion"];
+    mod_datafusion_expr_common_columnar_value[label="columnar_value", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr-common/src"];
+    mod_datafusion_expr_common_interval_arithmetic[label="interval_arithmetic", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr-common/src"];
+    mod_datafusion_expr_common_signature[label="signature", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr-common/src"];
+    mod_datafusion_expr_common_type_coercion[label="type_coercion", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/expr-common/src/type_coercion"];
   }
 
   subgraph cluster_datafusion_ffi {
     label="datafusion-ffi";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_datafusion_ffi_udaf[label="udaf", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/ffi/src/udaf"];
+    mod_datafusion_ffi_udaf[label="udaf", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/ffi/src/udaf"];
   }
 
   subgraph cluster_datafusion_functions {
     label="datafusion-functions";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_datafusion_functions_core[label="core", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/functions/src/core"];
-    mod_datafusion_functions_datetime[label="datetime", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/functions/src/datetime"];
-    mod_datafusion_functions_math[label="math", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/functions/src/math"];
-    mod_datafusion_functions_regex[label="regex", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/functions/src/regex"];
-    mod_datafusion_functions_string[label="string", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/functions/src/string"];
-    mod_datafusion_functions_unicode[label="unicode", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/functions/src/unicode"];
+    mod_datafusion_functions_core[label="core", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/functions/src/core"];
+    mod_datafusion_functions_datetime[label="datetime", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/functions/src/datetime"];
+    mod_datafusion_functions_math[label="math", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/functions/src/math"];
+    mod_datafusion_functions_regex[label="regex", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/functions/src/regex"];
+    mod_datafusion_functions_string[label="string", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/functions/src/string"];
+    mod_datafusion_functions_unicode[label="unicode", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/functions/src/unicode"];
   }
 
   subgraph cluster_datafusion_functions_aggregate {
     label="datafusion-functions-aggregate";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_datafusion_functions_aggregate_min_max[label="min_max", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/functions-aggregate/src"];
+    mod_datafusion_functions_aggregate_min_max[label="min_max", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/functions-aggregate/src"];
   }
 
   subgraph cluster_datafusion_optimizer {
     label="datafusion-optimizer";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_datafusion_optimizer_analyzer[label="analyzer", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/optimizer/src/analyzer"];
-    mod_datafusion_optimizer_simplify_expressions[label="simplify_expressions", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/optimizer/src/simplify_expressions"];
+    mod_datafusion_optimizer_analyzer[label="analyzer", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/optimizer/src/analyzer"];
+    mod_datafusion_optimizer_simplify_expressions[label="simplify_expressions", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/optimizer/src/simplify_expressions"];
   }
 
   subgraph cluster_datafusion_physical_expr {
     label="datafusion-physical-expr";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_datafusion_physical_expr_equivalence[label="equivalence", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/physical-expr/src/equivalence"];
-    mod_datafusion_physical_expr_expressions[label="expressions", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/physical-expr/src/expressions"];
+    mod_datafusion_physical_expr_equivalence[label="equivalence", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/physical-expr/src/equivalence"];
+    mod_datafusion_physical_expr_expressions[label="expressions", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/physical-expr/src/expressions"];
   }
 
   subgraph cluster_datafusion_physical_expr_common {
     label="datafusion-physical-expr-common";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_datafusion_physical_expr_common_metrics[label="metrics", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/physical-expr-common/src/metrics"];
-    mod_datafusion_physical_expr_common_physical_expr[label="physical_expr", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/physical-expr-common/src"];
-    mod_datafusion_physical_expr_common_sort_expr[label="sort_expr", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/physical-expr-common/src"];
+    mod_datafusion_physical_expr_common_metrics[label="metrics", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/physical-expr-common/src/metrics"];
+    mod_datafusion_physical_expr_common_physical_expr[label="physical_expr", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/physical-expr-common/src"];
+    mod_datafusion_physical_expr_common_sort_expr[label="sort_expr", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/physical-expr-common/src"];
   }
 
   subgraph cluster_datafusion_physical_optimizer {
     label="datafusion-physical-optimizer";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_datafusion_physical_optimizer_enforce_sorting[label="enforce_sorting", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/physical-optimizer/src/enforce_sorting"];
+    mod_datafusion_physical_optimizer_enforce_sorting[label="enforce_sorting", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/physical-optimizer/src/enforce_sorting"];
   }
 
   subgraph cluster_datafusion_physical_plan {
     label="datafusion-physical-plan";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_datafusion_physical_plan_aggregates[label="aggregates", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/physical-plan/src/aggregates"];
-    mod_datafusion_physical_plan_execution_plan[label="execution_plan", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/physical-plan/src"];
-    mod_datafusion_physical_plan_joins[label="joins", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/physical-plan/src/joins"];
-    mod_datafusion_physical_plan_sorts[label="sorts", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/physical-plan/src/sorts"];
+    mod_datafusion_physical_plan_aggregates[label="aggregates", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/physical-plan/src/aggregates"];
+    mod_datafusion_physical_plan_execution_plan[label="execution_plan", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/physical-plan/src"];
+    mod_datafusion_physical_plan_joins[label="joins", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/physical-plan/src/joins"];
+    mod_datafusion_physical_plan_sorts[label="sorts", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/physical-plan/src/sorts"];
   }
 
   subgraph cluster_datafusion_proto {
     label="datafusion-proto";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_datafusion_proto_generated[label="generated", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/proto/src/generated"];
-    mod_datafusion_proto_physical_plan[label="physical_plan", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/proto/src/physical_plan"];
+    mod_datafusion_proto_generated[label="generated", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/proto/src/generated"];
+    mod_datafusion_proto_physical_plan[label="physical_plan", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/proto/src/physical_plan"];
   }
 
   subgraph cluster_datafusion_proto_common {
     label="datafusion-proto-common";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_datafusion_proto_common_generated[label="generated", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/proto-common/src/generated"];
+    mod_datafusion_proto_common_generated[label="generated", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/proto-common/src/generated"];
   }
 
   subgraph cluster_datafusion_pruning {
     label="datafusion-pruning";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_datafusion_pruning_pruning_predicate[label="pruning_predicate", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/pruning/src"];
+    mod_datafusion_pruning_pruning_predicate[label="pruning_predicate", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/pruning/src"];
   }
 
   subgraph cluster_datafusion_spark {
     label="datafusion-spark";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_datafusion_spark_math[label="math", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/spark/src/function/math"];
-    mod_datafusion_spark_string[label="string", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/spark/src/function/string"];
+    mod_datafusion_spark_string[label="string", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/spark/src/function/string"];
   }
 
   subgraph cluster_datafusion_sql {
     label="datafusion-sql";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_datafusion_sql_unparser[label="unparser", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/sql/src/unparser"];
+    mod_datafusion_sql_unparser[label="unparser", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/sql/src/unparser"];
   }
 
   subgraph cluster_datafusion_sqllogictest {
     label="datafusion-sqllogictest";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_datafusion_sqllogictest_engines[label="engines", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/sqllogictest/src/engines"];
+    mod_datafusion_sqllogictest_engines[label="engines", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/sqllogictest/src/engines"];
   }
 
   subgraph cluster_datafusion_substrait {
     label="datafusion-substrait";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_datafusion_substrait_consumer[label="consumer", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/substrait/src/logical_plan/consumer"];
-    mod_datafusion_substrait_producer[label="producer", folder="/home/yibai/llmcc/sample/repos/datafusion/datafusion/substrait/src/logical_plan/producer"];
+    mod_datafusion_substrait_consumer[label="consumer", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/substrait/src/logical_plan/consumer"];
+    mod_datafusion_substrait_producer[label="producer", path="/home/yibai/llmcc/sample/repos/datafusion/datafusion/substrait/src/logical_plan/producer"];
   }
 
 
@@ -249,14 +207,15 @@ digraph architecture {
   mod_datafusion_execution -> mod_datafusion_optimizer_analyzer;
   mod_datafusion_expr_common_interval_arithmetic -> mod_datafusion_common_scalar;
   mod_datafusion_expr_common_interval_arithmetic -> mod_datafusion_expr_expr;
+  mod_datafusion_expr_expr -> mod_datafusion_common_tree_node;
   mod_datafusion_expr_expr -> mod_datafusion_expr_logical_plan;
-  mod_datafusion_expr_expr -> mod_datafusion_expr_udaf;
   mod_datafusion_expr_expr -> mod_datafusion_proto_generated;
   mod_datafusion_expr_expr_fn -> mod_datafusion_expr_common_signature;
   mod_datafusion_expr_expr_fn -> mod_datafusion_expr_expr;
   mod_datafusion_expr_expr_fn -> mod_datafusion_expr_logical_plan;
-  mod_datafusion_expr_expr_fn -> mod_datafusion_proto_generated;
+  mod_datafusion_expr_expr_fn -> mod_datafusion_physical_expr_expressions;
   mod_datafusion_expr_logical_plan -> mod_datafusion_common_dfschema;
+  mod_datafusion_expr_logical_plan -> mod_datafusion_common_tree_node;
   mod_datafusion_expr_logical_plan -> mod_datafusion_expr_expr;
   mod_datafusion_expr_logical_plan -> mod_datafusion_expr_utils;
   mod_datafusion_expr_logical_plan -> mod_datafusion_functions_unicode;
@@ -269,9 +228,8 @@ digraph architecture {
   mod_datafusion_expr_utils -> mod_datafusion_common_dfschema;
   mod_datafusion_expr_utils -> mod_datafusion_expr_expr;
   mod_datafusion_expr_utils -> mod_datafusion_expr_logical_plan;
-  mod_datafusion_expr_utils -> mod_datafusion_physical_expr_expressions;
   mod_datafusion_ffi_udaf -> mod_datafusion_expr_udaf;
-  mod_datafusion_functions_aggregate_min_max -> mod_datafusion_expr_expr;
+  mod_datafusion_functions_aggregate_min_max -> mod_datafusion_proto_generated;
   mod_datafusion_functions_core -> mod_datafusion_common_cast;
   mod_datafusion_functions_core -> mod_datafusion_expr_common_columnar_value;
   mod_datafusion_functions_core -> mod_datafusion_expr_common_signature;
@@ -283,6 +241,7 @@ digraph architecture {
   mod_datafusion_functions_datetime -> mod_datafusion_expr_common_signature;
   mod_datafusion_functions_datetime -> mod_datafusion_expr_expr;
   mod_datafusion_functions_datetime -> mod_datafusion_expr_udf;
+  mod_datafusion_functions_datetime -> mod_datafusion_physical_expr_expressions;
   mod_datafusion_functions_datetime -> mod_datafusion_proto_generated;
   mod_datafusion_functions_math -> mod_datafusion_expr_common_columnar_value;
   mod_datafusion_functions_math -> mod_datafusion_expr_common_signature;
@@ -301,10 +260,12 @@ digraph architecture {
   mod_datafusion_functions_unicode -> mod_datafusion_expr_expr;
   mod_datafusion_functions_unicode -> mod_datafusion_expr_udf;
   mod_datafusion_optimizer_analyzer -> mod_datafusion_common_dfschema;
+  mod_datafusion_optimizer_analyzer -> mod_datafusion_common_tree_node;
   mod_datafusion_optimizer_analyzer -> mod_datafusion_expr_expr;
   mod_datafusion_optimizer_analyzer -> mod_datafusion_expr_logical_plan;
   mod_datafusion_optimizer_analyzer -> mod_datafusion_expr_type_coercion;
   mod_datafusion_optimizer_analyzer -> mod_datafusion_proto_generated;
+  mod_datafusion_optimizer_simplify_expressions -> mod_datafusion_common_tree_node;
   mod_datafusion_optimizer_simplify_expressions -> mod_datafusion_expr_expr;
   mod_datafusion_optimizer_simplify_expressions -> mod_datafusion_expr_expr_fn;
   mod_datafusion_optimizer_simplify_expressions -> mod_datafusion_functions_unicode;
@@ -316,10 +277,11 @@ digraph architecture {
   mod_datafusion_physical_expr_expressions -> mod_datafusion_functions_unicode;
   mod_datafusion_physical_expr_expressions -> mod_datafusion_physical_expr_common_physical_expr;
   mod_datafusion_physical_expr_expressions -> mod_datafusion_proto_generated;
+  mod_datafusion_physical_optimizer_enforce_sorting -> mod_datafusion_common_tree_node;
   mod_datafusion_physical_optimizer_enforce_sorting -> mod_datafusion_physical_expr_common_sort_expr;
   mod_datafusion_physical_optimizer_enforce_sorting -> mod_datafusion_physical_plan_execution_plan;
   mod_datafusion_physical_optimizer_enforce_sorting -> mod_datafusion_physical_plan_joins;
-  mod_datafusion_physical_plan_aggregates -> mod_datafusion_expr_expr;
+  mod_datafusion_physical_optimizer_enforce_sorting -> mod_datafusion_proto_generated;
   mod_datafusion_physical_plan_aggregates -> mod_datafusion_physical_expr_common_metrics;
   mod_datafusion_physical_plan_aggregates -> mod_datafusion_physical_expr_common_physical_expr;
   mod_datafusion_physical_plan_aggregates -> mod_datafusion_physical_expr_common_sort_expr;
@@ -339,7 +301,6 @@ digraph architecture {
   mod_datafusion_physical_plan_sorts -> mod_datafusion_physical_plan_execution_plan;
   mod_datafusion_proto_common_generated -> mod_datafusion_cli_object_storage;
   mod_datafusion_proto_generated -> mod_datafusion_cli_object_storage;
-  mod_datafusion_proto_generated -> mod_datafusion_expr_expr;
   mod_datafusion_proto_generated -> mod_datafusion_proto_common_generated;
   mod_datafusion_proto_physical_plan -> mod_datafusion_physical_expr_common_physical_expr;
   mod_datafusion_proto_physical_plan -> mod_datafusion_physical_expr_common_sort_expr;
@@ -347,27 +308,25 @@ digraph architecture {
   mod_datafusion_pruning_pruning_predicate -> mod_datafusion_physical_expr_common_physical_expr;
   mod_datafusion_pruning_pruning_predicate -> mod_datafusion_physical_expr_expressions;
   mod_datafusion_pruning_pruning_predicate -> mod_datafusion_proto_generated;
-  mod_datafusion_spark_math -> mod_datafusion_common_cast;
-  mod_datafusion_spark_math -> mod_datafusion_common_error;
-  mod_datafusion_spark_math -> mod_datafusion_expr_common_columnar_value;
-  mod_datafusion_spark_math -> mod_datafusion_expr_common_signature;
-  mod_datafusion_spark_math -> mod_datafusion_expr_udf;
   mod_datafusion_spark_string -> mod_datafusion_common_cast;
   mod_datafusion_spark_string -> mod_datafusion_expr_common_columnar_value;
   mod_datafusion_spark_string -> mod_datafusion_expr_common_signature;
   mod_datafusion_spark_string -> mod_datafusion_expr_udf;
   mod_datafusion_sql_unparser -> mod_datafusion_expr_expr;
   mod_datafusion_sql_unparser -> mod_datafusion_expr_logical_plan;
+  mod_datafusion_sql_unparser -> mod_datafusion_proto_generated;
   mod_datafusion_sqllogictest_engines -> mod_datafusion_execution;
-  mod_datafusion_sqllogictest_engines -> mod_datafusion_proto_generated;
+  mod_datafusion_sqllogictest_engines -> mod_datafusion_physical_plan_execution_plan;
   mod_datafusion_substrait_consumer -> mod_datafusion_common_dfschema;
   mod_datafusion_substrait_consumer -> mod_datafusion_execution;
   mod_datafusion_substrait_consumer -> mod_datafusion_expr_expr;
   mod_datafusion_substrait_consumer -> mod_datafusion_expr_logical_plan;
   mod_datafusion_substrait_consumer -> mod_datafusion_expr_utils;
   mod_datafusion_substrait_consumer -> mod_datafusion_functions_unicode;
+  mod_datafusion_substrait_consumer -> mod_datafusion_physical_expr_expressions;
   mod_datafusion_substrait_consumer -> mod_datafusion_proto_generated;
   mod_datafusion_substrait_producer -> mod_datafusion_expr_expr;
   mod_datafusion_substrait_producer -> mod_datafusion_expr_logical_plan;
+  mod_datafusion_substrait_producer -> mod_datafusion_proto_common_generated;
   mod_datafusion_substrait_producer -> mod_datafusion_proto_generated;
 }

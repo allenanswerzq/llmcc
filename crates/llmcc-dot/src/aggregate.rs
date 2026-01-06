@@ -357,8 +357,6 @@ fn render_to_dot(
 
     output.push_str("digraph architecture {\n");
 
-    // Graph layout attributes for cleaner visualization
-    output.push_str("  // Layout settings\n");
     output.push_str("  rankdir=TB;\n"); // Top to bottom layout
     output.push_str("  ranksep=0.8;\n"); // Increase vertical spacing
     output.push_str("  nodesep=0.4;\n"); // Increase horizontal spacing
@@ -368,7 +366,7 @@ fn render_to_dot(
 
     // Node styling
     output.push_str("  node [shape=box, style=\"rounded,filled\", fillcolor=\"#f0f0f0\", fontname=\"Helvetica\"];\n");
-    output.push_str("  edge [color=\"#666666\", arrowsize=0.7];\n\n");
+    output.push_str("  edge [color=\"#888888\", arrowsize=0.7];\n\n");
 
     // Add title
     // let title = match depth {
@@ -379,8 +377,7 @@ fn render_to_dot(
     // };
     // output.push_str(&format!("  label=\"{}\";\n", title));
     output.push_str("  labelloc=t;\n");
-    output.push_str("  fontsize=16;\n");
-    output.push_str("  fontname=\"Helvetica Bold\";\n\n");
+    output.push_str("  fontsize=16;\n\n");
 
     // Cluster modules by crate if enabled
     if cluster_by_crate && depth == ComponentDepth::Module {
@@ -391,7 +388,7 @@ fn render_to_dot(
             if let Some(ref folder) = node.folder {
                 let _ = writeln!(
                     output,
-                    "  {}[label=\"{}\", folder=\"{}\"];",
+                    "  {}[label=\"{}\", path=\"{}\"];",
                     node.id, node.label, folder
                 );
             } else {
@@ -431,15 +428,13 @@ fn render_clustered_nodes(output: &mut String, nodes: &[&AggregatedNode]) {
         let _ = writeln!(output, "  subgraph cluster_{cluster_id} {{");
         let _ = writeln!(output, "    label=\"{crate_name}\";");
         output.push_str("    style=rounded;\n");
-        output.push_str("    color=\"#888888\";\n");
-        output.push_str("    bgcolor=\"#f0f0f0\";\n");
-        output.push_str("    fontname=\"Helvetica Bold\";\n\n");
+        output.push_str("    bgcolor=\"#f8f8f8\";\n\n");
 
         for node in crate_nodes {
             if let Some(ref folder) = node.folder {
                 let _ = writeln!(
                     output,
-                    "    {}[label=\"{}\", folder=\"{}\"];",
+                    "    {}[label=\"{}\", path=\"{}\"];",
                     node.id, node.label, folder
                 );
             } else {

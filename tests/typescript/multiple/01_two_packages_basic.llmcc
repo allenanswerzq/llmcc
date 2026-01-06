@@ -53,7 +53,6 @@ export function createUser(name: string): User {
 
 --- expect:arch-graph ---
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.6;
   nodesep=0.3;
@@ -65,14 +64,10 @@ digraph architecture {
 
   subgraph cluster_app {
     label="app";
-    style=rounded;
-    color="#999999";
     bgcolor="#f5f5f5";
 
     subgraph cluster_service_ts {
       label="service.ts";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n9[label="getUser", full_path="$TMP/app/src/service.ts:4", sym_ty="Function", shape=ellipse];
@@ -83,14 +78,10 @@ digraph architecture {
 
   subgraph cluster_common {
     label="common";
-    style=rounded;
-    color="#999999";
     bgcolor="#f5f5f5";
 
     subgraph cluster_types_ts {
       label="types.ts";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n2[label="User", full_path="$TMP/common/src/types.ts:2", sym_ty="Interface", shape=box];

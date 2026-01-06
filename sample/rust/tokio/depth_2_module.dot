@@ -1,5 +1,4 @@
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.8;
   nodesep=0.4;
@@ -7,62 +6,54 @@ digraph architecture {
   concentrate=true;
 
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#666666", arrowsize=0.7];
+  edge [color="#888888", arrowsize=0.7];
 
   labelloc=t;
   fontsize=16;
-  fontname="Helvetica Bold";
 
   subgraph cluster_tokio {
     label="tokio";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_tokio_fs[label="fs", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/fs"];
-    mod_tokio_io[label="io", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/io"];
-    mod_tokio_loom[label="loom", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/loom"];
-    mod_tokio_net[label="net", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/net"];
-    mod_tokio_process[label="process", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/process"];
-    mod_tokio_runtime[label="runtime", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/runtime"];
-    mod_tokio_signal[label="signal", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/signal"];
-    mod_tokio_sync[label="sync", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/sync"];
-    mod_tokio_task[label="task", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/task"];
-    mod_tokio_time[label="time", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/time"];
-    mod_tokio_util[label="util", folder="/home/yibai/llmcc/sample/repos/tokio/tokio/src/util"];
+    mod_tokio_fs[label="fs", path="/home/yibai/llmcc/sample/repos/tokio/tokio/src/fs"];
+    mod_tokio_io[label="io", path="/home/yibai/llmcc/sample/repos/tokio/tokio/src/io"];
+    mod_tokio_loom[label="loom", path="/home/yibai/llmcc/sample/repos/tokio/tokio/src/loom"];
+    mod_tokio_net[label="net", path="/home/yibai/llmcc/sample/repos/tokio/tokio/src/net"];
+    mod_tokio_process[label="process", path="/home/yibai/llmcc/sample/repos/tokio/tokio/src/process"];
+    mod_tokio_runtime[label="runtime", path="/home/yibai/llmcc/sample/repos/tokio/tokio/src/runtime"];
+    mod_tokio_signal[label="signal", path="/home/yibai/llmcc/sample/repos/tokio/tokio/src/signal"];
+    mod_tokio_sync[label="sync", path="/home/yibai/llmcc/sample/repos/tokio/tokio/src/sync"];
+    mod_tokio_task[label="task", path="/home/yibai/llmcc/sample/repos/tokio/tokio/src/task"];
+    mod_tokio_time[label="time", path="/home/yibai/llmcc/sample/repos/tokio/tokio/src/time"];
+    mod_tokio_util[label="util", path="/home/yibai/llmcc/sample/repos/tokio/tokio/src/util"];
   }
 
   subgraph cluster_tokio_macros {
     label="tokio-macros";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_tokio_macros_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/tokio/tokio-macros/src"];
+    mod_tokio_macros_lib[label="lib", path="/home/yibai/llmcc/sample/repos/tokio/tokio-macros/src"];
   }
 
   subgraph cluster_tokio_stream {
     label="tokio-stream";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_tokio_stream_empty[label="empty", folder="/home/yibai/llmcc/sample/repos/tokio/tokio-stream/src"];
+    mod_tokio_stream_empty[label="empty", path="/home/yibai/llmcc/sample/repos/tokio/tokio-stream/src"];
+    mod_tokio_stream_wrappers[label="wrappers", path="/home/yibai/llmcc/sample/repos/tokio/tokio-stream/src/wrappers"];
   }
 
   subgraph cluster_tokio_util {
     label="tokio-util";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_tokio_util_either[label="either", folder="/home/yibai/llmcc/sample/repos/tokio/tokio-util/src"];
-    mod_tokio_util_io[label="io", folder="/home/yibai/llmcc/sample/repos/tokio/tokio-util/src/io"];
-    mod_tokio_util_util[label="util", folder="/home/yibai/llmcc/sample/repos/tokio/tokio-util/src/util"];
+    mod_tokio_util_either[label="either", path="/home/yibai/llmcc/sample/repos/tokio/tokio-util/src"];
+    mod_tokio_util_io[label="io", path="/home/yibai/llmcc/sample/repos/tokio/tokio-util/src/io"];
+    mod_tokio_util_util[label="util", path="/home/yibai/llmcc/sample/repos/tokio/tokio-util/src/util"];
   }
 
 
@@ -81,6 +72,7 @@ digraph architecture {
   mod_tokio_signal -> mod_tokio_runtime;
   mod_tokio_signal -> mod_tokio_sync;
   mod_tokio_stream_empty -> mod_tokio_io;
+  mod_tokio_stream_wrappers -> mod_tokio_signal;
   mod_tokio_sync -> mod_tokio_loom;
   mod_tokio_sync -> mod_tokio_runtime;
   mod_tokio_sync -> mod_tokio_time;

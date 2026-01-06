@@ -1,5 +1,4 @@
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.8;
   nodesep=0.4;
@@ -7,29 +6,26 @@ digraph architecture {
   concentrate=true;
 
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#666666", arrowsize=0.7];
+  edge [color="#888888", arrowsize=0.7];
 
   labelloc=t;
   fontsize=16;
-  fontname="Helvetica Bold";
 
-  mod_globset_lib[label="globset::lib", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/globset/src"];
-  mod_grep_cli_decompress[label="grep-cli::decompress", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/cli/src"];
-  mod_grep_cli_process[label="grep-cli::process", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/cli/src"];
-  mod_grep_matcher_lib[label="grep-matcher::lib", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/matcher/src"];
-  mod_grep_printer_color[label="grep-printer::color", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/printer/src"];
-  mod_grep_printer_hyperlink[label="grep-printer::hyperlink", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/printer/src/hyperlink"];
-  mod_grep_printer_standard[label="grep-printer::standard", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/printer/src"];
-  mod_grep_printer_util[label="grep-printer::util", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/printer/src"];
-  mod_grep_searcher_line_buffer[label="grep-searcher::line_buffer", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/searcher/src"];
-  mod_grep_searcher_searcher[label="grep-searcher::searcher", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/searcher/src/searcher"];
-  mod_grep_searcher_sink[label="grep-searcher::sink", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/searcher/src"];
-  mod_grep_searcher_testutil[label="grep-searcher::testutil", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/searcher/src"];
-  mod_ignore_dir[label="ignore::dir", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/ignore/src"];
-  mod_ignore_gitignore[label="ignore::gitignore", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/ignore/src"];
-  mod_ignore_lib[label="ignore::lib", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/ignore/src"];
-  mod_ignore_walk[label="ignore::walk", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates/ignore/src"];
-  mod_ripgrep_crates[label="ripgrep::crates", folder="/home/yibai/llmcc/sample/repos/ripgrep/crates"];
+  mod_globset_lib[label="globset::lib", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/globset/src"];
+  mod_grep_cli_decompress[label="grep-cli::decompress", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/cli/src"];
+  mod_grep_cli_process[label="grep-cli::process", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/cli/src"];
+  mod_grep_matcher_lib[label="grep-matcher::lib", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/matcher/src"];
+  mod_grep_printer_standard[label="grep-printer::standard", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/printer/src"];
+  mod_grep_printer_util[label="grep-printer::util", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/printer/src"];
+  mod_grep_searcher_line_buffer[label="grep-searcher::line_buffer", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/searcher/src"];
+  mod_grep_searcher_searcher[label="grep-searcher::searcher", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/searcher/src/searcher"];
+  mod_grep_searcher_sink[label="grep-searcher::sink", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/searcher/src"];
+  mod_grep_searcher_testutil[label="grep-searcher::testutil", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/searcher/src"];
+  mod_ignore_dir[label="ignore::dir", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/ignore/src"];
+  mod_ignore_gitignore[label="ignore::gitignore", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/ignore/src"];
+  mod_ignore_lib[label="ignore::lib", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/ignore/src"];
+  mod_ignore_walk[label="ignore::walk", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/ignore/src"];
+  mod_ripgrep_crates[label="ripgrep::crates", path="/home/yibai/llmcc/sample/repos/ripgrep/crates"];
 
   mod_grep_cli_decompress -> mod_grep_cli_process;
   mod_grep_printer_standard -> mod_grep_printer_util;
@@ -48,7 +44,4 @@ digraph architecture {
   mod_ignore_walk -> mod_ignore_lib;
   mod_ignore_walk -> mod_ripgrep_crates;
   mod_ripgrep_crates -> mod_grep_matcher_lib;
-  mod_ripgrep_crates -> mod_grep_printer_color;
-  mod_ripgrep_crates -> mod_grep_printer_hyperlink;
-  mod_ripgrep_crates -> mod_ignore_walk;
 }

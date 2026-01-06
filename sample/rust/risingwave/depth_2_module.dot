@@ -1,5 +1,4 @@
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.8;
   nodesep=0.4;
@@ -7,630 +6,536 @@ digraph architecture {
   concentrate=true;
 
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#666666", arrowsize=0.7];
+  edge [color="#888888", arrowsize=0.7];
 
   labelloc=t;
   fontsize=16;
-  fontname="Helvetica Bold";
 
   subgraph cluster_delta_btree_map {
     label="delta_btree_map";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_delta_btree_map_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/risingwave/src/utils/delta_btree_map/src"];
+    mod_delta_btree_map_lib[label="lib", path="/home/yibai/llmcc/sample/repos/risingwave/src/utils/delta_btree_map/src"];
   }
 
   subgraph cluster_lints {
     label="lints";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_lints_format_error[label="format_error", folder="/home/yibai/llmcc/sample/repos/risingwave/lints/src"];
-    mod_lints_utils[label="utils", folder="/home/yibai/llmcc/sample/repos/risingwave/lints/src/utils"];
+    mod_lints_format_error[label="format_error", path="/home/yibai/llmcc/sample/repos/risingwave/lints/src"];
+    mod_lints_utils[label="utils", path="/home/yibai/llmcc/sample/repos/risingwave/lints/src/utils"];
   }
 
   subgraph cluster_pgwire {
     label="pgwire";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_pgwire_net[label="net", folder="/home/yibai/llmcc/sample/repos/risingwave/src/utils/pgwire/src"];
-    mod_pgwire_pg_field_descriptor[label="pg_field_descriptor", folder="/home/yibai/llmcc/sample/repos/risingwave/src/utils/pgwire/src"];
-    mod_pgwire_pg_protocol[label="pg_protocol", folder="/home/yibai/llmcc/sample/repos/risingwave/src/utils/pgwire/src"];
-    mod_pgwire_pg_server[label="pg_server", folder="/home/yibai/llmcc/sample/repos/risingwave/src/utils/pgwire/src"];
-    mod_pgwire_types[label="types", folder="/home/yibai/llmcc/sample/repos/risingwave/src/utils/pgwire/src"];
+    mod_pgwire_pg_field_descriptor[label="pg_field_descriptor", path="/home/yibai/llmcc/sample/repos/risingwave/src/utils/pgwire/src"];
+    mod_pgwire_pg_protocol[label="pg_protocol", path="/home/yibai/llmcc/sample/repos/risingwave/src/utils/pgwire/src"];
+    mod_pgwire_pg_response[label="pg_response", path="/home/yibai/llmcc/sample/repos/risingwave/src/utils/pgwire/src"];
+    mod_pgwire_pg_server[label="pg_server", path="/home/yibai/llmcc/sample/repos/risingwave/src/utils/pgwire/src"];
+    mod_pgwire_types[label="types", path="/home/yibai/llmcc/sample/repos/risingwave/src/utils/pgwire/src"];
   }
 
   subgraph cluster_prost_helpers {
     label="prost-helpers";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_prost_helpers_generate[label="generate", folder="/home/yibai/llmcc/sample/repos/risingwave/src/prost/helpers/src"];
-    mod_prost_helpers_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/risingwave/src/prost/helpers/src"];
+    mod_prost_helpers_generate[label="generate", path="/home/yibai/llmcc/sample/repos/risingwave/src/prost/helpers/src"];
+    mod_prost_helpers_lib[label="lib", path="/home/yibai/llmcc/sample/repos/risingwave/src/prost/helpers/src"];
   }
 
   subgraph cluster_risedev {
     label="risedev";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risedev_bin[label="bin", folder="/home/yibai/llmcc/sample/repos/risingwave/src/risedevtool/src/bin"];
-    mod_risedev_service_config[label="service_config", folder="/home/yibai/llmcc/sample/repos/risingwave/src/risedevtool/src"];
-    mod_risedev_task[label="task", folder="/home/yibai/llmcc/sample/repos/risingwave/src/risedevtool/src/task"];
-    mod_risedev_util[label="util", folder="/home/yibai/llmcc/sample/repos/risingwave/src/risedevtool/src"];
+    mod_risedev_bin[label="bin", path="/home/yibai/llmcc/sample/repos/risingwave/src/risedevtool/src/bin"];
+    mod_risedev_service_config[label="service_config", path="/home/yibai/llmcc/sample/repos/risingwave/src/risedevtool/src"];
+    mod_risedev_task[label="task", path="/home/yibai/llmcc/sample/repos/risingwave/src/risedevtool/src/task"];
+    mod_risedev_util[label="util", path="/home/yibai/llmcc/sample/repos/risingwave/src/risedevtool/src"];
   }
 
   subgraph cluster_risingwave_fields_derive {
     label="risingwave-fields-derive";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_fields_derive_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/fields-derive/src"];
+    mod_risingwave_fields_derive_lib[label="lib", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/fields-derive/src"];
   }
 
   subgraph cluster_risingwave_backup {
     label="risingwave_backup";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_backup_error[label="error", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/backup/src"];
-    mod_risingwave_backup_meta_snapshot[label="meta_snapshot", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/backup/src"];
-    mod_risingwave_backup_meta_snapshot_v1[label="meta_snapshot_v1", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/backup/src"];
+    mod_risingwave_backup_error[label="error", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/backup/src"];
+    mod_risingwave_backup_meta_snapshot[label="meta_snapshot", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/backup/src"];
   }
 
   subgraph cluster_risingwave_batch {
     label="risingwave_batch";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_batch_error[label="error", folder="/home/yibai/llmcc/sample/repos/risingwave/src/batch/src"];
-    mod_risingwave_batch_execution[label="execution", folder="/home/yibai/llmcc/sample/repos/risingwave/src/batch/src/execution"];
-    mod_risingwave_batch_executor[label="executor", folder="/home/yibai/llmcc/sample/repos/risingwave/src/batch/src/executor"];
-    mod_risingwave_batch_monitor[label="monitor", folder="/home/yibai/llmcc/sample/repos/risingwave/src/batch/src/monitor"];
-    mod_risingwave_batch_spill[label="spill", folder="/home/yibai/llmcc/sample/repos/risingwave/src/batch/src/spill"];
-    mod_risingwave_batch_task[label="task", folder="/home/yibai/llmcc/sample/repos/risingwave/src/batch/src/task"];
-    mod_risingwave_batch_worker_manager[label="worker_manager", folder="/home/yibai/llmcc/sample/repos/risingwave/src/batch/src/worker_manager"];
+    mod_risingwave_batch_error[label="error", path="/home/yibai/llmcc/sample/repos/risingwave/src/batch/src"];
+    mod_risingwave_batch_execution[label="execution", path="/home/yibai/llmcc/sample/repos/risingwave/src/batch/src/execution"];
+    mod_risingwave_batch_executor[label="executor", path="/home/yibai/llmcc/sample/repos/risingwave/src/batch/src/executor"];
+    mod_risingwave_batch_monitor[label="monitor", path="/home/yibai/llmcc/sample/repos/risingwave/src/batch/src/monitor"];
+    mod_risingwave_batch_spill[label="spill", path="/home/yibai/llmcc/sample/repos/risingwave/src/batch/src/spill"];
+    mod_risingwave_batch_task[label="task", path="/home/yibai/llmcc/sample/repos/risingwave/src/batch/src/task"];
+    mod_risingwave_batch_worker_manager[label="worker_manager", path="/home/yibai/llmcc/sample/repos/risingwave/src/batch/src/worker_manager"];
   }
 
   subgraph cluster_risingwave_batch_executors {
     label="risingwave_batch_executors";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_batch_executors_aggregation[label="aggregation", folder="/home/yibai/llmcc/sample/repos/risingwave/src/batch/executors/src/executor/aggregation"];
-    mod_risingwave_batch_executors_executor[label="executor", folder="/home/yibai/llmcc/sample/repos/risingwave/src/batch/executors/src/executor"];
-    mod_risingwave_batch_executors_join[label="join", folder="/home/yibai/llmcc/sample/repos/risingwave/src/batch/executors/src/executor/join"];
+    mod_risingwave_batch_executors_aggregation[label="aggregation", path="/home/yibai/llmcc/sample/repos/risingwave/src/batch/executors/src/executor/aggregation"];
+    mod_risingwave_batch_executors_executor[label="executor", path="/home/yibai/llmcc/sample/repos/risingwave/src/batch/executors/src/executor"];
+    mod_risingwave_batch_executors_join[label="join", path="/home/yibai/llmcc/sample/repos/risingwave/src/batch/executors/src/executor/join"];
   }
 
   subgraph cluster_risingwave_cmd {
     label="risingwave_cmd";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_cmd_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/risingwave/src/cmd/src"];
+    mod_risingwave_cmd_lib[label="lib", path="/home/yibai/llmcc/sample/repos/risingwave/src/cmd/src"];
   }
 
   subgraph cluster_risingwave_common {
     label="risingwave_common";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_common_array[label="array", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/array"];
-    mod_risingwave_common_bitmap[label="bitmap", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/src"];
-    mod_risingwave_common_catalog[label="catalog", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/catalog"];
-    mod_risingwave_common_config[label="config", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/config"];
-    mod_risingwave_common_gap_fill[label="gap_fill", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/src"];
-    mod_risingwave_common_global_jvm[label="global_jvm", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/src"];
-    mod_risingwave_common_hash[label="hash", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/hash"];
-    mod_risingwave_common_memory[label="memory", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/memory"];
-    mod_risingwave_common_operator[label="operator", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/src"];
-    mod_risingwave_common_range[label="range", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/src"];
-    mod_risingwave_common_row[label="row", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/row"];
-    mod_risingwave_common_session_config[label="session_config", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/session_config"];
-    mod_risingwave_common_system_param[label="system_param", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/system_param"];
-    mod_risingwave_common_telemetry[label="telemetry", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/telemetry"];
-    mod_risingwave_common_test_utils[label="test_utils", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/test_utils"];
-    mod_risingwave_common_types[label="types", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/types"];
-    mod_risingwave_common_util[label="util", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/util"];
-    mod_risingwave_common_vector[label="vector", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/vector"];
-    mod_risingwave_common_vnode_mapping[label="vnode_mapping", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/vnode_mapping"];
+    mod_risingwave_common_array[label="array", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/array"];
+    mod_risingwave_common_bitmap[label="bitmap", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src"];
+    mod_risingwave_common_catalog[label="catalog", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/catalog"];
+    mod_risingwave_common_config[label="config", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/config"];
+    mod_risingwave_common_gap_fill[label="gap_fill", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src"];
+    mod_risingwave_common_global_jvm[label="global_jvm", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src"];
+    mod_risingwave_common_hash[label="hash", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/hash"];
+    mod_risingwave_common_memory[label="memory", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/memory"];
+    mod_risingwave_common_operator[label="operator", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src"];
+    mod_risingwave_common_range[label="range", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src"];
+    mod_risingwave_common_row[label="row", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/row"];
+    mod_risingwave_common_session_config[label="session_config", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/session_config"];
+    mod_risingwave_common_system_param[label="system_param", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/system_param"];
+    mod_risingwave_common_telemetry[label="telemetry", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/telemetry"];
+    mod_risingwave_common_test_utils[label="test_utils", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/test_utils"];
+    mod_risingwave_common_types[label="types", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/types"];
+    mod_risingwave_common_util[label="util", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/util"];
+    mod_risingwave_common_vector[label="vector", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/vector"];
+    mod_risingwave_common_vnode_mapping[label="vnode_mapping", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/src/vnode_mapping"];
   }
 
   subgraph cluster_risingwave_common_estimate_size {
     label="risingwave_common_estimate_size";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_common_estimate_size_collections[label="collections", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/estimate_size/src/collections"];
-    mod_risingwave_common_estimate_size_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/estimate_size/src"];
+    mod_risingwave_common_estimate_size_collections[label="collections", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/estimate_size/src/collections"];
+    mod_risingwave_common_estimate_size_lib[label="lib", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/estimate_size/src"];
   }
 
   subgraph cluster_risingwave_common_metrics {
     label="risingwave_common_metrics";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_common_metrics_guarded_metrics[label="guarded_metrics", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/metrics/src"];
-    mod_risingwave_common_metrics_monitor[label="monitor", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/metrics/src/monitor"];
+    mod_risingwave_common_metrics_guarded_metrics[label="guarded_metrics", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/metrics/src"];
+    mod_risingwave_common_metrics_monitor[label="monitor", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/metrics/src/monitor"];
   }
 
   subgraph cluster_risingwave_common_proc_macro {
     label="risingwave_common_proc_macro";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_common_proc_macro_config_doc[label="config_doc", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/proc_macro/src"];
-    mod_risingwave_common_proc_macro_estimate_size[label="estimate_size", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/proc_macro/src"];
-    mod_risingwave_common_proc_macro_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/proc_macro/src"];
+    mod_risingwave_common_proc_macro_config_doc[label="config_doc", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/proc_macro/src"];
+    mod_risingwave_common_proc_macro_estimate_size[label="estimate_size", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/proc_macro/src"];
+    mod_risingwave_common_proc_macro_lib[label="lib", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/proc_macro/src"];
   }
 
   subgraph cluster_risingwave_common_rate_limit {
     label="risingwave_common_rate_limit";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_common_rate_limit_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/rate_limit/src"];
+    mod_risingwave_common_rate_limit_lib[label="lib", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/rate_limit/src"];
   }
 
   subgraph cluster_risingwave_common_secret {
     label="risingwave_common_secret";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_common_secret_secret_manager[label="secret_manager", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/secret/src"];
+    mod_risingwave_common_secret_secret_manager[label="secret_manager", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/secret/src"];
   }
 
   subgraph cluster_risingwave_common_service {
     label="risingwave_common_service";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_common_service_observer_manager[label="observer_manager", folder="/home/yibai/llmcc/sample/repos/risingwave/src/common/common_service/src"];
+    mod_risingwave_common_service_observer_manager[label="observer_manager", path="/home/yibai/llmcc/sample/repos/risingwave/src/common/common_service/src"];
   }
 
   subgraph cluster_risingwave_compactor {
     label="risingwave_compactor";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_compactor_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/compactor/src"];
-    mod_risingwave_compactor_rpc[label="rpc", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/compactor/src"];
-    mod_risingwave_compactor_server[label="server", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/compactor/src"];
-    mod_risingwave_compactor_telemetry[label="telemetry", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/compactor/src"];
+    mod_risingwave_compactor_lib[label="lib", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/compactor/src"];
+    mod_risingwave_compactor_rpc[label="rpc", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/compactor/src"];
+    mod_risingwave_compactor_server[label="server", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/compactor/src"];
+    mod_risingwave_compactor_telemetry[label="telemetry", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/compactor/src"];
   }
 
   subgraph cluster_risingwave_compute {
     label="risingwave_compute";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_compute_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/risingwave/src/compute/src"];
-    mod_risingwave_compute_memory[label="memory", folder="/home/yibai/llmcc/sample/repos/risingwave/src/compute/src/memory"];
-    mod_risingwave_compute_rpc[label="rpc", folder="/home/yibai/llmcc/sample/repos/risingwave/src/compute/src/rpc"];
-    mod_risingwave_compute_server[label="server", folder="/home/yibai/llmcc/sample/repos/risingwave/src/compute/src"];
-    mod_risingwave_compute_telemetry[label="telemetry", folder="/home/yibai/llmcc/sample/repos/risingwave/src/compute/src"];
+    mod_risingwave_compute_lib[label="lib", path="/home/yibai/llmcc/sample/repos/risingwave/src/compute/src"];
+    mod_risingwave_compute_memory[label="memory", path="/home/yibai/llmcc/sample/repos/risingwave/src/compute/src/memory"];
+    mod_risingwave_compute_rpc[label="rpc", path="/home/yibai/llmcc/sample/repos/risingwave/src/compute/src/rpc"];
+    mod_risingwave_compute_server[label="server", path="/home/yibai/llmcc/sample/repos/risingwave/src/compute/src"];
+    mod_risingwave_compute_telemetry[label="telemetry", path="/home/yibai/llmcc/sample/repos/risingwave/src/compute/src"];
   }
 
   subgraph cluster_risingwave_connector {
     label="risingwave_connector";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_connector_connector_common[label="connector_common", folder="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src/connector_common"];
-    mod_risingwave_connector_enforce_secret[label="enforce_secret", folder="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src"];
-    mod_risingwave_connector_parser[label="parser", folder="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src/parser"];
-    mod_risingwave_connector_schema[label="schema", folder="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src/schema"];
-    mod_risingwave_connector_sink[label="sink", folder="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src/sink"];
-    mod_risingwave_connector_source[label="source", folder="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src/source"];
-    mod_risingwave_connector_with_options[label="with_options", folder="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src"];
+    mod_risingwave_connector_connector_common[label="connector_common", path="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src/connector_common"];
+    mod_risingwave_connector_enforce_secret[label="enforce_secret", path="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src"];
+    mod_risingwave_connector_parser[label="parser", path="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src/parser"];
+    mod_risingwave_connector_schema[label="schema", path="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src/schema"];
+    mod_risingwave_connector_sink[label="sink", path="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src/sink"];
+    mod_risingwave_connector_source[label="source", path="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src/source"];
+    mod_risingwave_connector_with_options[label="with_options", path="/home/yibai/llmcc/sample/repos/risingwave/src/connector/src"];
   }
 
   subgraph cluster_risingwave_connector_codec {
     label="risingwave_connector_codec";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_connector_codec_decoder[label="decoder", folder="/home/yibai/llmcc/sample/repos/risingwave/src/connector/codec/src/decoder"];
+    mod_risingwave_connector_codec_decoder[label="decoder", path="/home/yibai/llmcc/sample/repos/risingwave/src/connector/codec/src/decoder"];
   }
 
   subgraph cluster_risingwave_ctl {
     label="risingwave_ctl";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_ctl_cmd_impl[label="cmd_impl", folder="/home/yibai/llmcc/sample/repos/risingwave/src/ctl/src/cmd_impl"];
-    mod_risingwave_ctl_common[label="common", folder="/home/yibai/llmcc/sample/repos/risingwave/src/ctl/src/common"];
-    mod_risingwave_ctl_hummock[label="hummock", folder="/home/yibai/llmcc/sample/repos/risingwave/src/ctl/src/cmd_impl/hummock"];
-    mod_risingwave_ctl_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/risingwave/src/ctl/src"];
-    mod_risingwave_ctl_meta[label="meta", folder="/home/yibai/llmcc/sample/repos/risingwave/src/ctl/src/cmd_impl/meta"];
-    mod_risingwave_ctl_table[label="table", folder="/home/yibai/llmcc/sample/repos/risingwave/src/ctl/src/cmd_impl/table"];
+    mod_risingwave_ctl_cmd_impl[label="cmd_impl", path="/home/yibai/llmcc/sample/repos/risingwave/src/ctl/src/cmd_impl"];
+    mod_risingwave_ctl_common[label="common", path="/home/yibai/llmcc/sample/repos/risingwave/src/ctl/src/common"];
+    mod_risingwave_ctl_hummock[label="hummock", path="/home/yibai/llmcc/sample/repos/risingwave/src/ctl/src/cmd_impl/hummock"];
+    mod_risingwave_ctl_lib[label="lib", path="/home/yibai/llmcc/sample/repos/risingwave/src/ctl/src"];
+    mod_risingwave_ctl_meta[label="meta", path="/home/yibai/llmcc/sample/repos/risingwave/src/ctl/src/cmd_impl/meta"];
+    mod_risingwave_ctl_table[label="table", path="/home/yibai/llmcc/sample/repos/risingwave/src/ctl/src/cmd_impl/table"];
   }
 
   subgraph cluster_risingwave_dml {
     label="risingwave_dml";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_dml_table[label="table", folder="/home/yibai/llmcc/sample/repos/risingwave/src/dml/src"];
-    mod_risingwave_dml_txn_channel[label="txn_channel", folder="/home/yibai/llmcc/sample/repos/risingwave/src/dml/src"];
+    mod_risingwave_dml_table[label="table", path="/home/yibai/llmcc/sample/repos/risingwave/src/dml/src"];
+    mod_risingwave_dml_txn_channel[label="txn_channel", path="/home/yibai/llmcc/sample/repos/risingwave/src/dml/src"];
   }
 
   subgraph cluster_risingwave_expr {
     label="risingwave_expr";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_expr_aggregate[label="aggregate", folder="/home/yibai/llmcc/sample/repos/risingwave/src/expr/core/src/aggregate"];
-    mod_risingwave_expr_error[label="error", folder="/home/yibai/llmcc/sample/repos/risingwave/src/expr/core/src"];
-    mod_risingwave_expr_expr[label="expr", folder="/home/yibai/llmcc/sample/repos/risingwave/src/expr/core/src/expr"];
-    mod_risingwave_expr_sig[label="sig", folder="/home/yibai/llmcc/sample/repos/risingwave/src/expr/core/src/sig"];
-    mod_risingwave_expr_table_function[label="table_function", folder="/home/yibai/llmcc/sample/repos/risingwave/src/expr/core/src/table_function"];
-    mod_risingwave_expr_window_function[label="window_function", folder="/home/yibai/llmcc/sample/repos/risingwave/src/expr/core/src/window_function"];
+    mod_risingwave_expr_aggregate[label="aggregate", path="/home/yibai/llmcc/sample/repos/risingwave/src/expr/core/src/aggregate"];
+    mod_risingwave_expr_error[label="error", path="/home/yibai/llmcc/sample/repos/risingwave/src/expr/core/src"];
+    mod_risingwave_expr_expr[label="expr", path="/home/yibai/llmcc/sample/repos/risingwave/src/expr/core/src/expr"];
+    mod_risingwave_expr_sig[label="sig", path="/home/yibai/llmcc/sample/repos/risingwave/src/expr/core/src/sig"];
+    mod_risingwave_expr_table_function[label="table_function", path="/home/yibai/llmcc/sample/repos/risingwave/src/expr/core/src/table_function"];
+    mod_risingwave_expr_window_function[label="window_function", path="/home/yibai/llmcc/sample/repos/risingwave/src/expr/core/src/window_function"];
   }
 
   subgraph cluster_risingwave_expr_impl {
     label="risingwave_expr_impl";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_expr_impl_aggregate[label="aggregate", folder="/home/yibai/llmcc/sample/repos/risingwave/src/expr/impl/src/aggregate"];
-    mod_risingwave_expr_impl_scalar[label="scalar", folder="/home/yibai/llmcc/sample/repos/risingwave/src/expr/impl/src/scalar"];
-    mod_risingwave_expr_impl_table_function[label="table_function", folder="/home/yibai/llmcc/sample/repos/risingwave/src/expr/impl/src/table_function"];
-    mod_risingwave_expr_impl_udf[label="udf", folder="/home/yibai/llmcc/sample/repos/risingwave/src/expr/impl/src/udf"];
-    mod_risingwave_expr_impl_window_function[label="window_function", folder="/home/yibai/llmcc/sample/repos/risingwave/src/expr/impl/src/window_function"];
+    mod_risingwave_expr_impl_aggregate[label="aggregate", path="/home/yibai/llmcc/sample/repos/risingwave/src/expr/impl/src/aggregate"];
+    mod_risingwave_expr_impl_scalar[label="scalar", path="/home/yibai/llmcc/sample/repos/risingwave/src/expr/impl/src/scalar"];
+    mod_risingwave_expr_impl_table_function[label="table_function", path="/home/yibai/llmcc/sample/repos/risingwave/src/expr/impl/src/table_function"];
+    mod_risingwave_expr_impl_udf[label="udf", path="/home/yibai/llmcc/sample/repos/risingwave/src/expr/impl/src/udf"];
+    mod_risingwave_expr_impl_window_function[label="window_function", path="/home/yibai/llmcc/sample/repos/risingwave/src/expr/impl/src/window_function"];
   }
 
   subgraph cluster_risingwave_expr_macro {
     label="risingwave_expr_macro";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_expr_macro_context[label="context", folder="/home/yibai/llmcc/sample/repos/risingwave/src/expr/macro/src"];
-    mod_risingwave_expr_macro_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/risingwave/src/expr/macro/src"];
-    mod_risingwave_expr_macro_parse[label="parse", folder="/home/yibai/llmcc/sample/repos/risingwave/src/expr/macro/src"];
+    mod_risingwave_expr_macro_context[label="context", path="/home/yibai/llmcc/sample/repos/risingwave/src/expr/macro/src"];
+    mod_risingwave_expr_macro_lib[label="lib", path="/home/yibai/llmcc/sample/repos/risingwave/src/expr/macro/src"];
+    mod_risingwave_expr_macro_parse[label="parse", path="/home/yibai/llmcc/sample/repos/risingwave/src/expr/macro/src"];
   }
 
   subgraph cluster_risingwave_frontend {
     label="risingwave_frontend";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_frontend_binder[label="binder", folder="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/binder"];
-    mod_risingwave_frontend_catalog[label="catalog", folder="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/catalog"];
-    mod_risingwave_frontend_datafusion[label="datafusion", folder="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/datafusion"];
-    mod_risingwave_frontend_error[label="error", folder="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src"];
-    mod_risingwave_frontend_expr[label="expr", folder="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/expr"];
-    mod_risingwave_frontend_handler[label="handler", folder="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/handler"];
-    mod_risingwave_frontend_meta_client[label="meta_client", folder="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src"];
-    mod_risingwave_frontend_monitor[label="monitor", folder="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/monitor"];
-    mod_risingwave_frontend_optimizer[label="optimizer", folder="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer"];
-    mod_risingwave_frontend_planner[label="planner", folder="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/planner"];
-    mod_risingwave_frontend_scheduler[label="scheduler", folder="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/scheduler"];
-    mod_risingwave_frontend_session[label="session", folder="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/session"];
-    mod_risingwave_frontend_stream_fragmenter[label="stream_fragmenter", folder="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/stream_fragmenter"];
-    mod_risingwave_frontend_telemetry[label="telemetry", folder="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src"];
-    mod_risingwave_frontend_user[label="user", folder="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/user"];
-    mod_risingwave_frontend_utils[label="utils", folder="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/utils"];
-    mod_risingwave_frontend_webhook[label="webhook", folder="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/webhook"];
+    mod_risingwave_frontend_binder[label="binder", path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/binder"];
+    mod_risingwave_frontend_catalog[label="catalog", path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/catalog"];
+    mod_risingwave_frontend_datafusion[label="datafusion", path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/datafusion"];
+    mod_risingwave_frontend_error[label="error", path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src"];
+    mod_risingwave_frontend_expr[label="expr", path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/expr"];
+    mod_risingwave_frontend_handler[label="handler", path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/handler"];
+    mod_risingwave_frontend_meta_client[label="meta_client", path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src"];
+    mod_risingwave_frontend_monitor[label="monitor", path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/monitor"];
+    mod_risingwave_frontend_optimizer[label="optimizer", path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/optimizer"];
+    mod_risingwave_frontend_planner[label="planner", path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/planner"];
+    mod_risingwave_frontend_scheduler[label="scheduler", path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/scheduler"];
+    mod_risingwave_frontend_session[label="session", path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/session"];
+    mod_risingwave_frontend_stream_fragmenter[label="stream_fragmenter", path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/stream_fragmenter"];
+    mod_risingwave_frontend_telemetry[label="telemetry", path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src"];
+    mod_risingwave_frontend_user[label="user", path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/user"];
+    mod_risingwave_frontend_utils[label="utils", path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/utils"];
+    mod_risingwave_frontend_webhook[label="webhook", path="/home/yibai/llmcc/sample/repos/risingwave/src/frontend/src/webhook"];
   }
 
   subgraph cluster_risingwave_hummock_sdk {
     label="risingwave_hummock_sdk";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_hummock_sdk_compact[label="compact", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src"];
-    mod_risingwave_hummock_sdk_compact_task[label="compact_task", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src"];
-    mod_risingwave_hummock_sdk_compaction_group[label="compaction_group", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src/compaction_group"];
-    mod_risingwave_hummock_sdk_key[label="key", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src"];
-    mod_risingwave_hummock_sdk_key_range[label="key_range", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src"];
-    mod_risingwave_hummock_sdk_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src"];
-    mod_risingwave_hummock_sdk_sstable_info[label="sstable_info", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src"];
-    mod_risingwave_hummock_sdk_table_stats[label="table_stats", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src"];
-    mod_risingwave_hummock_sdk_table_watermark[label="table_watermark", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src"];
-    mod_risingwave_hummock_sdk_time_travel[label="time_travel", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src"];
-    mod_risingwave_hummock_sdk_vector_index[label="vector_index", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src"];
-    mod_risingwave_hummock_sdk_version[label="version", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src"];
+    mod_risingwave_hummock_sdk_compact[label="compact", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src"];
+    mod_risingwave_hummock_sdk_compact_task[label="compact_task", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src"];
+    mod_risingwave_hummock_sdk_compaction_group[label="compaction_group", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src/compaction_group"];
+    mod_risingwave_hummock_sdk_key[label="key", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src"];
+    mod_risingwave_hummock_sdk_key_range[label="key_range", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src"];
+    mod_risingwave_hummock_sdk_lib[label="lib", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src"];
+    mod_risingwave_hummock_sdk_sstable_info[label="sstable_info", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src"];
+    mod_risingwave_hummock_sdk_table_stats[label="table_stats", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src"];
+    mod_risingwave_hummock_sdk_table_watermark[label="table_watermark", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src"];
+    mod_risingwave_hummock_sdk_time_travel[label="time_travel", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src"];
+    mod_risingwave_hummock_sdk_vector_index[label="vector_index", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src"];
+    mod_risingwave_hummock_sdk_version[label="version", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_sdk/src"];
   }
 
   subgraph cluster_risingwave_hummock_test {
     label="risingwave_hummock_test";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_hummock_test_bin[label="bin", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_test/src/bin"];
-    mod_risingwave_hummock_test_failpoint_tests[label="failpoint_tests", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_test/src"];
-    mod_risingwave_hummock_test_state_store_tests[label="state_store_tests", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_test/src"];
-    mod_risingwave_hummock_test_sync_point_tests[label="sync_point_tests", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_test/src"];
-    mod_risingwave_hummock_test_test_utils[label="test_utils", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_test/src"];
+    mod_risingwave_hummock_test_bin[label="bin", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_test/src/bin"];
+    mod_risingwave_hummock_test_failpoint_tests[label="failpoint_tests", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_test/src"];
+    mod_risingwave_hummock_test_state_store_tests[label="state_store_tests", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_test/src"];
+    mod_risingwave_hummock_test_sync_point_tests[label="sync_point_tests", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_test/src"];
+    mod_risingwave_hummock_test_test_utils[label="test_utils", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_test/src"];
   }
 
   subgraph cluster_risingwave_hummock_trace {
     label="risingwave_hummock_trace";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_hummock_trace_collector[label="collector", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_trace/src"];
-    mod_risingwave_hummock_trace_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_trace/src"];
-    mod_risingwave_hummock_trace_opts[label="opts", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_trace/src"];
-    mod_risingwave_hummock_trace_record[label="record", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_trace/src"];
-    mod_risingwave_hummock_trace_replay[label="replay", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_trace/src/replay"];
+    mod_risingwave_hummock_trace_collector[label="collector", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_trace/src"];
+    mod_risingwave_hummock_trace_lib[label="lib", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_trace/src"];
+    mod_risingwave_hummock_trace_opts[label="opts", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_trace/src"];
+    mod_risingwave_hummock_trace_record[label="record", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_trace/src"];
+    mod_risingwave_hummock_trace_replay[label="replay", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_trace/src/replay"];
   }
 
   subgraph cluster_risingwave_java_binding {
     label="risingwave_java_binding";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_java_binding_hummock_iterator[label="hummock_iterator", folder="/home/yibai/llmcc/sample/repos/risingwave/src/java_binding/src"];
-    mod_risingwave_java_binding_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/risingwave/src/java_binding/src"];
+    mod_risingwave_java_binding_bin[label="bin", path="/home/yibai/llmcc/sample/repos/risingwave/src/java_binding/src/bin"];
+    mod_risingwave_java_binding_hummock_iterator[label="hummock_iterator", path="/home/yibai/llmcc/sample/repos/risingwave/src/java_binding/src"];
+    mod_risingwave_java_binding_lib[label="lib", path="/home/yibai/llmcc/sample/repos/risingwave/src/java_binding/src"];
   }
 
   subgraph cluster_risingwave_jni_core {
     label="risingwave_jni_core";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_jni_core_jvm_runtime[label="jvm_runtime", folder="/home/yibai/llmcc/sample/repos/risingwave/src/jni_core/src"];
-    mod_risingwave_jni_core_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/risingwave/src/jni_core/src"];
-    mod_risingwave_jni_core_opendal_schema_history[label="opendal_schema_history", folder="/home/yibai/llmcc/sample/repos/risingwave/src/jni_core/src"];
-    mod_risingwave_jni_core_tracing_slf4j[label="tracing_slf4j", folder="/home/yibai/llmcc/sample/repos/risingwave/src/jni_core/src"];
+    mod_risingwave_jni_core_jvm_runtime[label="jvm_runtime", path="/home/yibai/llmcc/sample/repos/risingwave/src/jni_core/src"];
+    mod_risingwave_jni_core_lib[label="lib", path="/home/yibai/llmcc/sample/repos/risingwave/src/jni_core/src"];
+    mod_risingwave_jni_core_opendal_schema_history[label="opendal_schema_history", path="/home/yibai/llmcc/sample/repos/risingwave/src/jni_core/src"];
+    mod_risingwave_jni_core_tracing_slf4j[label="tracing_slf4j", path="/home/yibai/llmcc/sample/repos/risingwave/src/jni_core/src"];
   }
 
   subgraph cluster_risingwave_meta {
     label="risingwave_meta";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_meta_backup_restore[label="backup_restore", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/backup_restore"];
-    mod_risingwave_meta_barrier[label="barrier", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/barrier"];
-    mod_risingwave_meta_controller[label="controller", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/controller"];
-    mod_risingwave_meta_hummock[label="hummock", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/hummock"];
-    mod_risingwave_meta_manager[label="manager", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/manager"];
-    mod_risingwave_meta_model[label="model", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/model"];
-    mod_risingwave_meta_rpc[label="rpc", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/rpc"];
-    mod_risingwave_meta_serving[label="serving", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/serving"];
-    mod_risingwave_meta_stream[label="stream", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/stream"];
-    mod_risingwave_meta_telemetry[label="telemetry", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src"];
+    mod_risingwave_meta_backup_restore[label="backup_restore", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/backup_restore"];
+    mod_risingwave_meta_barrier[label="barrier", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/barrier"];
+    mod_risingwave_meta_controller[label="controller", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/controller"];
+    mod_risingwave_meta_hummock[label="hummock", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/hummock"];
+    mod_risingwave_meta_manager[label="manager", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/manager"];
+    mod_risingwave_meta_model[label="model", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/model"];
+    mod_risingwave_meta_rpc[label="rpc", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/rpc"];
+    mod_risingwave_meta_serving[label="serving", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/serving"];
+    mod_risingwave_meta_stream[label="stream", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src/stream"];
+    mod_risingwave_meta_telemetry[label="telemetry", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/src"];
   }
 
   subgraph cluster_risingwave_meta_model {
     label="risingwave_meta_model";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_meta_model_fragment[label="fragment", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/src"];
-    mod_risingwave_meta_model_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/src"];
-    mod_risingwave_meta_model_object[label="object", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/src"];
-    mod_risingwave_meta_model_sink[label="sink", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/src"];
-    mod_risingwave_meta_model_streaming_job[label="streaming_job", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/src"];
-    mod_risingwave_meta_model_worker[label="worker", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/src"];
+    mod_risingwave_meta_model_fragment[label="fragment", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/src"];
+    mod_risingwave_meta_model_lib[label="lib", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/src"];
+    mod_risingwave_meta_model_streaming_job[label="streaming_job", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/src"];
+    mod_risingwave_meta_model_table[label="table", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/src"];
+    mod_risingwave_meta_model_worker[label="worker", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/src"];
   }
 
   subgraph cluster_risingwave_meta_model_migration {
     label="risingwave_meta_model_migration";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_meta_model_migration_m20230908_072257_init[label="m20230908_072257_init", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src"];
-    mod_risingwave_meta_model_migration_m20231008_020431_hummock[label="m20231008_020431_hummock", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src"];
-    mod_risingwave_meta_model_migration_m20240417_062305_subscription_internal_table_name[label="m20240417_062305_subscription_internal_table_name", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src"];
-    mod_risingwave_meta_model_migration_m20240617_070131_index_column_properties[label="m20240617_070131_index_column_properties", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src"];
-    mod_risingwave_meta_model_migration_m20240806_143329_add_rate_limit_to_source_catalog[label="m20240806_143329_add_rate_limit_to_source_catalog", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src"];
-    mod_risingwave_meta_model_migration_m20250514_114514_dispatcher_type_mapping[label="m20250514_114514_dispatcher_type_mapping", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src"];
-    mod_risingwave_meta_model_migration_m20250528_064717_barrier_interval_per_database[label="m20250528_064717_barrier_interval_per_database", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src"];
-    mod_risingwave_meta_model_migration_m20250603_084830_default_privilege[label="m20250603_084830_default_privilege", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src"];
+    mod_risingwave_meta_model_migration_m20230908_072257_init[label="m20230908_072257_init", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src"];
+    mod_risingwave_meta_model_migration_m20231008_020431_hummock[label="m20231008_020431_hummock", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src"];
+    mod_risingwave_meta_model_migration_m20240417_062305_subscription_internal_table_name[label="m20240417_062305_subscription_internal_table_name", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src"];
+    mod_risingwave_meta_model_migration_m20240617_070131_index_column_properties[label="m20240617_070131_index_column_properties", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src"];
+    mod_risingwave_meta_model_migration_m20240806_143329_add_rate_limit_to_source_catalog[label="m20240806_143329_add_rate_limit_to_source_catalog", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src"];
+    mod_risingwave_meta_model_migration_m20250514_114514_dispatcher_type_mapping[label="m20250514_114514_dispatcher_type_mapping", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src"];
+    mod_risingwave_meta_model_migration_m20250528_064717_barrier_interval_per_database[label="m20250528_064717_barrier_interval_per_database", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src"];
+    mod_risingwave_meta_model_migration_m20250603_084830_default_privilege[label="m20250603_084830_default_privilege", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration/src"];
   }
 
   subgraph cluster_risingwave_meta_node {
     label="risingwave_meta_node";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_meta_node_server[label="server", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/node/src"];
+    mod_risingwave_meta_node_server[label="server", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/node/src"];
   }
 
   subgraph cluster_risingwave_meta_service {
     label="risingwave_meta_service";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_meta_service_ddl_service[label="ddl_service", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/service/src"];
-    mod_risingwave_meta_service_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/risingwave/src/meta/service/src"];
+    mod_risingwave_meta_service_ddl_service[label="ddl_service", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/service/src"];
+    mod_risingwave_meta_service_lib[label="lib", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/service/src"];
   }
 
   subgraph cluster_risingwave_object_store {
     label="risingwave_object_store";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_object_store_object[label="object", folder="/home/yibai/llmcc/sample/repos/risingwave/src/object_store/src/object"];
-    mod_risingwave_object_store_opendal_engine[label="opendal_engine", folder="/home/yibai/llmcc/sample/repos/risingwave/src/object_store/src/object/opendal_engine"];
-    mod_risingwave_object_store_sim[label="sim", folder="/home/yibai/llmcc/sample/repos/risingwave/src/object_store/src/object/sim"];
+    mod_risingwave_object_store_object[label="object", path="/home/yibai/llmcc/sample/repos/risingwave/src/object_store/src/object"];
+    mod_risingwave_object_store_opendal_engine[label="opendal_engine", path="/home/yibai/llmcc/sample/repos/risingwave/src/object_store/src/object/opendal_engine"];
+    mod_risingwave_object_store_sim[label="sim", path="/home/yibai/llmcc/sample/repos/risingwave/src/object_store/src/object/sim"];
   }
 
   subgraph cluster_risingwave_rpc_client {
     label="risingwave_rpc_client";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_rpc_client_compactor_client[label="compactor_client", folder="/home/yibai/llmcc/sample/repos/risingwave/src/rpc_client/src"];
-    mod_risingwave_rpc_client_hummock_meta_client[label="hummock_meta_client", folder="/home/yibai/llmcc/sample/repos/risingwave/src/rpc_client/src"];
-    mod_risingwave_rpc_client_meta_client[label="meta_client", folder="/home/yibai/llmcc/sample/repos/risingwave/src/rpc_client/src"];
+    mod_risingwave_rpc_client_compactor_client[label="compactor_client", path="/home/yibai/llmcc/sample/repos/risingwave/src/rpc_client/src"];
+    mod_risingwave_rpc_client_hummock_meta_client[label="hummock_meta_client", path="/home/yibai/llmcc/sample/repos/risingwave/src/rpc_client/src"];
+    mod_risingwave_rpc_client_meta_client[label="meta_client", path="/home/yibai/llmcc/sample/repos/risingwave/src/rpc_client/src"];
   }
 
   subgraph cluster_risingwave_rt {
     label="risingwave_rt";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_rt_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/risingwave/src/utils/runtime/src"];
-    mod_risingwave_rt_logger[label="logger", folder="/home/yibai/llmcc/sample/repos/risingwave/src/utils/runtime/src"];
+    mod_risingwave_rt_lib[label="lib", path="/home/yibai/llmcc/sample/repos/risingwave/src/utils/runtime/src"];
+    mod_risingwave_rt_logger[label="logger", path="/home/yibai/llmcc/sample/repos/risingwave/src/utils/runtime/src"];
   }
 
   subgraph cluster_risingwave_sqlparser {
     label="risingwave_sqlparser";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_sqlparser_ast[label="ast", folder="/home/yibai/llmcc/sample/repos/risingwave/src/sqlparser/src/ast"];
-    mod_risingwave_sqlparser_parser[label="parser", folder="/home/yibai/llmcc/sample/repos/risingwave/src/sqlparser/src"];
-    mod_risingwave_sqlparser_parser_v2[label="parser_v2", folder="/home/yibai/llmcc/sample/repos/risingwave/src/sqlparser/src/parser_v2"];
-    mod_risingwave_sqlparser_test_utils[label="test_utils", folder="/home/yibai/llmcc/sample/repos/risingwave/src/sqlparser/src"];
+    mod_risingwave_sqlparser_ast[label="ast", path="/home/yibai/llmcc/sample/repos/risingwave/src/sqlparser/src/ast"];
+    mod_risingwave_sqlparser_parser[label="parser", path="/home/yibai/llmcc/sample/repos/risingwave/src/sqlparser/src"];
+    mod_risingwave_sqlparser_parser_v2[label="parser_v2", path="/home/yibai/llmcc/sample/repos/risingwave/src/sqlparser/src/parser_v2"];
+    mod_risingwave_sqlparser_test_utils[label="test_utils", path="/home/yibai/llmcc/sample/repos/risingwave/src/sqlparser/src"];
   }
 
   subgraph cluster_risingwave_storage {
     label="risingwave_storage";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_storage_compaction_catalog_manager[label="compaction_catalog_manager", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src"];
-    mod_risingwave_storage_hummock[label="hummock", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/hummock"];
-    mod_risingwave_storage_mem_table[label="mem_table", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src"];
-    mod_risingwave_storage_memory[label="memory", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src"];
-    mod_risingwave_storage_monitor[label="monitor", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/monitor"];
-    mod_risingwave_storage_opts[label="opts", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src"];
-    mod_risingwave_storage_panic_store[label="panic_store", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src"];
-    mod_risingwave_storage_row_serde[label="row_serde", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/row_serde"];
-    mod_risingwave_storage_storage_failpoints[label="storage_failpoints", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/storage_failpoints"];
-    mod_risingwave_storage_store[label="store", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src"];
-    mod_risingwave_storage_store_impl[label="store_impl", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src"];
-    mod_risingwave_storage_table[label="table", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/table"];
-    mod_risingwave_storage_vector[label="vector", folder="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/vector"];
+    mod_risingwave_storage_compaction_catalog_manager[label="compaction_catalog_manager", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src"];
+    mod_risingwave_storage_hummock[label="hummock", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/hummock"];
+    mod_risingwave_storage_mem_table[label="mem_table", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src"];
+    mod_risingwave_storage_memory[label="memory", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src"];
+    mod_risingwave_storage_monitor[label="monitor", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/monitor"];
+    mod_risingwave_storage_opts[label="opts", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src"];
+    mod_risingwave_storage_panic_store[label="panic_store", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src"];
+    mod_risingwave_storage_row_serde[label="row_serde", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/row_serde"];
+    mod_risingwave_storage_storage_failpoints[label="storage_failpoints", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/storage_failpoints"];
+    mod_risingwave_storage_store[label="store", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src"];
+    mod_risingwave_storage_store_impl[label="store_impl", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src"];
+    mod_risingwave_storage_table[label="table", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/table"];
+    mod_risingwave_storage_vector[label="vector", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/src/vector"];
   }
 
   subgraph cluster_risingwave_stream {
     label="risingwave_stream";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_risingwave_stream_cache[label="cache", folder="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/cache"];
-    mod_risingwave_stream_common[label="common", folder="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/common"];
-    mod_risingwave_stream_executor[label="executor", folder="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/executor"];
-    mod_risingwave_stream_from_proto[label="from_proto", folder="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/from_proto"];
-    mod_risingwave_stream_task[label="task", folder="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/task"];
+    mod_risingwave_stream_cache[label="cache", path="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/cache"];
+    mod_risingwave_stream_common[label="common", path="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/common"];
+    mod_risingwave_stream_executor[label="executor", path="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/executor"];
+    mod_risingwave_stream_from_proto[label="from_proto", path="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/from_proto"];
+    mod_risingwave_stream_task[label="task", path="/home/yibai/llmcc/sample/repos/risingwave/src/stream/src/task"];
   }
 
   subgraph cluster_rw_futures_util {
     label="rw_futures_util";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_rw_futures_util_misc[label="misc", folder="/home/yibai/llmcc/sample/repos/risingwave/src/utils/futures_util/src"];
+    mod_rw_futures_util_misc[label="misc", path="/home/yibai/llmcc/sample/repos/risingwave/src/utils/futures_util/src"];
   }
 
   subgraph cluster_rw_resource_util {
     label="rw_resource_util";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_rw_resource_util_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/risingwave/src/utils/resource_util/src"];
+    mod_rw_resource_util_lib[label="lib", path="/home/yibai/llmcc/sample/repos/risingwave/src/utils/resource_util/src"];
   }
 
   subgraph cluster_simulator {
     label="simulator";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_simulator_entities[label="entities", folder="/home/yibai/llmcc/sample/repos/risingwave/integration_tests/feature-store/simulator/src"];
+    mod_simulator_entities[label="entities", path="/home/yibai/llmcc/sample/repos/risingwave/integration_tests/feature-store/simulator/src"];
   }
 
 
-  mod_lints_format_error -> mod_risingwave_frontend_expr;
+  mod_lints_format_error -> mod_risingwave_sqlparser_ast;
   mod_pgwire_pg_server -> mod_pgwire_pg_protocol;
   mod_pgwire_pg_server -> mod_risingwave_connector_sink;
   mod_pgwire_pg_server -> mod_risingwave_expr_impl_scalar;
@@ -639,11 +544,9 @@ digraph architecture {
   mod_risedev_bin -> mod_risedev_service_config;
   mod_risedev_bin -> mod_risedev_task;
   mod_risedev_bin -> mod_risedev_util;
-  mod_risedev_service_config -> mod_risedev_task;
   mod_risedev_task -> mod_risedev_service_config;
   mod_risedev_task -> mod_risingwave_meta_barrier;
   mod_risedev_util -> mod_risingwave_meta_barrier;
-  mod_risingwave_backup_meta_snapshot_v1 -> mod_risingwave_connector_sink;
   mod_risingwave_batch_execution -> mod_risingwave_batch_task;
   mod_risingwave_batch_executor -> mod_risingwave_batch_task;
   mod_risingwave_batch_executors_aggregation -> mod_risingwave_expr_aggregate;
@@ -687,7 +590,6 @@ digraph architecture {
   mod_risingwave_common_array -> mod_risingwave_frontend_session;
   mod_risingwave_common_catalog -> mod_risingwave_common_types;
   mod_risingwave_common_config -> mod_risingwave_sqlparser_ast;
-  mod_risingwave_common_config -> mod_risingwave_storage_hummock;
   mod_risingwave_common_estimate_size_collections -> mod_risingwave_common_estimate_size_lib;
   mod_risingwave_common_hash -> mod_risingwave_common_bitmap;
   mod_risingwave_common_hash -> mod_risingwave_common_estimate_size_lib;
@@ -710,7 +612,7 @@ digraph architecture {
   mod_risingwave_common_util -> mod_risingwave_common_types;
   mod_risingwave_common_util -> mod_risingwave_connector_sink;
   mod_risingwave_common_util -> mod_risingwave_expr_impl_scalar;
-  mod_risingwave_common_util -> mod_risingwave_frontend_optimizer;
+  mod_risingwave_common_util -> mod_risingwave_frontend_handler;
   mod_risingwave_common_util -> mod_risingwave_frontend_stream_fragmenter;
   mod_risingwave_common_util -> mod_risingwave_storage_hummock;
   mod_risingwave_common_util -> mod_risingwave_storage_row_serde;
@@ -755,13 +657,9 @@ digraph architecture {
   mod_risingwave_connector_sink -> mod_risingwave_expr_impl_scalar;
   mod_risingwave_connector_sink -> mod_risingwave_frontend_catalog;
   mod_risingwave_connector_sink -> mod_risingwave_meta_model_migration_m20250603_084830_default_privilege;
-  mod_risingwave_connector_sink -> mod_risingwave_meta_model_sink;
   mod_risingwave_connector_sink -> mod_risingwave_object_store_sim;
   mod_risingwave_connector_sink -> mod_risingwave_sqlparser_ast;
   mod_risingwave_connector_sink -> mod_risingwave_storage_hummock;
-  mod_risingwave_connector_sink -> mod_risingwave_stream_executor;
-  mod_risingwave_connector_source -> mod_pgwire_net;
-  mod_risingwave_connector_source -> mod_risingwave_common_array;
   mod_risingwave_connector_source -> mod_risingwave_common_catalog;
   mod_risingwave_connector_source -> mod_risingwave_common_range;
   mod_risingwave_connector_source -> mod_risingwave_common_types;
@@ -798,12 +696,12 @@ digraph architecture {
   mod_risingwave_expr_aggregate -> mod_risingwave_common_estimate_size_lib;
   mod_risingwave_expr_aggregate -> mod_risingwave_connector_sink;
   mod_risingwave_expr_aggregate -> mod_risingwave_expr_expr;
+  mod_risingwave_expr_aggregate -> mod_risingwave_sqlparser_ast;
+  mod_risingwave_expr_expr -> mod_risingwave_common_types;
   mod_risingwave_expr_expr -> mod_risingwave_sqlparser_ast;
   mod_risingwave_expr_impl_aggregate -> mod_risingwave_common_estimate_size_lib;
   mod_risingwave_expr_impl_aggregate -> mod_risingwave_connector_sink;
   mod_risingwave_expr_impl_aggregate -> mod_risingwave_expr_aggregate;
-  mod_risingwave_expr_impl_aggregate -> mod_risingwave_frontend_catalog;
-  mod_risingwave_expr_impl_aggregate -> mod_risingwave_frontend_datafusion;
   mod_risingwave_expr_impl_aggregate -> mod_risingwave_frontend_expr;
   mod_risingwave_expr_impl_scalar -> mod_lints_utils;
   mod_risingwave_expr_impl_scalar -> mod_pgwire_types;
@@ -811,13 +709,12 @@ digraph architecture {
   mod_risingwave_expr_impl_scalar -> mod_risingwave_common_row;
   mod_risingwave_expr_impl_scalar -> mod_risingwave_common_types;
   mod_risingwave_expr_impl_scalar -> mod_risingwave_common_util;
-  mod_risingwave_expr_impl_scalar -> mod_risingwave_compactor_lib;
   mod_risingwave_expr_impl_scalar -> mod_risingwave_connector_sink;
+  mod_risingwave_expr_impl_scalar -> mod_risingwave_ctl_lib;
   mod_risingwave_expr_impl_scalar -> mod_risingwave_ctl_table;
   mod_risingwave_expr_impl_scalar -> mod_risingwave_expr_error;
   mod_risingwave_expr_impl_scalar -> mod_risingwave_expr_expr;
   mod_risingwave_expr_impl_scalar -> mod_risingwave_expr_impl_aggregate;
-  mod_risingwave_expr_impl_scalar -> mod_risingwave_frontend_catalog;
   mod_risingwave_expr_impl_scalar -> mod_risingwave_frontend_session;
   mod_risingwave_expr_impl_scalar -> mod_risingwave_sqlparser_ast;
   mod_risingwave_expr_impl_scalar -> mod_risingwave_storage_hummock;
@@ -838,13 +735,13 @@ digraph architecture {
   mod_risingwave_expr_window_function -> mod_risingwave_common_types;
   mod_risingwave_expr_window_function -> mod_risingwave_common_util;
   mod_risingwave_expr_window_function -> mod_risingwave_expr_expr;
+  mod_risingwave_expr_window_function -> mod_risingwave_sqlparser_ast;
   mod_risingwave_fields_derive_lib -> mod_risingwave_sqlparser_parser_v2;
   mod_risingwave_frontend_binder -> mod_risingwave_common_catalog;
   mod_risingwave_frontend_binder -> mod_risingwave_connector_sink;
   mod_risingwave_frontend_binder -> mod_risingwave_frontend_catalog;
   mod_risingwave_frontend_binder -> mod_risingwave_frontend_expr;
   mod_risingwave_frontend_binder -> mod_risingwave_frontend_session;
-  mod_risingwave_frontend_binder -> mod_risingwave_meta_model_migration_m20250603_084830_default_privilege;
   mod_risingwave_frontend_binder -> mod_risingwave_sqlparser_ast;
   mod_risingwave_frontend_catalog -> mod_prost_helpers_lib;
   mod_risingwave_frontend_catalog -> mod_risingwave_common_catalog;
@@ -902,7 +799,9 @@ digraph architecture {
   mod_risingwave_frontend_handler -> mod_risingwave_frontend_stream_fragmenter;
   mod_risingwave_frontend_handler -> mod_risingwave_frontend_user;
   mod_risingwave_frontend_handler -> mod_risingwave_frontend_utils;
+  mod_risingwave_frontend_handler -> mod_risingwave_meta_model_table;
   mod_risingwave_frontend_handler -> mod_risingwave_sqlparser_ast;
+  mod_risingwave_frontend_handler -> mod_risingwave_sqlparser_parser_v2;
   mod_risingwave_frontend_handler -> mod_risingwave_sqlparser_test_utils;
   mod_risingwave_frontend_handler -> mod_risingwave_stream_executor;
   mod_risingwave_frontend_optimizer -> mod_risingwave_batch_executors_executor;
@@ -929,9 +828,9 @@ digraph architecture {
   mod_risingwave_frontend_scheduler -> mod_risingwave_frontend_session;
   mod_risingwave_frontend_scheduler -> mod_risingwave_sqlparser_test_utils;
   mod_risingwave_frontend_session -> mod_pgwire_pg_server;
-  mod_risingwave_frontend_session -> mod_pgwire_types;
   mod_risingwave_frontend_session -> mod_risingwave_common_catalog;
   mod_risingwave_frontend_session -> mod_risingwave_common_config;
+  mod_risingwave_frontend_session -> mod_risingwave_common_row;
   mod_risingwave_frontend_session -> mod_risingwave_common_session_config;
   mod_risingwave_frontend_session -> mod_risingwave_frontend_catalog;
   mod_risingwave_frontend_session -> mod_risingwave_frontend_monitor;
@@ -943,6 +842,7 @@ digraph architecture {
   mod_risingwave_frontend_user -> mod_risingwave_common_catalog;
   mod_risingwave_frontend_user -> mod_risingwave_expr_impl_scalar;
   mod_risingwave_frontend_user -> mod_risingwave_sqlparser_ast;
+  mod_risingwave_frontend_utils -> mod_risingwave_common_types;
   mod_risingwave_frontend_utils -> mod_risingwave_connector_with_options;
   mod_risingwave_frontend_utils -> mod_risingwave_frontend_catalog;
   mod_risingwave_frontend_utils -> mod_risingwave_frontend_session;
@@ -972,6 +872,7 @@ digraph architecture {
   mod_risingwave_hummock_trace_collector -> mod_risingwave_dml_txn_channel;
   mod_risingwave_hummock_trace_lib -> mod_risingwave_stream_executor;
   mod_risingwave_hummock_trace_record -> mod_risingwave_hummock_trace_opts;
+  mod_risingwave_java_binding_bin -> mod_risingwave_common_array;
   mod_risingwave_java_binding_hummock_iterator -> mod_risingwave_common_util;
   mod_risingwave_java_binding_hummock_iterator -> mod_risingwave_storage_hummock;
   mod_risingwave_java_binding_lib -> mod_risingwave_jni_core_lib;
@@ -985,7 +886,6 @@ digraph architecture {
   mod_risingwave_meta_backup_restore -> mod_risingwave_common_config;
   mod_risingwave_meta_backup_restore -> mod_risingwave_meta_controller;
   mod_risingwave_meta_barrier -> mod_risingwave_common_bitmap;
-  mod_risingwave_meta_barrier -> mod_risingwave_common_catalog;
   mod_risingwave_meta_barrier -> mod_risingwave_hummock_trace_replay;
   mod_risingwave_meta_barrier -> mod_risingwave_meta_controller;
   mod_risingwave_meta_barrier -> mod_risingwave_meta_manager;
@@ -1007,7 +907,6 @@ digraph architecture {
   mod_risingwave_meta_controller -> mod_risingwave_meta_model_migration_m20240617_070131_index_column_properties;
   mod_risingwave_meta_controller -> mod_risingwave_meta_model_migration_m20250514_114514_dispatcher_type_mapping;
   mod_risingwave_meta_controller -> mod_risingwave_meta_model_migration_m20250528_064717_barrier_interval_per_database;
-  mod_risingwave_meta_controller -> mod_risingwave_meta_model_object;
   mod_risingwave_meta_controller -> mod_risingwave_meta_model_streaming_job;
   mod_risingwave_meta_controller -> mod_risingwave_sqlparser_ast;
   mod_risingwave_meta_controller -> mod_risingwave_sqlparser_parser;
@@ -1015,8 +914,6 @@ digraph architecture {
   mod_risingwave_meta_controller -> mod_simulator_entities;
   mod_risingwave_meta_hummock -> mod_prost_helpers_lib;
   mod_risingwave_meta_hummock -> mod_risingwave_common_catalog;
-  mod_risingwave_meta_hummock -> mod_risingwave_common_config;
-  mod_risingwave_meta_hummock -> mod_risingwave_common_util;
   mod_risingwave_meta_hummock -> mod_risingwave_expr_impl_scalar;
   mod_risingwave_meta_hummock -> mod_risingwave_hummock_sdk_compact_task;
   mod_risingwave_meta_hummock -> mod_risingwave_hummock_sdk_compaction_group;
@@ -1036,6 +933,7 @@ digraph architecture {
   mod_risingwave_meta_manager -> mod_risingwave_connector_sink;
   mod_risingwave_meta_manager -> mod_risingwave_dml_txn_channel;
   mod_risingwave_meta_manager -> mod_risingwave_stream_executor;
+  mod_risingwave_meta_model_migration_m20231008_020431_hummock -> mod_risingwave_meta_model;
   mod_risingwave_meta_model_streaming_job -> mod_risingwave_meta_model_lib;
   mod_risingwave_meta_node_server -> mod_risingwave_common_session_config;
   mod_risingwave_meta_node_server -> mod_risingwave_common_telemetry;
@@ -1050,6 +948,7 @@ digraph architecture {
   mod_risingwave_meta_stream -> mod_risingwave_common_catalog;
   mod_risingwave_meta_stream -> mod_risingwave_connector_sink;
   mod_risingwave_meta_stream -> mod_risingwave_connector_source;
+  mod_risingwave_meta_stream -> mod_risingwave_frontend_handler;
   mod_risingwave_meta_stream -> mod_risingwave_frontend_optimizer;
   mod_risingwave_meta_stream -> mod_risingwave_hummock_trace_replay;
   mod_risingwave_meta_stream -> mod_risingwave_meta_barrier;
@@ -1079,7 +978,6 @@ digraph architecture {
   mod_risingwave_storage_hummock -> mod_risingwave_common_range;
   mod_risingwave_storage_hummock -> mod_risingwave_common_util;
   mod_risingwave_storage_hummock -> mod_risingwave_connector_sink;
-  mod_risingwave_storage_hummock -> mod_risingwave_dml_txn_channel;
   mod_risingwave_storage_hummock -> mod_risingwave_expr_impl_scalar;
   mod_risingwave_storage_hummock -> mod_risingwave_hummock_sdk_compact_task;
   mod_risingwave_storage_hummock -> mod_risingwave_hummock_sdk_key;
@@ -1108,7 +1006,7 @@ digraph architecture {
   mod_risingwave_storage_store -> mod_risingwave_storage_hummock;
   mod_risingwave_storage_store_impl -> mod_risingwave_storage_monitor;
   mod_risingwave_storage_store_impl -> mod_risingwave_storage_store;
-  mod_risingwave_storage_table -> mod_pgwire_net;
+  mod_risingwave_storage_table -> mod_pgwire_pg_response;
   mod_risingwave_storage_table -> mod_risingwave_common_util;
   mod_risingwave_storage_table -> mod_risingwave_storage_row_serde;
   mod_risingwave_storage_table -> mod_risingwave_storage_store;
@@ -1120,10 +1018,10 @@ digraph architecture {
   mod_risingwave_stream_common -> mod_risingwave_common_catalog;
   mod_risingwave_stream_common -> mod_risingwave_common_hash;
   mod_risingwave_stream_common -> mod_risingwave_common_row;
+  mod_risingwave_stream_common -> mod_risingwave_common_types;
   mod_risingwave_stream_common -> mod_risingwave_common_util;
   mod_risingwave_stream_common -> mod_risingwave_connector_sink;
   mod_risingwave_stream_common -> mod_risingwave_hummock_sdk_key;
-  mod_risingwave_stream_common -> mod_risingwave_storage_hummock;
   mod_risingwave_stream_common -> mod_risingwave_storage_row_serde;
   mod_risingwave_stream_common -> mod_risingwave_storage_store;
   mod_risingwave_stream_common -> mod_risingwave_stream_executor;

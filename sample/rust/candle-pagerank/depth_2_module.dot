@@ -1,5 +1,4 @@
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.8;
   nodesep=0.4;
@@ -7,100 +6,85 @@ digraph architecture {
   concentrate=true;
 
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#666666", arrowsize=0.7];
+  edge [color="#888888", arrowsize=0.7];
 
   labelloc=t;
   fontsize=16;
-  fontname="Helvetica Bold";
 
   subgraph cluster_candle_core {
     label="candle-core";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_candle_core_cpu_backend[label="cpu_backend", folder="/home/yibai/llmcc/sample/repos/candle/candle-core/src/cpu_backend"];
-    mod_candle_core_cuda_backend[label="cuda_backend", folder="/home/yibai/llmcc/sample/repos/candle/candle-core/src/cuda_backend"];
-    mod_candle_core_device[label="device", folder="/home/yibai/llmcc/sample/repos/candle/candle-core/src"];
-    mod_candle_core_dtype[label="dtype", folder="/home/yibai/llmcc/sample/repos/candle/candle-core/src"];
-    mod_candle_core_layout[label="layout", folder="/home/yibai/llmcc/sample/repos/candle/candle-core/src"];
-    mod_candle_core_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/candle/candle-core/src"];
-    mod_candle_core_quantized[label="quantized", folder="/home/yibai/llmcc/sample/repos/candle/candle-core/src/quantized"];
-    mod_candle_core_shape[label="shape", folder="/home/yibai/llmcc/sample/repos/candle/candle-core/src"];
-    mod_candle_core_tensor[label="tensor", folder="/home/yibai/llmcc/sample/repos/candle/candle-core/src"];
+    mod_candle_core_cpu_backend[label="cpu_backend", path="/home/yibai/llmcc/sample/repos/candle/candle-core/src/cpu_backend"];
+    mod_candle_core_cuda_backend[label="cuda_backend", path="/home/yibai/llmcc/sample/repos/candle/candle-core/src/cuda_backend"];
+    mod_candle_core_device[label="device", path="/home/yibai/llmcc/sample/repos/candle/candle-core/src"];
+    mod_candle_core_dtype[label="dtype", path="/home/yibai/llmcc/sample/repos/candle/candle-core/src"];
+    mod_candle_core_layout[label="layout", path="/home/yibai/llmcc/sample/repos/candle/candle-core/src"];
+    mod_candle_core_lib[label="lib", path="/home/yibai/llmcc/sample/repos/candle/candle-core/src"];
+    mod_candle_core_quantized[label="quantized", path="/home/yibai/llmcc/sample/repos/candle/candle-core/src/quantized"];
+    mod_candle_core_shape[label="shape", path="/home/yibai/llmcc/sample/repos/candle/candle-core/src"];
+    mod_candle_core_tensor[label="tensor", path="/home/yibai/llmcc/sample/repos/candle/candle-core/src"];
   }
 
   subgraph cluster_candle_metal_kernels {
     label="candle-metal-kernels";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_candle_metal_kernels_kernels[label="kernels", folder="/home/yibai/llmcc/sample/repos/candle/candle-metal-kernels/src/kernels"];
-    mod_candle_metal_kernels_metal[label="metal", folder="/home/yibai/llmcc/sample/repos/candle/candle-metal-kernels/src/metal"];
-    mod_candle_metal_kernels_tests[label="tests", folder="/home/yibai/llmcc/sample/repos/candle/candle-metal-kernels/src"];
-    mod_candle_metal_kernels_utils[label="utils", folder="/home/yibai/llmcc/sample/repos/candle/candle-metal-kernels/src"];
+    mod_candle_metal_kernels_kernels[label="kernels", path="/home/yibai/llmcc/sample/repos/candle/candle-metal-kernels/src/kernels"];
+    mod_candle_metal_kernels_metal[label="metal", path="/home/yibai/llmcc/sample/repos/candle/candle-metal-kernels/src/metal"];
+    mod_candle_metal_kernels_tests[label="tests", path="/home/yibai/llmcc/sample/repos/candle/candle-metal-kernels/src"];
+    mod_candle_metal_kernels_utils[label="utils", path="/home/yibai/llmcc/sample/repos/candle/candle-metal-kernels/src"];
   }
 
   subgraph cluster_candle_nn {
     label="candle-nn";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_candle_nn_func[label="func", folder="/home/yibai/llmcc/sample/repos/candle/candle-nn/src"];
-    mod_candle_nn_ops[label="ops", folder="/home/yibai/llmcc/sample/repos/candle/candle-nn/src"];
+    mod_candle_nn_func[label="func", path="/home/yibai/llmcc/sample/repos/candle/candle-nn/src"];
+    mod_candle_nn_ops[label="ops", path="/home/yibai/llmcc/sample/repos/candle/candle-nn/src"];
   }
 
   subgraph cluster_candle_onnx {
     label="candle-onnx";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_candle_onnx_eval[label="eval", folder="/home/yibai/llmcc/sample/repos/candle/candle-onnx/src"];
+    mod_candle_onnx_eval[label="eval", path="/home/yibai/llmcc/sample/repos/candle/candle-onnx/src"];
   }
 
   subgraph cluster_candle_pyo3 {
     label="candle-pyo3";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_candle_pyo3_lib[label="lib", folder="/home/yibai/llmcc/sample/repos/candle/candle-pyo3/src"];
+    mod_candle_pyo3_lib[label="lib", path="/home/yibai/llmcc/sample/repos/candle/candle-pyo3/src"];
   }
 
   subgraph cluster_candle_transformers {
     label="candle-transformers";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_candle_transformers_chinese_clip[label="chinese_clip", folder="/home/yibai/llmcc/sample/repos/candle/candle-transformers/src/models/chinese_clip"];
-    mod_candle_transformers_flux[label="flux", folder="/home/yibai/llmcc/sample/repos/candle/candle-transformers/src/models/flux"];
-    mod_candle_transformers_mimi[label="mimi", folder="/home/yibai/llmcc/sample/repos/candle/candle-transformers/src/models/mimi"];
-    mod_candle_transformers_mmdit[label="mmdit", folder="/home/yibai/llmcc/sample/repos/candle/candle-transformers/src/models/mmdit"];
-    mod_candle_transformers_models[label="models", folder="/home/yibai/llmcc/sample/repos/candle/candle-transformers/src/models"];
-    mod_candle_transformers_quantized_var_builder[label="quantized_var_builder", folder="/home/yibai/llmcc/sample/repos/candle/candle-transformers/src"];
-    mod_candle_transformers_segment_anything[label="segment_anything", folder="/home/yibai/llmcc/sample/repos/candle/candle-transformers/src/models/segment_anything"];
-    mod_candle_transformers_stable_diffusion[label="stable_diffusion", folder="/home/yibai/llmcc/sample/repos/candle/candle-transformers/src/models/stable_diffusion"];
-    mod_candle_transformers_z_image[label="z_image", folder="/home/yibai/llmcc/sample/repos/candle/candle-transformers/src/models/z_image"];
+    mod_candle_transformers_chinese_clip[label="chinese_clip", path="/home/yibai/llmcc/sample/repos/candle/candle-transformers/src/models/chinese_clip"];
+    mod_candle_transformers_flux[label="flux", path="/home/yibai/llmcc/sample/repos/candle/candle-transformers/src/models/flux"];
+    mod_candle_transformers_mimi[label="mimi", path="/home/yibai/llmcc/sample/repos/candle/candle-transformers/src/models/mimi"];
+    mod_candle_transformers_mmdit[label="mmdit", path="/home/yibai/llmcc/sample/repos/candle/candle-transformers/src/models/mmdit"];
+    mod_candle_transformers_models[label="models", path="/home/yibai/llmcc/sample/repos/candle/candle-transformers/src/models"];
+    mod_candle_transformers_quantized_var_builder[label="quantized_var_builder", path="/home/yibai/llmcc/sample/repos/candle/candle-transformers/src"];
+    mod_candle_transformers_segment_anything[label="segment_anything", path="/home/yibai/llmcc/sample/repos/candle/candle-transformers/src/models/segment_anything"];
+    mod_candle_transformers_stable_diffusion[label="stable_diffusion", path="/home/yibai/llmcc/sample/repos/candle/candle-transformers/src/models/stable_diffusion"];
+    mod_candle_transformers_z_image[label="z_image", path="/home/yibai/llmcc/sample/repos/candle/candle-transformers/src/models/z_image"];
   }
 
   subgraph cluster_candle_wasm_example_yolo {
     label="candle-wasm-example-yolo";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_candle_wasm_example_yolo_model[label="model", folder="/home/yibai/llmcc/sample/repos/candle/candle-wasm-examples/yolo/src"];
+    mod_candle_wasm_example_yolo_model[label="model", path="/home/yibai/llmcc/sample/repos/candle/candle-wasm-examples/yolo/src"];
   }
 
 

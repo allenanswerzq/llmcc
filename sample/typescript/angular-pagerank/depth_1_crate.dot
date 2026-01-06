@@ -1,5 +1,4 @@
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.8;
   nodesep=0.4;
@@ -7,31 +6,29 @@ digraph architecture {
   concentrate=true;
 
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#666666", arrowsize=0.7];
+  edge [color="#888888", arrowsize=0.7];
 
   labelloc=t;
   fontsize=16;
-  fontname="Helvetica Bold";
 
-  crate_angular_animations[label="angular_animations", folder="/home/yibai/llmcc/sample/repos/angular/packages/animations"];
-  crate_angular_benchpress[label="angular_benchpress", folder="/home/yibai/llmcc/sample/repos/angular/packages/benchpress"];
-  crate_angular_common[label="angular_common", folder="/home/yibai/llmcc/sample/repos/angular/packages/common"];
-  crate_angular_compiler[label="angular_compiler", folder="/home/yibai/llmcc/sample/repos/angular/packages/compiler"];
-  crate_angular_compiler_cli[label="angular_compiler-cli", folder="/home/yibai/llmcc/sample/repos/angular/packages/compiler-cli"];
-  crate_angular_core[label="angular_core", folder="/home/yibai/llmcc/sample/repos/angular/packages/core"];
-  crate_angular_docs[label="angular_docs", folder="/home/yibai/llmcc/sample/repos/angular/adev/shared-docs"];
-  crate_angular_forms[label="angular_forms", folder="/home/yibai/llmcc/sample/repos/angular/packages/forms"];
-  crate_angular_language_service[label="angular_language-service", folder="/home/yibai/llmcc/sample/repos/angular/packages/language-service"];
-  crate_angular_localize[label="angular_localize", folder="/home/yibai/llmcc/sample/repos/angular/packages/localize"];
-  crate_angular_platform_browser[label="angular_platform-browser", folder="/home/yibai/llmcc/sample/repos/angular/packages/platform-browser"];
-  crate_angular_platform_server[label="angular_platform-server", folder="/home/yibai/llmcc/sample/repos/angular/packages/platform-server"];
-  crate_angular_router[label="angular_router", folder="/home/yibai/llmcc/sample/repos/angular/packages/router"];
-  crate_angular_srcs[label="angular-srcs", folder="/home/yibai/llmcc/sample/repos/angular"];
-  crate_angular_upgrade[label="angular_upgrade", folder="/home/yibai/llmcc/sample/repos/angular/packages/upgrade"];
+  crate_angular_animations[label="angular_animations", path="/home/yibai/llmcc/sample/repos/angular/packages/animations"];
+  crate_angular_benchpress[label="angular_benchpress", path="/home/yibai/llmcc/sample/repos/angular/packages/benchpress"];
+  crate_angular_common[label="angular_common", path="/home/yibai/llmcc/sample/repos/angular/packages/common"];
+  crate_angular_compiler[label="angular_compiler", path="/home/yibai/llmcc/sample/repos/angular/packages/compiler"];
+  crate_angular_compiler_cli[label="angular_compiler-cli", path="/home/yibai/llmcc/sample/repos/angular/packages/compiler-cli"];
+  crate_angular_core[label="angular_core", path="/home/yibai/llmcc/sample/repos/angular/packages/core"];
+  crate_angular_docs[label="angular_docs", path="/home/yibai/llmcc/sample/repos/angular/adev/shared-docs"];
+  crate_angular_forms[label="angular_forms", path="/home/yibai/llmcc/sample/repos/angular/packages/forms"];
+  crate_angular_language_service[label="angular_language-service", path="/home/yibai/llmcc/sample/repos/angular/packages/language-service"];
+  crate_angular_localize[label="angular_localize", path="/home/yibai/llmcc/sample/repos/angular/packages/localize"];
+  crate_angular_platform_browser[label="angular_platform-browser", path="/home/yibai/llmcc/sample/repos/angular/packages/platform-browser"];
+  crate_angular_platform_server[label="angular_platform-server", path="/home/yibai/llmcc/sample/repos/angular/packages/platform-server"];
+  crate_angular_router[label="angular_router", path="/home/yibai/llmcc/sample/repos/angular/packages/router"];
+  crate_angular_srcs[label="angular-srcs", path="/home/yibai/llmcc/sample/repos/angular"];
+  crate_angular_upgrade[label="angular_upgrade", path="/home/yibai/llmcc/sample/repos/angular/packages/upgrade"];
 
   crate_angular_animations -> crate_angular_core;
   crate_angular_common -> crate_angular_core;
-  crate_angular_compiler -> crate_angular_compiler_cli;
   crate_angular_compiler -> crate_angular_core;
   crate_angular_compiler_cli -> crate_angular_compiler;
   crate_angular_compiler_cli -> crate_angular_core;
@@ -40,6 +37,7 @@ digraph architecture {
   crate_angular_core -> crate_angular_compiler_cli;
   crate_angular_core -> crate_angular_router;
   crate_angular_core -> crate_angular_srcs;
+  crate_angular_docs -> crate_angular_compiler;
   crate_angular_docs -> crate_angular_compiler_cli;
   crate_angular_docs -> crate_angular_core;
   crate_angular_forms -> crate_angular_core;
@@ -55,6 +53,5 @@ digraph architecture {
   crate_angular_router -> crate_angular_srcs;
   crate_angular_srcs -> crate_angular_compiler;
   crate_angular_srcs -> crate_angular_core;
-  crate_angular_srcs -> crate_angular_router;
   crate_angular_upgrade -> crate_angular_core;
 }

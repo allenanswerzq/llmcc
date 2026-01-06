@@ -1,5 +1,4 @@
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.8;
   nodesep=0.4;
@@ -7,39 +6,42 @@ digraph architecture {
   concentrate=true;
 
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#666666", arrowsize=0.7];
+  edge [color="#888888", arrowsize=0.7];
 
   labelloc=t;
   fontsize=16;
-  fontname="Helvetica Bold";
 
   subgraph cluster_babel_plugin_react_compiler {
     label="babel-plugin-react-compiler";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_babel_plugin_react_compiler_CompilerError[label="CompilerError", folder="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src"];
-    mod_babel_plugin_react_compiler_Entrypoint[label="Entrypoint", folder="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Entrypoint"];
-    mod_babel_plugin_react_compiler_HIR[label="HIR", folder="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR"];
-    mod_babel_plugin_react_compiler_Inference[label="Inference", folder="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Inference"];
-    mod_babel_plugin_react_compiler_Optimization[label="Optimization", folder="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Optimization"];
-    mod_babel_plugin_react_compiler_ReactiveScopes[label="ReactiveScopes", folder="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes"];
-    mod_babel_plugin_react_compiler_Transform[label="Transform", folder="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Transform"];
-    mod_babel_plugin_react_compiler_Utils[label="Utils", folder="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Utils"];
-    mod_babel_plugin_react_compiler_Validation[label="Validation", folder="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Validation"];
-    mod_babel_plugin_react_compiler___tests__[label="__tests__", folder="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/__tests__"];
+    mod_babel_plugin_react_compiler_CompilerError[label="CompilerError", path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src"];
+    mod_babel_plugin_react_compiler_Entrypoint[label="Entrypoint", path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Entrypoint"];
+    mod_babel_plugin_react_compiler_HIR[label="HIR", path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/HIR"];
+    mod_babel_plugin_react_compiler_Inference[label="Inference", path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Inference"];
+    mod_babel_plugin_react_compiler_Optimization[label="Optimization", path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Optimization"];
+    mod_babel_plugin_react_compiler_ReactiveScopes[label="ReactiveScopes", path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/ReactiveScopes"];
+    mod_babel_plugin_react_compiler_Transform[label="Transform", path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Transform"];
+    mod_babel_plugin_react_compiler_Utils[label="Utils", path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Utils"];
+    mod_babel_plugin_react_compiler_Validation[label="Validation", path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/Validation"];
+    mod_babel_plugin_react_compiler___tests__[label="__tests__", path="/home/yibai/llmcc/sample/repos/react/compiler/packages/babel-plugin-react-compiler/src/__tests__"];
+  }
+
+  subgraph cluster_react_mcp_server {
+    label="react-mcp-server";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_react_mcp_server_utils[label="utils", path="/home/yibai/llmcc/sample/repos/react/compiler/packages/react-mcp-server/src/utils"];
   }
 
   subgraph cluster_snap {
     label="snap";
     style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
+    bgcolor="#f8f8f8";
 
-    mod_snap_sprout[label="sprout", folder="/home/yibai/llmcc/sample/repos/react/compiler/packages/snap/src/sprout"];
+    mod_snap_sprout[label="sprout", path="/home/yibai/llmcc/sample/repos/react/compiler/packages/snap/src/sprout"];
   }
 
 
@@ -50,12 +52,15 @@ digraph architecture {
   mod_babel_plugin_react_compiler_Entrypoint -> mod_babel_plugin_react_compiler_Utils;
   mod_babel_plugin_react_compiler_Entrypoint -> mod_babel_plugin_react_compiler_Validation;
   mod_babel_plugin_react_compiler_HIR -> mod_babel_plugin_react_compiler_Utils;
+  mod_babel_plugin_react_compiler_HIR -> mod_react_mcp_server_utils;
   mod_babel_plugin_react_compiler_Inference -> mod_babel_plugin_react_compiler_CompilerError;
   mod_babel_plugin_react_compiler_Inference -> mod_babel_plugin_react_compiler_HIR;
   mod_babel_plugin_react_compiler_Inference -> mod_babel_plugin_react_compiler_Utils;
+  mod_babel_plugin_react_compiler_Inference -> mod_react_mcp_server_utils;
   mod_babel_plugin_react_compiler_Optimization -> mod_babel_plugin_react_compiler_HIR;
   mod_babel_plugin_react_compiler_ReactiveScopes -> mod_babel_plugin_react_compiler_HIR;
   mod_babel_plugin_react_compiler_ReactiveScopes -> mod_babel_plugin_react_compiler_Utils;
+  mod_babel_plugin_react_compiler_ReactiveScopes -> mod_react_mcp_server_utils;
   mod_babel_plugin_react_compiler_Transform -> mod_babel_plugin_react_compiler_HIR;
   mod_babel_plugin_react_compiler_Validation -> mod_babel_plugin_react_compiler_CompilerError;
   mod_babel_plugin_react_compiler_Validation -> mod_babel_plugin_react_compiler_HIR;

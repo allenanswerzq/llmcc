@@ -31,7 +31,6 @@ pub fn process_request(req: &Request) {
 
 --- expect:arch-graph-depth-3 ---
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.6;
   nodesep=0.3;
@@ -43,14 +42,10 @@ digraph architecture {
 
   subgraph cluster_app {
     label="app";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
+    bgcolor="#f8f8f8";
 
     subgraph cluster_lib_rs {
       label="lib.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n5[label="process_request", full_path="$TMP/app/src/lib.rs:4", sym_ty="Function", shape=ellipse];
@@ -60,14 +55,10 @@ digraph architecture {
 
   subgraph cluster_types {
     label="types";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
+    bgcolor="#f8f8f8";
 
     subgraph cluster_lib_rs {
       label="lib.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n2[label="Request", full_path="$TMP/types/src/lib.rs:1", sym_ty="Struct", shape=box];
@@ -81,7 +72,6 @@ digraph architecture {
 
 --- expect:arch-graph-depth-2 ---
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.8;
   nodesep=0.4;
@@ -93,7 +83,6 @@ digraph architecture {
 
   labelloc=t;
   fontsize=16;
-  fontname="Helvetica Bold";
 
   mod_app_lib[label="app::lib", folder="$TMP/app/src"];
   mod_types_lib[label="types::lib", folder="$TMP/types/src"];
@@ -103,7 +92,6 @@ digraph architecture {
 
 --- expect:arch-graph-depth-1 ---
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.8;
   nodesep=0.4;
@@ -115,7 +103,6 @@ digraph architecture {
 
   labelloc=t;
   fontsize=16;
-  fontname="Helvetica Bold";
 
   crate_app[label="app", folder="$TMP/app"];
   crate_types[label="types", folder="$TMP/types"];

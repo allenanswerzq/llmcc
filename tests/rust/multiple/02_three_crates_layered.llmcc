@@ -198,7 +198,6 @@ pub fn handle_order(order: Order) -> bool {
 
 --- expect:arch-graph ---
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.6;
   nodesep=0.3;
@@ -210,14 +209,10 @@ digraph architecture {
 
   subgraph cluster_api {
     label="api";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
+    bgcolor="#f8f8f8";
 
     subgraph cluster_handlers_rs {
       label="handlers.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n51[label="handle_get_user", full_path="$TMP/api/src/handlers.rs:10", sym_ty="Function", shape=ellipse];
@@ -229,14 +224,10 @@ digraph architecture {
 
   subgraph cluster_domain {
     label="domain";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
+    bgcolor="#f8f8f8";
 
     subgraph cluster_models_rs {
       label="models.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n4[label="User", full_path="$TMP/domain/src/models.rs:1", sym_ty="Struct", shape=box];
@@ -248,14 +239,10 @@ digraph architecture {
 
   subgraph cluster_service {
     label="service";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
+    bgcolor="#f8f8f8";
 
     subgraph cluster_order_service_rs {
       label="order_service.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n42[label="process_order", full_path="$TMP/service/src/order_service.rs:8", sym_ty="Function", shape=ellipse];
@@ -263,8 +250,6 @@ digraph architecture {
 
     subgraph cluster_user_service_rs {
       label="user_service.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n29[label="get_user", full_path="$TMP/service/src/user_service.rs:8", sym_ty="Function", shape=ellipse];

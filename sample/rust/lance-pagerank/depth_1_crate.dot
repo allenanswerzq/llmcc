@@ -1,5 +1,4 @@
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.8;
   nodesep=0.4;
@@ -7,27 +6,27 @@ digraph architecture {
   concentrate=true;
 
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#666666", arrowsize=0.7];
+  edge [color="#888888", arrowsize=0.7];
 
   labelloc=t;
   fontsize=16;
-  fontname="Helvetica Bold";
 
-  crate_lance[label="lance", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance"];
-  crate_lance_core[label="lance-core", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-core"];
-  crate_lance_datafusion[label="lance-datafusion", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-datafusion"];
-  crate_lance_encoding[label="lance-encoding", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding"];
-  crate_lance_file[label="lance-file", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-file"];
-  crate_lance_index[label="lance-index", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-index"];
-  crate_lance_io[label="lance-io", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-io"];
-  crate_lance_jni[label="lance-jni", folder="/home/yibai/llmcc/sample/repos/lance/java/lance-jni"];
-  crate_lance_linalg[label="lance-linalg", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-linalg"];
-  crate_lance_namespace_impls[label="lance-namespace-impls", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls"];
-  crate_lance_table[label="lance-table", folder="/home/yibai/llmcc/sample/repos/lance/rust/lance-table"];
-  crate_pylance[label="pylance", folder="/home/yibai/llmcc/sample/repos/lance/python"];
+  crate_lance[label="lance", path="/home/yibai/llmcc/sample/repos/lance/rust/lance"];
+  crate_lance_core[label="lance-core", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core"];
+  crate_lance_datafusion[label="lance-datafusion", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-datafusion"];
+  crate_lance_encoding[label="lance-encoding", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding"];
+  crate_lance_file[label="lance-file", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file"];
+  crate_lance_index[label="lance-index", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index"];
+  crate_lance_io[label="lance-io", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io"];
+  crate_lance_jni[label="lance-jni", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni"];
+  crate_lance_linalg[label="lance-linalg", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-linalg"];
+  crate_lance_namespace_impls[label="lance-namespace-impls", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls"];
+  crate_lance_table[label="lance-table", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table"];
+  crate_pylance[label="pylance", path="/home/yibai/llmcc/sample/repos/lance/python"];
 
   crate_lance -> crate_lance_core;
   crate_lance -> crate_lance_datafusion;
+  crate_lance -> crate_lance_encoding;
   crate_lance -> crate_lance_index;
   crate_lance -> crate_lance_io;
   crate_lance -> crate_lance_linalg;
@@ -48,4 +47,5 @@ digraph architecture {
   crate_pylance -> crate_lance;
   crate_pylance -> crate_lance_core;
   crate_pylance -> crate_lance_index;
+  crate_pylance -> crate_lance_table;
 }

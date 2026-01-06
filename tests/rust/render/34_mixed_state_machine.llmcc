@@ -179,7 +179,6 @@ impl Transition<Idle> for Machine<Stopped> {
 
 --- expect:arch-graph ---
 digraph architecture {
-  // Layout settings
   rankdir=TB;
   ranksep=0.6;
   nodesep=0.3;
@@ -191,14 +190,10 @@ digraph architecture {
 
   subgraph cluster_sample {
     label="sample";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
+    bgcolor="#f8f8f8";
 
     subgraph cluster_machine_rs {
       label="machine.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n26[label="Machine", full_path="$TMP/sample/src/machine.rs:3", sym_ty="Struct", shape=box];
@@ -206,8 +201,6 @@ digraph architecture {
 
     subgraph cluster_states_rs {
       label="states.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n6[label="Idle", full_path="$TMP/sample/src/states.rs:1", sym_ty="Struct", shape=box];
@@ -218,8 +211,6 @@ digraph architecture {
 
     subgraph cluster_transitions_rs {
       label="transitions.rs";
-      style=rounded;
-      color="#aaaaaa";
       bgcolor="#fafafa";
 
       n34[label="Transition", full_path="$TMP/sample/src/transitions.rs:4", sym_ty="Trait", shape=box];
