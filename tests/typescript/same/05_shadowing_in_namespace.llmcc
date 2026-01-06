@@ -1,0 +1,74 @@
+===============================================================================
+shadowing-in-namespace
+===============================================================================
+Test that inner namespace definitions shadow outer definitions.
+lang: typescript
+
+--- file: src/lib.ts ---
+
+interface Error {
+    message: string;
+}
+
+namespace Inner {
+    // Inner Error shadows outer Error within this namespace
+    export interface Error {
+        code: number;
+    }
+
+    export class Handler {
+        // Should resolve to Inner.Error, not outer Error
+        error: Error;
+    }
+}
+
+class OuterHandler {
+    // Should resolve to outer Error
+    error: Error;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 Error
+    (field:3 message @type string)
+  )
+  (module:4 Inner (inline)
+    (interface:5 Error
+      (field:6 code @type number)
+    )
+    (class:7 Handler
+      (field:8 error @type:2 Error)
+    )
+  )
+  (class:9 OuterHandler
+    (field:10 error @type:2 Error)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_ts {
+    label="lib.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n7[label="Handler", full_path="$TMP/src/lib.ts:12", sym_ty="Struct", shape=box];
+    n9[label="OuterHandler", full_path="$TMP/src/lib.ts:18", sym_ty="Struct", shape=box];
+    n2[label="Error", full_path="$TMP/src/lib.ts:2", sym_ty="Interface", shape=box];
+  }
+
+
+  n2 -> n7 [from="field_type", to="struct"];
+  n2 -> n9 [from="field_type", to="struct"];
+}

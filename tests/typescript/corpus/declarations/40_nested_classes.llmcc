@@ -1,0 +1,36 @@
+===============================================================================
+nested-classes
+===============================================================================
+Nested class declarations.
+lang: typescript
+
+--- file: src/lib.ts ---
+class Outer {
+    static Inner = class {
+        value: number = 0;
+    };
+    
+    nested = class Nested {
+        name: string = "";
+    };
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 Outer
+    (field:3 Inner @type:3 Inner
+      (class:4 class {
+        value: number = 0;
+    }
+        (field:5 value @type number)
+      )
+    )
+    (field:6 nested @type:6 nested
+      (class:7 class Nested {
+        name: string = "";
+    }
+        (field:8 name @type string)
+      )
+    )
+  )
+)

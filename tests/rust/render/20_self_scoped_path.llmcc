@@ -23,17 +23,21 @@ pub struct Helper {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs))
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 utils)
+)
 
-(root:2 utils ($TMP/sample/src/utils.rs)
-  (class:3 Wrapper
-    (field:4 inner @type:6 Helper)
+(root:3 utils ($TMP/sample/src/utils.rs)
+  (module:4 helper)
+  (class:5 Wrapper
+    (field:6 inner @type:8 Helper)
+    (@tdep:8 Helper)
   )
 )
 
-(root:5 helper ($TMP/sample/src/utils/helper.rs)
-  (class:6 Helper
-    (field:7 id @type u32)
+(root:7 helper ($TMP/sample/src/utils/helper.rs)
+  (class:8 Helper
+    (field:9 id @type u32)
   )
 )
 
@@ -48,9 +52,6 @@ digraph architecture {
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
-
-  label="architecture graph";
-  labelloc=t;
 
   subgraph cluster_sample {
     label="sample";
@@ -70,7 +71,7 @@ digraph architecture {
         color="#aaaaaa";
         bgcolor="#fafafa";
 
-        n6[label="Helper", full_path="$TMP/sample/src/utils/helper.rs:1", sym_ty="Struct", shape=box];
+        n8[label="Helper", full_path="$TMP/sample/src/utils/helper.rs:1", sym_ty="Struct", shape=box];
       }
 
     }
@@ -81,11 +82,11 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n3[label="Wrapper", full_path="$TMP/sample/src/utils.rs:3", sym_ty="Struct", shape=box];
+      n5[label="Wrapper", full_path="$TMP/sample/src/utils.rs:3", sym_ty="Struct", shape=box];
     }
 
   }
 
 
-  n6 -> n3 [from="field_type", to="struct"];
+  n8 -> n5 [from="field_type", to="struct"];
 }

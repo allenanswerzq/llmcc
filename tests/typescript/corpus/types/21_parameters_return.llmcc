@@ -1,0 +1,26 @@
+===============================================================================
+parameters-return-types
+===============================================================================
+Parameters and ReturnType utility types.
+lang: typescript
+
+--- file: src/lib.ts ---
+function example(a: string, b: number): boolean {
+    return true;
+}
+
+type Params = Parameters<typeof example>;
+type Return = ReturnType<typeof example>;
+type FirstParam = Parameters<typeof example>[0];
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 example
+    (parameter:3 a @type string)
+    (parameter:4 b @type number)
+    (return:5 @type boolean)
+  )
+  (alias:6 Params)
+  (alias:7 Return)
+  (alias:8 FirstParam)
+)

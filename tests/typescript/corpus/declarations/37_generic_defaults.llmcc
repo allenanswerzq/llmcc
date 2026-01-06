@@ -1,0 +1,26 @@
+===============================================================================
+generic-defaults
+===============================================================================
+Generic type defaults.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface Container<T = string> {
+    value: T;
+}
+
+class Box<T = number, U = T> {
+    first: T | undefined;
+    second: U | undefined;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 Container
+    (field:3 value @type T)
+  )
+  (class:4 Box
+    (field:5 first @type T)
+    (field:6 second @type U)
+  )
+)

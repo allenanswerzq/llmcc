@@ -1,0 +1,56 @@
+===============================================================================
+non-null-assertion
+===============================================================================
+Non-null assertion expressions.
+lang: typescript
+
+--- file: src/lib.ts ---
+function getLength(s: string | null): number {
+    return s!.length;
+}
+
+interface User {
+    name: string;
+    address?: {
+        city: string;
+    };
+}
+
+function getCity(user: User): string {
+    return user.address!.city;
+}
+
+const element = document.getElementById("id")!;
+const value = map.get("key")!;
+
+class Container<T> {
+    private value: T | null = null;
+    
+    getValue(): T {
+        return this.value!;
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 getLength
+    (parameter:3 s @type string)
+    (return:4 @type number)
+  )
+  (interface:5 User
+    (field:6 name @type string)
+    (field:7 address @type:7 address
+      (field:8 city @type string)
+    )
+  )
+  (func:9 getCity
+    (parameter:10 user @type:5 User)
+    (return:11 @type string)
+  )
+  (class:14 Container
+    (field:15 value @type T)
+    (method:16 getValue
+      (return:17 @type T)
+    )
+  )
+)

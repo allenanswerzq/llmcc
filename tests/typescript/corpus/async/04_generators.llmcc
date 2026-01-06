@@ -1,0 +1,31 @@
+===============================================================================
+generators
+===============================================================================
+Generator functions.
+lang: typescript
+
+--- file: src/lib.ts ---
+function* counter(): Generator<number> {
+    let i = 0;
+    while (true) {
+        yield i++;
+    }
+}
+
+function* range(start: number, end: number): Generator<number> {
+    for (let i = start; i < end; i++) {
+        yield i;
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 counter
+    (return:3 @type number)
+  )
+  (func:4 range
+    (parameter:5 start @type number)
+    (parameter:6 end @type number)
+    (return:7 @type number)
+  )
+)

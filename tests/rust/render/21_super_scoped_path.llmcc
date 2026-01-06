@@ -23,8 +23,11 @@ mod inner {
   (class:2 Base
     (field:3 id @type u32)
   )
-  (class:4 Child
-    (field:5 base @type:2 Base)
+  (module:4 inner (inline)
+    (class:5 Child
+      (field:6 base @type:2 Base)
+      (@tdep:2 Base)
+    )
   )
 )
 
@@ -40,9 +43,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_sample {
     label="sample";
     style=rounded;
@@ -56,11 +56,11 @@ digraph architecture {
       bgcolor="#fafafa";
 
       n2[label="Base", full_path="$TMP/sample/src/lib.rs:1", sym_ty="Struct", shape=box];
-      n4[label="Child", full_path="$TMP/sample/src/lib.rs:6", sym_ty="Struct", shape=box];
+      n5[label="Child", full_path="$TMP/sample/src/lib.rs:6", sym_ty="Struct", shape=box];
     }
 
   }
 
 
-  n2 -> n4 [from="field_type", to="struct"];
+  n2 -> n5 [from="field_type", to="struct"];
 }

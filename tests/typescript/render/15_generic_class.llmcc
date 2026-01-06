@@ -1,0 +1,28 @@
+===============================================================================
+generic-class
+===============================================================================
+Test that generic classes with type parameters appear correctly.
+lang: typescript
+
+--- file: sample/src/lib.ts ---
+
+class Container<T> {
+    value: T;
+
+    get(): T {
+        return this.value;
+    }
+
+    set(value: T): void {
+        this.value = value;
+    }
+}
+
+class Box<T, U> {
+    first: T;
+    second: U;
+}
+
+--- expect:arch-graph ---
+digraph G {
+}

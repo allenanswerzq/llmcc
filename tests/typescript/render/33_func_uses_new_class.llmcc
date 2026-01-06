@@ -1,0 +1,107 @@
+===============================================================================
+func-uses-new-class
+===============================================================================
+Test that free functions using new Class() create type dependency edges.
+lang: typescript
+
+--- file: sample/src/lib.ts ---
+
+export class User {
+    id: number;
+    name: string;
+
+    initialize(): void {
+        this.id = 0;
+        this.name = "";
+    }
+}
+
+export class Order {
+    orderId: number;
+    amount: number;
+}
+
+export function createUser(): User {
+    const user = new User();
+    user.initialize();
+    return user;
+}
+
+export function createOrder(): Order {
+    const order = new Order();
+    return order;
+}
+
+export function foo()  {
+}
+
+export function createBoth(): User {
+    foo();
+    const user = new User();
+    const order = new Order();
+    return user;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.ts)
+  (class:2 User
+    (field:3 id @type number)
+    (field:4 name @type string)
+    (method:5 initialize
+      (return:6 @type void)
+    )
+  )
+  (class:7 Order
+    (field:8 orderId @type number)
+    (field:9 amount @type number)
+  )
+  (func:10 createUser
+    (return:11 @type:2 User)
+    (@tdep:2 User)
+  )
+  (func:14 createOrder
+    (return:15 @type:7 Order)
+    (@tdep:7 Order)
+  )
+  (func:17 foo)
+  (func:18 createBoth
+    (return:19 @type:2 User)
+    (@tdep:2 User)
+    (@tdep:7 Order)
+    (@fdep:17 foo)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_ts {
+    label="lib.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n7[label="Order", full_path="$TMP/sample/src/lib.ts:12", sym_ty="Struct", shape=box];
+    n10[label="createUser", full_path="$TMP/sample/src/lib.ts:17", sym_ty="Function", shape=ellipse];
+    n2[label="User", full_path="$TMP/sample/src/lib.ts:2", sym_ty="Struct", shape=box];
+    n14[label="createOrder", full_path="$TMP/sample/src/lib.ts:23", sym_ty="Function", shape=ellipse];
+    n17[label="foo", full_path="$TMP/sample/src/lib.ts:28", sym_ty="Function", shape=ellipse];
+    n18[label="createBoth", full_path="$TMP/sample/src/lib.ts:31", sym_ty="Function", shape=ellipse];
+  }
+
+
+  n10 -> n2 [from="func", to="output"];
+  n14 -> n7 [from="func", to="output"];
+  n18 -> n2 [from="func", to="output"];
+  n18 -> n7 [from="func", to="type_dep"];
+  n18 -> n17 [from="caller", to="callee"];
+}

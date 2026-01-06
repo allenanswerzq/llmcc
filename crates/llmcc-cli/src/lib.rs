@@ -5,7 +5,7 @@ use std::io;
 use std::time::Instant;
 
 use ignore::WalkBuilder;
-use tracing::info;
+use tracing::{info, warn};
 
 use llmcc_core::graph_builder::{GraphBuildOption, build_llmcc_graph};
 use llmcc_core::lang_def::{LanguageTrait, LanguageTraitImpl};
@@ -42,6 +42,12 @@ fn should_skip_dir(name: &str) -> bool {
             | "node_modules"
             | "third_party"
     )
+}
+
+/// Check if a file should be skipped due to size.
+/// Returns Some(reason) if the file should be skipped, None otherwise.
+fn should_skip_file(_path: &std::path::Path) -> Option<String> {
+    None
 }
 
 /// Generate a flamegraph from CPU profiling data
@@ -166,15 +172,26 @@ where
 
     let mut seen = HashSet::new();
     let mut requested_files = Vec::new();
+    let mut skipped_count = 0usize;
 
-    let mut add_path = |path: String| {
-        if seen.insert(path.clone()) {
-            requested_files.push(path);
+    let mut add_path = |path: &str| {
+        if seen.contains(path) {
+            return;
         }
+
+        // Check if file should be skipped due to size
+        if let Some(reason) = should_skip_file(std::path::Path::new(path)) {
+            warn!("Skipping {}: {}", path, reason);
+            skipped_count += 1;
+            return;
+        }
+
+        seen.insert(path.to_string());
+        requested_files.push(path.to_string());
     };
 
     for file in &opts.files {
-        add_path(file.clone());
+        add_path(file);
     }
 
     if !opts.dirs.is_empty() {
@@ -230,10 +247,14 @@ where
                 };
 
                 if supported_exts.contains(&ext) {
-                    add_path(path.to_string_lossy().into_owned());
+                    add_path(&path.to_string_lossy());
                 }
             }
         }
+    }
+
+    if skipped_count > 0 {
+        info!("Skipped {} files due to size limits", skipped_count);
     }
 
     info!(

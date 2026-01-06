@@ -22,11 +22,15 @@ mod outer {
 
 --- expect:block-graph ---
 (root:1 lib ($TMP/sample/src/lib.rs)
-  (class:2 Outer
-    (field:3 value @type i32)
-  )
-  (class:4 Inner
-    (field:5 data @type String)
+  (module:2 outer (inline)
+    (class:3 Outer
+      (field:4 value @type i32)
+    )
+    (module:5 inner (inline)
+      (class:6 Inner
+        (field:7 data @type String)
+      )
+    )
   )
 )
 

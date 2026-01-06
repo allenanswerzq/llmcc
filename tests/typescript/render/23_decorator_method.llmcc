@@ -1,0 +1,31 @@
+===============================================================================
+decorator-method
+===============================================================================
+Test that decorators on methods create edges.
+lang: typescript
+
+--- file: sample/src/lib.ts ---
+
+function Log() {
+    return function(target: any, key: string, descriptor: PropertyDescriptor) {
+        return descriptor;
+    };
+}
+
+function Validate() {
+    return function(target: any, key: string, descriptor: PropertyDescriptor) {
+        return descriptor;
+    };
+}
+
+class UserService {
+    @Log()
+    @Validate()
+    createUser(name: string): void {
+        console.log(name);
+    }
+}
+
+--- expect:arch-graph ---
+digraph G {
+}

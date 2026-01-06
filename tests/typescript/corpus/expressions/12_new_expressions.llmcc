@@ -1,0 +1,18 @@
+===============================================================================
+new-expressions
+===============================================================================
+New object instantiation expressions.
+lang: typescript
+
+--- file: src/lib.ts ---
+class Person { name: string = ""; }
+const p = new Person();
+const arr = new Array<number>(10);
+const date = new Date();
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 Person
+    (field:3 name @type string)
+  )
+)

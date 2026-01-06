@@ -1,0 +1,17 @@
+===============================================================================
+nonnullable
+===============================================================================
+NonNullable utility type.
+lang: typescript
+
+--- file: src/lib.ts ---
+type Nullable = string | number | null | undefined;
+type NonNull = NonNullable<Nullable>;
+type NoUndefined = NonNullable<string | undefined>;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (alias:2 Nullable)
+  (alias:3 NonNull)
+  (alias:4 NoUndefined)
+)

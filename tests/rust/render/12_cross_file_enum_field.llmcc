@@ -25,19 +25,22 @@ pub enum Message {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs))
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 data)
+  (module:3 message)
+)
 
-(root:2 data ($TMP/sample/src/data.rs)
-  (class:3 Payload
-    (field:4 bytes @type bytes)
+(root:4 data ($TMP/sample/src/data.rs)
+  (class:5 Payload
+    (field:6 bytes @type bytes)
   )
 )
 
-(root:5 message ($TMP/sample/src/message.rs)
-  (enum:6 Message
-    (field:7 Empty @type:6 Empty)
-    (field:8 Data @type:6 Data
-      (field:9 payload @type:3 Payload)
+(root:7 message ($TMP/sample/src/message.rs)
+  (enum:8 Message
+    (field:9 Empty)
+    (field:10 Data
+      (field:11 payload @type:5 Payload)
     )
   )
 )
@@ -54,9 +57,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_sample {
     label="sample";
     style=rounded;
@@ -69,7 +69,7 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n3[label="Payload", full_path="$TMP/sample/src/data.rs:1", sym_ty="Struct", shape=box];
+      n5[label="Payload", full_path="$TMP/sample/src/data.rs:1", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_message_rs {
@@ -78,11 +78,11 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n6[label="Message", full_path="$TMP/sample/src/message.rs:3", sym_ty="Enum", shape=box];
+      n8[label="Message", full_path="$TMP/sample/src/message.rs:3", sym_ty="Enum", shape=box];
     }
 
   }
 
 
-  n3 -> n6 [from="field_type", to="enum"];
+  n5 -> n8 [from="field_type", to="enum"];
 }

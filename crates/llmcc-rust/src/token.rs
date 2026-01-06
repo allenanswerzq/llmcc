@@ -81,6 +81,14 @@ impl LanguageTraitImpl for LangRust {
         &["rs"]
     }
 
+    fn manifest_name_impl() -> &'static str {
+        "Cargo.toml"
+    }
+
+    fn container_dirs_impl() -> &'static [&'static str] {
+        &["src"]
+    }
+
     /// Check if the given parse node is a Rust test attribute.
     /// Detects: #[test], #[cfg(test)], #[tokio::test], #[async_std::test], etc.
     fn is_test_attribute_impl(node: &dyn ParseNode, source: &[u8]) -> bool {

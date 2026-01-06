@@ -135,105 +135,114 @@ pub fn create_context(name: String) -> Context {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/core/src/lib.rs))
+(root:1 lib ($TMP/core/src/lib.rs)
+  (module:2 plugin)
+)
 
-(root:2 plugin ($TMP/core/src/plugin.rs)
-  (class:3 Context
-    (field:4 name @type String)
+(root:3 plugin ($TMP/core/src/plugin.rs)
+  (class:4 Context
+    (field:5 name @type String)
   )
-  (class:5 Event
-    (field:6 kind @type String)
-    (field:7 data @type String)
+  (class:6 Event
+    (field:7 kind @type String)
+    (field:8 data @type String)
   )
-  (trait:8 Plugin
-    (method:9 name
-      (parameter:10 self @type:8 Plugin)
-      (return:11 @type String)
+  (trait:9 Plugin
+    (method:10 name
+      (parameter:11 self @type:9 Plugin)
+      (return:12 @type String)
     )
-    (method:12 init
-      (parameter:13 self @type:8 Plugin)
-      (parameter:14 ctx @type:3 Context)
+    (method:13 init
+      (parameter:14 self @type:9 Plugin)
+      (parameter:15 ctx @type:4 Context)
     )
-    (method:15 handle
-      (parameter:16 self @type:8 Plugin)
-      (parameter:17 event @type:5 Event)
-      (return:18 @type:5 Event)
+    (method:16 handle
+      (parameter:17 self @type:9 Plugin)
+      (parameter:18 event @type:6 Event)
+      (return:19 @type:6 Event)
+      (@tdep:6 Event)
     )
   )
 )
 
-(root:19 lib ($TMP/plugin-a/src/lib.rs)
-  (class:20 PluginA
-    (field:21 name @type String)
+(root:20 lib ($TMP/plugin-a/src/lib.rs)
+  (class:21 PluginA
+    (field:22 name @type String)
   )
-  (impl:22 PluginA @type:20
-    (method:23 new
-      (return:24 @type:20 PluginA)
-    )
-  )
-  (impl:26 PluginA @type:20 @trait:8
-    (method:27 name
-      (parameter:28 self @type:20 PluginA)
-      (return:29 @type String)
-    )
-    (method:31 init
-      (parameter:32 self @type:20 PluginA)
-      (parameter:33 ctx @type:3 Context)
-    )
-    (method:34 handle
-      (parameter:35 self @type:20 PluginA)
-      (parameter:36 event @type:5 Event)
-      (return:37 @type:5 Event)
+  (impl:23 PluginA @type:21
+    (method:24 new
+      (return:25 @type:21 PluginA)
     )
   )
-)
-
-(root:38 lib ($TMP/plugin-b/src/lib.rs)
-  (class:39 PluginB
-    (field:40 initialized @type bool)
-  )
-  (impl:41 PluginB @type:39
-    (method:42 new
-      (return:43 @type:39 PluginB)
+  (impl:27 PluginA @type:21 @trait:9
+    (method:28 name
+      (parameter:29 self @type:21 PluginA)
+      (return:30 @type String)
     )
-  )
-  (impl:44 PluginB @type:39 @trait:8
-    (method:45 name
-      (parameter:46 self @type:39 PluginB)
-      (return:47 @type String)
+    (method:32 init
+      (parameter:33 self @type:21 PluginA)
+      (parameter:34 ctx @type:4 Context)
     )
-    (method:49 init
-      (parameter:50 self @type:39 PluginB)
-      (parameter:51 _ctx @type:3 Context)
-    )
-    (method:52 handle
-      (parameter:53 self @type:39 PluginB)
-      (parameter:54 event @type:5 Event)
-      (return:55 @type:5 Event)
+    (method:35 handle
+      (parameter:36 self @type:21 PluginA)
+      (parameter:37 event @type:6 Event)
+      (return:38 @type:6 Event)
+      (@tdep:6 Event)
     )
   )
 )
 
-(root:57 lib ($TMP/runtime/src/lib.rs)
-  (class:58 Runtime
-    (field:59 plugin_a @type:20 PluginA)
-    (field:60 plugin_b @type:39 PluginB)
+(root:39 lib ($TMP/plugin-b/src/lib.rs)
+  (class:40 PluginB
+    (field:41 initialized @type bool)
   )
-  (impl:61 Runtime @type:58
-    (method:62 new
-      (return:63 @type:58 Runtime)
-      (@tdep:20 PluginA)
-      (@tdep:39 PluginB)
-    )
-    (method:66 dispatch
-      (parameter:67 self @type:58 Runtime)
-      (parameter:68 event @type:5 Event)
-      (return:69 @type:5 Event)
+  (impl:42 PluginB @type:40
+    (method:43 new
+      (return:44 @type:40 PluginB)
     )
   )
-  (func:70 create_context
-    (parameter:71 name @type String)
-    (return:72 @type:3 Context)
+  (impl:45 PluginB @type:40 @trait:9
+    (method:46 name
+      (parameter:47 self @type:40 PluginB)
+      (return:48 @type String)
+    )
+    (method:50 init
+      (parameter:51 self @type:40 PluginB)
+      (parameter:52 _ctx @type:4 Context)
+    )
+    (method:53 handle
+      (parameter:54 self @type:40 PluginB)
+      (parameter:55 event @type:6 Event)
+      (return:56 @type:6 Event)
+      (@tdep:6 Event)
+    )
+  )
+)
+
+(root:58 lib ($TMP/runtime/src/lib.rs)
+  (class:59 Runtime
+    (field:60 plugin_a @type:21 PluginA)
+    (field:61 plugin_b @type:40 PluginB)
+    (@tdep:21 PluginA)
+    (@tdep:40 PluginB)
+  )
+  (impl:62 Runtime @type:59
+    (method:63 new
+      (return:64 @type:59 Runtime)
+      (@tdep:21 PluginA)
+      (@tdep:40 PluginB)
+    )
+    (method:67 dispatch
+      (parameter:68 self @type:59 Runtime)
+      (parameter:69 event @type:6 Event)
+      (return:70 @type:6 Event)
+      (@tdep:6 Event)
+    )
+  )
+  (func:71 create_context
+    (parameter:72 name @type String)
+    (return:73 @type:4 Context)
+    (@tdep:4 Context)
   )
 )
 
@@ -249,9 +258,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_core {
     label="core";
     style=rounded;
@@ -264,8 +270,8 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n3[label="Context", full_path="$TMP/core/src/plugin.rs:1", sym_ty="Struct", shape=box];
-      n8[label="Plugin", full_path="$TMP/core/src/plugin.rs:10", sym_ty="Trait", shape=box];
+      n4[label="Context", full_path="$TMP/core/src/plugin.rs:1", sym_ty="Struct", shape=box];
+      n9[label="Plugin", full_path="$TMP/core/src/plugin.rs:10", sym_ty="Trait", shape=box];
     }
 
   }
@@ -282,7 +288,7 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n20[label="PluginA", full_path="$TMP/plugin-a/src/lib.rs:3", sym_ty="Struct", shape=box];
+      n21[label="PluginA", full_path="$TMP/plugin-a/src/lib.rs:3", sym_ty="Struct", shape=box];
     }
 
   }
@@ -299,7 +305,7 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n39[label="PluginB", full_path="$TMP/plugin-b/src/lib.rs:3", sym_ty="Struct", shape=box];
+      n40[label="PluginB", full_path="$TMP/plugin-b/src/lib.rs:3", sym_ty="Struct", shape=box];
     }
 
   }
@@ -316,16 +322,16 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n70[label="create_context", full_path="$TMP/runtime/src/lib.rs:23", sym_ty="Function"];
-      n58[label="Runtime", full_path="$TMP/runtime/src/lib.rs:5", sym_ty="Struct", shape=box];
+      n71[label="create_context", full_path="$TMP/runtime/src/lib.rs:23", sym_ty="Function", shape=ellipse];
+      n59[label="Runtime", full_path="$TMP/runtime/src/lib.rs:5", sym_ty="Struct", shape=box];
     }
 
   }
 
 
-  n8 -> n20 [from="trait", to="impl"];
-  n8 -> n39 [from="trait", to="impl"];
-  n20 -> n58 [from="field_type", to="struct"];
-  n39 -> n58 [from="field_type", to="struct"];
-  n70 -> n3 [from="func", to="output"];
+  n9 -> n21 [from="trait", to="impl"];
+  n9 -> n40 [from="trait", to="impl"];
+  n21 -> n59 [from="field_type", to="struct"];
+  n40 -> n59 [from="field_type", to="struct"];
+  n71 -> n4 [from="func", to="output"];
 }

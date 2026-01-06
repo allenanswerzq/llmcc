@@ -1,0 +1,65 @@
+===============================================================================
+optional-properties
+===============================================================================
+Optional properties and parameters.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface Config {
+    required: string;
+    optional?: number;
+    readonly fixed: boolean;
+}
+
+interface User {
+    name: string;
+    email?: string;
+    phone?: string;
+}
+
+function greet(name: string, greeting?: string): string {
+    return `${greeting || "Hello"}, ${name}`;
+}
+
+function configure(host: string, port?: number, secure?: boolean): void {}
+
+class Settings {
+    theme?: string;
+    fontSize?: number;
+
+    constructor(theme?: string) {
+        this.theme = theme;
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 Config
+    (field:3 required @type string)
+    (field:4 optional @type number)
+    (field:5 fixed @type boolean)
+  )
+  (interface:6 User
+    (field:7 name @type string)
+    (field:8 email @type string)
+    (field:9 phone @type string)
+  )
+  (func:10 greet
+    (parameter:11 name @type string)
+    (parameter:12 greeting @type string)
+    (return:13 @type string)
+  )
+  (func:14 configure
+    (parameter:15 host @type string)
+    (parameter:16 port @type number)
+    (parameter:17 secure @type boolean)
+    (return:18 @type void)
+  )
+  (class:19 Settings
+    (field:20 theme @type string)
+    (field:21 fontSize @type number)
+    (method:22 constructor
+      (parameter:23 theme @type string)
+    )
+  )
+)

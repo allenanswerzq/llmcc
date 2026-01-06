@@ -1,0 +1,65 @@
+===============================================================================
+multiple-interface-impl
+===============================================================================
+Test that a class implementing multiple interfaces creates edges to all of them.
+lang: typescript
+
+--- file: sample/src/lib.ts ---
+
+interface Serializable {
+    serialize(): string;
+}
+
+interface Comparable {
+    compareTo(other: Comparable): number;
+}
+
+interface Cloneable {
+    clone(): Cloneable;
+}
+
+class Document implements Serializable, Comparable, Cloneable {
+    content: string;
+
+    serialize(): string {
+        return this.content;
+    }
+
+    compareTo(other: Comparable): number {
+        return 0;
+    }
+
+    clone(): Document {
+        return new Document();
+    }
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_ts {
+    label="lib.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n9[label="Cloneable", full_path="$TMP/sample/src/lib.ts:10", sym_ty="Interface", shape=box];
+    n12[label="Document", full_path="$TMP/sample/src/lib.ts:14", sym_ty="Struct", shape=box];
+    n2[label="Serializable", full_path="$TMP/sample/src/lib.ts:2", sym_ty="Interface", shape=box];
+    n5[label="Comparable", full_path="$TMP/sample/src/lib.ts:6", sym_ty="Interface", shape=box];
+  }
+
+
+  n2 -> n12 [from="interface", to="implements"];
+  n5 -> n12 [from="interface", to="implements"];
+  n9 -> n12 [from="interface", to="implements"];
+}

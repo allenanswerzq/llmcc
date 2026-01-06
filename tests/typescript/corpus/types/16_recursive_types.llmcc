@@ -1,0 +1,30 @@
+===============================================================================
+recursive-types
+===============================================================================
+Recursive type definitions.
+lang: typescript
+
+--- file: src/lib.ts ---
+type Tree<T> = {
+    value: T;
+    left?: Tree<T>;
+    right?: Tree<T>;
+};
+
+type JSONValue = 
+    | string 
+    | number 
+    | boolean 
+    | null 
+    | JSONValue[] 
+    | { [key: string]: JSONValue };
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (alias:2 Tree
+    (field:3 value @type T)
+    (field:4 left @type:2 Tree)
+    (field:5 right @type:2 Tree)
+  )
+  (alias:6 JSONValue)
+)

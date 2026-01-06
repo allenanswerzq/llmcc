@@ -77,80 +77,88 @@ impl<R: Repository<User>> UserService<R> {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs))
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 repository)
+  (module:3 service)
+  (module:4 models)
+  (module:5 impl_repos)
+)
 
-(root:2 models ($TMP/sample/src/models.rs)
-  (class:3 User
-    (field:4 id @type u64)
-    (field:5 name @type String)
+(root:6 models ($TMP/sample/src/models.rs)
+  (class:7 User
+    (field:8 id @type u64)
+    (field:9 name @type String)
   )
-  (class:6 Order
-    (field:7 id @type u64)
-    (field:8 user_id @type u64)
-    (field:9 total @type f64)
+  (class:10 Order
+    (field:11 id @type u64)
+    (field:12 user_id @type u64)
+    (field:13 total @type f64)
   )
 )
 
-(root:10 repository ($TMP/sample/src/repository.rs)
-  (trait:11 Repository
-    (method:12 find
-      (parameter:13 self @type:11 Repository)
-      (parameter:14 id @type u64)
-      (return:15)
+(root:14 repository ($TMP/sample/src/repository.rs)
+  (trait:15 Repository
+    (method:16 find
+      (parameter:17 self @type:15 Repository)
+      (parameter:18 id @type u64)
+      (return:19)
     )
-    (method:16 save
-      (parameter:17 self @type:11 Repository)
-      (parameter:18 item @type T)
-      (return:19 @type bool)
-    )
-  )
-)
-
-(root:20 impl_repos ($TMP/sample/src/impl_repos.rs)
-  (class:21 UserRepo
-    (field:22 connection @type String)
-  )
-  (class:23 OrderRepo
-    (field:24 connection @type String)
-  )
-  (impl:25 UserRepo @type:21 @trait:11
-    (method:26 find
-      (parameter:27 self @type:21 UserRepo)
-      (parameter:28 id @type u64)
-      (return:29)
-      (@tdep:3 User)
-    )
-    (method:30 save
-      (parameter:31 self @type:21 UserRepo)
-      (parameter:32 item @type:3 User)
-      (return:33 @type bool)
-    )
-  )
-  (impl:34 OrderRepo @type:23 @trait:11
-    (method:35 find
-      (parameter:36 self @type:23 OrderRepo)
-      (parameter:37 id @type u64)
-      (return:38)
-      (@tdep:6 Order)
-    )
-    (method:39 save
-      (parameter:40 self @type:23 OrderRepo)
-      (parameter:41 item @type:6 Order)
-      (return:42 @type bool)
+    (method:20 save
+      (parameter:21 self @type:15 Repository)
+      (parameter:22 item @type T)
+      (return:23 @type bool)
     )
   )
 )
 
-(root:43 service ($TMP/sample/src/service.rs)
-  (class:44 UserService
-    (field:45 repo @type:11 Repository)
+(root:24 impl_repos ($TMP/sample/src/impl_repos.rs)
+  (class:25 UserRepo
+    (field:26 connection @type String)
+    (@tdep:7 User)
   )
-  (impl:46 UserService @type:44
-    (method:47 get_user
-      (parameter:48 self @type:44 UserService)
-      (parameter:49 id @type u64)
-      (return:50)
-      (@tdep:3 User)
+  (class:27 OrderRepo
+    (field:28 connection @type String)
+    (@tdep:10 Order)
+  )
+  (impl:29 UserRepo @type:25 @trait:15
+    (method:30 find
+      (parameter:31 self @type:25 UserRepo)
+      (parameter:32 id @type u64)
+      (return:33)
+      (@tdep:7 User)
+    )
+    (method:34 save
+      (parameter:35 self @type:25 UserRepo)
+      (parameter:36 item @type:7 User)
+      (return:37 @type bool)
+    )
+  )
+  (impl:38 OrderRepo @type:27 @trait:15
+    (method:39 find
+      (parameter:40 self @type:27 OrderRepo)
+      (parameter:41 id @type u64)
+      (return:42)
+      (@tdep:10 Order)
+    )
+    (method:43 save
+      (parameter:44 self @type:27 OrderRepo)
+      (parameter:45 item @type:10 Order)
+      (return:46 @type bool)
+    )
+  )
+)
+
+(root:47 service ($TMP/sample/src/service.rs)
+  (class:48 UserService
+    (field:49 repo @type:15 Repository)
+    (@tdep:15 Repository)
+  )
+  (impl:50 UserService @type:48
+    (method:51 get_user
+      (parameter:52 self @type:48 UserService)
+      (parameter:53 id @type u64)
+      (return:54)
+      (@tdep:7 User)
     )
   )
 )
@@ -167,9 +175,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_sample {
     label="sample";
     style=rounded;
@@ -182,8 +187,8 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n21[label="UserRepo", full_path="$TMP/sample/src/impl_repos.rs:4", sym_ty="Struct", shape=box];
-      n23[label="OrderRepo", full_path="$TMP/sample/src/impl_repos.rs:8", sym_ty="Struct", shape=box];
+      n25[label="UserRepo", full_path="$TMP/sample/src/impl_repos.rs:4", sym_ty="Struct", shape=box];
+      n27[label="OrderRepo", full_path="$TMP/sample/src/impl_repos.rs:8", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_models_rs {
@@ -192,8 +197,8 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n3[label="User", full_path="$TMP/sample/src/models.rs:1", sym_ty="Struct", shape=box];
-      n6[label="Order", full_path="$TMP/sample/src/models.rs:6", sym_ty="Struct", shape=box];
+      n7[label="User", full_path="$TMP/sample/src/models.rs:1", sym_ty="Struct", shape=box];
+      n10[label="Order", full_path="$TMP/sample/src/models.rs:6", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_repository_rs {
@@ -202,7 +207,7 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n11[label="Repository", full_path="$TMP/sample/src/repository.rs:1", sym_ty="Trait", shape=box];
+      n15[label="Repository", full_path="$TMP/sample/src/repository.rs:1", sym_ty="Trait", shape=box];
     }
 
     subgraph cluster_service_rs {
@@ -211,15 +216,15 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n44[label="UserService", full_path="$TMP/sample/src/service.rs:4", sym_ty="Struct", shape=box];
+      n48[label="UserService", full_path="$TMP/sample/src/service.rs:4", sym_ty="Struct", shape=box];
     }
 
   }
 
 
-  n3 -> n21 [from="type_arg", to="impl"];
-  n6 -> n23 [from="type_arg", to="impl"];
-  n11 -> n21 [from="trait", to="impl"];
-  n11 -> n23 [from="trait", to="impl"];
-  n11 -> n44 [from="field_type", to="struct"];
+  n7 -> n25 [from="type_arg", to="impl"];
+  n10 -> n27 [from="type_arg", to="impl"];
+  n15 -> n25 [from="trait", to="impl"];
+  n15 -> n27 [from="trait", to="impl"];
+  n15 -> n48 [from="field_type", to="struct"];
 }

@@ -7,8 +7,21 @@ use llmcc_core::symbol::SymKind;
 /// Map SymKind to DOT shape.
 pub fn shape_for_kind(kind: Option<SymKind>) -> &'static str {
     match kind {
-        Some(SymKind::Struct | SymKind::Enum | SymKind::Trait) => "box",
-        Some(SymKind::Field) => "plaintext",
+        // Types: rectangle (box)
+        Some(
+            SymKind::Struct
+            | SymKind::Enum
+            | SymKind::Trait
+            | SymKind::Interface
+            | SymKind::TypeAlias,
+        ) => "box",
+        // Modules/Files: folder shape
+        Some(SymKind::Module | SymKind::File | SymKind::Namespace | SymKind::Crate) => "folder",
+        // Fields/Variables: plain text (minimal)
+        Some(SymKind::Field | SymKind::Variable) => "plaintext",
+        // Constants: diamond
+        Some(SymKind::Const | SymKind::Static) => "diamond",
+        // Functions/Methods/Closures: ellipse (oval)
         _ => "ellipse",
     }
 }
@@ -111,13 +124,6 @@ impl DotBuilder {
             let _ = write!(self.output, "{key}=\"{value}\"");
         }
         self.output.push_str("];\n");
-        self
-    }
-
-    /// Add a bidirectional edge.
-    pub fn edge_bidirectional(&mut self, from: &str, to: &str) -> &mut Self {
-        write_indent(&mut self.output, self.indent);
-        let _ = writeln!(self.output, "{from} -> {to} [dir=both];");
         self
     }
 

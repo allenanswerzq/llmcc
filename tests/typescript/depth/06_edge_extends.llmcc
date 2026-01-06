@@ -1,0 +1,117 @@
+===============================================================================
+edge-extends
+===============================================================================
+Test that interface/class extends creates correct edge.
+Child depends on parent.
+lang: typescript
+
+--- file: base/entity.ts ---
+
+export interface Entity {
+    id: number;
+    createdAt: Date;
+}
+
+export interface Timestamped {
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export class BaseModel {
+    id: number;
+}
+
+--- file: models/user.ts ---
+
+import { Entity, Timestamped, BaseModel } from "../base/entity";
+
+export interface User extends Entity, Timestamped {
+    email: string;
+    name: string;
+}
+
+export class UserModel extends BaseModel {
+    email: string;
+    name: string;
+}
+
+--- expect:block-graph ---
+(root:1 entity ($TMP/base/entity.ts)
+  (interface:2 Entity
+    (field:3 id @type number)
+    (field:4 createdAt @type Date)
+  )
+  (interface:5 Timestamped
+    (field:6 createdAt @type Date)
+    (field:7 updatedAt @type Date)
+  )
+  (class:8 BaseModel
+    (field:9 id @type number)
+  )
+)
+
+(root:10 user ($TMP/models/user.ts)
+  (interface:11 User @extends:2 Entity @extends:5 Timestamped
+    (field:12 email @type string)
+    (field:13 name @type string)
+  )
+  (class:14 UserModel @extends:8 BaseModel
+    (field:15 email @type string)
+    (field:16 name @type string)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_base {
+    label="base";
+    style=rounded;
+    color="#999999";
+    bgcolor="#f5f5f5";
+
+    subgraph cluster_entity_ts {
+      label="entity.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n8[label="BaseModel", full_path="$TMP/base/entity.ts:12", sym_ty="Struct", shape=box];
+      n2[label="Entity", full_path="$TMP/base/entity.ts:2", sym_ty="Interface", shape=box];
+      n5[label="Timestamped", full_path="$TMP/base/entity.ts:7", sym_ty="Interface", shape=box];
+    }
+
+  }
+
+  subgraph cluster_models {
+    label="models";
+    style=rounded;
+    color="#999999";
+    bgcolor="#f5f5f5";
+
+    subgraph cluster_user_ts {
+      label="user.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n11[label="User", full_path="$TMP/models/user.ts:4", sym_ty="Interface", shape=box];
+      n14[label="UserModel", full_path="$TMP/models/user.ts:9", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+
+  n2 -> n11 [from="base", to="extends"];
+  n5 -> n11 [from="base", to="extends"];
+  n8 -> n14 [from="base", to="extends"];
+}

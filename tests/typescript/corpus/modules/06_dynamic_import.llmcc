@@ -1,0 +1,17 @@
+===============================================================================
+dynamic-import
+===============================================================================
+Dynamic import expressions.
+lang: typescript
+
+--- file: src/lib.ts ---
+async function loadModule(): Promise<void> {
+    const module = await import("./dynamic");
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 loadModule
+    (return:3 @type void)
+  )
+)

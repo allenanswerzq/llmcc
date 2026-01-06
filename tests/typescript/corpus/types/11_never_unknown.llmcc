@@ -1,0 +1,32 @@
+===============================================================================
+never-unknown-types
+===============================================================================
+Never and unknown type declarations.
+lang: typescript
+
+--- file: src/lib.ts ---
+type Never = never;
+type Unknown = unknown;
+
+function throwError(): never {
+    throw new Error("error");
+}
+
+function handleUnknown(value: unknown): void {
+    if (typeof value === "string") {
+        console.log(value);
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (alias:2 Never)
+  (alias:3 Unknown)
+  (func:4 throwError
+    (return:5 @type never)
+  )
+  (func:7 handleUnknown
+    (parameter:8 value @type unknown)
+    (return:9 @type void)
+  )
+)

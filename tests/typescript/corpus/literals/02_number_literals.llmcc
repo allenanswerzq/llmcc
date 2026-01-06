@@ -1,0 +1,38 @@
+===============================================================================
+number-literals
+===============================================================================
+Functions returning number literals.
+lang: typescript
+
+--- file: src/lib.ts ---
+function getDecimal(): number {
+    return 42;
+}
+
+function getFloat(): number {
+    return 3.14;
+}
+
+function getHex(): number {
+    return 0xff;
+}
+
+function getBigInt(): bigint {
+    return 9007199254740991n;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 getDecimal
+    (return:3 @type number)
+  )
+  (func:4 getFloat
+    (return:5 @type number)
+  )
+  (func:6 getHex
+    (return:7 @type number)
+  )
+  (func:8 getBigInt
+    (return:9 @type bigint)
+  )
+)

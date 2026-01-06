@@ -1,0 +1,87 @@
+===============================================================================
+prefer-same-file
+===============================================================================
+Test that symbol resolution prefers types defined in the same file
+over types with the same name in other files.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod types;
+mod services;
+
+--- file: sample/src/types.rs ---
+
+pub struct Config {
+    pub global_value: i32,
+}
+
+--- file: sample/src/services.rs ---
+
+// Local Config in same file should be preferred
+pub struct Config {
+    pub local_value: String,
+}
+
+pub struct Service {
+    // Should resolve to local Config (this file), not types::Config
+    pub config: Config,
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 types)
+  (module:3 services)
+)
+
+(root:4 types ($TMP/sample/src/types.rs)
+  (class:5 Config
+    (field:6 global_value @type i32)
+  )
+)
+
+(root:7 services ($TMP/sample/src/services.rs)
+  (class:8 Config
+    (field:9 local_value @type String)
+  )
+  (class:10 Service
+    (field:11 config @type:8 Config)
+    (@tdep:8 Config)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_services_rs {
+      label="services.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n8[label="Config", full_path="$TMP/sample/src/services.rs:3", sym_ty="Struct", shape=box];
+      n10[label="Service", full_path="$TMP/sample/src/services.rs:7", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+
+  n8 -> n10 [from="field_type", to="struct"];
+}

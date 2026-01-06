@@ -1,0 +1,57 @@
+===============================================================================
+generic-classes
+===============================================================================
+Classes with type parameters.
+lang: typescript
+
+--- file: src/lib.ts ---
+class Box<T> {
+    private content: T;
+
+    constructor(value: T) {
+        this.content = value;
+    }
+
+    get(): T {
+        return this.content;
+    }
+}
+
+class Pair<T, U> {
+    constructor(public first: T, public second: U) {}
+}
+
+class Repository<T extends { id: number }> {
+    private items: T[];
+
+    add(item: T): void {
+        this.items.push(item);
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 Box
+    (field:3 content @type T)
+    (method:4 constructor
+      (parameter:5 value @type T)
+    )
+    (method:6 get
+      (return:7 @type T)
+    )
+  )
+  (class:8 Pair
+    (method:9 constructor
+      (parameter:10 first @type T)
+      (parameter:11 second @type U)
+    )
+  )
+  (class:12 Repository
+    (field:13 id @type number)
+    (field:14 items @type T)
+    (method:15 add
+      (parameter:16 item @type T)
+      (return:17 @type void)
+    )
+  )
+)

@@ -1,0 +1,60 @@
+===============================================================================
+keyof-expressions
+===============================================================================
+Keyof operator in type positions.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface Person {
+    name: string;
+    age: number;
+    email: string;
+}
+
+type PersonKey = keyof Person;
+
+function getProperty<T, K extends keyof T>(obj: T, key: K): T[K] {
+    return obj[key];
+}
+
+function setProperty<T, K extends keyof T>(obj: T, key: K, value: T[K]): void {
+    obj[key] = value;
+}
+
+type Keys<T> = keyof T;
+type Values<T> = T[keyof T];
+
+interface Config {
+    host: string;
+    port: number;
+}
+
+type ConfigKey = keyof Config;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 Person
+    (field:3 name @type string)
+    (field:4 age @type number)
+    (field:5 email @type string)
+  )
+  (alias:6 PersonKey)
+  (func:7 getProperty
+    (parameter:8 obj @type T)
+    (parameter:9 key @type T)
+    (return:10 @type T)
+  )
+  (func:11 setProperty
+    (parameter:12 obj @type T)
+    (parameter:13 key @type T)
+    (parameter:14 value @type T)
+    (return:15 @type void)
+  )
+  (alias:16 Keys)
+  (alias:17 Values)
+  (interface:18 Config
+    (field:19 host @type string)
+    (field:20 port @type number)
+  )
+  (alias:21 ConfigKey)
+)

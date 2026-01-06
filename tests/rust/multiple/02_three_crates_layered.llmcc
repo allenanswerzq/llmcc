@@ -103,85 +103,96 @@ pub fn handle_order(order: Order) -> bool {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/domain/src/lib.rs))
+(root:1 lib ($TMP/domain/src/lib.rs)
+  (module:2 models)
+)
 
-(root:2 models ($TMP/domain/src/models.rs)
-  (class:3 User
-    (field:4 id @type u64)
-    (field:5 email @type String)
+(root:3 models ($TMP/domain/src/models.rs)
+  (class:4 User
+    (field:5 id @type u64)
+    (field:6 email @type String)
   )
-  (class:6 Order
-    (field:7 id @type u64)
-    (field:8 user_id @type u64)
-    (field:9 amount @type f64)
+  (class:7 Order
+    (field:8 id @type u64)
+    (field:9 user_id @type u64)
+    (field:10 amount @type f64)
   )
-  (enum:10 OrderStatus
-    (field:11 Pending @type:10 Pending)
-    (field:12 Confirmed @type:10 Confirmed)
-    (field:13 Shipped @type:10 Shipped)
-    (field:14 Delivered @type:10 Delivered)
+  (enum:11 OrderStatus
+    (field:12 Pending)
+    (field:13 Confirmed)
+    (field:14 Shipped)
+    (field:15 Delivered)
   )
 )
 
-(root:15 lib ($TMP/service/src/lib.rs))
+(root:16 lib ($TMP/service/src/lib.rs)
+  (module:17 user_service)
+  (module:18 order_service)
+)
 
-(root:16 user_service ($TMP/service/src/user_service.rs)
-  (trait:17 UserRepository
-    (method:18 find_by_id
-      (parameter:19 self @type:17 UserRepository)
-      (parameter:20 id @type u64)
-      (return:21)
-      (@tdep:3 User)
+(root:19 user_service ($TMP/service/src/user_service.rs)
+  (trait:20 UserRepository
+    (method:21 find_by_id
+      (parameter:22 self @type:20 UserRepository)
+      (parameter:23 id @type u64)
+      (return:24)
+      (@tdep:4 User)
     )
-    (method:22 save
-      (parameter:23 self @type:17 UserRepository)
-      (parameter:24 user @type:3 User)
-      (return:25 @type:3 User)
+    (method:25 save
+      (parameter:26 self @type:20 UserRepository)
+      (parameter:27 user @type:4 User)
+      (return:28 @type:4 User)
+      (@tdep:4 User)
     )
   )
-  (func:26 get_user
-    (parameter:27 id @type u64)
-    (return:28)
-    (@tdep:3 User)
+  (func:29 get_user
+    (parameter:30 id @type u64)
+    (return:31)
+    (@tdep:4 User)
   )
 )
 
-(root:29 order_service ($TMP/service/src/order_service.rs)
-  (trait:30 OrderRepository
-    (method:31 find_by_id
-      (parameter:32 self @type:30 OrderRepository)
-      (parameter:33 id @type u64)
-      (return:34)
-      (@tdep:6 Order)
+(root:32 order_service ($TMP/service/src/order_service.rs)
+  (trait:33 OrderRepository
+    (method:34 find_by_id
+      (parameter:35 self @type:33 OrderRepository)
+      (parameter:36 id @type u64)
+      (return:37)
+      (@tdep:7 Order)
     )
-    (method:35 update_status
-      (parameter:36 self @type:30 OrderRepository)
-      (parameter:37 id @type u64)
-      (parameter:38 status @type:10 OrderStatus)
+    (method:38 update_status
+      (parameter:39 self @type:33 OrderRepository)
+      (parameter:40 id @type u64)
+      (parameter:41 status @type:11 OrderStatus)
     )
   )
-  (func:39 process_order
-    (parameter:40 order @type:6 Order)
-    (return:41 @type:10 OrderStatus)
+  (func:42 process_order
+    (parameter:43 order @type:7 Order)
+    (return:44 @type:11 OrderStatus)
+    (@tdep:11 OrderStatus)
   )
 )
 
-(root:42 lib ($TMP/api/src/lib.rs))
+(root:45 lib ($TMP/api/src/lib.rs)
+  (module:46 handlers)
+)
 
-(root:43 handlers ($TMP/api/src/handlers.rs)
-  (class:44 ApiResponse
-    (field:45 success @type bool)
-    (field:46 data @type:3 User)
+(root:47 handlers ($TMP/api/src/handlers.rs)
+  (class:48 ApiResponse
+    (field:49 success @type bool)
+    (field:50 data @type:4 User)
+    (@tdep:4 User)
   )
-  (func:47 handle_get_user
-    (parameter:48 id @type u64)
-    (return:49 @type:44 ApiResponse)
-    (@fdep:26 get_user)
+  (func:51 handle_get_user
+    (parameter:52 id @type u64)
+    (return:53 @type:48 ApiResponse)
+    (@tdep:48 ApiResponse)
+    (@fdep:29 get_user)
   )
-  (func:52 handle_order
-    (parameter:53 order @type:6 Order)
-    (return:54 @type bool)
-    (@fdep:39 process_order)
+  (func:56 handle_order
+    (parameter:57 order @type:7 Order)
+    (return:58 @type bool)
+    (@fdep:42 process_order)
   )
 )
 
@@ -197,9 +208,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_api {
     label="api";
     style=rounded;
@@ -212,9 +220,9 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n47[label="handle_get_user", full_path="$TMP/api/src/handlers.rs:10", sym_ty="Function"];
-      n52[label="handle_order", full_path="$TMP/api/src/handlers.rs:15", sym_ty="Function"];
-      n44[label="ApiResponse", full_path="$TMP/api/src/handlers.rs:5", sym_ty="Struct", shape=box];
+      n51[label="handle_get_user", full_path="$TMP/api/src/handlers.rs:10", sym_ty="Function", shape=ellipse];
+      n56[label="handle_order", full_path="$TMP/api/src/handlers.rs:15", sym_ty="Function", shape=ellipse];
+      n48[label="ApiResponse", full_path="$TMP/api/src/handlers.rs:5", sym_ty="Struct", shape=box];
     }
 
   }
@@ -231,9 +239,9 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n3[label="User", full_path="$TMP/domain/src/models.rs:1", sym_ty="Struct", shape=box];
-      n10[label="OrderStatus", full_path="$TMP/domain/src/models.rs:12", sym_ty="Enum", shape=box];
-      n6[label="Order", full_path="$TMP/domain/src/models.rs:6", sym_ty="Struct", shape=box];
+      n4[label="User", full_path="$TMP/domain/src/models.rs:1", sym_ty="Struct", shape=box];
+      n11[label="OrderStatus", full_path="$TMP/domain/src/models.rs:12", sym_ty="Enum", shape=box];
+      n7[label="Order", full_path="$TMP/domain/src/models.rs:6", sym_ty="Struct", shape=box];
     }
 
   }
@@ -250,7 +258,7 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n39[label="process_order", full_path="$TMP/service/src/order_service.rs:8", sym_ty="Function"];
+      n42[label="process_order", full_path="$TMP/service/src/order_service.rs:8", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_user_service_rs {
@@ -259,18 +267,18 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n26[label="get_user", full_path="$TMP/service/src/user_service.rs:8", sym_ty="Function"];
+      n29[label="get_user", full_path="$TMP/service/src/user_service.rs:8", sym_ty="Function", shape=ellipse];
     }
 
   }
 
 
-  n3 -> n44 [from="type_dep", to="struct"];
-  n6 -> n39 [from="input", to="func"];
-  n6 -> n52 [from="input", to="func"];
-  n26 -> n3 [from="func", to="type_dep"];
-  n39 -> n10 [from="func", to="output"];
-  n47 -> n26 [from="caller", to="callee"];
-  n47 -> n44 [from="func", to="output"];
-  n52 -> n39 [from="caller", to="callee"];
+  n4 -> n48 [from="type_dep", to="struct"];
+  n7 -> n42 [from="input", to="func"];
+  n7 -> n56 [from="input", to="func"];
+  n29 -> n4 [from="func", to="type_dep"];
+  n42 -> n11 [from="func", to="output"];
+  n51 -> n29 [from="caller", to="callee"];
+  n51 -> n48 [from="func", to="output"];
+  n56 -> n42 [from="caller", to="callee"];
 }

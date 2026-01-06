@@ -1,0 +1,35 @@
+===============================================================================
+this-type
+===============================================================================
+This type in classes.
+lang: typescript
+
+--- file: src/lib.ts ---
+class Calculator {
+    value: number = 0;
+    
+    add(n: number): this {
+        this.value += n;
+        return this;
+    }
+    
+    multiply(n: number): this {
+        this.value *= n;
+        return this;
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 Calculator
+    (field:3 value @type number)
+    (method:4 add
+      (parameter:5 n @type number)
+      (return:6)
+    )
+    (method:7 multiply
+      (parameter:8 n @type number)
+      (return:9)
+    )
+  )
+)

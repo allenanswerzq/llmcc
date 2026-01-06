@@ -1,0 +1,23 @@
+===============================================================================
+break-continue
+===============================================================================
+Break and continue statements.
+lang: typescript
+
+--- file: src/lib.ts ---
+function search(arr: number[], target: number): number {
+    for (let i = 0; i < arr.length; i++) {
+        if (arr[i] < 0) continue;
+        if (arr[i] === target) break;
+    }
+    return -1;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 search
+    (parameter:3 arr @type number)
+    (parameter:4 target @type number)
+    (return:5 @type number)
+  )
+)

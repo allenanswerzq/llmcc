@@ -1,0 +1,55 @@
+===============================================================================
+cross-file-enum-field
+===============================================================================
+Test that cross-file enum field types create edges.
+lang: typescript
+
+--- file: sample/src/status.ts ---
+
+export enum Status {
+    Active,
+    Inactive,
+    Pending
+}
+
+--- file: sample/src/task.ts ---
+import { Status } from './status';
+
+export class Task {
+    name: string;
+    status: Status;
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_status_ts {
+    label="status.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n2[label="Status", full_path="$TMP/sample/src/status.ts:2", sym_ty="Enum", shape=box];
+  }
+
+  subgraph cluster_task_ts {
+    label="task.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n4[label="Task", full_path="$TMP/sample/src/task.ts:3", sym_ty="Struct", shape=box];
+  }
+
+
+  n2 -> n4 [from="field_type", to="struct"];
+}

@@ -9,7 +9,6 @@ use std::collections::HashMap;
 
 use crate::LangRust;
 use crate::token::AstVisitorRust;
-use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
 
 /// Check if a function is in a method context (parent is a type: Struct, Enum, Trait, or UnresolvedType).
 /// This is used to distinguish between free functions and methods inside impl blocks.
@@ -310,15 +309,15 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        let file_path = unit.file_path().expect("no file path found to compile");
         let start_depth = scopes.scope_depth();
+        let meta = unit.unit_meta();
 
         // Track crate scope for parent relationships
         let mut crate_scope: Option<&'tcx Scope<'tcx>> = None;
 
-        // Parse crate name and set up crate scope
-        if let Some(crate_name) = parse_crate_name(file_path)
-            && let Some(symbol) = scopes.lookup_or_insert_global(&crate_name, node, SymKind::Crate)
+        // Set up crate scope from unit metadata
+        if let Some(ref crate_name) = meta.package_name
+            && let Some(symbol) = scopes.lookup_or_insert_global(crate_name, node, SymKind::Crate)
         {
             tracing::trace!("insert crate symbol in globals '{}'", crate_name);
             scopes.push_scope_with(node, Some(symbol));
@@ -328,8 +327,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         // For files in subdirectories (like utils/helper.rs), create a module scope
         // for proper hierarchy traversal. The module scope has a Module symbol.
         let mut module_wrapper_scope: Option<&'tcx Scope<'tcx>> = None;
-        if let Some(module_name) = parse_module_name(file_path)
-            && let Some(module_sym) = scopes.lookup_or_insert_global(&module_name, node, SymKind::Module)
+        if let Some(ref module_name) = meta.module_name
+            && let Some(module_sym) = scopes.lookup_or_insert_global(module_name, node, SymKind::Module)
         {
             tracing::trace!("insert module symbol in globals '{}'", module_name);
             // Create a wrapper scope with the module symbol for hierarchy traversal.
@@ -344,11 +343,11 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         }
 
         let sn = node.as_scope().unwrap();
-        if let Some(file_name) = parse_file_name(file_path)
-            && let Some(file_sym) = scopes.lookup_or_insert(&file_name, node, SymKind::File)
+        if let Some(ref file_name) = meta.file_name
+            && let Some(file_sym) = scopes.lookup_or_insert(file_name, node, SymKind::File)
         {
             tracing::trace!("insert file symbol '{}' in current scope", file_name);
-            let arena_name = unit.cc.arena().alloc_str(&file_name);
+            let arena_name = unit.cc.arena().alloc_str(file_name);
             let ident = unit.cc.alloc_file_ident(next_hir_id(), arena_name, file_sym);
             ident.set_symbol(file_sym);
             sn.set_ident(ident);
@@ -377,7 +376,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             // in the crate scope that links to this file's scope.
             // This enables paths like `crate::models::Config` to resolve.
             if file_name != "lib" && file_name != "main" && module_wrapper_scope.is_none()
-                && let Some(mod_sym) = scopes.lookup_or_insert_global(&file_name, node, SymKind::Module)
+                && let Some(mod_sym) = scopes.lookup_or_insert_global(file_name, node, SymKind::Module)
             {
                 tracing::trace!("link file '{}' as module in crate scope", file_name);
                 mod_sym.set_scope(scope.id());

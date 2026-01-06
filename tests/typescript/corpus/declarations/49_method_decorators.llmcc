@@ -1,0 +1,37 @@
+===============================================================================
+method-decorators
+===============================================================================
+Method and property decorators.
+lang: typescript
+
+--- file: src/lib.ts ---
+function log(target: any, key: string): void {}
+function readonly(target: any, key: string): void {}
+
+class Service {
+    @log
+    method(): void {}
+    
+    @readonly
+    prop: string = "";
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 log
+    (parameter:3 target @type any)
+    (parameter:4 key @type string)
+    (return:5 @type void)
+  )
+  (func:6 readonly
+    (parameter:7 target @type any)
+    (parameter:8 key @type string)
+    (return:9 @type void)
+  )
+  (class:10 Service
+    (method:11 method
+      (return:12 @type void)
+    )
+    (field:13 prop @type string)
+  )
+)

@@ -1,0 +1,48 @@
+===============================================================================
+abstract-members
+===============================================================================
+Abstract class members.
+lang: typescript
+
+--- file: src/lib.ts ---
+abstract class Shape {
+    abstract get area(): number;
+    abstract draw(): void;
+    
+    describe(): string {
+        return "A shape";
+    }
+}
+
+class Circle extends Shape {
+    constructor(public radius: number) { super(); }
+    
+    get area(): number { return Math.PI * this.radius ** 2; }
+    draw(): void {}
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 Shape
+    (method:3 area
+      (return:4 @type number)
+    )
+    (method:5 draw
+      (return:6 @type void)
+    )
+    (method:7 describe
+      (return:8 @type string)
+    )
+  )
+  (class:9 Circle @extends:2 Shape
+    (method:10 constructor
+      (parameter:11 radius @type number)
+    )
+    (method:13 area
+      (return:14 @type number)
+    )
+    (method:15 draw
+      (return:16 @type void)
+    )
+  )
+)

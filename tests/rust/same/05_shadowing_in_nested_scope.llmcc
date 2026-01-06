@@ -1,0 +1,87 @@
+===============================================================================
+shadowing-in-nested-scope
+===============================================================================
+Test that inner scope definitions shadow outer scope definitions.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+
+pub struct Error {
+    pub message: String,
+}
+
+pub mod inner {
+    // Inner Error shadows outer Error within this module
+    pub struct Error {
+        pub code: i32,
+    }
+
+    pub struct Handler {
+        // Should resolve to inner::Error, not outer Error
+        pub error: Error,
+    }
+}
+
+pub struct OuterHandler {
+    // Should resolve to outer Error
+    pub error: Error,
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (class:2 Error
+    (field:3 message @type String)
+  )
+  (module:4 inner (inline)
+    (class:5 Error
+      (field:6 code @type i32)
+    )
+    (class:7 Handler
+      (field:8 error @type:5 Error)
+      (@tdep:5 Error)
+    )
+  )
+  (class:9 OuterHandler
+    (field:10 error @type:5 Error)
+    (@tdep:5 Error)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n7[label="Handler", full_path="$TMP/sample/src/lib.rs:12", sym_ty="Struct", shape=box];
+      n9[label="OuterHandler", full_path="$TMP/sample/src/lib.rs:18", sym_ty="Struct", shape=box];
+      n5[label="Error", full_path="$TMP/sample/src/lib.rs:8", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+
+  n5 -> n7 [from="field_type", to="struct"];
+  n5 -> n9 [from="field_type", to="struct"];
+}

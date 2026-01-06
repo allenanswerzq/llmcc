@@ -1,0 +1,85 @@
+===============================================================================
+prefer-import-over-global
+===============================================================================
+Test that explicitly imported types are preferred over same-named types
+that might be available through other means.
+lang: typescript
+
+--- file: src/v1.ts ---
+
+export interface Response {
+    data: string;
+    version: number;
+}
+
+--- file: src/v2.ts ---
+
+export interface Response {
+    payload: string;
+    status: number;
+}
+
+--- file: src/consumer.ts ---
+
+// Explicitly import v2::Response
+import { Response } from "./v2";
+
+export class Client {
+    // Should resolve to v2::Response due to explicit import
+    lastResponse: Response;
+}
+
+--- expect:block-graph ---
+(root:1 v1 ($TMP/src/v1.ts)
+  (interface:2 Response
+    (field:3 data @type string)
+    (field:4 version @type number)
+  )
+)
+
+(root:5 v2 ($TMP/src/v2.ts)
+  (interface:6 Response
+    (field:7 payload @type string)
+    (field:8 status @type number)
+  )
+)
+
+(root:9 consumer ($TMP/src/consumer.ts)
+  (class:10 Client
+    (field:11 lastResponse @type:6 Response)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_consumer_ts {
+    label="consumer.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n10[label="Client", full_path="$TMP/src/consumer.ts:5", sym_ty="Struct", shape=box];
+  }
+
+  subgraph cluster_v2_ts {
+    label="v2.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n6[label="Response", full_path="$TMP/src/v2.ts:2", sym_ty="Interface", shape=box];
+  }
+
+
+  n6 -> n10 [from="field_type", to="struct"];
+}

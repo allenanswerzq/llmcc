@@ -34,29 +34,32 @@ pub fn make_counter() -> impl Iterator {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs))
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 iterator)
+  (module:3 factory)
+)
 
-(root:2 iterator ($TMP/sample/src/iterator.rs)
-  (trait:3 Iterator
-    (method:4 next
-      (parameter:5 self @type:3 Iterator)
-      (return:6)
+(root:4 iterator ($TMP/sample/src/iterator.rs)
+  (trait:5 Iterator
+    (method:6 next
+      (parameter:7 self @type:5 Iterator)
+      (return:8)
     )
   )
 )
 
-(root:7 factory ($TMP/sample/src/factory.rs)
-  (class:8 Counter
-    (field:9 count @type i32)
+(root:9 factory ($TMP/sample/src/factory.rs)
+  (class:10 Counter
+    (field:11 count @type i32)
   )
-  (impl:10 Counter @type:8 @trait:3
-    (method:11 next
-      (parameter:12 self @type:8 Counter)
-      (return:13)
+  (impl:12 Counter @type:10 @trait:5
+    (method:13 next
+      (parameter:14 self @type:10 Counter)
+      (return:15)
     )
   )
-  (func:15 make_counter
-    (return:16 @type:3 Iterator)
+  (func:17 make_counter
+    (return:18 @type:5 Iterator)
   )
 )
 
@@ -72,9 +75,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_sample {
     label="sample";
     style=rounded;
@@ -87,8 +87,8 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n15[label="make_counter", full_path="$TMP/sample/src/factory.rs:13", sym_ty="Function"];
-      n8[label="Counter", full_path="$TMP/sample/src/factory.rs:3", sym_ty="Struct", shape=box];
+      n17[label="make_counter", full_path="$TMP/sample/src/factory.rs:13", sym_ty="Function", shape=ellipse];
+      n10[label="Counter", full_path="$TMP/sample/src/factory.rs:3", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_iterator_rs {
@@ -97,12 +97,12 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n3[label="Iterator", full_path="$TMP/sample/src/iterator.rs:1", sym_ty="Trait", shape=box];
+      n5[label="Iterator", full_path="$TMP/sample/src/iterator.rs:1", sym_ty="Trait", shape=box];
     }
 
   }
 
 
-  n3 -> n8 [from="trait", to="impl"];
-  n15 -> n3 [from="func", to="output"];
+  n5 -> n10 [from="trait", to="impl"];
+  n17 -> n5 [from="func", to="output"];
 }

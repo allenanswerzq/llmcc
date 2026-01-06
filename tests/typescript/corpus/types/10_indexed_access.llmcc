@@ -1,0 +1,26 @@
+===============================================================================
+indexed-access-types
+===============================================================================
+Indexed access types.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface Person {
+    name: string;
+    age: number;
+}
+
+type NameType = Person["name"];
+type AgeType = Person["age"];
+type KeyOfPerson = Person[keyof Person];
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 Person
+    (field:3 name @type string)
+    (field:4 age @type number)
+  )
+  (alias:5 NameType)
+  (alias:6 AgeType)
+  (alias:7 KeyOfPerson)
+)

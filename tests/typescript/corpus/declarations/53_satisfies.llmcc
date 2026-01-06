@@ -1,0 +1,21 @@
+===============================================================================
+satisfies-operator
+===============================================================================
+Satisfies operator for type checking.
+lang: typescript
+
+--- file: src/lib.ts ---
+type Colors = "red" | "green" | "blue";
+type RGB = [number, number, number];
+
+const palette = {
+    red: [255, 0, 0],
+    green: "#00ff00",
+    blue: [0, 0, 255]
+} satisfies Record<Colors, string | RGB>;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (alias:2 Colors)
+  (alias:3 RGB)
+)

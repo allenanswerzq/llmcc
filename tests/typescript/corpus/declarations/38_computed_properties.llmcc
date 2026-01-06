@@ -1,0 +1,28 @@
+===============================================================================
+computed-properties
+===============================================================================
+Computed property names.
+lang: typescript
+
+--- file: src/lib.ts ---
+const key = "dynamicKey";
+
+const obj = {
+    [key]: "value",
+    ["computed"]: 123
+};
+
+class WithComputed {
+    [Symbol.iterator](): Iterator<number> {
+        return [][Symbol.iterator]();
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 WithComputed
+    (method:3 Symbol
+      (return:4 @type number)
+    )
+  )
+)

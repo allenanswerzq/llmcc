@@ -1,0 +1,25 @@
+===============================================================================
+throw-statement
+===============================================================================
+Throw statements.
+lang: typescript
+
+--- file: src/lib.ts ---
+function fail(): never {
+    throw new Error("failure");
+}
+
+function validate(x: number): void {
+    if (x < 0) throw new RangeError("negative");
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 fail
+    (return:3 @type never)
+  )
+  (func:5 validate
+    (parameter:6 x @type number)
+    (return:7 @type void)
+  )
+)

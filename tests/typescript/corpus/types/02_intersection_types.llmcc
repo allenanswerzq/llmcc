@@ -1,0 +1,63 @@
+===============================================================================
+intersection-types
+===============================================================================
+Intersection type declarations.
+lang: typescript
+
+--- file: src/lib.ts ---
+type Named = { name: string };
+type Aged = { age: number };
+type Person = Named & Aged;
+
+type Serializable = { serialize(): string };
+type Comparable = { compare(other: any): number };
+type Entity = Serializable & Comparable;
+
+interface A {
+    a: string;
+}
+
+interface B {
+    b: number;
+}
+
+type AB = A & B;
+
+function merge<T, U>(obj1: T, obj2: U): T & U {
+    return { ...obj1, ...obj2 };
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (alias:2 Named
+    (field:3 name @type string)
+  )
+  (alias:4 Aged
+    (field:5 age @type number)
+  )
+  (alias:6 Person)
+  (alias:7 Serializable
+    (method:8 serialize
+      (return:9 @type string)
+    )
+  )
+  (alias:10 Comparable
+    (method:11 compare
+      (parameter:12 other @type any)
+      (return:13 @type number)
+    )
+  )
+  (alias:14 Entity)
+  (interface:15 A
+    (field:16 a @type string)
+  )
+  (interface:17 B
+    (field:18 b @type number)
+  )
+  (alias:19 AB)
+  (func:20 merge
+    (parameter:21 obj1 @type T)
+    (parameter:22 obj2 @type U)
+    (return:23 @type T)
+  )
+)

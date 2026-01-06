@@ -1,0 +1,24 @@
+===============================================================================
+try-catch-finally
+===============================================================================
+Try-catch-finally error handling.
+lang: typescript
+
+--- file: src/lib.ts ---
+function safe(fn: () => void): void {
+    try {
+        fn();
+    } catch (error) {
+        console.error(error);
+    } finally {
+        console.log("done");
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 safe
+    (parameter:3 fn @type void)
+    (return:4 @type void)
+  )
+)

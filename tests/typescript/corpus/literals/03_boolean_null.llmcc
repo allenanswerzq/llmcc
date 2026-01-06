@@ -1,0 +1,38 @@
+===============================================================================
+boolean-null-undefined
+===============================================================================
+Functions returning boolean, null and undefined.
+lang: typescript
+
+--- file: src/lib.ts ---
+function getTrue(): boolean {
+    return true;
+}
+
+function getFalse(): boolean {
+    return false;
+}
+
+function getNull(): null {
+    return null;
+}
+
+function getUndefined(): undefined {
+    return undefined;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 getTrue
+    (return:3 @type boolean)
+  )
+  (func:4 getFalse
+    (return:5 @type boolean)
+  )
+  (func:6 getNull
+    (return:7)
+  )
+  (func:8 getUndefined
+    (return:9)
+  )
+)

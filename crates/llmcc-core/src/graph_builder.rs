@@ -5,7 +5,7 @@ use crate::DynError;
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
 use crate::block::{
     BlockAlias, BlockCall, BlockClass, BlockConst, BlockEnum, BlockField, BlockFunc, BlockImpl,
-    BlockModule, BlockParameter, BlockReturn, BlockRoot, BlockTrait,
+    BlockInterface, BlockModule, BlockParameter, BlockReturn, BlockRoot, BlockTrait,
 };
 use crate::context::{CompileCtxt, CompileUnit};
 use crate::graph::UnitGraph;
@@ -71,15 +71,10 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             None => return (String::new(), None),
         };
 
-        // Special case: EnumVariant symbols should use their own name, not follow type_of
-        // This preserves the variant name (e.g., "None", "Some") rather than the parent enum
+        // Special case: EnumVariant symbols don't have a type - they ARE the enum's members
+        // Don't show @type for enum variants
         if sym.kind() == crate::symbol::SymKind::EnumVariant {
-            let type_name = self
-                .unit
-                .resolve_interned_owned(sym.name)
-                .unwrap_or_default();
-            // No block_id for enum variants - they don't define a type
-            return (type_name, None);
+            return (String::new(), None);
         }
 
         // First try type_of (for symbols that point to a type)
@@ -134,7 +129,27 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             return Some(sym);
         }
 
-        // Try identifier (for fields, parameters, etc.)
+        // For fields, use the language's name_field to avoid finding decorator identifiers
+        if kind == BlockKind::Field
+            && let Some(ident) = node.ident_by_field(&self.unit, Language::name_field())
+            && let Some(sym) = ident.opt_symbol()
+        {
+            return Some(sym);
+        }
+
+        // For parameters, prefer a bound variable identifier over decorator identifiers.
+        // This avoids cases like `handle(@inject req: string)` where `find_ident` returns `inject`.
+        if kind == BlockKind::Parameter {
+            for ident in node.collect_idents(&self.unit) {
+                if let Some(sym) = ident.opt_symbol()
+                    && matches!(sym.kind(), crate::symbol::SymKind::Variable)
+                {
+                    return Some(sym);
+                }
+            }
+        }
+
+        // Try identifier (for parameters, etc.)
         if let Some(ident) = node.find_ident(&self.unit)
             && let Some(sym) = ident.opt_symbol()
         {
@@ -190,13 +205,30 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 {
                     use crate::symbol::SymKind;
 
-                    if let Some(crate_sym) = scope.find_parent_by_kind(SymKind::Crate)
+                    // Use unit_meta for package/module info
+                    let meta = self.unit.unit_meta();
+                    if let Some(ref pkg_name) = meta.package_name {
+                        block.set_crate_name(pkg_name.clone());
+                    }
+                    if let Some(ref pkg_root) = meta.package_root {
+                        block.set_crate_root(pkg_root.display().to_string());
+                    }
+                    if let Some(ref mod_name) = meta.module_name {
+                        block.set_module_path(mod_name.clone());
+                    }
+                    if let Some(ref mod_root) = meta.module_root {
+                        block.set_module_root(mod_root.display().to_string());
+                    }
+
+                    // Fall back to scope chain if unit_meta is not populated
+                    if meta.package_name.is_none()
+                        && let Some(crate_sym) = scope.find_parent_by_kind(SymKind::Crate)
                         && let Some(name) = self.unit.cc.interner.resolve_owned(crate_sym.name)
                     {
                         block.set_crate_name(name);
                     }
-
-                    if let Some(module_sym) = scope.find_parent_by_kind(SymKind::Module)
+                    if meta.module_name.is_none()
+                        && let Some(module_sym) = scope.find_parent_by_kind(SymKind::Module)
                         && let Some(name) = self.unit.cc.interner.resolve_owned(module_sym.name)
                     {
                         block.set_module_path(name);
@@ -223,6 +255,11 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 let block = BlockTrait::new_with_symbol(id, node, parent, children, symbol);
                 let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
                 BasicBlock::Trait(block_ref)
+            }
+            BlockKind::Interface => {
+                let block = BlockInterface::new_with_symbol(id, node, parent, children, symbol);
+                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
+                BasicBlock::Interface(block_ref)
             }
             BlockKind::Call => {
                 // For call blocks, symbol is the callee (if resolved)
@@ -291,8 +328,12 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             }
             BlockKind::Field => {
                 let mut block = BlockField::new_with_symbol(id, node, parent, children, symbol);
-                // Find identifier name from children using ir.rs find_ident
-                if let Some(ident) = node.find_ident(&self.unit) {
+                // Find identifier name from children using ident_by_field with the language's name field
+                // This avoids finding decorator identifiers before the actual field name
+                if let Some(ident) = node.ident_by_field(&self.unit, Language::name_field()) {
+                    block.name = ident.name.to_string();
+                } else if let Some(ident) = node.find_ident(&self.unit) {
+                    // Fallback to find_ident for languages that don't use name field
                     block.name = ident.name.to_string();
                 }
                 // Resolve and set type info
@@ -303,8 +344,14 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             }
             BlockKind::Parameter => {
                 let mut block = BlockParameter::new_with_symbol(id, node, parent, children, symbol);
-                // Find identifier name from children using ir.rs find_ident
-                if let Some(ident) = node.find_ident(&self.unit) {
+                // Prefer variable identifier for parameter name to avoid decorator identifiers.
+                if let Some(ident) = node.collect_idents(&self.unit).into_iter().find(|ident| {
+                    ident
+                        .opt_symbol()
+                        .is_some_and(|sym| matches!(sym.kind(), crate::symbol::SymKind::Variable))
+                }) {
+                    block.name = ident.name.to_string();
+                } else if let Some(ident) = node.find_ident(&self.unit) {
                     block.name = ident.name.to_string();
                 } else if let Some(text) = node.find_text(&self.unit) {
                     // Fallback: look for text nodes like "self" keyword
@@ -541,6 +588,15 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                     }
                 }
             }
+            BasicBlock::Interface(iface_block) => {
+                for &(child_id, child_kind) in children {
+                    match child_kind {
+                        BlockKind::Field => iface_block.add_field(child_id),
+                        BlockKind::Func | BlockKind::Method => iface_block.add_method(child_id),
+                        _ => {}
+                    }
+                }
+            }
             BasicBlock::Impl(impl_block) => {
                 // Add methods to impl
                 for &(child_id, child_kind) in children {
@@ -573,6 +629,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 | BlockKind::Method
                 | BlockKind::Class
                 | BlockKind::Trait
+                | BlockKind::Interface
                 | BlockKind::Enum
                 | BlockKind::Const
                 | BlockKind::Impl
@@ -582,6 +639,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 | BlockKind::Call
                 | BlockKind::Root
                 | BlockKind::Alias
+                | BlockKind::Module
         )
     }
 }

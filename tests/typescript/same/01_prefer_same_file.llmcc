@@ -1,0 +1,66 @@
+===============================================================================
+prefer-same-file
+===============================================================================
+Test that symbol resolution prefers types defined in the same file
+over types with the same name in other files.
+lang: typescript
+
+--- file: src/types.ts ---
+
+export interface Config {
+    globalValue: number;
+}
+
+--- file: src/services.ts ---
+
+// Local Config in same file should be preferred
+interface Config {
+    localValue: string;
+}
+
+class Service {
+    // Should resolve to local Config (this file), not types::Config
+    config: Config;
+}
+
+--- expect:block-graph ---
+(root:1 types ($TMP/src/types.ts)
+  (interface:2 Config
+    (field:3 globalValue @type number)
+  )
+)
+
+(root:4 services ($TMP/src/services.ts)
+  (interface:5 Config
+    (field:6 localValue @type string)
+  )
+  (class:7 Service
+    (field:8 config @type:5 Config)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_services_ts {
+    label="services.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n5[label="Config", full_path="$TMP/src/services.ts:3", sym_ty="Interface", shape=box];
+    n7[label="Service", full_path="$TMP/src/services.ts:7", sym_ty="Struct", shape=box];
+  }
+
+
+  n5 -> n7 [from="field_type", to="struct"];
+}

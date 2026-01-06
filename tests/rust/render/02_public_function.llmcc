@@ -34,17 +34,20 @@ fn helper(s: Input) -> Output {
   (impl:5 Foo @type:4
     (method:6 new
       (return:7 @type:4 Foo)
+      (@tdep:4 Foo)
     )
   )
   (func:8 process_data
     (parameter:9 input @type:2 Input)
     (return:10 @type:3 Output)
+    (@tdep:3 Output)
     (@tdep:4 Foo)
     (@fdep:13 helper)
   )
   (func:13 helper
     (parameter:14 s @type:2 Input)
     (return:15 @type:3 Output)
+    (@tdep:3 Output)
   )
 )
 
@@ -60,9 +63,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_sample {
     label="sample";
     style=rounded;
@@ -75,11 +75,11 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n13[label="helper", full_path="$TMP/sample/src/lib.rs:14", sym_ty="Function"];
+      n13[label="helper", full_path="$TMP/sample/src/lib.rs:14", sym_ty="Function", shape=ellipse];
       n2[label="Input", full_path="$TMP/sample/src/lib.rs:2", sym_ty="Struct", shape=box];
       n3[label="Output", full_path="$TMP/sample/src/lib.rs:3", sym_ty="Enum", shape=box];
       n4[label="Foo", full_path="$TMP/sample/src/lib.rs:4", sym_ty="Struct", shape=box];
-      n8[label="process_data", full_path="$TMP/sample/src/lib.rs:9", sym_ty="Function"];
+      n8[label="process_data", full_path="$TMP/sample/src/lib.rs:9", sym_ty="Function", shape=ellipse];
     }
 
   }

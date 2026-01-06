@@ -1,0 +1,65 @@
+===============================================================================
+function-param-return-same-name
+===============================================================================
+Test resolution when function parameter type and return type have
+the same name but come from different modules.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod input;
+mod output;
+mod processor;
+
+--- file: sample/src/input.rs ---
+
+pub struct Data {
+    pub raw: Vec<u8>,
+}
+
+--- file: sample/src/output.rs ---
+
+pub struct Data {
+    pub processed: String,
+}
+
+--- file: sample/src/processor.rs ---
+
+use crate::input::Data as InputData;
+use crate::output::Data as OutputData;
+
+pub fn process(input: InputData) -> OutputData {
+    OutputData { processed: String::new() }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 input)
+  (module:3 output)
+  (module:4 processor)
+)
+
+(root:5 input ($TMP/sample/src/input.rs)
+  (class:6 Data
+    (field:7 raw @type raw)
+  )
+)
+
+(root:8 output ($TMP/sample/src/output.rs)
+  (class:9 Data
+    (field:10 processed @type String)
+  )
+)
+
+(root:11 processor ($TMP/sample/src/processor.rs)
+  (func:12 process
+    (parameter:13 input @type input)
+    (return:14)
+  )
+)
+
+--- expect:arch-graph ---
+digraph G {
+}

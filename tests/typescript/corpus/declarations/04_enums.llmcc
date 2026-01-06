@@ -1,0 +1,31 @@
+===============================================================================
+enums
+===============================================================================
+Basic enum declarations with explicit values.
+Note: Simple enum members without values are not yet captured as blocks.
+lang: typescript
+
+--- file: src/lib.ts ---
+enum Color {
+    Red = 0,
+    Green = 1,
+    Blue = 2
+}
+
+enum Status {
+    Active = 1,
+    Inactive = 0
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (enum:2 Color
+    (field:3 Red)
+    (field:4 Green)
+    (field:5 Blue)
+  )
+  (enum:6 Status
+    (field:7 Active)
+    (field:8 Inactive)
+  )
+)

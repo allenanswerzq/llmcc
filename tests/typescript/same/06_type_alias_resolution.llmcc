@@ -1,0 +1,70 @@
+===============================================================================
+type-alias-resolution
+===============================================================================
+Test that type aliases resolve correctly when there are same-named types.
+lang: typescript
+
+--- file: src/internal.ts ---
+
+export interface Error {
+    internalCode: number;
+}
+
+export type Result<T> = T | Error;
+
+--- file: src/public.ts ---
+
+interface Error {
+    userMessage: string;
+}
+
+// Public Result uses public Error
+type Result<T> = T | Error;
+
+export class Api {
+    lastError: Error;
+}
+
+--- expect:block-graph ---
+(root:1 internal ($TMP/src/internal.ts)
+  (interface:2 Error
+    (field:3 internalCode @type number)
+  )
+  (alias:4 Result)
+)
+
+(root:5 public ($TMP/src/public.ts)
+  (interface:6 Error
+    (field:7 userMessage @type string)
+  )
+  (alias:8 Result)
+  (class:9 Api
+    (field:10 lastError @type:6 Error)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_public_ts {
+    label="public.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n6[label="Error", full_path="$TMP/src/public.ts:2", sym_ty="Interface", shape=box];
+    n9[label="Api", full_path="$TMP/src/public.ts:9", sym_ty="Struct", shape=box];
+  }
+
+
+  n6 -> n9 [from="field_type", to="struct"];
+}

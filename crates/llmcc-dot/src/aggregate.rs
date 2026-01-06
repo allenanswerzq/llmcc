@@ -18,24 +18,25 @@ pub fn get_component_key(
     node: &RenderNode,
     depth: ComponentDepth,
 ) -> (String, String, &'static str) {
-    let (id, label, comp_type, _crate) = get_component_key_with_crate(node, depth, false);
+    let (id, label, comp_type, _crate, _folder) = get_component_key_with_crate(node, depth, false);
     (id, label, comp_type)
 }
 
 /// Get the component key for a node with optional short labels.
 ///
-/// Returns (component_id, component_label, component_type, crate_name).
+/// Returns (component_id, component_label, component_type, crate_name, folder).
 fn get_component_key_with_crate(
     node: &RenderNode,
     depth: ComponentDepth,
     short_labels: bool,
-) -> (String, String, &'static str, Option<String>) {
+) -> (String, String, &'static str, Option<String>, Option<String>) {
     match depth {
         ComponentDepth::Project => (
             "project".to_string(),
             "project".to_string(),
             "project",
             None,
+            None, // Project folder could be derived from any file's root
         ),
         ComponentDepth::Crate => {
             let crate_name = node
@@ -43,7 +44,9 @@ fn get_component_key_with_crate(
                 .clone()
                 .unwrap_or_else(|| "unknown".to_string());
             let id = format!("crate_{}", sanitize_id(&crate_name));
-            (id, crate_name.clone(), "crate", Some(crate_name))
+            // Use crate_root directly from the node (populated from package_registry)
+            let folder = node.crate_root.clone();
+            (id, crate_name.clone(), "crate", Some(crate_name), folder)
         }
         ComponentDepth::Module => {
             let crate_name = node
@@ -52,11 +55,23 @@ fn get_component_key_with_crate(
                 .unwrap_or_else(|| "unknown".to_string());
             let module_path = node.module_path.clone();
 
-            let (label, id, short) = if let Some(ref module) = module_path {
+            // Derive folder from location: "path/to/file.rs:42" -> "path/to"
+            let derive_folder = |loc: &str| -> Option<String> {
+                std::path::Path::new(loc.split(':').next().unwrap_or(loc))
+                    .parent()
+                    .map(|p| p.to_string_lossy().to_string())
+            };
+
+            let (label, id, short, folder) = if let Some(ref module) = module_path {
                 let full_label = format!("{crate_name}::{module}");
                 let short_label = module.clone();
                 let id = format!("mod_{}_{}", sanitize_id(&crate_name), sanitize_id(module));
-                (full_label, id, short_label)
+                // Use module_root if available, otherwise derive from location
+                let folder = node
+                    .module_root
+                    .clone()
+                    .or_else(|| node.location.as_ref().and_then(|loc| derive_folder(loc)));
+                (full_label, id, short_label, folder)
             } else {
                 let file_name = node
                     .file_name
@@ -76,15 +91,26 @@ fn get_component_key_with_crate(
                     sanitize_id(&crate_name),
                     sanitize_id(&file_name)
                 );
-                (full_label, id, short_label)
+                // For file-based modules, derive folder from location
+                let folder = node.location.as_ref().and_then(|loc| {
+                    std::path::Path::new(loc.split(':').next().unwrap_or(loc))
+                        .parent()
+                        .map(|p| p.to_string_lossy().to_string())
+                });
+                (full_label, id, short_label, folder)
             };
             let display_label = if short_labels { short } else { label };
-            (id, display_label, "module", Some(crate_name))
+            (id, display_label, "module", Some(crate_name), folder)
         }
         ComponentDepth::File => {
             let name = node.name.clone();
             let id = format!("node_{}", node.block_id.as_u32());
-            (id, name, "node", node.crate_name.clone())
+            let folder = node.location.as_ref().and_then(|loc| {
+                std::path::Path::new(loc.split(':').next().unwrap_or(loc))
+                    .parent()
+                    .map(|p| p.to_string_lossy().to_string())
+            });
+            (id, name, "node", node.crate_name.clone(), folder)
         }
     }
 }
@@ -107,20 +133,7 @@ pub fn render_aggregated_graph(
         compute_pagerank_components(project, &block_to_component, options.pagerank_top_k);
 
     // Aggregate edges between components
-    let mut component_edges = aggregate_edges(edges, &block_to_component);
-
-    // Detect and mark bidirectional edges
-    let bidirectional_pairs = detect_bidirectional_edges(&component_edges);
-
-    // Remove reverse edges from bidirectional pairs, merging their weights
-    for (a, b) in &bidirectional_pairs {
-        if let Some(reverse_weight) = component_edges.remove(&(b.clone(), a.clone())) {
-            // Add the reverse edge's weight to the canonical edge
-            if let Some(weight) = component_edges.get_mut(&(a.clone(), b.clone())) {
-                *weight += reverse_weight;
-            }
-        }
-    }
+    let component_edges = aggregate_edges(edges, &block_to_component);
 
     // Filter weak edges by weight threshold
     let component_edges = filter_weak_edges(component_edges);
@@ -137,7 +150,6 @@ pub fn render_aggregated_graph(
         depth,
         &filtered_nodes,
         &filtered_edges,
-        &bidirectional_pairs,
         options.cluster_by_crate && depth == ComponentDepth::Module,
     )
 }
@@ -158,19 +170,26 @@ fn build_component_mapping(
     let mut component_nodes = BTreeMap::new();
 
     for node in nodes {
-        let (id, label, component_type, crate_name) =
+        let (id, label, component_type, crate_name, folder) =
             get_component_key_with_crate(node, depth, short_labels);
         block_to_component.insert(node.block_id, id.clone());
 
         component_nodes
             .entry(id.clone())
-            .and_modify(|n: &mut AggregatedNode| n.node_count += 1)
+            .and_modify(|n: &mut AggregatedNode| {
+                n.node_count += 1;
+                // Update folder if not yet set
+                if n.folder.is_none() && folder.is_some() {
+                    n.folder = folder.clone();
+                }
+            })
             .or_insert(AggregatedNode {
                 id,
                 label,
                 component_type,
                 node_count: 1,
                 crate_name,
+                folder,
             });
     }
 
@@ -232,18 +251,18 @@ fn aggregate_edges(
                 continue;
             }
 
-            // Determine correct dependency direction based on edge type
+            // The reason we filp back is for aggregated graphs, to have correct relation
+            // for moudule and crates, becase we failed at the llmcc-collect, to able to draw
+            // file depth graph, like input -> func -> output, its not input crates depen on
+            // fun crate
             let (dep_from, dep_to) = match (edge.from_label, edge.to_label) {
-                // These edges need flipping: to_component depends on from_component
                 ("field_type", _)
                 | ("input", _)
                 | ("trait", _)
+                | ("interface", _)
+                | ("bound", _)
                 | ("type_arg", _)
                 | ("type_dep", _) => (to.clone(), from.clone()),
-                // These edges keep direction
-                ("caller", "callee") | ("func", "output") | ("func", "type_dep") => {
-                    (from.clone(), to.clone())
-                }
                 // Default: keep raw direction
                 _ => (from.clone(), to.clone()),
             };
@@ -253,24 +272,6 @@ fn aggregate_edges(
     }
 
     component_edges
-}
-
-/// Detect bidirectional edge pairs.
-fn detect_bidirectional_edges(
-    component_edges: &BTreeMap<(String, String), usize>,
-) -> HashSet<(String, String)> {
-    let mut pairs = HashSet::new();
-    for (from, to) in component_edges.keys() {
-        if component_edges.contains_key(&(to.clone(), from.clone())) {
-            let canonical = if from < to {
-                (from.clone(), to.clone())
-            } else {
-                (to.clone(), from.clone())
-            };
-            pairs.insert(canonical);
-        }
-    }
-    pairs
 }
 
 /// Filter edges by weight threshold (75th percentile).
@@ -350,7 +351,6 @@ fn render_to_dot(
     depth: ComponentDepth,
     nodes: &[&AggregatedNode],
     edges: &[(String, String)],
-    bidirectional_pairs: &HashSet<(String, String)>,
     cluster_by_crate: bool,
 ) -> String {
     let mut output = String::with_capacity(nodes.len() * 100 + edges.len() * 50);
@@ -388,32 +388,23 @@ fn render_to_dot(
     } else {
         // Render nodes without clustering
         for node in nodes {
-            let _ = writeln!(output, "  {}[label=\"{}\"];", node.id, node.label);
+            if let Some(ref folder) = node.folder {
+                let _ = writeln!(
+                    output,
+                    "  {}[label=\"{}\", folder=\"{}\"];",
+                    node.id, node.label, folder
+                );
+            } else {
+                let _ = writeln!(output, "  {}[label=\"{}\"];", node.id, node.label);
+            }
         }
     }
 
     output.push('\n');
 
-    // Render edges - bidirectional pairs get dir=both
+    // Render edges
     for (from, to) in edges {
-        // Use canonical ordering to check for bidirectional pairs
-        let canonical = if from < to {
-            (from.clone(), to.clone())
-        } else {
-            (to.clone(), from.clone())
-        };
-
-        if bidirectional_pairs.contains(&canonical) {
-            if from < to {
-                let _ = writeln!(
-                    output,
-                    "  {from} -> {to} [dir=both]; // dir best-effort not accurate"
-                );
-            }
-            // Skip the reverse direction
-        } else {
-            let _ = writeln!(output, "  {from} -> {to};");
-        }
+        let _ = writeln!(output, "  {from} -> {to};");
     }
 
     output.push_str("}\n");
@@ -445,7 +436,15 @@ fn render_clustered_nodes(output: &mut String, nodes: &[&AggregatedNode]) {
         output.push_str("    fontname=\"Helvetica Bold\";\n\n");
 
         for node in crate_nodes {
-            let _ = writeln!(output, "    {}[label=\"{}\"];", node.id, node.label);
+            if let Some(ref folder) = node.folder {
+                let _ = writeln!(
+                    output,
+                    "    {}[label=\"{}\", folder=\"{}\"];",
+                    node.id, node.label, folder
+                );
+            } else {
+                let _ = writeln!(output, "    {}[label=\"{}\"];", node.id, node.label);
+            }
         }
 
         output.push_str("  }\n\n");

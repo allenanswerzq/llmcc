@@ -36,33 +36,36 @@ impl Clickable for Button {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs))
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 traits)
+  (module:3 entity)
+)
 
-(root:2 traits ($TMP/sample/src/traits.rs)
-  (trait:3 Drawable
-    (method:4 draw
-      (parameter:5 self @type:3 Drawable)
+(root:4 traits ($TMP/sample/src/traits.rs)
+  (trait:5 Drawable
+    (method:6 draw
+      (parameter:7 self @type:5 Drawable)
     )
   )
-  (trait:6 Clickable
-    (method:7 click
-      (parameter:8 self @type:6 Clickable)
+  (trait:8 Clickable
+    (method:9 click
+      (parameter:10 self @type:8 Clickable)
     )
   )
 )
 
-(root:9 entity ($TMP/sample/src/entity.rs)
-  (class:10 Button
-    (field:11 label @type String)
+(root:11 entity ($TMP/sample/src/entity.rs)
+  (class:12 Button
+    (field:13 label @type String)
   )
-  (impl:12 Button @type:10 @trait:3
-    (method:13 draw
-      (parameter:14 self @type:10 Button)
+  (impl:14 Button @type:12 @trait:5
+    (method:15 draw
+      (parameter:16 self @type:12 Button)
     )
   )
-  (impl:15 Button @type:10 @trait:6
-    (method:16 click
-      (parameter:17 self @type:10 Button)
+  (impl:17 Button @type:12 @trait:8
+    (method:18 click
+      (parameter:19 self @type:12 Button)
     )
   )
 )
@@ -79,9 +82,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_sample {
     label="sample";
     style=rounded;
@@ -94,7 +94,7 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n10[label="Button", full_path="$TMP/sample/src/entity.rs:3", sym_ty="Struct", shape=box];
+      n12[label="Button", full_path="$TMP/sample/src/entity.rs:3", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_traits_rs {
@@ -103,13 +103,13 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n3[label="Drawable", full_path="$TMP/sample/src/traits.rs:1", sym_ty="Trait", shape=box];
-      n6[label="Clickable", full_path="$TMP/sample/src/traits.rs:5", sym_ty="Trait", shape=box];
+      n5[label="Drawable", full_path="$TMP/sample/src/traits.rs:1", sym_ty="Trait", shape=box];
+      n8[label="Clickable", full_path="$TMP/sample/src/traits.rs:5", sym_ty="Trait", shape=box];
     }
 
   }
 
 
-  n3 -> n10 [from="trait", to="impl"];
-  n6 -> n10 [from="trait", to="impl"];
+  n5 -> n12 [from="trait", to="impl"];
+  n8 -> n12 [from="trait", to="impl"];
 }

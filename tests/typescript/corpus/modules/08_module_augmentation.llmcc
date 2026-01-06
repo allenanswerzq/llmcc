@@ -1,0 +1,21 @@
+===============================================================================
+module-augmentation
+===============================================================================
+Module augmentation declarations.
+lang: typescript
+
+--- file: src/lib.ts ---
+declare module "./existing" {
+    interface ExistingInterface {
+        newProperty: string;
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (module:2  (inline)
+    (interface:3 ExistingInterface
+      (field:4 newProperty @type string)
+    )
+  )
+)

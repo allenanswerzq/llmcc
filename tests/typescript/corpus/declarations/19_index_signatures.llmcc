@@ -1,0 +1,35 @@
+===============================================================================
+index-signatures
+===============================================================================
+Index signatures in interfaces and classes.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface StringMap {
+    [key: string]: string;
+}
+
+interface NumberMap {
+    [index: number]: string;
+}
+
+interface MixedMap {
+    [key: string]: number;
+    length: number;
+    name: string;
+}
+
+class Dictionary<T> {
+    [key: string]: T;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 StringMap)
+  (interface:3 NumberMap)
+  (interface:4 MixedMap
+    (field:5 length @type number)
+    (field:6 name @type string)
+  )
+  (class:7 Dictionary)
+)

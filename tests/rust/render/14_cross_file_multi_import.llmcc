@@ -32,24 +32,30 @@ pub struct Session {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs))
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 user)
+  (module:3 role)
+  (module:4 auth)
+)
 
-(root:2 user ($TMP/sample/src/user.rs)
-  (class:3 User
-    (field:4 id @type u32)
+(root:5 user ($TMP/sample/src/user.rs)
+  (class:6 User
+    (field:7 id @type u32)
   )
 )
 
-(root:5 role ($TMP/sample/src/role.rs)
-  (class:6 Role
-    (field:7 level @type u32)
+(root:8 role ($TMP/sample/src/role.rs)
+  (class:9 Role
+    (field:10 level @type u32)
   )
 )
 
-(root:8 auth ($TMP/sample/src/auth.rs)
-  (class:9 Session
-    (field:10 user @type:3 User)
-    (field:11 role @type:6 Role)
+(root:11 auth ($TMP/sample/src/auth.rs)
+  (class:12 Session
+    (field:13 user @type:6 User)
+    (field:14 role @type:9 Role)
+    (@tdep:6 User)
+    (@tdep:9 Role)
   )
 )
 
@@ -65,9 +71,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_sample {
     label="sample";
     style=rounded;
@@ -80,7 +83,7 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n9[label="Session", full_path="$TMP/sample/src/auth.rs:4", sym_ty="Struct", shape=box];
+      n12[label="Session", full_path="$TMP/sample/src/auth.rs:4", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_role_rs {
@@ -89,7 +92,7 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n6[label="Role", full_path="$TMP/sample/src/role.rs:1", sym_ty="Struct", shape=box];
+      n9[label="Role", full_path="$TMP/sample/src/role.rs:1", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_user_rs {
@@ -98,12 +101,12 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n3[label="User", full_path="$TMP/sample/src/user.rs:1", sym_ty="Struct", shape=box];
+      n6[label="User", full_path="$TMP/sample/src/user.rs:1", sym_ty="Struct", shape=box];
     }
 
   }
 
 
-  n3 -> n9 [from="field_type", to="struct"];
-  n6 -> n9 [from="field_type", to="struct"];
+  n6 -> n12 [from="field_type", to="struct"];
+  n9 -> n12 [from="field_type", to="struct"];
 }

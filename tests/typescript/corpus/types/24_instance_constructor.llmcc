@@ -1,0 +1,25 @@
+===============================================================================
+instance-constructor-types
+===============================================================================
+InstanceType and ConstructorParameters utility types.
+lang: typescript
+
+--- file: src/lib.ts ---
+class Example {
+    constructor(public name: string, public age: number) {}
+}
+
+type Instance = InstanceType<typeof Example>;
+type CtorParams = ConstructorParameters<typeof Example>;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 Example
+    (method:3 constructor
+      (parameter:4 name @type string)
+      (parameter:5 age @type number)
+    )
+  )
+  (alias:6 Instance)
+  (alias:7 CtorParams)
+)

@@ -1,0 +1,27 @@
+===============================================================================
+type-alias-edges
+===============================================================================
+Test that type aliases referencing classes create edges.
+lang: typescript
+
+--- file: sample/src/lib.ts ---
+
+class User {
+    id: number;
+    name: string;
+}
+
+class Admin {
+    id: number;
+    role: string;
+}
+
+type Person = User | Admin;
+
+type UserList = User[];
+
+type UserMap = Map<string, User>;
+
+--- expect:arch-graph ---
+digraph G {
+}

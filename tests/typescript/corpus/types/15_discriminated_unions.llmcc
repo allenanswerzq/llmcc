@@ -1,0 +1,46 @@
+===============================================================================
+discriminated-unions
+===============================================================================
+Discriminated union types.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface Circle {
+    kind: "circle";
+    radius: number;
+}
+
+interface Rectangle {
+    kind: "rectangle";
+    width: number;
+    height: number;
+}
+
+type Shape = Circle | Rectangle;
+
+function area(shape: Shape): number {
+    switch (shape.kind) {
+        case "circle":
+            return Math.PI * shape.radius ** 2;
+        case "rectangle":
+            return shape.width * shape.height;
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 Circle
+    (field:3 kind @type string)
+    (field:4 radius @type number)
+  )
+  (interface:5 Rectangle
+    (field:6 kind @type string)
+    (field:7 width @type number)
+    (field:8 height @type number)
+  )
+  (alias:9 Shape)
+  (func:10 area
+    (parameter:11 shape @type:9 Shape)
+    (return:12 @type number)
+  )
+)

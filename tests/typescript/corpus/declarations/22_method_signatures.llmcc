@@ -1,0 +1,92 @@
+===============================================================================
+method-signatures
+===============================================================================
+Interface method signatures.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface Calculator {
+    add(a: number, b: number): number;
+    subtract(a: number, b: number): number;
+    multiply(a: number, b: number): number;
+    divide(a: number, b: number): number;
+}
+
+interface EventEmitter {
+    on(event: string, handler: (data: any) => void): void;
+    off(event: string, handler: (data: any) => void): void;
+    emit(event: string, data: any): void;
+}
+
+interface AsyncHandler<T> {
+    handle(input: T): Promise<T>;
+    handleAll(inputs: T[]): Promise<T[]>;
+}
+
+interface Comparable<T> {
+    compareTo(other: T): number;
+    equals(other: T): boolean;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 Calculator
+    (method:3 add
+      (parameter:4 a @type number)
+      (parameter:5 b @type number)
+      (return:6 @type number)
+    )
+    (method:7 subtract
+      (parameter:8 a @type number)
+      (parameter:9 b @type number)
+      (return:10 @type number)
+    )
+    (method:11 multiply
+      (parameter:12 a @type number)
+      (parameter:13 b @type number)
+      (return:14 @type number)
+    )
+    (method:15 divide
+      (parameter:16 a @type number)
+      (parameter:17 b @type number)
+      (return:18 @type number)
+    )
+  )
+  (interface:19 EventEmitter
+    (method:20 on
+      (parameter:21 event @type string)
+      (parameter:22 handler @type void)
+      (return:23 @type void)
+    )
+    (method:24 off
+      (parameter:25 event @type string)
+      (parameter:26 handler @type void)
+      (return:27 @type void)
+    )
+    (method:28 emit
+      (parameter:29 event @type string)
+      (parameter:30 data @type any)
+      (return:31 @type void)
+    )
+  )
+  (interface:32 AsyncHandler
+    (method:33 handle
+      (parameter:34 input @type T)
+      (return:35 @type Promise)
+    )
+    (method:36 handleAll
+      (parameter:37 inputs @type T)
+      (return:38 @type Promise)
+    )
+  )
+  (interface:39 Comparable
+    (method:40 compareTo
+      (parameter:41 other @type T)
+      (return:42 @type number)
+    )
+    (method:43 equals
+      (parameter:44 other @type T)
+      (return:45 @type boolean)
+    )
+  )
+)

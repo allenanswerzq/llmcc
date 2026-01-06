@@ -1,0 +1,53 @@
+===============================================================================
+namespace
+===============================================================================
+Test that namespaces with nested types appear correctly.
+lang: typescript
+
+--- file: sample/src/lib.ts ---
+
+namespace Models {
+    export class User {
+        id: number;
+        name: string;
+    }
+
+    export class Order {
+        id: number;
+        user: User;
+    }
+}
+
+namespace Services {
+    export class UserService {
+        getUser(id: number): Models.User {
+            return new Models.User();
+        }
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.ts)
+  (module:2 Models (inline)
+    (class:3 User
+      (field:4 id @type number)
+      (field:5 name @type string)
+    )
+    (class:6 Order
+      (field:7 id @type number)
+      (field:8 user @type:8 user)
+    )
+  )
+  (module:9 Services (inline)
+    (class:10 UserService
+      (method:11 getUser
+        (parameter:12 id @type number)
+        (return:13 @type:2 Models)
+      )
+    )
+  )
+)
+
+--- expect:arch-graph ---
+digraph G {
+}

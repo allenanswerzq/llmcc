@@ -1,0 +1,86 @@
+===============================================================================
+state-machine
+===============================================================================
+Test state machine pattern with enum states and transitions.
+lang: typescript
+
+--- file: sample/src/lib.ts ---
+
+enum OrderState {
+    Pending,
+    Confirmed,
+    Shipped,
+    Delivered,
+    Cancelled
+}
+
+interface StateTransition {
+    from: OrderState;
+    to: OrderState;
+    action: string;
+}
+
+class Order {
+    id: number;
+    state: OrderState;
+    transitions: StateTransition[];
+
+    canTransition(to: OrderState): boolean {
+        return true;
+    }
+
+    transition(to: OrderState): void {
+        this.state = to;
+    }
+}
+
+class OrderStateMachine {
+    order: Order;
+
+    confirm(): void {
+        this.order.transition(OrderState.Confirmed);
+    }
+
+    ship(): void {
+        this.order.transition(OrderState.Shipped);
+    }
+
+    deliver(): void {
+        this.order.transition(OrderState.Delivered);
+    }
+
+    cancel(): void {
+        this.order.transition(OrderState.Cancelled);
+    }
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_ts {
+    label="lib.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n3[label="StateTransition", full_path="$TMP/sample/src/lib.ts:10", sym_ty="Interface", shape=box];
+    n7[label="Order", full_path="$TMP/sample/src/lib.ts:16", sym_ty="Struct", shape=box];
+    n2[label="OrderState", full_path="$TMP/sample/src/lib.ts:2", sym_ty="Enum", shape=box];
+    n17[label="OrderStateMachine", full_path="$TMP/sample/src/lib.ts:30", sym_ty="Struct", shape=box];
+  }
+
+
+  n2 -> n3 [from="field_type", to="struct"];
+  n2 -> n7 [from="field_type", to="struct"];
+  n3 -> n7 [from="field_type", to="struct"];
+  n7 -> n17 [from="field_type", to="struct"];
+}

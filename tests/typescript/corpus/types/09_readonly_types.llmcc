@@ -1,0 +1,24 @@
+===============================================================================
+readonly-types
+===============================================================================
+Readonly type modifiers.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface Point {
+    readonly x: number;
+    readonly y: number;
+}
+
+type ReadonlyArr = readonly number[];
+type ReadonlyPoint = Readonly<Point>;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 Point
+    (field:3 x @type number)
+    (field:4 y @type number)
+  )
+  (alias:5 ReadonlyArr)
+  (alias:6 ReadonlyPoint)
+)

@@ -1,0 +1,95 @@
+===============================================================================
+abstract-classes
+===============================================================================
+Abstract classes and methods.
+lang: typescript
+
+--- file: src/lib.ts ---
+abstract class Shape {
+    abstract area(): number;
+    abstract perimeter(): number;
+
+    describe(): string {
+        return `Area: ${this.area()}`;
+    }
+}
+
+abstract class Animal {
+    abstract name: string;
+    abstract makeSound(): void;
+
+    move(): void {
+        console.log("Moving...");
+    }
+}
+
+class Circle extends Shape {
+    radius: number;
+
+    area(): number {
+        return Math.PI * this.radius ** 2;
+    }
+
+    perimeter(): number {
+        return 2 * Math.PI * this.radius;
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 Shape
+    (method:3 area
+      (return:4 @type number)
+    )
+    (method:5 perimeter
+      (return:6 @type number)
+    )
+    (method:7 describe
+      (return:8 @type string)
+    )
+  )
+  (class:10 Animal
+    (field:11 name @type string)
+    (method:12 makeSound
+      (return:13 @type void)
+    )
+    (method:14 move
+      (return:15 @type void)
+    )
+  )
+  (class:17 Circle @extends:2 Shape
+    (field:18 radius @type number)
+    (method:19 area
+      (return:20 @type number)
+    )
+    (method:21 perimeter
+      (return:22 @type number)
+    )
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_ts {
+    label="lib.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n2[label="Shape", full_path="$TMP/src/lib.ts:1", sym_ty="Struct", shape=box];
+    n17[label="Circle", full_path="$TMP/src/lib.ts:19", sym_ty="Struct", shape=box];
+  }
+
+
+  n2 -> n17 [from="base", to="extends"];
+}

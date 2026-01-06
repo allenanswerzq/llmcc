@@ -1,0 +1,39 @@
+===============================================================================
+typeof-expressions
+===============================================================================
+Typeof operator in type positions.
+lang: typescript
+
+--- file: src/lib.ts ---
+const person = { name: "John", age: 30 };
+type Person = typeof person;
+
+const colors = ["red", "green", "blue"] as const;
+type Color = typeof colors[number];
+
+function greet(name: string): string {
+    return `Hello, ${name}`;
+}
+type GreetFn = typeof greet;
+
+const config = {
+    api: {
+        host: "localhost",
+        port: 8080
+    }
+};
+type Config = typeof config;
+type ApiConfig = typeof config.api;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (alias:2 Person)
+  (alias:3 Color)
+  (func:4 greet
+    (parameter:5 name @type string)
+    (return:6 @type string)
+  )
+  (alias:7 GreetFn)
+  (alias:8 Config)
+  (alias:9 ApiConfig)
+)

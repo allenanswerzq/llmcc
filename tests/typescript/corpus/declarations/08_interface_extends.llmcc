@@ -1,0 +1,89 @@
+===============================================================================
+interface-extends
+===============================================================================
+Interfaces extending other interfaces.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface Animal {
+    name: string;
+}
+
+interface Mammal extends Animal {
+    warmBlooded: boolean;
+}
+
+interface Dog extends Mammal {
+    breed: string;
+    bark(): void;
+}
+
+interface Named {
+    name: string;
+}
+
+interface Aged {
+    age: number;
+}
+
+interface Person extends Named, Aged {
+    email: string;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 Animal
+    (field:3 name @type string)
+  )
+  (interface:4 Mammal @extends:2 Animal
+    (field:5 warmBlooded @type boolean)
+  )
+  (interface:6 Dog @extends:4 Mammal
+    (field:7 breed @type string)
+    (method:8 bark
+      (return:9 @type void)
+    )
+  )
+  (interface:10 Named
+    (field:11 name @type string)
+  )
+  (interface:12 Aged
+    (field:13 age @type number)
+  )
+  (interface:14 Person @extends:10 Named @extends:12 Aged
+    (field:15 email @type string)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_ts {
+    label="lib.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n2[label="Animal", full_path="$TMP/src/lib.ts:1", sym_ty="Interface", shape=box];
+    n10[label="Named", full_path="$TMP/src/lib.ts:14", sym_ty="Interface", shape=box];
+    n12[label="Aged", full_path="$TMP/src/lib.ts:18", sym_ty="Interface", shape=box];
+    n14[label="Person", full_path="$TMP/src/lib.ts:22", sym_ty="Interface", shape=box];
+    n4[label="Mammal", full_path="$TMP/src/lib.ts:5", sym_ty="Interface", shape=box];
+    n6[label="Dog", full_path="$TMP/src/lib.ts:9", sym_ty="Interface", shape=box];
+  }
+
+
+  n2 -> n4 [from="base", to="extends"];
+  n4 -> n6 [from="base", to="extends"];
+  n10 -> n14 [from="base", to="extends"];
+  n12 -> n14 [from="base", to="extends"];
+}

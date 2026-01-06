@@ -313,6 +313,18 @@ impl<'tree> ParseNode for TreeSitterParseNode<'tree> {
 
 /// Scopes trait defining language-specific AST handling.
 pub trait LanguageTrait {
+    /// Get the manifest file name for this language (e.g., "Cargo.toml", "package.json").
+    fn manifest_name() -> &'static str;
+
+    /// Get the container directories that don't add semantic meaning.
+    /// These directories are skipped in module detection (e.g., "src", "lib").
+    fn container_dirs() -> &'static [&'static str];
+
+    /// Check if a directory name is a container directory.
+    fn is_container(name: &str) -> bool {
+        Self::container_dirs().contains(&name)
+    }
+
     /// Parse source code and return a generic parse tree.
     fn parse(_text: impl AsRef<[u8]>) -> Option<Box<dyn ParseTree>>;
 
@@ -390,6 +402,12 @@ pub trait LanguageTraitImpl: LanguageTrait {
     /// Supported file extensions for this language.
     fn supported_extensions_impl() -> &'static [&'static str];
 
+    /// The manifest file name for this language (e.g., "Cargo.toml", "package.json").
+    fn manifest_name_impl() -> &'static str;
+
+    /// Container directories that don't add semantic meaning (e.g., "src", "lib").
+    fn container_dirs_impl() -> &'static [&'static str];
+
     /// Language-specific block kind with parent context.
     /// Override this to handle context-dependent block creation.
     /// Default implementation delegates to the trait's default.
@@ -460,6 +478,14 @@ macro_rules! define_lang {
 
             /// Language Trait Implementation
             impl $crate::lang_def::LanguageTrait for [<Lang $suffix>] {
+                fn manifest_name() -> &'static str {
+                    <Self as $crate::lang_def::LanguageTraitImpl>::manifest_name_impl()
+                }
+
+                fn container_dirs() -> &'static [&'static str] {
+                    <Self as $crate::lang_def::LanguageTraitImpl>::container_dirs_impl()
+                }
+
                 /// Parse source code and return a generic parse tree.
                 ///
                 /// First tries the custom parse_impl from LanguageTraitImpl.

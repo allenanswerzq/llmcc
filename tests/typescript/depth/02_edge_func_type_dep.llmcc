@@ -1,0 +1,115 @@
+===============================================================================
+edge-func-type-dep
+===============================================================================
+Test that func->type_dep edges create correct dependency direction.
+When function F has a type dependency on T (e.g., creates/uses T internally),
+F depends on T.
+lang: typescript
+
+--- file: types/config.ts ---
+
+export class Config {
+    value: number = 0;
+
+    static create(): Config {
+        return new Config();
+    }
+}
+
+export class Settings {
+    name: string = "";
+}
+
+--- file: app/init.ts ---
+
+import { Config, Settings } from "../types/config";
+
+export function initialize(): void {
+    const config = new Config();
+    const settings = new Settings();
+    console.log(config.value, settings.name);
+}
+
+export function getConfig(): Config {
+    return Config.create();
+}
+
+--- expect:block-graph ---
+(root:1 config ($TMP/types/config.ts)
+  (class:2 Config
+    (field:3 value @type number)
+    (method:4 create
+      (return:5 @type:2 Config)
+      (@tdep:2 Config)
+    )
+  )
+  (class:7 Settings
+    (field:8 name @type string)
+  )
+)
+
+(root:9 init ($TMP/app/init.ts)
+  (func:10 initialize
+    (return:11 @type void)
+    (@tdep:2 Config)
+    (@tdep:7 Settings)
+  )
+  (func:15 getConfig
+    (return:16 @type:2 Config)
+    (@tdep:2 Config)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_app {
+    label="app";
+    style=rounded;
+    color="#999999";
+    bgcolor="#f5f5f5";
+
+    subgraph cluster_init_ts {
+      label="init.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n15[label="getConfig", full_path="$TMP/app/init.ts:10", sym_ty="Function", shape=ellipse];
+      n10[label="initialize", full_path="$TMP/app/init.ts:4", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_types {
+    label="types";
+    style=rounded;
+    color="#999999";
+    bgcolor="#f5f5f5";
+
+    subgraph cluster_config_ts {
+      label="config.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n7[label="Settings", full_path="$TMP/types/config.ts:10", sym_ty="Struct", shape=box];
+      n2[label="Config", full_path="$TMP/types/config.ts:2", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+
+  n10 -> n2 [from="func", to="type_dep"];
+  n10 -> n7 [from="func", to="type_dep"];
+  n15 -> n2 [from="func", to="output"];
+}

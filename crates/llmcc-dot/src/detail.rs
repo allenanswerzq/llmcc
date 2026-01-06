@@ -1,10 +1,9 @@
 //! File-level detail rendering with hierarchical clustering.
 
-use std::collections::{BTreeSet, HashSet};
+use std::collections::BTreeSet;
 use std::fmt::Write;
 
 use llmcc_collect::{ComponentDepth, ComponentTree, RenderEdge, RenderNode};
-use llmcc_core::BlockId;
 
 use crate::dot::{escape_label, sanitize_id, shape_for_kind, write_indent};
 
@@ -47,9 +46,6 @@ pub fn render_dot(
     let estimated_size = nodes.len() * 150 + edges.len() * 80 + 200;
     let mut output = String::with_capacity(estimated_size);
 
-    // Detect bidirectional edges
-    let bidirectional_pairs = detect_bidirectional_edges(edges);
-
     output.push_str("digraph architecture {\n");
 
     // Graph layout attributes for cleaner visualization
@@ -70,67 +66,20 @@ pub fn render_dot(
 
     output.push('\n');
 
-    // Render edges (handling bidirectional pairs)
+    // Render edges
     for edge in edges {
-        let from_id = edge.from_id;
-        let to_id = edge.to_id;
-
-        // Check if this is a bidirectional pair
-        let canonical = if from_id < to_id {
-            (from_id, to_id)
-        } else {
-            (to_id, from_id)
-        };
-
-        if bidirectional_pairs.contains(&canonical) {
-            // Only render once for the canonical direction
-            if from_id < to_id {
-                let _ = writeln!(
-                    output,
-                    "  n{} -> n{} [from=\"{}\", to=\"{}\", dir=both]; // best effort, direction not guaranteed",
-                    from_id.as_u32(),
-                    to_id.as_u32(),
-                    edge.from_label,
-                    edge.to_label,
-                );
-            }
-            // Skip the reverse direction
-        } else {
-            let _ = writeln!(
-                output,
-                "  n{} -> n{} [from=\"{}\", to=\"{}\"];",
-                from_id.as_u32(),
-                to_id.as_u32(),
-                edge.from_label,
-                edge.to_label,
-            );
-        }
+        let _ = writeln!(
+            output,
+            "  n{} -> n{} [from=\"{}\", to=\"{}\"];",
+            edge.from_id.as_u32(),
+            edge.to_id.as_u32(),
+            edge.from_label,
+            edge.to_label,
+        );
     }
 
     output.push_str("}\n");
     output
-}
-
-/// Detect bidirectional edge pairs (cycles between two nodes).
-fn detect_bidirectional_edges(edges: &BTreeSet<RenderEdge>) -> HashSet<(BlockId, BlockId)> {
-    // Build a quick lookup set of (from, to) pairs
-    let edge_set: HashSet<(BlockId, BlockId)> =
-        edges.iter().map(|e| (e.from_id, e.to_id)).collect();
-
-    let mut pairs = HashSet::new();
-    for edge in edges {
-        // Check if reverse edge exists
-        if edge_set.contains(&(edge.to_id, edge.from_id)) {
-            // Use canonical ordering (smaller id first)
-            let canonical = if edge.from_id < edge.to_id {
-                (edge.from_id, edge.to_id)
-            } else {
-                (edge.to_id, edge.from_id)
-            };
-            pairs.insert(canonical);
-        }
-    }
-    pairs
 }
 
 /// Recursively render the component tree as nested subgraph clusters.
@@ -216,9 +165,8 @@ fn render_node(output: &mut String, node: &RenderNode, indent_level: usize) {
     if let Some(sym_kind) = &node.sym_kind {
         let _ = write!(output, ", sym_ty=\"{sym_kind:?}\"");
         let shape = shape_for_kind(Some(*sym_kind));
-        if shape != "ellipse" {
-            let _ = write!(output, ", shape={shape}");
-        }
+        // Always include shape for clarity
+        let _ = write!(output, ", shape={shape}");
     }
 
     output.push_str("];\n");

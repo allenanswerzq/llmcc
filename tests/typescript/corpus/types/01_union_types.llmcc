@@ -1,0 +1,42 @@
+===============================================================================
+union-types
+===============================================================================
+Union type declarations.
+lang: typescript
+
+--- file: src/lib.ts ---
+type StringOrNumber = string | number;
+type Result = "success" | "error" | "pending";
+type Nullable<T> = T | null;
+type Optional<T> = T | undefined;
+
+function process(value: string | number): void {}
+
+function format(input: string | number | boolean): string {
+    return String(input);
+}
+
+interface Response {
+    status: "ok" | "error";
+    data: string | null;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (alias:2 StringOrNumber)
+  (alias:3 Result)
+  (alias:4 Nullable)
+  (alias:5 Optional)
+  (func:6 process
+    (parameter:7 value @type string)
+    (return:8 @type void)
+  )
+  (func:9 format
+    (parameter:10 input @type string)
+    (return:11 @type string)
+  )
+  (interface:13 Response
+    (field:14 status @type string)
+    (field:15 data @type string)
+  )
+)

@@ -1,0 +1,20 @@
+===============================================================================
+extract-exclude
+===============================================================================
+Extract and Exclude utility types.
+lang: typescript
+
+--- file: src/lib.ts ---
+type AllTypes = string | number | boolean | null | undefined;
+
+type StringOrNumber = Extract<AllTypes, string | number>;
+type NotNull = Exclude<AllTypes, null | undefined>;
+type OnlyStrings = Extract<"a" | "b" | 1 | 2, string>;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (alias:2 AllTypes)
+  (alias:3 StringOrNumber)
+  (alias:4 NotNull)
+  (alias:5 OnlyStrings)
+)

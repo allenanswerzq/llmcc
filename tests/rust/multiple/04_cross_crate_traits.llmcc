@@ -68,59 +68,69 @@ impl Middleware for LogMiddleware {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/traits/src/lib.rs))
+(root:1 lib ($TMP/traits/src/lib.rs)
+  (module:2 core)
+)
 
-(root:2 core ($TMP/traits/src/core.rs)
-  (class:3 Request
-    (field:4 path @type String)
+(root:3 core ($TMP/traits/src/core.rs)
+  (class:4 Request
+    (field:5 path @type String)
   )
-  (class:5 Response
-    (field:6 status @type u16)
-    (field:7 body @type String)
+  (class:6 Response
+    (field:7 status @type u16)
+    (field:8 body @type String)
   )
-  (trait:8 Handler
-    (method:9 handle
-      (parameter:10 self @type:8 Handler)
-      (parameter:11 req @type:3 Request)
-      (return:12 @type:5 Response)
+  (trait:9 Handler
+    (method:10 handle
+      (parameter:11 self @type:9 Handler)
+      (parameter:12 req @type:4 Request)
+      (return:13 @type:6 Response)
+      (@tdep:6 Response)
     )
   )
-  (trait:13 Middleware
-    (method:14 before
-      (parameter:15 self @type:13 Middleware)
-      (parameter:16 req @type:3 Request)
-      (return:17 @type:3 Request)
+  (trait:14 Middleware
+    (method:15 before
+      (parameter:16 self @type:14 Middleware)
+      (parameter:17 req @type:4 Request)
+      (return:18 @type:4 Request)
+      (@tdep:4 Request)
     )
-    (method:18 after
-      (parameter:19 self @type:13 Middleware)
-      (parameter:20 res @type:5 Response)
-      (return:21 @type:5 Response)
+    (method:19 after
+      (parameter:20 self @type:14 Middleware)
+      (parameter:21 res @type:6 Response)
+      (return:22 @type:6 Response)
+      (@tdep:6 Response)
     )
   )
 )
 
-(root:22 lib ($TMP/impl/src/lib.rs))
+(root:23 lib ($TMP/impl/src/lib.rs)
+  (module:24 handlers)
+)
 
-(root:23 handlers ($TMP/impl/src/handlers.rs)
-  (class:24 EchoHandler)
-  (impl:25 EchoHandler @type:24 @trait:8
-    (method:26 handle
-      (parameter:27 self @type:24 EchoHandler)
-      (parameter:28 req @type:3 Request)
-      (return:29 @type:5 Response)
+(root:25 handlers ($TMP/impl/src/handlers.rs)
+  (class:26 EchoHandler)
+  (impl:27 EchoHandler @type:26 @trait:9
+    (method:28 handle
+      (parameter:29 self @type:26 EchoHandler)
+      (parameter:30 req @type:4 Request)
+      (return:31 @type:6 Response)
+      (@tdep:6 Response)
     )
   )
-  (class:30 LogMiddleware)
-  (impl:31 LogMiddleware @type:30 @trait:13
-    (method:32 before
-      (parameter:33 self @type:30 LogMiddleware)
-      (parameter:34 req @type:3 Request)
-      (return:35 @type:3 Request)
+  (class:32 LogMiddleware)
+  (impl:33 LogMiddleware @type:32 @trait:14
+    (method:34 before
+      (parameter:35 self @type:32 LogMiddleware)
+      (parameter:36 req @type:4 Request)
+      (return:37 @type:4 Request)
+      (@tdep:4 Request)
     )
-    (method:36 after
-      (parameter:37 self @type:30 LogMiddleware)
-      (parameter:38 res @type:5 Response)
-      (return:39 @type:5 Response)
+    (method:38 after
+      (parameter:39 self @type:32 LogMiddleware)
+      (parameter:40 res @type:6 Response)
+      (return:41 @type:6 Response)
+      (@tdep:6 Response)
     )
   )
 )
@@ -137,9 +147,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_impl {
     label="impl";
     style=rounded;
@@ -152,8 +159,8 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n30[label="LogMiddleware", full_path="$TMP/impl/src/handlers.rs:11", sym_ty="Struct", shape=box];
-      n24[label="EchoHandler", full_path="$TMP/impl/src/handlers.rs:3", sym_ty="Struct", shape=box];
+      n32[label="LogMiddleware", full_path="$TMP/impl/src/handlers.rs:11", sym_ty="Struct", shape=box];
+      n26[label="EchoHandler", full_path="$TMP/impl/src/handlers.rs:3", sym_ty="Struct", shape=box];
     }
 
   }
@@ -170,13 +177,13 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n8[label="Handler", full_path="$TMP/traits/src/core.rs:10", sym_ty="Trait", shape=box];
-      n13[label="Middleware", full_path="$TMP/traits/src/core.rs:14", sym_ty="Trait", shape=box];
+      n9[label="Handler", full_path="$TMP/traits/src/core.rs:10", sym_ty="Trait", shape=box];
+      n14[label="Middleware", full_path="$TMP/traits/src/core.rs:14", sym_ty="Trait", shape=box];
     }
 
   }
 
 
-  n8 -> n24 [from="trait", to="impl"];
-  n13 -> n30 [from="trait", to="impl"];
+  n9 -> n26 [from="trait", to="impl"];
+  n14 -> n32 [from="trait", to="impl"];
 }

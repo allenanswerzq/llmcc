@@ -1,0 +1,227 @@
+===============================================================================
+plugin-architecture
+===============================================================================
+Plugin architecture with core and plugins.
+lang: typescript
+
+--- file: core/plugin.ts ---
+
+export interface Plugin {
+    name: string;
+    initialize(): void;
+    execute(input: string): string;
+}
+
+export interface PluginRegistry {
+    register(plugin: Plugin): void;
+    getPlugin(name: string): Plugin | null;
+}
+
+--- file: plugins/logger.ts ---
+
+import { Plugin } from "../core/plugin";
+
+export class LoggerPlugin implements Plugin {
+    name: string = "logger";
+
+    initialize(): void {
+        console.log("Logger initialized");
+    }
+
+    execute(input: string): string {
+        console.log(input);
+        return input;
+    }
+}
+
+--- file: plugins/transformer.ts ---
+
+import { Plugin } from "../core/plugin";
+
+export class TransformerPlugin implements Plugin {
+    name: string = "transformer";
+
+    initialize(): void {}
+
+    execute(input: string): string {
+        return input.toUpperCase();
+    }
+}
+
+--- file: app/main.ts ---
+
+import { Plugin, PluginRegistry } from "../core/plugin";
+import { LoggerPlugin } from "../plugins/logger";
+import { TransformerPlugin } from "../plugins/transformer";
+
+export class AppRegistry implements PluginRegistry {
+    private plugins: Map<string, Plugin> = new Map();
+
+    register(plugin: Plugin): void {
+        this.plugins.set(plugin.name, plugin);
+    }
+
+    getPlugin(name: string): Plugin | null {
+        return this.plugins.get(name) || null;
+    }
+}
+
+export function setupPlugins(): AppRegistry {
+    const registry = new AppRegistry();
+    registry.register(new LoggerPlugin());
+    registry.register(new TransformerPlugin());
+    return registry;
+}
+
+--- expect:block-graph ---
+(root:1 plugin ($TMP/core/plugin.ts)
+  (interface:2 Plugin
+    (field:3 name @type string)
+    (method:4 initialize
+      (return:5 @type void)
+    )
+    (method:6 execute
+      (parameter:7 input @type string)
+      (return:8 @type string)
+    )
+  )
+  (interface:9 PluginRegistry
+    (method:10 register
+      (parameter:11 plugin @type:2 Plugin)
+      (return:12 @type void)
+    )
+    (method:13 getPlugin
+      (parameter:14 name @type string)
+      (return:15 @type:2 Plugin)
+    )
+  )
+)
+
+(root:16 logger ($TMP/plugins/logger.ts)
+  (class:17 LoggerPlugin
+    (field:18 name @type string)
+    (method:19 initialize
+      (return:20 @type void)
+    )
+    (method:22 execute
+      (parameter:23 input @type string)
+      (return:24 @type string)
+    )
+    (@tdep:2 Plugin)
+  )
+)
+
+(root:26 transformer ($TMP/plugins/transformer.ts)
+  (class:27 TransformerPlugin
+    (field:28 name @type string)
+    (method:29 initialize
+      (return:30 @type void)
+    )
+    (method:31 execute
+      (parameter:32 input @type string)
+      (return:33 @type string)
+    )
+    (@tdep:2 Plugin)
+  )
+)
+
+(root:35 main ($TMP/app/main.ts)
+  (class:36 AppRegistry
+    (field:37 plugins @type string
+    )
+    (method:39 register
+      (parameter:40 plugin @type:2 Plugin)
+      (return:41 @type void)
+    )
+    (method:43 getPlugin
+      (parameter:44 name @type string)
+      (return:45 @type:2 Plugin)
+    )
+    (@tdep:9 PluginRegistry)
+  )
+  (func:47 setupPlugins
+    (return:48 @type:36 AppRegistry)
+    (@tdep:36 AppRegistry)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_app {
+    label="app";
+    style=rounded;
+    color="#999999";
+    bgcolor="#f5f5f5";
+
+    subgraph cluster_main_ts {
+      label="main.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n47[label="setupPlugins", full_path="$TMP/app/main.ts:18", sym_ty="Function", shape=ellipse];
+      n36[label="AppRegistry", full_path="$TMP/app/main.ts:6", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_core {
+    label="core";
+    style=rounded;
+    color="#999999";
+    bgcolor="#f5f5f5";
+
+    subgraph cluster_plugin_ts {
+      label="plugin.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2[label="Plugin", full_path="$TMP/core/plugin.ts:2", sym_ty="Interface", shape=box];
+      n9[label="PluginRegistry", full_path="$TMP/core/plugin.ts:8", sym_ty="Interface", shape=box];
+    }
+
+  }
+
+  subgraph cluster_plugins {
+    label="plugins";
+    style=rounded;
+    color="#999999";
+    bgcolor="#f5f5f5";
+
+    subgraph cluster_logger_ts {
+      label="logger.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n17[label="LoggerPlugin", full_path="$TMP/plugins/logger.ts:4", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_transformer_ts {
+      label="transformer.ts";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n27[label="TransformerPlugin", full_path="$TMP/plugins/transformer.ts:4", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+
+  n2 -> n17 [from="interface", to="implements"];
+  n2 -> n27 [from="interface", to="implements"];
+  n9 -> n36 [from="interface", to="implements"];
+  n47 -> n36 [from="func", to="output"];
+}

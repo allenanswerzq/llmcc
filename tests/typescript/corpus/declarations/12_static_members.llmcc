@@ -1,0 +1,54 @@
+===============================================================================
+static-members
+===============================================================================
+Static class members.
+lang: typescript
+
+--- file: src/lib.ts ---
+class Counter {
+    static count: number = 0;
+
+    static increment(): number {
+        return ++Counter.count;
+    }
+
+    static reset(): void {
+        Counter.count = 0;
+    }
+}
+
+class Config {
+    static readonly VERSION: string = "1.0.0";
+    static readonly MAX_SIZE: number = 100;
+
+    private static instance: Config;
+
+    static getInstance(): Config {
+        if (!Config.instance) {
+            Config.instance = new Config();
+        }
+        return Config.instance;
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 Counter
+    (field:3 count @type number)
+    (method:4 increment
+      (return:5 @type number)
+    )
+    (method:6 reset
+      (return:7 @type void)
+    )
+  )
+  (class:8 Config
+    (field:9 VERSION @type string)
+    (field:10 MAX_SIZE @type number)
+    (field:11 instance @type:8 Config)
+    (method:12 getInstance
+      (return:13 @type:8 Config)
+      (@tdep:8 Config)
+    )
+  )
+)

@@ -1,0 +1,24 @@
+===============================================================================
+readonly-class-members
+===============================================================================
+Readonly class members.
+lang: typescript
+
+--- file: src/lib.ts ---
+class Config {
+    readonly version: string = "1.0";
+    readonly settings: readonly string[] = [];
+    
+    constructor(readonly id: number) {}
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 Config
+    (field:3 version @type string)
+    (field:4 settings @type:4 settings)
+    (method:5 constructor
+      (parameter:6 id @type number)
+    )
+  )
+)

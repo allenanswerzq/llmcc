@@ -1,0 +1,42 @@
+===============================================================================
+for-loops
+===============================================================================
+For loop statements.
+lang: typescript
+
+--- file: src/lib.ts ---
+function sum(n: number): number {
+    let total = 0;
+    for (let i = 0; i < n; i++) {
+        total += i;
+    }
+    return total;
+}
+
+function process(items: string[]): void {
+    for (const item of items) {
+        console.log(item);
+    }
+}
+
+function keys(obj: object): void {
+    for (const key in obj) {
+        console.log(key);
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 sum
+    (parameter:3 n @type number)
+    (return:4 @type number)
+  )
+  (func:5 process
+    (parameter:6 items @type string)
+    (return:7 @type void)
+  )
+  (func:9 keys
+    (parameter:10 obj @type object)
+    (return:11 @type void)
+  )
+)

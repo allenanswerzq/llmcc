@@ -1,0 +1,19 @@
+===============================================================================
+export-assignment
+===============================================================================
+Export assignment syntax.
+lang: typescript
+
+--- file: src/lib.ts ---
+class MyClass {
+    value: number = 0;
+}
+
+export = MyClass;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 MyClass
+    (field:3 value @type number)
+  )
+)

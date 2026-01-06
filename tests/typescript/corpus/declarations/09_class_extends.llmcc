@@ -1,0 +1,58 @@
+===============================================================================
+class-extends
+===============================================================================
+Classes extending other classes.
+lang: typescript
+
+--- file: src/lib.ts ---
+class Base {
+    id: number;
+
+    constructor(id: number) {
+        this.id = id;
+    }
+}
+
+class Derived extends Base {
+    name: string;
+
+    constructor(id: number, name: string) {
+        super(id);
+        this.name = name;
+    }
+}
+
+class Animal {
+    move(): void {}
+}
+
+class Dog extends Animal {
+    bark(): void {}
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 Base
+    (field:3 id @type number)
+    (method:4 constructor
+      (parameter:5 id @type number)
+    )
+  )
+  (class:6 Derived @extends:2 Base
+    (field:7 name @type string)
+    (method:8 constructor
+      (parameter:9 id @type number)
+      (parameter:10 name @type string)
+    )
+  )
+  (class:12 Animal
+    (method:13 move
+      (return:14 @type void)
+    )
+  )
+  (class:15 Dog @extends:12 Animal
+    (method:16 bark
+      (return:17 @type void)
+    )
+  )
+)

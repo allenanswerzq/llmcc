@@ -1,0 +1,74 @@
+===============================================================================
+namespace-declarations
+===============================================================================
+Namespace declarations.
+lang: typescript
+
+--- file: src/lib.ts ---
+namespace Validation {
+    export interface StringValidator {
+        isValid(s: string): boolean;
+    }
+
+    export class EmailValidator implements StringValidator {
+        isValid(s: string): boolean {
+            return s.includes("@");
+        }
+    }
+
+    export function validate(value: string): boolean {
+        return value.length > 0;
+    }
+}
+
+namespace Utils {
+    export namespace String {
+        export function capitalize(s: string): string {
+            return s.charAt(0).toUpperCase() + s.slice(1);
+        }
+    }
+
+    export namespace Math {
+        export function clamp(value: number, min: number, max: number): number {
+            return Math.min(Math.max(value, min), max);
+        }
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (module:2 Validation (inline)
+    (interface:3 StringValidator
+      (method:4 isValid
+        (parameter:5 s @type string)
+        (return:6 @type boolean)
+      )
+    )
+    (class:7 EmailValidator
+      (method:8 isValid
+        (parameter:9 s @type string)
+        (return:10 @type boolean)
+      )
+    )
+    (func:12 validate
+      (parameter:13 value @type string)
+      (return:14 @type boolean)
+    )
+  )
+  (module:15 Utils (inline)
+    (module:16 String (inline)
+      (func:17 capitalize
+        (parameter:18 s @type string)
+        (return:19 @type string)
+      )
+    )
+    (module:22 Math (inline)
+      (func:23 clamp
+        (parameter:24 value @type number)
+        (parameter:25 min @type number)
+        (parameter:26 max @type number)
+        (return:27 @type number)
+      )
+    )
+  )
+)

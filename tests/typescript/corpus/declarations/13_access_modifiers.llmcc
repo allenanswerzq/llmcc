@@ -1,0 +1,54 @@
+===============================================================================
+access-modifiers
+===============================================================================
+Public, private, protected access modifiers.
+lang: typescript
+
+--- file: src/lib.ts ---
+class Person {
+    public name: string;
+    private age: number;
+    protected email: string;
+    readonly id: number;
+
+    constructor(name: string, age: number) {
+        this.name = name;
+        this.age = age;
+        this.id = Date.now();
+    }
+
+    public greet(): string {
+        return `Hello, ${this.name}`;
+    }
+
+    private validate(): boolean {
+        return this.age > 0;
+    }
+
+    protected getInfo(): string {
+        return `${this.name}: ${this.age}`;
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 Person
+    (field:3 name @type string)
+    (field:4 age @type number)
+    (field:5 email @type string)
+    (field:6 id @type number)
+    (method:7 constructor
+      (parameter:8 name @type string)
+      (parameter:9 age @type number)
+    )
+    (method:11 greet
+      (return:12 @type string)
+    )
+    (method:13 validate
+      (return:14 @type boolean)
+    )
+    (method:15 getInfo
+      (return:16 @type string)
+    )
+  )
+)

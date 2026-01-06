@@ -1,0 +1,53 @@
+===============================================================================
+classes
+===============================================================================
+Basic class declarations.
+lang: typescript
+
+--- file: src/lib.ts ---
+class Animal {
+    name: string;
+}
+
+class Dog extends Animal {
+    breed: string;
+}
+
+class Empty {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (class:2 Animal
+    (field:3 name @type string)
+  )
+  (class:4 Dog @extends:2 Animal
+    (field:5 breed @type string)
+  )
+  (class:6 Empty)
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_ts {
+    label="lib.ts";
+    style=rounded;
+    color="#aaaaaa";
+    bgcolor="#fafafa";
+
+    n2[label="Animal", full_path="$TMP/src/lib.ts:1", sym_ty="Struct", shape=box];
+    n4[label="Dog", full_path="$TMP/src/lib.ts:5", sym_ty="Struct", shape=box];
+  }
+
+
+  n2 -> n4 [from="base", to="extends"];
+}

@@ -30,25 +30,28 @@ impl Render for Html {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs))
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 traits)
+  (module:3 impls)
+)
 
-(root:2 traits ($TMP/sample/src/traits.rs)
-  (trait:3 Render
-    (method:4 render
-      (parameter:5 self @type:3 Render)
-      (return:6 @type String)
+(root:4 traits ($TMP/sample/src/traits.rs)
+  (trait:5 Render
+    (method:6 render
+      (parameter:7 self @type:5 Render)
+      (return:8 @type String)
     )
   )
 )
 
-(root:7 impls ($TMP/sample/src/impls.rs)
-  (class:8 Html
-    (field:9 content @type String)
+(root:9 impls ($TMP/sample/src/impls.rs)
+  (class:10 Html
+    (field:11 content @type String)
   )
-  (impl:10 Html @type:8 @trait:3
-    (method:11 render
-      (parameter:12 self @type:8 Html)
-      (return:13 @type String)
+  (impl:12 Html @type:10 @trait:5
+    (method:13 render
+      (parameter:14 self @type:10 Html)
+      (return:15 @type String)
     )
   )
 )
@@ -65,9 +68,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_sample {
     label="sample";
     style=rounded;
@@ -80,7 +80,7 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n8[label="Html", full_path="$TMP/sample/src/impls.rs:3", sym_ty="Struct", shape=box];
+      n10[label="Html", full_path="$TMP/sample/src/impls.rs:3", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_traits_rs {
@@ -89,11 +89,11 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n3[label="Render", full_path="$TMP/sample/src/traits.rs:1", sym_ty="Trait", shape=box];
+      n5[label="Render", full_path="$TMP/sample/src/traits.rs:1", sym_ty="Trait", shape=box];
     }
 
   }
 
 
-  n3 -> n8 [from="trait", to="impl"];
+  n5 -> n10 [from="trait", to="impl"];
 }

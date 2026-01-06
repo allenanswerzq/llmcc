@@ -1,0 +1,17 @@
+===============================================================================
+awaited-type
+===============================================================================
+Awaited utility type.
+lang: typescript
+
+--- file: src/lib.ts ---
+type A = Awaited<Promise<string>>;
+type B = Awaited<Promise<Promise<number>>>;
+type C = Awaited<boolean | Promise<number>>;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (alias:2 A)
+  (alias:3 B)
+  (alias:4 C)
+)

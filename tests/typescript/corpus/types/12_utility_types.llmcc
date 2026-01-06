@@ -1,0 +1,32 @@
+===============================================================================
+utility-types
+===============================================================================
+Built-in utility types.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface Todo {
+    title: string;
+    description: string;
+    completed: boolean;
+}
+
+type PartialTodo = Partial<Todo>;
+type RequiredTodo = Required<Todo>;
+type PickTitle = Pick<Todo, "title">;
+type OmitDesc = Omit<Todo, "description">;
+type RecordType = Record<string, number>;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (interface:2 Todo
+    (field:3 title @type string)
+    (field:4 description @type string)
+    (field:5 completed @type boolean)
+  )
+  (alias:6 PartialTodo)
+  (alias:7 RequiredTodo)
+  (alias:8 PickTitle)
+  (alias:9 OmitDesc)
+  (alias:10 RecordType)
+)

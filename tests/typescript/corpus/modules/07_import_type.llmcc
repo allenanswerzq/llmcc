@@ -1,0 +1,16 @@
+===============================================================================
+import-type
+===============================================================================
+Type-only imports.
+lang: typescript
+
+--- file: src/lib.ts ---
+import type { SomeType } from "./types";
+import type SomeDefault from "./default";
+
+type LocalType = SomeType;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (alias:2 LocalType)
+)

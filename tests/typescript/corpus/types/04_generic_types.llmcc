@@ -1,0 +1,71 @@
+===============================================================================
+generic-types
+===============================================================================
+Generic type declarations.
+lang: typescript
+
+--- file: src/lib.ts ---
+type Container<T> = { value: T };
+type Pair<T, U> = { first: T; second: U };
+type Wrapper<T> = T extends null ? never : T;
+
+interface Box<T> {
+    contents: T;
+    isEmpty(): boolean;
+}
+
+interface Map<K, V> {
+    get(key: K): V | undefined;
+    set(key: K, value: V): void;
+}
+
+class Stack<T> {
+    private items: T[] = [];
+
+    push(item: T): void {
+        this.items.push(item);
+    }
+
+    pop(): T | undefined {
+        return this.items.pop();
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (alias:2 Container
+    (field:3 value @type T)
+  )
+  (alias:4 Pair
+    (field:5 first @type T)
+    (field:6 second @type U)
+  )
+  (alias:7 Wrapper)
+  (interface:8 Box
+    (field:9 contents @type T)
+    (method:10 isEmpty
+      (return:11 @type boolean)
+    )
+  )
+  (interface:12 Map
+    (method:13 get
+      (parameter:14 key @type K)
+      (return:15 @type V)
+    )
+    (method:16 set
+      (parameter:17 key @type K)
+      (parameter:18 value @type V)
+      (return:19 @type void)
+    )
+  )
+  (class:20 Stack
+    (field:21 items @type T)
+    (method:22 push
+      (parameter:23 item @type T)
+      (return:24 @type void)
+    )
+    (method:26 pop
+      (return:27 @type T)
+    )
+  )
+)

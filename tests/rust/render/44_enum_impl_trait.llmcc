@@ -47,44 +47,46 @@ impl Displayable for Priority {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs))
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 types)
+)
 
-(root:2 types ($TMP/sample/src/types.rs)
-  (trait:3 Displayable
-    (method:4 display
-      (parameter:5 self @type:3 Displayable)
-      (return:6 @type String)
+(root:3 types ($TMP/sample/src/types.rs)
+  (trait:4 Displayable
+    (method:5 display
+      (parameter:6 self @type:4 Displayable)
+      (return:7 @type String)
     )
   )
-  (trait:7 Processable
-    (method:8 process
-      (parameter:9 self @type:7 Processable)
+  (trait:8 Processable
+    (method:9 process
+      (parameter:10 self @type:8 Processable)
     )
   )
-  (enum:10 Status
-    (field:11 Active @type:10 Active)
-    (field:12 Inactive @type:10 Inactive)
-    (field:13 Pending @type:10 Pending)
+  (enum:11 Status
+    (field:12 Active)
+    (field:13 Inactive)
+    (field:14 Pending)
   )
-  (enum:14 Priority
-    (field:15 Low @type:14 Low)
-    (field:16 High @type:14 High)
+  (enum:15 Priority
+    (field:16 Low)
+    (field:17 High)
   )
-  (impl:17 Status @type:10 @trait:3
-    (method:18 display
-      (parameter:19 self @type:3 Displayable)
-      (return:20 @type String)
+  (impl:18 Status @type:11 @trait:4
+    (method:19 display
+      (parameter:20 self @type:4 Displayable)
+      (return:21 @type String)
     )
   )
-  (impl:22 Status @type:10 @trait:7
-    (method:23 process
-      (parameter:24 self @type:3 Displayable)
+  (impl:23 Status @type:11 @trait:8
+    (method:24 process
+      (parameter:25 self @type:4 Displayable)
     )
   )
-  (impl:25 Priority @type:14 @trait:3
-    (method:26 display
-      (parameter:27 self @type:3 Displayable)
-      (return:28 @type String)
+  (impl:26 Priority @type:15 @trait:4
+    (method:27 display
+      (parameter:28 self @type:4 Displayable)
+      (return:29 @type String)
     )
   )
 )
@@ -101,9 +103,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_sample {
     label="sample";
     style=rounded;
@@ -116,16 +115,16 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n3[label="Displayable", full_path="$TMP/sample/src/types.rs:1", sym_ty="Trait", shape=box];
-      n14[label="Priority", full_path="$TMP/sample/src/types.rs:15", sym_ty="Enum", shape=box];
-      n7[label="Processable", full_path="$TMP/sample/src/types.rs:5", sym_ty="Trait", shape=box];
-      n10[label="Status", full_path="$TMP/sample/src/types.rs:9", sym_ty="Enum", shape=box];
+      n4[label="Displayable", full_path="$TMP/sample/src/types.rs:1", sym_ty="Trait", shape=box];
+      n15[label="Priority", full_path="$TMP/sample/src/types.rs:15", sym_ty="Enum", shape=box];
+      n8[label="Processable", full_path="$TMP/sample/src/types.rs:5", sym_ty="Trait", shape=box];
+      n11[label="Status", full_path="$TMP/sample/src/types.rs:9", sym_ty="Enum", shape=box];
     }
 
   }
 
 
-  n3 -> n10 [from="trait", to="impl"];
-  n3 -> n14 [from="trait", to="impl"];
-  n7 -> n10 [from="trait", to="impl"];
+  n4 -> n11 [from="trait", to="impl"];
+  n4 -> n15 [from="trait", to="impl"];
+  n8 -> n11 [from="trait", to="impl"];
 }

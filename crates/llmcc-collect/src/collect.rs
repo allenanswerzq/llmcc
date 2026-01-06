@@ -52,6 +52,16 @@ pub fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
                 })
                 .unwrap_or_else(|| format!("{}:{}", kind, block_id.as_u32()));
 
+            // Skip anonymous functions - they are implementation details
+            // Anonymous functions have names that look like code (contain parentheses, arrows, etc.)
+            if display_name.contains("=>")
+                || display_name.contains("function(")
+                || display_name.starts_with('(')
+                || display_name.starts_with("async (")
+            {
+                return None;
+            }
+
             // Skip methods - they are implementation details, not architectural
             if let Some(func_block) = block.as_func()
                 && func_block.is_method()
@@ -83,23 +93,27 @@ pub fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
                 .or(Some(raw_path.to_string()));
 
             // Get crate_name and module_path from BlockRoot of this unit
-            let (crate_name, module_path, file_name) = unit
+            let (crate_name, crate_root, module_path, module_root, file_name) = unit
                 .root_block()
                 .and_then(|root| root.as_root())
                 .map(|root| {
                     let crate_name = root.get_crate_name();
+                    let crate_root = root.get_crate_root();
                     let module_path = root.get_module_path();
+                    let module_root = root.get_module_root();
                     let file_name = root.file_name.clone();
-                    (crate_name, module_path, file_name)
+                    (crate_name, crate_root, module_path, module_root, file_name)
                 })
-                .unwrap_or((None, None, None));
+                .unwrap_or((None, None, None, None, None));
 
             Some(RenderNode {
                 block_id,
                 name: display_name,
                 location,
                 crate_name,
+                crate_root,
                 module_path,
+                module_root,
                 file_name,
                 sym_kind,
             })
@@ -160,11 +174,20 @@ pub fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTr
             collect_return_edges(project, block_id, node_set, &mut local_edges);
 
             // 5. Trait implementations
-            collect_impl_edges(project, block_id, node_set, &mut local_edges);
+            collect_impl_edges(project, block_id, node_set, &mut local_edges, get_kind);
 
-            // 6. Trait bounds
-            if block_kind == Some(BlockKind::Trait) {
+            // 6. Trait bounds (type parameters with bounds)
+            // In Rust: Trait, in TypeScript: Interface can be used as type bounds
+            if block_kind == Some(BlockKind::Trait) || block_kind == Some(BlockKind::Interface) {
                 collect_bound_edges(project, block_id, node_set, &mut local_edges, get_kind);
+            }
+
+            // 6b. Inheritance (extends for classes/interfaces/traits)
+            if block_kind == Some(BlockKind::Trait)
+                || block_kind == Some(BlockKind::Interface)
+                || block_kind == Some(BlockKind::Class)
+            {
+                collect_extends_edges(project, block_id, node_set, &mut local_edges);
             }
 
             // 7. Type dependencies from function bodies
@@ -172,7 +195,7 @@ pub fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTr
                 collect_type_dep_edges(project, block_id, node_set, &mut local_edges, get_kind);
             }
 
-            // 8. Impl type arguments
+            // 8. Impl type arguments and decorators
             if block_kind == Some(BlockKind::Class) || block_kind == Some(BlockKind::Enum) {
                 collect_impl_type_arg_edges(
                     project,
@@ -181,6 +204,7 @@ pub fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTr
                     &mut local_edges,
                     get_kind,
                 );
+                collect_decorator_edges(project, block_id, node_set, &mut local_edges, get_kind);
             }
 
             local_edges
@@ -434,12 +458,16 @@ fn collect_return_edges(
     }
 }
 
-fn collect_impl_edges(
+fn collect_impl_edges<F>(
     project: &ProjectGraph,
     block_id: BlockId,
     node_set: &HashSet<BlockId>,
     edges: &mut BTreeSet<RenderEdge>,
-) {
+    get_kind: F,
+) where
+    F: Fn(BlockId) -> Option<BlockKind>,
+{
+    // Rust-style: struct -> impl block -> trait
     let impl_blocks = project
         .cc
         .related_map
@@ -460,6 +488,28 @@ fn collect_impl_edges(
             }
         }
     }
+
+    // TypeScript-style: class directly implements interface
+    // Only create interface -> implements edge for TypeScript Interfaces, not Rust Traits
+    let direct_implements = project
+        .cc
+        .related_map
+        .get_related(block_id, BlockRelation::Implements);
+    for interface_id in direct_implements {
+        // Only TypeScript interfaces should get the "interface -> implements" label
+        // Rust traits are handled above via impl blocks
+        if node_set.contains(&interface_id)
+            && block_id != interface_id
+            && get_kind(interface_id) == Some(BlockKind::Interface)
+        {
+            edges.insert(RenderEdge {
+                from_id: interface_id,
+                to_id: block_id,
+                from_label: "interface",
+                to_label: "implements",
+            });
+        }
+    }
 }
 
 fn collect_bound_edges<F>(
@@ -478,9 +528,12 @@ fn collect_bound_edges<F>(
     for user_id in used_by {
         if node_set.contains(&user_id) && block_id != user_id {
             let user_kind = get_kind(user_id);
+            // Funcs, Classes, Traits, and Interfaces can use traits/interfaces as type parameter bounds
+            // (trait inheritance via extends is handled by collect_extends_edges using Extends relation)
             if user_kind == Some(BlockKind::Func)
                 || user_kind == Some(BlockKind::Class)
                 || user_kind == Some(BlockKind::Trait)
+                || user_kind == Some(BlockKind::Interface)
             {
                 edges.insert(RenderEdge {
                     from_id: block_id,
@@ -489,6 +542,31 @@ fn collect_bound_edges<F>(
                     to_label: "generic",
                 });
             }
+        }
+    }
+}
+
+/// Collect edges for trait inheritance (e.g., `interface Admin extends User`)
+/// The edge goes from the child trait (Admin) to the parent trait (User).
+fn collect_extends_edges(
+    project: &ProjectGraph,
+    block_id: BlockId,
+    node_set: &HashSet<BlockId>,
+    edges: &mut BTreeSet<RenderEdge>,
+) {
+    // Extends relation points from child (Admin) to parent (User)
+    let extends = project
+        .cc
+        .related_map
+        .get_related(block_id, BlockRelation::Extends);
+    for parent_id in extends {
+        if node_set.contains(&parent_id) && block_id != parent_id {
+            edges.insert(RenderEdge {
+                from_id: parent_id,
+                to_id: block_id,
+                from_label: "base",
+                to_label: "extends",
+            });
         }
     }
 }
@@ -513,10 +591,27 @@ fn collect_type_dep_edges<F>(
                 || type_kind == Some(BlockKind::Enum)
                 || type_kind == Some(BlockKind::Trait)
             {
-                let has_existing_edge = edges
+                // Skip if this is a trait/interface used as a type bound
+                // (a bound -> generic edge will be created from collect_bound_edges)
+                if type_kind == Some(BlockKind::Trait) {
+                    let used_by = project
+                        .cc
+                        .related_map
+                        .get_related(type_id, BlockRelation::UsedBy);
+                    if used_by.contains(&block_id) {
+                        continue;
+                    }
+                }
+                // Skip if there's already a more specific edge involving these nodes
+                // Check outgoing edges (e.g., output)
+                let has_outgoing_edge = edges
                     .iter()
                     .any(|e| e.from_id == block_id && e.to_id == type_id);
-                if !has_existing_edge {
+                // Check incoming edges (e.g., input -> func)
+                let has_incoming_edge = edges
+                    .iter()
+                    .any(|e| e.from_id == type_id && e.to_id == block_id);
+                if !has_outgoing_edge && !has_incoming_edge {
                     edges.insert(RenderEdge {
                         from_id: block_id,
                         to_id: type_id,
@@ -561,6 +656,40 @@ fn collect_impl_type_arg_edges<F>(
                         to_label: "impl",
                     });
                 }
+            }
+        }
+    }
+}
+
+/// Collect decorator edges for classes
+/// When a class is decorated with @Component, @Injectable, etc., create edges
+/// from the decorator function to the decorated class.
+fn collect_decorator_edges<F>(
+    project: &ProjectGraph,
+    block_id: BlockId,
+    node_set: &HashSet<BlockId>,
+    edges: &mut BTreeSet<RenderEdge>,
+    get_kind: F,
+) where
+    F: Fn(BlockId) -> Option<BlockKind>,
+{
+    // Decorators are stored in type_deps for the class
+    // and have Uses/UsedBy relations
+    let uses = project
+        .cc
+        .related_map
+        .get_related(block_id, BlockRelation::Uses);
+    for decorator_id in uses {
+        if node_set.contains(&decorator_id) && block_id != decorator_id {
+            let decorator_kind = get_kind(decorator_id);
+            // Decorators are functions
+            if decorator_kind == Some(BlockKind::Func) {
+                edges.insert(RenderEdge {
+                    from_id: decorator_id,
+                    to_id: block_id,
+                    from_label: "decorator",
+                    to_label: "decorates",
+                });
             }
         }
     }

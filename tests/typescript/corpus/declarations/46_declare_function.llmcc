@@ -1,0 +1,20 @@
+===============================================================================
+declare-function
+===============================================================================
+Declare function statements.
+lang: typescript
+
+--- file: src/lib.ts ---
+declare function externalFn(x: number): string;
+declare function anotherFn(): void;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (func:2 externalFn
+    (parameter:3 x @type number)
+    (return:4 @type string)
+  )
+  (func:5 anotherFn
+    (return:6 @type void)
+  )
+)

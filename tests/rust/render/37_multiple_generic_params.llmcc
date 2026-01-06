@@ -63,44 +63,50 @@ pub struct AllThree {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs))
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 types)
+  (module:3 services)
+)
 
-(root:2 types ($TMP/sample/src/types.rs)
-  (class:3 User
-    (field:4 id @type u64)
+(root:4 types ($TMP/sample/src/types.rs)
+  (class:5 User
+    (field:6 id @type u64)
   )
-  (class:5 Error
-    (field:6 code @type i32)
-    (field:7 message @type String)
+  (class:7 Error
+    (field:8 code @type i32)
+    (field:9 message @type String)
   )
-  (class:8 Config
-    (field:9 key @type String)
+  (class:10 Config
+    (field:11 key @type String)
   )
 )
 
-(root:10 services ($TMP/sample/src/services.rs)
-  (func:11 get_user
-    (return:12)
-    (@tdep:3 User)
-    (@tdep:5 Error)
+(root:12 services ($TMP/sample/src/services.rs)
+  (func:13 get_user
+    (return:14)
+    (@tdep:5 User)
+    (@tdep:7 Error)
   )
-  (class:14 UserConfigMap
-    (field:15 configs @type:3 User)
+  (class:16 UserConfigMap
+    (field:17 configs @type:5 User)
+    (@tdep:5 User)
   )
-  (class:16 Pair
-    (field:17 first @type A)
-    (field:18 second @type B)
+  (class:18 Pair
+    (field:19 first @type A)
+    (field:20 second @type B)
   )
-  (class:19 UserErrorPair
-    (field:20 pair @type:16 Pair)
+  (class:21 UserErrorPair
+    (field:22 pair @type:18 Pair)
+    (@tdep:18 Pair)
   )
-  (class:21 Triple
-    (field:22 a @type A)
-    (field:23 b @type B)
-    (field:24 c @type C)
+  (class:23 Triple
+    (field:24 a @type A)
+    (field:25 b @type B)
+    (field:26 c @type C)
   )
-  (class:25 AllThree
-    (field:26 data @type:21 Triple)
+  (class:27 AllThree
+    (field:28 data @type:23 Triple)
+    (@tdep:23 Triple)
   )
 )
 
@@ -116,9 +122,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  label="architecture graph";
-  labelloc=t;
-
   subgraph cluster_sample {
     label="sample";
     style=rounded;
@@ -131,12 +134,12 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n14[label="UserConfigMap", full_path="$TMP/sample/src/services.rs:10", sym_ty="Struct", shape=box];
-      n16[label="Pair", full_path="$TMP/sample/src/services.rs:15", sym_ty="Struct", shape=box];
-      n19[label="UserErrorPair", full_path="$TMP/sample/src/services.rs:21", sym_ty="Struct", shape=box];
-      n21[label="Triple", full_path="$TMP/sample/src/services.rs:26", sym_ty="Struct", shape=box];
-      n25[label="AllThree", full_path="$TMP/sample/src/services.rs:33", sym_ty="Struct", shape=box];
-      n11[label="get_user", full_path="$TMP/sample/src/services.rs:5", sym_ty="Function"];
+      n16[label="UserConfigMap", full_path="$TMP/sample/src/services.rs:10", sym_ty="Struct", shape=box];
+      n18[label="Pair", full_path="$TMP/sample/src/services.rs:15", sym_ty="Struct", shape=box];
+      n21[label="UserErrorPair", full_path="$TMP/sample/src/services.rs:21", sym_ty="Struct", shape=box];
+      n23[label="Triple", full_path="$TMP/sample/src/services.rs:26", sym_ty="Struct", shape=box];
+      n27[label="AllThree", full_path="$TMP/sample/src/services.rs:33", sym_ty="Struct", shape=box];
+      n13[label="get_user", full_path="$TMP/sample/src/services.rs:5", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_types_rs {
@@ -145,23 +148,23 @@ digraph architecture {
       color="#aaaaaa";
       bgcolor="#fafafa";
 
-      n3[label="User", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
-      n8[label="Config", full_path="$TMP/sample/src/types.rs:10", sym_ty="Struct", shape=box];
-      n5[label="Error", full_path="$TMP/sample/src/types.rs:5", sym_ty="Struct", shape=box];
+      n5[label="User", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+      n10[label="Config", full_path="$TMP/sample/src/types.rs:10", sym_ty="Struct", shape=box];
+      n7[label="Error", full_path="$TMP/sample/src/types.rs:5", sym_ty="Struct", shape=box];
     }
 
   }
 
 
-  n3 -> n14 [from="type_dep", to="struct"];
-  n3 -> n16 [from="type_arg", to="generic"];
-  n3 -> n21 [from="type_arg", to="generic"];
-  n5 -> n16 [from="type_arg", to="generic"];
-  n5 -> n21 [from="type_arg", to="generic"];
-  n8 -> n14 [from="type_dep", to="struct"];
-  n8 -> n21 [from="type_arg", to="generic"];
-  n11 -> n3 [from="func", to="type_dep"];
-  n11 -> n5 [from="func", to="type_dep"];
-  n16 -> n19 [from="field_type", to="struct"];
-  n21 -> n25 [from="field_type", to="struct"];
+  n5 -> n16 [from="type_dep", to="struct"];
+  n5 -> n18 [from="type_arg", to="generic"];
+  n5 -> n23 [from="type_arg", to="generic"];
+  n7 -> n18 [from="type_arg", to="generic"];
+  n7 -> n23 [from="type_arg", to="generic"];
+  n10 -> n16 [from="type_dep", to="struct"];
+  n10 -> n23 [from="type_arg", to="generic"];
+  n13 -> n5 [from="func", to="type_dep"];
+  n13 -> n7 [from="func", to="type_dep"];
+  n18 -> n21 [from="field_type", to="struct"];
+  n23 -> n27 [from="field_type", to="struct"];
 }

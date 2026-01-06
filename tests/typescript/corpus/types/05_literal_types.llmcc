@@ -1,0 +1,48 @@
+===============================================================================
+literal-types
+===============================================================================
+Literal type declarations.
+lang: typescript
+
+--- file: src/lib.ts ---
+type Yes = "yes";
+type No = "no";
+type Answer = "yes" | "no" | "maybe";
+
+type One = 1;
+type Zero = 0;
+type Binary = 0 | 1;
+
+type True = true;
+type False = false;
+
+interface Config {
+    mode: "development" | "production" | "test";
+    debug: true | false;
+    port: 80 | 443 | 8080;
+}
+
+function setMode(mode: "on" | "off"): void {}
+
+const direction: "north" | "south" | "east" | "west" = "north";
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.ts)
+  (alias:2 Yes)
+  (alias:3 No)
+  (alias:4 Answer)
+  (alias:5 One)
+  (alias:6 Zero)
+  (alias:7 Binary)
+  (alias:8 True)
+  (alias:9 False)
+  (interface:10 Config
+    (field:11 mode @type string)
+    (field:12 debug @type:12 debug)
+    (field:13 port @type number)
+  )
+  (func:14 setMode
+    (parameter:15 mode @type string)
+    (return:16 @type void)
+  )
+)
