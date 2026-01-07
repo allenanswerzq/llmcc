@@ -21,6 +21,25 @@ clean:
 fetch:
     cd {{root}}/bench && python3 -m llmcc_bench fetch
 
+claude:
+    cargo build --workspace --release
+    # copy the binary to ~/.cargo/bin/llmcc
+    mkdir -p ~/.cargo/bin
+    cp {{root}}/target/release/llmcc ~/.cargo/bin/llmcc
+    # llmcc must exist before starting claude
+    llmcc --version
+    # start the claude code
+    bash {{root}}/agent/scripts/start-claude.sh
+
+
+codex:
+    cargo build --workspace --release
+    # copy the binary to ~/.cargo/bin/llmcc
+    mkdir -p ~/.cargo/bin
+    cp {{root}}/target/release/llmcc ~/.cargo/bin/llmcc
+    # start the codex
+    bash {{root}}/agent/scripts/start-codex.sh
+
 uv-sync:
     PIP_NO_BINARY="mypy" uv sync --extra dev
 

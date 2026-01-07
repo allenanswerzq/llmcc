@@ -24,6 +24,9 @@ export interface ToolResult {
 // Registry of built-in tools
 const builtinTools: Map<string, (args: Record<string, unknown>) => Promise<ToolResult>> = new Map();
 
+// TEST FLAG: Set to true to disable all built-in tools
+const DISABLE_ALL_TOOLS = true;
+
 // ============================================
 // Tool: bash - Execute shell commands
 // Args:
@@ -411,10 +414,121 @@ builtinTools.set('sed', async (args) => {
 });
 
 // ============================================
+// Tool: llmcc - Generate multi-depth architecture graphs for code understanding
+// Args:
+//   dirs: string[] (optional) - Directories to scan recursively
+//   files: string[] (optional) - Individual files to compile
+//   lang: string (optional) - Language: 'rust', 'typescript' or 'ts' (default: 'rust')
+//   depth: number (optional) - Component depth: 0=project, 1=crate, 2=module, 3=file (default: 3)
+//   pagerank_top_k: number (optional) - Show only top K nodes by PageRank score
+//   cluster_by_crate: boolean (optional) - Cluster modules by parent crate
+//   short_labels: boolean (optional) - Use shortened labels (module name only)
+//   output: string (optional) - Output file path (writes to file instead of stdout)
+//   print_ir: boolean (optional) - Print intermediate representation
+//   print_block: boolean (optional) - Print basic block graph
+// ============================================
+builtinTools.set('llmcc', async (args) => {
+    // Either dirs or files must be provided
+    const dirs = args.dirs as string[] || args.directories as string[];
+    const files = args.files as string[];
+    const lang = (args.lang as string) || (args.language as string) || 'rust';
+    const depth = (args.depth as number) ?? (args.component_depth as number) ?? 3;
+    const pagerankTopK = args.pagerank_top_k as number || args.pagerankTopK as number;
+    const clusterByCrate = args.cluster_by_crate === true || args.clusterByCrate === true;
+    const shortLabels = args.short_labels === true || args.shortLabels === true;
+    const output = args.output as string;
+    const printIr = args.print_ir === true || args.printIr === true;
+    const printBlock = args.print_block === true || args.printBlock === true;
+    const graph = args.graph !== false; // Default to true for graph generation
+    const timeoutSec = (args.timeout as number) || 120;
+
+    if (!dirs && !files) {
+        return { success: false, output: '', error: 'Either dirs or files must be provided' };
+    }
+
+    try {
+        // Build the llmcc command
+        const cmdParts: string[] = ['llmcc'];
+
+        // Add directories
+        if (dirs && Array.isArray(dirs)) {
+            for (const dir of dirs) {
+                cmdParts.push('-d', `"${dir}"`);
+            }
+        }
+
+        // Add files
+        if (files && Array.isArray(files)) {
+            for (const file of files) {
+                cmdParts.push('-f', `"${file}"`);
+            }
+        }
+
+        // Add language
+        cmdParts.push('--lang', lang);
+
+        // Add graph flag (default behavior)
+        if (graph) {
+            cmdParts.push('--graph');
+        }
+
+        // Add depth
+        cmdParts.push('--depth', depth.toString());
+
+        // Add optional flags
+        if (pagerankTopK) {
+            cmdParts.push('--pagerank-top-k', pagerankTopK.toString());
+        }
+        if (clusterByCrate) {
+            cmdParts.push('--cluster-by-crate');
+        }
+        if (shortLabels) {
+            cmdParts.push('--short-labels');
+        }
+        if (output) {
+            cmdParts.push('-o', `"${output}"`);
+        }
+        if (printIr) {
+            cmdParts.push('--print-ir');
+        }
+        if (printBlock) {
+            cmdParts.push('--print-block');
+        }
+
+        const command = cmdParts.join(' ');
+        console.log(`[Tools] Running llmcc: ${command}`);
+
+        const result = child_process.execSync(command, {
+            encoding: 'utf-8',
+            timeout: timeoutSec * 1000,
+            maxBuffer: 50 * 1024 * 1024, // 50MB max output for large graphs
+            shell: process.platform === 'win32' ? 'powershell.exe' : '/bin/bash'
+        });
+
+        return { success: true, output: result };
+    } catch (error) {
+        const execError = error as child_process.ExecException & { stdout?: string; stderr?: string };
+        return {
+            success: false,
+            output: execError.stdout || '',
+            error: execError.stderr || execError.message
+        };
+    }
+});
+
+// ============================================
 // Tool Execution
 // ============================================
 
 export async function executeTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
+    // TEST: Skip all tool execution when disabled
+    if (DISABLE_ALL_TOOLS) {
+        return {
+            success: false,
+            output: '',
+            error: `Tools are disabled for testing. Tool "${name}" was not executed.`
+        };
+    }
     const tool = builtinTools.get(name);
     if (!tool) {
         return {
@@ -549,6 +663,10 @@ export interface BuiltinToolDoc {
 }
 
 export function getBuiltinToolDocs(): BuiltinToolDoc[] {
+    // TEST: Return empty when disabled
+    if (DISABLE_ALL_TOOLS) {
+        return [];
+    }
     return [
         {
             name: 'bash',
@@ -656,6 +774,30 @@ export function getBuiltinToolDocs(): BuiltinToolDoc[] {
                 '{"tool": "sed", "path": "/file.ts", "pattern": "oldText", "replacement": "newText"}',
                 '{"tool": "sed", "path": "/file.ts", "pattern": "console\\\\.log\\\\(.*\\\\)", "replacement": "", "dry_run": true}',
                 '{"tool": "sed", "path": "/config.json", "pattern": "localhost", "replacement": "production.server.com", "backup": true}',
+            ]
+        },
+        {
+            name: 'llmcc',
+            description: 'Generate multi-depth architecture graphs for code understanding. Analyzes Rust or TypeScript codebases and produces DOT graph output showing graphs at various granularity levels. this will quickly give you an overview of complex codebases.',
+            parameters: [
+                { name: 'dirs', type: 'string[]', required: false, description: 'Directories to scan recursively (conflicts with files)' },
+                { name: 'files', type: 'string[]', required: false, description: 'Individual files to compile (conflicts with dirs)' },
+                { name: 'lang', type: 'string', required: false, description: 'Language: rust, typescript, or ts', default: 'rust' },
+                { name: 'depth', type: 'number', required: false, description: 'Component depth: 0=project, 1=crate/lib, 2=module, 3=file+symbol', default: '3' },
+                { name: 'pagerank_top_k', type: 'number', required: false, description: 'Show only top K nodes by PageRank score' },
+                { name: 'cluster_by_crate', type: 'boolean', required: false, description: 'Cluster modules by their parent crate', default: 'false' },
+                { name: 'short_labels', type: 'boolean', required: false, description: 'Use shortened labels (module name only)', default: 'false' },
+                { name: 'output', type: 'string', required: false, description: 'Output file path (writes to file instead of stdout)' },
+                { name: 'graph', type: 'boolean', required: false, description: 'Generate DOT graph output', default: 'true' },
+                { name: 'print_ir', type: 'boolean', required: false, description: 'Print intermediate representation', default: 'false' },
+                { name: 'print_block', type: 'boolean', required: false, description: 'Print basic block graph', default: 'false' },
+                { name: 'timeout', type: 'number', required: false, description: 'Timeout in seconds', default: '120' },
+            ],
+            examples: [
+                '{"tool": "llmcc", "dirs": ["/path/to/rust/project"], "depth": 1}',
+                '{"tool": "llmcc", "dirs": ["/path/to/project"], "lang": "typescript", "depth": 3, "pagerank_top_k": 100}',
+                '{"tool": "llmcc", "dirs": ["/project"], "depth": 2, "cluster_by_crate": true, "short_labels": true}',
+                '{"tool": "llmcc", "dirs": ["/project"], "output": "/tmp/graph.dot", "pagerank_top_k": 200}',
             ]
         },
     ];
