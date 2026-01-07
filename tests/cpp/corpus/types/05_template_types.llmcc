@@ -1,0 +1,37 @@
+===============================================================================
+template-types
+===============================================================================
+Template type usage.
+lang: cpp
+
+--- file: src/lib.cpp ---
+struct Config {};
+
+struct Service {
+    std::vector<int> numbers;
+    std::map<std::string, Config> configs;
+    std::optional<Config> maybe_config;
+    std::unique_ptr<Config> owned_config;
+    std::shared_ptr<Config> shared_config;
+};
+
+--- expect:block-graph ---
+(root:1 struct Config {};
+
+struct Service {
+    std::vector<int> numbers;
+    std::map<std::string, Config> configs;
+    std::optional<Config> maybe_config;
+    std::unique_ptr<Config> owned_config;
+    std::shared_ptr<Config> shared_config;
+};
+ ($TMP/src/lib.cpp)
+  (class:2 Config)
+  (class:3 Service
+    (field:4 std @type numbers)
+    (field:5 std @type configs)
+    (field:6 std @type maybe_config)
+    (field:7 std @type owned_config)
+    (field:8 std @type shared_config)
+  )
+)

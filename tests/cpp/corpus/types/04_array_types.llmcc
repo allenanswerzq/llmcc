@@ -1,0 +1,43 @@
+===============================================================================
+array-types
+===============================================================================
+Array type declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+struct ArrayTypes {
+    int fixed[10];
+    double matrix[3][3];
+    char name[256];
+};
+
+void process_array(int arr[], int size) {}
+void process_2d(int arr[10][20]) {}
+
+--- expect:block-graph ---
+(root:1 struct ArrayTypes {
+    int fixed[10];
+    double matrix[3][3];
+    char name[256];
+};
+
+void process_array(int arr[], int size) {}
+void process_2d(int arr[10][20]) {}
+ ($TMP/src/lib.cpp)
+  (class:2 ArrayTypes
+    (field:3 int @type int)
+    (field:4 double @type double)
+    (field:5 char @type char)
+  )
+  (func:6 process_array
+    (func:7 process_array
+      (parameter:8 arr @type int)
+      (parameter:9 size @type int)
+    )
+  )
+  (func:10 process_2d
+    (func:11 process_2d
+      (parameter:12 arr @type int)
+    )
+  )
+)

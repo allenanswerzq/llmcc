@@ -1,0 +1,69 @@
+===============================================================================
+constructors-destructors
+===============================================================================
+Constructors and destructors.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Resource {
+    int* data;
+public:
+    Resource() : data(nullptr) {}
+
+    Resource(int size) : data(new int[size]) {}
+
+    Resource(const Resource& other) = default;
+
+    Resource(Resource&& other) noexcept : data(other.data) {
+        other.data = nullptr;
+    }
+
+    ~Resource() {
+        delete[] data;
+    }
+};
+
+--- expect:block-graph ---
+(root:1 class Resource {
+    int* data;
+public:
+    Resource() : data(nullptr) {}
+
+    Resource(int size) : data(new int[size]) {}
+
+    Resource(const Resource& other) = default;
+
+    Resource(Resource&& other) noexcept : data(other.data) {
+        other.data = nullptr;
+    }
+
+    ~Resource() {
+        delete[] data;
+    }
+};
+ ($TMP/src/lib.cpp)
+  (class:2 Resource
+    (field:3 int @type int)
+    (method:4 Resource
+      (func:5 Resource)
+    )
+    (method:6 Resource
+      (func:7 Resource
+        (parameter:8 size @type int)
+      )
+    )
+    (method:10 Resource
+      (func:11 Resource
+        (parameter:12 other @type:2 Resource)
+      )
+    )
+    (method:13 Resource
+      (func:14 Resource
+        (parameter:15 other @type:2 Resource)
+      )
+    )
+    (method:16 ~Resource
+      (func:17 ~Resource)
+    )
+  )
+)

@@ -1,0 +1,42 @@
+===============================================================================
+structs
+===============================================================================
+Basic struct declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+struct Empty {};
+
+struct Point {
+    int x;
+    int y;
+};
+
+struct Person {
+    std::string name;
+    int age;
+};
+
+--- expect:block-graph ---
+(root:1 struct Empty {};
+
+struct Point {
+    int x;
+    int y;
+};
+
+struct Person {
+    std::string name;
+    int age;
+};
+ ($TMP/src/lib.cpp)
+  (class:2 Empty)
+  (class:3 Point
+    (field:4 int @type int)
+    (field:5 int @type int)
+  )
+  (class:6 Person
+    (field:7 std @type name)
+    (field:8 int @type int)
+  )
+)

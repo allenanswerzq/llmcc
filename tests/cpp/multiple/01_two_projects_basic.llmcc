@@ -1,0 +1,87 @@
+===============================================================================
+two-projects-basic
+===============================================================================
+Test basic cross-project references.
+lang: cpp
+
+--- file: core/CMakeLists.txt ---
+cmake_minimum_required(VERSION 3.10)
+project(core)
+
+--- file: core/src/types.h ---
+namespace core {
+    struct User {
+        int id;
+        std::string name;
+    };
+
+    struct Config {
+        std::string host;
+        int port;
+    };
+}
+
+--- file: app/CMakeLists.txt ---
+cmake_minimum_required(VERSION 3.10)
+project(app)
+
+--- file: app/src/main.cpp ---
+#include "../../core/src/types.h"
+
+namespace app {
+    struct Service {
+        core::User user;
+        core::Config config;
+    };
+
+    void run(core::User user) {}
+}
+
+--- expect:block-graph ---
+(root:1 namespace core {
+    struct User {
+        int id;
+        std::string name;
+    };
+
+    struct Config {
+        std::string host;
+        int port;
+    };
+}
+ ($TMP/core/src/types.h)
+  (module:2 core (inline)
+    (class:3 User
+      (field:4 int @type int)
+      (field:5 std @type name)
+    )
+    (class:6 Config
+      (field:7 std @type host)
+      (field:8 int @type int)
+    )
+  )
+)
+
+(root:9 #include "../../core/src/types.h"
+
+namespace app {
+    struct Service {
+        core::User user;
+        core::Config config;
+    };
+
+    void run(core::User user) {}
+}
+ ($TMP/app/src/main.cpp)
+  (module:10 app (inline)
+    (class:11 Service
+      (field:12 core @type core)
+      (field:13 core @type core)
+    )
+    (func:14 run
+      (func:15 run
+        (parameter:16 user @type:3 User)
+      )
+    )
+  )
+)

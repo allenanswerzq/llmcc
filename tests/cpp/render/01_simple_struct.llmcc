@@ -1,0 +1,57 @@
+===============================================================================
+simple-struct
+===============================================================================
+Test that a simple struct appears in the architecture graph.
+lang: cpp
+
+--- file: sample/CMakeLists.txt ---
+cmake_minimum_required(VERSION 3.10)
+project(sample)
+
+--- file: sample/src/lib.cpp ---
+
+struct Foo {};
+
+struct User {
+    Foo name;
+    int age;
+};
+
+--- expect:block-graph ---
+(root:1 struct Foo {};
+
+struct User {
+    Foo name;
+    int age;
+};
+ ($TMP/sample/src/lib.cpp)
+  (class:2 Foo)
+  (class:3 User
+    (field:4 Foo @type:2 Foo)
+    (field:5 int @type int)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_cpp {
+    label="lib.cpp";
+    style=rounded;
+        bgcolor="#fafafa";
+
+    n2[label="Foo", path="$TMP/sample/src/lib.cpp:2", sym_ty="Struct", shape=box];
+    n3[label="User", path="$TMP/sample/src/lib.cpp:4", sym_ty="Struct", shape=box];
+  }
+
+
+  n2 -> n3 [from="field_type", to="struct"];
+}
