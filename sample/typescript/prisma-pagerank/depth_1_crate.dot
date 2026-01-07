@@ -13,37 +13,43 @@ digraph architecture {
 
   crate_dev_env[label="dev-env", path="/home/yibai/llmcc/sample/repos/prisma"];
   crate_prisma[label="prisma", path="/home/yibai/llmcc/sample/repos/prisma/packages/cli"];
-  crate_prisma_adapter_d1[label="prisma_adapter-d1", path="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-d1"];
   crate_prisma_client[label="prisma_client", path="/home/yibai/llmcc/sample/repos/prisma/packages/client"];
   crate_prisma_client_engine_runtime[label="prisma_client-engine-runtime", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-engine-runtime"];
   crate_prisma_client_generator_js[label="prisma_client-generator-js", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js"];
   crate_prisma_client_generator_ts[label="prisma_client-generator-ts", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-ts"];
+  crate_prisma_client_runtime_utils[label="prisma_client-runtime-utils", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-runtime-utils"];
   crate_prisma_config[label="prisma_config", path="/home/yibai/llmcc/sample/repos/prisma/packages/config"];
   crate_prisma_driver_adapter_utils[label="prisma_driver-adapter-utils", path="/home/yibai/llmcc/sample/repos/prisma/packages/driver-adapter-utils"];
   crate_prisma_fetch_engine[label="prisma_fetch-engine", path="/home/yibai/llmcc/sample/repos/prisma/packages/fetch-engine"];
+  crate_prisma_get_platform[label="prisma_get-platform", path="/home/yibai/llmcc/sample/repos/prisma/packages/get-platform"];
   crate_prisma_internals[label="prisma_internals", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals"];
   crate_prisma_migrate[label="prisma_migrate", path="/home/yibai/llmcc/sample/repos/prisma/packages/migrate"];
   crate_prisma_query_plan_executor[label="prisma_query-plan-executor", path="/home/yibai/llmcc/sample/repos/prisma/packages/query-plan-executor"];
   crate_prisma_ts_builders[label="prisma_ts-builders", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders"];
 
-  crate_dev_env -> crate_prisma_internals;
   crate_prisma -> crate_prisma_internals;
-  crate_prisma_adapter_d1 -> crate_prisma_driver_adapter_utils;
+  crate_prisma -> crate_prisma_query_plan_executor;
+  crate_prisma_client -> crate_dev_env;
+  crate_prisma_client -> crate_prisma_client_engine_runtime;
+  crate_prisma_client -> crate_prisma_client_runtime_utils;
   crate_prisma_client -> crate_prisma_internals;
+  crate_prisma_client -> crate_prisma_query_plan_executor;
   crate_prisma_client -> crate_prisma_ts_builders;
+  crate_prisma_client_engine_runtime -> crate_prisma_client;
   crate_prisma_client_engine_runtime -> crate_prisma_driver_adapter_utils;
-  crate_prisma_client_engine_runtime -> crate_prisma_internals;
   crate_prisma_client_generator_js -> crate_prisma_client_generator_ts;
   crate_prisma_client_generator_js -> crate_prisma_internals;
   crate_prisma_client_generator_js -> crate_prisma_migrate;
   crate_prisma_client_generator_js -> crate_prisma_ts_builders;
   crate_prisma_client_generator_ts -> crate_prisma_client_generator_js;
-  crate_prisma_client_generator_ts -> crate_prisma_internals;
   crate_prisma_client_generator_ts -> crate_prisma_migrate;
   crate_prisma_client_generator_ts -> crate_prisma_ts_builders;
   crate_prisma_config -> crate_prisma_query_plan_executor;
   crate_prisma_fetch_engine -> crate_prisma_query_plan_executor;
   crate_prisma_internals -> crate_prisma_fetch_engine;
+  crate_prisma_internals -> crate_prisma_get_platform;
   crate_prisma_internals -> crate_prisma_query_plan_executor;
+  crate_prisma_migrate -> crate_dev_env;
   crate_prisma_migrate -> crate_prisma_internals;
+  crate_prisma_migrate -> crate_prisma_query_plan_executor;
 }

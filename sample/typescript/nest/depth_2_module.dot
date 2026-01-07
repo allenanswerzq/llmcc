@@ -16,12 +16,13 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_nest_typescript_starter_app_module[label="app.module", path="/home/yibai/llmcc/sample/repos/nest/sample/26-queues/src"];
-    mod_nest_typescript_starter_cats[label="cats", path="/home/yibai/llmcc/sample/repos/nest/sample/10-fastify/src/cats"];
+    mod_nest_typescript_starter_app_module[label="app.module", path="/home/yibai/llmcc/sample/repos/nest/sample/28-sse/src"];
+    mod_nest_typescript_starter_cats[label="cats", path="/home/yibai/llmcc/sample/repos/nest/sample/01-cats-app/src/cats"];
     mod_nest_typescript_starter_common[label="common", path="/home/yibai/llmcc/sample/repos/nest/sample/23-graphql-code-first/src/common"];
-    mod_nest_typescript_starter_core[label="core", path="/home/yibai/llmcc/sample/repos/nest/sample/36-hmr-esm/src/core"];
-    mod_nest_typescript_starter_dto[label="dto", path="/home/yibai/llmcc/sample/repos/nest/sample/11-swagger/src/cats/dto"];
+    mod_nest_typescript_starter_core[label="core", path="/home/yibai/llmcc/sample/repos/nest/sample/01-cats-app/src/core"];
+    mod_nest_typescript_starter_dto[label="dto", path="/home/yibai/llmcc/sample/repos/nest/sample/06-mongoose/src/cats/dto"];
     mod_nest_typescript_starter_graphql_schema[label="graphql.schema", path="/home/yibai/llmcc/sample/repos/nest/sample/12-graphql-schema-first/src"];
+    mod_nest_typescript_starter_main[label="main", path="/home/yibai/llmcc/sample/repos/nest/sample/28-sse/src"];
   }
 
   subgraph cluster_nestjs_common {
@@ -35,7 +36,6 @@ digraph architecture {
     mod_nestjs_common_module_utils[label="module-utils", path="/home/yibai/llmcc/sample/repos/nest/packages/common/module-utils"];
     mod_nestjs_common_pipes[label="pipes", path="/home/yibai/llmcc/sample/repos/nest/packages/common/pipes"];
     mod_nestjs_common_serializer[label="serializer", path="/home/yibai/llmcc/sample/repos/nest/packages/common/serializer"];
-    mod_nestjs_common_utils[label="utils", path="/home/yibai/llmcc/sample/repos/nest/packages/common/utils"];
   }
 
   subgraph cluster_nestjs_core {
@@ -46,7 +46,6 @@ digraph architecture {
     mod_nestjs_core_application_config[label="application-config", path="/home/yibai/llmcc/sample/repos/nest/packages/core"];
     mod_nestjs_core_errors[label="errors", path="/home/yibai/llmcc/sample/repos/nest/packages/core/errors"];
     mod_nestjs_core_graphql_code_first[label="graphql-code-first", path="/home/yibai/llmcc/sample/repos/nest/integration/graphql-code-first"];
-    mod_nestjs_core_graphql_schema_first[label="graphql-schema-first", path="/home/yibai/llmcc/sample/repos/nest/integration/graphql-schema-first"];
     mod_nestjs_core_hello_world[label="hello-world", path="/home/yibai/llmcc/sample/repos/nest/integration/hello-world"];
     mod_nestjs_core_helpers[label="helpers", path="/home/yibai/llmcc/sample/repos/nest/packages/core/helpers"];
     mod_nestjs_core_hooks[label="hooks", path="/home/yibai/llmcc/sample/repos/nest/integration/hooks"];
@@ -85,6 +84,14 @@ digraph architecture {
     mod_nestjs_platform_express_multer[label="multer", path="/home/yibai/llmcc/sample/repos/nest/packages/platform-express/multer"];
   }
 
+  subgraph cluster_nestjs_platform_fastify {
+    label="nestjs_platform-fastify";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_nestjs_platform_fastify_adapters[label="adapters", path="/home/yibai/llmcc/sample/repos/nest/packages/platform-fastify/adapters"];
+  }
+
   subgraph cluster_nestjs_websockets {
     label="nestjs_websockets";
     style=rounded;
@@ -95,13 +102,14 @@ digraph architecture {
 
 
   mod_nest_typescript_starter_app_module -> mod_nestjs_common_interfaces;
-  mod_nest_typescript_starter_cats -> mod_nestjs_core_graphql_schema_first;
   mod_nest_typescript_starter_common -> mod_nestjs_common_interfaces;
   mod_nest_typescript_starter_core -> mod_nestjs_common_interfaces;
   mod_nest_typescript_starter_graphql_schema -> mod_nest_typescript_starter_cats;
   mod_nest_typescript_starter_graphql_schema -> mod_nest_typescript_starter_dto;
+  mod_nest_typescript_starter_main -> mod_nest_typescript_starter_app_module;
+  mod_nest_typescript_starter_main -> mod_nest_typescript_starter_common;
+  mod_nest_typescript_starter_main -> mod_nestjs_platform_fastify_adapters;
   mod_nestjs_common_decorators -> mod_nestjs_common_interfaces;
-  mod_nestjs_common_decorators -> mod_nestjs_common_utils;
   mod_nestjs_common_decorators -> mod_nestjs_core_hello_world;
   mod_nestjs_common_decorators -> mod_nestjs_core_hooks;
   mod_nestjs_common_decorators -> mod_nestjs_core_injector;

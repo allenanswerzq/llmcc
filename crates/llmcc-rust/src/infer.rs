@@ -312,10 +312,24 @@ fn infer_scoped_identifier<'tcx>(
 
     tracing::trace!("resolving scoped ident {:?}", qualified_names);
 
-    scopes
-        .lookup_qualified(&qualified_names, SymKindSet::empty())?
-        .last()
-        .copied()
+    // Handle Rust's "crate" keyword by replacing with actual crate name
+    let resolved_path: Vec<&str>;
+    let crate_name_owned = unit.unit_meta().package_name.clone();
+    let lookup_path = if !qualified_names.is_empty() && qualified_names[0] == "crate" {
+        if let Some(ref crate_name) = crate_name_owned {
+            resolved_path = std::iter::once(crate_name.as_str())
+                .chain(qualified_names[1..].iter().copied())
+                .collect();
+            &resolved_path[..]
+        } else {
+            &qualified_names[..]
+        }
+    } else {
+        &qualified_names[..]
+    };
+
+    // Use lookup_qualified_symbol to apply same-crate preference for multi-crate scenarios
+    scopes.lookup_qualified_symbol(lookup_path, SymKindSet::empty())
 }
 
 /// Infer index expression type: arr[i] -> ElementType

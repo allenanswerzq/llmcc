@@ -8,6 +8,52 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
+  subgraph cluster_gateway {
+    label="gateway";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_app_module_ts {
+      label="app.module.ts";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n9167[label="AppModule", path="/home/yibai/llmcc/sample/repos/nest/sample/32-graphql-federation-schema-first/gateway/src/app.module.ts:23", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_nest_typescript_starter {
+    label="nest-typescript-starter";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_app_module_ts {
+      label="app.module.ts";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n8641[label="AppModule", path="/home/yibai/llmcc/sample/repos/nest/sample/06-mongoose/src/app.module.ts:11", sym_ty="Struct", shape=box];
+      n6180[label="AppModule", path="/home/yibai/llmcc/sample/repos/nest/sample/18-context/src/app.module.ts:11", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_common {
+      label="common";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_validation_pipe_ts {
+        label="validation.pipe.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n6979[label="ValidationPipe", path="/home/yibai/llmcc/sample/repos/nest/sample/01-cats-app/src/common/pipes/validation.pipe.ts:12", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
   subgraph cluster_nestjs_common {
     label="nestjs_common";
     style=rounded;
@@ -23,15 +69,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n12625[label="Injectable", path="/home/yibai/llmcc/sample/repos/nest/packages/common/decorators/core/injectable.decorator.ts:43", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_optional_decorator_ts {
-        label="optional.decorator.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n8501[label="Optional", path="/home/yibai/llmcc/sample/repos/nest/packages/common/decorators/core/optional.decorator.ts:20", sym_ty="Function", shape=ellipse];
+        n11451[label="Injectable", path="/home/yibai/llmcc/sample/repos/nest/packages/common/decorators/core/injectable.decorator.ts:43", sym_ty="Function", shape=ellipse];
+        n11521[label="mixin", path="/home/yibai/llmcc/sample/repos/nest/packages/common/decorators/core/injectable.decorator.ts:53", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_route_params_decorator_ts {
@@ -40,26 +79,9 @@ digraph architecture {
                 bgcolor="#fafafa";
 
         n21601[label="Query", path="/home/yibai/llmcc/sample/repos/nest/packages/common/decorators/http/route-params.decorator.ts:408", sym_ty="Function", shape=ellipse];
-        n21523[label="createRouteParamDecorator", path="/home/yibai/llmcc/sample/repos/nest/packages/common/decorators/http/route-params.decorator.ts:47", sym_ty="Function", shape=ellipse];
         n21615[label="Body", path="/home/yibai/llmcc/sample/repos/nest/packages/common/decorators/http/route-params.decorator.ts:502", sym_ty="Function", shape=ellipse];
         n21638[label="Param", path="/home/yibai/llmcc/sample/repos/nest/packages/common/decorators/http/route-params.decorator.ts:689", sym_ty="Function", shape=ellipse];
         n21648[label="HostParam", path="/home/yibai/llmcc/sample/repos/nest/packages/common/decorators/http/route-params.decorator.ts:764", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_use_guards_decorator_ts {
-        label="use-guards.decorator.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n2200[label="UseGuards", path="/home/yibai/llmcc/sample/repos/nest/packages/common/decorators/core/use-guards.decorator.ts:28", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_use_interceptors_decorator_ts {
-        label="use-interceptors.decorator.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n9832[label="UseInterceptors", path="/home/yibai/llmcc/sample/repos/nest/packages/common/decorators/core/use-interceptors.decorator.ts:28", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -74,7 +96,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n5351[label="RequestMethod", path="/home/yibai/llmcc/sample/repos/nest/packages/common/enums/request-method.enum.ts:1", sym_ty="Enum", shape=box];
+        n11238[label="RequestMethod", path="/home/yibai/llmcc/sample/repos/nest/packages/common/enums/request-method.enum.ts:1", sym_ty="Enum", shape=box];
       }
 
       subgraph cluster_route_paramtypes_enum_ts {
@@ -82,7 +104,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n1387[label="RouteParamtypes", path="/home/yibai/llmcc/sample/repos/nest/packages/common/enums/route-paramtypes.enum.ts:1", sym_ty="Enum", shape=box];
+        n4769[label="RouteParamtypes", path="/home/yibai/llmcc/sample/repos/nest/packages/common/enums/route-paramtypes.enum.ts:1", sym_ty="Enum", shape=box];
       }
 
     }
@@ -97,7 +119,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n11495[label="BadRequestException", path="/home/yibai/llmcc/sample/repos/nest/packages/common/exceptions/bad-request.exception.ts:11", sym_ty="Struct", shape=box];
+        n16151[label="BadRequestException", path="/home/yibai/llmcc/sample/repos/nest/packages/common/exceptions/bad-request.exception.ts:11", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_forbidden_exception_ts {
@@ -105,7 +127,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n12121[label="ForbiddenException", path="/home/yibai/llmcc/sample/repos/nest/packages/common/exceptions/forbidden.exception.ts:11", sym_ty="Struct", shape=box];
+        n16809[label="ForbiddenException", path="/home/yibai/llmcc/sample/repos/nest/packages/common/exceptions/forbidden.exception.ts:11", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_http_exception_ts {
@@ -113,15 +135,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n17848[label="HttpException", path="/home/yibai/llmcc/sample/repos/nest/packages/common/exceptions/http.exception.ts:27", sym_ty="Struct", shape=box];
-      }
-
-      subgraph cluster_not_found_exception_ts {
-        label="not-found.exception.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n12222[label="NotFoundException", path="/home/yibai/llmcc/sample/repos/nest/packages/common/exceptions/not-found.exception.ts:11", sym_ty="Struct", shape=box];
+        n3235[label="HttpException", path="/home/yibai/llmcc/sample/repos/nest/packages/common/exceptions/http.exception.ts:27", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_unauthorized_exception_ts {
@@ -129,7 +143,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n10910[label="UnauthorizedException", path="/home/yibai/llmcc/sample/repos/nest/packages/common/exceptions/unauthorized.exception.ts:11", sym_ty="Struct", shape=box];
+        n15460[label="UnauthorizedException", path="/home/yibai/llmcc/sample/repos/nest/packages/common/exceptions/unauthorized.exception.ts:11", sym_ty="Struct", shape=box];
       }
 
     }
@@ -144,7 +158,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n13128[label="ArgumentsHost", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/features/arguments-host.interface.ts:64", sym_ty="Interface", shape=box];
+        n18202[label="ArgumentsHost", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/features/arguments-host.interface.ts:64", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_can_activate_interface_ts {
@@ -152,7 +166,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n17297[label="CanActivate", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/features/can-activate.interface.ts:14", sym_ty="Interface", shape=box];
+        n9657[label="CanActivate", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/features/can-activate.interface.ts:14", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_cors_options_interface_ts {
@@ -160,7 +174,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n2428[label="CorsOptions", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/external/cors-options.interface.ts:23", sym_ty="Interface", shape=box];
+        n8654[label="CorsOptions", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/external/cors-options.interface.ts:23", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_dynamic_module_interface_ts {
@@ -168,7 +182,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n7679[label="DynamicModule", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/modules/dynamic-module.interface.ts:11", sym_ty="Interface", shape=box];
+        n6006[label="DynamicModule", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/modules/dynamic-module.interface.ts:11", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_exception_filter_metadata_interface_ts {
@@ -176,7 +190,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n1473[label="ExceptionFilterMetadata", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/exceptions/exception-filter-metadata.interface.ts:4", sym_ty="Interface", shape=box];
+        n4954[label="ExceptionFilterMetadata", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/exceptions/exception-filter-metadata.interface.ts:4", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_exception_filter_interface_ts {
@@ -184,7 +198,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n17390[label="ExceptionFilter", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/exceptions/exception-filter.interface.ts:10", sym_ty="Interface", shape=box];
+        n14880[label="ExceptionFilter", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/exceptions/exception-filter.interface.ts:10", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_execution_context_interface_ts {
@@ -192,7 +206,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n17653[label="ExecutionContext", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/features/execution-context.interface.ts:11", sym_ty="Interface", shape=box];
+        n12646[label="ExecutionContext", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/features/execution-context.interface.ts:11", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_global_prefix_options_interface_ts {
@@ -200,7 +214,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n9397[label="GlobalPrefixOptions", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/global-prefix-options.interface.ts:6", sym_ty="Interface", shape=box];
+        n12003[label="GlobalPrefixOptions", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/global-prefix-options.interface.ts:6", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_http_server_interface_ts {
@@ -208,7 +222,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n1692[label="HttpServer", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/http/http-server.interface.ts:17", sym_ty="Interface", shape=box];
+        n6359[label="HttpServer", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/http/http-server.interface.ts:17", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_middleware_configuration_interface_ts {
@@ -216,16 +230,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n11815[label="MiddlewareConfiguration", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/middleware/middleware-configuration.interface.ts:11", sym_ty="Interface", shape=box];
-        n11773[label="RouteInfo", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/middleware/middleware-configuration.interface.ts:5", sym_ty="Interface", shape=box];
-      }
-
-      subgraph cluster_middleware_consumer_interface_ts {
-        label="middleware-consumer.interface.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n17759[label="MiddlewareConsumer", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/middleware/middleware-consumer.interface.ts:11", sym_ty="Interface", shape=box];
+        n9504[label="MiddlewareConfiguration", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/middleware/middleware-configuration.interface.ts:11", sym_ty="Interface", shape=box];
+        n9464[label="RouteInfo", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/middleware/middleware-configuration.interface.ts:5", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_nest_application_context_options_interface_ts {
@@ -233,7 +239,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n5709[label="NestApplicationContextOptions", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/nest-application-context-options.interface.ts:6", sym_ty="Struct", shape=box];
+        n3753[label="NestApplicationContextOptions", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/nest-application-context-options.interface.ts:6", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_nest_application_context_interface_ts {
@@ -241,7 +247,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n20513[label="INestApplicationContext", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/nest-application-context.interface.ts:29", sym_ty="Interface", shape=box];
+        n11462[label="INestApplicationContext", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/nest-application-context.interface.ts:29", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_nest_application_options_interface_ts {
@@ -249,7 +255,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n14588[label="NestApplicationOptions", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/nest-application-options.interface.ts:11", sym_ty="Interface", shape=box];
+        n3724[label="NestApplicationOptions", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/nest-application-options.interface.ts:11", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_nest_application_interface_ts {
@@ -257,7 +263,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n2860[label="INestApplication", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/nest-application.interface.ts:20", sym_ty="Interface", shape=box];
+        n8310[label="INestApplication", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/nest-application.interface.ts:20", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_nest_interceptor_interface_ts {
@@ -265,7 +271,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n10157[label="NestInterceptor", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/features/nest-interceptor.interface.ts:27", sym_ty="Interface", shape=box];
+        n3848[label="NestInterceptor", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/features/nest-interceptor.interface.ts:27", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_nest_microservice_interface_ts {
@@ -273,7 +279,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n20456[label="INestMicroservice", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/nest-microservice.interface.ts:14", sym_ty="Interface", shape=box];
+        n20488[label="INestMicroservice", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/nest-microservice.interface.ts:14", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_on_destroy_interface_ts {
@@ -281,7 +287,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n12047[label="OnModuleDestroy", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/hooks/on-destroy.interface.ts:10", sym_ty="Interface", shape=box];
+        n9699[label="OnModuleDestroy", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/hooks/on-destroy.interface.ts:10", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_on_init_interface_ts {
@@ -289,7 +295,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n9280[label="OnModuleInit", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/hooks/on-init.interface.ts:8", sym_ty="Interface", shape=box];
+        n13293[label="OnModuleInit", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/hooks/on-init.interface.ts:8", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_pipe_transform_interface_ts {
@@ -297,8 +303,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n3996[label="ArgumentMetadata", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/features/pipe-transform.interface.ts:13", sym_ty="Interface", shape=box];
-        n4048[label="PipeTransform", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/features/pipe-transform.interface.ts:37", sym_ty="Interface", shape=box];
+        n2646[label="ArgumentMetadata", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/features/pipe-transform.interface.ts:13", sym_ty="Interface", shape=box];
+        n2699[label="PipeTransform", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/features/pipe-transform.interface.ts:37", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_provider_interface_ts {
@@ -306,7 +312,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n4879[label="FactoryProvider", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/modules/provider.interface.ts:116", sym_ty="Interface", shape=box];
+        n10420[label="FactoryProvider", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/modules/provider.interface.ts:116", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_scope_options_interface_ts {
@@ -314,7 +320,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n13884[label="Scope", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/scope-options.interface.ts:4", sym_ty="Enum", shape=box];
+        n5132[label="Scope", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/scope-options.interface.ts:4", sym_ty="Enum", shape=box];
       }
 
       subgraph cluster_type_interface_ts {
@@ -322,7 +328,15 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n12702[label="Type", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/type.interface.ts:1", sym_ty="Interface", shape=box];
+        n14321[label="Type", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/type.interface.ts:1", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_validation_error_interface_ts {
+        label="validation-error.interface.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n250[label="ValidationError", path="/home/yibai/llmcc/sample/repos/nest/packages/common/interfaces/external/validation-error.interface.ts:9", sym_ty="Interface", shape=box];
       }
 
     }
@@ -337,15 +351,22 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n816[label="ConfigurableModuleAsyncOptions", path="/home/yibai/llmcc/sample/repos/nest/packages/common/module-utils/interfaces/configurable-module-async-options.interface.ts:29", sym_ty="Interface", shape=box];
+        n5277[label="ConfigurableModuleAsyncOptions", path="/home/yibai/llmcc/sample/repos/nest/packages/common/module-utils/interfaces/configurable-module-async-options.interface.ts:29", sym_ty="Interface", shape=box];
       }
 
-      subgraph cluster_configurable_module_builder_ts {
-        label="configurable-module.builder.ts";
+    }
+
+    subgraph cluster_pipes {
+      label="pipes";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_validation_pipe_ts {
+        label="validation.pipe.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n10288[label="ConfigurableModuleBuilder", path="/home/yibai/llmcc/sample/repos/nest/packages/common/module-utils/configurable-module.builder.ts:53", sym_ty="Struct", shape=box];
+        n10416[label="ValidationPipe", path="/home/yibai/llmcc/sample/repos/nest/packages/common/pipes/validation.pipe.ts:47", sym_ty="Struct", shape=box];
       }
 
     }
@@ -360,8 +381,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n13237[label="LoggerService", path="/home/yibai/llmcc/sample/repos/nest/packages/common/services/logger.service.ts:23", sym_ty="Interface", shape=box];
-        n13462[label="Logger", path="/home/yibai/llmcc/sample/repos/nest/packages/common/services/logger.service.ts:88", sym_ty="Struct", shape=box];
+        n16103[label="LoggerService", path="/home/yibai/llmcc/sample/repos/nest/packages/common/services/logger.service.ts:23", sym_ty="Interface", shape=box];
+        n16465[label="Logger", path="/home/yibai/llmcc/sample/repos/nest/packages/common/services/logger.service.ts:88", sym_ty="Struct", shape=box];
       }
 
     }
@@ -371,29 +392,12 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
-      subgraph cluster_extend_metadata_util_ts {
-        label="extend-metadata.util.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n4245[label="extendArrayMetadata", path="/home/yibai/llmcc/sample/repos/nest/packages/common/utils/extend-metadata.util.ts:1", sym_ty="Function", shape=ellipse];
-      }
-
       subgraph cluster_load_package_util_ts {
         label="load-package.util.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n20660[label="loadPackage", path="/home/yibai/llmcc/sample/repos/nest/packages/common/utils/load-package.util.ts:8", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_validate_each_util_ts {
-        label="validate-each.util.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n5840[label="InvalidDecoratorItemException", path="/home/yibai/llmcc/sample/repos/nest/packages/common/utils/validate-each.util.ts:1", sym_ty="Struct", shape=box];
-        n6045[label="validateEach", path="/home/yibai/llmcc/sample/repos/nest/packages/common/utils/validate-each.util.ts:16", sym_ty="Function", shape=ellipse];
+        n15935[label="loadPackage", path="/home/yibai/llmcc/sample/repos/nest/packages/common/utils/load-package.util.ts:8", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -415,7 +419,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n15254[label="AbstractHttpAdapter", path="/home/yibai/llmcc/sample/repos/nest/packages/core/adapters/http-adapter.ts:8", sym_ty="Struct", shape=box];
+        n1771[label="AbstractHttpAdapter", path="/home/yibai/llmcc/sample/repos/nest/packages/core/adapters/http-adapter.ts:8", sym_ty="Struct", shape=box];
       }
 
     }
@@ -425,7 +429,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n3696[label="ApplicationConfig", path="/home/yibai/llmcc/sample/repos/nest/packages/core/application-config.ts:13", sym_ty="Struct", shape=box];
+      n9023[label="ApplicationConfig", path="/home/yibai/llmcc/sample/repos/nest/packages/core/application-config.ts:13", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_errors {
@@ -438,7 +442,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n9209[label="InvalidExceptionFilterException", path="/home/yibai/llmcc/sample/repos/nest/packages/core/errors/exceptions/invalid-exception-filter.exception.ts:4", sym_ty="Struct", shape=box];
+        n13249[label="InvalidExceptionFilterException", path="/home/yibai/llmcc/sample/repos/nest/packages/core/errors/exceptions/invalid-exception-filter.exception.ts:4", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_runtime_exception_ts {
@@ -446,15 +450,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n9037[label="RuntimeException", path="/home/yibai/llmcc/sample/repos/nest/packages/core/errors/exceptions/runtime.exception.ts:1", sym_ty="Struct", shape=box];
-      }
-
-      subgraph cluster_unknown_element_exception_ts {
-        label="unknown-element.exception.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n13726[label="UnknownElementException", path="/home/yibai/llmcc/sample/repos/nest/packages/core/errors/exceptions/unknown-element.exception.ts:3", sym_ty="Struct", shape=box];
+        n11666[label="RuntimeException", path="/home/yibai/llmcc/sample/repos/nest/packages/core/errors/exceptions/runtime.exception.ts:1", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_unknown_module_exception_ts {
@@ -462,7 +458,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n1415[label="UnknownModuleException", path="/home/yibai/llmcc/sample/repos/nest/packages/core/errors/exceptions/unknown-module.exception.ts:3", sym_ty="Struct", shape=box];
+        n2820[label="UnknownModuleException", path="/home/yibai/llmcc/sample/repos/nest/packages/core/errors/exceptions/unknown-module.exception.ts:3", sym_ty="Struct", shape=box];
       }
 
     }
@@ -472,12 +468,27 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
-      subgraph cluster_base_exception_filter_ts {
-        label="base-exception-filter.ts";
+      subgraph cluster_exceptions_handler_ts {
+        label="exceptions-handler.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n3332[label="BaseExceptionFilter", path="/home/yibai/llmcc/sample/repos/nest/packages/core/exceptions/base-exception-filter.ts:17", sym_ty="Struct", shape=box];
+        n18764[label="ExceptionsHandler", path="/home/yibai/llmcc/sample/repos/nest/packages/core/exceptions/exceptions-handler.ts:9", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_graphql_code_first {
+      label="graphql-code-first";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_main_ts {
+        label="main.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n5473[label="bootstrap", path="/home/yibai/llmcc/sample/repos/nest/integration/graphql-code-first/src/main.ts:5", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -487,12 +498,20 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
+      subgraph cluster_context_id_factory_ts {
+        label="context-id-factory.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n18972[label="createContextId", path="/home/yibai/llmcc/sample/repos/nest/packages/core/helpers/context-id-factory.ts:5", sym_ty="Function", shape=ellipse];
+      }
+
       subgraph cluster_context_utils_ts {
         label="context-utils.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n15613[label="ParamProperties", path="/home/yibai/llmcc/sample/repos/nest/packages/core/helpers/context-utils.ts:15", sym_ty="Interface", shape=box];
+        n19771[label="ParamProperties", path="/home/yibai/llmcc/sample/repos/nest/packages/core/helpers/context-utils.ts:15", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_execution_context_host_ts {
@@ -500,15 +519,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n3416[label="ExecutionContextHost", path="/home/yibai/llmcc/sample/repos/nest/packages/core/helpers/execution-context-host.ts:10", sym_ty="Struct", shape=box];
-      }
-
-      subgraph cluster_get_class_scope_ts {
-        label="get-class-scope.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n13415[label="getClassScope", path="/home/yibai/llmcc/sample/repos/nest/packages/core/helpers/get-class-scope.ts:5", sym_ty="Function", shape=ellipse];
+        n10290[label="ExecutionContextHost", path="/home/yibai/llmcc/sample/repos/nest/packages/core/helpers/execution-context-host.ts:10", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_http_adapter_host_ts {
@@ -516,7 +527,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n9145[label="HttpAdapterHost", path="/home/yibai/llmcc/sample/repos/nest/packages/core/helpers/http-adapter-host.ts:16", sym_ty="Struct", shape=box];
+        n13581[label="HttpAdapterHost", path="/home/yibai/llmcc/sample/repos/nest/packages/core/helpers/http-adapter-host.ts:16", sym_ty="Struct", shape=box];
       }
 
     }
@@ -526,52 +537,12 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
-      subgraph cluster_before_app_shutdown_hook_ts {
-        label="before-app-shutdown.hook.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n9403[label="callBeforeAppShutdownHook", path="/home/yibai/llmcc/sample/repos/nest/packages/core/hooks/before-app-shutdown.hook.ts:49", sym_ty="Function", shape=ellipse];
-      }
-
       subgraph cluster_lifecycle_hook_order_spec_ts {
         label="lifecycle-hook-order.spec.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n6217[label="TestInjectable", path="/home/yibai/llmcc/sample/repos/nest/integration/hooks/e2e/lifecycle-hook-order.spec.ts:12", sym_ty="Struct", shape=box];
-      }
-
-      subgraph cluster_on_app_bootstrap_hook_ts {
-        label="on-app-bootstrap.hook.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n10553[label="callModuleBootstrapHook", path="/home/yibai/llmcc/sample/repos/nest/packages/core/hooks/on-app-bootstrap.hook.ts:43", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_on_app_shutdown_hook_ts {
-        label="on-app-shutdown.hook.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n6638[label="callAppShutdownHook", path="/home/yibai/llmcc/sample/repos/nest/packages/core/hooks/on-app-shutdown.hook.ts:45", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_on_module_destroy_hook_ts {
-        label="on-module-destroy.hook.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n11383[label="callModuleDestroyHook", path="/home/yibai/llmcc/sample/repos/nest/packages/core/hooks/on-module-destroy.hook.ts:41", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_on_module_init_hook_ts {
-        label="on-module-init.hook.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n8672[label="callModuleInitHook", path="/home/yibai/llmcc/sample/repos/nest/packages/core/hooks/on-module-init.hook.ts:37", sym_ty="Function", shape=ellipse];
+        n4715[label="TestInjectable", path="/home/yibai/llmcc/sample/repos/nest/integration/hooks/e2e/lifecycle-hook-order.spec.ts:12", sym_ty="Struct", shape=box];
       }
 
     }
@@ -586,7 +557,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n13503[label="ModuleCompiler", path="/home/yibai/llmcc/sample/repos/nest/packages/core/injector/compiler.ts:14", sym_ty="Struct", shape=box];
+        n16515[label="ModuleCompiler", path="/home/yibai/llmcc/sample/repos/nest/packages/core/injector/compiler.ts:14", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_container_ts {
@@ -594,7 +565,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n15221[label="NestContainer", path="/home/yibai/llmcc/sample/repos/nest/packages/core/injector/container.ts:31", sym_ty="Struct", shape=box];
+        n16067[label="NestContainer", path="/home/yibai/llmcc/sample/repos/nest/packages/core/injector/container.ts:31", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_injector_ts {
@@ -602,7 +573,16 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n16388[label="Injector", path="/home/yibai/llmcc/sample/repos/nest/packages/core/injector/injector.ts:86", sym_ty="Struct", shape=box];
+        n9693[label="Injector", path="/home/yibai/llmcc/sample/repos/nest/packages/core/injector/injector.ts:86", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_instance_links_host_ts {
+        label="instance-links-host.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n21011[label="InstanceLink", path="/home/yibai/llmcc/sample/repos/nest/packages/core/injector/instance-links-host.ts:10", sym_ty="Interface", shape=box];
+        n21065[label="InstanceLinksHost", path="/home/yibai/llmcc/sample/repos/nest/packages/core/injector/instance-links-host.ts:17", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_instance_wrapper_ts {
@@ -610,7 +590,16 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n1330[label="InstanceWrapper", path="/home/yibai/llmcc/sample/repos/nest/packages/core/injector/instance-wrapper.ts:61", sym_ty="Struct", shape=box];
+        n4877[label="ContextId", path="/home/yibai/llmcc/sample/repos/nest/packages/core/injector/instance-wrapper.ts:36", sym_ty="Interface", shape=box];
+        n5098[label="InstanceWrapper", path="/home/yibai/llmcc/sample/repos/nest/packages/core/injector/instance-wrapper.ts:61", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_many_global_modules_spec_ts {
+        label="many-global-modules.spec.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n19819[label="AppModule", path="/home/yibai/llmcc/sample/repos/nest/integration/injector/e2e/many-global-modules.spec.ts:142", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_module_ts {
@@ -626,8 +615,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n7330[label="getNonTransientInstances", path="/home/yibai/llmcc/sample/repos/nest/packages/core/injector/helpers/transient-instances.ts:25", sym_ty="Function", shape=ellipse];
-        n7271[label="getTransientInstances", path="/home/yibai/llmcc/sample/repos/nest/packages/core/injector/helpers/transient-instances.ts:9", sym_ty="Function", shape=ellipse];
+        n910[label="getNonTransientInstances", path="/home/yibai/llmcc/sample/repos/nest/packages/core/injector/helpers/transient-instances.ts:25", sym_ty="Function", shape=ellipse];
+        n34[label="getTransientInstances", path="/home/yibai/llmcc/sample/repos/nest/packages/core/injector/helpers/transient-instances.ts:9", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -642,7 +631,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n16109[label="GraphInspector", path="/home/yibai/llmcc/sample/repos/nest/packages/core/inspector/graph-inspector.ts:13", sym_ty="Struct", shape=box];
+        n11135[label="GraphInspector", path="/home/yibai/llmcc/sample/repos/nest/packages/core/inspector/graph-inspector.ts:13", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_serialized_graph_ts {
@@ -650,32 +639,17 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n19672[label="SerializedGraph", path="/home/yibai/llmcc/sample/repos/nest/packages/core/inspector/serialized-graph.ts:26", sym_ty="Struct", shape=box];
+        n13099[label="SerializedGraph", path="/home/yibai/llmcc/sample/repos/nest/packages/core/inspector/serialized-graph.ts:26", sym_ty="Struct", shape=box];
       }
 
     }
 
-    subgraph cluster_middleware {
-      label="middleware";
+    subgraph cluster_nest_application_context_ts {
+      label="nest-application-context.ts";
       style=rounded;
-            bgcolor="#f5f5f5";
+            bgcolor="#fafafa";
 
-      subgraph cluster_builder_ts {
-        label="builder.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n7033[label="MiddlewareBuilder", path="/home/yibai/llmcc/sample/repos/nest/packages/core/middleware/builder.ts:17", sym_ty="Struct", shape=box];
-      }
-
-      subgraph cluster_route_info_path_extractor_ts {
-        label="route-info-path-extractor.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n7730[label="RouteInfoPathExtractor", path="/home/yibai/llmcc/sample/repos/nest/packages/core/middleware/route-info-path-extractor.ts:16", sym_ty="Struct", shape=box];
-      }
-
+      n2384[label="NestApplicationContext", path="/home/yibai/llmcc/sample/repos/nest/packages/core/nest-application-context.ts:40", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_repl {
@@ -688,8 +662,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n6989[label="bootstrap", path="/home/yibai/llmcc/sample/repos/nest/integration/repl/src/repl.ts:4", sym_ty="Function", shape=ellipse];
-        n6598[label="repl", path="/home/yibai/llmcc/sample/repos/nest/packages/core/repl/repl.ts:12", sym_ty="Function", shape=ellipse];
+        n5208[label="repl", path="/home/yibai/llmcc/sample/repos/nest/packages/core/repl/repl.ts:12", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -704,23 +677,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n2662[label="ExcludeRouteMetadata", path="/home/yibai/llmcc/sample/repos/nest/packages/core/router/interfaces/exclude-route-metadata.interface.ts:3", sym_ty="Interface", shape=box];
-      }
-
-      subgraph cluster_exclude_route_util_ts {
-        label="exclude-route.util.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n6617[label="isRouteExcluded", path="/home/yibai/llmcc/sample/repos/nest/packages/core/router/utils/exclude-route.util.ts:9", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_route_path_factory_ts {
-        label="route-path-factory.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n19949[label="RoutePathFactory", path="/home/yibai/llmcc/sample/repos/nest/packages/core/router/route-path-factory.ts:18", sym_ty="Struct", shape=box];
+        n4135[label="ExcludeRouteMetadata", path="/home/yibai/llmcc/sample/repos/nest/packages/core/router/interfaces/exclude-route-metadata.interface.ts:3", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_router_execution_context_ts {
@@ -728,7 +685,30 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n9003[label="ParamProperties", path="/home/yibai/llmcc/sample/repos/nest/packages/core/router/router-execution-context.ts:50", sym_ty="Interface", shape=box];
+        n16434[label="ParamProperties", path="/home/yibai/llmcc/sample/repos/nest/packages/core/router/router-execution-context.ts:50", sym_ty="Interface", shape=box];
+      }
+
+    }
+
+    subgraph cluster_scopes {
+      label="scopes";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_logging_interceptor_ts {
+        label="logging.interceptor.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n7019[label="Interceptor", path="/home/yibai/llmcc/sample/repos/nest/integration/scopes/src/circular-hello/interceptors/logging.interceptor.ts:11", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_request_scoped_guard_ts {
+        label="request-scoped.guard.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n7396[label="Guard", path="/home/yibai/llmcc/sample/repos/nest/integration/scopes/src/transient/guards/request-scoped.guard.ts:10", sym_ty="Struct", shape=box];
       }
 
     }
@@ -745,12 +725,20 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
+      subgraph cluster_client_grpc_ts {
+        label="client-grpc.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n9517[label="ClientGrpcProxy", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/client/client-grpc.ts:31", sym_ty="Struct", shape=box];
+      }
+
       subgraph cluster_client_kafka_ts {
         label="client-kafka.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n6342[label="ClientKafka", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/client/client-kafka.ts:58", sym_ty="Struct", shape=box];
+        n6650[label="ClientKafka", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/client/client-kafka.ts:58", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_client_proxy_ts {
@@ -758,22 +746,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n17300[label="ClientProxy", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/client/client-proxy.ts:38", sym_ty="Struct", shape=box];
-      }
-
-    }
-
-    subgraph cluster_context {
-      label="context";
-      style=rounded;
-            bgcolor="#f5f5f5";
-
-      subgraph cluster_request_context_host_ts {
-        label="request-context-host.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n11421[label="RequestContextHost", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/context/request-context-host.ts:7", sym_ty="Struct", shape=box];
+        n12309[label="ClientProxy", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/client/client-proxy.ts:38", sym_ty="Struct", shape=box];
       }
 
     }
@@ -788,7 +761,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n5528[label="BaseRpcContext", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/ctx-host/base-rpc.context.ts:4", sym_ty="Struct", shape=box];
+        n6857[label="BaseRpcContext", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/ctx-host/base-rpc.context.ts:4", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_kafka_context_ts {
@@ -796,7 +769,15 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n10495[label="KafkaContext", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/ctx-host/kafka.context.ts:16", sym_ty="Struct", shape=box];
+        n723[label="KafkaContext", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/ctx-host/kafka.context.ts:16", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mqtt_context_ts {
+        label="mqtt.context.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n2234[label="MqttContext", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/ctx-host/mqtt.context.ts:8", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_nats_context_ts {
@@ -804,7 +785,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n2843[label="NatsContext", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/ctx-host/nats.context.ts:8", sym_ty="Struct", shape=box];
+        n4705[label="NatsContext", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/ctx-host/nats.context.ts:8", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_rmq_context_ts {
@@ -812,7 +793,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n16079[label="RmqContext", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/ctx-host/rmq.context.ts:8", sym_ty="Struct", shape=box];
+        n11089[label="RmqContext", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/ctx-host/rmq.context.ts:8", sym_ty="Struct", shape=box];
       }
 
     }
@@ -827,7 +808,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n1980[label="Payload", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/decorators/payload.decorator.ts:54", sym_ty="Function", shape=ellipse];
+        n8091[label="Payload", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/decorators/payload.decorator.ts:54", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -842,22 +823,23 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n12579[label="Transport", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/enums/transport.enum.ts:1", sym_ty="Enum", shape=box];
+        n13904[label="Transport", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/enums/transport.enum.ts:1", sym_ty="Enum", shape=box];
       }
 
     }
 
-    subgraph cluster_helpers {
-      label="helpers";
+    subgraph cluster_external {
+      label="external";
       style=rounded;
             bgcolor="#f5f5f5";
 
-      subgraph cluster_kafka_parser_ts {
-        label="kafka-parser.ts";
+      subgraph cluster_kafka_interface_ts {
+        label="kafka.interface.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n5377[label="KafkaParser", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/helpers/kafka-parser.ts:4", sym_ty="Struct", shape=box];
+        n83[label="KafkaConfig", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/external/kafka.interface.ts:60", sym_ty="Interface", shape=box];
+        n2091[label="logLevel", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/external/kafka.interface.ts:618", sym_ty="Enum", shape=box];
       }
 
     }
@@ -867,20 +849,36 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
+      subgraph cluster_client_grpc_interface_ts {
+        label="client-grpc.interface.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n7103[label="ClientGrpc", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/interfaces/client-grpc.interface.ts:4", sym_ty="Interface", shape=box];
+      }
+
       subgraph cluster_client_kafka_proxy_interface_ts {
         label="client-kafka-proxy.interface.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n12224[label="ClientKafkaProxy", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/interfaces/client-kafka-proxy.interface.ts:9", sym_ty="Interface", shape=box];
+        n4184[label="ClientKafkaProxy", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/interfaces/client-kafka-proxy.interface.ts:9", sym_ty="Interface", shape=box];
       }
 
-      subgraph cluster_request_context_interface_ts {
-        label="request-context.interface.ts";
+      subgraph cluster_deserializer_interface_ts {
+        label="deserializer.interface.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n2899[label="RequestContext", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/interfaces/request-context.interface.ts:3", sym_ty="Interface", shape=box];
+        n3938[label="Deserializer", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/interfaces/deserializer.interface.ts:10", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_microservice_configuration_interface_ts {
+        label="microservice-configuration.interface.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n19574[label="NatsOptions", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/interfaces/microservice-configuration.interface.ts:168", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_serializer_interface_ts {
@@ -888,7 +886,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n5738[label="Serializer", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/interfaces/serializer.interface.ts:10", sym_ty="Interface", shape=box];
+        n7145[label="Serializer", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/interfaces/serializer.interface.ts:10", sym_ty="Interface", shape=box];
       }
 
     }
@@ -898,12 +896,12 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
-      subgraph cluster_identity_serializer_ts {
-        label="identity.serializer.ts";
+      subgraph cluster_nats_record_serializer_ts {
+        label="nats-record.serializer.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n6421[label="IdentitySerializer", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/serializers/identity.serializer.ts:3", sym_ty="Struct", shape=box];
+        n617[label="NatsRecordSerializer", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/serializers/nats-record.serializer.ts:10", sym_ty="Struct", shape=box];
       }
 
     }
@@ -913,82 +911,20 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
+      subgraph cluster_server_grpc_ts {
+        label="server-grpc.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n16017[label="ServerGrpc", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/server/server-grpc.ts:59", sym_ty="Struct", shape=box];
+      }
+
       subgraph cluster_server_ts {
         label="server.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n10159[label="Server", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/server/server.ts:47", sym_ty="Struct", shape=box];
-      }
-
-    }
-
-  }
-
-  subgraph cluster_nestjs_platform_express {
-    label="nestjs_platform-express";
-    style=rounded;
-        bgcolor="#f8f8f8";
-
-    subgraph cluster_multer {
-      label="multer";
-      style=rounded;
-            bgcolor="#f5f5f5";
-
-      subgraph cluster_any_files_interceptor_ts {
-        label="any-files.interceptor.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n5767[label="AnyFilesInterceptor", path="/home/yibai/llmcc/sample/repos/nest/packages/platform-express/multer/interceptors/any-files.interceptor.ts:24", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_file_fields_interceptor_ts {
-        label="file-fields.interceptor.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n7209[label="FileFieldsInterceptor", path="/home/yibai/llmcc/sample/repos/nest/packages/platform-express/multer/interceptors/file-fields.interceptor.ts:27", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_file_interceptor_ts {
-        label="file.interceptor.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n8500[label="FileInterceptor", path="/home/yibai/llmcc/sample/repos/nest/packages/platform-express/multer/interceptors/file.interceptor.ts:25", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_files_interceptor_ts {
-        label="files.interceptor.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n5835[label="FilesInterceptor", path="/home/yibai/llmcc/sample/repos/nest/packages/platform-express/multer/interceptors/files.interceptor.ts:27", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_multer_options_interface_ts {
-        label="multer-options.interface.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n7999[label="MulterOptions", path="/home/yibai/llmcc/sample/repos/nest/packages/platform-express/multer/interfaces/multer-options.interface.ts:6", sym_ty="Interface", shape=box];
-      }
-
-      subgraph cluster_multer_utils_ts {
-        label="multer.utils.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n5506[label="transformException", path="/home/yibai/llmcc/sample/repos/nest/packages/platform-express/multer/multer/multer.utils.ts:10", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_no_files_interceptor_ts {
-        label="no-files.interceptor.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n6108[label="NoFilesInterceptor", path="/home/yibai/llmcc/sample/repos/nest/packages/platform-express/multer/interceptors/no-files.interceptor.ts:24", sym_ty="Function", shape=ellipse];
+        n15103[label="Server", path="/home/yibai/llmcc/sample/repos/nest/packages/microservices/server/server.ts:47", sym_ty="Struct", shape=box];
       }
 
     }
@@ -1005,14 +941,21 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
+      subgraph cluster_fastify_adapter_ts {
+        label="fastify-adapter.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n19501[label="FastifyAdapter", path="/home/yibai/llmcc/sample/repos/nest/packages/platform-fastify/adapters/fastify-adapter.ts:124", sym_ty="Struct", shape=box];
+      }
+
       subgraph cluster_fastify_middie_ts {
         label="fastify-middie.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n19195[label="fastifyMiddie", path="/home/yibai/llmcc/sample/repos/nest/packages/platform-fastify/adapters/middie/fastify-middie.ts:209", sym_ty="Function", shape=ellipse];
-        n19802[label="onRegister", path="/home/yibai/llmcc/sample/repos/nest/packages/platform-fastify/adapters/middie/fastify-middie.ts:295", sym_ty="Function", shape=ellipse];
-        n18048[label="middie", path="/home/yibai/llmcc/sample/repos/nest/packages/platform-fastify/adapters/middie/fastify-middie.ts:36", sym_ty="Function", shape=ellipse];
+        n20507[label="cleanup", path="/home/yibai/llmcc/sample/repos/nest/packages/platform-fastify/adapters/middie/fastify-middie.ts:153", sym_ty="Function", shape=ellipse];
+        n19567[label="middie", path="/home/yibai/llmcc/sample/repos/nest/packages/platform-fastify/adapters/middie/fastify-middie.ts:36", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -1034,7 +977,30 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n2102[label="MessageBody", path="/home/yibai/llmcc/sample/repos/nest/packages/websockets/decorators/message-body.decorator.ts:54", sym_ty="Function", shape=ellipse];
+        n8193[label="MessageBody", path="/home/yibai/llmcc/sample/repos/nest/packages/websockets/decorators/message-body.decorator.ts:54", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_exceptions {
+      label="exceptions";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_base_ws_exception_filter_ts {
+        label="base-ws-exception-filter.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n18250[label="BaseWsExceptionFilter", path="/home/yibai/llmcc/sample/repos/nest/packages/websockets/exceptions/base-ws-exception-filter.ts:46", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_ws_exceptions_handler_ts {
+        label="ws-exceptions-handler.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n19084[label="WsExceptionsHandler", path="/home/yibai/llmcc/sample/repos/nest/packages/websockets/exceptions/ws-exceptions-handler.ts:12", sym_ty="Struct", shape=box];
       }
 
     }
@@ -1049,7 +1015,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n13799[label="GatewayMetadata", path="/home/yibai/llmcc/sample/repos/nest/packages/websockets/interfaces/gateway-metadata.interface.ts:8", sym_ty="Interface", shape=box];
+        n17699[label="GatewayMetadata", path="/home/yibai/llmcc/sample/repos/nest/packages/websockets/interfaces/gateway-metadata.interface.ts:8", sym_ty="Interface", shape=box];
       }
 
     }
@@ -1071,7 +1037,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n2456[label="Post", path="/home/yibai/llmcc/sample/repos/nest/sample/32-graphql-federation-schema-first/posts-application/src/posts/models/post.model.ts:6", sym_ty="Struct", shape=box];
+        n1610[label="Post", path="/home/yibai/llmcc/sample/repos/nest/sample/32-graphql-federation-schema-first/posts-application/src/posts/models/post.model.ts:6", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_posts_interfaces_ts {
@@ -1079,7 +1045,15 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n8829[label="Post", path="/home/yibai/llmcc/sample/repos/nest/sample/32-graphql-federation-schema-first/posts-application/src/posts/posts.interfaces.ts:3", sym_ty="Interface", shape=box];
+        n10838[label="Post", path="/home/yibai/llmcc/sample/repos/nest/sample/32-graphql-federation-schema-first/posts-application/src/posts/posts.interfaces.ts:3", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_posts_service_ts {
+        label="posts.service.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n16032[label="PostsService", path="/home/yibai/llmcc/sample/repos/nest/sample/31-graphql-federation-code-first/posts-application/src/posts/posts.service.ts:5", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_users_interfaces_ts {
@@ -1087,7 +1061,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n11568[label="User", path="/home/yibai/llmcc/sample/repos/nest/sample/32-graphql-federation-schema-first/posts-application/src/posts/users.interfaces.ts:3", sym_ty="Interface", shape=box];
+        n14161[label="User", path="/home/yibai/llmcc/sample/repos/nest/sample/32-graphql-federation-schema-first/posts-application/src/posts/users.interfaces.ts:3", sym_ty="Interface", shape=box];
       }
 
     }
@@ -1095,133 +1069,108 @@ digraph architecture {
   }
 
 
-  n1330 -> n3696 [from="field_type", to="struct"];
-  n1387 -> n9003 [from="field_type", to="struct"];
-  n1387 -> n21523 [from="input", to="func"];
-  n1692 -> n15254 [from="interface", to="implements"];
-  n2200 -> n4245 [from="caller", to="callee"];
-  n2200 -> n6045 [from="caller", to="callee"];
-  n2428 -> n13799 [from="field_type", to="struct"];
-  n2428 -> n14588 [from="field_type", to="struct"];
-  n2662 -> n6617 [from="input", to="func"];
-  n2662 -> n7730 [from="field_type", to="struct"];
-  n2899 -> n11421 [from="interface", to="implements"];
-  n4048 -> n3696 [from="field_type", to="struct"];
-  n4048 -> n9003 [from="field_type", to="struct"];
-  n4048 -> n15613 [from="field_type", to="struct"];
-  n4879 -> n816 [from="field_type", to="struct"];
-  n4879 -> n1330 [from="field_type", to="struct"];
-  n5351 -> n2662 [from="field_type", to="struct"];
-  n5351 -> n6617 [from="input", to="func"];
-  n5351 -> n11773 [from="field_type", to="struct"];
-  n5351 -> n15254 [from="field_type", to="struct"];
-  n5377 -> n6342 [from="field_type", to="struct"];
-  n5506 -> n11495 [from="func", to="type_dep"];
-  n5528 -> n2843 [from="base", to="extends"];
-  n5528 -> n10159 [from="field_type", to="struct"];
-  n5528 -> n10495 [from="base", to="extends"];
-  n5528 -> n16079 [from="base", to="extends"];
-  n5709 -> n14588 [from="base", to="extends"];
-  n5738 -> n6421 [from="interface", to="implements"];
-  n5767 -> n8501 [from="caller", to="callee"];
-  n5767 -> n12702 [from="func", to="output"];
-  n5835 -> n8501 [from="caller", to="callee"];
-  n5835 -> n12702 [from="func", to="output"];
-  n6045 -> n5840 [from="func", to="type_dep"];
-  n6108 -> n8501 [from="caller", to="callee"];
-  n6108 -> n12702 [from="func", to="output"];
-  n6598 -> n13462 [from="func", to="type_dep"];
-  n6638 -> n7271 [from="caller", to="callee"];
-  n6638 -> n7330 [from="caller", to="callee"];
-  n6989 -> n6598 [from="caller", to="callee"];
-  n7209 -> n8501 [from="caller", to="callee"];
-  n7209 -> n12702 [from="func", to="output"];
-  n7271 -> n1330 [from="func", to="output"];
-  n7330 -> n1330 [from="func", to="output"];
-  n7679 -> n10288 [from="field_type", to="struct"];
-  n7999 -> n5767 [from="input", to="func"];
-  n7999 -> n5835 [from="input", to="func"];
-  n7999 -> n6108 [from="input", to="func"];
-  n7999 -> n7209 [from="input", to="func"];
-  n7999 -> n8500 [from="input", to="func"];
-  n8500 -> n8501 [from="caller", to="callee"];
-  n8500 -> n12702 [from="func", to="output"];
-  n8672 -> n7271 [from="caller", to="callee"];
-  n8672 -> n7330 [from="caller", to="callee"];
-  n8829 -> n11568 [from="field_type", to="struct"];
-  n9037 -> n1415 [from="base", to="extends"];
-  n9037 -> n9209 [from="base", to="extends"];
-  n9037 -> n13726 [from="base", to="extends"];
-  n9145 -> n3332 [from="field_type", to="struct"];
-  n9280 -> n6217 [from="interface", to="implements"];
-  n9397 -> n3696 [from="field_type", to="struct"];
-  n9403 -> n7271 [from="caller", to="callee"];
-  n9403 -> n7330 [from="caller", to="callee"];
-  n9832 -> n4245 [from="caller", to="callee"];
-  n9832 -> n6045 [from="caller", to="callee"];
-  n10157 -> n3696 [from="field_type", to="struct"];
-  n10157 -> n9832 [from="input", to="func"];
-  n10553 -> n7271 [from="caller", to="callee"];
-  n10553 -> n7330 [from="caller", to="callee"];
-  n11383 -> n7271 [from="caller", to="callee"];
-  n11383 -> n7330 [from="caller", to="callee"];
-  n11568 -> n2456 [from="field_type", to="struct"];
-  n11773 -> n7033 [from="field_type", to="struct"];
-  n12047 -> n6217 [from="interface", to="implements"];
-  n12224 -> n6342 [from="interface", to="implements"];
-  n12579 -> n10159 [from="field_type", to="struct"];
-  n12625 -> n6217 [from="decorator", to="decorates"];
-  n12702 -> n816 [from="field_type", to="struct"];
-  n12702 -> n1330 [from="field_type", to="struct"];
-  n12702 -> n1473 [from="field_type", to="struct"];
-  n12702 -> n1980 [from="input", to="func"];
-  n12702 -> n2102 [from="input", to="func"];
-  n12702 -> n3996 [from="field_type", to="struct"];
-  n12702 -> n6598 [from="input", to="func"];
-  n12702 -> n7679 [from="field_type", to="struct"];
-  n12702 -> n11815 [from="field_type", to="struct"];
-  n12702 -> n13415 [from="input", to="func"];
-  n12702 -> n21601 [from="input", to="func"];
-  n12702 -> n21615 [from="input", to="func"];
-  n12702 -> n21638 [from="input", to="func"];
-  n12702 -> n21648 [from="input", to="func"];
-  n13128 -> n17653 [from="base", to="extends"];
-  n13237 -> n1330 [from="field_type", to="struct"];
-  n13237 -> n5709 [from="field_type", to="struct"];
-  n13237 -> n10159 [from="field_type", to="struct"];
-  n13237 -> n13462 [from="field_type", to="struct"];
-  n13237 -> n13462 [from="interface", to="implements"];
-  n13237 -> n16388 [from="field_type", to="struct"];
-  n13415 -> n13884 [from="func", to="output"];
-  n13503 -> n15221 [from="field_type", to="struct"];
-  n13884 -> n1330 [from="field_type", to="struct"];
-  n13884 -> n4879 [from="field_type", to="struct"];
-  n17297 -> n2200 [from="input", to="func"];
-  n17297 -> n3696 [from="field_type", to="struct"];
-  n17300 -> n6342 [from="base", to="extends"];
-  n17390 -> n1473 [from="field_type", to="struct"];
-  n17390 -> n3332 [from="interface", to="implements"];
-  n17390 -> n3696 [from="field_type", to="struct"];
-  n17653 -> n3416 [from="interface", to="implements"];
-  n17759 -> n7033 [from="interface", to="implements"];
-  n17848 -> n10910 [from="base", to="extends"];
-  n17848 -> n11495 [from="base", to="extends"];
-  n17848 -> n12121 [from="base", to="extends"];
-  n17848 -> n12222 [from="base", to="extends"];
-  n19195 -> n18048 [from="caller", to="callee"];
-  n19195 -> n19802 [from="caller", to="callee"];
-  n19672 -> n16109 [from="field_type", to="struct"];
-  n19802 -> n18048 [from="caller", to="callee"];
-  n19949 -> n7730 [from="field_type", to="struct"];
-  n20513 -> n2860 [from="base", to="extends"];
-  n20513 -> n20456 [from="base", to="extends"];
-  n20660 -> n13462 [from="func", to="type_dep"];
-  n21648 -> n21523 [from="caller", to="callee"];
-  n22126 -> n1330 [from="field_type", to="struct"];
-  n22126 -> n6638 [from="input", to="func"];
-  n22126 -> n8672 [from="input", to="func"];
-  n22126 -> n9403 [from="input", to="func"];
-  n22126 -> n10553 [from="input", to="func"];
-  n22126 -> n11383 [from="input", to="func"];
-  n22126 -> n15221 [from="field_type", to="struct"];
+  n34 -> n5098 [from="func", to="output"];
+  n250 -> n10416 [from="field_type", to="struct"];
+  n910 -> n5098 [from="func", to="output"];
+  n1771 -> n13581 [from="field_type", to="struct"];
+  n1771 -> n19501 [from="base", to="extends"];
+  n2091 -> n83 [from="field_type", to="struct"];
+  n2699 -> n6979 [from="interface", to="implements"];
+  n2699 -> n9023 [from="field_type", to="struct"];
+  n2699 -> n10416 [from="interface", to="implements"];
+  n2699 -> n16434 [from="field_type", to="struct"];
+  n2699 -> n19771 [from="field_type", to="struct"];
+  n3235 -> n15460 [from="base", to="extends"];
+  n3235 -> n16151 [from="base", to="extends"];
+  n3235 -> n16809 [from="base", to="extends"];
+  n3753 -> n3724 [from="base", to="extends"];
+  n3848 -> n7019 [from="interface", to="implements"];
+  n3848 -> n9023 [from="field_type", to="struct"];
+  n3938 -> n19574 [from="field_type", to="struct"];
+  n4184 -> n6650 [from="interface", to="implements"];
+  n4769 -> n16434 [from="field_type", to="struct"];
+  n4954 -> n18764 [from="field_type", to="struct"];
+  n4954 -> n19084 [from="field_type", to="struct"];
+  n5098 -> n9023 [from="field_type", to="struct"];
+  n5098 -> n21011 [from="field_type", to="struct"];
+  n5132 -> n5098 [from="field_type", to="struct"];
+  n5132 -> n10420 [from="field_type", to="struct"];
+  n5208 -> n16465 [from="func", to="type_dep"];
+  n5473 -> n10416 [from="func", to="type_dep"];
+  n5473 -> n19819 [from="func", to="type_dep"];
+  n6359 -> n1771 [from="interface", to="implements"];
+  n6857 -> n723 [from="base", to="extends"];
+  n6857 -> n2234 [from="base", to="extends"];
+  n6857 -> n4705 [from="base", to="extends"];
+  n6857 -> n11089 [from="base", to="extends"];
+  n6857 -> n15103 [from="field_type", to="struct"];
+  n7103 -> n9517 [from="interface", to="implements"];
+  n7145 -> n617 [from="interface", to="implements"];
+  n7145 -> n19574 [from="field_type", to="struct"];
+  n8654 -> n3724 [from="field_type", to="struct"];
+  n8654 -> n17699 [from="field_type", to="struct"];
+  n9657 -> n7396 [from="interface", to="implements"];
+  n9657 -> n9023 [from="field_type", to="struct"];
+  n9693 -> n2384 [from="field_type", to="struct"];
+  n9699 -> n4715 [from="interface", to="implements"];
+  n10420 -> n5098 [from="field_type", to="struct"];
+  n10420 -> n5277 [from="field_type", to="struct"];
+  n10838 -> n14161 [from="field_type", to="struct"];
+  n10838 -> n16032 [from="field_type", to="struct"];
+  n11238 -> n1771 [from="field_type", to="struct"];
+  n11238 -> n4135 [from="field_type", to="struct"];
+  n11238 -> n9464 [from="field_type", to="struct"];
+  n11451 -> n4715 [from="decorator", to="decorates"];
+  n11462 -> n2384 [from="interface", to="implements"];
+  n11462 -> n8310 [from="base", to="extends"];
+  n11462 -> n20488 [from="base", to="extends"];
+  n11666 -> n2820 [from="base", to="extends"];
+  n11666 -> n13249 [from="base", to="extends"];
+  n12003 -> n9023 [from="field_type", to="struct"];
+  n12309 -> n6650 [from="base", to="extends"];
+  n12309 -> n9517 [from="base", to="extends"];
+  n12646 -> n10290 [from="interface", to="implements"];
+  n13099 -> n11135 [from="field_type", to="struct"];
+  n13293 -> n4715 [from="interface", to="implements"];
+  n13293 -> n6180 [from="interface", to="implements"];
+  n13293 -> n8641 [from="interface", to="implements"];
+  n13293 -> n9167 [from="interface", to="implements"];
+  n13293 -> n19819 [from="interface", to="implements"];
+  n13904 -> n15103 [from="field_type", to="struct"];
+  n14161 -> n1610 [from="field_type", to="struct"];
+  n14321 -> n2646 [from="field_type", to="struct"];
+  n14321 -> n4954 [from="field_type", to="struct"];
+  n14321 -> n5098 [from="field_type", to="struct"];
+  n14321 -> n5208 [from="input", to="func"];
+  n14321 -> n5277 [from="field_type", to="struct"];
+  n14321 -> n6006 [from="field_type", to="struct"];
+  n14321 -> n8091 [from="input", to="func"];
+  n14321 -> n8193 [from="input", to="func"];
+  n14321 -> n9504 [from="field_type", to="struct"];
+  n14321 -> n10416 [from="field_type", to="struct"];
+  n14321 -> n11521 [from="input", to="func"];
+  n14321 -> n21601 [from="input", to="func"];
+  n14321 -> n21615 [from="input", to="func"];
+  n14321 -> n21638 [from="input", to="func"];
+  n14321 -> n21648 [from="input", to="func"];
+  n14880 -> n4954 [from="field_type", to="struct"];
+  n14880 -> n9023 [from="field_type", to="struct"];
+  n15103 -> n16017 [from="base", to="extends"];
+  n15935 -> n16465 [from="func", to="type_dep"];
+  n16103 -> n3753 [from="field_type", to="struct"];
+  n16103 -> n5098 [from="field_type", to="struct"];
+  n16103 -> n9693 [from="field_type", to="struct"];
+  n16103 -> n15103 [from="field_type", to="struct"];
+  n16103 -> n16465 [from="field_type", to="struct"];
+  n16103 -> n16465 [from="interface", to="implements"];
+  n16515 -> n2384 [from="field_type", to="struct"];
+  n16515 -> n16067 [from="field_type", to="struct"];
+  n18202 -> n12646 [from="base", to="extends"];
+  n18250 -> n19084 [from="base", to="extends"];
+  n18972 -> n4877 [from="func", to="output"];
+  n19567 -> n20507 [from="caller", to="callee"];
+  n21065 -> n2384 [from="field_type", to="struct"];
+  n22126 -> n2384 [from="field_type", to="struct"];
+  n22126 -> n5098 [from="field_type", to="struct"];
+  n22126 -> n16067 [from="field_type", to="struct"];
 }

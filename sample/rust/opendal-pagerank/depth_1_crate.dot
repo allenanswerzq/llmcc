@@ -11,23 +11,33 @@ digraph architecture {
   labelloc=t;
   fontsize=16;
 
+  crate_odev[label="odev", path="/home/yibai/llmcc/sample/repos/opendal/dev"];
   crate_opendal_core[label="opendal-core", path="/home/yibai/llmcc/sample/repos/opendal/core/core"];
+  crate_opendal_cpp[label="opendal-cpp", path="/home/yibai/llmcc/sample/repos/opendal/bindings/cpp"];
+  crate_opendal_hs[label="opendal-hs", path="/home/yibai/llmcc/sample/repos/opendal/bindings/haskell"];
   crate_opendal_java[label="opendal-java", path="/home/yibai/llmcc/sample/repos/opendal/bindings/java"];
+  crate_opendal_nodejs[label="opendal-nodejs", path="/home/yibai/llmcc/sample/repos/opendal/bindings/nodejs"];
   crate_opendal_ocaml[label="opendal-ocaml", path="/home/yibai/llmcc/sample/repos/opendal/bindings/ocaml"];
   crate_opendal_python[label="opendal-python", path="/home/yibai/llmcc/sample/repos/opendal/bindings/python"];
   crate_opendal_ruby[label="opendal-ruby", path="/home/yibai/llmcc/sample/repos/opendal/bindings/ruby"];
   crate_opendal_service_aliyun_drive[label="opendal-service-aliyun-drive", path="/home/yibai/llmcc/sample/repos/opendal/core/services/aliyun-drive"];
+  crate_opendal_service_b2[label="opendal-service-b2", path="/home/yibai/llmcc/sample/repos/opendal/core/services/b2"];
   crate_opendal_service_memcached[label="opendal-service-memcached", path="/home/yibai/llmcc/sample/repos/opendal/core/services/memcached"];
   crate_opendal_service_oss[label="opendal-service-oss", path="/home/yibai/llmcc/sample/repos/opendal/core/services/oss"];
   crate_opendal_service_s3[label="opendal-service-s3", path="/home/yibai/llmcc/sample/repos/opendal/core/services/s3"];
 
+  crate_odev -> crate_opendal_java;
   crate_opendal_core -> crate_opendal_python;
+  crate_opendal_hs -> crate_opendal_core;
+  crate_opendal_hs -> crate_opendal_cpp;
   crate_opendal_java -> crate_opendal_core;
-  crate_opendal_ocaml -> crate_opendal_python;
+  crate_opendal_java -> crate_opendal_cpp;
+  crate_opendal_java -> crate_opendal_nodejs;
+  crate_opendal_java -> crate_opendal_ocaml;
   crate_opendal_python -> crate_opendal_core;
   crate_opendal_ruby -> crate_opendal_core;
-  crate_opendal_ruby -> crate_opendal_java;
   crate_opendal_service_aliyun_drive -> crate_opendal_core;
+  crate_opendal_service_b2 -> crate_opendal_core;
   crate_opendal_service_memcached -> crate_opendal_core;
   crate_opendal_service_oss -> crate_opendal_core;
   crate_opendal_service_s3 -> crate_opendal_core;

@@ -152,8 +152,15 @@ impl<'hir> HirNode<'hir> {
         ident.opt_symbol()
     }
 
-    /// Returns the ident symbol if any
+    /// Returns the ident symbol if any.
+    /// Prefers finding an identifier that has a symbol set (useful for scoped paths
+    /// where the target identifier has the resolved symbol).
     pub fn ident_symbol(&self, unit: &CompileUnit<'hir>) -> Option<&'hir Symbol> {
+        // First try to find an identifier that already has a symbol set
+        if let Some(ident) = self.find_symboled_ident(unit) {
+            return ident.opt_symbol();
+        }
+        // Fall back to finding any identifier
         let ident = self.find_ident(unit)?;
         ident.opt_symbol()
     }
@@ -197,6 +204,41 @@ impl<'hir> HirNode<'hir> {
             }
         }
         None
+    }
+
+    /// Find the deepest/rightmost identifier that has a symbol set.
+    /// This is useful for call expressions where we want the resolved callee,
+    /// not just the first identifier in a scoped path like `crate::module::func`.
+    pub fn find_symboled_ident(&self, unit: &CompileUnit<'hir>) -> Option<&'hir HirIdent<'hir>> {
+        let mut result: Option<&'hir HirIdent<'hir>> = None;
+        self.find_symboled_ident_recursive(unit, &mut result);
+        result
+    }
+
+    fn find_symboled_ident_recursive(
+        &self,
+        unit: &CompileUnit<'hir>,
+        result: &mut Option<&'hir HirIdent<'hir>>,
+    ) {
+        if self.is_kind(HirKind::Identifier) {
+            if let Some(ident) = self.as_ident()
+                && ident.opt_symbol().is_some()
+            {
+                *result = Some(ident);
+            }
+            return;
+        }
+        for child in self.children(unit) {
+            if child.is_kind(HirKind::Identifier) {
+                if let Some(ident) = child.as_ident()
+                    && ident.opt_symbol().is_some()
+                {
+                    *result = Some(ident);
+                }
+            } else if child.is_kind(HirKind::Internal) {
+                child.find_symboled_ident_recursive(unit, result);
+            }
+        }
     }
 
     /// Find the first text node's content in children (for keywords like "self").

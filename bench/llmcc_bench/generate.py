@@ -77,9 +77,10 @@ def generate_svg(
     if not shutil.which("dot"):
         return False
 
-    # Check file size
-    if dot_file.stat().st_size > size_threshold:
-        svg_file.write_text(f"<!-- SVG skipped: {dot_file.stat().st_size} bytes -->")
+    # Check file size - skip if too large
+    file_size = dot_file.stat().st_size
+    if file_size > size_threshold:
+        print(f"  Skipping SVG generation for {dot_file.name}: file too large ({file_size:,} bytes > {size_threshold:,})")
         return False
 
     def try_generate(input_file: Path) -> tuple[bool, str]:
@@ -105,8 +106,7 @@ def generate_svg(
     if success:
         return True
     else:
-        print(f"  SVG generation failed for {dot_file.name}: {error}")
-        svg_file.write_text(f"<!-- SVG generation failed: {error} -->")
+        print(f"  Skipping SVG generation for {dot_file.name}: {error}")
     return False
 
 

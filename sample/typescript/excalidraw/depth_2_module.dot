@@ -16,9 +16,7 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_excalidraw_common_colors[label="colors", path="/home/yibai/llmcc/sample/repos/excalidraw/packages/common/src"];
     mod_excalidraw_common_font_metadata[label="font-metadata", path="/home/yibai/llmcc/sample/repos/excalidraw/packages/common/src"];
-    mod_excalidraw_common_utils[label="utils", path="/home/yibai/llmcc/sample/repos/excalidraw/packages/common/src"];
   }
 
   subgraph cluster_excalidraw_element {
@@ -30,7 +28,6 @@ digraph architecture {
     mod_excalidraw_element_linearElementEditor[label="linearElementEditor", path="/home/yibai/llmcc/sample/repos/excalidraw/packages/element/src"];
     mod_excalidraw_element_renderElement[label="renderElement", path="/home/yibai/llmcc/sample/repos/excalidraw/packages/element/src"];
     mod_excalidraw_element_store[label="store", path="/home/yibai/llmcc/sample/repos/excalidraw/packages/element/src"];
-    mod_excalidraw_element_utils[label="utils", path="/home/yibai/llmcc/sample/repos/excalidraw/packages/element/src"];
     mod_excalidraw_element_zindex[label="zindex", path="/home/yibai/llmcc/sample/repos/excalidraw/packages/element/src"];
   }
 
@@ -59,15 +56,9 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_excalidraw_math_angle[label="angle", path="/home/yibai/llmcc/sample/repos/excalidraw/packages/math/src"];
     mod_excalidraw_math_curve[label="curve", path="/home/yibai/llmcc/sample/repos/excalidraw/packages/math/src"];
     mod_excalidraw_math_ellipse[label="ellipse", path="/home/yibai/llmcc/sample/repos/excalidraw/packages/math/src"];
-    mod_excalidraw_math_line[label="line", path="/home/yibai/llmcc/sample/repos/excalidraw/packages/math/src"];
     mod_excalidraw_math_point[label="point", path="/home/yibai/llmcc/sample/repos/excalidraw/packages/math/src"];
-    mod_excalidraw_math_polygon[label="polygon", path="/home/yibai/llmcc/sample/repos/excalidraw/packages/math/src"];
-    mod_excalidraw_math_range[label="range", path="/home/yibai/llmcc/sample/repos/excalidraw/packages/math/src"];
-    mod_excalidraw_math_rectangle[label="rectangle", path="/home/yibai/llmcc/sample/repos/excalidraw/packages/math/src"];
-    mod_excalidraw_math_segment[label="segment", path="/home/yibai/llmcc/sample/repos/excalidraw/packages/math/src"];
     mod_excalidraw_math_vector[label="vector", path="/home/yibai/llmcc/sample/repos/excalidraw/packages/math/src"];
   }
 
@@ -80,15 +71,9 @@ digraph architecture {
   }
 
 
-  mod_excalidraw_common_colors -> mod_excalidraw_math_angle;
   mod_excalidraw_element_Scene -> mod_excalidraw_excalidraw_types;
-  mod_excalidraw_element_renderElement -> mod_excalidraw_common_utils;
   mod_excalidraw_element_renderElement -> mod_excalidraw_excalidraw_types;
-  mod_excalidraw_element_renderElement -> mod_excalidraw_math_point;
   mod_excalidraw_element_store -> mod_excalidraw_excalidraw_history;
-  mod_excalidraw_element_utils -> mod_excalidraw_math_point;
-  mod_excalidraw_element_utils -> mod_excalidraw_math_rectangle;
-  mod_excalidraw_element_utils -> mod_excalidraw_math_segment;
   mod_excalidraw_element_zindex -> mod_excalidraw_excalidraw_types;
   mod_excalidraw_excalidraw_actions -> mod_excalidraw_excalidraw_types;
   mod_excalidraw_excalidraw_animated_trail -> mod_excalidraw_excalidraw_eraser;
@@ -109,9 +94,5 @@ digraph architecture {
   mod_excalidraw_math_curve -> mod_excalidraw_math_vector;
   mod_excalidraw_math_ellipse -> mod_excalidraw_math_point;
   mod_excalidraw_math_ellipse -> mod_excalidraw_math_vector;
-  mod_excalidraw_math_line -> mod_excalidraw_math_point;
-  mod_excalidraw_math_polygon -> mod_excalidraw_math_point;
-  mod_excalidraw_math_range -> mod_excalidraw_common_utils;
-  mod_excalidraw_math_segment -> mod_excalidraw_math_line;
   mod_excalidraw_utils_bbox -> mod_excalidraw_math_vector;
 }

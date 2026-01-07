@@ -47,8 +47,14 @@ digraph architecture {
 
     mod_clap_derive_derives[label="derives", path="/home/yibai/llmcc/sample/repos/clap/clap_derive/src/derives"];
     mod_clap_derive_item[label="item", path="/home/yibai/llmcc/sample/repos/clap/clap_derive/src"];
-    mod_clap_derive_lib[label="lib", path="/home/yibai/llmcc/sample/repos/clap/clap_derive/src"];
-    mod_clap_derive_utils[label="utils", path="/home/yibai/llmcc/sample/repos/clap/clap_derive/src/utils"];
+  }
+
+  subgraph cluster_clap_lex {
+    label="clap_lex";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_clap_lex_lib[label="lib", path="/home/yibai/llmcc/sample/repos/clap/clap_lex/src"];
   }
 
   subgraph cluster_clap_mangen {
@@ -56,6 +62,7 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_clap_mangen_lib[label="lib", path="/home/yibai/llmcc/sample/repos/clap/clap_mangen/src"];
     mod_clap_mangen_render[label="render", path="/home/yibai/llmcc/sample/repos/clap/clap_mangen/src"];
   }
 
@@ -68,8 +75,9 @@ digraph architecture {
   mod_clap_complete_aot -> mod_clap_builder_builder;
   mod_clap_complete_engine -> mod_clap_builder_builder;
   mod_clap_complete_nushell_lib -> mod_clap_builder_builder;
+  mod_clap_derive_derives -> mod_clap_builder_error;
   mod_clap_derive_derives -> mod_clap_derive_item;
-  mod_clap_derive_derives -> mod_clap_derive_lib;
-  mod_clap_derive_derives -> mod_clap_derive_utils;
+  mod_clap_lex_lib -> mod_clap_builder_builder;
+  mod_clap_mangen_lib -> mod_clap_builder_builder;
   mod_clap_mangen_render -> mod_clap_builder_builder;
 }

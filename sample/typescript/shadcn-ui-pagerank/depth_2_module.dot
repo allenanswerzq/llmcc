@@ -18,16 +18,37 @@ digraph architecture {
 
     mod_shadcn_commands[label="commands", path="/home/yibai/llmcc/sample/repos/shadcn-ui/packages/shadcn/src/commands"];
     mod_shadcn_migrations[label="migrations", path="/home/yibai/llmcc/sample/repos/shadcn-ui/packages/shadcn/src/migrations"];
-    mod_shadcn_preflights[label="preflights", path="/home/yibai/llmcc/sample/repos/shadcn-ui/packages/shadcn/src/preflights"];
     mod_shadcn_registry[label="registry", path="/home/yibai/llmcc/sample/repos/shadcn-ui/packages/shadcn/src/registry"];
     mod_shadcn_utils[label="utils", path="/home/yibai/llmcc/sample/repos/shadcn-ui/packages/shadcn/src/utils"];
+  }
+
+  subgraph cluster_v4 {
+    label="v4";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_v4_app[label="app", path="/home/yibai/llmcc/sample/repos/shadcn-ui/apps/v4/app"];
+    mod_v4_blocks[label="blocks", path="/home/yibai/llmcc/sample/repos/shadcn-ui/apps/v4/lib"];
+    mod_v4_registry[label="registry", path="/home/yibai/llmcc/sample/repos/shadcn-ui/apps/v4/registry"];
+    mod_v4_scripts[label="scripts", path="/home/yibai/llmcc/sample/repos/shadcn-ui/apps/v4/scripts"];
+  }
+
+  subgraph cluster_www {
+    label="www";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_www_rehype_component[label="rehype-component", path="/home/yibai/llmcc/sample/repos/shadcn-ui/deprecated/www/lib"];
+    mod_www_types[label="types", path="/home/yibai/llmcc/sample/repos/shadcn-ui/deprecated/www/types"];
   }
 
 
   mod_shadcn_commands -> mod_shadcn_registry;
   mod_shadcn_commands -> mod_shadcn_utils;
   mod_shadcn_migrations -> mod_shadcn_utils;
-  mod_shadcn_preflights -> mod_shadcn_utils;
   mod_shadcn_registry -> mod_shadcn_utils;
   mod_shadcn_utils -> mod_shadcn_registry;
+  mod_v4_app -> mod_v4_registry;
+  mod_v4_scripts -> mod_v4_blocks;
+  mod_www_rehype_component -> mod_www_types;
 }

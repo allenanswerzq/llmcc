@@ -131,6 +131,7 @@ impl<R: Repository<User>> UserService<R> {
       (parameter:35 self @type:25 UserRepo)
       (parameter:36 item @type:7 User)
       (return:37 @type bool)
+      (@tdep:7 User)
     )
   )
   (impl:38 OrderRepo @type:27 @trait:15
@@ -144,6 +145,7 @@ impl<R: Repository<User>> UserService<R> {
       (parameter:44 self @type:27 OrderRepo)
       (parameter:45 item @type:10 Order)
       (return:46 @type bool)
+      (@tdep:10 Order)
     )
   )
 )
@@ -176,36 +178,41 @@ digraph architecture {
 
   subgraph cluster_sample {
     label="sample";
-    bgcolor="#f8f8f8";
+    style=rounded;
+        bgcolor="#f8f8f8";
 
     subgraph cluster_impl_repos_rs {
       label="impl_repos.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n25[label="UserRepo", full_path="$TMP/sample/src/impl_repos.rs:4", sym_ty="Struct", shape=box];
-      n27[label="OrderRepo", full_path="$TMP/sample/src/impl_repos.rs:8", sym_ty="Struct", shape=box];
+      n25[label="UserRepo", path="$TMP/sample/src/impl_repos.rs:4", sym_ty="Struct", shape=box];
+      n27[label="OrderRepo", path="$TMP/sample/src/impl_repos.rs:8", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_models_rs {
       label="models.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n7[label="User", full_path="$TMP/sample/src/models.rs:1", sym_ty="Struct", shape=box];
-      n10[label="Order", full_path="$TMP/sample/src/models.rs:6", sym_ty="Struct", shape=box];
+      n7[label="User", path="$TMP/sample/src/models.rs:1", sym_ty="Struct", shape=box];
+      n10[label="Order", path="$TMP/sample/src/models.rs:6", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_repository_rs {
       label="repository.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n15[label="Repository", full_path="$TMP/sample/src/repository.rs:1", sym_ty="Trait", shape=box];
+      n15[label="Repository", path="$TMP/sample/src/repository.rs:1", sym_ty="Trait", shape=box];
     }
 
     subgraph cluster_service_rs {
       label="service.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n48[label="UserService", full_path="$TMP/sample/src/service.rs:4", sym_ty="Struct", shape=box];
+      n48[label="UserService", path="$TMP/sample/src/service.rs:4", sym_ty="Struct", shape=box];
     }
 
   }

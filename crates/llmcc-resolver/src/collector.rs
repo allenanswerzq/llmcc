@@ -44,6 +44,16 @@ impl<'a> CollectorScopes<'a> {
         self.unit_index
     }
 
+    /// Get the crate index for the current unit
+    #[inline]
+    pub fn crate_index(&self) -> usize {
+        self.cc
+            .unit_metas
+            .get(self.unit_index)
+            .map(|m| m.crate_index)
+            .unwrap_or(usize::MAX)
+    }
+
     /// Get the arena
     #[inline]
     pub fn arena(&self) -> &'a Arena<'a> {
@@ -156,6 +166,7 @@ impl<'a> CollectorScopes<'a> {
             symbol.set_owner(node.id());
             symbol.set_kind(kind);
             symbol.set_unit_index(self.unit_index());
+            symbol.set_crate_index(self.crate_index());
             symbol.add_defining(node.id());
             if let Some(parent) = self.top() {
                 symbol.set_parent_scope(parent.id());
@@ -196,6 +207,57 @@ impl<'a> CollectorScopes<'a> {
         self.init_symbol(symbol, name, node, kind);
         symbol.set_is_global(true);
         Some(symbol)
+    }
+
+    /// Always insert a new symbol in global scope, even if one with the same name exists.
+    /// This is needed for per-crate module symbols (e.g., each crate's `tui` module
+    /// should be a separate symbol, not shared).
+    #[inline]
+    pub fn insert_in_global(
+        &self,
+        name: &str,
+        node: &HirNode<'a>,
+        kind: SymKind,
+    ) -> Option<&'a Symbol> {
+        let name_key = self.interner().intern(name);
+        let new_symbol = Symbol::new(node.id(), name_key);
+        let sym_id = new_symbol.id().0;
+        let allocated = self.arena().alloc_with_id(sym_id, new_symbol);
+        self.globals.insert(allocated);
+        self.init_symbol(allocated, name, node, kind);
+        allocated.set_is_global(true);
+        tracing::trace!(
+            "insert_in_global: created new symbol '{}' id={:?}",
+            name,
+            allocated.id()
+        );
+        Some(allocated)
+    }
+
+    /// Insert a new symbol into a specific scope.
+    /// This is used for inserting module symbols into the crate scope for qualified path resolution
+    /// (e.g., `crate_b::utils::helper` needs `utils` to be in `crate_b`'s scope).
+    #[inline]
+    pub fn insert_in_scope(
+        &self,
+        scope: &'a Scope<'a>,
+        name: &str,
+        node: &HirNode<'a>,
+        kind: SymKind,
+    ) -> Option<&'a Symbol> {
+        let name_key = self.interner().intern(name);
+        let new_symbol = Symbol::new(node.id(), name_key);
+        let sym_id = new_symbol.id().0;
+        let allocated = self.arena().alloc_with_id(sym_id, new_symbol);
+        scope.insert(allocated);
+        self.init_symbol(allocated, name, node, kind);
+        tracing::trace!(
+            "insert_in_scope: created symbol '{}' id={:?} in scope {:?}",
+            name,
+            allocated.id(),
+            scope.id()
+        );
+        Some(allocated)
     }
 
     /// Lookup symbols by name with options

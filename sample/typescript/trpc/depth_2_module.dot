@@ -11,7 +11,6 @@ digraph architecture {
   labelloc=t;
   fontsize=16;
 
-  mod_trpc_client_TRPCClientError[label="trpc_client::TRPCClientError", path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src"];
   mod_trpc_client___tests__[label="trpc_client::__tests__", path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/__tests__"];
   mod_trpc_client_createTRPCClient[label="trpc_client::createTRPCClient", path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src"];
   mod_trpc_client_internals[label="trpc_client::internals", path="/home/yibai/llmcc/sample/repos/trpc/packages/client/src/internals"];
@@ -25,21 +24,18 @@ digraph architecture {
   mod_trpc_server_unstable_core_do_not_import[label="trpc_server::unstable-core-do-not-import", path="/home/yibai/llmcc/sample/repos/trpc/packages/server/src/unstable-core-do-not-import"];
   mod_trpc_tanstack_react_query_internals[label="trpc_tanstack-react-query::internals", path="/home/yibai/llmcc/sample/repos/trpc/packages/tanstack-react-query/src/internals"];
 
-  mod_trpc_client_TRPCClientError -> mod_trpc_server_unstable_core_do_not_import;
   mod_trpc_client___tests__ -> mod_trpc_client_links;
   mod_trpc_client_createTRPCClient -> mod_trpc_client_internals;
   mod_trpc_client_internals -> mod_trpc_client_links;
   mod_trpc_client_links -> mod_trpc_client_internals;
   mod_trpc_client_links -> mod_trpc_server_observable;
   mod_trpc_client_links -> mod_trpc_server_unstable_core_do_not_import;
-  mod_trpc_next_app_dir -> mod_trpc_client_internals;
   mod_trpc_next_app_dir -> mod_trpc_client_links;
   mod_trpc_next_app_dir -> mod_trpc_server_unstable_core_do_not_import;
-  mod_trpc_react_query_internals -> mod_trpc_tanstack_react_query_internals;
-  mod_trpc_react_query_shared -> mod_trpc_client_createTRPCClient;
+  mod_trpc_react_query_internals -> mod_trpc_react_query_shared;
   mod_trpc_server___tests__ -> mod_trpc_server_adapters;
   mod_trpc_server___tests__ -> mod_trpc_server_unstable_core_do_not_import;
   mod_trpc_server_adapters -> mod_trpc_server_unstable_core_do_not_import;
+  mod_trpc_tanstack_react_query_internals -> mod_trpc_react_query_internals;
   mod_trpc_tanstack_react_query_internals -> mod_trpc_react_query_shared;
-  mod_trpc_tanstack_react_query_internals -> mod_trpc_server_unstable_core_do_not_import;
 }

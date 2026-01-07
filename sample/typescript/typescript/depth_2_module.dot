@@ -20,15 +20,17 @@ digraph architecture {
     mod_typescript_harness[label="harness", path="/home/yibai/llmcc/sample/repos/typescript/src/harness"];
     mod_typescript_server[label="server", path="/home/yibai/llmcc/sample/repos/typescript/src/server"];
     mod_typescript_services[label="services", path="/home/yibai/llmcc/sample/repos/typescript/src/services"];
+    mod_typescript_testRunner[label="testRunner", path="/home/yibai/llmcc/sample/repos/typescript/src/testRunner"];
   }
 
 
   mod_typescript_compiler -> mod_typescript_harness;
   mod_typescript_compiler -> mod_typescript_server;
+  mod_typescript_compiler -> mod_typescript_testRunner;
   mod_typescript_server -> mod_typescript_compiler;
-  mod_typescript_server -> mod_typescript_harness;
   mod_typescript_server -> mod_typescript_services;
   mod_typescript_services -> mod_typescript_compiler;
   mod_typescript_services -> mod_typescript_harness;
   mod_typescript_services -> mod_typescript_server;
+  mod_typescript_testRunner -> mod_typescript_harness;
 }

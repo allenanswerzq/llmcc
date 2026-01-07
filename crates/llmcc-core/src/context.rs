@@ -497,7 +497,7 @@ impl<'tcx> CompileCtxt<'tcx> {
         let builder = UnitMetaBuilder::from_lang_trait::<L>(&file_paths);
 
         // Generate metadata for each file
-        files
+        let mut metas: Vec<UnitMeta> = files
             .iter()
             .map(|f| {
                 if let Some(path) = f.path() {
@@ -506,7 +506,28 @@ impl<'tcx> CompileCtxt<'tcx> {
                     UnitMeta::default()
                 }
             })
-            .collect()
+            .collect();
+
+        // Assign unique crate_index to each distinct package_root
+        // This enables O(1) same-crate checks during symbol lookup
+        let mut package_root_to_crate_index: std::collections::HashMap<std::path::PathBuf, usize> =
+            std::collections::HashMap::new();
+        let mut next_crate_index = 0usize;
+
+        for meta in &mut metas {
+            if let Some(ref package_root) = meta.package_root {
+                let crate_idx = *package_root_to_crate_index
+                    .entry(package_root.clone())
+                    .or_insert_with(|| {
+                        let idx = next_crate_index;
+                        next_crate_index += 1;
+                        idx
+                    });
+                meta.crate_index = crate_idx;
+            }
+        }
+
+        metas
     }
 
     fn parse_files_with_metrics<L: LanguageTrait>(

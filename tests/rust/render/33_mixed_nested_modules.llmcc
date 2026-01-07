@@ -110,6 +110,7 @@ pub fn create_client(url: String) -> HttpClient {
       (parameter:24 self @type:22 Transport)
       (parameter:25 req @type:9 Request)
       (return:26 @type:12 Response)
+      (@tdep:9 Request)
       (@tdep:12 Response)
     )
   )
@@ -121,6 +122,7 @@ pub fn create_client(url: String) -> HttpClient {
       (parameter:31 self @type:27 HttpClient)
       (parameter:32 req @type:9 Request)
       (return:33 @type:12 Response)
+      (@tdep:9 Request)
       (@tdep:12 Response)
     )
   )
@@ -144,19 +146,22 @@ digraph architecture {
 
   subgraph cluster_sample {
     label="sample";
-    bgcolor="#f8f8f8";
+    style=rounded;
+        bgcolor="#f8f8f8";
 
     subgraph cluster_api {
       label="api";
-      bgcolor="#f5f5f5";
+      style=rounded;
+            bgcolor="#f5f5f5";
 
       subgraph cluster_client_rs {
         label="client.rs";
-        bgcolor="#fafafa";
+        style=rounded;
+                bgcolor="#fafafa";
 
-        n35[label="create_client", full_path="$TMP/sample/src/api/client.rs:23", sym_ty="Function", shape=ellipse];
-        n22[label="Transport", full_path="$TMP/sample/src/api/client.rs:4", sym_ty="Trait", shape=box];
-        n27[label="HttpClient", full_path="$TMP/sample/src/api/client.rs:8", sym_ty="Struct", shape=box];
+        n35[label="create_client", path="$TMP/sample/src/api/client.rs:23", sym_ty="Function", shape=ellipse];
+        n22[label="Transport", path="$TMP/sample/src/api/client.rs:4", sym_ty="Trait", shape=box];
+        n27[label="HttpClient", path="$TMP/sample/src/api/client.rs:8", sym_ty="Struct", shape=box];
       }
 
     }

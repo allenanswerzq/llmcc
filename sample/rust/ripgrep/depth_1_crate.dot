@@ -20,6 +20,7 @@ digraph architecture {
   crate_ignore[label="ignore", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/ignore"];
   crate_ripgrep[label="ripgrep", path="/home/yibai/llmcc/sample/repos/ripgrep"];
 
+  crate_grep_cli -> crate_ignore;
   crate_grep_cli -> crate_ripgrep;
   crate_grep_printer -> crate_grep_matcher;
   crate_grep_printer -> crate_grep_searcher;
@@ -27,7 +28,7 @@ digraph architecture {
   crate_grep_searcher -> crate_grep_matcher;
   crate_ignore -> crate_globset;
   crate_ignore -> crate_grep_cli;
-  crate_ignore -> crate_ripgrep;
+  crate_ripgrep -> crate_grep_matcher;
   crate_ripgrep -> crate_grep_printer;
   crate_ripgrep -> crate_ignore;
 }

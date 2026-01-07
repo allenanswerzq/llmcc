@@ -547,7 +547,9 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         }
     }
 
-    // AST: func(args) or obj.method(args)
+    // AST: func(args) or obj.method(args) or path::func(args)
+    // The function part (identifier, scoped_identifier, field_expression) is resolved
+    // by visit_children through the appropriate visitor (visit_identifier, visit_scoped_identifier, etc.)
     #[tracing::instrument(skip_all)]
     fn visit_call_expression(
         &mut self,
@@ -559,7 +561,12 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     ) {
         self.visit_children(unit, node, scopes, namespace, parent);
 
-        if let Some(ident) = node.find_ident(unit)
+        // For simple identifiers that weren't resolved by visit_identifier,
+        // try to resolve them as callable symbols
+        if let Some(func_node) = node.child_by_field(unit, LangRust::field_function)
+            && func_node.kind_id() == LangRust::identifier
+            && let Some(ident) = func_node.as_ident()
+            && ident.opt_symbol().is_none()
             && let Some(symbol) = scopes.lookup_symbol(ident.name, SYM_KIND_CALLABLE)
         {
             ident.set_symbol(symbol);
@@ -791,6 +798,10 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     }
 
     // AST: path::to::identifier or module::item
+    // For nested paths like `crate_b::utils::helper`:
+    //   - path child is `scoped_identifier` (crate_b::utils)
+    //   - name child is `identifier` (helper)
+    // After visit_children, the path's name (utils) should have its symbol set.
     fn visit_scoped_identifier(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -801,12 +812,45 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     ) {
         self.visit_children(unit, node, scopes, namespace, parent);
 
-        if let Some(name_ident) = node.ident_by_field(unit, LangRust::field_name)
-            && let Some(path_ident) = node.ident_by_field(unit, LangRust::field_path)
-            && let Some(path_sym) = path_ident.opt_symbol()
+        let name_ident = node.ident_by_field(unit, LangRust::field_name);
+        let path_node = node.child_by_field(unit, LangRust::field_path);
+
+        if let Some(name_ident) = name_ident
+            && let Some(path_node) = path_node
         {
-            if let Some(name_sym) = scopes.lookup_member_symbol(path_sym, name_ident.name, None) {
-                name_ident.set_symbol(name_sym);
+            // Get the path symbol - depends on whether path is a simple identifier or nested scoped_identifier
+            let path_sym = if path_node.kind_id() == LangRust::scoped_identifier {
+                // For nested scoped_identifier, the symbol is on the path's "name" field
+                // (which was resolved by the recursive visit_children call)
+                path_node
+                    .ident_by_field(unit, LangRust::field_name)
+                    .and_then(|i| i.opt_symbol())
+            } else if path_node.kind_id() == LangRust::identifier {
+                // For simple identifier path, get or resolve it
+                let path_ident = path_node.as_ident();
+                if let Some(ident) = path_ident {
+                    if let Some(sym) = ident.opt_symbol() {
+                        Some(sym)
+                    } else {
+                        // Path doesn't have a symbol yet - look it up
+                        let sym = scopes.lookup_symbol(ident.name, SymKindSet::empty());
+                        if let Some(s) = sym {
+                            ident.set_symbol(s);
+                        }
+                        sym
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+
+            if let Some(path_sym) = path_sym {
+                if let Some(name_sym) = scopes.lookup_member_symbol(path_sym, name_ident.name, None)
+                {
+                    name_ident.set_symbol(name_sym);
+                }
             }
         }
     }

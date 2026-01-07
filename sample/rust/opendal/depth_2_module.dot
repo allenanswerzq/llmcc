@@ -31,22 +31,6 @@ digraph architecture {
     mod_edge_test_aws_s3_assume_role_with_web_identity_main[label="main", path="/home/yibai/llmcc/sample/repos/opendal/core/edge/s3_aws_assume_role_with_web_identity/src"];
   }
 
-  subgraph cluster_edge_test_file_write_on_full_disk {
-    label="edge_test_file_write_on_full_disk";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_edge_test_file_write_on_full_disk_main[label="main", path="/home/yibai/llmcc/sample/repos/opendal/core/edge/file_write_on_full_disk/src"];
-  }
-
-  subgraph cluster_edge_test_s3_read_on_wasm {
-    label="edge_test_s3_read_on_wasm";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_edge_test_s3_read_on_wasm_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/edge/s3_read_on_wasm/src"];
-  }
-
   subgraph cluster_object_store_opendal {
     label="object_store_opendal";
     style=rounded;
@@ -68,12 +52,19 @@ digraph architecture {
     mod_odev_release[label="release", path="/home/yibai/llmcc/sample/repos/opendal/dev/src/release"];
   }
 
+  subgraph cluster_opendal {
+    label="opendal";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_opendal_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/src"];
+  }
+
   subgraph cluster_opendal_c {
     label="opendal-c";
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_opendal_c_build[label="build", path="/home/yibai/llmcc/sample/repos/opendal/bindings/c"];
     mod_opendal_c_entry[label="entry", path="/home/yibai/llmcc/sample/repos/opendal/bindings/c/src"];
     mod_opendal_c_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/bindings/c/src"];
     mod_opendal_c_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/bindings/c/src"];
@@ -102,6 +93,7 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_opendal_cpp_async[label="async", path="/home/yibai/llmcc/sample/repos/opendal/bindings/cpp/src"];
     mod_opendal_cpp_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/bindings/cpp/src"];
     mod_opendal_cpp_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/bindings/cpp/src"];
     mod_opendal_cpp_reader[label="reader", path="/home/yibai/llmcc/sample/repos/opendal/bindings/cpp/src"];
@@ -139,6 +131,7 @@ digraph architecture {
 
     mod_opendal_hs_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/bindings/haskell/src"];
     mod_opendal_hs_result[label="result", path="/home/yibai/llmcc/sample/repos/opendal/bindings/haskell/src"];
+    mod_opendal_hs_types[label="types", path="/home/yibai/llmcc/sample/repos/opendal/bindings/haskell/src"];
   }
 
   subgraph cluster_opendal_java {
@@ -155,7 +148,6 @@ digraph architecture {
     mod_opendal_java_operator[label="operator", path="/home/yibai/llmcc/sample/repos/opendal/bindings/java/src"];
     mod_opendal_java_operator_input_stream[label="operator_input_stream", path="/home/yibai/llmcc/sample/repos/opendal/bindings/java/src"];
     mod_opendal_java_operator_output_stream[label="operator_output_stream", path="/home/yibai/llmcc/sample/repos/opendal/bindings/java/src"];
-    mod_opendal_java_utility[label="utility", path="/home/yibai/llmcc/sample/repos/opendal/bindings/java/src"];
   }
 
   subgraph cluster_opendal_layer_async_backtrace {
@@ -365,6 +357,7 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_opendal_ocaml_build[label="build", path="/home/yibai/llmcc/sample/repos/opendal/bindings/ocaml"];
     mod_opendal_ocaml_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/bindings/ocaml/src"];
     mod_opendal_ocaml_operator[label="operator", path="/home/yibai/llmcc/sample/repos/opendal/bindings/ocaml/src/operator"];
   }
@@ -382,12 +375,16 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_opendal_python_capability[label="capability", path="/home/yibai/llmcc/sample/repos/opendal/bindings/python/src"];
+    mod_opendal_python_errors[label="errors", path="/home/yibai/llmcc/sample/repos/opendal/bindings/python/src"];
     mod_opendal_python_file[label="file", path="/home/yibai/llmcc/sample/repos/opendal/bindings/python/src"];
     mod_opendal_python_layers[label="layers", path="/home/yibai/llmcc/sample/repos/opendal/bindings/python/src"];
+    mod_opendal_python_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/bindings/python/src"];
     mod_opendal_python_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/bindings/python/src"];
     mod_opendal_python_metadata[label="metadata", path="/home/yibai/llmcc/sample/repos/opendal/bindings/python/src"];
     mod_opendal_python_operator[label="operator", path="/home/yibai/llmcc/sample/repos/opendal/bindings/python/src"];
     mod_opendal_python_options[label="options", path="/home/yibai/llmcc/sample/repos/opendal/bindings/python/src"];
+    mod_opendal_python_services[label="services", path="/home/yibai/llmcc/sample/repos/opendal/bindings/python/src"];
     mod_opendal_python_utils[label="utils", path="/home/yibai/llmcc/sample/repos/opendal/bindings/python/src"];
   }
 
@@ -396,6 +393,7 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_opendal_ruby_build[label="build", path="/home/yibai/llmcc/sample/repos/opendal/bindings/ruby"];
     mod_opendal_ruby_capability[label="capability", path="/home/yibai/llmcc/sample/repos/opendal/bindings/ruby/src"];
     mod_opendal_ruby_io[label="io", path="/home/yibai/llmcc/sample/repos/opendal/bindings/ruby/src"];
     mod_opendal_ruby_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/bindings/ruby/src"];
@@ -416,6 +414,7 @@ digraph architecture {
     mod_opendal_service_aliyun_drive_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/aliyun-drive/src"];
     mod_opendal_service_aliyun_drive_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/aliyun-drive/src"];
     mod_opendal_service_aliyun_drive_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/aliyun-drive/src"];
+    mod_opendal_service_aliyun_drive_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/aliyun-drive/src"];
     mod_opendal_service_aliyun_drive_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/aliyun-drive/src"];
     mod_opendal_service_aliyun_drive_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/aliyun-drive/src"];
   }
@@ -430,6 +429,7 @@ digraph architecture {
     mod_opendal_service_alluxio_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/alluxio/src"];
     mod_opendal_service_alluxio_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/alluxio/src"];
     mod_opendal_service_alluxio_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/alluxio/src"];
+    mod_opendal_service_alluxio_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/alluxio/src"];
     mod_opendal_service_alluxio_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/alluxio/src"];
     mod_opendal_service_alluxio_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/alluxio/src"];
   }
@@ -440,10 +440,10 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_opendal_service_azblob_backend[label="backend", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azblob/src"];
-    mod_opendal_service_azblob_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azblob/src"];
     mod_opendal_service_azblob_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azblob/src"];
     mod_opendal_service_azblob_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azblob/src"];
     mod_opendal_service_azblob_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azblob/src"];
+    mod_opendal_service_azblob_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azblob/src"];
     mod_opendal_service_azblob_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azblob/src"];
     mod_opendal_service_azblob_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azblob/src"];
   }
@@ -454,10 +454,10 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_opendal_service_azdls_backend[label="backend", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azdls/src"];
-    mod_opendal_service_azdls_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azdls/src"];
     mod_opendal_service_azdls_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azdls/src"];
     mod_opendal_service_azdls_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azdls/src"];
     mod_opendal_service_azdls_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azdls/src"];
+    mod_opendal_service_azdls_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azdls/src"];
     mod_opendal_service_azdls_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azdls/src"];
     mod_opendal_service_azdls_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azdls/src"];
   }
@@ -468,10 +468,10 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_opendal_service_azfile_backend[label="backend", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azfile/src"];
-    mod_opendal_service_azfile_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azfile/src"];
     mod_opendal_service_azfile_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azfile/src"];
     mod_opendal_service_azfile_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azfile/src"];
     mod_opendal_service_azfile_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azfile/src"];
+    mod_opendal_service_azfile_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azfile/src"];
     mod_opendal_service_azfile_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azfile/src"];
     mod_opendal_service_azfile_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azfile/src"];
   }
@@ -494,6 +494,7 @@ digraph architecture {
     mod_opendal_service_b2_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/b2/src"];
     mod_opendal_service_b2_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/b2/src"];
     mod_opendal_service_b2_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/b2/src"];
+    mod_opendal_service_b2_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/b2/src"];
     mod_opendal_service_b2_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/b2/src"];
     mod_opendal_service_b2_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/b2/src"];
   }
@@ -507,6 +508,7 @@ digraph architecture {
     mod_opendal_service_cacache_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cacache/src"];
     mod_opendal_service_cacache_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cacache/src"];
     mod_opendal_service_cacache_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cacache/src"];
+    mod_opendal_service_cacache_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cacache/src"];
     mod_opendal_service_cacache_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cacache/src"];
   }
 
@@ -520,6 +522,7 @@ digraph architecture {
     mod_opendal_service_cloudflare_kv_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cloudflare-kv/src"];
     mod_opendal_service_cloudflare_kv_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cloudflare-kv/src"];
     mod_opendal_service_cloudflare_kv_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cloudflare-kv/src"];
+    mod_opendal_service_cloudflare_kv_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cloudflare-kv/src"];
     mod_opendal_service_cloudflare_kv_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cloudflare-kv/src"];
     mod_opendal_service_cloudflare_kv_model[label="model", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cloudflare-kv/src"];
     mod_opendal_service_cloudflare_kv_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cloudflare-kv/src"];
@@ -534,6 +537,7 @@ digraph architecture {
     mod_opendal_service_compfs_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/compfs/src"];
     mod_opendal_service_compfs_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/compfs/src"];
     mod_opendal_service_compfs_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/compfs/src"];
+    mod_opendal_service_compfs_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/compfs/src"];
     mod_opendal_service_compfs_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/compfs/src"];
     mod_opendal_service_compfs_reader[label="reader", path="/home/yibai/llmcc/sample/repos/opendal/core/services/compfs/src"];
     mod_opendal_service_compfs_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/compfs/src"];
@@ -549,6 +553,7 @@ digraph architecture {
     mod_opendal_service_cos_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cos/src"];
     mod_opendal_service_cos_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cos/src"];
     mod_opendal_service_cos_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cos/src"];
+    mod_opendal_service_cos_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cos/src"];
     mod_opendal_service_cos_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cos/src"];
     mod_opendal_service_cos_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cos/src"];
   }
@@ -563,6 +568,7 @@ digraph architecture {
     mod_opendal_service_d1_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/d1/src"];
     mod_opendal_service_d1_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/d1/src"];
     mod_opendal_service_d1_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/d1/src"];
+    mod_opendal_service_d1_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/d1/src"];
     mod_opendal_service_d1_model[label="model", path="/home/yibai/llmcc/sample/repos/opendal/core/services/d1/src"];
     mod_opendal_service_d1_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/d1/src"];
   }
@@ -576,6 +582,7 @@ digraph architecture {
     mod_opendal_service_dashmap_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dashmap/src"];
     mod_opendal_service_dashmap_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dashmap/src"];
     mod_opendal_service_dashmap_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dashmap/src"];
+    mod_opendal_service_dashmap_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dashmap/src"];
     mod_opendal_service_dashmap_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dashmap/src"];
   }
 
@@ -589,6 +596,7 @@ digraph architecture {
     mod_opendal_service_dbfs_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dbfs/src"];
     mod_opendal_service_dbfs_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dbfs/src"];
     mod_opendal_service_dbfs_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dbfs/src"];
+    mod_opendal_service_dbfs_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dbfs/src"];
     mod_opendal_service_dbfs_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dbfs/src"];
     mod_opendal_service_dbfs_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dbfs/src"];
   }
@@ -604,6 +612,7 @@ digraph architecture {
     mod_opendal_service_dropbox_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dropbox/src"];
     mod_opendal_service_dropbox_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dropbox/src"];
     mod_opendal_service_dropbox_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dropbox/src"];
+    mod_opendal_service_dropbox_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dropbox/src"];
     mod_opendal_service_dropbox_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dropbox/src"];
     mod_opendal_service_dropbox_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dropbox/src"];
   }
@@ -618,6 +627,7 @@ digraph architecture {
     mod_opendal_service_etcd_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/etcd/src"];
     mod_opendal_service_etcd_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/etcd/src"];
     mod_opendal_service_etcd_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/etcd/src"];
+    mod_opendal_service_etcd_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/etcd/src"];
     mod_opendal_service_etcd_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/etcd/src"];
   }
 
@@ -630,6 +640,7 @@ digraph architecture {
     mod_opendal_service_foundationdb_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/foundationdb/src"];
     mod_opendal_service_foundationdb_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/foundationdb/src"];
     mod_opendal_service_foundationdb_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/foundationdb/src"];
+    mod_opendal_service_foundationdb_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/foundationdb/src"];
     mod_opendal_service_foundationdb_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/foundationdb/src"];
   }
 
@@ -643,6 +654,7 @@ digraph architecture {
     mod_opendal_service_fs_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/fs/src"];
     mod_opendal_service_fs_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/fs/src"];
     mod_opendal_service_fs_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/fs/src"];
+    mod_opendal_service_fs_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/fs/src"];
     mod_opendal_service_fs_reader[label="reader", path="/home/yibai/llmcc/sample/repos/opendal/core/services/fs/src"];
     mod_opendal_service_fs_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/fs/src"];
   }
@@ -657,6 +669,7 @@ digraph architecture {
     mod_opendal_service_ftp_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ftp/src"];
     mod_opendal_service_ftp_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ftp/src"];
     mod_opendal_service_ftp_err[label="err", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ftp/src"];
+    mod_opendal_service_ftp_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ftp/src"];
     mod_opendal_service_ftp_reader[label="reader", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ftp/src"];
     mod_opendal_service_ftp_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ftp/src"];
   }
@@ -671,6 +684,7 @@ digraph architecture {
     mod_opendal_service_gcs_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gcs/src"];
     mod_opendal_service_gcs_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gcs/src"];
     mod_opendal_service_gcs_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gcs/src"];
+    mod_opendal_service_gcs_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gcs/src"];
     mod_opendal_service_gcs_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gcs/src"];
     mod_opendal_service_gcs_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gcs/src"];
   }
@@ -686,6 +700,7 @@ digraph architecture {
     mod_opendal_service_gdrive_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gdrive/src"];
     mod_opendal_service_gdrive_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gdrive/src"];
     mod_opendal_service_gdrive_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gdrive/src"];
+    mod_opendal_service_gdrive_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gdrive/src"];
     mod_opendal_service_gdrive_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gdrive/src"];
     mod_opendal_service_gdrive_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gdrive/src"];
   }
@@ -699,6 +714,7 @@ digraph architecture {
     mod_opendal_service_ghac_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ghac/src"];
     mod_opendal_service_ghac_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ghac/src"];
     mod_opendal_service_ghac_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ghac/src"];
+    mod_opendal_service_ghac_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ghac/src"];
     mod_opendal_service_ghac_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ghac/src"];
   }
 
@@ -712,6 +728,7 @@ digraph architecture {
     mod_opendal_service_github_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/github/src"];
     mod_opendal_service_github_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/github/src"];
     mod_opendal_service_github_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/github/src"];
+    mod_opendal_service_github_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/github/src"];
     mod_opendal_service_github_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/github/src"];
     mod_opendal_service_github_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/github/src"];
   }
@@ -725,6 +742,7 @@ digraph architecture {
     mod_opendal_service_gridfs_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gridfs/src"];
     mod_opendal_service_gridfs_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gridfs/src"];
     mod_opendal_service_gridfs_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gridfs/src"];
+    mod_opendal_service_gridfs_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gridfs/src"];
     mod_opendal_service_gridfs_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gridfs/src"];
   }
 
@@ -737,6 +755,8 @@ digraph architecture {
     mod_opendal_service_hdfs_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/hdfs/src"];
     mod_opendal_service_hdfs_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/hdfs/src"];
     mod_opendal_service_hdfs_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/hdfs/src"];
+    mod_opendal_service_hdfs_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/hdfs/src"];
+    mod_opendal_service_hdfs_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/hdfs/src"];
   }
 
   subgraph cluster_opendal_service_hdfs_native {
@@ -749,6 +769,7 @@ digraph architecture {
     mod_opendal_service_hdfs_native_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/hdfs-native/src"];
     mod_opendal_service_hdfs_native_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/hdfs-native/src"];
     mod_opendal_service_hdfs_native_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/hdfs-native/src"];
+    mod_opendal_service_hdfs_native_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/hdfs-native/src"];
   }
 
   subgraph cluster_opendal_service_http {
@@ -760,6 +781,7 @@ digraph architecture {
     mod_opendal_service_http_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/http/src"];
     mod_opendal_service_http_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/http/src"];
     mod_opendal_service_http_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/http/src"];
+    mod_opendal_service_http_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/http/src"];
   }
 
   subgraph cluster_opendal_service_huggingface {
@@ -771,6 +793,7 @@ digraph architecture {
     mod_opendal_service_huggingface_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/huggingface/src"];
     mod_opendal_service_huggingface_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/huggingface/src"];
     mod_opendal_service_huggingface_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/huggingface/src"];
+    mod_opendal_service_huggingface_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/huggingface/src"];
     mod_opendal_service_huggingface_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/huggingface/src"];
   }
 
@@ -784,6 +807,7 @@ digraph architecture {
     mod_opendal_service_ipfs_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ipfs/src"];
     mod_opendal_service_ipfs_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ipfs/src"];
     mod_opendal_service_ipfs_ipld[label="ipld", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ipfs/src"];
+    mod_opendal_service_ipfs_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ipfs/src"];
   }
 
   subgraph cluster_opendal_service_ipmfs {
@@ -797,6 +821,7 @@ digraph architecture {
     mod_opendal_service_ipmfs_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ipmfs/src"];
     mod_opendal_service_ipmfs_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ipmfs/src"];
     mod_opendal_service_ipmfs_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ipmfs/src"];
+    mod_opendal_service_ipmfs_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ipmfs/src"];
     mod_opendal_service_ipmfs_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ipmfs/src"];
     mod_opendal_service_ipmfs_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ipmfs/src"];
   }
@@ -811,6 +836,7 @@ digraph architecture {
     mod_opendal_service_koofr_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/koofr/src"];
     mod_opendal_service_koofr_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/koofr/src"];
     mod_opendal_service_koofr_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/koofr/src"];
+    mod_opendal_service_koofr_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/koofr/src"];
     mod_opendal_service_koofr_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/koofr/src"];
     mod_opendal_service_koofr_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/koofr/src"];
   }
@@ -825,6 +851,7 @@ digraph architecture {
     mod_opendal_service_lakefs_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/lakefs/src"];
     mod_opendal_service_lakefs_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/lakefs/src"];
     mod_opendal_service_lakefs_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/lakefs/src"];
+    mod_opendal_service_lakefs_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/lakefs/src"];
     mod_opendal_service_lakefs_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/lakefs/src"];
     mod_opendal_service_lakefs_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/lakefs/src"];
   }
@@ -839,6 +866,7 @@ digraph architecture {
     mod_opendal_service_memcached_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/memcached/src"];
     mod_opendal_service_memcached_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/memcached/src"];
     mod_opendal_service_memcached_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/memcached/src"];
+    mod_opendal_service_memcached_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/memcached/src"];
     mod_opendal_service_memcached_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/memcached/src"];
   }
 
@@ -851,6 +879,7 @@ digraph architecture {
     mod_opendal_service_mini_moka_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/mini_moka/src"];
     mod_opendal_service_mini_moka_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/mini_moka/src"];
     mod_opendal_service_mini_moka_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/mini_moka/src"];
+    mod_opendal_service_mini_moka_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/mini_moka/src"];
     mod_opendal_service_mini_moka_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/mini_moka/src"];
   }
 
@@ -863,6 +892,7 @@ digraph architecture {
     mod_opendal_service_moka_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/moka/src"];
     mod_opendal_service_moka_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/moka/src"];
     mod_opendal_service_moka_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/moka/src"];
+    mod_opendal_service_moka_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/moka/src"];
     mod_opendal_service_moka_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/moka/src"];
   }
 
@@ -875,6 +905,7 @@ digraph architecture {
     mod_opendal_service_mongodb_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/mongodb/src"];
     mod_opendal_service_mongodb_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/mongodb/src"];
     mod_opendal_service_mongodb_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/mongodb/src"];
+    mod_opendal_service_mongodb_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/mongodb/src"];
     mod_opendal_service_mongodb_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/mongodb/src"];
   }
 
@@ -887,6 +918,7 @@ digraph architecture {
     mod_opendal_service_monoiofs_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/monoiofs/src"];
     mod_opendal_service_monoiofs_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/monoiofs/src"];
     mod_opendal_service_monoiofs_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/monoiofs/src"];
+    mod_opendal_service_monoiofs_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/monoiofs/src"];
     mod_opendal_service_monoiofs_reader[label="reader", path="/home/yibai/llmcc/sample/repos/opendal/core/services/monoiofs/src"];
     mod_opendal_service_monoiofs_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/monoiofs/src"];
   }
@@ -900,6 +932,7 @@ digraph architecture {
     mod_opendal_service_mysql_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/mysql/src"];
     mod_opendal_service_mysql_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/mysql/src"];
     mod_opendal_service_mysql_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/mysql/src"];
+    mod_opendal_service_mysql_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/mysql/src"];
     mod_opendal_service_mysql_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/mysql/src"];
   }
 
@@ -913,6 +946,7 @@ digraph architecture {
     mod_opendal_service_obs_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/obs/src"];
     mod_opendal_service_obs_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/obs/src"];
     mod_opendal_service_obs_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/obs/src"];
+    mod_opendal_service_obs_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/obs/src"];
     mod_opendal_service_obs_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/obs/src"];
     mod_opendal_service_obs_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/obs/src"];
   }
@@ -928,7 +962,7 @@ digraph architecture {
     mod_opendal_service_onedrive_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/onedrive/src"];
     mod_opendal_service_onedrive_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/onedrive/src"];
     mod_opendal_service_onedrive_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/onedrive/src"];
-    mod_opendal_service_onedrive_graph_model[label="graph_model", path="/home/yibai/llmcc/sample/repos/opendal/core/services/onedrive/src"];
+    mod_opendal_service_onedrive_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/onedrive/src"];
     mod_opendal_service_onedrive_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/onedrive/src"];
     mod_opendal_service_onedrive_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/onedrive/src"];
   }
@@ -941,6 +975,8 @@ digraph architecture {
     mod_opendal_service_opfs_backend[label="backend", path="/home/yibai/llmcc/sample/repos/opendal/core/services/opfs/src"];
     mod_opendal_service_opfs_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/opfs/src"];
     mod_opendal_service_opfs_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/opfs/src"];
+    mod_opendal_service_opfs_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/opfs/src"];
+    mod_opendal_service_opfs_utils[label="utils", path="/home/yibai/llmcc/sample/repos/opendal/core/services/opfs/src"];
   }
 
   subgraph cluster_opendal_service_oss {
@@ -953,6 +989,7 @@ digraph architecture {
     mod_opendal_service_oss_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/oss/src"];
     mod_opendal_service_oss_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/oss/src"];
     mod_opendal_service_oss_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/oss/src"];
+    mod_opendal_service_oss_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/oss/src"];
     mod_opendal_service_oss_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/oss/src"];
     mod_opendal_service_oss_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/oss/src"];
   }
@@ -967,6 +1004,7 @@ digraph architecture {
     mod_opendal_service_pcloud_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/pcloud/src"];
     mod_opendal_service_pcloud_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/pcloud/src"];
     mod_opendal_service_pcloud_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/pcloud/src"];
+    mod_opendal_service_pcloud_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/pcloud/src"];
     mod_opendal_service_pcloud_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/pcloud/src"];
     mod_opendal_service_pcloud_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/pcloud/src"];
   }
@@ -980,6 +1018,7 @@ digraph architecture {
     mod_opendal_service_persy_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/persy/src"];
     mod_opendal_service_persy_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/persy/src"];
     mod_opendal_service_persy_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/persy/src"];
+    mod_opendal_service_persy_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/persy/src"];
     mod_opendal_service_persy_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/persy/src"];
   }
 
@@ -992,6 +1031,7 @@ digraph architecture {
     mod_opendal_service_postgresql_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/postgresql/src"];
     mod_opendal_service_postgresql_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/postgresql/src"];
     mod_opendal_service_postgresql_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/postgresql/src"];
+    mod_opendal_service_postgresql_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/postgresql/src"];
     mod_opendal_service_postgresql_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/postgresql/src"];
   }
 
@@ -1004,6 +1044,7 @@ digraph architecture {
     mod_opendal_service_redb_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/redb/src"];
     mod_opendal_service_redb_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/redb/src"];
     mod_opendal_service_redb_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/redb/src"];
+    mod_opendal_service_redb_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/redb/src"];
     mod_opendal_service_redb_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/redb/src"];
   }
 
@@ -1016,6 +1057,7 @@ digraph architecture {
     mod_opendal_service_redis_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/redis/src"];
     mod_opendal_service_redis_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/redis/src"];
     mod_opendal_service_redis_delete[label="delete", path="/home/yibai/llmcc/sample/repos/opendal/core/services/redis/src"];
+    mod_opendal_service_redis_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/redis/src"];
     mod_opendal_service_redis_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/redis/src"];
   }
 
@@ -1028,6 +1070,7 @@ digraph architecture {
     mod_opendal_service_rocksdb_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/rocksdb/src"];
     mod_opendal_service_rocksdb_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/rocksdb/src"];
     mod_opendal_service_rocksdb_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/rocksdb/src"];
+    mod_opendal_service_rocksdb_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/rocksdb/src"];
     mod_opendal_service_rocksdb_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/rocksdb/src"];
   }
 
@@ -1041,6 +1084,7 @@ digraph architecture {
     mod_opendal_service_s3_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/s3/src"];
     mod_opendal_service_s3_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/s3/src"];
     mod_opendal_service_s3_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/s3/src"];
+    mod_opendal_service_s3_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/s3/src"];
     mod_opendal_service_s3_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/s3/src"];
     mod_opendal_service_s3_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/s3/src"];
   }
@@ -1055,6 +1099,7 @@ digraph architecture {
     mod_opendal_service_seafile_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/seafile/src"];
     mod_opendal_service_seafile_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/seafile/src"];
     mod_opendal_service_seafile_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/seafile/src"];
+    mod_opendal_service_seafile_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/seafile/src"];
     mod_opendal_service_seafile_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/seafile/src"];
     mod_opendal_service_seafile_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/seafile/src"];
   }
@@ -1069,6 +1114,7 @@ digraph architecture {
     mod_opendal_service_sftp_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/sftp/src"];
     mod_opendal_service_sftp_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/sftp/src"];
     mod_opendal_service_sftp_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/sftp/src"];
+    mod_opendal_service_sftp_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/sftp/src"];
     mod_opendal_service_sftp_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/sftp/src"];
     mod_opendal_service_sftp_reader[label="reader", path="/home/yibai/llmcc/sample/repos/opendal/core/services/sftp/src"];
     mod_opendal_service_sftp_utils[label="utils", path="/home/yibai/llmcc/sample/repos/opendal/core/services/sftp/src"];
@@ -1083,6 +1129,7 @@ digraph architecture {
     mod_opendal_service_sled_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/sled/src"];
     mod_opendal_service_sled_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/sled/src"];
     mod_opendal_service_sled_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/sled/src"];
+    mod_opendal_service_sled_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/sled/src"];
     mod_opendal_service_sled_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/sled/src"];
   }
 
@@ -1095,6 +1142,7 @@ digraph architecture {
     mod_opendal_service_sqlite_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/sqlite/src"];
     mod_opendal_service_sqlite_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/sqlite/src"];
     mod_opendal_service_sqlite_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/sqlite/src"];
+    mod_opendal_service_sqlite_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/sqlite/src"];
     mod_opendal_service_sqlite_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/sqlite/src"];
   }
 
@@ -1107,6 +1155,7 @@ digraph architecture {
     mod_opendal_service_surrealdb_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/surrealdb/src"];
     mod_opendal_service_surrealdb_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/surrealdb/src"];
     mod_opendal_service_surrealdb_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/surrealdb/src"];
+    mod_opendal_service_surrealdb_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/surrealdb/src"];
     mod_opendal_service_surrealdb_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/surrealdb/src"];
   }
 
@@ -1120,6 +1169,7 @@ digraph architecture {
     mod_opendal_service_swift_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/swift/src"];
     mod_opendal_service_swift_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/swift/src"];
     mod_opendal_service_swift_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/swift/src"];
+    mod_opendal_service_swift_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/swift/src"];
     mod_opendal_service_swift_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/swift/src"];
     mod_opendal_service_swift_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/swift/src"];
   }
@@ -1133,6 +1183,7 @@ digraph architecture {
     mod_opendal_service_tikv_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/tikv/src"];
     mod_opendal_service_tikv_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/tikv/src"];
     mod_opendal_service_tikv_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/tikv/src"];
+    mod_opendal_service_tikv_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/tikv/src"];
     mod_opendal_service_tikv_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/tikv/src"];
   }
 
@@ -1146,6 +1197,7 @@ digraph architecture {
     mod_opendal_service_upyun_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/upyun/src"];
     mod_opendal_service_upyun_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/upyun/src"];
     mod_opendal_service_upyun_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/upyun/src"];
+    mod_opendal_service_upyun_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/upyun/src"];
     mod_opendal_service_upyun_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/upyun/src"];
     mod_opendal_service_upyun_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/upyun/src"];
   }
@@ -1160,6 +1212,7 @@ digraph architecture {
     mod_opendal_service_vercel_artifacts_config[label="config", path="/home/yibai/llmcc/sample/repos/opendal/core/services/vercel-artifacts/src"];
     mod_opendal_service_vercel_artifacts_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/vercel-artifacts/src"];
     mod_opendal_service_vercel_artifacts_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/vercel-artifacts/src"];
+    mod_opendal_service_vercel_artifacts_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/vercel-artifacts/src"];
     mod_opendal_service_vercel_artifacts_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/vercel-artifacts/src"];
   }
 
@@ -1173,6 +1226,7 @@ digraph architecture {
     mod_opendal_service_vercel_blob_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/vercel-blob/src"];
     mod_opendal_service_vercel_blob_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/vercel-blob/src"];
     mod_opendal_service_vercel_blob_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/vercel-blob/src"];
+    mod_opendal_service_vercel_blob_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/vercel-blob/src"];
     mod_opendal_service_vercel_blob_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/vercel-blob/src"];
     mod_opendal_service_vercel_blob_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/vercel-blob/src"];
   }
@@ -1187,6 +1241,7 @@ digraph architecture {
     mod_opendal_service_webdav_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/webdav/src"];
     mod_opendal_service_webdav_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/webdav/src"];
     mod_opendal_service_webdav_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/webdav/src"];
+    mod_opendal_service_webdav_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/webdav/src"];
     mod_opendal_service_webdav_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/webdav/src"];
     mod_opendal_service_webdav_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/webdav/src"];
   }
@@ -1201,6 +1256,7 @@ digraph architecture {
     mod_opendal_service_webhdfs_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/webhdfs/src"];
     mod_opendal_service_webhdfs_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/webhdfs/src"];
     mod_opendal_service_webhdfs_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/webhdfs/src"];
+    mod_opendal_service_webhdfs_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/webhdfs/src"];
     mod_opendal_service_webhdfs_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/webhdfs/src"];
     mod_opendal_service_webhdfs_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/webhdfs/src"];
   }
@@ -1215,6 +1271,7 @@ digraph architecture {
     mod_opendal_service_yandex_disk_core[label="core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/yandex-disk/src"];
     mod_opendal_service_yandex_disk_deleter[label="deleter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/yandex-disk/src"];
     mod_opendal_service_yandex_disk_error[label="error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/yandex-disk/src"];
+    mod_opendal_service_yandex_disk_lib[label="lib", path="/home/yibai/llmcc/sample/repos/opendal/core/services/yandex-disk/src"];
     mod_opendal_service_yandex_disk_lister[label="lister", path="/home/yibai/llmcc/sample/repos/opendal/core/services/yandex-disk/src"];
     mod_opendal_service_yandex_disk_writer[label="writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/yandex-disk/src"];
   }
@@ -1247,40 +1304,41 @@ digraph architecture {
   }
 
 
-  mod_dav_server_opendalfs_dir -> mod_opendal_core_blocking;
+  mod_dav_server_opendalfs_dir -> mod_opendal_core_types;
   mod_dav_server_opendalfs_dir -> mod_opendal_cpp_lister;
-  mod_dav_server_opendalfs_dir -> mod_opendal_service_github_core;
+  mod_dav_server_opendalfs_dir -> mod_opendal_ocaml_operator;
   mod_dav_server_opendalfs_file -> mod_opendal_core_types;
-  mod_dav_server_opendalfs_file -> mod_opendal_ruby_operator;
-  mod_dav_server_opendalfs_fs -> mod_opendal_core_blocking;
-  mod_dav_server_opendalfs_metadata -> mod_opendal_python_metadata;
-  mod_dav_server_opendalfs_utils -> mod_opendal_c_error;
+  mod_dav_server_opendalfs_file -> mod_opendal_cpp_async;
+  mod_dav_server_opendalfs_fs -> mod_opendal_ocaml_operator;
+  mod_dav_server_opendalfs_metadata -> mod_opendal_service_ipfs_ipld;
+  mod_dav_server_opendalfs_utils -> mod_opendal_java_error;
   mod_edge_test_aws_s3_assume_role_with_web_identity_main -> mod_opendal_testkit_utils;
-  mod_edge_test_file_write_on_full_disk_main -> mod_opendal_core_blocking;
-  mod_edge_test_s3_read_on_wasm_lib -> mod_opendal_core_blocking;
-  mod_object_store_opendal_lib -> mod_opendal_core_blocking;
-  mod_object_store_opendal_lib -> mod_opendal_lua_lib;
-  mod_object_store_opendal_service -> mod_object_store_opendal_lib;
+  mod_object_store_opendal_lib -> mod_opendal_core_raw;
   mod_object_store_opendal_service -> mod_opendal_core_raw;
   mod_object_store_opendal_service -> mod_opendal_core_types;
   mod_object_store_opendal_service -> mod_opendal_java_error;
-  mod_object_store_opendal_service -> mod_opendal_nodejs_lib;
+  mod_object_store_opendal_service -> mod_opendal_ocaml_operator;
   mod_object_store_opendal_store -> mod_opendal_core_blocking;
+  mod_object_store_opendal_store -> mod_opendal_nodejs_lib;
   mod_object_store_opendal_store -> mod_opendal_ocaml_operator;
   mod_object_store_opendal_store -> mod_opendal_service_azdls_lister;
-  mod_object_store_opendal_utils -> mod_opendal_core_types;
-  mod_object_store_opendal_utils -> mod_opendal_service_ipfs_ipld;
-  mod_odev_generate -> mod_odev_main;
-  mod_odev_generate -> mod_opendal_service_compfs_lister;
+  mod_object_store_opendal_utils -> mod_object_store_opendal_lib;
+  mod_object_store_opendal_utils -> mod_opendal_java_error;
+  mod_object_store_opendal_utils -> mod_opendal_ocaml_operator;
+  mod_odev_generate -> mod_opendal_core_types;
+  mod_odev_generate -> mod_opendal_java_error;
   mod_odev_main -> mod_odev_generate;
+  mod_odev_main -> mod_odev_release;
   mod_odev_main -> mod_opendal_service_azdls_lister;
   mod_odev_release -> mod_odev_main;
   mod_odev_release -> mod_opendal_service_azdls_lister;
-  mod_opendal_c_build -> mod_opendal_service_azdls_lister;
   mod_opendal_c_error -> mod_opendal_c_types;
   mod_opendal_c_operator -> mod_opendal_c_error;
   mod_opendal_c_operator -> mod_opendal_c_result;
   mod_opendal_c_operator -> mod_opendal_c_types;
+  mod_opendal_c_operator -> mod_opendal_layer_retry_lib;
+  mod_opendal_c_operator -> mod_opendal_lib;
+  mod_opendal_c_operator -> mod_opendal_php_lib;
   mod_opendal_c_result -> mod_opendal_c_entry;
   mod_opendal_c_result -> mod_opendal_c_error;
   mod_opendal_c_result -> mod_opendal_c_lister;
@@ -1297,51 +1355,75 @@ digraph architecture {
   mod_opendal_core_blocking -> mod_parquet_opendal_async_writer;
   mod_opendal_core_layers -> mod_opendal_core_raw;
   mod_opendal_core_layers -> mod_opendal_core_types;
+  mod_opendal_core_raw -> mod_object_store_opendal_service;
   mod_opendal_core_raw -> mod_opendal_core_types;
+  mod_opendal_core_raw -> mod_opendal_nodejs_options;
   mod_opendal_core_raw -> mod_opendal_python_options;
+  mod_opendal_core_raw -> mod_opendal_service_azblob_core;
+  mod_opendal_core_raw -> mod_opendal_service_azblob_writer;
+  mod_opendal_core_raw -> mod_opendal_service_azdls_core;
+  mod_opendal_core_raw -> mod_opendal_service_azdls_writer;
+  mod_opendal_core_raw -> mod_opendal_service_azfile_core;
+  mod_opendal_core_raw -> mod_opendal_service_azfile_writer;
+  mod_opendal_core_raw -> mod_opendal_service_cos_core;
+  mod_opendal_core_raw -> mod_opendal_service_cos_lister;
+  mod_opendal_core_raw -> mod_opendal_service_cos_writer;
+  mod_opendal_core_raw -> mod_opendal_service_fs_writer;
   mod_opendal_core_raw -> mod_opendal_service_gdrive_core;
+  mod_opendal_core_raw -> mod_opendal_service_gdrive_lister;
+  mod_opendal_core_raw -> mod_opendal_service_obs_core;
+  mod_opendal_core_raw -> mod_opendal_service_obs_writer;
+  mod_opendal_core_raw -> mod_opendal_service_oss_lister;
+  mod_opendal_core_raw -> mod_opendal_service_oss_writer;
+  mod_opendal_core_raw -> mod_opendal_service_s3_core;
+  mod_opendal_core_raw -> mod_opendal_service_s3_lister;
+  mod_opendal_core_raw -> mod_opendal_service_s3_writer;
+  mod_opendal_core_raw -> mod_opendal_service_webhdfs_core;
+  mod_opendal_core_raw -> mod_opendal_service_webhdfs_writer;
   mod_opendal_core_services -> mod_opendal_core_raw;
   mod_opendal_core_services -> mod_opendal_core_types;
-  mod_opendal_core_types -> mod_opendal_c_types;
   mod_opendal_core_types -> mod_opendal_core_blocking;
   mod_opendal_core_types -> mod_opendal_core_raw;
+  mod_opendal_cpp_async -> mod_opendal_cpp_lister;
+  mod_opendal_cpp_async -> mod_opendal_cpp_reader;
+  mod_opendal_cpp_async -> mod_opendal_lib;
+  mod_opendal_cpp_lib -> mod_opendal_core_types;
   mod_opendal_cpp_lib -> mod_opendal_cpp_lister;
   mod_opendal_cpp_lib -> mod_opendal_cpp_reader;
+  mod_opendal_cpp_lib -> mod_opendal_lib;
   mod_opendal_cpp_reader -> mod_opendal_core_blocking;
   mod_opendal_dart_api -> mod_opendal_lua_lib;
+  mod_opendal_dotnet_lib -> mod_opendal_cpp_async;
   mod_opendal_dotnet_lib -> mod_opendal_lua_lib;
-  mod_opendal_fuzz_fuzz_reader -> mod_opendal_core_blocking;
+  mod_opendal_fuzz_fuzz_reader -> mod_opendal_core_types;
   mod_opendal_fuzz_fuzz_reader -> mod_opendal_testkit_read;
-  mod_opendal_fuzz_fuzz_writer -> mod_opendal_core_blocking;
+  mod_opendal_fuzz_fuzz_writer -> mod_opendal_core_types;
+  mod_opendal_fuzz_fuzz_writer -> mod_opendal_cpp_async;
   mod_opendal_fuzz_fuzz_writer -> mod_opendal_testkit_write;
+  mod_opendal_hs_lib -> mod_opendal_cpp_lib;
   mod_opendal_hs_lib -> mod_opendal_hs_result;
+  mod_opendal_hs_lib -> mod_opendal_hs_types;
+  mod_opendal_hs_lib -> mod_opendal_layer_retry_lib;
   mod_opendal_hs_lib -> mod_opendal_ocaml_operator;
-  mod_opendal_java_async_operator -> mod_opendal_core_raw;
-  mod_opendal_java_async_operator -> mod_opendal_java_convert;
+  mod_opendal_java_async_operator -> mod_opendal_core_blocking;
+  mod_opendal_java_async_operator -> mod_opendal_core_types;
   mod_opendal_java_async_operator -> mod_opendal_java_executor;
-  mod_opendal_java_async_operator -> mod_opendal_java_lib;
-  mod_opendal_java_async_operator -> mod_opendal_python_operator;
-  mod_opendal_java_convert -> mod_opendal_lua_lib;
-  mod_opendal_java_layer -> mod_opendal_core_blocking;
-  mod_opendal_java_layer -> mod_opendal_layer_concurrent_limit_lib;
-  mod_opendal_java_layer -> mod_opendal_python_layers;
+  mod_opendal_java_async_operator -> mod_opendal_ocaml_operator;
+  mod_opendal_java_convert -> mod_opendal_core_raw;
+  mod_opendal_java_layer -> mod_opendal_cpp_lib;
+  mod_opendal_java_layer -> mod_opendal_layer_retry_lib;
   mod_opendal_java_lib -> mod_opendal_core_raw;
   mod_opendal_java_lib -> mod_opendal_core_types;
-  mod_opendal_java_lib -> mod_opendal_nodejs_lib;
+  mod_opendal_java_lib -> mod_opendal_nodejs_options;
   mod_opendal_java_lib -> mod_opendal_ocaml_operator;
-  mod_opendal_java_lib -> mod_opendal_ruby_operator_info;
-  mod_opendal_java_operator -> mod_opendal_java_convert;
-  mod_opendal_java_operator -> mod_opendal_java_lib;
+  mod_opendal_java_operator -> mod_opendal_cpp_lib;
   mod_opendal_java_operator_input_stream -> mod_opendal_core_blocking;
-  mod_opendal_java_operator_input_stream -> mod_opendal_java_convert;
-  mod_opendal_java_operator_input_stream -> mod_opendal_java_lib;
-  mod_opendal_java_operator_output_stream -> mod_opendal_java_convert;
-  mod_opendal_java_operator_output_stream -> mod_opendal_java_lib;
-  mod_opendal_java_utility -> mod_opendal_java_convert;
+  mod_opendal_java_operator_input_stream -> mod_opendal_ruby_operator;
+  mod_opendal_java_operator_output_stream -> mod_opendal_core_types;
   mod_opendal_layer_async_backtrace_lib -> mod_opendal_core_raw;
   mod_opendal_layer_await_tree_lib -> mod_opendal_core_raw;
   mod_opendal_layer_capability_check_lib -> mod_opendal_core_raw;
-  mod_opendal_layer_capability_check_lib -> mod_opendal_core_types;
+  mod_opendal_layer_capability_check_lib -> mod_opendal_java_error;
   mod_opendal_layer_chaos_lib -> mod_opendal_core_raw;
   mod_opendal_layer_concurrent_limit_lib -> mod_opendal_core_raw;
   mod_opendal_layer_dtrace_lib -> mod_opendal_core_raw;
@@ -1355,8 +1437,10 @@ digraph architecture {
   mod_opendal_layer_observe_metrics_common_lib -> mod_opendal_core_raw;
   mod_opendal_layer_observe_metrics_common_lib -> mod_opendal_core_types;
   mod_opendal_layer_otelmetrics_lib -> mod_opendal_core_raw;
+  mod_opendal_layer_otelmetrics_lib -> mod_opendal_layer_observe_metrics_common_lib;
   mod_opendal_layer_oteltrace_lib -> mod_opendal_core_raw;
   mod_opendal_layer_prometheus_client_lib -> mod_opendal_core_raw;
+  mod_opendal_layer_prometheus_client_lib -> mod_opendal_layer_observe_metrics_common_lib;
   mod_opendal_layer_prometheus_lib -> mod_opendal_core_raw;
   mod_opendal_layer_prometheus_lib -> mod_opendal_java_error;
   mod_opendal_layer_retry_lib -> mod_opendal_core_raw;
@@ -1365,27 +1449,37 @@ digraph architecture {
   mod_opendal_layer_timeout_lib -> mod_opendal_core_raw;
   mod_opendal_layer_timeout_lib -> mod_opendal_core_types;
   mod_opendal_layer_tracing_lib -> mod_opendal_core_raw;
-  mod_opendal_lua_lib -> mod_opendal_ocaml_operator;
+  mod_opendal_lib -> mod_opendal_core_types;
+  mod_opendal_lua_lib -> mod_opendal_service_redb_core;
   mod_opendal_nodejs_capability -> mod_opendal_lua_lib;
   mod_opendal_nodejs_lib -> mod_opendal_java_error;
   mod_opendal_nodejs_lib -> mod_opendal_lua_lib;
   mod_opendal_nodejs_options -> mod_opendal_python_options;
-  mod_opendal_ocaml_operator -> mod_opendal_ocaml_lib;
-  mod_opendal_ocaml_operator -> mod_opendal_ruby_operator;
+  mod_opendal_ocaml_build -> mod_odev_generate;
+  mod_opendal_ocaml_lib -> mod_opendal_core_types;
+  mod_opendal_php_lib -> mod_opendal_java_error;
+  mod_opendal_python_errors -> mod_opendal_core_types;
   mod_opendal_python_file -> mod_opendal_core_blocking;
   mod_opendal_python_file -> mod_opendal_core_types;
-  mod_opendal_python_lister -> mod_opendal_ocaml_operator;
+  mod_opendal_python_lib -> mod_opendal_java_error;
+  mod_opendal_python_lib -> mod_opendal_python_capability;
+  mod_opendal_python_lib -> mod_opendal_python_file;
+  mod_opendal_python_lib -> mod_opendal_python_layers;
+  mod_opendal_python_lib -> mod_opendal_python_operator;
+  mod_opendal_python_lib -> mod_opendal_python_options;
+  mod_opendal_python_lib -> mod_opendal_python_services;
+  mod_opendal_python_lister -> mod_opendal_ruby_lister;
+  mod_opendal_python_operator -> mod_opendal_python_errors;
+  mod_opendal_ruby_build -> mod_opendal_java_error;
   mod_opendal_ruby_capability -> mod_opendal_java_error;
   mod_opendal_ruby_io -> mod_opendal_core_blocking;
   mod_opendal_ruby_io -> mod_opendal_core_types;
-  mod_opendal_ruby_io -> mod_opendal_java_error;
-  mod_opendal_ruby_lib -> mod_opendal_core_types;
-  mod_opendal_ruby_lib -> mod_opendal_ocaml_operator;
+  mod_opendal_ruby_lib -> mod_opendal_java_error;
   mod_opendal_ruby_lister -> mod_opendal_java_error;
   mod_opendal_ruby_metadata -> mod_opendal_java_error;
   mod_opendal_ruby_middlewares -> mod_opendal_java_error;
-  mod_opendal_ruby_middlewares -> mod_opendal_ocaml_operator;
   mod_opendal_ruby_middlewares -> mod_opendal_ruby_operator;
+  mod_opendal_ruby_operator -> mod_opendal_core_types;
   mod_opendal_ruby_operator -> mod_opendal_java_error;
   mod_opendal_ruby_operator_info -> mod_opendal_java_error;
   mod_opendal_service_aliyun_drive_backend -> mod_opendal_core_raw;
@@ -1395,7 +1489,9 @@ digraph architecture {
   mod_opendal_service_aliyun_drive_core -> mod_opendal_core_raw;
   mod_opendal_service_aliyun_drive_deleter -> mod_opendal_service_aliyun_drive_core;
   mod_opendal_service_aliyun_drive_error -> mod_opendal_core_types;
+  mod_opendal_service_aliyun_drive_error -> mod_opendal_java_error;
   mod_opendal_service_aliyun_drive_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_aliyun_drive_lib -> mod_opendal_core_types;
   mod_opendal_service_aliyun_drive_lister -> mod_opendal_service_aliyun_drive_core;
   mod_opendal_service_aliyun_drive_writer -> mod_opendal_core_raw;
   mod_opendal_service_aliyun_drive_writer -> mod_opendal_service_aliyun_drive_core;
@@ -1405,59 +1501,64 @@ digraph architecture {
   mod_opendal_service_alluxio_backend -> mod_opendal_service_alluxio_core;
   mod_opendal_service_alluxio_core -> mod_opendal_core_raw;
   mod_opendal_service_alluxio_deleter -> mod_opendal_service_alluxio_core;
-  mod_opendal_service_alluxio_error -> mod_opendal_core_raw;
   mod_opendal_service_alluxio_error -> mod_opendal_java_error;
+  mod_opendal_service_alluxio_error -> mod_opendal_python_utils;
   mod_opendal_service_alluxio_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_alluxio_lib -> mod_opendal_core_types;
   mod_opendal_service_alluxio_lister -> mod_opendal_service_alluxio_core;
   mod_opendal_service_alluxio_writer -> mod_opendal_core_raw;
   mod_opendal_service_alluxio_writer -> mod_opendal_service_alluxio_core;
   mod_opendal_service_azblob_backend -> mod_opendal_core_raw;
   mod_opendal_service_azblob_backend -> mod_opendal_core_types;
-  mod_opendal_service_azblob_backend -> mod_opendal_service_azblob_config;
   mod_opendal_service_azblob_backend -> mod_opendal_service_azblob_core;
   mod_opendal_service_azblob_core -> mod_opendal_core_raw;
   mod_opendal_service_azblob_deleter -> mod_opendal_service_azblob_core;
   mod_opendal_service_azblob_error -> mod_opendal_java_error;
-  mod_opendal_service_azblob_error -> mod_opendal_service_azure_common_lib;
+  mod_opendal_service_azblob_error -> mod_opendal_python_utils;
   mod_opendal_service_azblob_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_azblob_lib -> mod_opendal_core_types;
   mod_opendal_service_azblob_lister -> mod_opendal_service_azblob_core;
   mod_opendal_service_azblob_writer -> mod_opendal_core_raw;
   mod_opendal_service_azblob_writer -> mod_opendal_service_azblob_core;
   mod_opendal_service_azdls_backend -> mod_opendal_core_raw;
   mod_opendal_service_azdls_backend -> mod_opendal_core_types;
-  mod_opendal_service_azdls_backend -> mod_opendal_service_azdls_config;
   mod_opendal_service_azdls_backend -> mod_opendal_service_azdls_core;
   mod_opendal_service_azdls_core -> mod_opendal_core_raw;
   mod_opendal_service_azdls_deleter -> mod_opendal_service_azdls_core;
   mod_opendal_service_azdls_error -> mod_opendal_java_error;
-  mod_opendal_service_azdls_error -> mod_opendal_service_azure_common_lib;
+  mod_opendal_service_azdls_error -> mod_opendal_python_utils;
   mod_opendal_service_azdls_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_azdls_lib -> mod_opendal_core_types;
   mod_opendal_service_azdls_lister -> mod_opendal_service_azdls_core;
   mod_opendal_service_azdls_writer -> mod_opendal_core_raw;
   mod_opendal_service_azdls_writer -> mod_opendal_service_azdls_core;
   mod_opendal_service_azfile_backend -> mod_opendal_core_raw;
   mod_opendal_service_azfile_backend -> mod_opendal_core_types;
-  mod_opendal_service_azfile_backend -> mod_opendal_service_azfile_config;
   mod_opendal_service_azfile_backend -> mod_opendal_service_azfile_core;
   mod_opendal_service_azfile_core -> mod_opendal_core_raw;
   mod_opendal_service_azfile_deleter -> mod_opendal_service_azfile_core;
-  mod_opendal_service_azfile_error -> mod_opendal_java_error;
-  mod_opendal_service_azfile_error -> mod_opendal_service_azure_common_lib;
+  mod_opendal_service_azfile_error -> mod_opendal_core_types;
+  mod_opendal_service_azfile_error -> mod_opendal_python_utils;
   mod_opendal_service_azfile_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_azfile_lib -> mod_opendal_core_types;
   mod_opendal_service_azfile_lister -> mod_opendal_service_azfile_core;
   mod_opendal_service_azfile_writer -> mod_opendal_core_raw;
   mod_opendal_service_azfile_writer -> mod_opendal_service_azfile_core;
   mod_opendal_service_azure_common_lib -> mod_opendal_java_error;
+  mod_opendal_service_azure_common_lib -> mod_opendal_service_vercel_blob_core;
   mod_opendal_service_b2_backend -> mod_opendal_core_raw;
   mod_opendal_service_b2_backend -> mod_opendal_core_types;
   mod_opendal_service_b2_backend -> mod_opendal_service_b2_config;
   mod_opendal_service_b2_backend -> mod_opendal_service_b2_core;
   mod_opendal_service_b2_core -> mod_opendal_core_raw;
-  mod_opendal_service_b2_core -> mod_opendal_service_ipfs_ipld;
+  mod_opendal_service_b2_core -> mod_opendal_core_types;
+  mod_opendal_service_b2_core -> mod_opendal_dart_api;
+  mod_opendal_service_b2_core -> mod_opendal_service_fs_reader;
   mod_opendal_service_b2_deleter -> mod_opendal_service_b2_core;
-  mod_opendal_service_b2_error -> mod_opendal_core_raw;
-  mod_opendal_service_b2_error -> mod_opendal_core_types;
+  mod_opendal_service_b2_error -> mod_opendal_java_error;
+  mod_opendal_service_b2_error -> mod_opendal_python_utils;
   mod_opendal_service_b2_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_b2_lib -> mod_opendal_core_types;
   mod_opendal_service_b2_lister -> mod_opendal_service_b2_core;
   mod_opendal_service_b2_writer -> mod_opendal_core_raw;
   mod_opendal_service_b2_writer -> mod_opendal_service_b2_core;
@@ -1466,6 +1567,7 @@ digraph architecture {
   mod_opendal_service_cacache_backend -> mod_opendal_service_cacache_config;
   mod_opendal_service_cacache_backend -> mod_opendal_service_cacache_core;
   mod_opendal_service_cacache_deleter -> mod_opendal_service_cacache_core;
+  mod_opendal_service_cacache_lib -> mod_opendal_core_types;
   mod_opendal_service_cacache_writer -> mod_opendal_service_cacache_core;
   mod_opendal_service_cloudflare_kv_backend -> mod_opendal_core_raw;
   mod_opendal_service_cloudflare_kv_backend -> mod_opendal_core_types;
@@ -1473,10 +1575,11 @@ digraph architecture {
   mod_opendal_service_cloudflare_kv_backend -> mod_opendal_service_cloudflare_kv_core;
   mod_opendal_service_cloudflare_kv_core -> mod_opendal_core_raw;
   mod_opendal_service_cloudflare_kv_deleter -> mod_opendal_service_cloudflare_kv_core;
-  mod_opendal_service_cloudflare_kv_error -> mod_opendal_core_raw;
   mod_opendal_service_cloudflare_kv_error -> mod_opendal_java_error;
+  mod_opendal_service_cloudflare_kv_error -> mod_opendal_python_utils;
   mod_opendal_service_cloudflare_kv_error -> mod_opendal_service_cloudflare_kv_model;
   mod_opendal_service_cloudflare_kv_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_cloudflare_kv_lib -> mod_opendal_core_types;
   mod_opendal_service_cloudflare_kv_lister -> mod_opendal_service_cloudflare_kv_core;
   mod_opendal_service_cloudflare_kv_writer -> mod_opendal_service_cloudflare_kv_core;
   mod_opendal_service_compfs_backend -> mod_opendal_core_raw;
@@ -1485,12 +1588,14 @@ digraph architecture {
   mod_opendal_service_compfs_backend -> mod_opendal_service_compfs_core;
   mod_opendal_service_compfs_core -> mod_opendal_core_raw;
   mod_opendal_service_compfs_deleter -> mod_opendal_service_compfs_core;
-  mod_opendal_service_compfs_lister -> mod_opendal_core_raw;
+  mod_opendal_service_compfs_lib -> mod_opendal_core_types;
+  mod_opendal_service_compfs_lister -> mod_opendal_ocaml_operator;
   mod_opendal_service_compfs_lister -> mod_opendal_service_azdls_lister;
   mod_opendal_service_compfs_lister -> mod_opendal_service_compfs_core;
   mod_opendal_service_compfs_reader -> mod_opendal_service_compfs_core;
   mod_opendal_service_compfs_writer -> mod_opendal_service_b2_core;
   mod_opendal_service_compfs_writer -> mod_opendal_service_compfs_core;
+  mod_opendal_service_compfs_writer -> mod_opendal_service_fs_reader;
   mod_opendal_service_cos_backend -> mod_opendal_core_raw;
   mod_opendal_service_cos_backend -> mod_opendal_core_types;
   mod_opendal_service_cos_backend -> mod_opendal_service_cos_config;
@@ -1498,9 +1603,10 @@ digraph architecture {
   mod_opendal_service_cos_config -> mod_opendal_core_types;
   mod_opendal_service_cos_core -> mod_opendal_core_raw;
   mod_opendal_service_cos_deleter -> mod_opendal_service_cos_core;
-  mod_opendal_service_cos_error -> mod_opendal_core_raw;
   mod_opendal_service_cos_error -> mod_opendal_java_error;
+  mod_opendal_service_cos_error -> mod_opendal_python_utils;
   mod_opendal_service_cos_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_cos_lib -> mod_opendal_core_types;
   mod_opendal_service_cos_lister -> mod_opendal_core_raw;
   mod_opendal_service_cos_lister -> mod_opendal_service_cos_core;
   mod_opendal_service_cos_writer -> mod_opendal_core_raw;
@@ -1511,10 +1617,11 @@ digraph architecture {
   mod_opendal_service_d1_backend -> mod_opendal_service_d1_core;
   mod_opendal_service_d1_core -> mod_opendal_core_raw;
   mod_opendal_service_d1_deleter -> mod_opendal_service_d1_core;
-  mod_opendal_service_d1_error -> mod_opendal_core_raw;
   mod_opendal_service_d1_error -> mod_opendal_java_error;
+  mod_opendal_service_d1_error -> mod_opendal_python_utils;
   mod_opendal_service_d1_error -> mod_opendal_service_d1_model;
   mod_opendal_service_d1_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_d1_lib -> mod_opendal_core_types;
   mod_opendal_service_d1_writer -> mod_opendal_service_d1_core;
   mod_opendal_service_dashmap_backend -> mod_opendal_core_raw;
   mod_opendal_service_dashmap_backend -> mod_opendal_core_types;
@@ -1522,8 +1629,9 @@ digraph architecture {
   mod_opendal_service_dashmap_backend -> mod_opendal_service_dashmap_core;
   mod_opendal_service_dashmap_config -> mod_opendal_core_types;
   mod_opendal_service_dashmap_core -> mod_opendal_core_types;
-  mod_opendal_service_dashmap_core -> mod_opendal_ruby_metadata;
+  mod_opendal_service_dashmap_core -> mod_opendal_service_ipfs_ipld;
   mod_opendal_service_dashmap_deleter -> mod_opendal_service_dashmap_core;
+  mod_opendal_service_dashmap_lib -> mod_opendal_core_types;
   mod_opendal_service_dashmap_writer -> mod_opendal_core_raw;
   mod_opendal_service_dashmap_writer -> mod_opendal_service_dashmap_core;
   mod_opendal_service_dbfs_backend -> mod_opendal_core_raw;
@@ -1532,9 +1640,10 @@ digraph architecture {
   mod_opendal_service_dbfs_backend -> mod_opendal_service_dbfs_core;
   mod_opendal_service_dbfs_core -> mod_opendal_core_raw;
   mod_opendal_service_dbfs_deleter -> mod_opendal_service_dbfs_core;
-  mod_opendal_service_dbfs_error -> mod_opendal_core_raw;
-  mod_opendal_service_dbfs_error -> mod_opendal_core_types;
+  mod_opendal_service_dbfs_error -> mod_opendal_java_error;
+  mod_opendal_service_dbfs_error -> mod_opendal_python_utils;
   mod_opendal_service_dbfs_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_dbfs_lib -> mod_opendal_core_types;
   mod_opendal_service_dbfs_lister -> mod_opendal_service_dbfs_core;
   mod_opendal_service_dbfs_writer -> mod_opendal_service_dbfs_core;
   mod_opendal_service_dropbox_backend -> mod_opendal_core_raw;
@@ -1543,9 +1652,10 @@ digraph architecture {
   mod_opendal_service_dropbox_builder -> mod_opendal_service_dropbox_config;
   mod_opendal_service_dropbox_core -> mod_opendal_core_raw;
   mod_opendal_service_dropbox_deleter -> mod_opendal_service_dropbox_core;
-  mod_opendal_service_dropbox_error -> mod_opendal_core_raw;
   mod_opendal_service_dropbox_error -> mod_opendal_java_error;
+  mod_opendal_service_dropbox_error -> mod_opendal_python_utils;
   mod_opendal_service_dropbox_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_dropbox_lib -> mod_opendal_core_types;
   mod_opendal_service_dropbox_lister -> mod_opendal_service_dropbox_core;
   mod_opendal_service_dropbox_writer -> mod_opendal_core_raw;
   mod_opendal_service_dropbox_writer -> mod_opendal_service_dropbox_core;
@@ -1554,7 +1664,8 @@ digraph architecture {
   mod_opendal_service_etcd_backend -> mod_opendal_service_etcd_config;
   mod_opendal_service_etcd_backend -> mod_opendal_service_etcd_core;
   mod_opendal_service_etcd_deleter -> mod_opendal_service_etcd_core;
-  mod_opendal_service_etcd_error -> mod_opendal_core_types;
+  mod_opendal_service_etcd_error -> mod_opendal_java_error;
+  mod_opendal_service_etcd_lib -> mod_opendal_core_types;
   mod_opendal_service_etcd_writer -> mod_opendal_service_etcd_core;
   mod_opendal_service_foundationdb_backend -> mod_opendal_core_raw;
   mod_opendal_service_foundationdb_backend -> mod_opendal_core_types;
@@ -1562,6 +1673,7 @@ digraph architecture {
   mod_opendal_service_foundationdb_backend -> mod_opendal_service_foundationdb_core;
   mod_opendal_service_foundationdb_core -> mod_opendal_java_error;
   mod_opendal_service_foundationdb_deleter -> mod_opendal_service_foundationdb_core;
+  mod_opendal_service_foundationdb_lib -> mod_opendal_core_types;
   mod_opendal_service_foundationdb_writer -> mod_opendal_service_foundationdb_core;
   mod_opendal_service_fs_backend -> mod_opendal_core_raw;
   mod_opendal_service_fs_backend -> mod_opendal_core_types;
@@ -1569,10 +1681,12 @@ digraph architecture {
   mod_opendal_service_fs_backend -> mod_opendal_service_fs_core;
   mod_opendal_service_fs_core -> mod_opendal_core_raw;
   mod_opendal_service_fs_deleter -> mod_opendal_service_fs_core;
-  mod_opendal_service_fs_error -> mod_opendal_core_raw;
-  mod_opendal_service_fs_error -> mod_opendal_core_types;
+  mod_opendal_service_fs_error -> mod_opendal_java_error;
+  mod_opendal_service_fs_lib -> mod_opendal_core_types;
+  mod_opendal_service_fs_reader -> mod_opendal_service_b2_core;
   mod_opendal_service_fs_reader -> mod_opendal_service_fs_core;
-  mod_opendal_service_fs_writer -> mod_opendal_service_azfile_lister;
+  mod_opendal_service_fs_writer -> mod_opendal_core_raw;
+  mod_opendal_service_fs_writer -> mod_opendal_service_b2_core;
   mod_opendal_service_ftp_backend -> mod_opendal_core_raw;
   mod_opendal_service_ftp_backend -> mod_opendal_core_types;
   mod_opendal_service_ftp_backend -> mod_opendal_service_ftp_config;
@@ -1580,6 +1694,7 @@ digraph architecture {
   mod_opendal_service_ftp_core -> mod_opendal_core_raw;
   mod_opendal_service_ftp_deleter -> mod_opendal_service_ftp_core;
   mod_opendal_service_ftp_err -> mod_opendal_core_types;
+  mod_opendal_service_ftp_lib -> mod_opendal_core_types;
   mod_opendal_service_ftp_reader -> mod_opendal_service_ftp_core;
   mod_opendal_service_ftp_writer -> mod_opendal_service_ftp_core;
   mod_opendal_service_gcs_backend -> mod_opendal_core_raw;
@@ -1588,9 +1703,10 @@ digraph architecture {
   mod_opendal_service_gcs_backend -> mod_opendal_service_gcs_core;
   mod_opendal_service_gcs_core -> mod_opendal_core_raw;
   mod_opendal_service_gcs_deleter -> mod_opendal_service_gcs_core;
-  mod_opendal_service_gcs_error -> mod_opendal_core_raw;
   mod_opendal_service_gcs_error -> mod_opendal_java_error;
+  mod_opendal_service_gcs_error -> mod_opendal_python_utils;
   mod_opendal_service_gcs_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_gcs_lib -> mod_opendal_core_types;
   mod_opendal_service_gcs_lister -> mod_opendal_service_gcs_core;
   mod_opendal_service_gcs_writer -> mod_opendal_core_raw;
   mod_opendal_service_gcs_writer -> mod_opendal_service_gcs_core;
@@ -1600,9 +1716,10 @@ digraph architecture {
   mod_opendal_service_gdrive_builder -> mod_opendal_service_gdrive_config;
   mod_opendal_service_gdrive_core -> mod_opendal_core_raw;
   mod_opendal_service_gdrive_deleter -> mod_opendal_service_gdrive_core;
-  mod_opendal_service_gdrive_error -> mod_opendal_core_raw;
   mod_opendal_service_gdrive_error -> mod_opendal_java_error;
+  mod_opendal_service_gdrive_error -> mod_opendal_python_utils;
   mod_opendal_service_gdrive_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_gdrive_lib -> mod_opendal_core_types;
   mod_opendal_service_gdrive_lister -> mod_opendal_service_gdrive_core;
   mod_opendal_service_gdrive_writer -> mod_opendal_service_gdrive_core;
   mod_opendal_service_ghac_backend -> mod_opendal_core_raw;
@@ -1611,9 +1728,10 @@ digraph architecture {
   mod_opendal_service_ghac_backend -> mod_opendal_service_ghac_core;
   mod_opendal_service_ghac_core -> mod_opendal_core_raw;
   mod_opendal_service_ghac_core -> mod_opendal_core_types;
-  mod_opendal_service_ghac_error -> mod_opendal_core_raw;
+  mod_opendal_service_ghac_error -> mod_opendal_core_types;
   mod_opendal_service_ghac_error -> mod_opendal_java_error;
   mod_opendal_service_ghac_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_ghac_lib -> mod_opendal_core_types;
   mod_opendal_service_ghac_writer -> mod_opendal_core_raw;
   mod_opendal_service_ghac_writer -> mod_opendal_service_azblob_writer;
   mod_opendal_service_ghac_writer -> mod_opendal_service_ghac_core;
@@ -1624,9 +1742,10 @@ digraph architecture {
   mod_opendal_service_github_config -> mod_opendal_core_types;
   mod_opendal_service_github_core -> mod_opendal_core_raw;
   mod_opendal_service_github_deleter -> mod_opendal_service_github_core;
-  mod_opendal_service_github_error -> mod_opendal_core_raw;
   mod_opendal_service_github_error -> mod_opendal_java_error;
+  mod_opendal_service_github_error -> mod_opendal_python_utils;
   mod_opendal_service_github_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_github_lib -> mod_opendal_core_types;
   mod_opendal_service_github_lister -> mod_opendal_service_github_core;
   mod_opendal_service_github_writer -> mod_opendal_service_github_core;
   mod_opendal_service_gridfs_backend -> mod_opendal_core_raw;
@@ -1636,6 +1755,7 @@ digraph architecture {
   mod_opendal_service_gridfs_config -> mod_opendal_core_types;
   mod_opendal_service_gridfs_core -> mod_opendal_java_error;
   mod_opendal_service_gridfs_deleter -> mod_opendal_service_gridfs_core;
+  mod_opendal_service_gridfs_lib -> mod_opendal_core_types;
   mod_opendal_service_gridfs_writer -> mod_opendal_service_gridfs_core;
   mod_opendal_service_hdfs_backend -> mod_opendal_core_raw;
   mod_opendal_service_hdfs_backend -> mod_opendal_core_types;
@@ -1643,48 +1763,55 @@ digraph architecture {
   mod_opendal_service_hdfs_backend -> mod_opendal_service_hdfs_core;
   mod_opendal_service_hdfs_core -> mod_opendal_core_raw;
   mod_opendal_service_hdfs_deleter -> mod_opendal_service_hdfs_core;
+  mod_opendal_service_hdfs_lib -> mod_opendal_core_types;
   mod_opendal_service_hdfs_native_backend -> mod_opendal_core_raw;
   mod_opendal_service_hdfs_native_backend -> mod_opendal_core_types;
   mod_opendal_service_hdfs_native_backend -> mod_opendal_service_hdfs_native_config;
   mod_opendal_service_hdfs_native_backend -> mod_opendal_service_hdfs_native_core;
   mod_opendal_service_hdfs_native_core -> mod_opendal_core_raw;
   mod_opendal_service_hdfs_native_deleter -> mod_opendal_service_hdfs_native_core;
-  mod_opendal_service_hdfs_native_error -> mod_opendal_core_types;
+  mod_opendal_service_hdfs_native_error -> mod_opendal_java_error;
+  mod_opendal_service_hdfs_native_lib -> mod_opendal_core_types;
+  mod_opendal_service_hdfs_writer -> mod_opendal_python_file;
   mod_opendal_service_http_backend -> mod_opendal_core_raw;
   mod_opendal_service_http_backend -> mod_opendal_core_types;
   mod_opendal_service_http_backend -> mod_opendal_service_http_config;
   mod_opendal_service_http_backend -> mod_opendal_service_http_core;
   mod_opendal_service_http_core -> mod_opendal_core_raw;
-  mod_opendal_service_http_error -> mod_opendal_core_raw;
+  mod_opendal_service_http_error -> mod_opendal_core_types;
   mod_opendal_service_http_error -> mod_opendal_java_error;
   mod_opendal_service_http_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_http_lib -> mod_opendal_core_types;
   mod_opendal_service_huggingface_backend -> mod_opendal_core_raw;
   mod_opendal_service_huggingface_backend -> mod_opendal_core_types;
   mod_opendal_service_huggingface_backend -> mod_opendal_service_huggingface_config;
   mod_opendal_service_huggingface_backend -> mod_opendal_service_huggingface_core;
   mod_opendal_service_huggingface_core -> mod_opendal_core_raw;
   mod_opendal_service_huggingface_core -> mod_opendal_service_huggingface_backend;
-  mod_opendal_service_huggingface_error -> mod_opendal_core_raw;
   mod_opendal_service_huggingface_error -> mod_opendal_java_error;
+  mod_opendal_service_huggingface_error -> mod_opendal_python_utils;
   mod_opendal_service_huggingface_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_huggingface_lib -> mod_opendal_core_types;
   mod_opendal_service_huggingface_lister -> mod_opendal_service_huggingface_core;
   mod_opendal_service_ipfs_backend -> mod_opendal_core_raw;
   mod_opendal_service_ipfs_backend -> mod_opendal_core_types;
   mod_opendal_service_ipfs_backend -> mod_opendal_service_ipfs_config;
   mod_opendal_service_ipfs_backend -> mod_opendal_service_ipfs_core;
   mod_opendal_service_ipfs_core -> mod_opendal_core_raw;
-  mod_opendal_service_ipfs_error -> mod_opendal_core_raw;
+  mod_opendal_service_ipfs_error -> mod_opendal_core_types;
   mod_opendal_service_ipfs_error -> mod_opendal_java_error;
   mod_opendal_service_ipfs_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_ipfs_lib -> mod_opendal_core_types;
   mod_opendal_service_ipmfs_backend -> mod_opendal_core_raw;
   mod_opendal_service_ipmfs_backend -> mod_opendal_service_ipmfs_core;
   mod_opendal_service_ipmfs_builder -> mod_opendal_core_types;
   mod_opendal_service_ipmfs_builder -> mod_opendal_service_ipmfs_config;
   mod_opendal_service_ipmfs_core -> mod_opendal_core_raw;
   mod_opendal_service_ipmfs_deleter -> mod_opendal_service_ipmfs_core;
-  mod_opendal_service_ipmfs_error -> mod_opendal_core_raw;
   mod_opendal_service_ipmfs_error -> mod_opendal_java_error;
+  mod_opendal_service_ipmfs_error -> mod_opendal_python_utils;
   mod_opendal_service_ipmfs_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_ipmfs_lib -> mod_opendal_core_types;
   mod_opendal_service_ipmfs_lister -> mod_opendal_service_ipmfs_core;
   mod_opendal_service_ipmfs_writer -> mod_opendal_service_ipmfs_core;
   mod_opendal_service_koofr_backend -> mod_opendal_core_raw;
@@ -1692,12 +1819,13 @@ digraph architecture {
   mod_opendal_service_koofr_backend -> mod_opendal_service_koofr_config;
   mod_opendal_service_koofr_backend -> mod_opendal_service_koofr_core;
   mod_opendal_service_koofr_core -> mod_opendal_core_raw;
-  mod_opendal_service_koofr_core -> mod_opendal_core_types;
+  mod_opendal_service_koofr_core -> mod_opendal_python_utils;
   mod_opendal_service_koofr_core -> mod_opendal_service_memcached_binary;
   mod_opendal_service_koofr_deleter -> mod_opendal_service_koofr_core;
-  mod_opendal_service_koofr_error -> mod_opendal_core_raw;
-  mod_opendal_service_koofr_error -> mod_opendal_core_types;
+  mod_opendal_service_koofr_error -> mod_opendal_java_error;
+  mod_opendal_service_koofr_error -> mod_opendal_python_utils;
   mod_opendal_service_koofr_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_koofr_lib -> mod_opendal_core_types;
   mod_opendal_service_koofr_lister -> mod_opendal_service_koofr_core;
   mod_opendal_service_koofr_writer -> mod_opendal_service_koofr_core;
   mod_opendal_service_lakefs_backend -> mod_opendal_core_raw;
@@ -1707,9 +1835,10 @@ digraph architecture {
   mod_opendal_service_lakefs_config -> mod_opendal_core_types;
   mod_opendal_service_lakefs_core -> mod_opendal_core_raw;
   mod_opendal_service_lakefs_deleter -> mod_opendal_service_lakefs_core;
-  mod_opendal_service_lakefs_error -> mod_opendal_core_raw;
   mod_opendal_service_lakefs_error -> mod_opendal_java_error;
+  mod_opendal_service_lakefs_error -> mod_opendal_python_utils;
   mod_opendal_service_lakefs_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_lakefs_lib -> mod_opendal_core_types;
   mod_opendal_service_lakefs_lister -> mod_opendal_service_lakefs_core;
   mod_opendal_service_lakefs_writer -> mod_opendal_core_raw;
   mod_opendal_service_lakefs_writer -> mod_opendal_service_lakefs_core;
@@ -1717,17 +1846,20 @@ digraph architecture {
   mod_opendal_service_memcached_backend -> mod_opendal_core_types;
   mod_opendal_service_memcached_backend -> mod_opendal_service_memcached_config;
   mod_opendal_service_memcached_backend -> mod_opendal_service_memcached_core;
+  mod_opendal_service_memcached_binary -> mod_opendal_core_raw;
   mod_opendal_service_memcached_config -> mod_opendal_core_types;
   mod_opendal_service_memcached_deleter -> mod_opendal_service_memcached_core;
+  mod_opendal_service_memcached_lib -> mod_opendal_core_types;
   mod_opendal_service_memcached_writer -> mod_opendal_service_memcached_core;
   mod_opendal_service_mini_moka_backend -> mod_opendal_core_raw;
   mod_opendal_service_mini_moka_backend -> mod_opendal_core_types;
   mod_opendal_service_mini_moka_backend -> mod_opendal_service_mini_moka_config;
   mod_opendal_service_mini_moka_backend -> mod_opendal_service_mini_moka_core;
   mod_opendal_service_mini_moka_config -> mod_opendal_core_types;
+  mod_opendal_service_mini_moka_core -> mod_opendal_hs_types;
   mod_opendal_service_mini_moka_core -> mod_opendal_python_utils;
-  mod_opendal_service_mini_moka_core -> mod_opendal_service_ipfs_ipld;
   mod_opendal_service_mini_moka_deleter -> mod_opendal_service_mini_moka_core;
+  mod_opendal_service_mini_moka_lib -> mod_opendal_core_types;
   mod_opendal_service_mini_moka_writer -> mod_opendal_core_raw;
   mod_opendal_service_mini_moka_writer -> mod_opendal_service_mini_moka_core;
   mod_opendal_service_moka_backend -> mod_opendal_core_raw;
@@ -1736,16 +1868,18 @@ digraph architecture {
   mod_opendal_service_moka_backend -> mod_opendal_service_moka_core;
   mod_opendal_service_moka_config -> mod_opendal_core_types;
   mod_opendal_service_moka_core -> mod_opendal_core_types;
-  mod_opendal_service_moka_core -> mod_opendal_ocaml_operator;
+  mod_opendal_service_moka_core -> mod_opendal_service_ipfs_ipld;
   mod_opendal_service_moka_deleter -> mod_opendal_service_moka_core;
+  mod_opendal_service_moka_lib -> mod_opendal_core_types;
   mod_opendal_service_moka_writer -> mod_opendal_core_raw;
   mod_opendal_service_moka_writer -> mod_opendal_service_moka_core;
   mod_opendal_service_mongodb_backend -> mod_opendal_core_raw;
   mod_opendal_service_mongodb_backend -> mod_opendal_core_types;
   mod_opendal_service_mongodb_backend -> mod_opendal_service_mongodb_config;
   mod_opendal_service_mongodb_backend -> mod_opendal_service_mongodb_core;
-  mod_opendal_service_mongodb_core -> mod_opendal_java_error;
+  mod_opendal_service_mongodb_core -> mod_opendal_core_types;
   mod_opendal_service_mongodb_deleter -> mod_opendal_service_mongodb_core;
+  mod_opendal_service_mongodb_lib -> mod_opendal_core_types;
   mod_opendal_service_mongodb_writer -> mod_opendal_service_mongodb_core;
   mod_opendal_service_monoiofs_backend -> mod_opendal_core_raw;
   mod_opendal_service_monoiofs_backend -> mod_opendal_core_types;
@@ -1754,14 +1888,16 @@ digraph architecture {
   mod_opendal_service_monoiofs_config -> mod_opendal_core_types;
   mod_opendal_service_monoiofs_core -> mod_opendal_core_raw;
   mod_opendal_service_monoiofs_deleter -> mod_opendal_service_monoiofs_core;
+  mod_opendal_service_monoiofs_lib -> mod_opendal_core_types;
   mod_opendal_service_monoiofs_reader -> mod_opendal_service_monoiofs_core;
   mod_opendal_service_monoiofs_writer -> mod_opendal_service_monoiofs_core;
   mod_opendal_service_mysql_backend -> mod_opendal_core_raw;
   mod_opendal_service_mysql_backend -> mod_opendal_core_types;
   mod_opendal_service_mysql_backend -> mod_opendal_service_mysql_config;
   mod_opendal_service_mysql_backend -> mod_opendal_service_mysql_core;
-  mod_opendal_service_mysql_core -> mod_opendal_core_types;
+  mod_opendal_service_mysql_core -> mod_opendal_java_error;
   mod_opendal_service_mysql_deleter -> mod_opendal_service_mysql_core;
+  mod_opendal_service_mysql_lib -> mod_opendal_core_types;
   mod_opendal_service_mysql_writer -> mod_opendal_service_mysql_core;
   mod_opendal_service_obs_backend -> mod_opendal_core_raw;
   mod_opendal_service_obs_backend -> mod_opendal_core_types;
@@ -1769,9 +1905,10 @@ digraph architecture {
   mod_opendal_service_obs_backend -> mod_opendal_service_obs_core;
   mod_opendal_service_obs_core -> mod_opendal_core_raw;
   mod_opendal_service_obs_deleter -> mod_opendal_service_obs_core;
-  mod_opendal_service_obs_error -> mod_opendal_core_raw;
   mod_opendal_service_obs_error -> mod_opendal_java_error;
+  mod_opendal_service_obs_error -> mod_opendal_python_utils;
   mod_opendal_service_obs_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_obs_lib -> mod_opendal_core_types;
   mod_opendal_service_obs_lister -> mod_opendal_service_obs_core;
   mod_opendal_service_obs_writer -> mod_opendal_core_raw;
   mod_opendal_service_obs_writer -> mod_opendal_service_obs_core;
@@ -1782,9 +1919,10 @@ digraph architecture {
   mod_opendal_service_onedrive_config -> mod_opendal_core_types;
   mod_opendal_service_onedrive_core -> mod_opendal_core_raw;
   mod_opendal_service_onedrive_deleter -> mod_opendal_service_onedrive_core;
-  mod_opendal_service_onedrive_error -> mod_opendal_core_raw;
-  mod_opendal_service_onedrive_error -> mod_opendal_core_types;
+  mod_opendal_service_onedrive_error -> mod_opendal_java_error;
+  mod_opendal_service_onedrive_error -> mod_opendal_python_utils;
   mod_opendal_service_onedrive_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_onedrive_lib -> mod_opendal_core_types;
   mod_opendal_service_onedrive_lister -> mod_opendal_core_raw;
   mod_opendal_service_onedrive_lister -> mod_opendal_service_onedrive_core;
   mod_opendal_service_onedrive_writer -> mod_opendal_core_raw;
@@ -1792,16 +1930,20 @@ digraph architecture {
   mod_opendal_service_opfs_backend -> mod_opendal_core_raw;
   mod_opendal_service_opfs_backend -> mod_opendal_core_types;
   mod_opendal_service_opfs_backend -> mod_opendal_service_opfs_config;
-  mod_opendal_service_opfs_error -> mod_opendal_core_types;
+  mod_opendal_service_opfs_error -> mod_opendal_java_error;
+  mod_opendal_service_opfs_lib -> mod_opendal_core_types;
+  mod_opendal_service_opfs_utils -> mod_opendal_core_types;
+  mod_opendal_service_opfs_utils -> mod_opendal_service_opfs_error;
   mod_opendal_service_oss_backend -> mod_opendal_core_raw;
   mod_opendal_service_oss_backend -> mod_opendal_core_types;
   mod_opendal_service_oss_backend -> mod_opendal_service_oss_config;
   mod_opendal_service_oss_backend -> mod_opendal_service_oss_core;
   mod_opendal_service_oss_core -> mod_opendal_core_raw;
   mod_opendal_service_oss_deleter -> mod_opendal_service_oss_core;
-  mod_opendal_service_oss_error -> mod_opendal_core_raw;
   mod_opendal_service_oss_error -> mod_opendal_java_error;
+  mod_opendal_service_oss_error -> mod_opendal_python_utils;
   mod_opendal_service_oss_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_oss_lib -> mod_opendal_core_types;
   mod_opendal_service_oss_lister -> mod_opendal_core_raw;
   mod_opendal_service_oss_lister -> mod_opendal_service_oss_core;
   mod_opendal_service_oss_writer -> mod_opendal_core_raw;
@@ -1812,19 +1954,22 @@ digraph architecture {
   mod_opendal_service_pcloud_backend -> mod_opendal_service_pcloud_core;
   mod_opendal_service_pcloud_config -> mod_opendal_core_types;
   mod_opendal_service_pcloud_core -> mod_opendal_core_raw;
-  mod_opendal_service_pcloud_core -> mod_opendal_php_lib;
+  mod_opendal_service_pcloud_core -> mod_opendal_hs_types;
   mod_opendal_service_pcloud_deleter -> mod_opendal_service_pcloud_core;
-  mod_opendal_service_pcloud_error -> mod_opendal_core_raw;
+  mod_opendal_service_pcloud_error -> mod_opendal_core_types;
   mod_opendal_service_pcloud_error -> mod_opendal_java_error;
   mod_opendal_service_pcloud_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_pcloud_lib -> mod_opendal_core_types;
   mod_opendal_service_pcloud_lister -> mod_opendal_service_pcloud_core;
   mod_opendal_service_pcloud_writer -> mod_opendal_service_pcloud_core;
   mod_opendal_service_persy_backend -> mod_opendal_core_raw;
   mod_opendal_service_persy_backend -> mod_opendal_core_types;
+  mod_opendal_service_persy_backend -> mod_opendal_java_error;
   mod_opendal_service_persy_backend -> mod_opendal_service_persy_config;
   mod_opendal_service_persy_backend -> mod_opendal_service_persy_core;
   mod_opendal_service_persy_core -> mod_opendal_java_error;
   mod_opendal_service_persy_deleter -> mod_opendal_service_persy_core;
+  mod_opendal_service_persy_lib -> mod_opendal_core_types;
   mod_opendal_service_persy_writer -> mod_opendal_service_persy_core;
   mod_opendal_service_postgresql_backend -> mod_opendal_core_raw;
   mod_opendal_service_postgresql_backend -> mod_opendal_core_types;
@@ -1832,13 +1977,15 @@ digraph architecture {
   mod_opendal_service_postgresql_backend -> mod_opendal_service_postgresql_core;
   mod_opendal_service_postgresql_core -> mod_opendal_core_types;
   mod_opendal_service_postgresql_deleter -> mod_opendal_service_postgresql_core;
+  mod_opendal_service_postgresql_lib -> mod_opendal_core_types;
   mod_opendal_service_postgresql_writer -> mod_opendal_service_postgresql_core;
   mod_opendal_service_redb_backend -> mod_opendal_core_raw;
   mod_opendal_service_redb_backend -> mod_opendal_core_types;
   mod_opendal_service_redb_backend -> mod_opendal_service_redb_config;
   mod_opendal_service_redb_backend -> mod_opendal_service_redb_core;
-  mod_opendal_service_redb_core -> mod_opendal_java_error;
+  mod_opendal_service_redb_core -> mod_opendal_core_types;
   mod_opendal_service_redb_deleter -> mod_opendal_service_redb_core;
+  mod_opendal_service_redb_lib -> mod_opendal_core_types;
   mod_opendal_service_redb_writer -> mod_opendal_service_redb_core;
   mod_opendal_service_redis_backend -> mod_opendal_core_raw;
   mod_opendal_service_redis_backend -> mod_opendal_core_types;
@@ -1847,14 +1994,16 @@ digraph architecture {
   mod_opendal_service_redis_config -> mod_opendal_core_types;
   mod_opendal_service_redis_core -> mod_opendal_java_error;
   mod_opendal_service_redis_delete -> mod_opendal_service_redis_core;
+  mod_opendal_service_redis_lib -> mod_opendal_core_types;
   mod_opendal_service_redis_writer -> mod_opendal_service_redis_core;
   mod_opendal_service_rocksdb_backend -> mod_opendal_core_raw;
   mod_opendal_service_rocksdb_backend -> mod_opendal_core_types;
   mod_opendal_service_rocksdb_backend -> mod_opendal_service_rocksdb_config;
   mod_opendal_service_rocksdb_backend -> mod_opendal_service_rocksdb_core;
   mod_opendal_service_rocksdb_config -> mod_opendal_core_types;
-  mod_opendal_service_rocksdb_core -> mod_opendal_core_types;
+  mod_opendal_service_rocksdb_core -> mod_opendal_java_error;
   mod_opendal_service_rocksdb_deleter -> mod_opendal_service_rocksdb_core;
+  mod_opendal_service_rocksdb_lib -> mod_opendal_core_types;
   mod_opendal_service_rocksdb_writer -> mod_opendal_service_rocksdb_core;
   mod_opendal_service_s3_backend -> mod_opendal_core_raw;
   mod_opendal_service_s3_backend -> mod_opendal_core_types;
@@ -1864,10 +2013,10 @@ digraph architecture {
   mod_opendal_service_s3_core -> mod_opendal_core_raw;
   mod_opendal_service_s3_deleter -> mod_opendal_java_error;
   mod_opendal_service_s3_deleter -> mod_opendal_service_s3_core;
-  mod_opendal_service_s3_deleter -> mod_opendal_service_s3_error;
-  mod_opendal_service_s3_error -> mod_opendal_core_raw;
   mod_opendal_service_s3_error -> mod_opendal_core_types;
+  mod_opendal_service_s3_error -> mod_opendal_java_error;
   mod_opendal_service_s3_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_s3_lib -> mod_opendal_core_types;
   mod_opendal_service_s3_lister -> mod_opendal_core_raw;
   mod_opendal_service_s3_lister -> mod_opendal_service_s3_core;
   mod_opendal_service_s3_writer -> mod_opendal_core_raw;
@@ -1877,11 +2026,12 @@ digraph architecture {
   mod_opendal_service_seafile_backend -> mod_opendal_service_seafile_config;
   mod_opendal_service_seafile_backend -> mod_opendal_service_seafile_core;
   mod_opendal_service_seafile_core -> mod_opendal_core_raw;
-  mod_opendal_service_seafile_core -> mod_opendal_nodejs_lib;
+  mod_opendal_service_seafile_core -> mod_opendal_ocaml_operator;
   mod_opendal_service_seafile_deleter -> mod_opendal_service_seafile_core;
-  mod_opendal_service_seafile_error -> mod_opendal_core_raw;
   mod_opendal_service_seafile_error -> mod_opendal_java_error;
+  mod_opendal_service_seafile_error -> mod_opendal_python_utils;
   mod_opendal_service_seafile_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_seafile_lib -> mod_opendal_core_types;
   mod_opendal_service_seafile_lister -> mod_opendal_service_seafile_core;
   mod_opendal_service_seafile_writer -> mod_opendal_core_raw;
   mod_opendal_service_seafile_writer -> mod_opendal_service_seafile_core;
@@ -1891,18 +2041,21 @@ digraph architecture {
   mod_opendal_service_sftp_backend -> mod_opendal_service_sftp_core;
   mod_opendal_service_sftp_core -> mod_opendal_core_raw;
   mod_opendal_service_sftp_deleter -> mod_opendal_service_sftp_core;
-  mod_opendal_service_sftp_error -> mod_opendal_core_types;
-  mod_opendal_service_sftp_lister -> mod_opendal_nodejs_lib;
-  mod_opendal_service_sftp_reader -> mod_opendal_service_onedrive_graph_model;
+  mod_opendal_service_sftp_error -> mod_opendal_java_error;
+  mod_opendal_service_sftp_lib -> mod_opendal_core_types;
+  mod_opendal_service_sftp_lister -> mod_opendal_python_metadata;
+  mod_opendal_service_sftp_lister -> mod_opendal_service_github_core;
+  mod_opendal_service_sftp_reader -> mod_opendal_service_b2_core;
+  mod_opendal_service_sftp_reader -> mod_opendal_service_fs_reader;
   mod_opendal_service_sftp_reader -> mod_opendal_service_sftp_core;
-  mod_opendal_service_sftp_utils -> mod_opendal_core_raw;
-  mod_opendal_service_sftp_utils -> mod_opendal_service_ipfs_ipld;
+  mod_opendal_service_sftp_utils -> mod_opendal_hs_types;
   mod_opendal_service_sled_backend -> mod_opendal_core_raw;
   mod_opendal_service_sled_backend -> mod_opendal_core_types;
   mod_opendal_service_sled_backend -> mod_opendal_service_sled_config;
   mod_opendal_service_sled_backend -> mod_opendal_service_sled_core;
-  mod_opendal_service_sled_core -> mod_opendal_core_types;
+  mod_opendal_service_sled_core -> mod_opendal_java_error;
   mod_opendal_service_sled_deleter -> mod_opendal_service_sled_core;
+  mod_opendal_service_sled_lib -> mod_opendal_core_types;
   mod_opendal_service_sled_writer -> mod_opendal_service_sled_core;
   mod_opendal_service_sqlite_backend -> mod_opendal_core_raw;
   mod_opendal_service_sqlite_backend -> mod_opendal_core_types;
@@ -1910,13 +2063,15 @@ digraph architecture {
   mod_opendal_service_sqlite_backend -> mod_opendal_service_sqlite_config;
   mod_opendal_service_sqlite_backend -> mod_opendal_service_sqlite_core;
   mod_opendal_service_sqlite_deleter -> mod_opendal_service_sqlite_core;
+  mod_opendal_service_sqlite_lib -> mod_opendal_core_types;
   mod_opendal_service_sqlite_writer -> mod_opendal_service_sqlite_core;
   mod_opendal_service_surrealdb_backend -> mod_opendal_core_raw;
   mod_opendal_service_surrealdb_backend -> mod_opendal_core_types;
   mod_opendal_service_surrealdb_backend -> mod_opendal_service_surrealdb_config;
   mod_opendal_service_surrealdb_backend -> mod_opendal_service_surrealdb_core;
-  mod_opendal_service_surrealdb_core -> mod_opendal_java_error;
+  mod_opendal_service_surrealdb_core -> mod_opendal_core_types;
   mod_opendal_service_surrealdb_deleter -> mod_opendal_service_surrealdb_core;
+  mod_opendal_service_surrealdb_lib -> mod_opendal_core_types;
   mod_opendal_service_surrealdb_writer -> mod_opendal_service_surrealdb_core;
   mod_opendal_service_swift_backend -> mod_opendal_core_raw;
   mod_opendal_service_swift_backend -> mod_opendal_core_types;
@@ -1924,9 +2079,10 @@ digraph architecture {
   mod_opendal_service_swift_backend -> mod_opendal_service_swift_core;
   mod_opendal_service_swift_core -> mod_opendal_core_raw;
   mod_opendal_service_swift_deleter -> mod_opendal_service_swift_core;
-  mod_opendal_service_swift_error -> mod_opendal_core_raw;
+  mod_opendal_service_swift_error -> mod_opendal_core_types;
   mod_opendal_service_swift_error -> mod_opendal_java_error;
   mod_opendal_service_swift_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_swift_lib -> mod_opendal_core_types;
   mod_opendal_service_swift_lister -> mod_opendal_service_swift_core;
   mod_opendal_service_swift_writer -> mod_opendal_core_raw;
   mod_opendal_service_swift_writer -> mod_opendal_service_swift_core;
@@ -1936,6 +2092,7 @@ digraph architecture {
   mod_opendal_service_tikv_backend -> mod_opendal_service_tikv_core;
   mod_opendal_service_tikv_core -> mod_opendal_java_error;
   mod_opendal_service_tikv_deleter -> mod_opendal_service_tikv_core;
+  mod_opendal_service_tikv_lib -> mod_opendal_core_types;
   mod_opendal_service_tikv_writer -> mod_opendal_service_tikv_core;
   mod_opendal_service_upyun_backend -> mod_opendal_core_raw;
   mod_opendal_service_upyun_backend -> mod_opendal_core_types;
@@ -1943,14 +2100,14 @@ digraph architecture {
   mod_opendal_service_upyun_backend -> mod_opendal_service_upyun_core;
   mod_opendal_service_upyun_config -> mod_opendal_core_types;
   mod_opendal_service_upyun_core -> mod_opendal_core_raw;
-  mod_opendal_service_upyun_core -> mod_opendal_core_types;
-  mod_opendal_service_upyun_core -> mod_opendal_nodejs_lib;
+  mod_opendal_service_upyun_core -> mod_opendal_ocaml_operator;
+  mod_opendal_service_upyun_core -> mod_opendal_python_utils;
   mod_opendal_service_upyun_core -> mod_opendal_service_memcached_binary;
   mod_opendal_service_upyun_deleter -> mod_opendal_service_upyun_core;
-  mod_opendal_service_upyun_error -> mod_opendal_core_raw;
-  mod_opendal_service_upyun_error -> mod_opendal_core_types;
   mod_opendal_service_upyun_error -> mod_opendal_java_error;
+  mod_opendal_service_upyun_error -> mod_opendal_python_utils;
   mod_opendal_service_upyun_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_upyun_lib -> mod_opendal_core_types;
   mod_opendal_service_upyun_lister -> mod_opendal_service_upyun_core;
   mod_opendal_service_upyun_writer -> mod_opendal_core_raw;
   mod_opendal_service_upyun_writer -> mod_opendal_service_upyun_core;
@@ -1959,9 +2116,10 @@ digraph architecture {
   mod_opendal_service_vercel_artifacts_builder -> mod_opendal_core_types;
   mod_opendal_service_vercel_artifacts_builder -> mod_opendal_service_vercel_artifacts_config;
   mod_opendal_service_vercel_artifacts_core -> mod_opendal_core_raw;
-  mod_opendal_service_vercel_artifacts_error -> mod_opendal_core_raw;
   mod_opendal_service_vercel_artifacts_error -> mod_opendal_core_types;
+  mod_opendal_service_vercel_artifacts_error -> mod_opendal_python_utils;
   mod_opendal_service_vercel_artifacts_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_vercel_artifacts_lib -> mod_opendal_core_types;
   mod_opendal_service_vercel_artifacts_writer -> mod_opendal_core_raw;
   mod_opendal_service_vercel_artifacts_writer -> mod_opendal_service_vercel_artifacts_core;
   mod_opendal_service_vercel_blob_backend -> mod_opendal_core_raw;
@@ -1969,11 +2127,12 @@ digraph architecture {
   mod_opendal_service_vercel_blob_backend -> mod_opendal_service_vercel_blob_config;
   mod_opendal_service_vercel_blob_backend -> mod_opendal_service_vercel_blob_core;
   mod_opendal_service_vercel_blob_core -> mod_opendal_core_raw;
-  mod_opendal_service_vercel_blob_core -> mod_opendal_php_lib;
+  mod_opendal_service_vercel_blob_core -> mod_opendal_dart_api;
   mod_opendal_service_vercel_blob_deleter -> mod_opendal_service_vercel_blob_core;
-  mod_opendal_service_vercel_blob_error -> mod_opendal_core_raw;
+  mod_opendal_service_vercel_blob_error -> mod_opendal_core_types;
   mod_opendal_service_vercel_blob_error -> mod_opendal_java_error;
   mod_opendal_service_vercel_blob_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_vercel_blob_lib -> mod_opendal_core_types;
   mod_opendal_service_vercel_blob_lister -> mod_opendal_service_vercel_blob_core;
   mod_opendal_service_vercel_blob_writer -> mod_opendal_core_raw;
   mod_opendal_service_vercel_blob_writer -> mod_opendal_service_vercel_blob_core;
@@ -1982,12 +2141,13 @@ digraph architecture {
   mod_opendal_service_webdav_backend -> mod_opendal_service_webdav_config;
   mod_opendal_service_webdav_backend -> mod_opendal_service_webdav_core;
   mod_opendal_service_webdav_core -> mod_opendal_core_raw;
+  mod_opendal_service_webdav_core -> mod_opendal_core_types;
   mod_opendal_service_webdav_core -> mod_opendal_nodejs_lib;
-  mod_opendal_service_webdav_core -> mod_opendal_ocaml_operator;
   mod_opendal_service_webdav_deleter -> mod_opendal_service_webdav_core;
-  mod_opendal_service_webdav_error -> mod_opendal_core_raw;
+  mod_opendal_service_webdav_error -> mod_opendal_core_types;
   mod_opendal_service_webdav_error -> mod_opendal_java_error;
   mod_opendal_service_webdav_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_webdav_lib -> mod_opendal_core_types;
   mod_opendal_service_webdav_lister -> mod_opendal_core_raw;
   mod_opendal_service_webdav_lister -> mod_opendal_service_webdav_core;
   mod_opendal_service_webdav_writer -> mod_opendal_core_raw;
@@ -1998,9 +2158,10 @@ digraph architecture {
   mod_opendal_service_webhdfs_backend -> mod_opendal_service_webhdfs_core;
   mod_opendal_service_webhdfs_core -> mod_opendal_core_raw;
   mod_opendal_service_webhdfs_deleter -> mod_opendal_service_webhdfs_core;
-  mod_opendal_service_webhdfs_error -> mod_opendal_core_raw;
-  mod_opendal_service_webhdfs_error -> mod_opendal_java_error;
+  mod_opendal_service_webhdfs_error -> mod_opendal_core_types;
+  mod_opendal_service_webhdfs_error -> mod_opendal_python_utils;
   mod_opendal_service_webhdfs_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_webhdfs_lib -> mod_opendal_core_types;
   mod_opendal_service_webhdfs_lister -> mod_opendal_service_webhdfs_core;
   mod_opendal_service_webhdfs_writer -> mod_opendal_core_raw;
   mod_opendal_service_webhdfs_writer -> mod_opendal_service_webhdfs_core;
@@ -2011,16 +2172,17 @@ digraph architecture {
   mod_opendal_service_yandex_disk_core -> mod_opendal_core_raw;
   mod_opendal_service_yandex_disk_core -> mod_opendal_service_ipfs_ipld;
   mod_opendal_service_yandex_disk_deleter -> mod_opendal_service_yandex_disk_core;
-  mod_opendal_service_yandex_disk_error -> mod_opendal_core_raw;
   mod_opendal_service_yandex_disk_error -> mod_opendal_java_error;
+  mod_opendal_service_yandex_disk_error -> mod_opendal_python_utils;
   mod_opendal_service_yandex_disk_error -> mod_opendal_service_memcached_binary;
+  mod_opendal_service_yandex_disk_lib -> mod_opendal_core_types;
   mod_opendal_service_yandex_disk_lister -> mod_opendal_service_yandex_disk_core;
   mod_opendal_service_yandex_disk_writer -> mod_opendal_service_yandex_disk_core;
-  mod_opendal_testkit_utils -> mod_opendal_core_blocking;
-  mod_parquet_opendal_async_reader -> mod_opendal_nodejs_lib;
-  mod_parquet_opendal_async_writer -> mod_opendal_core_types;
-  mod_unftp_sbe_opendal_lib -> mod_opendal_core_blocking;
-  mod_unftp_sbe_opendal_lib -> mod_opendal_core_types;
+  mod_opendal_testkit_utils -> mod_opendal_dart_api;
+  mod_parquet_opendal_async_reader -> mod_opendal_cpp_reader;
+  mod_parquet_opendal_async_writer -> mod_opendal_core_blocking;
+  mod_unftp_sbe_opendal_lib -> mod_opendal_cpp_lib;
+  mod_unftp_sbe_opendal_lib -> mod_opendal_java_error;
   mod_unftp_sbe_opendal_lib -> mod_opendal_lua_lib;
   mod_unftp_sbe_opendal_lib -> mod_opendal_service_azdls_lister;
 }

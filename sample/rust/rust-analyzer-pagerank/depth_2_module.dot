@@ -11,6 +11,14 @@ digraph architecture {
   labelloc=t;
   fontsize=16;
 
+  subgraph cluster_base_db {
+    label="base-db";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_base_db_input[label="input", path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/base-db/src"];
+  }
+
   subgraph cluster_hir {
     label="hir";
     style=rounded;
@@ -39,6 +47,7 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_hir_expand_builtin[label="builtin", path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-expand/src/builtin"];
+    mod_hir_expand_lib[label="lib", path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-expand/src"];
   }
 
   subgraph cluster_hir_ty {
@@ -92,7 +101,7 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_ide_db_imports[label="imports", path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-db/src/imports"];
-    mod_ide_db_search[label="search", path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-db/src"];
+    mod_ide_db_lib[label="lib", path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-db/src"];
     mod_ide_db_syntax_helpers[label="syntax_helpers", path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-db/src/syntax_helpers"];
   }
 
@@ -102,23 +111,6 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_ide_diagnostics_handlers[label="handlers", path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-diagnostics/src/handlers"];
-    mod_ide_diagnostics_lib[label="lib", path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-diagnostics/src"];
-  }
-
-  subgraph cluster_ide_ssr {
-    label="ide-ssr";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_ide_ssr_fragments[label="fragments", path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-ssr/src"];
-  }
-
-  subgraph cluster_mbe {
-    label="mbe";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_mbe_expander[label="expander", path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/mbe/src"];
   }
 
   subgraph cluster_parser {
@@ -129,15 +121,8 @@ digraph architecture {
     mod_parser_grammar[label="grammar", path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/grammar"];
     mod_parser_inline[label="inline", path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/test_data/parser/inline"];
     mod_parser_ok[label="ok", path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/test_data/parser/ok"];
+    mod_parser_parser[label="parser", path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src"];
     mod_parser_syntax_kind[label="syntax_kind", path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/syntax_kind"];
-  }
-
-  subgraph cluster_paths {
-    label="paths";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_paths_lib[label="lib", path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/paths/src"];
   }
 
   subgraph cluster_project_model {
@@ -185,12 +170,20 @@ digraph architecture {
     mod_test_utils_minicore[label="minicore", path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-utils/src"];
   }
 
-  subgraph cluster_ungrammar {
-    label="ungrammar";
+  subgraph cluster_text_size {
+    label="text-size";
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_ungrammar_parser[label="parser", path="/home/yibai/llmcc/sample/repos/rust-analyzer/lib/ungrammar/src"];
+    mod_text_size_range[label="range", path="/home/yibai/llmcc/sample/repos/rust-analyzer/lib/text-size/src"];
+  }
+
+  subgraph cluster_tt {
+    label="tt";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_tt_lib[label="lib", path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/tt/src"];
   }
 
   subgraph cluster_xtask {
@@ -202,71 +195,77 @@ digraph architecture {
   }
 
 
+  mod_base_db_input -> mod_test_utils_minicore;
   mod_hir_def_expr_store -> mod_hir_def_db;
   mod_hir_def_expr_store -> mod_hir_def_hir;
+  mod_hir_def_expr_store -> mod_hir_def_item_tree;
   mod_hir_def_expr_store -> mod_hir_def_lib;
-  mod_hir_def_expr_store -> mod_hir_ty_next_solver;
-  mod_hir_def_expr_store -> mod_ide_completion_render;
+  mod_hir_def_expr_store -> mod_hir_expand_lib;
   mod_hir_def_expr_store -> mod_parser_grammar;
-  mod_hir_def_expr_store -> mod_parser_ok;
+  mod_hir_def_expr_store -> mod_parser_syntax_kind;
   mod_hir_def_expr_store -> mod_query_group_macro_lib;
   mod_hir_def_expr_store -> mod_syntax_ast;
   mod_hir_def_expr_store -> mod_test_utils_minicore;
-  mod_hir_def_expr_store -> mod_xtask_codegen;
   mod_hir_def_hir -> mod_hir_def_expr_store;
-  mod_hir_def_hir -> mod_parser_inline;
   mod_hir_def_hir -> mod_query_group_macro_lib;
   mod_hir_def_hir -> mod_syntax_ast;
   mod_hir_def_hir -> mod_test_utils_minicore;
   mod_hir_def_item_tree -> mod_hir_def_db;
-  mod_hir_def_item_tree -> mod_parser_grammar;
+  mod_hir_def_item_tree -> mod_hir_expand_lib;
   mod_hir_def_item_tree -> mod_query_group_macro_lib;
   mod_hir_def_item_tree -> mod_syntax_ast;
   mod_hir_def_item_tree -> mod_test_utils_minicore;
-  mod_hir_def_item_tree -> mod_xtask_codegen;
+  mod_hir_def_lib -> mod_hir_def_item_tree;
+  mod_hir_def_lib -> mod_hir_lib;
+  mod_hir_def_lib -> mod_hir_ty_next_solver;
   mod_hir_def_lib -> mod_test_utils_minicore;
-  mod_hir_def_lib -> mod_xtask_codegen;
+  mod_hir_def_nameres -> mod_base_db_input;
   mod_hir_def_nameres -> mod_hir_def_db;
   mod_hir_def_nameres -> mod_hir_def_item_tree;
   mod_hir_def_nameres -> mod_hir_def_lib;
+  mod_hir_def_nameres -> mod_hir_expand_lib;
+  mod_hir_def_nameres -> mod_parser_syntax_kind;
+  mod_hir_def_nameres -> mod_project_model_project_json;
   mod_hir_def_nameres -> mod_query_group_macro_lib;
   mod_hir_def_nameres -> mod_syntax_ast;
   mod_hir_def_nameres -> mod_test_utils_minicore;
+  mod_hir_expand_builtin -> mod_hir_expand_lib;
+  mod_hir_expand_builtin -> mod_hir_ty_next_solver;
   mod_hir_expand_builtin -> mod_parser_grammar;
+  mod_hir_expand_builtin -> mod_parser_ok;
+  mod_hir_expand_builtin -> mod_parser_syntax_kind;
   mod_hir_expand_builtin -> mod_query_group_macro_lib;
   mod_hir_expand_builtin -> mod_syntax_ast;
   mod_hir_expand_builtin -> mod_test_utils_minicore;
+  mod_hir_expand_builtin -> mod_tt_lib;
+  mod_hir_expand_lib -> mod_base_db_input;
+  mod_hir_expand_lib -> mod_query_group_macro_lib;
   mod_hir_lib -> mod_hir_def_expr_store;
-  mod_hir_lib -> mod_hir_def_hir;
   mod_hir_lib -> mod_hir_def_lib;
-  mod_hir_lib -> mod_hir_def_nameres;
   mod_hir_lib -> mod_hir_ty_db;
   mod_hir_lib -> mod_hir_ty_next_solver;
-  mod_hir_lib -> mod_syntax_ast;
+  mod_hir_lib -> mod_parser_syntax_kind;
   mod_hir_lib -> mod_test_utils_minicore;
-  mod_hir_semantics -> mod_hir_def_db;
   mod_hir_semantics -> mod_hir_def_lib;
+  mod_hir_semantics -> mod_hir_expand_lib;
   mod_hir_semantics -> mod_hir_lib;
   mod_hir_semantics -> mod_hir_ty_db;
-  mod_hir_semantics -> mod_query_group_macro_lib;
   mod_hir_semantics -> mod_syntax_ast;
-  mod_hir_semantics -> mod_test_utils_minicore;
-  mod_hir_ty_db -> mod_hir_def_lib;
   mod_hir_ty_diagnostics -> mod_hir_def_expr_store;
   mod_hir_ty_diagnostics -> mod_hir_def_lib;
   mod_hir_ty_diagnostics -> mod_hir_ty_db;
   mod_hir_ty_diagnostics -> mod_hir_ty_display;
   mod_hir_ty_diagnostics -> mod_hir_ty_infer;
   mod_hir_ty_diagnostics -> mod_hir_ty_next_solver;
-  mod_hir_ty_diagnostics -> mod_parser_grammar;
+  mod_hir_ty_diagnostics -> mod_parser_syntax_kind;
   mod_hir_ty_diagnostics -> mod_query_group_macro_lib;
   mod_hir_ty_diagnostics -> mod_syntax_ast;
   mod_hir_ty_diagnostics -> mod_test_utils_minicore;
+  mod_hir_ty_display -> mod_base_db_input;
+  mod_hir_ty_display -> mod_hir_def_lib;
   mod_hir_ty_display -> mod_hir_ty_db;
-  mod_hir_ty_display -> mod_hir_ty_mir;
   mod_hir_ty_display -> mod_hir_ty_next_solver;
-  mod_hir_ty_display -> mod_syntax_ast;
-  mod_hir_ty_display -> mod_test_utils_minicore;
+  mod_hir_ty_display -> mod_query_group_macro_lib;
   mod_hir_ty_infer -> mod_hir_def_expr_store;
   mod_hir_ty_infer -> mod_hir_def_hir;
   mod_hir_ty_infer -> mod_hir_def_lib;
@@ -274,7 +273,7 @@ digraph architecture {
   mod_hir_ty_infer -> mod_hir_ty_lower;
   mod_hir_ty_infer -> mod_hir_ty_mir;
   mod_hir_ty_infer -> mod_hir_ty_next_solver;
-  mod_hir_ty_infer -> mod_ide_ssr_fragments;
+  mod_hir_ty_infer -> mod_parser_syntax_kind;
   mod_hir_ty_infer -> mod_query_group_macro_lib;
   mod_hir_ty_infer -> mod_syntax_ast;
   mod_hir_ty_infer -> mod_test_utils_minicore;
@@ -283,255 +282,226 @@ digraph architecture {
   mod_hir_ty_lower -> mod_hir_def_lib;
   mod_hir_ty_lower -> mod_hir_ty_db;
   mod_hir_ty_lower -> mod_hir_ty_next_solver;
-  mod_hir_ty_lower -> mod_parser_grammar;
-  mod_hir_ty_lower -> mod_paths_lib;
   mod_hir_ty_lower -> mod_query_group_macro_lib;
   mod_hir_ty_lower -> mod_syntax_ast;
   mod_hir_ty_lower -> mod_test_utils_minicore;
   mod_hir_ty_method_resolution -> mod_hir_def_expr_store;
-  mod_hir_ty_method_resolution -> mod_hir_def_hir;
   mod_hir_ty_method_resolution -> mod_hir_ty_db;
-  mod_hir_ty_method_resolution -> mod_hir_ty_infer;
   mod_hir_ty_method_resolution -> mod_hir_ty_next_solver;
   mod_hir_ty_method_resolution -> mod_query_group_macro_lib;
-  mod_hir_ty_method_resolution -> mod_test_utils_minicore;
   mod_hir_ty_mir -> mod_hir_def_expr_store;
   mod_hir_ty_mir -> mod_hir_def_lib;
   mod_hir_ty_mir -> mod_hir_ty_db;
   mod_hir_ty_mir -> mod_hir_ty_infer;
+  mod_hir_ty_mir -> mod_hir_ty_method_resolution;
   mod_hir_ty_mir -> mod_hir_ty_next_solver;
-  mod_hir_ty_mir -> mod_ide_ssr_fragments;
   mod_hir_ty_mir -> mod_parser_ok;
   mod_hir_ty_mir -> mod_query_group_macro_lib;
   mod_hir_ty_mir -> mod_syntax_ast;
   mod_hir_ty_mir -> mod_test_utils_minicore;
-  mod_hir_ty_next_solver -> mod_hir_def_expr_store;
   mod_hir_ty_next_solver -> mod_hir_def_hir;
   mod_hir_ty_next_solver -> mod_hir_def_lib;
   mod_hir_ty_next_solver -> mod_hir_ty_db;
   mod_hir_ty_next_solver -> mod_hir_ty_display;
-  mod_hir_ty_next_solver -> mod_parser_inline;
+  mod_hir_ty_next_solver -> mod_parser_syntax_kind;
   mod_hir_ty_next_solver -> mod_query_group_macro_lib;
   mod_hir_ty_next_solver -> mod_syntax_ast;
   mod_hir_ty_next_solver -> mod_test_utils_minicore;
+  mod_ide_assists_handlers -> mod_hir_def_expr_store;
   mod_ide_assists_handlers -> mod_hir_def_hir;
   mod_ide_assists_handlers -> mod_hir_def_item_tree;
+  mod_ide_assists_handlers -> mod_hir_expand_lib;
   mod_ide_assists_handlers -> mod_hir_lib;
   mod_ide_assists_handlers -> mod_hir_semantics;
   mod_ide_assists_handlers -> mod_hir_ty_db;
+  mod_ide_assists_handlers -> mod_hir_ty_diagnostics;
   mod_ide_assists_handlers -> mod_hir_ty_next_solver;
   mod_ide_assists_handlers -> mod_ide_assists_assist_context;
   mod_ide_assists_handlers -> mod_ide_assists_utils;
   mod_ide_assists_handlers -> mod_ide_completion_render;
   mod_ide_assists_handlers -> mod_ide_db_imports;
-  mod_ide_assists_handlers -> mod_ide_db_search;
+  mod_ide_assists_handlers -> mod_ide_db_lib;
   mod_ide_assists_handlers -> mod_ide_db_syntax_helpers;
-  mod_ide_assists_handlers -> mod_ide_diagnostics_handlers;
-  mod_ide_assists_handlers -> mod_ide_ssr_fragments;
-  mod_ide_assists_handlers -> mod_ide_syntax_highlighting;
   mod_ide_assists_handlers -> mod_parser_grammar;
-  mod_ide_assists_handlers -> mod_parser_inline;
   mod_ide_assists_handlers -> mod_parser_ok;
+  mod_ide_assists_handlers -> mod_parser_syntax_kind;
+  mod_ide_assists_handlers -> mod_project_model_project_json;
   mod_ide_assists_handlers -> mod_query_group_macro_lib;
   mod_ide_assists_handlers -> mod_rust_analyzer_lsp;
   mod_ide_assists_handlers -> mod_syntax_ast;
   mod_ide_assists_handlers -> mod_syntax_syntax_editor;
   mod_ide_assists_handlers -> mod_syntax_test_data;
   mod_ide_assists_handlers -> mod_test_utils_minicore;
-  mod_ide_assists_handlers -> mod_ungrammar_parser;
-  mod_ide_assists_handlers -> mod_xtask_codegen;
+  mod_ide_assists_handlers -> mod_text_size_range;
+  mod_ide_assists_handlers -> mod_tt_lib;
+  mod_ide_assists_utils -> mod_hir_def_expr_store;
   mod_ide_assists_utils -> mod_hir_semantics;
   mod_ide_assists_utils -> mod_hir_ty_db;
   mod_ide_assists_utils -> mod_ide_assists_assist_context;
-  mod_ide_assists_utils -> mod_parser_grammar;
+  mod_ide_assists_utils -> mod_ide_db_lib;
+  mod_ide_assists_utils -> mod_parser_syntax_kind;
   mod_ide_assists_utils -> mod_query_group_macro_lib;
   mod_ide_assists_utils -> mod_syntax_ast;
   mod_ide_assists_utils -> mod_syntax_test_data;
   mod_ide_assists_utils -> mod_test_utils_minicore;
+  mod_ide_assists_utils -> mod_text_size_range;
+  mod_ide_completion_completions -> mod_hir_def_item_tree;
+  mod_ide_completion_completions -> mod_hir_lib;
   mod_ide_completion_completions -> mod_hir_semantics;
+  mod_ide_completion_completions -> mod_ide_assists_handlers;
   mod_ide_completion_completions -> mod_ide_completion_context;
   mod_ide_completion_completions -> mod_ide_completion_render;
   mod_ide_completion_completions -> mod_ide_db_imports;
-  mod_ide_completion_completions -> mod_ide_db_syntax_helpers;
-  mod_ide_completion_completions -> mod_ide_ssr_fragments;
+  mod_ide_completion_completions -> mod_ide_db_lib;
   mod_ide_completion_completions -> mod_parser_grammar;
-  mod_ide_completion_completions -> mod_parser_inline;
+  mod_ide_completion_completions -> mod_parser_ok;
+  mod_ide_completion_completions -> mod_parser_syntax_kind;
   mod_ide_completion_completions -> mod_query_group_macro_lib;
   mod_ide_completion_completions -> mod_syntax_ast;
   mod_ide_completion_completions -> mod_syntax_test_data;
   mod_ide_completion_completions -> mod_test_utils_minicore;
+  mod_ide_completion_completions -> mod_text_size_range;
   mod_ide_completion_context -> mod_hir_semantics;
-  mod_ide_completion_context -> mod_parser_grammar;
-  mod_ide_completion_context -> mod_parser_ok;
+  mod_ide_completion_context -> mod_ide_db_lib;
+  mod_ide_completion_context -> mod_parser_syntax_kind;
   mod_ide_completion_context -> mod_query_group_macro_lib;
   mod_ide_completion_context -> mod_syntax_ast;
   mod_ide_completion_context -> mod_syntax_test_data;
-  mod_ide_completion_context -> mod_test_utils_minicore;
-  mod_ide_completion_context -> mod_ungrammar_parser;
-  mod_ide_completion_render -> mod_hir_ty_db;
+  mod_ide_completion_render -> mod_hir_def_item_tree;
+  mod_ide_completion_render -> mod_ide_assists_handlers;
   mod_ide_completion_render -> mod_ide_completion_context;
   mod_ide_completion_render -> mod_ide_db_imports;
-  mod_ide_completion_render -> mod_ide_ssr_fragments;
-  mod_ide_completion_render -> mod_parser_grammar;
-  mod_ide_completion_render -> mod_parser_inline;
+  mod_ide_completion_render -> mod_ide_db_lib;
   mod_ide_completion_render -> mod_query_group_macro_lib;
   mod_ide_completion_render -> mod_syntax_ast;
-  mod_ide_completion_render -> mod_test_utils_minicore;
+  mod_ide_db_imports -> mod_hir_def_expr_store;
+  mod_ide_db_imports -> mod_hir_def_item_tree;
   mod_ide_db_imports -> mod_hir_semantics;
+  mod_ide_db_imports -> mod_ide_db_lib;
   mod_ide_db_imports -> mod_parser_grammar;
-  mod_ide_db_imports -> mod_parser_inline;
   mod_ide_db_imports -> mod_parser_ok;
+  mod_ide_db_imports -> mod_parser_syntax_kind;
   mod_ide_db_imports -> mod_query_group_macro_lib;
   mod_ide_db_imports -> mod_syntax_ast;
   mod_ide_db_imports -> mod_syntax_test_data;
   mod_ide_db_imports -> mod_test_utils_minicore;
-  mod_ide_db_imports -> mod_ungrammar_parser;
-  mod_ide_db_search -> mod_hir_semantics;
-  mod_ide_db_search -> mod_query_group_macro_lib;
-  mod_ide_db_search -> mod_syntax_ast;
-  mod_ide_db_search -> mod_test_utils_minicore;
-  mod_ide_db_syntax_helpers -> mod_ide_ssr_fragments;
-  mod_ide_db_syntax_helpers -> mod_parser_grammar;
-  mod_ide_db_syntax_helpers -> mod_parser_inline;
-  mod_ide_db_syntax_helpers -> mod_paths_lib;
+  mod_ide_db_lib -> mod_test_utils_minicore;
+  mod_ide_db_syntax_helpers -> mod_hir_def_expr_store;
+  mod_ide_db_syntax_helpers -> mod_ide_db_lib;
+  mod_ide_db_syntax_helpers -> mod_parser_ok;
+  mod_ide_db_syntax_helpers -> mod_parser_syntax_kind;
   mod_ide_db_syntax_helpers -> mod_query_group_macro_lib;
   mod_ide_db_syntax_helpers -> mod_syntax_ast;
   mod_ide_db_syntax_helpers -> mod_syntax_test_data;
   mod_ide_db_syntax_helpers -> mod_test_utils_minicore;
-  mod_ide_db_syntax_helpers -> mod_ungrammar_parser;
-  mod_ide_diagnostics_handlers -> mod_hir_lib;
-  mod_ide_diagnostics_handlers -> mod_hir_semantics;
-  mod_ide_diagnostics_handlers -> mod_ide_diagnostics_lib;
-  mod_ide_diagnostics_handlers -> mod_ide_ssr_fragments;
+  mod_ide_diagnostics_handlers -> mod_hir_expand_lib;
+  mod_ide_diagnostics_handlers -> mod_hir_ty_diagnostics;
+  mod_ide_diagnostics_handlers -> mod_hir_ty_infer;
+  mod_ide_diagnostics_handlers -> mod_ide_db_lib;
   mod_ide_diagnostics_handlers -> mod_parser_grammar;
-  mod_ide_diagnostics_handlers -> mod_parser_inline;
-  mod_ide_diagnostics_handlers -> mod_parser_ok;
+  mod_ide_diagnostics_handlers -> mod_parser_syntax_kind;
   mod_ide_diagnostics_handlers -> mod_query_group_macro_lib;
+  mod_ide_diagnostics_handlers -> mod_rust_analyzer_lsp;
   mod_ide_diagnostics_handlers -> mod_syntax_ast;
   mod_ide_diagnostics_handlers -> mod_syntax_test_data;
-  mod_ide_diagnostics_handlers -> mod_ungrammar_parser;
+  mod_ide_diagnostics_handlers -> mod_test_utils_minicore;
+  mod_ide_diagnostics_handlers -> mod_text_size_range;
   mod_ide_diagnostics_handlers -> mod_xtask_codegen;
-  mod_ide_diagnostics_lib -> mod_hir_semantics;
-  mod_ide_diagnostics_lib -> mod_query_group_macro_lib;
-  mod_ide_diagnostics_lib -> mod_rust_analyzer_cli;
-  mod_ide_diagnostics_lib -> mod_syntax_ast;
-  mod_ide_diagnostics_lib -> mod_ungrammar_parser;
+  mod_ide_hover -> mod_hir_lib;
   mod_ide_hover -> mod_hir_semantics;
   mod_ide_hover -> mod_hir_ty_display;
-  mod_ide_hover -> mod_ide_completion_render;
+  mod_ide_hover -> mod_ide_db_lib;
   mod_ide_hover -> mod_ide_syntax_highlighting;
-  mod_ide_hover -> mod_parser_grammar;
   mod_ide_hover -> mod_query_group_macro_lib;
   mod_ide_hover -> mod_syntax_ast;
-  mod_ide_hover -> mod_syntax_test_data;
   mod_ide_hover -> mod_test_utils_minicore;
-  mod_ide_hover -> mod_xtask_codegen;
+  mod_ide_inlay_hints -> mod_hir_def_expr_store;
+  mod_ide_inlay_hints -> mod_hir_lib;
   mod_ide_inlay_hints -> mod_hir_semantics;
   mod_ide_inlay_hints -> mod_hir_ty_display;
-  mod_ide_inlay_hints -> mod_ide_completion_render;
+  mod_ide_inlay_hints -> mod_ide_db_lib;
   mod_ide_inlay_hints -> mod_ide_hover;
-  mod_ide_inlay_hints -> mod_ide_ssr_fragments;
-  mod_ide_inlay_hints -> mod_parser_grammar;
-  mod_ide_inlay_hints -> mod_parser_inline;
+  mod_ide_inlay_hints -> mod_parser_syntax_kind;
   mod_ide_inlay_hints -> mod_query_group_macro_lib;
+  mod_ide_inlay_hints -> mod_rust_analyzer_lsp;
   mod_ide_inlay_hints -> mod_syntax_ast;
   mod_ide_inlay_hints -> mod_syntax_test_data;
   mod_ide_inlay_hints -> mod_test_utils_minicore;
-  mod_ide_inlay_hints -> mod_ungrammar_parser;
-  mod_ide_ssr_fragments -> mod_syntax_test_data;
-  mod_ide_ssr_fragments -> mod_test_utils_minicore;
+  mod_ide_inlay_hints -> mod_text_size_range;
   mod_ide_syntax_highlighting -> mod_hir_semantics;
-  mod_ide_syntax_highlighting -> mod_ide_db_syntax_helpers;
-  mod_ide_syntax_highlighting -> mod_ide_ssr_fragments;
-  mod_ide_syntax_highlighting -> mod_parser_grammar;
+  mod_ide_syntax_highlighting -> mod_ide_db_lib;
+  mod_ide_syntax_highlighting -> mod_parser_syntax_kind;
+  mod_ide_syntax_highlighting -> mod_project_model_project_json;
   mod_ide_syntax_highlighting -> mod_query_group_macro_lib;
   mod_ide_syntax_highlighting -> mod_syntax_ast;
   mod_ide_syntax_highlighting -> mod_syntax_test_data;
-  mod_mbe_expander -> mod_parser_grammar;
-  mod_mbe_expander -> mod_query_group_macro_lib;
-  mod_mbe_expander -> mod_syntax_ast;
-  mod_mbe_expander -> mod_test_utils_minicore;
-  mod_parser_grammar -> mod_ide_completion_render;
-  mod_parser_grammar -> mod_parser_ok;
+  mod_ide_syntax_highlighting -> mod_test_utils_minicore;
+  mod_parser_grammar -> mod_hir_ty_next_solver;
+  mod_parser_grammar -> mod_parser_parser;
   mod_parser_grammar -> mod_parser_syntax_kind;
-  mod_parser_grammar -> mod_paths_lib;
   mod_parser_grammar -> mod_query_group_macro_lib;
   mod_parser_grammar -> mod_test_utils_minicore;
-  mod_parser_inline -> mod_parser_ok;
+  mod_parser_grammar -> mod_text_size_range;
   mod_parser_inline -> mod_syntax_ast;
   mod_parser_inline -> mod_test_utils_minicore;
-  mod_parser_ok -> mod_hir_lib;
-  mod_parser_ok -> mod_paths_lib;
+  mod_parser_ok -> mod_parser_inline;
   mod_parser_ok -> mod_test_utils_minicore;
   mod_parser_syntax_kind -> mod_test_utils_minicore;
-  mod_paths_lib -> mod_hir_def_expr_store;
-  mod_paths_lib -> mod_test_utils_minicore;
-  mod_project_model_project_json -> mod_paths_lib;
-  mod_project_model_project_json -> mod_query_group_macro_lib;
   mod_project_model_project_json -> mod_syntax_ast;
   mod_project_model_project_json -> mod_test_utils_minicore;
   mod_query_group_macro_lib -> mod_hir_def_expr_store;
   mod_query_group_macro_lib -> mod_hir_def_hir;
-  mod_query_group_macro_lib -> mod_hir_lib;
+  mod_query_group_macro_lib -> mod_hir_ty_mir;
   mod_query_group_macro_lib -> mod_hir_ty_next_solver;
-  mod_query_group_macro_lib -> mod_ide_hover;
-  mod_query_group_macro_lib -> mod_project_model_project_json;
   mod_query_group_macro_lib -> mod_rust_analyzer_cli;
   mod_query_group_macro_lib -> mod_rust_analyzer_lsp;
   mod_query_group_macro_lib -> mod_syntax_ast;
   mod_query_group_macro_lib -> mod_test_utils_minicore;
   mod_rust_analyzer_cli -> mod_hir_def_expr_store;
+  mod_rust_analyzer_cli -> mod_hir_semantics;
   mod_rust_analyzer_cli -> mod_hir_ty_db;
-  mod_rust_analyzer_cli -> mod_ide_assists_handlers;
-  mod_rust_analyzer_cli -> mod_project_model_project_json;
+  mod_rust_analyzer_cli -> mod_ide_db_lib;
   mod_rust_analyzer_cli -> mod_query_group_macro_lib;
+  mod_rust_analyzer_cli -> mod_rust_analyzer_lsp;
   mod_rust_analyzer_cli -> mod_syntax_ast;
   mod_rust_analyzer_cli -> mod_test_utils_minicore;
-  mod_rust_analyzer_cli -> mod_ungrammar_parser;
-  mod_rust_analyzer_config -> mod_paths_lib;
-  mod_rust_analyzer_config -> mod_rust_analyzer_lsp;
+  mod_rust_analyzer_cli -> mod_text_size_range;
   mod_rust_analyzer_config -> mod_syntax_ast;
   mod_rust_analyzer_config -> mod_test_utils_minicore;
-  mod_rust_analyzer_handlers -> mod_ide_completion_render;
-  mod_rust_analyzer_handlers -> mod_ide_hover;
-  mod_rust_analyzer_handlers -> mod_ide_inlay_hints;
+  mod_rust_analyzer_handlers -> mod_parser_syntax_kind;
   mod_rust_analyzer_handlers -> mod_query_group_macro_lib;
   mod_rust_analyzer_handlers -> mod_rust_analyzer_config;
   mod_rust_analyzer_handlers -> mod_rust_analyzer_lsp;
   mod_rust_analyzer_handlers -> mod_syntax_ast;
+  mod_rust_analyzer_handlers -> mod_syntax_syntax_editor;
   mod_rust_analyzer_handlers -> mod_test_utils_minicore;
-  mod_rust_analyzer_lsp -> mod_ide_completion_render;
+  mod_rust_analyzer_lsp -> mod_hir_lib;
+  mod_rust_analyzer_lsp -> mod_hir_ty_next_solver;
   mod_rust_analyzer_lsp -> mod_ide_inlay_hints;
-  mod_rust_analyzer_lsp -> mod_paths_lib;
   mod_rust_analyzer_lsp -> mod_query_group_macro_lib;
   mod_rust_analyzer_lsp -> mod_rust_analyzer_config;
   mod_rust_analyzer_lsp -> mod_syntax_ast;
   mod_rust_analyzer_lsp -> mod_test_utils_minicore;
-  mod_syntax_ast -> mod_parser_grammar;
-  mod_syntax_ast -> mod_parser_ok;
+  mod_rust_analyzer_lsp -> mod_text_size_range;
+  mod_syntax_ast -> mod_parser_inline;
   mod_syntax_ast -> mod_parser_syntax_kind;
   mod_syntax_ast -> mod_query_group_macro_lib;
   mod_syntax_ast -> mod_syntax_test_data;
   mod_syntax_ast -> mod_test_utils_minicore;
-  mod_syntax_ast -> mod_ungrammar_parser;
-  mod_syntax_syntax_editor -> mod_syntax_ast;
+  mod_syntax_syntax_editor -> mod_query_group_macro_lib;
   mod_syntax_syntax_editor -> mod_test_utils_minicore;
-  mod_syntax_syntax_editor -> mod_ungrammar_parser;
   mod_syntax_test_data -> mod_query_group_macro_lib;
   mod_syntax_test_data -> mod_syntax_ast;
-  mod_syntax_test_data -> mod_ungrammar_parser;
-  mod_test_utils_minicore -> mod_hir_ty_method_resolution;
-  mod_test_utils_minicore -> mod_hir_ty_mir;
+  mod_syntax_test_data -> mod_text_size_range;
   mod_test_utils_minicore -> mod_hir_ty_next_solver;
   mod_test_utils_minicore -> mod_syntax_ast;
-  mod_ungrammar_parser -> mod_parser_ok;
-  mod_ungrammar_parser -> mod_test_utils_minicore;
+  mod_text_size_range -> mod_parser_inline;
+  mod_tt_lib -> mod_syntax_ast;
+  mod_tt_lib -> mod_test_utils_minicore;
   mod_xtask_codegen -> mod_hir_def_expr_store;
-  mod_xtask_codegen -> mod_parser_grammar;
-  mod_xtask_codegen -> mod_parser_ok;
-  mod_xtask_codegen -> mod_paths_lib;
+  mod_xtask_codegen -> mod_hir_ty_infer;
+  mod_xtask_codegen -> mod_parser_syntax_kind;
+  mod_xtask_codegen -> mod_query_group_macro_lib;
   mod_xtask_codegen -> mod_syntax_ast;
-  mod_xtask_codegen -> mod_syntax_test_data;
   mod_xtask_codegen -> mod_test_utils_minicore;
-  mod_xtask_codegen -> mod_ungrammar_parser;
 }

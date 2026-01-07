@@ -16,26 +16,29 @@ digraph architecture {
   mod_tanstack_query_core_mutationCache[label="tanstack_query-core::mutationCache", path="/home/yibai/llmcc/sample/repos/tanstack-query/packages/query-core/src"];
   mod_tanstack_query_core_query[label="tanstack_query-core::query", path="/home/yibai/llmcc/sample/repos/tanstack-query/packages/query-core/src"];
   mod_tanstack_query_core_queryCache[label="tanstack_query-core::queryCache", path="/home/yibai/llmcc/sample/repos/tanstack-query/packages/query-core/src"];
+  mod_tanstack_query_core_queryClient[label="tanstack_query-core::queryClient", path="/home/yibai/llmcc/sample/repos/tanstack-query/packages/query-core/src"];
   mod_tanstack_query_core_queryObserver[label="tanstack_query-core::queryObserver", path="/home/yibai/llmcc/sample/repos/tanstack-query/packages/query-core/src"];
   mod_tanstack_query_core_types[label="tanstack_query-core::types", path="/home/yibai/llmcc/sample/repos/tanstack-query/packages/query-core/src"];
   mod_tanstack_query_core_utils[label="tanstack_query-core::utils", path="/home/yibai/llmcc/sample/repos/tanstack-query/packages/query-core/src"];
   mod_tanstack_query_persist_client_core_createPersister[label="tanstack_query-persist-client-core::createPersister", path="/home/yibai/llmcc/sample/repos/tanstack-query/packages/query-persist-client-core/src"];
   mod_tanstack_query_persist_client_core_persist[label="tanstack_query-persist-client-core::persist", path="/home/yibai/llmcc/sample/repos/tanstack-query/packages/query-persist-client-core/src"];
   mod_tanstack_solid_query_QueryClient[label="tanstack_solid-query::QueryClient", path="/home/yibai/llmcc/sample/repos/tanstack-query/packages/solid-query/src"];
-  mod_tanstack_vue_query_devtools[label="tanstack_vue-query::devtools", path="/home/yibai/llmcc/sample/repos/tanstack-query/packages/vue-query/src/devtools"];
+  mod_tanstack_vue_query_queryClient[label="tanstack_vue-query::queryClient", path="/home/yibai/llmcc/sample/repos/tanstack-query/packages/vue-query/src"];
 
   mod_tanstack_query_core_hydration -> mod_tanstack_query_core_mutation;
   mod_tanstack_query_core_hydration -> mod_tanstack_query_core_query;
   mod_tanstack_query_core_hydration -> mod_tanstack_query_core_types;
+  mod_tanstack_query_core_hydration -> mod_tanstack_vue_query_queryClient;
   mod_tanstack_query_core_mutation -> mod_tanstack_query_core_types;
+  mod_tanstack_query_core_mutation -> mod_tanstack_vue_query_queryClient;
   mod_tanstack_query_core_mutationCache -> mod_tanstack_query_core_mutation;
+  mod_tanstack_query_core_query -> mod_tanstack_query_core_queryClient;
   mod_tanstack_query_core_query -> mod_tanstack_query_core_queryObserver;
   mod_tanstack_query_core_query -> mod_tanstack_query_core_types;
   mod_tanstack_query_core_queryCache -> mod_tanstack_query_core_query;
   mod_tanstack_query_core_queryCache -> mod_tanstack_query_core_queryObserver;
   mod_tanstack_query_core_queryObserver -> mod_tanstack_query_core_query;
   mod_tanstack_query_core_queryObserver -> mod_tanstack_query_core_types;
-  mod_tanstack_query_core_queryObserver -> mod_tanstack_query_core_utils;
   mod_tanstack_query_core_types -> mod_tanstack_query_core_hydration;
   mod_tanstack_query_core_types -> mod_tanstack_query_core_mutationCache;
   mod_tanstack_query_core_types -> mod_tanstack_query_core_query;
@@ -46,6 +49,7 @@ digraph architecture {
   mod_tanstack_query_core_utils -> mod_tanstack_query_core_types;
   mod_tanstack_query_persist_client_core_createPersister -> mod_tanstack_query_core_query;
   mod_tanstack_query_persist_client_core_createPersister -> mod_tanstack_query_core_utils;
+  mod_tanstack_query_persist_client_core_createPersister -> mod_tanstack_solid_query_QueryClient;
+  mod_tanstack_query_persist_client_core_createPersister -> mod_tanstack_vue_query_queryClient;
   mod_tanstack_query_persist_client_core_persist -> mod_tanstack_query_core_hydration;
-  mod_tanstack_vue_query_devtools -> mod_tanstack_query_core_query;
 }

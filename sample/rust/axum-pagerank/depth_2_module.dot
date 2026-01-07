@@ -12,13 +12,14 @@ digraph architecture {
   fontsize=16;
 
   mod_axum_boxed[label="axum::boxed", path="/home/yibai/llmcc/sample/repos/axum/axum/src"];
+  mod_axum_core_error[label="axum-core::error", path="/home/yibai/llmcc/sample/repos/axum/axum-core/src"];
   mod_axum_core_extract[label="axum-core::extract", path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/extract"];
   mod_axum_core_response[label="axum-core::response", path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/response"];
   mod_axum_extra_extract[label="axum-extra::extract", path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/extract"];
   mod_axum_extra_response[label="axum-extra::response", path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/response"];
   mod_axum_extra_routing[label="axum-extra::routing", path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/routing"];
   mod_axum_extract[label="axum::extract", path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract"];
-  mod_axum_macros_attr_parsing[label="axum-macros::attr_parsing", path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src"];
+  mod_axum_macros_debug_handler[label="axum-macros::debug_handler", path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src"];
   mod_axum_macros_from_request[label="axum-macros::from_request", path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/from_request"];
   mod_axum_macros_typed_path[label="axum-macros::typed_path", path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src"];
   mod_axum_response[label="axum::response", path="/home/yibai/llmcc/sample/repos/axum/axum/src/response"];
@@ -29,9 +30,15 @@ digraph architecture {
   mod_axum_extra_extract -> mod_axum_core_response;
   mod_axum_extra_response -> mod_axum_core_response;
   mod_axum_extra_routing -> mod_axum_routing;
+  mod_axum_extract -> mod_axum_core_error;
   mod_axum_extract -> mod_axum_core_extract;
   mod_axum_extract -> mod_axum_core_response;
-  mod_axum_macros_from_request -> mod_axum_macros_attr_parsing;
-  mod_axum_macros_typed_path -> mod_axum_routing;
+  mod_axum_macros_debug_handler -> mod_axum_boxed;
+  mod_axum_macros_debug_handler -> mod_axum_routing;
+  mod_axum_macros_from_request -> mod_axum_boxed;
+  mod_axum_macros_from_request -> mod_axum_extract;
+  mod_axum_macros_from_request -> mod_axum_routing;
+  mod_axum_macros_typed_path -> mod_axum_extract;
   mod_axum_response -> mod_axum_core_response;
+  mod_axum_routing -> mod_axum_core_error;
 }
