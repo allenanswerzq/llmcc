@@ -22,4 +22,6 @@ echo ""
 
 # Use --dangerously-skip-permissions to allow Claude to read files and run commands
 # Remove this flag in production and use proper permission grants instead
-claude --dangerously-skip-permissions "$@"
+# Use --model opus for extended thinking capability
+# Use --verbose to show more internal details
+claude --dangerously-skip-permissions --model opus --verbose "$@"

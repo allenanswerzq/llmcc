@@ -16,12 +16,14 @@ import {
     isToolAvailable,
     getAvailableTools,
     formatBuiltinToolsForPrompt,
+    getBuiltinToolDocs,
     ToolDefinition as InternalToolDef
 } from '../tools';
 
 // Configuration
 const ENABLE_AGENT_MODE = true;
 const MAX_AGENT_ITERATIONS = 5;
+const ALWAYS_INJECT_BUILTIN_TOOLS = true; // Always add our tools even if client doesn't request them
 
 export async function handleAgentChatCompletions(
     request: ChatCompletionRequest,
@@ -29,6 +31,33 @@ export async function handleAgentChatCompletions(
 ): Promise<void> {
     const requestId = generateRequestId();
     const created = Math.floor(Date.now() / 1000);
+
+    // Always inject built-in tools if enabled
+    if (ALWAYS_INJECT_BUILTIN_TOOLS) {
+        request.tools = request.tools || [];
+        const existingToolNames = new Set(request.tools.map(t => t.function.name));
+        const builtinDocs = getBuiltinToolDocs();
+
+        for (const doc of builtinDocs) {
+            if (!existingToolNames.has(doc.name)) {
+                request.tools.push({
+                    type: 'function',
+                    function: {
+                        name: doc.name,
+                        description: doc.description,
+                        parameters: {
+                            type: 'object',
+                            properties: Object.fromEntries(
+                                doc.parameters.map(p => [p.name, { type: p.type, description: p.description }])
+                            ),
+                            required: doc.parameters.filter(p => p.required).map(p => p.name)
+                        }
+                    }
+                });
+            }
+        }
+        console.log(`[Agent] Injected built-in tools. Total tools: ${request.tools.length}`);
+    }
 
     // Check if we should use agent mode
     const hasTools = request.tools && request.tools.length > 0;
