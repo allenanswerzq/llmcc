@@ -301,7 +301,10 @@ impl<'a> BinderScopes<'a> {
             qualified_name,
             symbols.len(),
             current_unit,
-            symbols.iter().map(|s| (s.id(), s.unit_index())).collect::<Vec<_>>()
+            symbols
+                .iter()
+                .map(|s| (s.id(), s.unit_index()))
+                .collect::<Vec<_>>()
         );
 
         if symbols.len() > 1 {
@@ -316,9 +319,10 @@ impl<'a> BinderScopes<'a> {
 
             // 2. Prefer symbols from the same crate using crate_index (O(1) check)
             let current_crate_index = self.unit.unit_meta().crate_index;
-            if let Some(same_crate_sym) = symbols.iter().find(|s| {
-                s.crate_index() == Some(current_crate_index)
-            }) {
+            if let Some(same_crate_sym) = symbols
+                .iter()
+                .find(|s| s.crate_index() == Some(current_crate_index))
+            {
                 tracing::trace!(
                     "preferring same-crate symbol for qualified '{:?}' crate_index={}",
                     qualified_name,

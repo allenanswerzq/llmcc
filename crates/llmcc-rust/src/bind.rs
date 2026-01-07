@@ -847,7 +847,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             };
 
             if let Some(path_sym) = path_sym {
-                if let Some(name_sym) = scopes.lookup_member_symbol(path_sym, name_ident.name, None) {
+                if let Some(name_sym) = scopes.lookup_member_symbol(path_sym, name_ident.name, None)
+                {
                     name_ident.set_symbol(name_sym);
                 }
             }

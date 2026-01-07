@@ -221,19 +221,19 @@ impl<'hir> HirNode<'hir> {
         result: &mut Option<&'hir HirIdent<'hir>>,
     ) {
         if self.is_kind(HirKind::Identifier) {
-            if let Some(ident) = self.as_ident() {
-                if ident.opt_symbol().is_some() {
-                    *result = Some(ident);
-                }
+            if let Some(ident) = self.as_ident()
+                && ident.opt_symbol().is_some()
+            {
+                *result = Some(ident);
             }
             return;
         }
         for child in self.children(unit) {
             if child.is_kind(HirKind::Identifier) {
-                if let Some(ident) = child.as_ident() {
-                    if ident.opt_symbol().is_some() {
-                        *result = Some(ident);
-                    }
+                if let Some(ident) = child.as_ident()
+                    && ident.opt_symbol().is_some()
+                {
+                    *result = Some(ident);
                 }
             } else if child.is_kind(HirKind::Internal) {
                 child.find_symboled_ident_recursive(unit, result);

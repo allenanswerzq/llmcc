@@ -384,11 +384,16 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
                     mod_sym.set_scope(scope.id());
                 }
                 // Also insert into crate scope for qualified path resolution like `crate_b::utils`
-                if let Some(crate_s) = crate_scope {
-                    if let Some(mod_sym) = scopes.insert_in_scope(crate_s, file_name, node, SymKind::Module) {
-                        tracing::trace!("link file '{}' as module in crate scope {:?}", file_name, crate_s.id());
-                        mod_sym.set_scope(scope.id());
-                    }
+                if let Some(crate_s) = crate_scope
+                    && let Some(mod_sym) =
+                        scopes.insert_in_scope(crate_s, file_name, node, SymKind::Module)
+                {
+                    tracing::trace!(
+                        "link file '{}' as module in crate scope {:?}",
+                        file_name,
+                        crate_s.id()
+                    );
+                    mod_sym.set_scope(scope.id());
                 }
             }
         }

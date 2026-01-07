@@ -226,7 +226,11 @@ impl<'a> CollectorScopes<'a> {
         self.globals.insert(allocated);
         self.init_symbol(allocated, name, node, kind);
         allocated.set_is_global(true);
-        tracing::trace!("insert_in_global: created new symbol '{}' id={:?}", name, allocated.id());
+        tracing::trace!(
+            "insert_in_global: created new symbol '{}' id={:?}",
+            name,
+            allocated.id()
+        );
         Some(allocated)
     }
 

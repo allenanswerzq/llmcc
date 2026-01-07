@@ -267,6 +267,7 @@ pub struct Symbol {
     /// Packed unit_index (low 32 bits) and crate_index (high 32 bits).
     /// - unit_index: which compile unit (file) this symbol is defined in
     /// - crate_index: which crate/package this symbol belongs to
+    ///
     /// Both use INDEX_NONE (u32::MAX) to indicate "not set".
     unit_crate_index: AtomicU64,
     /// Owning HIR node that introduces the symbol (e.g. function def, struct def).
@@ -492,25 +493,24 @@ impl Symbol {
     pub fn set_unit_index(&self, unit_idx: usize) {
         debug_assert!(unit_idx <= u32::MAX as usize, "unit_index exceeds u32::MAX");
         let unit_idx = unit_idx as u32;
-        
+
         loop {
             let current = self.unit_crate_index.load(Ordering::Relaxed);
             let current_unit = Self::unpack_unit_index(current);
-            
+
             // Only set if not already set
             if current_unit != INDEX_NONE {
                 return;
             }
-            
+
             let crate_idx = Self::unpack_crate_index(current);
             let new_packed = Self::pack_indices(unit_idx, crate_idx);
-            
-            if self.unit_crate_index.compare_exchange(
-                current,
-                new_packed,
-                Ordering::Relaxed,
-                Ordering::Relaxed,
-            ).is_ok() {
+
+            if self
+                .unit_crate_index
+                .compare_exchange(current, new_packed, Ordering::Relaxed, Ordering::Relaxed)
+                .is_ok()
+            {
                 return;
             }
         }
@@ -529,27 +529,29 @@ impl Symbol {
     /// Sets the crate index, but only if not already set.
     #[inline]
     pub fn set_crate_index(&self, crate_idx: usize) {
-        debug_assert!(crate_idx <= u32::MAX as usize, "crate_index exceeds u32::MAX");
+        debug_assert!(
+            crate_idx <= u32::MAX as usize,
+            "crate_index exceeds u32::MAX"
+        );
         let crate_idx = crate_idx as u32;
-        
+
         loop {
             let current = self.unit_crate_index.load(Ordering::Relaxed);
             let current_crate = Self::unpack_crate_index(current);
-            
+
             // Only set if not already set
             if current_crate != INDEX_NONE {
                 return;
             }
-            
+
             let unit_idx = Self::unpack_unit_index(current);
             let new_packed = Self::pack_indices(unit_idx, crate_idx);
-            
-            if self.unit_crate_index.compare_exchange(
-                current,
-                new_packed,
-                Ordering::Relaxed,
-                Ordering::Relaxed,
-            ).is_ok() {
+
+            if self
+                .unit_crate_index
+                .compare_exchange(current, new_packed, Ordering::Relaxed, Ordering::Relaxed)
+                .is_ok()
+            {
                 return;
             }
         }
