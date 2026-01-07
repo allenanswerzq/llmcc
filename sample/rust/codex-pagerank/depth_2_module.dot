@@ -28,6 +28,23 @@ digraph architecture {
     mod_codex_cli_main[label="main", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/cli/src"];
   }
 
+  subgraph cluster_codex_cloud_tasks {
+    label="codex-cloud-tasks";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_codex_cloud_tasks_lib[label="lib", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/cloud-tasks/src"];
+  }
+
+  subgraph cluster_codex_cloud_tasks_client {
+    label="codex-cloud-tasks-client";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_codex_cloud_tasks_client_api[label="api", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/cloud-tasks-client/src"];
+    mod_codex_cloud_tasks_client_http[label="http", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/cloud-tasks-client/src"];
+  }
+
   subgraph cluster_codex_core {
     label="codex-core";
     style=rounded;
@@ -39,18 +56,19 @@ digraph architecture {
     mod_codex_core_config[label="config", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/config"];
     mod_codex_core_config_loader[label="config_loader", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/config_loader"];
     mod_codex_core_exec[label="exec", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src"];
+    mod_codex_core_features[label="features", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/features"];
     mod_codex_core_rollout[label="rollout", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/rollout"];
     mod_codex_core_skills[label="skills", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/skills"];
     mod_codex_core_tools[label="tools", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/tools"];
     mod_codex_core_unified_exec[label="unified_exec", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/unified_exec"];
   }
 
-  subgraph cluster_codex_login {
-    label="codex-login";
+  subgraph cluster_codex_exec_server {
+    label="codex-exec-server";
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_codex_login_server[label="server", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/login/src"];
+    mod_codex_exec_server_posix[label="posix", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/exec-server/src/posix"];
   }
 
   subgraph cluster_codex_protocol {
@@ -92,6 +110,7 @@ digraph architecture {
     mod_codex_tui2_bottom_pane[label="bottom_pane", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src/bottom_pane"];
     mod_codex_tui2_chatwidget[label="chatwidget", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src"];
     mod_codex_tui2_history_cell[label="history_cell", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src"];
+    mod_codex_tui2_onboarding[label="onboarding", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src/onboarding"];
     mod_codex_tui2_render[label="render", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src/render"];
     mod_codex_tui2_resume_picker[label="resume_picker", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src"];
     mod_codex_tui2_status[label="status", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src/status"];
@@ -108,10 +127,12 @@ digraph architecture {
 
 
   mod_codex_app_server_protocol_export -> mod_mcp_types_lib;
-  mod_codex_app_server_protocol_protocol -> mod_codex_core_config;
   mod_codex_app_server_protocol_protocol -> mod_codex_protocol_models;
   mod_codex_app_server_protocol_protocol -> mod_codex_protocol_protocol;
-  mod_codex_cli_main -> mod_codex_core_config;
+  mod_codex_cli_main -> mod_codex_app_server_protocol_export;
+  mod_codex_cli_main -> mod_codex_core_features;
+  mod_codex_cloud_tasks_client_http -> mod_codex_cloud_tasks_client_api;
+  mod_codex_cloud_tasks_lib -> mod_codex_cloud_tasks_client_api;
   mod_codex_core_codex -> mod_codex_core_config;
   mod_codex_core_codex -> mod_codex_core_tools;
   mod_codex_core_codex -> mod_codex_protocol_models;
@@ -120,11 +141,12 @@ digraph architecture {
   mod_codex_core_config -> mod_codex_app_server_protocol_protocol;
   mod_codex_core_config -> mod_codex_core_auth;
   mod_codex_core_config -> mod_codex_core_config_loader;
+  mod_codex_core_config -> mod_codex_core_features;
   mod_codex_core_config -> mod_codex_protocol_protocol;
   mod_codex_core_config -> mod_codex_rmcp_client_oauth;
   mod_codex_core_config_loader -> mod_codex_app_server_protocol_protocol;
+  mod_codex_core_config_loader -> mod_codex_core_config;
   mod_codex_core_config_loader -> mod_codex_protocol_protocol;
-  mod_codex_core_exec -> mod_codex_app_server_protocol_protocol;
   mod_codex_core_exec -> mod_codex_protocol_protocol;
   mod_codex_core_rollout -> mod_codex_protocol_protocol;
   mod_codex_core_skills -> mod_codex_core_config;
@@ -138,49 +160,46 @@ digraph architecture {
   mod_codex_core_tools -> mod_mcp_types_lib;
   mod_codex_core_unified_exec -> mod_codex_core_codex;
   mod_codex_core_unified_exec -> mod_codex_core_exec;
-  mod_codex_core_unified_exec -> mod_codex_core_tools;
-  mod_codex_login_server -> mod_codex_core_auth;
+  mod_codex_exec_server_posix -> mod_codex_tui2_tui;
   mod_codex_protocol_models -> mod_mcp_types_lib;
   mod_codex_protocol_protocol -> mod_codex_protocol_models;
   mod_codex_protocol_protocol -> mod_mcp_types_lib;
+  mod_codex_tui2_bottom_pane -> mod_codex_core_features;
   mod_codex_tui2_bottom_pane -> mod_codex_core_skills;
   mod_codex_tui2_bottom_pane -> mod_codex_protocol_protocol;
   mod_codex_tui2_bottom_pane -> mod_codex_tui2_render;
   mod_codex_tui2_bottom_pane -> mod_codex_tui2_tui;
-  mod_codex_tui2_bottom_pane -> mod_mcp_types_lib;
   mod_codex_tui2_chatwidget -> mod_codex_app_server_protocol_protocol;
   mod_codex_tui2_chatwidget -> mod_codex_core_auth;
   mod_codex_tui2_chatwidget -> mod_codex_core_config;
   mod_codex_tui2_chatwidget -> mod_codex_core_skills;
   mod_codex_tui2_chatwidget -> mod_codex_protocol_protocol;
-  mod_codex_tui2_chatwidget -> mod_codex_tui2_bottom_pane;
   mod_codex_tui2_chatwidget -> mod_codex_tui2_history_cell;
   mod_codex_tui2_chatwidget -> mod_codex_tui2_tui;
   mod_codex_tui2_history_cell -> mod_codex_core_config;
   mod_codex_tui2_history_cell -> mod_codex_protocol_protocol;
   mod_codex_tui2_history_cell -> mod_mcp_types_lib;
+  mod_codex_tui2_onboarding -> mod_codex_core_auth;
+  mod_codex_tui2_onboarding -> mod_codex_tui2_tui;
   mod_codex_tui2_resume_picker -> mod_codex_core_rollout;
   mod_codex_tui2_resume_picker -> mod_codex_tui2_tui;
   mod_codex_tui2_status -> mod_codex_app_server_protocol_protocol;
   mod_codex_tui2_status -> mod_codex_core_auth;
   mod_codex_tui2_status -> mod_codex_core_config;
   mod_codex_tui2_status -> mod_codex_protocol_protocol;
-  mod_codex_tui2_status -> mod_codex_tui2_chatwidget;
   mod_codex_tui2_status -> mod_codex_tui2_history_cell;
   mod_codex_tui2_tui -> mod_codex_core_config;
+  mod_codex_tui_bottom_pane -> mod_codex_core_features;
   mod_codex_tui_bottom_pane -> mod_codex_core_skills;
   mod_codex_tui_bottom_pane -> mod_codex_protocol_protocol;
   mod_codex_tui_bottom_pane -> mod_codex_tui_render;
   mod_codex_tui_bottom_pane -> mod_codex_tui_tui;
-  mod_codex_tui_bottom_pane -> mod_mcp_types_lib;
   mod_codex_tui_chatwidget -> mod_codex_app_server_protocol_protocol;
   mod_codex_tui_chatwidget -> mod_codex_core_auth;
   mod_codex_tui_chatwidget -> mod_codex_core_config;
   mod_codex_tui_chatwidget -> mod_codex_protocol_protocol;
-  mod_codex_tui_chatwidget -> mod_codex_tui_bottom_pane;
   mod_codex_tui_chatwidget -> mod_codex_tui_history_cell;
   mod_codex_tui_chatwidget -> mod_codex_tui_tui;
-  mod_codex_tui_history_cell -> mod_codex_core_config;
   mod_codex_tui_history_cell -> mod_codex_protocol_protocol;
   mod_codex_tui_history_cell -> mod_mcp_types_lib;
   mod_codex_tui_resume_picker -> mod_codex_core_rollout;
@@ -189,6 +208,5 @@ digraph architecture {
   mod_codex_tui_status -> mod_codex_core_auth;
   mod_codex_tui_status -> mod_codex_core_config;
   mod_codex_tui_status -> mod_codex_protocol_protocol;
-  mod_codex_tui_status -> mod_codex_tui_chatwidget;
   mod_codex_tui_status -> mod_codex_tui_history_cell;
 }

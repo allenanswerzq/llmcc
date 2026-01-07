@@ -20,13 +20,14 @@ digraph architecture {
   crate_lance_io[label="lance-io", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io"];
   crate_lance_jni[label="lance-jni", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni"];
   crate_lance_linalg[label="lance-linalg", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-linalg"];
+  crate_lance_memtest[label="lance-memtest", path="/home/yibai/llmcc/sample/repos/lance/memtest"];
   crate_lance_namespace_impls[label="lance-namespace-impls", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls"];
   crate_lance_table[label="lance-table", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table"];
   crate_pylance[label="pylance", path="/home/yibai/llmcc/sample/repos/lance/python"];
 
   crate_lance -> crate_lance_core;
-  crate_lance -> crate_lance_datafusion;
   crate_lance -> crate_lance_encoding;
+  crate_lance -> crate_lance_file;
   crate_lance -> crate_lance_index;
   crate_lance -> crate_lance_io;
   crate_lance -> crate_lance_jni;
@@ -39,13 +40,16 @@ digraph architecture {
   crate_lance_file -> crate_lance_encoding;
   crate_lance_file -> crate_lance_io;
   crate_lance_index -> crate_lance_core;
+  crate_lance_index -> crate_lance_file;
   crate_lance_index -> crate_lance_io;
   crate_lance_index -> crate_lance_linalg;
   crate_lance_jni -> crate_lance;
+  crate_lance_jni -> crate_lance_namespace_impls;
   crate_lance_namespace_impls -> crate_lance_io;
   crate_lance_table -> crate_lance_io;
   crate_pylance -> crate_lance;
   crate_pylance -> crate_lance_core;
   crate_pylance -> crate_lance_index;
+  crate_pylance -> crate_lance_memtest;
   crate_pylance -> crate_lance_table;
 }

@@ -69,16 +69,20 @@ pub fn handle_response(response: Response) -> bool {
   (func:16 get_user_status
     (parameter:17 user @type:5 User)
     (return:18 @type:7 Status)
+    (@tdep:5 User)
     (@tdep:7 Status)
   )
   (func:19 process_status
     (parameter:20 status @type:7 Status)
     (return:21 @type:10 Response)
+    (@tdep:5 User)
+    (@tdep:7 Status)
     (@tdep:10 Response)
   )
   (func:23 handle_response
     (parameter:24 response @type:10 Response)
     (return:25 @type bool)
+    (@tdep:10 Response)
   )
 )
 
@@ -126,5 +130,6 @@ digraph architecture {
   n7 -> n19 [from="input", to="func"];
   n10 -> n23 [from="input", to="func"];
   n16 -> n7 [from="func", to="output"];
+  n19 -> n5 [from="func", to="type_dep"];
   n19 -> n10 [from="func", to="output"];
 }

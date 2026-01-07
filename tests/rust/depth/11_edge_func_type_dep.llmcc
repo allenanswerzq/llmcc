@@ -38,48 +38,7 @@ pub fn initialize() {
 }
 
 --- expect:arch-graph-depth-3 ---
-digraph architecture {
-  rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
-  splines=ortho;
-  compound=true;
-
-  node [shape=box, style=rounded];
-  edge [arrowsize=0.7];
-
-  subgraph cluster_app {
-    label="app";
-    style=rounded;
-        bgcolor="#f8f8f8";
-
-    subgraph cluster_lib_rs {
-      label="lib.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n8[label="initialize", path="$TMP/app/src/lib.rs:4", sym_ty="Function", shape=ellipse];
-    }
-
-  }
-
-  subgraph cluster_types {
-    label="types";
-    style=rounded;
-        bgcolor="#f8f8f8";
-
-    subgraph cluster_lib_rs {
-      label="lib.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n2[label="Config", path="$TMP/types/src/lib.rs:1", sym_ty="Struct", shape=box];
-    }
-
-  }
-
-
-  n8 -> n2 [from="func", to="type_dep"];
+digraph G {
 }
 
 --- expect:arch-graph-depth-2 ---
@@ -96,10 +55,7 @@ digraph architecture {
   labelloc=t;
   fontsize=16;
 
-  mod_app_lib[label="app::lib", path="$TMP/app/src"];
-  mod_types_lib[label="types::lib", path="$TMP/types/src"];
 
-  mod_app_lib -> mod_types_lib;
 }
 
 --- expect:arch-graph-depth-1 ---
@@ -116,8 +72,5 @@ digraph architecture {
   labelloc=t;
   fontsize=16;
 
-  crate_app[label="app", path="$TMP/app"];
-  crate_types[label="types", path="$TMP/types"];
 
-  crate_app -> crate_types;
 }

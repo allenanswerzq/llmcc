@@ -13,36 +13,20 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n33569[label="assertion", path="/home/yibai/llmcc/sample/repos/opendal/integrations/object_store/src/lib.rs:85", sym_ty="Function", shape=ellipse];
+    }
+
     subgraph cluster_store_rs {
       label="store.rs";
       style=rounded;
             bgcolor="#fafafa";
 
-      n31411[label="OpendalStore", path="/home/yibai/llmcc/sample/repos/opendal/integrations/object_store/src/store.rs:98", sym_ty="Struct", shape=box];
-    }
-
-  }
-
-  subgraph cluster_odev {
-    label="odev";
-    style=rounded;
-        bgcolor="#f8f8f8";
-
-    subgraph cluster_release {
-      label="release";
-      style=rounded;
-            bgcolor="#f5f5f5";
-
-      subgraph cluster_package_rs {
-        label="package.rs";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n1175[label="Package", path="/home/yibai/llmcc/sample/repos/opendal/dev/src/release/package.rs:24", sym_ty="Struct", shape=box];
-        n1256[label="make_package", path="/home/yibai/llmcc/sample/repos/opendal/dev/src/release/package.rs:49", sym_ty="Function", shape=ellipse];
-        n1375[label="update_package_version", path="/home/yibai/llmcc/sample/repos/opendal/dev/src/release/package.rs:94", sym_ty="Function", shape=ellipse];
-      }
-
+      n32[label="OpendalStore", path="/home/yibai/llmcc/sample/repos/opendal/integrations/object_store/src/store.rs:98", sym_ty="Struct", shape=box];
     }
 
   }
@@ -57,8 +41,8 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n18231[label="opendal_code", path="/home/yibai/llmcc/sample/repos/opendal/bindings/c/src/error.rs:27", sym_ty="Enum", shape=box];
-      n18537[label="opendal_error", path="/home/yibai/llmcc/sample/repos/opendal/bindings/c/src/error.rs:96", sym_ty="Struct", shape=box];
+      n44024[label="opendal_code", path="/home/yibai/llmcc/sample/repos/opendal/bindings/c/src/error.rs:27", sym_ty="Enum", shape=box];
+      n44350[label="opendal_error", path="/home/yibai/llmcc/sample/repos/opendal/bindings/c/src/error.rs:96", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_types_rs {
@@ -66,7 +50,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n17[label="opendal_bytes", path="/home/yibai/llmcc/sample/repos/opendal/bindings/c/src/types.rs:32", sym_ty="Struct", shape=box];
+      n38665[label="opendal_bytes", path="/home/yibai/llmcc/sample/repos/opendal/bindings/c/src/types.rs:32", sym_ty="Struct", shape=box];
     }
 
   }
@@ -86,7 +70,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n7162[label="Operator", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/blocking/operator.rs:124", sym_ty="Struct", shape=box];
+        n13202[label="Operator", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/blocking/operator.rs:124", sym_ty="Struct", shape=box];
       }
 
     }
@@ -101,8 +85,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n22618[label="ErrorContextWrapper", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/layers/error_context.rs:190", sym_ty="Struct", shape=box];
-        n21763[label="ErrorContextAccessor", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/layers/error_context.rs:55", sym_ty="Struct", shape=box];
+        n13285[label="ErrorContextWrapper", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/layers/error_context.rs:190", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_simulate_rs {
@@ -110,7 +93,15 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n7928[label="SimulateAccessor", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/layers/simulate.rs:98", sym_ty="Struct", shape=box];
+        n6675[label="SimulateAccessor", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/layers/simulate.rs:98", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_type_eraser_rs {
+        label="type_eraser.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n24942[label="TypeEraseLayer", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/layers/type_eraser.rs:32", sym_ty="Struct", shape=box];
       }
 
     }
@@ -125,9 +116,9 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n39871[label="AccessDyn", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/accessor.rs:264", sym_ty="Trait", shape=box];
-        n38600[label="Access", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/accessor.rs:60", sym_ty="Trait", shape=box];
-        n43532[label="AccessorInfo", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/accessor.rs:615", sym_ty="Struct", shape=box];
+        n2097[label="AccessDyn", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/accessor.rs:264", sym_ty="Trait", shape=box];
+        n22[label="Access", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/accessor.rs:60", sym_ty="Trait", shape=box];
+        n4463[label="AccessorInfo", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/accessor.rs:615", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_bytes_content_range_rs {
@@ -135,7 +126,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n42162[label="BytesContentRange", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/bytes_content_range.rs:50", sym_ty="Struct", shape=box];
+        n23231[label="BytesContentRange", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/bytes_content_range.rs:50", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_bytes_range_rs {
@@ -143,7 +134,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n36591[label="BytesRange", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/bytes_range.rs:42", sym_ty="Struct", shape=box];
+        n18560[label="BytesRange", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/bytes_range.rs:42", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_client_rs {
@@ -151,15 +142,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n37807[label="HttpClient", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/client.rs:61", sym_ty="Struct", shape=box];
-      }
-
-      subgraph cluster_entry_rs {
-        label="entry.rs";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n28409[label="Entry", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/oio/entry.rs:29", sym_ty="Struct", shape=box];
+        n6032[label="HttpClient", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/client.rs:61", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_error_rs {
@@ -167,25 +150,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n27101[label="with_error_response_context", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/error.rs:55", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_futures_util_rs {
-        label="futures_util.rs";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n11906[label="ConcurrentTasks", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/futures_util.rs:111", sym_ty="Struct", shape=box];
-      }
-
-      subgraph cluster_header_rs {
-        label="header.rs";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n10759[label="parse_etag", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/header.rs:102", sym_ty="Function", shape=ellipse];
-        n10835[label="parse_header_to_str", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/header.rs:118", sym_ty="Function", shape=ellipse];
-        n10934[label="parse_into_metadata", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/header.rs:154", sym_ty="Function", shape=ellipse];
+        n33918[label="new_request_build_error", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/error.rs:25", sym_ty="Function", shape=ellipse];
+        n33964[label="new_request_credential_error", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/error.rs:32", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_layer_rs {
@@ -193,8 +159,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n25068[label="LayeredAccess", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/layer.rs:109", sym_ty="Trait", shape=box];
-        n25017[label="Layer", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/layer.rs:98", sym_ty="Trait", shape=box];
+        n6436[label="LayeredAccess", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/layer.rs:109", sym_ty="Trait", shape=box];
+        n6353[label="Layer", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/layer.rs:98", sym_ty="Trait", shape=box];
       }
 
       subgraph cluster_multipart_rs {
@@ -202,8 +168,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n29558[label="MixedPart", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/multipart.rs:254", sym_ty="Struct", shape=box];
-        n31257[label="RelatedPart", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/multipart.rs:527", sym_ty="Struct", shape=box];
+        n37673[label="Part", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/multipart.rs:154", sym_ty="Trait", shape=box];
+        n38268[label="MixedPart", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/multipart.rs:254", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_ops_rs {
@@ -211,10 +177,13 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n41429[label="OpRead", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/ops.rs:307", sym_ty="Struct", shape=box];
-        n42371[label="OpReader", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/ops.rs:433", sym_ty="Struct", shape=box];
-        n43393[label="OpStat", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/ops.rs:558", sym_ty="Struct", shape=box];
-        n43977[label="OpWrite", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/ops.rs:682", sym_ty="Struct", shape=box];
+        n6034[label="OpPresign", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/ops.rs:236", sym_ty="Struct", shape=box];
+        n6223[label="PresignOperation", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/ops.rs:270", sym_ty="Enum", shape=box];
+        n6435[label="OpRead", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/ops.rs:307", sym_ty="Struct", shape=box];
+        n7408[label="OpReader", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/ops.rs:433", sym_ty="Struct", shape=box];
+        n5150[label="OpDelete", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/ops.rs:44", sym_ty="Struct", shape=box];
+        n8010[label="OpStat", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/ops.rs:558", sym_ty="Struct", shape=box];
+        n11302[label="OpWrite", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/ops.rs:682", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_rps_rs {
@@ -222,9 +191,25 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n1003[label="RpStat", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/rps.rs:158", sym_ty="Struct", shape=box];
-        n684[label="RpPresign", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/rps.rs:37", sym_ty="Struct", shape=box];
-        n745[label="PresignedRequest", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/rps.rs:55", sym_ty="Struct", shape=box];
+        n1133[label="RpStat", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/rps.rs:158", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_serde_util_rs {
+        label="serde_util.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n15426[label="new_xml_deserialize_error", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/serde_util.rs:37", sym_ty="Function", shape=ellipse];
+        n15468[label="new_json_serialize_error", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/serde_util.rs:42", sym_ty="Function", shape=ellipse];
+        n15499[label="new_json_deserialize_error", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/serde_util.rs:47", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_std_io_util_rs {
+        label="std_io_util.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n38420[label="new_std_io_error", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/std_io_util.rs:29", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_time_rs {
@@ -232,7 +217,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n40845[label="Timestamp", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/time.rs:34", sym_ty="Struct", shape=box];
+        n2173[label="Timestamp", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/time.rs:34", sym_ty="Struct", shape=box];
       }
 
     }
@@ -247,7 +232,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n26136[label="Execute", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/execute/api.rs:52", sym_ty="Trait", shape=box];
+        n35440[label="Execute", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/execute/api.rs:52", sym_ty="Trait", shape=box];
       }
 
       subgraph cluster_buffer_rs {
@@ -255,7 +240,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n24639[label="Buffer", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/buffer.rs:118", sym_ty="Struct", shape=box];
+        n10682[label="Buffer", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/buffer.rs:118", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_builder_rs {
@@ -263,7 +248,15 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n25173[label="Builder", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/builder.rs:52", sym_ty="Trait", shape=box];
+        n40952[label="Builder", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/builder.rs:52", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_entry_rs {
+        label="entry.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n41337[label="Entry", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/entry.rs:23", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_error_rs {
@@ -271,8 +264,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n7248[label="Error", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/error.rs:223", sym_ty="Struct", shape=box];
-        n6552[label="ErrorKind", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/error.rs:51", sym_ty="Enum", shape=box];
+        n4563[label="Error", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/error.rs:223", sym_ty="Struct", shape=box];
+        n3764[label="ErrorKind", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/error.rs:51", sym_ty="Enum", shape=box];
       }
 
       subgraph cluster_executor_rs {
@@ -280,7 +273,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n13548[label="Executor", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/execute/executor.rs:37", sym_ty="Struct", shape=box];
+        n15537[label="Executor", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/execute/executor.rs:37", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_metadata_rs {
@@ -288,7 +281,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n15944[label="Metadata", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/metadata.rs:48", sym_ty="Struct", shape=box];
+        n18329[label="Metadata", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/metadata.rs:48", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_mode_rs {
@@ -296,7 +289,15 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n38217[label="EntryMode", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/mode.rs:23", sym_ty="Enum", shape=box];
+        n38208[label="EntryMode", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/mode.rs:23", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_operator_rs {
+        label="operator.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n1110[label="Operator", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/operator/operator.rs:146", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_read_rs {
@@ -304,7 +305,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n9260[label="ReadContext", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/context/read.rs:27", sym_ty="Struct", shape=box];
+        n18045[label="ReadContext", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/context/read.rs:27", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_uri_rs {
@@ -312,8 +313,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n29195[label="IntoOperatorUri", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/operator/uri.rs:165", sym_ty="Trait", shape=box];
-        n28580[label="OperatorUri", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/operator/uri.rs:28", sym_ty="Struct", shape=box];
+        n14033[label="IntoOperatorUri", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/operator/uri.rs:165", sym_ty="Trait", shape=box];
+        n13351[label="OperatorUri", path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/operator/uri.rs:28", sym_ty="Struct", shape=box];
       }
 
     }
@@ -335,7 +336,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n31345[label="Metadata", path="/home/yibai/llmcc/sample/repos/opendal/bindings/dart/rust/src/api/opendal_api.rs:96", sym_ty="Struct", shape=box];
+        n44508[label="Operator", path="/home/yibai/llmcc/sample/repos/opendal/bindings/dart/rust/src/api/opendal_api.rs:33", sym_ty="Struct", shape=box];
+        n45148[label="Metadata", path="/home/yibai/llmcc/sample/repos/opendal/bindings/dart/rust/src/api/opendal_api.rs:96", sym_ty="Struct", shape=box];
       }
 
     }
@@ -352,8 +354,8 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n10370[label="FFIResult", path="/home/yibai/llmcc/sample/repos/opendal/bindings/haskell/src/result.rs:26", sym_ty="Struct", shape=box];
-      n10398[label="FFIErrorCode", path="/home/yibai/llmcc/sample/repos/opendal/bindings/haskell/src/result.rs:34", sym_ty="Enum", shape=box];
+      n11804[label="FFIResult", path="/home/yibai/llmcc/sample/repos/opendal/bindings/haskell/src/result.rs:26", sym_ty="Struct", shape=box];
+      n11852[label="FFIErrorCode", path="/home/yibai/llmcc/sample/repos/opendal/bindings/haskell/src/result.rs:34", sym_ty="Enum", shape=box];
     }
 
   }
@@ -368,46 +370,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n33635[label="Error", path="/home/yibai/llmcc/sample/repos/opendal/bindings/java/src/error.rs:27", sym_ty="Struct", shape=box];
-    }
-
-    subgraph cluster_executor_rs {
-      label="executor.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n4323[label="executor_or_default", path="/home/yibai/llmcc/sample/repos/opendal/bindings/java/src/executor.rs:197", sym_ty="Function", shape=ellipse];
-      n3815[label="Executor", path="/home/yibai/llmcc/sample/repos/opendal/bindings/java/src/executor.rs:62", sym_ty="Enum", shape=box];
-    }
-
-  }
-
-  subgraph cluster_opendal_layer_fastrace {
-    label="opendal-layer-fastrace";
-    style=rounded;
-        bgcolor="#f8f8f8";
-
-    subgraph cluster_lib_rs {
-      label="lib.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n38526[label="FastraceAccessor", path="/home/yibai/llmcc/sample/repos/opendal/core/layers/fastrace/src/lib.rs:127", sym_ty="Struct", shape=box];
-    }
-
-  }
-
-  subgraph cluster_opendal_layer_logging {
-    label="opendal-layer-logging";
-    style=rounded;
-        bgcolor="#f8f8f8";
-
-    subgraph cluster_lib_rs {
-      label="lib.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n21846[label="LoggingAccessor", path="/home/yibai/llmcc/sample/repos/opendal/core/layers/logging/src/lib.rs:239", sym_ty="Struct", shape=box];
+      n35931[label="Error", path="/home/yibai/llmcc/sample/repos/opendal/bindings/java/src/error.rs:27", sym_ty="Struct", shape=box];
     }
 
   }
@@ -422,24 +385,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n24077[label="MetricLabels", path="/home/yibai/llmcc/sample/repos/opendal/core/layers/observe-metrics-common/src/lib.rs:208", sym_ty="Struct", shape=box];
-      n26511[label="MetricsAccessor", path="/home/yibai/llmcc/sample/repos/opendal/core/layers/observe-metrics-common/src/lib.rs:597", sym_ty="Struct", shape=box];
-      n27720[label="MetricsWrapper", path="/home/yibai/llmcc/sample/repos/opendal/core/layers/observe-metrics-common/src/lib.rs:868", sym_ty="Struct", shape=box];
-    }
-
-  }
-
-  subgraph cluster_opendal_layer_oteltrace {
-    label="opendal-layer-oteltrace";
-    style=rounded;
-        bgcolor="#f8f8f8";
-
-    subgraph cluster_lib_rs {
-      label="lib.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n36456[label="OtelTraceAccessor", path="/home/yibai/llmcc/sample/repos/opendal/core/layers/oteltrace/src/lib.rs:77", sym_ty="Struct", shape=box];
+      n36381[label="MetricLabels", path="/home/yibai/llmcc/sample/repos/opendal/core/layers/observe-metrics-common/src/lib.rs:208", sym_ty="Struct", shape=box];
     }
 
   }
@@ -454,7 +400,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n35690[label="RetryLayer", path="/home/yibai/llmcc/sample/repos/opendal/core/layers/retry/src/lib.rs:118", sym_ty="Struct", shape=box];
+      n5671[label="RetryLayer", path="/home/yibai/llmcc/sample/repos/opendal/core/layers/retry/src/lib.rs:118", sym_ty="Struct", shape=box];
     }
 
   }
@@ -469,7 +415,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n42746[label="TailCutAccessor", path="/home/yibai/llmcc/sample/repos/opendal/core/layers/tail-cut/src/lib.rs:303", sym_ty="Struct", shape=box];
+      n10715[label="TailCutAccessor", path="/home/yibai/llmcc/sample/repos/opendal/core/layers/tail-cut/src/lib.rs:303", sym_ty="Struct", shape=box];
     }
 
   }
@@ -484,7 +430,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n3034[label="TimeoutAccessor", path="/home/yibai/llmcc/sample/repos/opendal/core/layers/timeout/src/lib.rs:177", sym_ty="Struct", shape=box];
+      n22663[label="TimeoutAccessor", path="/home/yibai/llmcc/sample/repos/opendal/core/layers/timeout/src/lib.rs:177", sym_ty="Struct", shape=box];
     }
 
   }
@@ -499,7 +445,10 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n45330[label="opendal", path="/home/yibai/llmcc/sample/repos/opendal/bindings/lua/src/lib.rs:230", sym_ty="Function", shape=ellipse];
+      n29132[label="operator_stat", path="/home/yibai/llmcc/sample/repos/opendal/bindings/lua/src/lib.rs:200", sym_ty="Function", shape=ellipse];
+      n29302[label="opendal", path="/home/yibai/llmcc/sample/repos/opendal/bindings/lua/src/lib.rs:230", sym_ty="Function", shape=ellipse];
+      n27928[label="ODOperator", path="/home/yibai/llmcc/sample/repos/opendal/bindings/lua/src/lib.rs:33", sym_ty="Struct", shape=box];
+      n27980[label="operator_new", path="/home/yibai/llmcc/sample/repos/opendal/bindings/lua/src/lib.rs:46", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -514,7 +463,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n34185[label="Capability", path="/home/yibai/llmcc/sample/repos/opendal/bindings/nodejs/src/capability.rs:29", sym_ty="Struct", shape=box];
+      n17835[label="Capability", path="/home/yibai/llmcc/sample/repos/opendal/bindings/nodejs/src/capability.rs:29", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_lib_rs {
@@ -522,8 +471,17 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n9939[label="Operator", path="/home/yibai/llmcc/sample/repos/opendal/bindings/nodejs/src/lib.rs:40", sym_ty="Struct", shape=box];
-      n14403[label="Metadata", path="/home/yibai/llmcc/sample/repos/opendal/bindings/nodejs/src/lib.rs:840", sym_ty="Struct", shape=box];
+      n10461[label="format_napi_error", path="/home/yibai/llmcc/sample/repos/opendal/bindings/nodejs/src/lib.rs:1166", sym_ty="Function", shape=ellipse];
+      n8461[label="Entry", path="/home/yibai/llmcc/sample/repos/opendal/bindings/nodejs/src/lib.rs:801", sym_ty="Struct", shape=box];
+      n8698[label="Metadata", path="/home/yibai/llmcc/sample/repos/opendal/bindings/nodejs/src/lib.rs:840", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_options_rs {
+      label="options.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n17618[label="ReaderOptions", path="/home/yibai/llmcc/sample/repos/opendal/bindings/nodejs/src/options.rs:242", sym_ty="Struct", shape=box];
     }
 
   }
@@ -532,14 +490,6 @@ digraph architecture {
     label="opendal-ocaml";
     style=rounded;
         bgcolor="#f8f8f8";
-
-    subgraph cluster_lib_rs {
-      label="lib.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n10750[label="map_res_error", path="/home/yibai/llmcc/sample/repos/opendal/bindings/ocaml/src/lib.rs:42", sym_ty="Function", shape=ellipse];
-    }
 
     subgraph cluster_operator {
       label="operator";
@@ -551,15 +501,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n38947[label="Operator", path="/home/yibai/llmcc/sample/repos/opendal/bindings/ocaml/src/operator/_type.rs:23", sym_ty="Struct", shape=box];
-      }
-
-      subgraph cluster_mod_rs {
-        label="mod.rs";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n9139[label="operator", path="/home/yibai/llmcc/sample/repos/opendal/bindings/ocaml/src/operator/mod.rs:33", sym_ty="Function", shape=ellipse];
+        n39946[label="OperatorInfo", path="/home/yibai/llmcc/sample/repos/opendal/bindings/ocaml/src/operator/_type.rs:47", sym_ty="Struct", shape=box];
       }
 
     }
@@ -576,7 +518,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n24956[label="AsyncOperator", path="/home/yibai/llmcc/sample/repos/opendal/bindings/python/src/operator.rs:715", sym_ty="Struct", shape=box];
+      n31850[label="AsyncOperator", path="/home/yibai/llmcc/sample/repos/opendal/bindings/python/src/operator.rs:715", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_utils_rs {
@@ -584,7 +526,38 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n32057[label="Buffer", path="/home/yibai/llmcc/sample/repos/opendal/bindings/python/src/utils.rs:26", sym_ty="Struct", shape=box];
+      n34372[label="Buffer", path="/home/yibai/llmcc/sample/repos/opendal/bindings/python/src/utils.rs:26", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_opendal_ruby {
+    label="opendal-ruby";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_io_rs {
+      label="io.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n16059[label="include", path="/home/yibai/llmcc/sample/repos/opendal/bindings/ruby/src/io.rs:447", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_middlewares_rs {
+      label="middlewares.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n30321[label="include", path="/home/yibai/llmcc/sample/repos/opendal/bindings/ruby/src/middlewares.rs:152", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_operator_rs {
+      label="operator.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n29685[label="include", path="/home/yibai/llmcc/sample/repos/opendal/bindings/ruby/src/operator.rs:292", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -599,7 +572,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n1559[label="AliyunDriveBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/aliyun-drive/src/backend.rs:40", sym_ty="Struct", shape=box];
+      n12900[label="AliyunDriveBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/aliyun-drive/src/backend.rs:40", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_core_rs {
@@ -607,7 +580,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n14891[label="AliyunDriveCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/aliyun-drive/src/core.rs:62", sym_ty="Struct", shape=box];
+      n3300[label="AliyunDriveCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/aliyun-drive/src/core.rs:62", sym_ty="Struct", shape=box];
     }
 
   }
@@ -622,7 +595,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n5717[label="AlluxioCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/alluxio/src/core.rs:34", sym_ty="Struct", shape=box];
+      n4282[label="AlluxioCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/alluxio/src/core.rs:34", sym_ty="Struct", shape=box];
     }
 
   }
@@ -637,7 +610,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n12349[label="AzblobBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azblob/src/backend.rs:64", sym_ty="Struct", shape=box];
+      n14477[label="AzblobBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azblob/src/backend.rs:64", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_core_rs {
@@ -645,15 +618,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n16716[label="AzblobCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azblob/src/core.rs:64", sym_ty="Struct", shape=box];
-    }
-
-    subgraph cluster_writer_rs {
-      label="writer.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n4426[label="AzblobWriter", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azblob/src/writer.rs:33", sym_ty="Struct", shape=box];
+      n2740[label="AzblobCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azblob/src/core.rs:64", sym_ty="Struct", shape=box];
     }
 
   }
@@ -668,7 +633,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n6733[label="AzdlsBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azdls/src/backend.rs:62", sym_ty="Struct", shape=box];
+      n17475[label="AzdlsBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azdls/src/backend.rs:62", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_core_rs {
@@ -676,7 +641,16 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n28684[label="AzdlsCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azdls/src/core.rs:44", sym_ty="Struct", shape=box];
+      n28191[label="AzdlsCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azdls/src/core.rs:44", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_lister_rs {
+      label="lister.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n43761[label="Output", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azdls/src/lister.rs:119", sym_ty="Struct", shape=box];
+      n43791[label="Path", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azdls/src/lister.rs:125", sym_ty="Struct", shape=box];
     }
 
   }
@@ -691,7 +665,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n35683[label="AzfileBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azfile/src/backend.rs:59", sym_ty="Struct", shape=box];
+      n29716[label="AzfileBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azfile/src/backend.rs:59", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_core_rs {
@@ -699,7 +673,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n11132[label="AzfileCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azfile/src/core.rs:47", sym_ty="Struct", shape=box];
+      n21645[label="AzfileCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/azfile/src/core.rs:47", sym_ty="Struct", shape=box];
     }
 
   }
@@ -709,20 +683,12 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_backend_rs {
-      label="backend.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n316[label="B2Builder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/b2/src/backend.rs:44", sym_ty="Struct", shape=box];
-    }
-
     subgraph cluster_core_rs {
       label="core.rs";
       style=rounded;
             bgcolor="#fafafa";
 
-      n15372[label="B2Core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/b2/src/core.rs:47", sym_ty="Struct", shape=box];
+      n19527[label="B2Core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/b2/src/core.rs:47", sym_ty="Struct", shape=box];
     }
 
   }
@@ -732,20 +698,27 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_backend_rs {
-      label="backend.rs";
+    subgraph cluster_core_rs {
+      label="core.rs";
       style=rounded;
             bgcolor="#fafafa";
 
-      n2621[label="CloudflareKvBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cloudflare-kv/src/backend.rs:37", sym_ty="Struct", shape=box];
+      n42964[label="CloudflareKvCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cloudflare-kv/src/core.rs:31", sym_ty="Struct", shape=box];
     }
+
+  }
+
+  subgraph cluster_opendal_service_compfs {
+    label="opendal-service-compfs";
+    style=rounded;
+        bgcolor="#f8f8f8";
 
     subgraph cluster_core_rs {
       label="core.rs";
       style=rounded;
             bgcolor="#fafafa";
 
-      n24797[label="CloudflareKvCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cloudflare-kv/src/core.rs:31", sym_ty="Struct", shape=box];
+      n40716[label="CompfsCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/compfs/src/core.rs:66", sym_ty="Struct", shape=box];
     }
 
   }
@@ -760,7 +733,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n25583[label="CosBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cos/src/backend.rs:48", sym_ty="Struct", shape=box];
+      n32977[label="CosBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cos/src/backend.rs:48", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_core_rs {
@@ -768,7 +741,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n28780[label="CosCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cos/src/core.rs:50", sym_ty="Struct", shape=box];
+      n8719[label="CosCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/cos/src/core.rs:50", sym_ty="Struct", shape=box];
     }
 
   }
@@ -783,7 +756,15 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n23471[label="D1Builder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/d1/src/backend.rs:31", sym_ty="Struct", shape=box];
+      n4577[label="D1Builder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/d1/src/backend.rs:31", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_core_rs {
+      label="core.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n43527[label="D1Core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/d1/src/core.rs:31", sym_ty="Struct", shape=box];
     }
 
   }
@@ -798,7 +779,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n17606[label="DbfsCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dbfs/src/core.rs:33", sym_ty="Struct", shape=box];
+      n36016[label="DbfsCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dbfs/src/core.rs:33", sym_ty="Struct", shape=box];
     }
 
   }
@@ -808,28 +789,12 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_builder_rs {
-      label="builder.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n18618[label="DropboxBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dropbox/src/builder.rs:34", sym_ty="Struct", shape=box];
-    }
-
     subgraph cluster_core_rs {
       label="core.rs";
       style=rounded;
             bgcolor="#fafafa";
 
-      n5532[label="DropboxCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dropbox/src/core.rs:37", sym_ty="Struct", shape=box];
-    }
-
-    subgraph cluster_error_rs {
-      label="error.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n2388[label="parse_error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dropbox/src/error.rs:32", sym_ty="Function", shape=ellipse];
+      n24371[label="DropboxCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/dropbox/src/core.rs:37", sym_ty="Struct", shape=box];
     }
 
   }
@@ -844,7 +809,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n25064[label="EtcdBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/etcd/src/backend.rs:38", sym_ty="Struct", shape=box];
+      n15618[label="EtcdBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/etcd/src/backend.rs:38", sym_ty="Struct", shape=box];
     }
 
   }
@@ -859,7 +824,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n30743[label="FsCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/fs/src/core.rs:29", sym_ty="Struct", shape=box];
+      n14805[label="FsCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/fs/src/core.rs:29", sym_ty="Struct", shape=box];
     }
 
   }
@@ -874,7 +839,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n9342[label="GcsBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gcs/src/backend.rs:49", sym_ty="Struct", shape=box];
+      n17986[label="GcsBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gcs/src/backend.rs:49", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_core_rs {
@@ -882,7 +847,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n29928[label="GcsCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gcs/src/core.rs:59", sym_ty="Struct", shape=box];
+      n37662[label="GcsCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gcs/src/core.rs:59", sym_ty="Struct", shape=box];
     }
 
   }
@@ -892,20 +857,12 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_builder_rs {
-      label="builder.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n15840[label="GdriveBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gdrive/src/builder.rs:36", sym_ty="Struct", shape=box];
-    }
-
     subgraph cluster_core_rs {
       label="core.rs";
       style=rounded;
             bgcolor="#fafafa";
 
-      n20128[label="GdriveCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gdrive/src/core.rs:35", sym_ty="Struct", shape=box];
+      n20495[label="GdriveCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/gdrive/src/core.rs:35", sym_ty="Struct", shape=box];
     }
 
   }
@@ -920,7 +877,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n19372[label="GithubCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/github/src/core.rs:38", sym_ty="Struct", shape=box];
+      n9993[label="GithubCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/github/src/core.rs:38", sym_ty="Struct", shape=box];
     }
 
   }
@@ -935,22 +892,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n32567[label="HdfsBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/hdfs/src/backend.rs:35", sym_ty="Struct", shape=box];
-    }
-
-  }
-
-  subgraph cluster_opendal_service_http {
-    label="opendal-service-http";
-    style=rounded;
-        bgcolor="#f8f8f8";
-
-    subgraph cluster_backend_rs {
-      label="backend.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n43399[label="HttpBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/http/src/backend.rs:35", sym_ty="Struct", shape=box];
+      n14959[label="HdfsBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/hdfs/src/backend.rs:35", sym_ty="Struct", shape=box];
     }
 
   }
@@ -965,7 +907,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n16142[label="HuggingfaceBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/huggingface/src/backend.rs:37", sym_ty="Struct", shape=box];
+      n17868[label="HuggingfaceBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/huggingface/src/backend.rs:37", sym_ty="Struct", shape=box];
     }
 
   }
@@ -980,7 +922,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n31878[label="IpmfsCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ipmfs/src/core.rs:28", sym_ty="Struct", shape=box];
+      n44983[label="IpmfsCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/ipmfs/src/core.rs:28", sym_ty="Struct", shape=box];
     }
 
   }
@@ -995,7 +937,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n16215[label="KoofrCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/koofr/src/core.rs:39", sym_ty="Struct", shape=box];
+      n27432[label="KoofrCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/koofr/src/core.rs:39", sym_ty="Struct", shape=box];
     }
 
   }
@@ -1010,7 +952,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n40552[label="LakefsBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/lakefs/src/backend.rs:39", sym_ty="Struct", shape=box];
+      n7997[label="LakefsBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/lakefs/src/backend.rs:39", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_core_rs {
@@ -1018,7 +960,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n36937[label="LakefsCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/lakefs/src/core.rs:29", sym_ty="Struct", shape=box];
+      n13[label="LakefsCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/lakefs/src/core.rs:29", sym_ty="Struct", shape=box];
     }
 
   }
@@ -1033,7 +975,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n44123[label="MemcachedBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/memcached/src/backend.rs:32", sym_ty="Struct", shape=box];
+      n24448[label="MemcachedBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/memcached/src/backend.rs:32", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_binary_rs {
@@ -1041,7 +983,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n42182[label="Response", path="/home/yibai/llmcc/sample/repos/opendal/core/services/memcached/src/binary.rs:92", sym_ty="Struct", shape=box];
+      n14597[label="Response", path="/home/yibai/llmcc/sample/repos/opendal/core/services/memcached/src/binary.rs:92", sym_ty="Struct", shape=box];
     }
 
   }
@@ -1056,7 +998,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n3824[label="MokaBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/moka/src/backend.rs:40", sym_ty="Struct", shape=box];
+      n2518[label="MokaBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/moka/src/backend.rs:40", sym_ty="Struct", shape=box];
     }
 
   }
@@ -1071,7 +1013,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n22361[label="MongodbBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/mongodb/src/backend.rs:32", sym_ty="Struct", shape=box];
+      n2996[label="MongodbBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/mongodb/src/backend.rs:32", sym_ty="Struct", shape=box];
     }
 
   }
@@ -1086,7 +1028,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n11638[label="MonoiofsCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/monoiofs/src/core.rs:40", sym_ty="Struct", shape=box];
+      n10081[label="MonoiofsCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/monoiofs/src/core.rs:40", sym_ty="Struct", shape=box];
     }
 
   }
@@ -1101,7 +1043,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n24018[label="ObsBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/obs/src/backend.rs:45", sym_ty="Struct", shape=box];
+      n30620[label="ObsBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/obs/src/backend.rs:45", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_core_rs {
@@ -1109,7 +1051,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n1071[label="ObsCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/obs/src/core.rs:44", sym_ty="Struct", shape=box];
+      n60[label="ObsCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/obs/src/core.rs:44", sym_ty="Struct", shape=box];
     }
 
   }
@@ -1124,7 +1066,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n42515[label="OnedriveBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/onedrive/src/builder.rs:35", sym_ty="Struct", shape=box];
+      n26126[label="OnedriveBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/onedrive/src/builder.rs:35", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_core_rs {
@@ -1132,7 +1074,22 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n23[label="OneDriveCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/onedrive/src/core.rs:36", sym_ty="Struct", shape=box];
+      n12[label="OneDriveCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/onedrive/src/core.rs:36", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_opendal_service_opfs {
+    label="opendal-service-opfs";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_error_rs {
+      label="error.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n36004[label="parse_js_error", path="/home/yibai/llmcc/sample/repos/opendal/core/services/opfs/src/error.rs:23", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -1147,7 +1104,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n23160[label="OssBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/oss/src/backend.rs:47", sym_ty="Struct", shape=box];
+      n24317[label="OssBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/oss/src/backend.rs:47", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_core_rs {
@@ -1155,7 +1112,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n4798[label="OssCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/oss/src/core.rs:63", sym_ty="Struct", shape=box];
+      n1127[label="OssCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/oss/src/core.rs:63", sym_ty="Struct", shape=box];
     }
 
   }
@@ -1170,7 +1127,22 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n13873[label="PcloudCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/pcloud/src/core.rs:34", sym_ty="Struct", shape=box];
+      n24733[label="PcloudCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/pcloud/src/core.rs:34", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_opendal_service_redb {
+    label="opendal-service-redb";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_core_rs {
+      label="core.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n45041[label="create_table", path="/home/yibai/llmcc/sample/repos/opendal/core/services/redb/src/core.rs:123", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -1185,7 +1157,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n25943[label="RedisBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/redis/src/backend.rs:44", sym_ty="Struct", shape=box];
+      n19250[label="RedisBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/redis/src/backend.rs:44", sym_ty="Struct", shape=box];
     }
 
   }
@@ -1200,7 +1172,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n31591[label="S3Builder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/s3/src/backend.rs:82", sym_ty="Struct", shape=box];
+      n29976[label="S3Builder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/s3/src/backend.rs:82", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_core_rs {
@@ -1208,15 +1180,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n15261[label="S3Core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/s3/src/core.rs:85", sym_ty="Struct", shape=box];
-    }
-
-    subgraph cluster_writer_rs {
-      label="writer.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n26378[label="S3Writer", path="/home/yibai/llmcc/sample/repos/opendal/core/services/s3/src/writer.rs:34", sym_ty="Struct", shape=box];
+      n15148[label="S3Core", path="/home/yibai/llmcc/sample/repos/opendal/core/services/s3/src/core.rs:85", sym_ty="Struct", shape=box];
     }
 
   }
@@ -1226,20 +1190,12 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_backend_rs {
-      label="backend.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n37654[label="SeafileBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/seafile/src/backend.rs:43", sym_ty="Struct", shape=box];
-    }
-
     subgraph cluster_core_rs {
       label="core.rs";
       style=rounded;
             bgcolor="#fafafa";
 
-      n14491[label="SeafileCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/seafile/src/core.rs:36", sym_ty="Struct", shape=box];
+      n31175[label="SeafileCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/seafile/src/core.rs:36", sym_ty="Struct", shape=box];
     }
 
   }
@@ -1254,22 +1210,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n1787[label="SftpBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/sftp/src/backend.rs:52", sym_ty="Struct", shape=box];
-    }
-
-  }
-
-  subgraph cluster_opendal_service_sqlite {
-    label="opendal-service-sqlite";
-    style=rounded;
-        bgcolor="#f8f8f8";
-
-    subgraph cluster_backend_rs {
-      label="backend.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n465[label="SqliteBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/sqlite/src/backend.rs:35", sym_ty="Struct", shape=box];
+      n1214[label="SftpBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/sftp/src/backend.rs:52", sym_ty="Struct", shape=box];
     }
 
   }
@@ -1284,7 +1225,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n40535[label="SurrealdbBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/surrealdb/src/backend.rs:33", sym_ty="Struct", shape=box];
+      n12360[label="SurrealdbBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/surrealdb/src/backend.rs:33", sym_ty="Struct", shape=box];
     }
 
   }
@@ -1299,7 +1240,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n44143[label="SwiftCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/swift/src/core.rs:29", sym_ty="Struct", shape=box];
+      n11133[label="SwiftCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/swift/src/core.rs:29", sym_ty="Struct", shape=box];
     }
 
   }
@@ -1314,7 +1255,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n18802[label="UpyunCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/upyun/src/core.rs:57", sym_ty="Struct", shape=box];
+      n30359[label="UpyunCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/upyun/src/core.rs:57", sym_ty="Struct", shape=box];
     }
 
   }
@@ -1329,7 +1270,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n18735[label="VercelBlobCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/vercel-blob/src/core.rs:58", sym_ty="Struct", shape=box];
+      n24592[label="VercelBlobCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/vercel-blob/src/core.rs:58", sym_ty="Struct", shape=box];
     }
 
   }
@@ -1344,7 +1285,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n23315[label="WebdavBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/webdav/src/backend.rs:40", sym_ty="Struct", shape=box];
+      n13918[label="WebdavBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/webdav/src/backend.rs:40", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_core_rs {
@@ -1352,7 +1293,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n18791[label="WebdavCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/webdav/src/core.rs:86", sym_ty="Struct", shape=box];
+      n17838[label="WebdavCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/webdav/src/core.rs:86", sym_ty="Struct", shape=box];
     }
 
   }
@@ -1367,7 +1308,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n33322[label="WebhdfsBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/webhdfs/src/backend.rs:47", sym_ty="Struct", shape=box];
+      n23651[label="WebhdfsBuilder", path="/home/yibai/llmcc/sample/repos/opendal/core/services/webhdfs/src/backend.rs:47", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_core_rs {
@@ -1375,7 +1316,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n29420[label="WebhdfsCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/webhdfs/src/core.rs:34", sym_ty="Struct", shape=box];
+      n23170[label="WebhdfsCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/webhdfs/src/core.rs:34", sym_ty="Struct", shape=box];
     }
 
   }
@@ -1390,140 +1331,134 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n37584[label="YandexDiskCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/yandex-disk/src/core.rs:34", sym_ty="Struct", shape=box];
+      n20171[label="YandexDiskCore", path="/home/yibai/llmcc/sample/repos/opendal/core/services/yandex-disk/src/core.rs:34", sym_ty="Struct", shape=box];
     }
 
   }
 
 
-  n17 -> n18537 [from="field_type", to="struct"];
-  n745 -> n684 [from="field_type", to="struct"];
-  n1175 -> n1256 [from="input", to="func"];
-  n1175 -> n1375 [from="input", to="func"];
-  n1256 -> n1175 [from="func", to="output"];
-  n2388 -> n27101 [from="caller", to="callee"];
-  n2388 -> n33635 [from="func", to="output"];
-  n3815 -> n4323 [from="input", to="func"];
-  n6552 -> n7248 [from="field_type", to="struct"];
-  n6552 -> n24077 [from="type_dep", to="struct"];
-  n7248 -> n27101 [from="input", to="func"];
-  n9139 -> n10750 [from="caller", to="callee"];
-  n9139 -> n38947 [from="func", to="type_dep"];
-  n9939 -> n31411 [from="field_type", to="struct"];
-  n10398 -> n10370 [from="field_type", to="struct"];
-  n10759 -> n10835 [from="caller", to="callee"];
-  n10934 -> n10759 [from="caller", to="callee"];
-  n10934 -> n15944 [from="func", to="type_dep"];
-  n13548 -> n11906 [from="field_type", to="struct"];
-  n15261 -> n26378 [from="type_dep", to="struct"];
-  n15944 -> n1003 [from="field_type", to="struct"];
-  n15944 -> n28409 [from="field_type", to="struct"];
-  n16716 -> n4426 [from="type_dep", to="struct"];
-  n18231 -> n18537 [from="field_type", to="struct"];
-  n24077 -> n27720 [from="field_type", to="struct"];
-  n24639 -> n11906 [from="type_arg", to="generic"];
-  n24639 -> n16215 [from="type_dep", to="struct"];
-  n24639 -> n29558 [from="type_arg", to="impl"];
-  n24639 -> n31257 [from="type_arg", to="impl"];
-  n24956 -> n7162 [from="field_type", to="struct"];
-  n25017 -> n35690 [from="trait", to="impl"];
-  n25068 -> n3034 [from="trait", to="impl"];
-  n25068 -> n7928 [from="trait", to="impl"];
-  n25068 -> n21763 [from="trait", to="impl"];
-  n25068 -> n21846 [from="trait", to="impl"];
-  n25068 -> n26511 [from="trait", to="impl"];
-  n25068 -> n36456 [from="trait", to="impl"];
-  n25068 -> n38526 [from="trait", to="impl"];
-  n25068 -> n42746 [from="trait", to="impl"];
-  n25173 -> n316 [from="trait", to="impl"];
-  n25173 -> n465 [from="trait", to="impl"];
-  n25173 -> n1559 [from="trait", to="impl"];
-  n25173 -> n1787 [from="trait", to="impl"];
-  n25173 -> n2621 [from="trait", to="impl"];
-  n25173 -> n3824 [from="trait", to="impl"];
-  n25173 -> n6733 [from="trait", to="impl"];
-  n25173 -> n9342 [from="trait", to="impl"];
-  n25173 -> n12349 [from="trait", to="impl"];
-  n25173 -> n15840 [from="trait", to="impl"];
-  n25173 -> n16142 [from="trait", to="impl"];
-  n25173 -> n18618 [from="trait", to="impl"];
-  n25173 -> n22361 [from="trait", to="impl"];
-  n25173 -> n23160 [from="trait", to="impl"];
-  n25173 -> n23315 [from="trait", to="impl"];
-  n25173 -> n23471 [from="trait", to="impl"];
-  n25173 -> n24018 [from="trait", to="impl"];
-  n25173 -> n25064 [from="trait", to="impl"];
-  n25173 -> n25583 [from="trait", to="impl"];
-  n25173 -> n25943 [from="trait", to="impl"];
-  n25173 -> n31591 [from="trait", to="impl"];
-  n25173 -> n32567 [from="trait", to="impl"];
-  n25173 -> n33322 [from="trait", to="impl"];
-  n25173 -> n35683 [from="trait", to="impl"];
-  n25173 -> n37654 [from="trait", to="impl"];
-  n25173 -> n40535 [from="trait", to="impl"];
-  n25173 -> n40552 [from="trait", to="impl"];
-  n25173 -> n42515 [from="trait", to="impl"];
-  n25173 -> n43399 [from="trait", to="impl"];
-  n25173 -> n44123 [from="trait", to="impl"];
-  n26136 -> n13548 [from="bound", to="generic"];
-  n26136 -> n13548 [from="field_type", to="struct"];
-  n27101 -> n7248 [from="func", to="output"];
-  n29195 -> n28580 [from="trait", to="impl"];
-  n32057 -> n18802 [from="type_dep", to="struct"];
-  n36591 -> n22618 [from="field_type", to="struct"];
-  n36591 -> n41429 [from="field_type", to="struct"];
-  n37807 -> n17606 [from="field_type", to="struct"];
-  n38217 -> n15944 [from="field_type", to="struct"];
-  n38600 -> n7928 [from="type_arg", to="generic"];
-  n38600 -> n25017 [from="bound", to="generic"];
-  n38600 -> n25068 [from="trait", to="impl"];
-  n38600 -> n39871 [from="trait", to="impl"];
-  n40845 -> n15944 [from="type_dep", to="struct"];
-  n40845 -> n41429 [from="type_dep", to="struct"];
-  n40845 -> n43393 [from="type_dep", to="struct"];
-  n41429 -> n9260 [from="field_type", to="struct"];
-  n42162 -> n15944 [from="type_dep", to="struct"];
-  n42182 -> n2388 [from="input", to="func"];
-  n42182 -> n16215 [from="type_dep", to="struct"];
-  n42182 -> n18802 [from="type_dep", to="struct"];
-  n42371 -> n9260 [from="field_type", to="struct"];
-  n43532 -> n23 [from="type_dep", to="struct"];
-  n43532 -> n1071 [from="type_dep", to="struct"];
-  n43532 -> n4798 [from="type_dep", to="struct"];
-  n43532 -> n5532 [from="type_dep", to="struct"];
-  n43532 -> n5717 [from="type_dep", to="struct"];
-  n43532 -> n7928 [from="type_dep", to="struct"];
-  n43532 -> n11132 [from="type_dep", to="struct"];
-  n43532 -> n11638 [from="type_dep", to="struct"];
-  n43532 -> n13873 [from="type_dep", to="struct"];
-  n43532 -> n14491 [from="type_dep", to="struct"];
-  n43532 -> n14891 [from="type_dep", to="struct"];
-  n43532 -> n15261 [from="type_dep", to="struct"];
-  n43532 -> n15372 [from="type_dep", to="struct"];
-  n43532 -> n16215 [from="type_dep", to="struct"];
-  n43532 -> n16716 [from="type_dep", to="struct"];
-  n43532 -> n18735 [from="type_dep", to="struct"];
-  n43532 -> n18791 [from="type_dep", to="struct"];
-  n43532 -> n18802 [from="type_dep", to="struct"];
-  n43532 -> n19372 [from="type_dep", to="struct"];
-  n43532 -> n20128 [from="type_dep", to="struct"];
-  n43532 -> n21763 [from="type_dep", to="struct"];
-  n43532 -> n21846 [from="type_dep", to="struct"];
-  n43532 -> n24797 [from="type_dep", to="struct"];
-  n43532 -> n26511 [from="type_dep", to="struct"];
-  n43532 -> n28684 [from="type_dep", to="struct"];
-  n43532 -> n28780 [from="type_dep", to="struct"];
-  n43532 -> n29420 [from="type_dep", to="struct"];
-  n43532 -> n29928 [from="type_dep", to="struct"];
-  n43532 -> n30743 [from="type_dep", to="struct"];
-  n43532 -> n31878 [from="type_dep", to="struct"];
-  n43532 -> n36937 [from="type_dep", to="struct"];
-  n43532 -> n37584 [from="type_dep", to="struct"];
-  n43532 -> n44143 [from="type_dep", to="struct"];
-  n43977 -> n4426 [from="field_type", to="struct"];
-  n43977 -> n26378 [from="field_type", to="struct"];
-  n45330 -> n9139 [from="caller", to="callee"];
-  n45330 -> n14403 [from="field_type", to="struct"];
-  n45330 -> n31345 [from="field_type", to="struct"];
-  n45330 -> n34185 [from="field_type", to="struct"];
+  n22 -> n2097 [from="trait", to="impl"];
+  n22 -> n6353 [from="bound", to="generic"];
+  n22 -> n6436 [from="trait", to="impl"];
+  n22 -> n6675 [from="type_arg", to="generic"];
+  n2173 -> n6435 [from="type_dep", to="struct"];
+  n2173 -> n8010 [from="type_dep", to="struct"];
+  n2173 -> n18329 [from="type_dep", to="struct"];
+  n3764 -> n4563 [from="field_type", to="struct"];
+  n3764 -> n36381 [from="type_dep", to="struct"];
+  n4463 -> n12 [from="type_dep", to="struct"];
+  n4463 -> n13 [from="type_dep", to="struct"];
+  n4463 -> n60 [from="type_dep", to="struct"];
+  n4463 -> n1127 [from="type_dep", to="struct"];
+  n4463 -> n2740 [from="type_dep", to="struct"];
+  n4463 -> n3300 [from="type_dep", to="struct"];
+  n4463 -> n4282 [from="type_dep", to="struct"];
+  n4463 -> n6675 [from="type_dep", to="struct"];
+  n4463 -> n8719 [from="type_dep", to="struct"];
+  n4463 -> n9993 [from="type_dep", to="struct"];
+  n4463 -> n10081 [from="type_dep", to="struct"];
+  n4463 -> n11133 [from="type_dep", to="struct"];
+  n4463 -> n14805 [from="type_dep", to="struct"];
+  n4463 -> n15148 [from="type_dep", to="struct"];
+  n4463 -> n17838 [from="type_dep", to="struct"];
+  n4463 -> n19527 [from="type_dep", to="struct"];
+  n4463 -> n20171 [from="type_dep", to="struct"];
+  n4463 -> n20495 [from="type_dep", to="struct"];
+  n4463 -> n21645 [from="type_dep", to="struct"];
+  n4463 -> n23170 [from="type_dep", to="struct"];
+  n4463 -> n24371 [from="type_dep", to="struct"];
+  n4463 -> n24592 [from="type_dep", to="struct"];
+  n4463 -> n24733 [from="type_dep", to="struct"];
+  n4463 -> n27432 [from="type_dep", to="struct"];
+  n4463 -> n28191 [from="type_dep", to="struct"];
+  n4463 -> n30359 [from="type_dep", to="struct"];
+  n4463 -> n31175 [from="type_dep", to="struct"];
+  n4463 -> n37662 [from="type_dep", to="struct"];
+  n4463 -> n40716 [from="type_dep", to="struct"];
+  n4463 -> n42964 [from="type_dep", to="struct"];
+  n4463 -> n44983 [from="type_dep", to="struct"];
+  n5150 -> n6223 [from="field_type", to="enum"];
+  n6032 -> n36016 [from="field_type", to="struct"];
+  n6032 -> n43527 [from="field_type", to="struct"];
+  n6223 -> n6034 [from="field_type", to="struct"];
+  n6353 -> n5671 [from="trait", to="impl"];
+  n6353 -> n24942 [from="trait", to="impl"];
+  n6435 -> n6223 [from="field_type", to="enum"];
+  n6435 -> n18045 [from="field_type", to="struct"];
+  n6436 -> n6675 [from="trait", to="impl"];
+  n6436 -> n10715 [from="trait", to="impl"];
+  n6436 -> n22663 [from="trait", to="impl"];
+  n7408 -> n18045 [from="field_type", to="struct"];
+  n8010 -> n6223 [from="field_type", to="enum"];
+  n10461 -> n4563 [from="func", to="output"];
+  n10682 -> n38268 [from="type_arg", to="impl"];
+  n11302 -> n6223 [from="field_type", to="enum"];
+  n11852 -> n11804 [from="field_type", to="struct"];
+  n13351 -> n1110 [from="base", to="extends"];
+  n14033 -> n13351 [from="trait", to="impl"];
+  n14597 -> n27432 [from="type_dep", to="struct"];
+  n14597 -> n30359 [from="type_dep", to="struct"];
+  n15426 -> n4563 [from="func", to="output"];
+  n15468 -> n4563 [from="func", to="output"];
+  n15499 -> n4563 [from="func", to="output"];
+  n16059 -> n4563 [from="func", to="type_dep"];
+  n17618 -> n6435 [from="type_arg", to="impl"];
+  n18329 -> n1133 [from="field_type", to="struct"];
+  n18329 -> n41337 [from="field_type", to="struct"];
+  n18560 -> n6435 [from="field_type", to="struct"];
+  n18560 -> n13285 [from="field_type", to="struct"];
+  n23231 -> n18329 [from="type_dep", to="struct"];
+  n27980 -> n29132 [from="caller", to="callee"];
+  n27980 -> n45041 [from="caller", to="callee"];
+  n29132 -> n27928 [from="func", to="type_dep"];
+  n29132 -> n45041 [from="caller", to="callee"];
+  n29302 -> n8461 [from="field_type", to="struct"];
+  n29302 -> n8698 [from="field_type", to="struct"];
+  n29302 -> n17835 [from="field_type", to="struct"];
+  n29302 -> n27980 [from="caller", to="callee"];
+  n29302 -> n45041 [from="caller", to="callee"];
+  n29302 -> n45148 [from="field_type", to="struct"];
+  n29685 -> n35931 [from="func", to="type_dep"];
+  n30321 -> n35931 [from="func", to="type_dep"];
+  n31850 -> n13202 [from="field_type", to="struct"];
+  n33569 -> n13202 [from="func", to="type_dep"];
+  n33918 -> n4563 [from="func", to="output"];
+  n33964 -> n4563 [from="func", to="output"];
+  n34372 -> n27432 [from="type_dep", to="struct"];
+  n34372 -> n30359 [from="type_dep", to="struct"];
+  n35440 -> n15537 [from="bound", to="generic"];
+  n35440 -> n15537 [from="field_type", to="struct"];
+  n36004 -> n4563 [from="func", to="output"];
+  n37673 -> n38268 [from="trait", to="impl"];
+  n38208 -> n18329 [from="field_type", to="struct"];
+  n38420 -> n4563 [from="func", to="output"];
+  n38665 -> n34372 [from="type_arg", to="impl"];
+  n38665 -> n44350 [from="field_type", to="struct"];
+  n39946 -> n32 [from="type_dep", to="struct"];
+  n40952 -> n1214 [from="trait", to="impl"];
+  n40952 -> n2518 [from="trait", to="impl"];
+  n40952 -> n2996 [from="trait", to="impl"];
+  n40952 -> n4577 [from="trait", to="impl"];
+  n40952 -> n7997 [from="trait", to="impl"];
+  n40952 -> n12360 [from="trait", to="impl"];
+  n40952 -> n12900 [from="trait", to="impl"];
+  n40952 -> n13918 [from="trait", to="impl"];
+  n40952 -> n14477 [from="trait", to="impl"];
+  n40952 -> n14959 [from="trait", to="impl"];
+  n40952 -> n15618 [from="trait", to="impl"];
+  n40952 -> n17475 [from="trait", to="impl"];
+  n40952 -> n17868 [from="trait", to="impl"];
+  n40952 -> n17986 [from="trait", to="impl"];
+  n40952 -> n19250 [from="trait", to="impl"];
+  n40952 -> n23651 [from="trait", to="impl"];
+  n40952 -> n24317 [from="trait", to="impl"];
+  n40952 -> n24448 [from="trait", to="impl"];
+  n40952 -> n26126 [from="trait", to="impl"];
+  n40952 -> n29716 [from="trait", to="impl"];
+  n40952 -> n29976 [from="trait", to="impl"];
+  n40952 -> n30620 [from="trait", to="impl"];
+  n40952 -> n32977 [from="trait", to="impl"];
+  n43791 -> n43761 [from="type_dep", to="struct"];
+  n44024 -> n44350 [from="field_type", to="struct"];
+  n44508 -> n32 [from="field_type", to="struct"];
 }

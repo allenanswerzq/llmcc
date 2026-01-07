@@ -40,13 +40,14 @@ fn helper(s: Input) -> Output {
   (func:8 process_data
     (parameter:9 input @type:2 Input)
     (return:10 @type:3 Output)
+    (@tdep:2 Input)
     (@tdep:3 Output)
     (@tdep:4 Foo)
-    (@fdep:13 helper)
   )
   (func:13 helper
     (parameter:14 s @type:2 Input)
     (return:15 @type:3 Output)
+    (@tdep:2 Input)
     (@tdep:3 Output)
   )
 )
@@ -86,6 +87,5 @@ digraph architecture {
   n2 -> n13 [from="input", to="func"];
   n8 -> n3 [from="func", to="output"];
   n8 -> n4 [from="func", to="type_dep"];
-  n8 -> n13 [from="caller", to="callee"];
   n13 -> n3 [from="func", to="output"];
 }

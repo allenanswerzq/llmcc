@@ -18,12 +18,13 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
-      subgraph cluster_path_ts {
-        label="path.ts";
+      subgraph cluster_build_ts {
+        label="build.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n4343[label="parse", path="/home/yibai/llmcc/sample/repos/prisma/helpers/compile/plugins/fill-plugin/fillers/path.ts:9", sym_ty="Function", shape=ellipse];
+        n6101[label="executeEsBuild", path="/home/yibai/llmcc/sample/repos/prisma/helpers/compile/build.ts:116", sym_ty="Function", shape=ellipse];
+        n6257[label="build", path="/home/yibai/llmcc/sample/repos/prisma/helpers/compile/build.ts:138", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -38,8 +39,12 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n2944[label="publish", path="/home/yibai/llmcc/sample/repos/prisma/scripts/ci/publish.ts:459", sym_ty="Function", shape=ellipse];
-        n3764[label="publishPackages", path="/home/yibai/llmcc/sample/repos/prisma/scripts/ci/publish.ts:702", sym_ty="Function", shape=ellipse];
+        n23400[label="getNewDevVersion", path="/home/yibai/llmcc/sample/repos/prisma/scripts/ci/publish.ts:198", sym_ty="Function", shape=ellipse];
+        n23538[label="getNewIntegrationVersion", path="/home/yibai/llmcc/sample/repos/prisma/scripts/ci/publish.ts:221", sym_ty="Function", shape=ellipse];
+        n23802[label="getNewPatchDevVersion", path="/home/yibai/llmcc/sample/repos/prisma/scripts/ci/publish.ts:307", sym_ty="Function", shape=ellipse];
+        n23970[label="getNextMinorStable", path="/home/yibai/llmcc/sample/repos/prisma/scripts/ci/publish.ts:422", sym_ty="Function", shape=ellipse];
+        n23978[label="publish", path="/home/yibai/llmcc/sample/repos/prisma/scripts/ci/publish.ts:459", sym_ty="Function", shape=ellipse];
+        n24069[label="publishPackages", path="/home/yibai/llmcc/sample/repos/prisma/scripts/ci/publish.ts:702", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -56,7 +61,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n10264[label="smokeTest", path="/home/yibai/llmcc/sample/repos/prisma/sandbox/driver-adapters/src/test.ts:6", sym_ty="Function", shape=ellipse];
+      n2619[label="smokeTest", path="/home/yibai/llmcc/sample/repos/prisma/sandbox/driver-adapters/src/test.ts:6", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -66,12 +71,27 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
+    subgraph cluster___tests__ {
+      label="__tests__";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_main_ts {
+        label="main.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n19229[label="main", path="/home/yibai/llmcc/sample/repos/prisma/packages/cli/src/__tests__/fixtures/multi-schema-files/valid-custom-output/main.ts:3", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
     subgraph cluster_bin_ts {
       label="bin.ts";
       style=rounded;
             bgcolor="#fafafa";
 
-      n7969[label="main", path="/home/yibai/llmcc/sample/repos/prisma/packages/cli/src/bin.ts:90", sym_ty="Function", shape=ellipse];
+      n709[label="main", path="/home/yibai/llmcc/sample/repos/prisma/packages/cli/src/bin.ts:90", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_platform {
@@ -79,46 +99,30 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
-      subgraph cluster_parameters_ts {
-        label="parameters.ts";
+      subgraph cluster___ts {
+        label="$.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n18943[label="argOrThrow", path="/home/yibai/llmcc/sample/repos/prisma/packages/cli/src/platform/_lib/cli/parameters.ts:14", sym_ty="Function", shape=ellipse];
+        n7786[label="$", path="/home/yibai/llmcc/sample/repos/prisma/packages/cli/src/platform/$.ts:8", sym_ty="Struct", shape=box];
       }
 
     }
 
-    subgraph cluster_scripts {
-      label="scripts";
+    subgraph cluster_utils {
+      label="utils";
       style=rounded;
             bgcolor="#f5f5f5";
 
-      subgraph cluster_preinstall_ts {
-        label="preinstall.ts";
+      subgraph cluster_client_output_path_ts {
+        label="client-output-path.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n12540[label="printMessageAndExitIfUnsupportedNodeVersion", path="/home/yibai/llmcc/sample/repos/prisma/packages/cli/scripts/preinstall.ts:23", sym_ty="Function", shape=ellipse];
-        n12458[label="main", path="/home/yibai/llmcc/sample/repos/prisma/packages/cli/scripts/preinstall.ts:8", sym_ty="Function", shape=ellipse];
+        n7041[label="determineClientOutputPath", path="/home/yibai/llmcc/sample/repos/prisma/packages/cli/src/utils/client-output-path.ts:12", sym_ty="Function", shape=ellipse];
+        n7143[label="getSourceDir", path="/home/yibai/llmcc/sample/repos/prisma/packages/cli/src/utils/client-output-path.ts:24", sym_ty="Function", shape=ellipse];
       }
 
-    }
-
-  }
-
-  subgraph cluster_prisma_adapter_better_sqlite3 {
-    label="prisma_adapter-better-sqlite3";
-    style=rounded;
-        bgcolor="#f8f8f8";
-
-    subgraph cluster_conversion_ts {
-      label="conversion.ts";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n12487[label="inferColumnType", path="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-better-sqlite3/src/conversion.ts:114", sym_ty="Function", shape=ellipse];
-      n12281[label="getColumnTypes", path="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-better-sqlite3/src/conversion.ts:90", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -128,29 +132,12 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_conversion_ts {
-      label="conversion.ts";
+    subgraph cluster_d1_http_ts {
+      label="d1-http.ts";
       style=rounded;
             bgcolor="#fafafa";
 
-      n8034[label="getColumnTypes", path="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-d1/src/conversion.ts:5", sym_ty="Function", shape=ellipse];
-      n8167[label="inferColumnType", path="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-d1/src/conversion.ts:52", sym_ty="Function", shape=ellipse];
-    }
-
-  }
-
-  subgraph cluster_prisma_adapter_libsql {
-    label="prisma_adapter-libsql";
-    style=rounded;
-        bgcolor="#f8f8f8";
-
-    subgraph cluster_conversion_ts {
-      label="conversion.ts";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n19996[label="getColumnTypes", path="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-libsql/src/conversion.ts:74", sym_ty="Function", shape=ellipse];
-      n20165[label="inferColumnType", path="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-libsql/src/conversion.ts:98", sym_ty="Function", shape=ellipse];
+      n7620[label="onUnsuccessfulD1HttpResponse", path="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-d1/src/d1-http.ts:42", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -165,7 +152,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n5628[label="parseConnectionString", path="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-mssql/src/connection-string.ts:53", sym_ty="Function", shape=ellipse];
+      n14596[label="parseConnectionString", path="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-mssql/src/connection-string.ts:53", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -185,7 +172,22 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n4302[label="main", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/fixtures/generate.ts:6", sym_ty="Function", shape=ellipse];
+        n7339[label="main", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/fixtures/generate.ts:6", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_helpers {
+      label="helpers";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_new_test_ts {
+        label="new-test.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n16226[label="main", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/helpers/new-test/new-test.ts:12", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -200,8 +202,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n24931[label="ArgumentsRenderingTree", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/errorRendering/ArgumentsRenderingTree.ts:17", sym_ty="Struct", shape=box];
-        n25150[label="buildInputValue", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/errorRendering/ArgumentsRenderingTree.ts:61", sym_ty="Function", shape=ellipse];
+        n19989[label="ArgumentsRenderingTree", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/errorRendering/ArgumentsRenderingTree.ts:17", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_Field_ts {
@@ -209,7 +210,23 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n16601[label="Field", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/errorRendering/Field.ts:3", sym_ty="Interface", shape=box];
+        n23147[label="Field", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/errorRendering/Field.ts:3", sym_ty="Interface", shape=box];
+      }
+
+      subgraph cluster_MergedExtensionsList_ts {
+        label="MergedExtensionsList.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n14004[label="MergedExtensionsList", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/extensions/MergedExtensionsList.ts:127", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_ObjectField_ts {
+        label="ObjectField.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n20602[label="ObjectField", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/errorRendering/ObjectField.ts:7", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_ObjectValue_ts {
@@ -217,15 +234,16 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n13245[label="ObjectValue", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/errorRendering/ObjectValue.ts:36", sym_ty="Struct", shape=box];
+        n21136[label="ObjectValue", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/errorRendering/ObjectValue.ts:36", sym_ty="Struct", shape=box];
       }
 
-      subgraph cluster_ScalarValue_ts {
-        label="ScalarValue.ts";
+      subgraph cluster_Skip_ts {
+        label="Skip.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n4729[label="ScalarValue", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/errorRendering/ScalarValue.ts:5", sym_ty="Struct", shape=box];
+        n11494[label="isSkip", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/types/exported/Skip.ts:21", sym_ty="Function", shape=ellipse];
+        n11389[label="Skip", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/types/exported/Skip.ts:4", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_Value_ts {
@@ -233,7 +251,23 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n10151[label="Value", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/errorRendering/Value.ts:4", sym_ty="Struct", shape=box];
+        n11713[label="Value", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/errorRendering/Value.ts:4", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_applyModelsAndClientExtensions_ts {
+        label="applyModelsAndClientExtensions.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n10488[label="applyModelsAndClientExtensions", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/model/applyModelsAndClientExtensions.ts:25", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_applyResultExtensions_ts {
+        label="applyResultExtensions.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n12691[label="applyResultExtensions", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/extensions/applyResultExtensions.ts:34", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_applyUnionError_ts {
@@ -241,7 +275,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n21973[label="applyUnionError", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/errorRendering/applyUnionError.ts:24", sym_ty="Function", shape=ellipse];
+        n18192[label="applyUnionError", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/errorRendering/applyUnionError.ts:24", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_applyValidationError_ts {
@@ -249,35 +283,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n12625[label="applyEmptySelectionError", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/errorRendering/applyValidationError.ts:140", sym_ty="Function", shape=ellipse];
-        n13611[label="applyUnknownSelectionFieldError", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/errorRendering/applyValidationError.ts:270", sym_ty="Function", shape=ellipse];
-        n12091[label="applyValidationError", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/errorRendering/applyValidationError.ts:42", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_createCompositeProxy_ts {
-        label="createCompositeProxy.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n18771[label="CompositeProxyLayer", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/compositeProxy/createCompositeProxy.ts:3", sym_ty="Interface", shape=box];
-        n18909[label="createCompositeProxy", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/compositeProxy/createCompositeProxy.ts:42", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_createErrorMessageWithContext_ts {
-        label="createErrorMessageWithContext.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n16371[label="createErrorMessageWithContext", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/utils/createErrorMessageWithContext.ts:216", sym_ty="Function", shape=ellipse];
-        n15587[label="getTemplateParameters", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/utils/createErrorMessageWithContext.ts:75", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_dedent_ts {
-        label="dedent.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n16470[label="dedent", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/utils/dedent.ts:3", sym_ty="Function", shape=ellipse];
+        n25382[label="applyRequiredArgumentMissingError", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/errorRendering/applyValidationError.ts:363", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_getPrismaClient_ts {
@@ -285,28 +291,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n3430[label="getPrismaClient", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/getPrismaClient.ts:230", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_serializeJsonQuery_ts {
-        label="serializeJsonQuery.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n1922[label="serializeSelectionSet", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/jsonProtocol/serializeJsonQuery.ts:129", sym_ty="Function", shape=ellipse];
-        n2008[label="createImplicitSelection", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/jsonProtocol/serializeJsonQuery.ts:157", sym_ty="Function", shape=ellipse];
-        n2557[label="serializeArgumentsValue", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/jsonProtocol/serializeJsonQuery.ts:265", sym_ty="Function", shape=ellipse];
-        n2748[label="serializeArgumentsObject", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/jsonProtocol/serializeJsonQuery.ts:352", sym_ty="Function", shape=ellipse];
-        n3099[label="SerializeContext", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/jsonProtocol/serializeJsonQuery.ts:438", sym_ty="Struct", shape=box];
-      }
-
-      subgraph cluster_serializeRawParameters_ts {
-        label="serializeRawParameters.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n22701[label="preprocessValueInObject", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/utils/serializeRawParameters.ts:110", sym_ty="Function", shape=ellipse];
-        n22612[label="preprocessObject", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/utils/serializeRawParameters.ts:85", sym_ty="Function", shape=ellipse];
+        n19019[label="getPrismaClient", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/getPrismaClient.ts:230", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_throwValidationException_ts {
@@ -314,15 +299,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n20131[label="throwValidationException", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/errorRendering/throwValidationException.ts:22", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_validatePrismaClientOptions_ts {
-        label="validatePrismaClientOptions.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n251[label="validatePrismaClientOptions", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/utils/validatePrismaClientOptions.ts:235", sym_ty="Function", shape=ellipse];
+        n14488[label="throwValidationException", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/errorRendering/throwValidationException.ts:22", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_visitQueryResult_ts {
@@ -330,8 +307,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n21982[label="visitQueryResult", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/extensions/visitQueryResult.ts:26", sym_ty="Function", shape=ellipse];
-        n22133[label="visitNested", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/extensions/visitQueryResult.ts:69", sym_ty="Function", shape=ellipse];
+        n1934[label="visitQueryResult", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/extensions/visitQueryResult.ts:26", sym_ty="Function", shape=ellipse];
+        n2033[label="visitNested", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime/core/extensions/visitQueryResult.ts:69", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -346,7 +323,23 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n2317[label="PrismaClient", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/scripts/default-index.ts:5", sym_ty="Struct", shape=box];
+        n3460[label="PrismaClient", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/scripts/default-index.ts:5", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_testUtils {
+      label="testUtils";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_dataModelBuilder_ts {
+        label="dataModelBuilder.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n15750[label="model", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/testUtils/dataModelBuilder.ts:19", sym_ty="Function", shape=ellipse];
+        n15679[label="field", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/testUtils/dataModelBuilder.ts:4", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -361,7 +354,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n22507[label="generateInFolder", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/utils/generateInFolder.ts:18", sym_ty="Function", shape=ellipse];
+        n14148[label="generateInFolder", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/utils/generateInFolder.ts:18", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_getTestClient_ts {
@@ -369,26 +362,10 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n21578[label="getTestClient", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/utils/getTestClient.ts:22", sym_ty="Function", shape=ellipse];
-        n21735[label="generateTestClient", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/utils/getTestClient.ts:82", sym_ty="Function", shape=ellipse];
+        n3076[label="getTestClient", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/utils/getTestClient.ts:22", sym_ty="Function", shape=ellipse];
+        n3182[label="generateTestClient", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/utils/getTestClient.ts:82", sym_ty="Function", shape=ellipse];
       }
 
-    }
-
-  }
-
-  subgraph cluster_prisma_client_common {
-    label="prisma_client-common";
-    style=rounded;
-        bgcolor="#f8f8f8";
-
-    subgraph cluster_Dictionary_ts {
-      label="Dictionary.ts";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n15580[label="Dictionary", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-common/src/Dictionary.ts:1", sym_ty="Interface", shape=box];
-      n15601[label="keyBy", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-common/src/Dictionary.ts:5", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -398,50 +375,19 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_interpreter {
-      label="interpreter";
+    subgraph cluster_transaction_manager {
+      label="transaction-manager";
       style=rounded;
             bgcolor="#f5f5f5";
 
-      subgraph cluster_data_mapper_ts {
-        label="data-mapper.ts";
+      subgraph cluster_transaction_manager_ts {
+        label="transaction-manager.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n2398[label="mapArrayOrObject", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-engine-runtime/src/interpreter/data-mapper.ts:35", sym_ty="Function", shape=ellipse];
-        n2436[label="mapObject", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-engine-runtime/src/interpreter/data-mapper.ts:72", sym_ty="Function", shape=ellipse];
-        n6[label="DataMapperError", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-engine-runtime/src/interpreter/data-mapper.ts:8", sym_ty="Struct", shape=box];
+        n4491[label="TransactionManager", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-engine-runtime/src/transaction-manager/transaction-manager.ts:53", sym_ty="Struct", shape=box];
       }
 
-      subgraph cluster_in_memory_processing_ts {
-        label="in-memory-processing.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n24066[label="processOneRecord", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-engine-runtime/src/interpreter/in-memory-processing.ts:20", sym_ty="Function", shape=ellipse];
-        n24173[label="processNestedRecords", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-engine-runtime/src/interpreter/in-memory-processing.ts:36", sym_ty="Function", shape=ellipse];
-        n24000[label="processRecords", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-engine-runtime/src/interpreter/in-memory-processing.ts:4", sym_ty="Function", shape=ellipse];
-        n24233[label="processManyRecords", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-engine-runtime/src/interpreter/in-memory-processing.ts:46", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_render_query_ts {
-        label="render-query.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n1016[label="renderQuery", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-engine-runtime/src/interpreter/render-query.ts:18", sym_ty="Function", shape=ellipse];
-        n1738[label="chunkParams", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-engine-runtime/src/interpreter/render-query.ts:257", sym_ty="Function", shape=ellipse];
-        n1070[label="evaluateArg", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-engine-runtime/src/interpreter/render-query.ts:44", sym_ty="Function", shape=ellipse];
-      }
-
-    }
-
-    subgraph cluster_utils_ts {
-      label="utils.ts";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n23404[label="assertNever", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-engine-runtime/src/utils.ts:8", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -451,17 +397,34 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
+    subgraph cluster_GenericsArgsInfo_ts {
+      label="GenericsArgsInfo.ts";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n9806[label="GenericArgsInfo", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/GenericsArgsInfo.ts:11", sym_ty="Struct", shape=box];
+    }
+
     subgraph cluster_TSClient {
       label="TSClient";
       style=rounded;
             bgcolor="#f5f5f5";
+
+      subgraph cluster_Generable_ts {
+        label="Generable.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n22618[label="Generable", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/TSClient/Generable.ts:1", sym_ty="Interface", shape=box];
+      }
 
       subgraph cluster_GenerateContext_ts {
         label="GenerateContext.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n6650[label="GenerateContext", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/TSClient/GenerateContext.ts:13", sym_ty="Struct", shape=box];
+        n15636[label="GenerateContext", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/TSClient/GenerateContext.ts:13", sym_ty="Struct", shape=box];
+        n15593[label="GenerateContextOptions", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/TSClient/GenerateContext.ts:6", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_Input_ts {
@@ -469,8 +432,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n14578[label="buildInputField", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/TSClient/Input.ts:25", sym_ty="Function", shape=ellipse];
-        n14960[label="buildAllFieldTypes", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/TSClient/Input.ts:96", sym_ty="Function", shape=ellipse];
+        n23828[label="InputType", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/TSClient/Input.ts:124", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_Model_ts {
@@ -478,7 +440,25 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n4373[label="buildModelDelegateMethod", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/TSClient/Model.ts:618", sym_ty="Function", shape=ellipse];
+        n12062[label="Model", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/TSClient/Model.ts:49", sym_ty="Struct", shape=box];
+        n14808[label="buildModelDelegateMethod", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/TSClient/Model.ts:618", sym_ty="Function", shape=ellipse];
+        n15821[label="getReturnType", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/TSClient/Model.ts:764", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_SelectIncludeOmit_ts {
+        label="SelectIncludeOmit.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n6948[label="buildOmitType", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/TSClient/SelectIncludeOmit.ts:32", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_helpers_ts {
+        label="helpers.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n463[label="getMethodJSDoc", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/TSClient/helpers.ts:23", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -488,7 +468,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n16248[label="DMMFHelper", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/dmmf.ts:11", sym_ty="Struct", shape=box];
+      n13733[label="DMMFHelper", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/dmmf.ts:11", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_generateClient_ts {
@@ -496,9 +476,8 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n4337[label="generateClient", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/generateClient.ts:303", sym_ty="Function", shape=ellipse];
-      n4834[label="getGenerationDirs", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/generateClient.ts:525", sym_ty="Function", shape=ellipse];
-      n3998[label="buildClient", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/generateClient.ts:72", sym_ty="Function", shape=ellipse];
+      n21186[label="generateClient", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/generateClient.ts:303", sym_ty="Function", shape=ellipse];
+      n20681[label="buildClient", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/generateClient.ts:72", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_typedSql {
@@ -511,7 +490,22 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n20645[label="buildTypedSql", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/typedSql/typedSql.ts:17", sym_ty="Function", shape=ellipse];
+        n13746[label="buildTypedSql", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/typedSql/typedSql.ts:17", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_utils {
+      label="utils";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_addPreamble_ts {
+        label="addPreamble.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n20458[label="addPreambleToJSFiles", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js/src/utils/addPreamble.ts:12", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -533,16 +527,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n23560[label="createClassFile", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-ts/src/TSClient/file-generators/ClassFile.ts:20", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_GenerateContext_ts {
-        label="GenerateContext.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n19707[label="GenerateContext", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-ts/src/TSClient/GenerateContext.ts:18", sym_ty="Struct", shape=box];
-        n19603[label="GenerateContextOptions", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-ts/src/TSClient/GenerateContext.ts:7", sym_ty="Interface", shape=box];
+        n11161[label="clientConfig", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-ts/src/TSClient/file-generators/ClassFile.ts:43", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_Model_ts {
@@ -550,15 +535,16 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n1787[label="buildModelDelegateMethod", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-ts/src/TSClient/Model.ts:641", sym_ty="Function", shape=ellipse];
+        n9094[label="buildModelDelegateMethod", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-ts/src/TSClient/Model.ts:641", sym_ty="Function", shape=ellipse];
+        n10159[label="getReturnType", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-ts/src/TSClient/Model.ts:787", sym_ty="Function", shape=ellipse];
       }
 
-      subgraph cluster_PrismaNamespaceFile_ts {
-        label="PrismaNamespaceFile.ts";
+      subgraph cluster_TSClient_ts {
+        label="TSClient.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n10024[label="createPrismaNamespaceFile", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-ts/src/TSClient/file-generators/PrismaNamespaceFile.ts:24", sym_ty="Function", shape=ellipse];
+        n16000[label="TSClient", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-ts/src/TSClient/TSClient.ts:28", sym_ty="Struct", shape=box];
       }
 
     }
@@ -568,60 +554,8 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n3740[label="generateClient", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-ts/src/generateClient.ts:171", sym_ty="Function", shape=ellipse];
-    }
-
-    subgraph cluster_typedSql {
-      label="typedSql";
-      style=rounded;
-            bgcolor="#f5f5f5";
-
-      subgraph cluster_buildDbEnums_ts {
-        label="buildDbEnums.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n16172[label="DbEnumsList", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-ts/src/typedSql/buildDbEnums.ts:11", sym_ty="Struct", shape=box];
-      }
-
-      subgraph cluster_typedSql_ts {
-        label="typedSql.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n10483[label="buildTypedSql", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-ts/src/typedSql/typedSql.ts:20", sym_ty="Function", shape=ellipse];
-      }
-
-    }
-
-  }
-
-  subgraph cluster_prisma_client_runtime_utils {
-    label="prisma_client-runtime-utils";
-    style=rounded;
-        bgcolor="#f8f8f8";
-
-    subgraph cluster_errors {
-      label="errors";
-      style=rounded;
-            bgcolor="#f5f5f5";
-
-      subgraph cluster_ErrorWithBatchIndex_ts {
-        label="ErrorWithBatchIndex.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n20423[label="ErrorWithBatchIndex", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-runtime-utils/src/errors/ErrorWithBatchIndex.ts:1", sym_ty="Interface", shape=box];
-      }
-
-      subgraph cluster_PrismaClientKnownRequestError_ts {
-        label="PrismaClientKnownRequestError.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n4785[label="PrismaClientKnownRequestError", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-runtime-utils/src/errors/PrismaClientKnownRequestError.ts:11", sym_ty="Struct", shape=box];
-      }
-
+      n10249[label="generateClient", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-ts/src/generateClient.ts:171", sym_ty="Function", shape=ellipse];
+      n9991[label="buildClient", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-ts/src/generateClient.ts:69", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -636,7 +570,8 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n131[label="makePrismaConfigInternal", path="/home/yibai/llmcc/sample/repos/prisma/packages/config/src/PrismaConfig.ts:351", sym_ty="Function", shape=ellipse];
+      n9648[label="brandPrismaConfigInternal", path="/home/yibai/llmcc/sample/repos/prisma/packages/config/src/PrismaConfig.ts:314", sym_ty="Function", shape=ellipse];
+      n9821[label="makePrismaConfigInternal", path="/home/yibai/llmcc/sample/repos/prisma/packages/config/src/PrismaConfig.ts:351", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_defaultConfig_ts {
@@ -644,7 +579,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n11368[label="defaultConfig", path="/home/yibai/llmcc/sample/repos/prisma/packages/config/src/defaultConfig.ts:8", sym_ty="Function", shape=ellipse];
+      n12848[label="defaultConfig", path="/home/yibai/llmcc/sample/repos/prisma/packages/config/src/defaultConfig.ts:8", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_defineConfig_ts {
@@ -652,17 +587,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n3139[label="defineMigrationsConfig", path="/home/yibai/llmcc/sample/repos/prisma/packages/config/src/defineConfig.ts:103", sym_ty="Function", shape=ellipse];
-      n29[label="validateExperimentalFeatures", path="/home/yibai/llmcc/sample/repos/prisma/packages/config/src/defineConfig.ts:11", sym_ty="Function", shape=ellipse];
-      n3183[label="defineTypedSqlConfig", path="/home/yibai/llmcc/sample/repos/prisma/packages/config/src/defineConfig.ts:115", sym_ty="Function", shape=ellipse];
-      n3224[label="defineViewsConfig", path="/home/yibai/llmcc/sample/repos/prisma/packages/config/src/defineConfig.ts:127", sym_ty="Function", shape=ellipse];
-      n3260[label="defineTablesConfig", path="/home/yibai/llmcc/sample/repos/prisma/packages/config/src/defineConfig.ts:139", sym_ty="Function", shape=ellipse];
-      n3302[label="defineEnumsConfig", path="/home/yibai/llmcc/sample/repos/prisma/packages/config/src/defineConfig.ts:151", sym_ty="Function", shape=ellipse];
-      n3337[label="defineDatasource", path="/home/yibai/llmcc/sample/repos/prisma/packages/config/src/defineConfig.ts:160", sym_ty="Function", shape=ellipse];
-      n3363[label="defineExtensionsConfig", path="/home/yibai/llmcc/sample/repos/prisma/packages/config/src/defineConfig.ts:166", sym_ty="Function", shape=ellipse];
-      n2918[label="defineConfig", path="/home/yibai/llmcc/sample/repos/prisma/packages/config/src/defineConfig.ts:46", sym_ty="Function", shape=ellipse];
-      n3030[label="defineExperimentalConfig", path="/home/yibai/llmcc/sample/repos/prisma/packages/config/src/defineConfig.ts:79", sym_ty="Function", shape=ellipse];
-      n3085[label="defineSchemaConfig", path="/home/yibai/llmcc/sample/repos/prisma/packages/config/src/defineConfig.ts:91", sym_ty="Function", shape=ellipse];
+      n2597[label="defineConfig", path="/home/yibai/llmcc/sample/repos/prisma/packages/config/src/defineConfig.ts:46", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_loadConfigFromFile_ts {
@@ -670,7 +595,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n13208[label="loadConfigFromFile", path="/home/yibai/llmcc/sample/repos/prisma/packages/config/src/loadConfigFromFile.ts:92", sym_ty="Function", shape=ellipse];
+      n5974[label="loadConfigFromFile", path="/home/yibai/llmcc/sample/repos/prisma/packages/config/src/loadConfigFromFile.ts:92", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -680,15 +605,24 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
+    subgraph cluster_binder_ts {
+      label="binder.ts";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n18251[label="ErrorRegistryInternal", path="/home/yibai/llmcc/sample/repos/prisma/packages/driver-adapter-utils/src/binder.ts:19", sym_ty="Struct", shape=box];
+    }
+
     subgraph cluster_types_ts {
       label="types.ts";
       style=rounded;
             bgcolor="#fafafa";
 
-      n10854[label="SqlDriverAdapterFactory", path="/home/yibai/llmcc/sample/repos/prisma/packages/driver-adapter-utils/src/types.ts:227", sym_ty="Interface", shape=box];
-      n11009[label="SqlQueryable", path="/home/yibai/llmcc/sample/repos/prisma/packages/driver-adapter-utils/src/types.ts:251", sym_ty="Interface", shape=box];
-      n11031[label="SqlDriverAdapter", path="/home/yibai/llmcc/sample/repos/prisma/packages/driver-adapter-utils/src/types.ts:253", sym_ty="Interface", shape=box];
-      n11180[label="Transaction", path="/home/yibai/llmcc/sample/repos/prisma/packages/driver-adapter-utils/src/types.ts:279", sym_ty="Interface", shape=box];
+      n4095[label="SqlDriverAdapterFactory", path="/home/yibai/llmcc/sample/repos/prisma/packages/driver-adapter-utils/src/types.ts:227", sym_ty="Interface", shape=box];
+      n4185[label="SqlQueryable", path="/home/yibai/llmcc/sample/repos/prisma/packages/driver-adapter-utils/src/types.ts:251", sym_ty="Interface", shape=box];
+      n4198[label="SqlDriverAdapter", path="/home/yibai/llmcc/sample/repos/prisma/packages/driver-adapter-utils/src/types.ts:253", sym_ty="Interface", shape=box];
+      n4323[label="Transaction", path="/home/yibai/llmcc/sample/repos/prisma/packages/driver-adapter-utils/src/types.ts:279", sym_ty="Interface", shape=box];
+      n4647[label="ErrorRegistry", path="/home/yibai/llmcc/sample/repos/prisma/packages/driver-adapter-utils/src/types.ts:330", sym_ty="Interface", shape=box];
     }
 
   }
@@ -698,17 +632,33 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
+    subgraph cluster_index_ts {
+      label="index.ts";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n7340[label="ensureNeededBinariesExist", path="/home/yibai/llmcc/sample/repos/prisma/packages/engines/src/index.ts:17", sym_ty="Function", shape=ellipse];
+    }
+
     subgraph cluster_scripts {
       label="scripts";
       style=rounded;
             bgcolor="#f5f5f5";
+
+      subgraph cluster_localinstall_ts {
+        label="localinstall.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n1222[label="main", path="/home/yibai/llmcc/sample/repos/prisma/packages/engines/src/scripts/localinstall.ts:10", sym_ty="Function", shape=ellipse];
+      }
 
       subgraph cluster_postinstall_ts {
         label="postinstall.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n18102[label="main", path="/home/yibai/llmcc/sample/repos/prisma/packages/engines/src/scripts/postinstall.ts:15", sym_ty="Function", shape=ellipse];
+        n593[label="main", path="/home/yibai/llmcc/sample/repos/prisma/packages/engines/src/scripts/postinstall.ts:15", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -725,7 +675,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n17687[label="BinaryType", path="/home/yibai/llmcc/sample/repos/prisma/packages/fetch-engine/src/BinaryType.ts:1", sym_ty="Enum", shape=box];
+      n23128[label="BinaryType", path="/home/yibai/llmcc/sample/repos/prisma/packages/fetch-engine/src/BinaryType.ts:1", sym_ty="Enum", shape=box];
     }
 
     subgraph cluster_download_ts {
@@ -733,17 +683,8 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n7675[label="binaryNeedsToBeDownloaded", path="/home/yibai/llmcc/sample/repos/prisma/packages/fetch-engine/src/download.ts:245", sym_ty="Function", shape=ellipse];
-      n8192[label="downloadBinary", path="/home/yibai/llmcc/sample/repos/prisma/packages/fetch-engine/src/download.ts:389", sym_ty="Function", shape=ellipse];
-      n7025[label="download", path="/home/yibai/llmcc/sample/repos/prisma/packages/fetch-engine/src/download.ts:62", sym_ty="Function", shape=ellipse];
-    }
-
-    subgraph cluster_env_ts {
-      label="env.ts";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n5934[label="getBinaryEnvVarPath", path="/home/yibai/llmcc/sample/repos/prisma/packages/fetch-engine/src/env.ts:24", sym_ty="Function", shape=ellipse];
+      n22979[label="binaryNeedsToBeDownloaded", path="/home/yibai/llmcc/sample/repos/prisma/packages/fetch-engine/src/download.ts:245", sym_ty="Function", shape=ellipse];
+      n22233[label="download", path="/home/yibai/llmcc/sample/repos/prisma/packages/fetch-engine/src/download.ts:62", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -758,12 +699,21 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n2590[label="getSSLVersion", path="/home/yibai/llmcc/sample/repos/prisma/packages/get-platform/src/getPlatform.ts:343", sym_ty="Function", shape=ellipse];
-      n2870[label="getBinaryTargetForCurrentPlatform", path="/home/yibai/llmcc/sample/repos/prisma/packages/get-platform/src/getPlatform.ts:440", sym_ty="Function", shape=ellipse];
-      n2950[label="getPlatformInfo", path="/home/yibai/llmcc/sample/repos/prisma/packages/get-platform/src/getPlatform.ts:454", sym_ty="Function", shape=ellipse];
-      n2994[label="getPlatformInfoMemoized", path="/home/yibai/llmcc/sample/repos/prisma/packages/get-platform/src/getPlatform.ts:461", sym_ty="Function", shape=ellipse];
-      n3053[label="getBinaryTargetForCurrentPlatformInternal", path="/home/yibai/llmcc/sample/repos/prisma/packages/get-platform/src/getPlatform.ts:475", sym_ty="Function", shape=ellipse];
-      n2285[label="getos", path="/home/yibai/llmcc/sample/repos/prisma/packages/get-platform/src/getPlatform.ts:73", sym_ty="Function", shape=ellipse];
+      n20857[label="getSSLVersion", path="/home/yibai/llmcc/sample/repos/prisma/packages/get-platform/src/getPlatform.ts:343", sym_ty="Function", shape=ellipse];
+      n21283[label="getBinaryTargetForCurrentPlatform", path="/home/yibai/llmcc/sample/repos/prisma/packages/get-platform/src/getPlatform.ts:440", sym_ty="Function", shape=ellipse];
+      n21362[label="getPlatformInfo", path="/home/yibai/llmcc/sample/repos/prisma/packages/get-platform/src/getPlatform.ts:454", sym_ty="Function", shape=ellipse];
+      n21401[label="getPlatformInfoMemoized", path="/home/yibai/llmcc/sample/repos/prisma/packages/get-platform/src/getPlatform.ts:461", sym_ty="Function", shape=ellipse];
+      n21463[label="getBinaryTargetForCurrentPlatformInternal", path="/home/yibai/llmcc/sample/repos/prisma/packages/get-platform/src/getPlatform.ts:475", sym_ty="Function", shape=ellipse];
+      n22625[label="getCommandOutput", path="/home/yibai/llmcc/sample/repos/prisma/packages/get-platform/src/getPlatform.ts:605", sym_ty="Function", shape=ellipse];
+      n20173[label="getos", path="/home/yibai/llmcc/sample/repos/prisma/packages/get-platform/src/getPlatform.ts:73", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_link_ts {
+      label="link.ts";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n19727[label="link", path="/home/yibai/llmcc/sample/repos/prisma/packages/get-platform/src/link.ts:4", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -773,21 +723,38 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
+    subgraph cluster_Generator_ts {
+      label="Generator.ts";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n18333[label="Generator", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/Generator.ts:12", sym_ty="Struct", shape=box];
+    }
+
     subgraph cluster_cli {
       label="cli";
       style=rounded;
             bgcolor="#f5f5f5";
+
+      subgraph cluster_Help_ts {
+        label="Help.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n8939[label="HelpError", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/cli/Help.ts:14", sym_ty="Struct", shape=box];
+      }
 
       subgraph cluster_getSchema_ts {
         label="getSchema.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n12790[label="readSchemaFromSingleFile", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/cli/getSchema.ts:115", sym_ty="Function", shape=ellipse];
-        n12988[label="readSchemaFromFileOrDirectory", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/cli/getSchema.ts:140", sym_ty="Function", shape=ellipse];
-        n13487[label="getSchemaWithPathInternal", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/cli/getSchema.ts:171", sym_ty="Function", shape=ellipse];
-        n14006[label="getDefaultSchema", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/cli/getSchema.ts:269", sym_ty="Function", shape=ellipse];
-        n12588[label="getSchemaWithPath", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/cli/getSchema.ts:71", sym_ty="Function", shape=ellipse];
+        n6121[label="getSchemaWithPathInternal", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/cli/getSchema.ts:171", sym_ty="Function", shape=ellipse];
+        n6199[label="renderLookupError", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/cli/getSchema.ts:204", sym_ty="Function", shape=ellipse];
+        n6269[label="renderDefaultLookupError", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/cli/getSchema.ts:215", sym_ty="Function", shape=ellipse];
+        n6588[label="getDefaultSchema", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/cli/getSchema.ts:269", sym_ty="Function", shape=ellipse];
+        n4823[label="getSchemaWithPath", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/cli/getSchema.ts:71", sym_ty="Function", shape=ellipse];
+        n5668[label="getSchemaWithPathOptional", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/cli/getSchema.ts:99", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_schemaContext_ts {
@@ -795,7 +762,16 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n24841[label="loadSchemaContext", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/cli/schemaContext.ts:57", sym_ty="Function", shape=ellipse];
+        n5920[label="loadSchemaContext", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/cli/schemaContext.ts:57", sym_ty="Function", shape=ellipse];
+        n6042[label="processSchemaResult", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/cli/schemaContext.ts:78", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_types_ts {
+        label="types.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n6803[label="Command", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/cli/types.ts:6", sym_ty="Interface", shape=box];
       }
 
       subgraph cluster_utils_ts {
@@ -803,9 +779,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n3805[label="arg", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/cli/utils.ts:14", sym_ty="Function", shape=ellipse];
-        n3851[label="isError", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/cli/utils.ts:30", sym_ty="Function", shape=ellipse];
-        n3791[label="format", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/cli/utils.ts:7", sym_ty="Function", shape=ellipse];
+        n5768[label="arg", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/cli/utils.ts:14", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -815,8 +789,39 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n18560[label="protocolToConnectorType", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/convertCredentials.ts:169", sym_ty="Function", shape=ellipse];
-      n18074[label="uriToCredentials", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/convertCredentials.ts:82", sym_ty="Function", shape=ellipse];
+      n23992[label="protocolToConnectorType", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/convertCredentials.ts:169", sym_ty="Function", shape=ellipse];
+      n23940[label="uriToCredentials", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/convertCredentials.ts:82", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_engine_commands {
+      label="engine-commands";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_formatSchema_ts {
+        label="formatSchema.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n20959[label="formatSchema", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/engine-commands/formatSchema.ts:13", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_getConfig_ts {
+        label="getConfig.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n8259[label="getConfig", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/engine-commands/getConfig.ts:71", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_lintSchema_ts {
+        label="lintSchema.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n11249[label="getLintWarningsAsText", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/engine-commands/lintSchema.ts:64", sym_ty="Function", shape=ellipse];
+      }
+
     }
 
     subgraph cluster_get_generators {
@@ -829,7 +834,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n17140[label="getBinaryPathsByVersion", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/get-generators/utils/getBinaryPathsByVersion.ts:15", sym_ty="Function", shape=ellipse];
+        n23259[label="getBinaryPathsByVersion", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/get-generators/utils/getBinaryPathsByVersion.ts:15", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_getGenerators_ts {
@@ -837,10 +842,18 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n6745[label="getGenerator", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/get-generators/getGenerators.ts:338", sym_ty="Function", shape=ellipse];
-        n5556[label="getGenerators", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/get-generators/getGenerators.ts:84", sym_ty="Function", shape=ellipse];
+        n22543[label="validateGenerators", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/get-generators/getGenerators.ts:355", sym_ty="Function", shape=ellipse];
+        n21207[label="getGenerators", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/get-generators/getGenerators.ts:84", sym_ty="Function", shape=ellipse];
       }
 
+    }
+
+    subgraph cluster_logger_ts {
+      label="logger.ts";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n17842[label="error", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/logger.ts:23", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_resolveBinary_ts {
@@ -848,16 +861,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n24215[label="resolveBinary", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/resolveBinary.ts:21", sym_ty="Function", shape=ellipse];
-    }
-
-    subgraph cluster_schemaEngineCommands_ts {
-      label="schemaEngineCommands.ts";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n18298[label="execaCommand", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/schemaEngineCommands.ts:168", sym_ty="Function", shape=ellipse];
-      n17784[label="canConnectToDatabase", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/schemaEngineCommands.ts:68", sym_ty="Function", shape=ellipse];
+      n15197[label="resolveBinary", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/resolveBinary.ts:21", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_sendPanic_ts {
@@ -865,7 +869,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n21246[label="sendPanic", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/sendPanic.ts:25", sym_ty="Function", shape=ellipse];
+      n9176[label="sendPanic", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/sendPanic.ts:25", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_utils {
@@ -873,13 +877,28 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
+      subgraph cluster_getCommandWithExecutor_ts {
+        label="getCommandWithExecutor.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n10090[label="getCommandWithExecutor", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/utils/getCommandWithExecutor.ts:3", sym_ty="Function", shape=ellipse];
+      }
+
       subgraph cluster_handlePanic_ts {
         label="handlePanic.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n22892[label="handlePanic", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/utils/handlePanic.ts:21", sym_ty="Function", shape=ellipse];
-        n22934[label="panicDialog", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/utils/handlePanic.ts:31", sym_ty="Function", shape=ellipse];
+        n2626[label="panicDialog", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/utils/handlePanic.ts:31", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_isCurrentBinInstalledGlobally_ts {
+        label="isCurrentBinInstalledGlobally.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n15335[label="isCurrentBinInstalledGlobally", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals/src/utils/isCurrentBinInstalledGlobally.ts:5", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -891,12 +910,28 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_bin_ts {
-      label="bin.ts";
+    subgraph cluster_Migrate_ts {
+      label="Migrate.ts";
       style=rounded;
             bgcolor="#fafafa";
 
-      n25243[label="main", path="/home/yibai/llmcc/sample/repos/prisma/packages/migrate/src/bin.ts:53", sym_ty="Function", shape=ellipse];
+      n1512[label="Migrate", path="/home/yibai/llmcc/sample/repos/prisma/packages/migrate/src/Migrate.ts:30", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_SchemaEngine_ts {
+      label="SchemaEngine.ts";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n16824[label="SchemaEngine", path="/home/yibai/llmcc/sample/repos/prisma/packages/migrate/src/SchemaEngine.ts:5", sym_ty="Interface", shape=box];
+    }
+
+    subgraph cluster_types_ts {
+      label="types.ts";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n13626[label="Dictionary", path="/home/yibai/llmcc/sample/repos/prisma/packages/migrate/src/types.ts:332", sym_ty="Interface", shape=box];
     }
 
     subgraph cluster_utils {
@@ -904,12 +939,12 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
-      subgraph cluster_printDatasources_ts {
-        label="printDatasources.ts";
+      subgraph cluster_ai_safety_ts {
+        label="ai-safety.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n21699[label="GeneratorConfig", path="/home/yibai/llmcc/sample/repos/prisma/packages/migrate/src/utils/printDatasources.ts:7", sym_ty="Interface", shape=box];
+        n1088[label="aiAgentConfirmationCheckpoint", path="/home/yibai/llmcc/sample/repos/prisma/packages/migrate/src/utils/ai-safety.ts:35", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -926,46 +961,52 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
-      subgraph cluster_context_ts {
-        label="context.ts";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n4938[label="getActiveLogger", path="/home/yibai/llmcc/sample/repos/prisma/packages/query-plan-executor/src/log/context.ts:12", sym_ty="Function", shape=ellipse];
-      }
-
       subgraph cluster_facade_ts {
         label="facade.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n17958[label="debug", path="/home/yibai/llmcc/sample/repos/prisma/packages/query-plan-executor/src/log/facade.ts:11", sym_ty="Function", shape=ellipse];
+        n10115[label="debug", path="/home/yibai/llmcc/sample/repos/prisma/packages/query-plan-executor/src/log/facade.ts:11", sym_ty="Function", shape=ellipse];
       }
 
-      subgraph cluster_factory_ts {
-        label="factory.ts";
+    }
+
+    subgraph cluster_logic {
+      label="logic";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_app_ts {
+        label="app.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n8471[label="createConsoleLogger", path="/home/yibai/llmcc/sample/repos/prisma/packages/query-plan-executor/src/log/factory.ts:12", sym_ty="Function", shape=ellipse];
+        n23573[label="App", path="/home/yibai/llmcc/sample/repos/prisma/packages/query-plan-executor/src/logic/app.ts:26", sym_ty="Struct", shape=box];
       }
 
-      subgraph cluster_logger_ts {
-        label="logger.ts";
-        style=rounded;
-                bgcolor="#fafafa";
+    }
 
-        n23[label="Logger", path="/home/yibai/llmcc/sample/repos/prisma/packages/query-plan-executor/src/log/logger.ts:8", sym_ty="Struct", shape=box];
-      }
+    subgraph cluster_options_ts {
+      label="options.ts";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      subgraph cluster_sink_ts {
-        label="sink.ts";
-        style=rounded;
-                bgcolor="#fafafa";
+      n15287[label="Options", path="/home/yibai/llmcc/sample/repos/prisma/packages/query-plan-executor/src/options.ts:14", sym_ty="Interface", shape=box];
+    }
 
-        n23512[label="LogSink", path="/home/yibai/llmcc/sample/repos/prisma/packages/query-plan-executor/src/log/sink.ts:8", sym_ty="Interface", shape=box];
-      }
+  }
 
+  subgraph cluster_prisma_schema_files_loader {
+    label="prisma_schema-files-loader";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_testUtils_ts {
+      label="testUtils.ts";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n13561[label="line", path="/home/yibai/llmcc/sample/repos/prisma/packages/schema-files-loader/src/testUtils.ts:6", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -975,18 +1016,33 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_parameterize {
-      label="parameterize";
+    subgraph cluster_format {
+      label="format";
       style=rounded;
             bgcolor="#f5f5f5";
 
-      subgraph cluster_parameterize_ts {
-        label="parameterize.ts";
+      subgraph cluster_format_ts {
+        label="format.ts";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n25148[label="parameterizeObject", path="/home/yibai/llmcc/sample/repos/prisma/packages/sqlcommenter-query-insights/src/parameterize/parameterize.ts:133", sym_ty="Function", shape=ellipse];
-        n24989[label="parameterize", path="/home/yibai/llmcc/sample/repos/prisma/packages/sqlcommenter-query-insights/src/parameterize/parameterize.ts:97", sym_ty="Function", shape=ellipse];
+        n8588[label="formatQueryInsight", path="/home/yibai/llmcc/sample/repos/prisma/packages/sqlcommenter-query-insights/src/format/format.ts:22", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_shape {
+      label="shape";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_shape_ts {
+        label="shape.ts";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n13827[label="shapeValue", path="/home/yibai/llmcc/sample/repos/prisma/packages/sqlcommenter-query-insights/src/shape/shape.ts:33", sym_ty="Function", shape=ellipse];
+        n13915[label="shapeQuery", path="/home/yibai/llmcc/sample/repos/prisma/packages/sqlcommenter-query-insights/src/shape/shape.ts:56", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -1003,7 +1059,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n10724[label="BasicBuilder", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/BasicBuilder.ts:3", sym_ty="Interface", shape=box];
+      n22416[label="BasicBuilder", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/BasicBuilder.ts:3", sym_ty="Interface", shape=box];
     }
 
     subgraph cluster_DocComment_ts {
@@ -1011,10 +1067,8 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n22856[label="docComment", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/DocComment.ts:30", sym_ty="Function", shape=ellipse];
-      n22910[label="docCommentTag", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/DocComment.ts:37", sym_ty="Function", shape=ellipse];
-      n22726[label="DocComment", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/DocComment.ts:4", sym_ty="Struct", shape=box];
-      n22993[label="trimEmptyLines", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/DocComment.ts:58", sym_ty="Function", shape=ellipse];
+      n12990[label="docCommentTag", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/DocComment.ts:37", sym_ty="Function", shape=ellipse];
+      n12679[label="DocComment", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/DocComment.ts:4", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_File_ts {
@@ -1022,8 +1076,8 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n18624[label="file", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/File.ts:37", sym_ty="Function", shape=ellipse];
-      n18424[label="File", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/File.ts:9", sym_ty="Struct", shape=box];
+      n14972[label="file", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/File.ts:37", sym_ty="Function", shape=ellipse];
+      n14752[label="File", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/File.ts:9", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_GenericParameter_ts {
@@ -1031,7 +1085,16 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n7351[label="GenericParameter", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/GenericParameter.ts:6", sym_ty="Struct", shape=box];
+      n16411[label="GenericParameter", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/GenericParameter.ts:6", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_Method_ts {
+      label="Method.ts";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n9152[label="method", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/Method.ts:58", sym_ty="Function", shape=ellipse];
+      n8803[label="Method", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/Method.ts:9", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_NamedType_ts {
@@ -1039,8 +1102,8 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n3767[label="namedType", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/NamedType.ts:24", sym_ty="Function", shape=ellipse];
-      n3705[label="NamedType", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/NamedType.ts:4", sym_ty="Struct", shape=box];
+      n5664[label="namedType", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/NamedType.ts:24", sym_ty="Function", shape=ellipse];
+      n5490[label="NamedType", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/NamedType.ts:4", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_ObjectType_ts {
@@ -1048,8 +1111,16 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n7840[label="objectType", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/ObjectType.ts:57", sym_ty="Function", shape=ellipse];
-      n7556[label="ObjectType", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/ObjectType.ts:8", sym_ty="Struct", shape=box];
+      n5201[label="objectType", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/ObjectType.ts:57", sym_ty="Function", shape=ellipse];
+      n5049[label="ObjectType", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/ObjectType.ts:8", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_Parameter_ts {
+      label="Parameter.ts";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n5251[label="Parameter", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/Parameter.ts:5", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_PrimitiveType_ts {
@@ -1057,7 +1128,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n5007[label="PrimitiveType", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/PrimitiveType.ts:4", sym_ty="Struct", shape=box];
+      n18376[label="PrimitiveType", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/PrimitiveType.ts:4", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_TypeBuilder_ts {
@@ -1065,7 +1136,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n14687[label="TypeBuilder", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/TypeBuilder.ts:5", sym_ty="Struct", shape=box];
+      n11887[label="TypeBuilder", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/TypeBuilder.ts:5", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_ValueBuilder_ts {
@@ -1073,189 +1144,167 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n683[label="ValueBuilder", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/ValueBuilder.ts:5", sym_ty="Struct", shape=box];
+      n1064[label="ValueBuilder", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src/ValueBuilder.ts:5", sym_ty="Struct", shape=box];
     }
 
   }
 
 
-  n1016 -> n1738 [from="caller", to="callee"];
-  n1016 -> n23404 [from="caller", to="callee"];
-  n1070 -> n23404 [from="caller", to="callee"];
-  n1922 -> n2008 [from="caller", to="callee"];
-  n2285 -> n2590 [from="caller", to="callee"];
-  n2398 -> n6 [from="func", to="type_dep"];
-  n2398 -> n2436 [from="caller", to="callee"];
-  n2436 -> n6 [from="func", to="type_dep"];
-  n2436 -> n2398 [from="caller", to="callee"];
-  n2436 -> n23404 [from="caller", to="callee"];
-  n2557 -> n2748 [from="caller", to="callee"];
-  n2590 -> n17958 [from="caller", to="callee"];
-  n2748 -> n2557 [from="caller", to="callee"];
-  n2870 -> n2994 [from="caller", to="callee"];
-  n2918 -> n29 [from="caller", to="callee"];
-  n2918 -> n3030 [from="caller", to="callee"];
-  n2918 -> n3085 [from="caller", to="callee"];
-  n2918 -> n3139 [from="caller", to="callee"];
-  n2918 -> n3183 [from="caller", to="callee"];
-  n2918 -> n3224 [from="caller", to="callee"];
-  n2918 -> n3260 [from="caller", to="callee"];
-  n2918 -> n3302 [from="caller", to="callee"];
-  n2918 -> n3337 [from="caller", to="callee"];
-  n2918 -> n3363 [from="caller", to="callee"];
-  n2918 -> n11368 [from="caller", to="callee"];
-  n2918 -> n17958 [from="caller", to="callee"];
-  n2944 -> n3764 [from="caller", to="callee"];
-  n2944 -> n3805 [from="caller", to="callee"];
-  n2950 -> n2994 [from="caller", to="callee"];
-  n2994 -> n2285 [from="caller", to="callee"];
-  n2994 -> n3053 [from="caller", to="callee"];
-  n3030 -> n17958 [from="caller", to="callee"];
-  n3053 -> n17958 [from="caller", to="callee"];
-  n3085 -> n17958 [from="caller", to="callee"];
-  n3099 -> n1922 [from="input", to="func"];
-  n3099 -> n2008 [from="input", to="func"];
-  n3099 -> n2557 [from="input", to="func"];
-  n3099 -> n2748 [from="input", to="func"];
-  n3139 -> n17958 [from="caller", to="callee"];
-  n3183 -> n17958 [from="caller", to="callee"];
-  n3224 -> n17958 [from="caller", to="callee"];
-  n3260 -> n17958 [from="caller", to="callee"];
-  n3302 -> n17958 [from="caller", to="callee"];
-  n3337 -> n17958 [from="caller", to="callee"];
-  n3363 -> n17958 [from="caller", to="callee"];
-  n3430 -> n251 [from="caller", to="callee"];
-  n3430 -> n2317 [from="func", to="type_dep"];
-  n3430 -> n17958 [from="caller", to="callee"];
-  n3430 -> n18909 [from="caller", to="callee"];
-  n3740 -> n3998 [from="caller", to="callee"];
-  n3767 -> n3705 [from="func", to="type_dep"];
-  n3767 -> n14687 [from="func", to="output"];
-  n3791 -> n16470 [from="caller", to="callee"];
-  n3998 -> n20645 [from="caller", to="callee"];
-  n4302 -> n22507 [from="caller", to="callee"];
-  n4337 -> n3998 [from="caller", to="callee"];
-  n4337 -> n4834 [from="caller", to="callee"];
-  n4938 -> n23 [from="func", to="output"];
-  n5556 -> n17140 [from="caller", to="callee"];
-  n5556 -> n17958 [from="caller", to="callee"];
-  n5556 -> n24841 [from="caller", to="callee"];
-  n5628 -> n17958 [from="caller", to="callee"];
-  n5934 -> n17958 [from="caller", to="callee"];
-  n6650 -> n10024 [from="input", to="func"];
-  n6650 -> n14578 [from="input", to="func"];
-  n6650 -> n14960 [from="input", to="func"];
-  n6745 -> n5556 [from="caller", to="callee"];
-  n7025 -> n2950 [from="caller", to="callee"];
-  n7025 -> n17958 [from="caller", to="callee"];
-  n7675 -> n17958 [from="caller", to="callee"];
-  n7840 -> n7556 [from="func", to="type_dep"];
-  n7969 -> n17958 [from="caller", to="callee"];
-  n7969 -> n22892 [from="caller", to="callee"];
-  n8034 -> n8167 [from="caller", to="callee"];
-  n8192 -> n17958 [from="caller", to="callee"];
-  n8471 -> n23 [from="func", to="output"];
-  n10151 -> n4729 [from="base", to="extends"];
-  n10151 -> n8167 [from="input", to="func"];
-  n10151 -> n13245 [from="base", to="extends"];
-  n10151 -> n16601 [from="field_type", to="struct"];
-  n10151 -> n20165 [from="input", to="func"];
-  n10264 -> n2317 [from="func", to="type_dep"];
-  n10483 -> n16172 [from="func", to="type_dep"];
-  n10724 -> n683 [from="interface", to="implements"];
-  n10724 -> n7351 [from="interface", to="implements"];
-  n10724 -> n14687 [from="interface", to="implements"];
-  n10724 -> n18424 [from="interface", to="implements"];
-  n10724 -> n22726 [from="interface", to="implements"];
-  n10854 -> n10264 [from="input", to="func"];
-  n11009 -> n11031 [from="base", to="extends"];
-  n11009 -> n11180 [from="base", to="extends"];
-  n11368 -> n131 [from="caller", to="callee"];
-  n12091 -> n12625 [from="caller", to="callee"];
-  n12091 -> n13611 [from="caller", to="callee"];
-  n12091 -> n21973 [from="caller", to="callee"];
-  n12281 -> n12487 [from="caller", to="callee"];
-  n12458 -> n12540 [from="caller", to="callee"];
-  n12588 -> n13487 [from="caller", to="callee"];
-  n12790 -> n17958 [from="caller", to="callee"];
-  n12988 -> n12790 [from="caller", to="callee"];
-  n13208 -> n17958 [from="caller", to="callee"];
-  n13245 -> n24931 [from="field_type", to="struct"];
-  n13487 -> n14006 [from="caller", to="callee"];
-  n14006 -> n12790 [from="caller", to="callee"];
-  n14006 -> n17958 [from="caller", to="callee"];
-  n14578 -> n14960 [from="caller", to="callee"];
-  n14687 -> n3705 [from="base", to="extends"];
-  n14687 -> n3705 [from="field_type", to="struct"];
-  n14687 -> n5007 [from="base", to="extends"];
-  n14687 -> n7351 [from="field_type", to="struct"];
-  n14687 -> n7556 [from="base", to="extends"];
-  n15580 -> n16248 [from="field_type", to="struct"];
-  n15601 -> n15580 [from="func", to="output"];
-  n16248 -> n6650 [from="field_type", to="struct"];
-  n16248 -> n19603 [from="field_type", to="struct"];
-  n16248 -> n19707 [from="field_type", to="struct"];
-  n16371 -> n15587 [from="caller", to="callee"];
-  n17140 -> n7025 [from="caller", to="callee"];
-  n17687 -> n5934 [from="input", to="func"];
-  n17687 -> n24215 [from="input", to="func"];
-  n17784 -> n18298 [from="caller", to="callee"];
-  n17958 -> n4938 [from="caller", to="callee"];
-  n18074 -> n18560 [from="caller", to="callee"];
-  n18102 -> n7025 [from="caller", to="callee"];
-  n18102 -> n17958 [from="caller", to="callee"];
-  n18298 -> n24215 [from="caller", to="callee"];
-  n18624 -> n18424 [from="func", to="output"];
-  n18771 -> n18909 [from="input", to="func"];
-  n18943 -> n3805 [from="caller", to="callee"];
-  n18943 -> n3851 [from="caller", to="callee"];
-  n19603 -> n6650 [from="interface", to="implements"];
-  n19603 -> n19707 [from="interface", to="implements"];
-  n19707 -> n1787 [from="input", to="func"];
-  n19707 -> n4373 [from="input", to="func"];
-  n19707 -> n23560 [from="input", to="func"];
-  n19996 -> n20165 [from="caller", to="callee"];
-  n20131 -> n12091 [from="caller", to="callee"];
-  n20131 -> n16371 [from="caller", to="callee"];
-  n20423 -> n4785 [from="interface", to="implements"];
-  n20645 -> n16172 [from="func", to="type_dep"];
-  n21578 -> n3430 [from="caller", to="callee"];
-  n21578 -> n12588 [from="caller", to="callee"];
-  n21699 -> n6650 [from="field_type", to="struct"];
-  n21699 -> n19603 [from="field_type", to="struct"];
-  n21699 -> n19707 [from="field_type", to="struct"];
-  n21735 -> n4343 [from="caller", to="callee"];
-  n21735 -> n22507 [from="caller", to="callee"];
-  n21973 -> n12091 [from="caller", to="callee"];
-  n21982 -> n22133 [from="caller", to="callee"];
-  n22133 -> n21982 [from="caller", to="callee"];
-  n22507 -> n4337 [from="caller", to="callee"];
-  n22507 -> n12588 [from="caller", to="callee"];
-  n22507 -> n17958 [from="caller", to="callee"];
-  n22612 -> n22701 [from="caller", to="callee"];
-  n22701 -> n22612 [from="caller", to="callee"];
-  n22856 -> n22726 [from="func", to="output"];
-  n22856 -> n22910 [from="caller", to="callee"];
-  n22892 -> n22934 [from="caller", to="callee"];
-  n22910 -> n22726 [from="func", to="type_dep"];
-  n22910 -> n22856 [from="caller", to="callee"];
-  n22910 -> n22993 [from="caller", to="callee"];
-  n22934 -> n21246 [from="caller", to="callee"];
-  n23512 -> n23 [from="field_type", to="struct"];
-  n24000 -> n24066 [from="caller", to="callee"];
-  n24000 -> n24233 [from="caller", to="callee"];
-  n24066 -> n24173 [from="caller", to="callee"];
-  n24173 -> n24000 [from="caller", to="callee"];
-  n24215 -> n5934 [from="caller", to="callee"];
-  n24841 -> n12588 [from="caller", to="callee"];
-  n24931 -> n12091 [from="input", to="func"];
-  n24931 -> n12625 [from="input", to="func"];
-  n24931 -> n13611 [from="input", to="func"];
-  n24931 -> n21973 [from="input", to="func"];
-  n24989 -> n25148 [from="caller", to="callee"];
-  n25148 -> n24989 [from="caller", to="callee"];
-  n25150 -> n4729 [from="func", to="type_dep"];
-  n25243 -> n3851 [from="caller", to="callee"];
-  n25243 -> n13208 [from="caller", to="callee"];
-  n25243 -> n22892 [from="caller", to="callee"];
+  n463 -> n12062 [from="func", to="type_dep"];
+  n593 -> n10115 [from="caller", to="callee"];
+  n593 -> n22233 [from="caller", to="callee"];
+  n709 -> n8939 [from="func", to="type_dep"];
+  n709 -> n10115 [from="caller", to="callee"];
+  n709 -> n17842 [from="caller", to="callee"];
+  n709 -> n22233 [from="caller", to="callee"];
+  n1088 -> n10115 [from="caller", to="callee"];
+  n1222 -> n21283 [from="caller", to="callee"];
+  n1934 -> n2033 [from="caller", to="callee"];
+  n2033 -> n1934 [from="caller", to="callee"];
+  n2033 -> n11494 [from="caller", to="callee"];
+  n2597 -> n10115 [from="caller", to="callee"];
+  n2597 -> n12848 [from="caller", to="callee"];
+  n2619 -> n3460 [from="func", to="type_dep"];
+  n2626 -> n9176 [from="caller", to="callee"];
+  n2626 -> n17842 [from="caller", to="callee"];
+  n2626 -> n19727 [from="caller", to="callee"];
+  n3076 -> n4823 [from="caller", to="callee"];
+  n3076 -> n8259 [from="caller", to="callee"];
+  n3076 -> n19019 [from="caller", to="callee"];
+  n3182 -> n14148 [from="caller", to="callee"];
+  n4095 -> n2619 [from="input", to="func"];
+  n4185 -> n4198 [from="base", to="extends"];
+  n4185 -> n4323 [from="base", to="extends"];
+  n4198 -> n4491 [from="field_type", to="struct"];
+  n4198 -> n23573 [from="field_type", to="struct"];
+  n4491 -> n23573 [from="field_type", to="struct"];
+  n4647 -> n18251 [from="interface", to="implements"];
+  n4823 -> n6121 [from="caller", to="callee"];
+  n4823 -> n6269 [from="caller", to="callee"];
+  n5201 -> n5049 [from="func", to="type_dep"];
+  n5251 -> n8803 [from="field_type", to="struct"];
+  n5664 -> n5490 [from="func", to="type_dep"];
+  n5664 -> n11887 [from="func", to="output"];
+  n5668 -> n6121 [from="caller", to="callee"];
+  n5920 -> n4823 [from="caller", to="callee"];
+  n5920 -> n5668 [from="caller", to="callee"];
+  n5920 -> n6042 [from="caller", to="callee"];
+  n5974 -> n10115 [from="caller", to="callee"];
+  n6042 -> n8259 [from="caller", to="callee"];
+  n6121 -> n6588 [from="caller", to="callee"];
+  n6257 -> n6101 [from="caller", to="callee"];
+  n6269 -> n6199 [from="caller", to="callee"];
+  n6803 -> n7786 [from="interface", to="implements"];
+  n6948 -> n11887 [from="func", to="type_dep"];
+  n7041 -> n7143 [from="caller", to="callee"];
+  n7339 -> n14148 [from="caller", to="callee"];
+  n7340 -> n22233 [from="caller", to="callee"];
+  n7620 -> n17842 [from="caller", to="callee"];
+  n8259 -> n10115 [from="caller", to="callee"];
+  n8588 -> n13915 [from="caller", to="callee"];
+  n9094 -> n9152 [from="caller", to="callee"];
+  n9094 -> n10159 [from="caller", to="callee"];
+  n9152 -> n8803 [from="func", to="output"];
+  n9176 -> n17842 [from="caller", to="callee"];
+  n9806 -> n15593 [from="field_type", to="struct"];
+  n9806 -> n15636 [from="field_type", to="struct"];
+  n9806 -> n16000 [from="field_type", to="struct"];
+  n9821 -> n9648 [from="caller", to="callee"];
+  n9991 -> n16000 [from="func", to="type_dep"];
+  n10090 -> n15335 [from="caller", to="callee"];
+  n10159 -> n11887 [from="func", to="type_dep"];
+  n10249 -> n20681 [from="caller", to="callee"];
+  n11494 -> n11389 [from="func", to="type_dep"];
+  n11713 -> n21136 [from="base", to="extends"];
+  n11713 -> n23147 [from="field_type", to="struct"];
+  n11887 -> n5049 [from="base", to="extends"];
+  n11887 -> n5490 [from="base", to="extends"];
+  n11887 -> n5490 [from="field_type", to="struct"];
+  n11887 -> n8803 [from="field_type", to="struct"];
+  n11887 -> n16411 [from="field_type", to="struct"];
+  n11887 -> n18376 [from="base", to="extends"];
+  n12679 -> n8803 [from="field_type", to="struct"];
+  n12691 -> n15679 [from="caller", to="callee"];
+  n12848 -> n9821 [from="caller", to="callee"];
+  n12990 -> n12679 [from="func", to="type_dep"];
+  n12990 -> n13561 [from="caller", to="callee"];
+  n13626 -> n13733 [from="field_type", to="struct"];
+  n13733 -> n12062 [from="field_type", to="struct"];
+  n13733 -> n15593 [from="field_type", to="struct"];
+  n13733 -> n15636 [from="field_type", to="struct"];
+  n13733 -> n16000 [from="field_type", to="struct"];
+  n13827 -> n13915 [from="caller", to="callee"];
+  n13915 -> n13827 [from="caller", to="callee"];
+  n14148 -> n4823 [from="caller", to="callee"];
+  n14148 -> n8259 [from="caller", to="callee"];
+  n14148 -> n10115 [from="caller", to="callee"];
+  n14148 -> n21186 [from="caller", to="callee"];
+  n14488 -> n17842 [from="caller", to="callee"];
+  n14596 -> n10115 [from="caller", to="callee"];
+  n14808 -> n9152 [from="caller", to="callee"];
+  n14808 -> n15636 [from="func", to="type_dep"];
+  n14808 -> n15821 [from="caller", to="callee"];
+  n14972 -> n14752 [from="func", to="output"];
+  n15287 -> n4491 [from="field_type", to="struct"];
+  n15593 -> n15636 [from="interface", to="implements"];
+  n15636 -> n9094 [from="input", to="func"];
+  n15636 -> n11161 [from="input", to="func"];
+  n15750 -> n12062 [from="func", to="type_dep"];
+  n15821 -> n11887 [from="func", to="type_dep"];
+  n16226 -> n7786 [from="func", to="type_dep"];
+  n16411 -> n8803 [from="field_type", to="struct"];
+  n16824 -> n1512 [from="field_type", to="struct"];
+  n19019 -> n3460 [from="func", to="type_dep"];
+  n19019 -> n10115 [from="caller", to="callee"];
+  n19019 -> n10488 [from="caller", to="callee"];
+  n19019 -> n14004 [from="func", to="type_dep"];
+  n19229 -> n3460 [from="func", to="type_dep"];
+  n19989 -> n18192 [from="input", to="func"];
+  n19989 -> n25382 [from="input", to="func"];
+  n20173 -> n20857 [from="caller", to="callee"];
+  n20173 -> n22625 [from="caller", to="callee"];
+  n20681 -> n13746 [from="caller", to="callee"];
+  n20681 -> n16000 [from="func", to="type_dep"];
+  n20681 -> n20458 [from="caller", to="callee"];
+  n20857 -> n10115 [from="caller", to="callee"];
+  n20857 -> n22625 [from="caller", to="callee"];
+  n20959 -> n11249 [from="caller", to="callee"];
+  n21136 -> n19989 [from="field_type", to="struct"];
+  n21186 -> n20681 [from="caller", to="callee"];
+  n21207 -> n5920 [from="caller", to="callee"];
+  n21207 -> n10115 [from="caller", to="callee"];
+  n21207 -> n18333 [from="func", to="output"];
+  n21207 -> n22543 [from="caller", to="callee"];
+  n21207 -> n23259 [from="caller", to="callee"];
+  n21283 -> n21401 [from="caller", to="callee"];
+  n21362 -> n21401 [from="caller", to="callee"];
+  n21401 -> n20173 [from="caller", to="callee"];
+  n21401 -> n21463 [from="caller", to="callee"];
+  n21463 -> n10115 [from="caller", to="callee"];
+  n22233 -> n10115 [from="caller", to="callee"];
+  n22233 -> n21362 [from="caller", to="callee"];
+  n22416 -> n1064 [from="interface", to="implements"];
+  n22416 -> n5251 [from="interface", to="implements"];
+  n22416 -> n8803 [from="interface", to="implements"];
+  n22416 -> n11887 [from="interface", to="implements"];
+  n22416 -> n12679 [from="interface", to="implements"];
+  n22416 -> n14752 [from="interface", to="implements"];
+  n22416 -> n16411 [from="interface", to="implements"];
+  n22543 -> n21283 [from="caller", to="callee"];
+  n22618 -> n12062 [from="interface", to="implements"];
+  n22618 -> n16000 [from="interface", to="implements"];
+  n22618 -> n23828 [from="interface", to="implements"];
+  n22979 -> n10115 [from="caller", to="callee"];
+  n23128 -> n15197 [from="input", to="func"];
+  n23147 -> n20602 [from="interface", to="implements"];
+  n23259 -> n22233 [from="caller", to="callee"];
+  n23400 -> n23970 [from="caller", to="callee"];
+  n23538 -> n23970 [from="caller", to="callee"];
+  n23940 -> n23992 [from="caller", to="callee"];
+  n23978 -> n5768 [from="caller", to="callee"];
+  n23978 -> n23400 [from="caller", to="callee"];
+  n23978 -> n23538 [from="caller", to="callee"];
+  n23978 -> n23802 [from="caller", to="callee"];
+  n23978 -> n24069 [from="caller", to="callee"];
+  n25382 -> n15679 [from="caller", to="callee"];
 }

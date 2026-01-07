@@ -24,8 +24,6 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_databend_bendsave_backup[label="backup", path="/home/yibai/llmcc/sample/repos/databend/src/bendsave/src"];
-    mod_databend_bendsave_restore[label="restore", path="/home/yibai/llmcc/sample/repos/databend/src/bendsave/src"];
     mod_databend_bendsave_storage[label="storage", path="/home/yibai/llmcc/sample/repos/databend/src/bendsave/src"];
   }
 
@@ -42,6 +40,7 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_databend_codegen_bin[label="bin", path="/home/yibai/llmcc/sample/repos/databend/src/query/codegen/src/bin"];
     mod_databend_codegen_writes[label="writes", path="/home/yibai/llmcc/sample/repos/databend/src/query/codegen/src/writes"];
   }
 
@@ -67,11 +66,20 @@ digraph architecture {
     mod_databend_common_base_runtime[label="runtime", path="/home/yibai/llmcc/sample/repos/databend/src/common/base/src/runtime"];
   }
 
+  subgraph cluster_databend_common_building {
+    label="databend-common-building";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_databend_common_building_lib[label="lib", path="/home/yibai/llmcc/sample/repos/databend/src/common/building/src"];
+  }
+
   subgraph cluster_databend_common_cache {
     label="databend-common-cache";
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_databend_common_cache_cache[label="cache", path="/home/yibai/llmcc/sample/repos/databend/src/common/cache/src"];
     mod_databend_common_cache_mem_sized[label="mem_sized", path="/home/yibai/llmcc/sample/repos/databend/src/common/cache/src"];
   }
 
@@ -97,7 +105,6 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_databend_common_cloud_control_client_config[label="client_config", path="/home/yibai/llmcc/sample/repos/databend/src/common/cloud_control/src"];
     mod_databend_common_cloud_control_task_utils[label="task_utils", path="/home/yibai/llmcc/sample/repos/databend/src/common/cloud_control/src"];
   }
 
@@ -107,9 +114,12 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_databend_common_column_binary[label="binary", path="/home/yibai/llmcc/sample/repos/databend/src/common/column/src/binary"];
+    mod_databend_common_column_binview[label="binview", path="/home/yibai/llmcc/sample/repos/databend/src/common/column/src/binview"];
     mod_databend_common_column_bitmap[label="bitmap", path="/home/yibai/llmcc/sample/repos/databend/src/common/column/src/bitmap"];
     mod_databend_common_column_buffer[label="buffer", path="/home/yibai/llmcc/sample/repos/databend/src/common/column/src/buffer"];
+    mod_databend_common_column_error[label="error", path="/home/yibai/llmcc/sample/repos/databend/src/common/column/src"];
     mod_databend_common_column_fmt[label="fmt", path="/home/yibai/llmcc/sample/repos/databend/src/common/column/src"];
+    mod_databend_common_column_iterator[label="iterator", path="/home/yibai/llmcc/sample/repos/databend/src/common/column/src"];
     mod_databend_common_column_types[label="types", path="/home/yibai/llmcc/sample/repos/databend/src/common/column/src/types"];
   }
 
@@ -119,7 +129,6 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_databend_common_config_config[label="config", path="/home/yibai/llmcc/sample/repos/databend/src/query/config/src"];
-    mod_databend_common_config_global[label="global", path="/home/yibai/llmcc/sample/repos/databend/src/query/config/src"];
     mod_databend_common_config_inner[label="inner", path="/home/yibai/llmcc/sample/repos/databend/src/query/config/src"];
   }
 
@@ -128,7 +137,7 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_databend_common_datavalues_data_field[label="data_field", path="/home/yibai/llmcc/sample/repos/databend/src/query/datavalues/src"];
+    mod_databend_common_datavalues_data_schema[label="data_schema", path="/home/yibai/llmcc/sample/repos/databend/src/query/datavalues/src"];
     mod_databend_common_datavalues_types[label="types", path="/home/yibai/llmcc/sample/repos/databend/src/query/datavalues/src/types"];
   }
 
@@ -149,11 +158,12 @@ digraph architecture {
     mod_databend_common_expression_aggregate[label="aggregate", path="/home/yibai/llmcc/sample/repos/databend/src/query/expression/src/aggregate"];
     mod_databend_common_expression_block[label="block", path="/home/yibai/llmcc/sample/repos/databend/src/query/expression/src"];
     mod_databend_common_expression_converts[label="converts", path="/home/yibai/llmcc/sample/repos/databend/src/query/expression/src/converts"];
-    mod_databend_common_expression_evaluator[label="evaluator", path="/home/yibai/llmcc/sample/repos/databend/src/query/expression/src"];
     mod_databend_common_expression_expression[label="expression", path="/home/yibai/llmcc/sample/repos/databend/src/query/expression/src"];
     mod_databend_common_expression_filter[label="filter", path="/home/yibai/llmcc/sample/repos/databend/src/query/expression/src/filter"];
     mod_databend_common_expression_function[label="function", path="/home/yibai/llmcc/sample/repos/databend/src/query/expression/src"];
+    mod_databend_common_expression_hilbert[label="hilbert", path="/home/yibai/llmcc/sample/repos/databend/src/query/expression/src/hilbert"];
     mod_databend_common_expression_kernels[label="kernels", path="/home/yibai/llmcc/sample/repos/databend/src/query/expression/src/kernels"];
+    mod_databend_common_expression_projected_block[label="projected_block", path="/home/yibai/llmcc/sample/repos/databend/src/query/expression/src"];
     mod_databend_common_expression_property[label="property", path="/home/yibai/llmcc/sample/repos/databend/src/query/expression/src"];
     mod_databend_common_expression_register_vectorize[label="register_vectorize", path="/home/yibai/llmcc/sample/repos/databend/src/query/expression/src"];
     mod_databend_common_expression_sampler[label="sampler", path="/home/yibai/llmcc/sample/repos/databend/src/query/expression/src/sampler"];
@@ -169,6 +179,7 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_databend_common_formats_binary[label="binary", path="/home/yibai/llmcc/sample/repos/databend/src/query/formats/src"];
     mod_databend_common_formats_clickhouse[label="clickhouse", path="/home/yibai/llmcc/sample/repos/databend/src/query/formats/src"];
     mod_databend_common_formats_common_settings[label="common_settings", path="/home/yibai/llmcc/sample/repos/databend/src/query/formats/src"];
     mod_databend_common_formats_field_decoder[label="field_decoder", path="/home/yibai/llmcc/sample/repos/databend/src/query/formats/src/field_decoder"];
@@ -198,6 +209,7 @@ digraph architecture {
     mod_databend_common_hashtable_stack_hashtable[label="stack_hashtable", path="/home/yibai/llmcc/sample/repos/databend/src/common/hashtable/src"];
     mod_databend_common_hashtable_string_hashtable[label="string_hashtable", path="/home/yibai/llmcc/sample/repos/databend/src/common/hashtable/src"];
     mod_databend_common_hashtable_table0[label="table0", path="/home/yibai/llmcc/sample/repos/databend/src/common/hashtable/src"];
+    mod_databend_common_hashtable_table1[label="table1", path="/home/yibai/llmcc/sample/repos/databend/src/common/hashtable/src"];
     mod_databend_common_hashtable_table_empty[label="table_empty", path="/home/yibai/llmcc/sample/repos/databend/src/common/hashtable/src"];
     mod_databend_common_hashtable_traits[label="traits", path="/home/yibai/llmcc/sample/repos/databend/src/common/hashtable/src"];
   }
@@ -219,14 +231,9 @@ digraph architecture {
     mod_databend_common_io_cursor_ext[label="cursor_ext", path="/home/yibai/llmcc/sample/repos/databend/src/common/io/src/cursor_ext"];
     mod_databend_common_io_decimal[label="decimal", path="/home/yibai/llmcc/sample/repos/databend/src/common/io/src"];
     mod_databend_common_io_format_settings[label="format_settings", path="/home/yibai/llmcc/sample/repos/databend/src/common/io/src"];
-  }
-
-  subgraph cluster_databend_common_license {
-    label="databend-common-license";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_databend_common_license_license_manager[label="license_manager", path="/home/yibai/llmcc/sample/repos/databend/src/common/license/src"];
+    mod_databend_common_io_geometry[label="geometry", path="/home/yibai/llmcc/sample/repos/databend/src/common/io/src"];
+    mod_databend_common_io_interval[label="interval", path="/home/yibai/llmcc/sample/repos/databend/src/common/io/src"];
+    mod_databend_common_io_wkb[label="wkb", path="/home/yibai/llmcc/sample/repos/databend/src/common/io/src"];
   }
 
   subgraph cluster_databend_common_management {
@@ -242,17 +249,16 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_databend_common_meta_api_crud[label="crud", path="/home/yibai/llmcc/sample/repos/databend/src/meta/api/src/crud"];
     mod_databend_common_meta_api_error_util[label="error_util", path="/home/yibai/llmcc/sample/repos/databend/src/meta/api/src"];
     mod_databend_common_meta_api_garbage_collection_api[label="garbage_collection_api", path="/home/yibai/llmcc/sample/repos/databend/src/meta/api/src"];
     mod_databend_common_meta_api_kv_app_error[label="kv_app_error", path="/home/yibai/llmcc/sample/repos/databend/src/meta/api/src"];
     mod_databend_common_meta_api_kv_fetch_util[label="kv_fetch_util", path="/home/yibai/llmcc/sample/repos/databend/src/meta/api/src"];
     mod_databend_common_meta_api_kv_pb_api[label="kv_pb_api", path="/home/yibai/llmcc/sample/repos/databend/src/meta/api/src/kv_pb_api"];
-    mod_databend_common_meta_api_meta_txn_error[label="meta_txn_error", path="/home/yibai/llmcc/sample/repos/databend/src/meta/api/src"];
     mod_databend_common_meta_api_schema_api[label="schema_api", path="/home/yibai/llmcc/sample/repos/databend/src/meta/api/src"];
     mod_databend_common_meta_api_schema_api_test_suite[label="schema_api_test_suite", path="/home/yibai/llmcc/sample/repos/databend/src/meta/api/src"];
     mod_databend_common_meta_api_serialization_util[label="serialization_util", path="/home/yibai/llmcc/sample/repos/databend/src/meta/api/src"];
-    mod_databend_common_meta_api_table_api[label="table_api", path="/home/yibai/llmcc/sample/repos/databend/src/meta/api/src"];
-    mod_databend_common_meta_api_txn_core_util[label="txn_core_util", path="/home/yibai/llmcc/sample/repos/databend/src/meta/api/src"];
+    mod_databend_common_meta_api_txn_op_builder_util[label="txn_op_builder_util", path="/home/yibai/llmcc/sample/repos/databend/src/meta/api/src"];
   }
 
   subgraph cluster_databend_common_meta_app {
@@ -261,9 +267,10 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_databend_common_meta_app_app_error[label="app_error", path="/home/yibai/llmcc/sample/repos/databend/src/meta/app/src"];
+    mod_databend_common_meta_app_data_id[label="data_id", path="/home/yibai/llmcc/sample/repos/databend/src/meta/app/src"];
     mod_databend_common_meta_app_data_mask[label="data_mask", path="/home/yibai/llmcc/sample/repos/databend/src/meta/app/src/data_mask"];
+    mod_databend_common_meta_app_primitive[label="primitive", path="/home/yibai/llmcc/sample/repos/databend/src/meta/app/src"];
     mod_databend_common_meta_app_principal[label="principal", path="/home/yibai/llmcc/sample/repos/databend/src/meta/app/src/principal"];
-    mod_databend_common_meta_app_row_access_policy[label="row_access_policy", path="/home/yibai/llmcc/sample/repos/databend/src/meta/app/src/row_access_policy"];
     mod_databend_common_meta_app_schema[label="schema", path="/home/yibai/llmcc/sample/repos/databend/src/meta/app/src/schema"];
     mod_databend_common_meta_app_tenant[label="tenant", path="/home/yibai/llmcc/sample/repos/databend/src/meta/app/src/tenant"];
     mod_databend_common_meta_app_tenant_key[label="tenant_key", path="/home/yibai/llmcc/sample/repos/databend/src/meta/app/src/tenant_key"];
@@ -294,7 +301,9 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_databend_common_meta_control_args[label="args", path="/home/yibai/llmcc/sample/repos/databend/src/meta/control/src"];
+    mod_databend_common_meta_control_export_from_grpc[label="export_from_grpc", path="/home/yibai/llmcc/sample/repos/databend/src/meta/control/src"];
     mod_databend_common_meta_control_import[label="import", path="/home/yibai/llmcc/sample/repos/databend/src/meta/control/src"];
+    mod_databend_common_meta_control_keys_layout_from_grpc[label="keys_layout_from_grpc", path="/home/yibai/llmcc/sample/repos/databend/src/meta/control/src"];
   }
 
   subgraph cluster_databend_common_meta_kvapi {
@@ -335,11 +344,20 @@ digraph architecture {
     mod_databend_common_meta_sled_store_sled_serde[label="sled_serde", path="/home/yibai/llmcc/sample/repos/databend/src/meta/sled-store/src"];
   }
 
+  subgraph cluster_databend_common_meta_store {
+    label="databend-common-meta-store";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_databend_common_meta_store_local[label="local", path="/home/yibai/llmcc/sample/repos/databend/src/meta/store/src"];
+  }
+
   subgraph cluster_databend_common_meta_types {
     label="databend-common-meta-types";
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_databend_common_meta_types_change[label="change", path="/home/yibai/llmcc/sample/repos/databend/src/meta/types/src"];
     mod_databend_common_meta_types_cluster[label="cluster", path="/home/yibai/llmcc/sample/repos/databend/src/meta/types/src"];
     mod_databend_common_meta_types_endpoint[label="endpoint", path="/home/yibai/llmcc/sample/repos/databend/src/meta/types/src"];
     mod_databend_common_meta_types_errors[label="errors", path="/home/yibai/llmcc/sample/repos/databend/src/meta/types/src/errors"];
@@ -364,6 +382,7 @@ digraph architecture {
     mod_databend_common_native_nested[label="nested", path="/home/yibai/llmcc/sample/repos/databend/src/common/native/src"];
     mod_databend_common_native_read[label="read", path="/home/yibai/llmcc/sample/repos/databend/src/common/native/src/read"];
     mod_databend_common_native_stat[label="stat", path="/home/yibai/llmcc/sample/repos/databend/src/common/native/src"];
+    mod_databend_common_native_util[label="util", path="/home/yibai/llmcc/sample/repos/databend/src/common/native/src/util"];
     mod_databend_common_native_write[label="write", path="/home/yibai/llmcc/sample/repos/databend/src/common/native/src/write"];
   }
 
@@ -385,9 +404,7 @@ digraph architecture {
 
     mod_databend_common_pipeline_transforms_blocks[label="blocks", path="/home/yibai/llmcc/sample/repos/databend/src/query/pipeline/transforms/src/processors/transforms/blocks"];
     mod_databend_common_pipeline_transforms_columns[label="columns", path="/home/yibai/llmcc/sample/repos/databend/src/query/pipeline/transforms/src/processors/transforms/columns"];
-    mod_databend_common_pipeline_transforms_filters[label="filters", path="/home/yibai/llmcc/sample/repos/databend/src/query/pipeline/transforms/src/processors/transforms/filters"];
     mod_databend_common_pipeline_transforms_processors[label="processors", path="/home/yibai/llmcc/sample/repos/databend/src/query/pipeline/transforms/src/processors"];
-    mod_databend_common_pipeline_transforms_sets[label="sets", path="/home/yibai/llmcc/sample/repos/databend/src/query/pipeline/transforms/src/processors/transforms/sets"];
     mod_databend_common_pipeline_transforms_sorts[label="sorts", path="/home/yibai/llmcc/sample/repos/databend/src/query/pipeline/transforms/src/processors/transforms/sorts"];
     mod_databend_common_pipeline_transforms_traits[label="traits", path="/home/yibai/llmcc/sample/repos/databend/src/query/pipeline/transforms/src/processors/traits"];
     mod_databend_common_pipeline_transforms_window[label="window", path="/home/yibai/llmcc/sample/repos/databend/src/query/pipeline/transforms/src/processors/transforms/window"];
@@ -445,6 +462,7 @@ digraph architecture {
     mod_databend_common_storage_meta_hll[label="meta_hll", path="/home/yibai/llmcc/sample/repos/databend/src/common/storage/src"];
     mod_databend_common_storage_metrics_layer[label="metrics_layer", path="/home/yibai/llmcc/sample/repos/databend/src/common/storage/src"];
     mod_databend_common_storage_operator[label="operator", path="/home/yibai/llmcc/sample/repos/databend/src/common/storage/src"];
+    mod_databend_common_storage_parquet[label="parquet", path="/home/yibai/llmcc/sample/repos/databend/src/common/storage/src"];
     mod_databend_common_storage_runtime_layer[label="runtime_layer", path="/home/yibai/llmcc/sample/repos/databend/src/common/storage/src"];
     mod_databend_common_storage_stage[label="stage", path="/home/yibai/llmcc/sample/repos/databend/src/common/storage/src"];
     mod_databend_common_storage_statistics[label="statistics", path="/home/yibai/llmcc/sample/repos/databend/src/common/storage/src"];
@@ -464,7 +482,6 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_databend_common_storages_fuse_fuse_part[label="fuse_part", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/fuse/src"];
     mod_databend_common_storages_fuse_fuse_table[label="fuse_table", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/fuse/src"];
     mod_databend_common_storages_fuse_fuse_type[label="fuse_type", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/fuse/src"];
     mod_databend_common_storages_fuse_io[label="io", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/fuse/src/io"];
@@ -481,7 +498,6 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_databend_common_storages_hive_converters[label="converters", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/hive/hive/src"];
     mod_databend_common_storages_hive_hive_table[label="hive_table", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/hive/hive/src"];
   }
 
@@ -500,7 +516,6 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_databend_common_storages_orc_copy_into_table[label="copy_into_table", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/orc/src/copy_into_table"];
-    mod_databend_common_storages_orc_hashable_schema[label="hashable_schema", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/orc/src"];
     mod_databend_common_storages_orc_processors[label="processors", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/orc/src/processors"];
   }
 
@@ -512,7 +527,6 @@ digraph architecture {
     mod_databend_common_storages_parquet_meta[label="meta", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/parquet/src"];
     mod_databend_common_storages_parquet_parquet_part[label="parquet_part", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/parquet/src"];
     mod_databend_common_storages_parquet_parquet_reader[label="parquet_reader", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/parquet/src/parquet_reader"];
-    mod_databend_common_storages_parquet_parquet_variant_table[label="parquet_variant_table", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/parquet/src/parquet_variant_table"];
     mod_databend_common_storages_parquet_row_group_serde[label="row_group_serde", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/parquet/src"];
     mod_databend_common_storages_parquet_source[label="source", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/parquet/src"];
     mod_databend_common_storages_parquet_statistics[label="statistics", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/parquet/src/statistics"];
@@ -527,7 +541,6 @@ digraph architecture {
     mod_databend_common_storages_stage_append[label="append", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/stage/src/append"];
     mod_databend_common_storages_stage_read[label="read", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/stage/src/read"];
     mod_databend_common_storages_stage_streaming_load[label="streaming_load", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/stage/src"];
-    mod_databend_common_storages_stage_transform_generating[label="transform_generating", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/stage/src"];
   }
 
   subgraph cluster_databend_common_storages_stream {
@@ -535,7 +548,6 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_databend_common_storages_stream_stream_status_table_func[label="stream_status_table_func", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/stream/src"];
     mod_databend_common_storages_stream_stream_table[label="stream_table", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/stream/src"];
   }
 
@@ -545,7 +557,6 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_databend_common_storages_system_log_queue[label="log_queue", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/system/src"];
-    mod_databend_common_storages_system_query_log_table[label="query_log_table", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/system/src"];
     mod_databend_common_storages_system_table[label="table", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/system/src"];
     mod_databend_common_storages_system_temp_files_table[label="temp_files_table", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/system/src"];
     mod_databend_common_storages_system_util[label="util", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/system/src"];
@@ -567,15 +578,14 @@ digraph architecture {
     mod_databend_common_tracing_config[label="config", path="/home/yibai/llmcc/sample/repos/databend/src/common/tracing/src"];
     mod_databend_common_tracing_crash_hook[label="crash_hook", path="/home/yibai/llmcc/sample/repos/databend/src/common/tracing/src"];
     mod_databend_common_tracing_loggers[label="loggers", path="/home/yibai/llmcc/sample/repos/databend/src/common/tracing/src"];
-    mod_databend_common_tracing_structlog[label="structlog", path="/home/yibai/llmcc/sample/repos/databend/src/common/tracing/src"];
   }
 
-  subgraph cluster_databend_common_users {
-    label="databend-common-users";
+  subgraph cluster_databend_common_vector {
+    label="databend-common-vector";
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_databend_common_users_user_api[label="user_api", path="/home/yibai/llmcc/sample/repos/databend/src/query/users/src"];
+    mod_databend_common_vector_distance[label="distance", path="/home/yibai/llmcc/sample/repos/databend/src/common/vector/src"];
   }
 
   subgraph cluster_databend_enterprise_query {
@@ -631,6 +641,7 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_databend_functions_scalar_geo_geo[label="geo", path="/home/yibai/llmcc/sample/repos/databend/src/query/functions/src/scalars/geographic/src"];
+    mod_databend_functions_scalar_geo_geo_h3[label="geo_h3", path="/home/yibai/llmcc/sample/repos/databend/src/query/functions/src/scalars/geographic/src"];
     mod_databend_functions_scalar_geo_geometry[label="geometry", path="/home/yibai/llmcc/sample/repos/databend/src/query/functions/src/scalars/geographic/src"];
   }
 
@@ -702,10 +713,8 @@ digraph architecture {
 
     mod_databend_storages_common_cache_cache[label="cache", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/common/cache/src"];
     mod_databend_storages_common_cache_caches[label="caches", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/common/cache/src"];
-    mod_databend_storages_common_cache_manager[label="manager", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/common/cache/src"];
     mod_databend_storages_common_cache_providers[label="providers", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/common/cache/src/providers"];
     mod_databend_storages_common_cache_read[label="read", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/common/cache/src/read"];
-    mod_databend_storages_common_cache_temp_dir[label="temp_dir", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/common/cache/src"];
   }
 
   subgraph cluster_databend_storages_common_index {
@@ -720,7 +729,6 @@ digraph architecture {
     mod_databend_storages_common_index_index[label="index", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/common/index/src"];
     mod_databend_storages_common_index_inverted_index[label="inverted_index", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/common/index/src"];
     mod_databend_storages_common_index_page_index[label="page_index", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/common/index/src"];
-    mod_databend_storages_common_index_range_index[label="range_index", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/common/index/src"];
   }
 
   subgraph cluster_databend_storages_common_io {
@@ -728,7 +736,6 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_databend_storages_common_io_merge_io_reader[label="merge_io_reader", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/common/io/src"];
     mod_databend_storages_common_io_read_settings[label="read_settings", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/common/io/src"];
   }
 
@@ -756,121 +763,132 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_databend_storages_common_table_meta_meta[label="meta", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/common/table_meta/src/meta"];
+    mod_databend_storages_common_table_meta_readers[label="readers", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/common/table_meta/src/readers"];
     mod_databend_storages_common_table_meta_table[label="table", path="/home/yibai/llmcc/sample/repos/databend/src/query/storages/common/table_meta/src/table"];
+  }
+
+  subgraph cluster_unknown {
+    label="unknown";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_unknown_unknown[label="unknown", path="/home/yibai/llmcc/sample/repos/databend/src/query/expression/src"];
   }
 
 
   mod_bendpy_lib -> mod_databend_common_config_inner;
-  mod_databend_bendsave_backup -> mod_databend_bendsave_storage;
-  mod_databend_bendsave_restore -> mod_databend_bendsave_storage;
   mod_databend_bendsave_storage -> mod_databend_common_config_inner;
-  mod_databend_binaries_query -> mod_databend_common_base_runtime;
   mod_databend_binaries_query -> mod_databend_common_config_inner;
-  mod_databend_binaries_query -> mod_databend_common_meta_client_required;
-  mod_databend_binaries_query -> mod_databend_common_tracing_crash_hook;
-  mod_databend_binaries_query -> mod_databend_query_servers;
-  mod_databend_codegen_writes -> mod_databend_common_expression_types;
-  mod_databend_common_ast_ast -> mod_databend_common_ast_parser;
+  mod_databend_codegen_bin -> mod_databend_codegen_writes;
+  mod_databend_codegen_writes -> mod_databend_storages_common_table_meta_meta;
+  mod_databend_common_ast_ast -> mod_databend_common_column_bitmap;
   mod_databend_common_ast_ast -> mod_databend_common_column_types;
   mod_databend_common_ast_ast -> mod_databend_common_meta_client_required;
   mod_databend_common_ast_ast -> mod_databend_common_meta_kvapi_kvapi;
   mod_databend_common_ast_ast -> mod_databend_query_servers;
   mod_databend_common_ast_parser -> mod_databend_common_ast_ast;
   mod_databend_common_ast_parser -> mod_databend_common_ast_span;
-  mod_databend_common_ast_parser -> mod_databend_common_sql_plans;
-  mod_databend_common_base_base -> mod_databend_common_meta_client_required;
+  mod_databend_common_ast_parser -> mod_databend_common_column_binview;
+  mod_databend_common_base_base -> mod_databend_common_ast_parser;
+  mod_databend_common_base_base -> mod_databend_common_expression_types;
   mod_databend_common_base_containers -> mod_databend_common_pipeline_transforms_sorts;
   mod_databend_common_base_rangemap -> mod_databend_common_ast_span;
+  mod_databend_common_base_runtime -> mod_databend_common_base_base;
+  mod_databend_common_base_runtime -> mod_databend_common_expression_types;
   mod_databend_common_base_runtime -> mod_databend_common_meta_client_required;
   mod_databend_common_base_runtime -> mod_databend_common_meta_kvapi_kvapi;
-  mod_databend_common_base_runtime -> mod_databend_common_meta_raft_store_leveled_store;
   mod_databend_common_base_runtime -> mod_databend_common_storage_metrics_layer;
   mod_databend_common_base_runtime -> mod_databend_meta_metrics;
+  mod_databend_common_building_lib -> mod_databend_common_meta_raft_store_leveled_store;
   mod_databend_common_catalog_plan -> mod_databend_common_expression_block;
   mod_databend_common_catalog_plan -> mod_databend_common_expression_expression;
   mod_databend_common_catalog_plan -> mod_databend_common_expression_schema;
   mod_databend_common_catalog_plan -> mod_databend_common_expression_values;
   mod_databend_common_catalog_plan -> mod_databend_common_meta_app_principal;
-  mod_databend_common_catalog_plan -> mod_databend_common_meta_app_schema;
+  mod_databend_common_catalog_plan -> mod_databend_common_sql_plans;
   mod_databend_common_catalog_plan -> mod_databend_common_storage_stage;
   mod_databend_common_catalog_plan -> mod_databend_storages_common_table_meta_meta;
   mod_databend_common_catalog_table -> mod_databend_common_meta_app_schema;
-  mod_databend_common_catalog_table_args -> mod_databend_common_expression_expression;
   mod_databend_common_catalog_table_args -> mod_databend_common_expression_values;
+  mod_databend_common_catalog_table_args -> mod_databend_common_sql_plans;
   mod_databend_common_catalog_table_args -> mod_databend_common_storages_fuse_table_functions;
   mod_databend_common_catalog_table_with_options -> mod_databend_common_ast_ast;
-  mod_databend_common_catalog_table_with_options -> mod_databend_common_ast_parser;
   mod_databend_common_cloud_control_task_utils -> mod_databend_common_meta_app_principal;
+  mod_databend_common_column_binview -> mod_databend_common_column_buffer;
   mod_databend_common_column_bitmap -> mod_databend_common_column_types;
-  mod_databend_common_column_bitmap -> mod_databend_common_meta_client_required;
   mod_databend_common_column_bitmap -> mod_databend_common_meta_kvapi_kvapi;
+  mod_databend_common_column_bitmap -> mod_databend_common_meta_types_change;
   mod_databend_common_column_fmt -> mod_databend_common_column_bitmap;
+  mod_databend_common_column_iterator -> mod_databend_common_column_binview;
   mod_databend_common_column_types -> mod_databend_query_servers;
   mod_databend_common_config_config -> mod_databend_common_config_inner;
   mod_databend_common_config_inner -> mod_databend_common_config_config;
   mod_databend_common_config_inner -> mod_databend_query_servers;
-  mod_databend_common_exception_exception -> mod_databend_common_meta_types_errors;
-  mod_databend_common_exception_exception -> mod_databend_storages_common_index_filters;
+  mod_databend_common_exception_exception -> mod_databend_common_meta_app_app_error;
   mod_databend_common_exception_exception_into -> mod_databend_query_servers;
   mod_databend_common_expression_aggregate -> mod_databend_common_expression_types;
-  mod_databend_common_expression_aggregate -> mod_databend_common_expression_utils;
   mod_databend_common_expression_aggregate -> mod_databend_common_expression_values;
   mod_databend_common_expression_aggregate -> mod_databend_query_spillers;
-  mod_databend_common_expression_block -> mod_databend_common_expression_types;
   mod_databend_common_expression_converts -> mod_databend_common_column_buffer;
-  mod_databend_common_expression_converts -> mod_databend_common_column_types;
+  mod_databend_common_expression_converts -> mod_databend_common_expression_filter;
   mod_databend_common_expression_converts -> mod_databend_common_expression_schema;
   mod_databend_common_expression_converts -> mod_databend_common_expression_types;
   mod_databend_common_expression_converts -> mod_databend_common_expression_values;
   mod_databend_common_expression_expression -> mod_databend_common_expression_function;
   mod_databend_common_expression_expression -> mod_databend_common_expression_types;
   mod_databend_common_expression_expression -> mod_databend_common_expression_values;
-  mod_databend_common_expression_filter -> mod_databend_common_expression_expression;
+  mod_databend_common_expression_expression -> mod_databend_common_sql_plans;
+  mod_databend_common_expression_function -> mod_databend_common_column_bitmap;
   mod_databend_common_expression_function -> mod_databend_common_expression_types;
-  mod_databend_common_expression_function -> mod_databend_common_expression_values;
+  mod_databend_common_expression_hilbert -> mod_databend_common_meta_types_change;
   mod_databend_common_expression_kernels -> mod_databend_common_column_binary;
   mod_databend_common_expression_kernels -> mod_databend_common_column_bitmap;
   mod_databend_common_expression_kernels -> mod_databend_common_column_buffer;
   mod_databend_common_expression_kernels -> mod_databend_common_expression_types;
   mod_databend_common_expression_kernels -> mod_databend_common_expression_utils;
   mod_databend_common_expression_kernels -> mod_databend_common_expression_values;
+  mod_databend_common_expression_kernels -> mod_databend_common_functions_aggregates;
   mod_databend_common_expression_kernels -> mod_databend_storages_common_index_index;
   mod_databend_common_expression_property -> mod_databend_common_expression_types;
+  mod_databend_common_expression_register_vectorize -> mod_databend_common_expression_function;
   mod_databend_common_expression_register_vectorize -> mod_databend_common_expression_types;
   mod_databend_common_expression_register_vectorize -> mod_databend_common_expression_values;
   mod_databend_common_expression_sampler -> mod_databend_common_expression_block;
   mod_databend_common_expression_schema -> mod_databend_common_expression_types;
-  mod_databend_common_expression_type_check -> mod_databend_common_ast_parser;
+  mod_databend_common_expression_type_check -> mod_databend_common_datavalues_types;
   mod_databend_common_expression_type_check -> mod_databend_common_expression_expression;
   mod_databend_common_expression_type_check -> mod_databend_common_expression_function;
   mod_databend_common_expression_type_check -> mod_databend_common_expression_types;
-  mod_databend_common_expression_types -> mod_databend_common_column_binary;
   mod_databend_common_expression_types -> mod_databend_common_column_bitmap;
   mod_databend_common_expression_types -> mod_databend_common_column_buffer;
   mod_databend_common_expression_types -> mod_databend_common_column_types;
   mod_databend_common_expression_types -> mod_databend_common_exception_exception;
   mod_databend_common_expression_types -> mod_databend_common_expression_property;
+  mod_databend_common_expression_types -> mod_databend_common_expression_schema;
   mod_databend_common_expression_types -> mod_databend_common_expression_values;
   mod_databend_common_expression_types -> mod_databend_common_functions_aggregates;
+  mod_databend_common_expression_types -> mod_databend_common_meta_app_tenant_key;
   mod_databend_common_expression_types -> mod_databend_common_meta_client_required;
+  mod_databend_common_expression_types -> mod_databend_common_meta_types_change;
   mod_databend_common_expression_types -> mod_databend_query_servers;
   mod_databend_common_expression_utils -> mod_databend_common_ast_ast;
-  mod_databend_common_expression_utils -> mod_databend_common_column_binary;
+  mod_databend_common_expression_utils -> mod_databend_common_ast_parser;
   mod_databend_common_expression_utils -> mod_databend_common_column_bitmap;
   mod_databend_common_expression_utils -> mod_databend_common_expression_block;
   mod_databend_common_expression_utils -> mod_databend_common_expression_expression;
   mod_databend_common_expression_utils -> mod_databend_common_expression_function;
-  mod_databend_common_expression_utils -> mod_databend_common_expression_schema;
   mod_databend_common_expression_utils -> mod_databend_common_expression_types;
   mod_databend_common_expression_utils -> mod_databend_common_expression_values;
   mod_databend_common_expression_utils -> mod_databend_common_meta_client_required;
+  mod_databend_common_expression_utils -> mod_databend_common_sql_plans;
   mod_databend_common_expression_utils -> mod_databend_common_timezone_lib;
-  mod_databend_common_expression_values -> mod_databend_common_column_types;
-  mod_databend_common_expression_values -> mod_databend_common_expression_converts;
   mod_databend_common_expression_values -> mod_databend_common_expression_types;
+  mod_databend_common_expression_values -> mod_databend_common_sql_plans;
+  mod_databend_common_expression_values -> mod_databend_query_servers;
+  mod_databend_common_formats_binary -> mod_databend_common_meta_types_change;
   mod_databend_common_formats_field_decoder -> mod_databend_common_formats_common_settings;
-  mod_databend_common_formats_field_decoder -> mod_databend_common_pipeline_transforms_sorts;
   mod_databend_common_formats_output_format -> mod_databend_common_formats_field_encoder;
+  mod_databend_common_functions_aggregates -> mod_databend_common_base_base;
   mod_databend_common_functions_aggregates -> mod_databend_common_column_bitmap;
   mod_databend_common_functions_aggregates -> mod_databend_common_datavalues_types;
   mod_databend_common_functions_aggregates -> mod_databend_common_expression_aggregate;
@@ -879,9 +897,11 @@ digraph architecture {
   mod_databend_common_functions_aggregates -> mod_databend_common_expression_values;
   mod_databend_common_functions_aggregates -> mod_databend_common_sql_plans;
   mod_databend_common_functions_aggregates -> mod_databend_query_servers;
-  mod_databend_common_functions_scalars -> mod_databend_common_column_binary;
+  mod_databend_common_functions_scalars -> mod_databend_common_base_base;
+  mod_databend_common_functions_scalars -> mod_databend_common_cache_cache;
   mod_databend_common_functions_scalars -> mod_databend_common_column_bitmap;
   mod_databend_common_functions_scalars -> mod_databend_common_column_buffer;
+  mod_databend_common_functions_scalars -> mod_databend_common_column_error;
   mod_databend_common_functions_scalars -> mod_databend_common_datavalues_types;
   mod_databend_common_functions_scalars -> mod_databend_common_expression_aggregate;
   mod_databend_common_functions_scalars -> mod_databend_common_expression_filter;
@@ -889,13 +909,14 @@ digraph architecture {
   mod_databend_common_functions_scalars -> mod_databend_common_expression_register_vectorize;
   mod_databend_common_functions_scalars -> mod_databend_common_expression_types;
   mod_databend_common_functions_scalars -> mod_databend_common_expression_values;
-  mod_databend_common_functions_scalars -> mod_databend_common_meta_client_required;
-  mod_databend_common_functions_scalars -> mod_databend_common_meta_kvapi_kvapi;
+  mod_databend_common_functions_scalars -> mod_databend_common_functions_aggregates;
+  mod_databend_common_functions_scalars -> mod_databend_common_hashtable_stack_hashtable;
   mod_databend_common_functions_scalars -> mod_databend_common_meta_raft_store_leveled_store;
-  mod_databend_common_functions_srfs -> mod_databend_common_datavalues_types;
+  mod_databend_common_functions_scalars -> mod_databend_query_servers;
+  mod_databend_common_functions_scalars -> mod_unknown_unknown;
   mod_databend_common_functions_srfs -> mod_databend_common_expression_function;
-  mod_databend_common_functions_srfs -> mod_databend_common_meta_client_required;
-  mod_databend_common_functions_srfs -> mod_databend_common_meta_kvapi_kvapi;
+  mod_databend_common_functions_srfs -> mod_databend_common_expression_types;
+  mod_databend_common_functions_srfs -> mod_databend_common_meta_raft_store_leveled_store;
   mod_databend_common_functions_test_utils -> mod_databend_common_expression_expression;
   mod_databend_common_hashtable_dictionary_string_hashtable -> mod_databend_common_hashtable_traits;
   mod_databend_common_hashtable_hashtable -> mod_databend_common_hashtable_table0;
@@ -906,82 +927,89 @@ digraph architecture {
   mod_databend_common_hashtable_string_hashtable -> mod_databend_common_hashtable_table0;
   mod_databend_common_hashtable_string_hashtable -> mod_databend_common_hashtable_table_empty;
   mod_databend_common_hashtable_string_hashtable -> mod_databend_common_hashtable_traits;
+  mod_databend_common_hashtable_table0 -> mod_databend_common_hashtable_short_string_hashtable;
   mod_databend_common_http_debug -> mod_databend_common_ast_ast;
+  mod_databend_common_io_cursor_ext -> mod_databend_common_exception_exception;
   mod_databend_common_io_decimal -> mod_databend_query_servers;
+  mod_databend_common_io_geometry -> mod_databend_common_meta_types_change;
+  mod_databend_common_io_interval -> mod_databend_common_exception_exception;
+  mod_databend_common_meta_api_crud -> mod_databend_common_meta_app_tenant_key;
   mod_databend_common_meta_api_error_util -> mod_databend_common_meta_api_kv_app_error;
-  mod_databend_common_meta_api_error_util -> mod_databend_common_meta_app_app_error;
   mod_databend_common_meta_api_error_util -> mod_databend_query_servers;
+  mod_databend_common_meta_api_garbage_collection_api -> mod_databend_common_hashtable_table0;
   mod_databend_common_meta_api_garbage_collection_api -> mod_databend_common_meta_api_kv_app_error;
-  mod_databend_common_meta_api_garbage_collection_api -> mod_databend_common_meta_api_txn_core_util;
+  mod_databend_common_meta_api_garbage_collection_api -> mod_databend_common_meta_api_txn_op_builder_util;
   mod_databend_common_meta_api_garbage_collection_api -> mod_databend_common_meta_app_schema;
   mod_databend_common_meta_api_garbage_collection_api -> mod_databend_common_meta_app_tenant;
-  mod_databend_common_meta_api_garbage_collection_api -> mod_databend_common_meta_kvapi_kvapi;
   mod_databend_common_meta_api_garbage_collection_api -> mod_databend_common_meta_types_errors;
   mod_databend_common_meta_api_kv_app_error -> mod_databend_common_meta_app_app_error;
   mod_databend_common_meta_api_kv_app_error -> mod_databend_common_meta_types_errors;
-  mod_databend_common_meta_api_kv_fetch_util -> mod_databend_common_meta_api_serialization_util;
   mod_databend_common_meta_api_kv_fetch_util -> mod_databend_common_meta_types_errors;
   mod_databend_common_meta_api_kv_pb_api -> mod_databend_common_proto_conv_from_to_protobuf;
-  mod_databend_common_meta_api_meta_txn_error -> mod_databend_common_meta_types_errors;
   mod_databend_common_meta_api_schema_api -> mod_databend_common_meta_api_kv_app_error;
   mod_databend_common_meta_api_schema_api -> mod_databend_common_meta_app_schema;
   mod_databend_common_meta_api_schema_api -> mod_databend_common_meta_app_tenant;
   mod_databend_common_meta_api_schema_api -> mod_databend_common_meta_types_errors;
   mod_databend_common_meta_api_schema_api_test_suite -> mod_databend_common_meta_app_schema;
   mod_databend_common_meta_api_serialization_util -> mod_databend_common_meta_types_errors;
-  mod_databend_common_meta_api_table_api -> mod_databend_common_meta_app_app_error;
+  mod_databend_common_meta_api_txn_op_builder_util -> mod_databend_common_meta_raft_store_leveled_store;
   mod_databend_common_meta_app_app_error -> mod_databend_common_meta_app_tenant_key;
-  mod_databend_common_meta_app_data_mask -> mod_databend_common_meta_app_tenant_key;
+  mod_databend_common_meta_app_data_id -> mod_databend_common_meta_app_schema;
+  mod_databend_common_meta_app_primitive -> mod_databend_common_meta_app_schema;
   mod_databend_common_meta_app_principal -> mod_databend_common_datavalues_types;
+  mod_databend_common_meta_app_principal -> mod_databend_common_expression_filter;
   mod_databend_common_meta_app_principal -> mod_databend_common_meta_app_tenant_key;
   mod_databend_common_meta_app_principal -> mod_databend_common_meta_client_required;
-  mod_databend_common_meta_app_principal -> mod_databend_common_meta_kvapi_kvapi;
-  mod_databend_common_meta_app_principal -> mod_databend_common_proto_conv_from_to_protobuf;
   mod_databend_common_meta_app_principal -> mod_databend_common_sql_plans;
   mod_databend_common_meta_app_principal -> mod_databend_query_servers;
-  mod_databend_common_meta_app_row_access_policy -> mod_databend_common_meta_app_tenant_key;
-  mod_databend_common_meta_app_schema -> mod_databend_common_expression_schema;
   mod_databend_common_meta_app_schema -> mod_databend_common_meta_app_tenant;
   mod_databend_common_meta_app_schema -> mod_databend_common_meta_app_tenant_key;
-  mod_databend_common_meta_app_schema -> mod_databend_common_meta_kvapi_kvapi;
-  mod_databend_common_meta_app_schema -> mod_databend_common_sql_plans;
   mod_databend_common_meta_app_schema -> mod_databend_query_servers;
+  mod_databend_common_meta_app_storage_storage_params -> mod_databend_common_proto_conv_from_to_protobuf;
+  mod_databend_common_meta_app_tenant_key -> mod_databend_common_meta_app_data_mask;
+  mod_databend_common_meta_app_tenant_key -> mod_databend_common_meta_app_principal;
+  mod_databend_common_meta_app_tenant_key -> mod_databend_common_meta_app_schema;
   mod_databend_common_meta_client_grpc_action -> mod_databend_common_meta_kvapi_kvapi;
   mod_databend_common_meta_client_message -> mod_databend_common_meta_client_grpc_action;
+  mod_databend_common_meta_control_export_from_grpc -> mod_databend_common_column_error;
   mod_databend_common_meta_control_import -> mod_databend_common_meta_control_args;
-  mod_databend_common_meta_kvapi_kvapi -> mod_databend_common_meta_client_grpc_action;
-  mod_databend_common_meta_kvapi_kvapi -> mod_databend_common_meta_raft_store_leveled_store;
+  mod_databend_common_meta_control_keys_layout_from_grpc -> mod_databend_common_column_error;
   mod_databend_common_meta_raft_store_key_spaces -> mod_databend_common_meta_sled_store_sled_key_space;
-  mod_databend_common_meta_raft_store_leveled_store -> mod_databend_common_meta_raft_store_sm_v003;
+  mod_databend_common_meta_raft_store_leveled_store -> mod_databend_common_meta_types_change;
   mod_databend_common_meta_raft_store_leveled_store -> mod_databend_common_meta_types_snapshot_db;
   mod_databend_common_meta_raft_store_sm_v003 -> mod_databend_common_base_base;
+  mod_databend_common_meta_raft_store_sm_v003 -> mod_databend_common_column_error;
   mod_databend_common_meta_raft_store_sm_v003 -> mod_databend_common_meta_raft_store_leveled_store;
   mod_databend_common_meta_raft_store_sm_v003 -> mod_databend_common_meta_raft_store_snapshot_config;
   mod_databend_common_meta_raft_store_state_machine -> mod_databend_common_meta_sled_store_sled_serde;
   mod_databend_common_meta_semaphore_queue -> mod_databend_common_meta_semaphore_storage;
+  mod_databend_common_meta_store_local -> mod_databend_common_column_error;
+  mod_databend_common_meta_store_local -> mod_databend_common_expression_kernels;
+  mod_databend_common_meta_types_errors -> mod_databend_common_meta_api_kv_pb_api;
+  mod_databend_common_meta_types_errors -> mod_databend_common_meta_client_required;
+  mod_databend_common_metrics_metrics -> mod_databend_common_expression_filter;
   mod_databend_common_metrics_metrics -> mod_databend_common_sql_plans;
+  mod_databend_common_native_compression -> mod_databend_common_base_base;
   mod_databend_common_native_compression -> mod_databend_common_column_binary;
   mod_databend_common_native_compression -> mod_databend_common_column_bitmap;
   mod_databend_common_native_compression -> mod_databend_common_column_buffer;
-  mod_databend_common_native_compression -> mod_databend_common_column_types;
-  mod_databend_common_native_compression -> mod_databend_common_meta_client_required;
-  mod_databend_common_native_compression -> mod_databend_common_meta_raft_store_leveled_store;
+  mod_databend_common_native_compression -> mod_databend_common_expression_filter;
+  mod_databend_common_native_compression -> mod_databend_common_expression_types;
   mod_databend_common_native_compression -> mod_databend_common_native_read;
+  mod_databend_common_native_compression -> mod_databend_common_native_util;
   mod_databend_common_native_compression -> mod_databend_common_native_write;
-  mod_databend_common_native_nested -> mod_databend_common_expression_schema;
   mod_databend_common_native_nested -> mod_databend_common_expression_values;
-  mod_databend_common_native_read -> mod_databend_common_ast_parser;
+  mod_databend_common_native_nested -> mod_databend_storages_common_table_meta_meta;
   mod_databend_common_native_read -> mod_databend_common_column_bitmap;
+  mod_databend_common_native_read -> mod_databend_common_expression_filter;
   mod_databend_common_native_read -> mod_databend_common_expression_schema;
   mod_databend_common_native_read -> mod_databend_common_expression_values;
-  mod_databend_common_native_read -> mod_databend_common_meta_client_required;
-  mod_databend_common_native_read -> mod_databend_common_native_compression;
   mod_databend_common_native_read -> mod_databend_common_native_lib;
   mod_databend_common_native_read -> mod_databend_common_native_nested;
   mod_databend_common_native_read -> mod_databend_storages_common_table_meta_meta;
   mod_databend_common_native_stat -> mod_databend_common_expression_schema;
+  mod_databend_common_native_util -> mod_databend_common_meta_types_change;
   mod_databend_common_native_write -> mod_databend_common_column_bitmap;
-  mod_databend_common_native_write -> mod_databend_common_native_compression;
   mod_databend_common_pipeline_basic -> mod_databend_common_pipeline_core;
   mod_databend_common_pipeline_core -> mod_databend_common_base_runtime;
   mod_databend_common_pipeline_sinks -> mod_databend_common_expression_block;
@@ -993,42 +1021,37 @@ digraph architecture {
   mod_databend_common_pipeline_transforms_blocks -> mod_databend_common_expression_function;
   mod_databend_common_pipeline_transforms_blocks -> mod_databend_common_pipeline_transforms_processors;
   mod_databend_common_pipeline_transforms_columns -> mod_databend_common_pipeline_transforms_processors;
-  mod_databend_common_pipeline_transforms_filters -> mod_databend_common_pipeline_core;
   mod_databend_common_pipeline_transforms_processors -> mod_databend_common_base_runtime;
   mod_databend_common_pipeline_transforms_processors -> mod_databend_common_expression_block;
   mod_databend_common_pipeline_transforms_processors -> mod_databend_common_expression_utils;
   mod_databend_common_pipeline_transforms_processors -> mod_databend_common_pipeline_core;
-  mod_databend_common_pipeline_transforms_sets -> mod_databend_common_pipeline_core;
-  mod_databend_common_pipeline_transforms_sorts -> mod_databend_common_column_binary;
   mod_databend_common_pipeline_transforms_sorts -> mod_databend_common_expression_block;
   mod_databend_common_pipeline_transforms_sorts -> mod_databend_common_expression_kernels;
-  mod_databend_common_pipeline_transforms_sorts -> mod_databend_common_expression_schema;
   mod_databend_common_pipeline_transforms_sorts -> mod_databend_common_expression_utils;
   mod_databend_common_pipeline_transforms_sorts -> mod_databend_common_expression_values;
   mod_databend_common_pipeline_transforms_sorts -> mod_databend_common_io_cursor_ext;
   mod_databend_common_pipeline_transforms_sorts -> mod_databend_common_pipeline_core;
   mod_databend_common_pipeline_transforms_sorts -> mod_databend_common_pipeline_transforms_processors;
   mod_databend_common_pipeline_transforms_sorts -> mod_databend_common_pipeline_transforms_traits;
-  mod_databend_common_pipeline_transforms_sorts -> mod_databend_common_storages_stream_stream_status_table_func;
   mod_databend_common_pipeline_transforms_window -> mod_databend_common_column_types;
-  mod_databend_common_pipeline_transforms_window -> mod_databend_common_datavalues_types;
-  mod_databend_common_pipeline_transforms_window -> mod_databend_common_expression_function;
+  mod_databend_common_pipeline_transforms_window -> mod_databend_common_expression_types;
   mod_databend_common_pipeline_transforms_window -> mod_databend_common_expression_values;
-  mod_databend_common_pipeline_transforms_window -> mod_databend_common_pipeline_core;
   mod_databend_common_pipeline_transforms_window -> mod_databend_common_sql_plans;
+  mod_databend_common_script_compiler -> mod_databend_common_exception_exception;
   mod_databend_common_script_compiler -> mod_databend_common_expression_expression;
   mod_databend_common_script_compiler -> mod_databend_common_script_ir;
   mod_databend_common_script_ir -> mod_databend_query_servers;
   mod_databend_common_settings_settings -> mod_databend_common_meta_app_principal;
   mod_databend_common_sql_binder -> mod_databend_common_ast_ast;
   mod_databend_common_sql_binder -> mod_databend_common_ast_parser;
-  mod_databend_common_sql_binder -> mod_databend_common_base_runtime;
   mod_databend_common_sql_binder -> mod_databend_common_catalog_plan;
   mod_databend_common_sql_binder -> mod_databend_common_catalog_table_context;
   mod_databend_common_sql_binder -> mod_databend_common_datavalues_types;
-  mod_databend_common_sql_binder -> mod_databend_common_expression_schema;
-  mod_databend_common_sql_binder -> mod_databend_common_expression_values;
-  mod_databend_common_sql_binder -> mod_databend_common_meta_app_principal;
+  mod_databend_common_sql_binder -> mod_databend_common_exception_exception;
+  mod_databend_common_sql_binder -> mod_databend_common_expression_expression;
+  mod_databend_common_sql_binder -> mod_databend_common_expression_filter;
+  mod_databend_common_sql_binder -> mod_databend_common_expression_type_check;
+  mod_databend_common_sql_binder -> mod_databend_common_expression_types;
   mod_databend_common_sql_binder -> mod_databend_common_meta_app_schema;
   mod_databend_common_sql_binder -> mod_databend_common_meta_app_storage_storage_params;
   mod_databend_common_sql_binder -> mod_databend_common_sql_execution;
@@ -1038,6 +1061,7 @@ digraph architecture {
   mod_databend_common_sql_evaluator -> mod_databend_common_expression_expression;
   mod_databend_common_sql_executor -> mod_databend_common_ast_ast;
   mod_databend_common_sql_executor -> mod_databend_common_datavalues_types;
+  mod_databend_common_sql_executor -> mod_databend_common_io_wkb;
   mod_databend_common_sql_executor -> mod_databend_common_meta_app_schema;
   mod_databend_common_sql_executor -> mod_databend_common_pipeline_core;
   mod_databend_common_sql_executor -> mod_databend_common_sql_metadata;
@@ -1045,17 +1069,21 @@ digraph architecture {
   mod_databend_common_sql_executor -> mod_databend_query_physical_plans;
   mod_databend_common_sql_executor -> mod_databend_query_servers;
   mod_databend_common_sql_expression -> mod_databend_common_ast_ast;
-  mod_databend_common_sql_expression -> mod_databend_common_ast_parser;
-  mod_databend_common_sql_expression -> mod_databend_common_base_obfuscator;
+  mod_databend_common_sql_expression -> mod_databend_common_catalog_table;
   mod_databend_common_sql_expression -> mod_databend_common_catalog_table_context;
-  mod_databend_common_sql_expression -> mod_databend_common_sql_binder;
+  mod_databend_common_sql_expression -> mod_databend_common_expression_expression;
+  mod_databend_common_sql_expression -> mod_databend_common_expression_types;
   mod_databend_common_sql_expression -> mod_databend_common_sql_metadata;
-  mod_databend_common_sql_expression -> mod_databend_common_sql_semantic;
   mod_databend_common_sql_format -> mod_databend_common_ast_ast;
   mod_databend_common_sql_format -> mod_databend_common_sql_plans;
-  mod_databend_common_sql_optimizer -> mod_databend_common_ast_parser;
+  mod_databend_common_sql_optimizer -> mod_databend_common_ast_ast;
+  mod_databend_common_sql_optimizer -> mod_databend_common_base_base;
   mod_databend_common_sql_optimizer -> mod_databend_common_catalog_table_context;
-  mod_databend_common_sql_optimizer -> mod_databend_common_datavalues_types;
+  mod_databend_common_sql_optimizer -> mod_databend_common_exception_exception;
+  mod_databend_common_sql_optimizer -> mod_databend_common_expression_expression;
+  mod_databend_common_sql_optimizer -> mod_databend_common_expression_filter;
+  mod_databend_common_sql_optimizer -> mod_databend_common_expression_projected_block;
+  mod_databend_common_sql_optimizer -> mod_databend_common_expression_types;
   mod_databend_common_sql_optimizer -> mod_databend_common_expression_values;
   mod_databend_common_sql_optimizer -> mod_databend_common_meta_app_schema;
   mod_databend_common_sql_optimizer -> mod_databend_common_sql_binder;
@@ -1065,12 +1093,12 @@ digraph architecture {
   mod_databend_common_sql_planner -> mod_databend_common_ast_ast;
   mod_databend_common_sql_planner -> mod_databend_common_catalog_table_context;
   mod_databend_common_sql_plans -> mod_databend_common_ast_ast;
-  mod_databend_common_sql_plans -> mod_databend_common_ast_parser;
   mod_databend_common_sql_plans -> mod_databend_common_catalog_plan;
   mod_databend_common_sql_plans -> mod_databend_common_catalog_table;
-  mod_databend_common_sql_plans -> mod_databend_common_datavalues_types;
   mod_databend_common_sql_plans -> mod_databend_common_expression_expression;
+  mod_databend_common_sql_plans -> mod_databend_common_expression_filter;
   mod_databend_common_sql_plans -> mod_databend_common_expression_schema;
+  mod_databend_common_sql_plans -> mod_databend_common_expression_types;
   mod_databend_common_sql_plans -> mod_databend_common_expression_values;
   mod_databend_common_sql_plans -> mod_databend_common_meta_app_principal;
   mod_databend_common_sql_plans -> mod_databend_common_meta_app_schema;
@@ -1082,18 +1110,18 @@ digraph architecture {
   mod_databend_common_sql_semantic -> mod_databend_common_ast_ast;
   mod_databend_common_sql_semantic -> mod_databend_common_catalog_table_context;
   mod_databend_common_sql_semantic -> mod_databend_common_expression_expression;
-  mod_databend_common_sql_semantic -> mod_databend_common_expression_schema;
   mod_databend_common_sql_semantic -> mod_databend_common_meta_app_schema;
   mod_databend_common_sql_semantic -> mod_databend_common_sql_binder;
   mod_databend_common_sql_semantic -> mod_databend_common_sql_plans;
+  mod_databend_common_sql_semantic -> mod_databend_storages_common_table_meta_meta;
   mod_databend_common_storage_metrics_layer -> mod_databend_common_base_runtime;
   mod_databend_common_storage_operator -> mod_databend_common_meta_app_storage_storage_params;
   mod_databend_common_storage_operator -> mod_databend_common_pipeline_transforms_sorts;
   mod_databend_common_storage_operator -> mod_databend_common_sql_plans;
+  mod_databend_common_storage_parquet -> mod_databend_common_hashtable_table0;
   mod_databend_common_storage_runtime_layer -> mod_databend_common_base_runtime;
   mod_databend_common_storages_basic_memory_table -> mod_databend_common_expression_block;
   mod_databend_common_storages_basic_result_cache -> mod_databend_common_sql_plans;
-  mod_databend_common_storages_fuse_fuse_part -> mod_databend_storages_common_table_meta_meta;
   mod_databend_common_storages_fuse_fuse_table -> mod_databend_common_meta_app_schema;
   mod_databend_common_storages_fuse_fuse_table -> mod_databend_common_meta_app_storage_storage_params;
   mod_databend_common_storages_fuse_fuse_table -> mod_databend_common_storages_fuse_fuse_type;
@@ -1102,32 +1130,28 @@ digraph architecture {
   mod_databend_common_storages_fuse_io -> mod_databend_common_column_buffer;
   mod_databend_common_storages_fuse_io -> mod_databend_common_datavalues_types;
   mod_databend_common_storages_fuse_io -> mod_databend_common_expression_block;
-  mod_databend_common_storages_fuse_io -> mod_databend_common_expression_expression;
-  mod_databend_common_storages_fuse_io -> mod_databend_common_expression_schema;
+  mod_databend_common_storages_fuse_io -> mod_databend_common_expression_types;
   mod_databend_common_storages_fuse_io -> mod_databend_common_expression_values;
-  mod_databend_common_storages_fuse_io -> mod_databend_common_meta_client_required;
-  mod_databend_common_storages_fuse_io -> mod_databend_common_metrics_metrics;
   mod_databend_common_storages_fuse_io -> mod_databend_common_pipeline_transforms_traits;
   mod_databend_common_storages_fuse_io -> mod_databend_common_sql_plans;
-  mod_databend_common_storages_fuse_io -> mod_databend_common_storages_stream_stream_status_table_func;
-  mod_databend_common_storages_fuse_io -> mod_databend_storages_common_cache_manager;
+  mod_databend_common_storages_fuse_io -> mod_databend_storages_common_cache_providers;
   mod_databend_common_storages_fuse_io -> mod_databend_storages_common_cache_read;
   mod_databend_common_storages_fuse_io -> mod_databend_storages_common_index_bloom_index;
   mod_databend_common_storages_fuse_io -> mod_databend_storages_common_index_filters;
   mod_databend_common_storages_fuse_io -> mod_databend_storages_common_index_hnsw_index;
   mod_databend_common_storages_fuse_io -> mod_databend_storages_common_index_inverted_index;
-  mod_databend_common_storages_fuse_io -> mod_databend_storages_common_io_merge_io_reader;
   mod_databend_common_storages_fuse_io -> mod_databend_storages_common_io_read_settings;
   mod_databend_common_storages_fuse_io -> mod_databend_storages_common_table_meta_meta;
   mod_databend_common_storages_fuse_io -> mod_databend_storages_common_table_meta_table;
-  mod_databend_common_storages_fuse_operations -> mod_databend_common_ast_ast;
   mod_databend_common_storages_fuse_operations -> mod_databend_common_base_base;
-  mod_databend_common_storages_fuse_operations -> mod_databend_common_base_obfuscator;
+  mod_databend_common_storages_fuse_operations -> mod_databend_common_cache_cache;
   mod_databend_common_storages_fuse_operations -> mod_databend_common_catalog_plan;
   mod_databend_common_storages_fuse_operations -> mod_databend_common_catalog_runtime_filter_info;
+  mod_databend_common_storages_fuse_operations -> mod_databend_common_catalog_table;
   mod_databend_common_storages_fuse_operations -> mod_databend_common_catalog_table_context;
   mod_databend_common_storages_fuse_operations -> mod_databend_common_expression_block;
   mod_databend_common_storages_fuse_operations -> mod_databend_common_expression_expression;
+  mod_databend_common_storages_fuse_operations -> mod_databend_common_expression_filter;
   mod_databend_common_storages_fuse_operations -> mod_databend_common_expression_function;
   mod_databend_common_storages_fuse_operations -> mod_databend_common_expression_schema;
   mod_databend_common_storages_fuse_operations -> mod_databend_common_expression_types;
@@ -1135,7 +1159,7 @@ digraph architecture {
   mod_databend_common_storages_fuse_operations -> mod_databend_common_expression_values;
   mod_databend_common_storages_fuse_operations -> mod_databend_common_hashtable_table0;
   mod_databend_common_storages_fuse_operations -> mod_databend_common_meta_app_schema;
-  mod_databend_common_storages_fuse_operations -> mod_databend_common_meta_client_required;
+  mod_databend_common_storages_fuse_operations -> mod_databend_common_meta_kvapi_kvapi;
   mod_databend_common_storages_fuse_operations -> mod_databend_common_pipeline_core;
   mod_databend_common_storages_fuse_operations -> mod_databend_common_pipeline_sinks;
   mod_databend_common_storages_fuse_operations -> mod_databend_common_pipeline_sources;
@@ -1149,36 +1173,33 @@ digraph architecture {
   mod_databend_common_storages_fuse_operations -> mod_databend_common_storages_fuse_fuse_type;
   mod_databend_common_storages_fuse_operations -> mod_databend_common_storages_fuse_io;
   mod_databend_common_storages_fuse_operations -> mod_databend_common_storages_fuse_statistics;
-  mod_databend_common_storages_fuse_operations -> mod_databend_meta_binaries_meta;
+  mod_databend_common_storages_fuse_operations -> mod_databend_storages_common_cache_providers;
   mod_databend_common_storages_fuse_operations -> mod_databend_storages_common_io_read_settings;
   mod_databend_common_storages_fuse_operations -> mod_databend_storages_common_table_meta_meta;
-  mod_databend_common_storages_fuse_pruning -> mod_databend_common_ast_ast;
   mod_databend_common_storages_fuse_pruning -> mod_databend_common_catalog_plan;
   mod_databend_common_storages_fuse_pruning -> mod_databend_common_sql_plans;
-  mod_databend_common_storages_fuse_pruning -> mod_databend_common_storages_fuse_io;
   mod_databend_common_storages_fuse_pruning_pipeline -> mod_databend_common_catalog_plan;
   mod_databend_common_storages_fuse_pruning_pipeline -> mod_databend_common_expression_block;
   mod_databend_common_storages_fuse_pruning_pipeline -> mod_databend_common_pipeline_transforms_processors;
   mod_databend_common_storages_fuse_pruning_pipeline -> mod_databend_common_storages_fuse_pruning;
   mod_databend_common_storages_fuse_retry -> mod_databend_common_catalog_table_context;
   mod_databend_common_storages_fuse_retry -> mod_databend_common_meta_app_schema;
-  mod_databend_common_storages_fuse_retry -> mod_databend_storages_common_table_meta_meta;
   mod_databend_common_storages_fuse_statistics -> mod_databend_common_datavalues_types;
+  mod_databend_common_storages_fuse_statistics -> mod_databend_common_expression_types;
   mod_databend_common_storages_fuse_statistics -> mod_databend_common_expression_values;
-  mod_databend_common_storages_fuse_statistics -> mod_databend_storages_common_index_range_index;
+  mod_databend_common_storages_fuse_statistics -> mod_databend_common_hashtable_table0;
+  mod_databend_common_storages_fuse_statistics -> mod_databend_common_sql_plans;
   mod_databend_common_storages_fuse_statistics -> mod_databend_storages_common_table_meta_meta;
   mod_databend_common_storages_fuse_table_functions -> mod_databend_common_catalog_plan;
   mod_databend_common_storages_fuse_table_functions -> mod_databend_common_catalog_table_context;
-  mod_databend_common_storages_fuse_table_functions -> mod_databend_common_expression_expression;
   mod_databend_common_storages_fuse_table_functions -> mod_databend_common_storages_fuse_fuse_table;
-  mod_databend_common_storages_hive_converters -> mod_databend_common_expression_schema;
+  mod_databend_common_storages_fuse_table_functions -> mod_databend_storages_common_table_meta_meta;
   mod_databend_common_storages_hive_hive_table -> mod_databend_common_sql_plans;
-  mod_databend_common_storages_iceberg_database -> mod_databend_common_expression_schema;
+  mod_databend_common_storages_iceberg_database -> mod_databend_storages_common_table_meta_meta;
   mod_databend_common_storages_iceberg_predicate -> mod_databend_common_sql_optimizer;
   mod_databend_common_storages_iceberg_predicate -> mod_databend_common_storage_statistics;
-  mod_databend_common_storages_orc_copy_into_table -> mod_databend_common_pipeline_core;
+  mod_databend_common_storages_orc_copy_into_table -> mod_databend_common_expression_expression;
   mod_databend_common_storages_orc_copy_into_table -> mod_databend_common_sql_plans;
-  mod_databend_common_storages_orc_copy_into_table -> mod_databend_common_storages_orc_hashable_schema;
   mod_databend_common_storages_orc_processors -> mod_databend_common_catalog_plan;
   mod_databend_common_storages_parquet_meta -> mod_databend_common_catalog_plan;
   mod_databend_common_storages_parquet_meta -> mod_databend_common_sql_plans;
@@ -1191,23 +1212,23 @@ digraph architecture {
   mod_databend_common_storages_parquet_parquet_reader -> mod_databend_common_sql_plans;
   mod_databend_common_storages_parquet_parquet_reader -> mod_databend_common_storage_operator;
   mod_databend_common_storages_parquet_parquet_reader -> mod_databend_common_storages_parquet_transformer;
-  mod_databend_common_storages_parquet_parquet_variant_table -> mod_databend_common_expression_schema;
+  mod_databend_common_storages_parquet_parquet_reader -> mod_databend_storages_common_table_meta_meta;
   mod_databend_common_storages_parquet_row_group_serde -> mod_databend_common_exception_exception;
   mod_databend_common_storages_parquet_source -> mod_databend_common_catalog_plan;
   mod_databend_common_storages_parquet_statistics -> mod_databend_common_catalog_table;
   mod_databend_common_storages_parquet_statistics -> mod_databend_common_expression_schema;
-  mod_databend_common_storages_parquet_statistics -> mod_databend_common_expression_values;
   mod_databend_common_storages_parquet_statistics -> mod_databend_storages_common_index_page_index;
   mod_databend_common_storages_parquet_statistics -> mod_databend_storages_common_table_meta_meta;
   mod_databend_common_storages_stage_append -> mod_databend_common_catalog_table_context;
   mod_databend_common_storages_stage_append -> mod_databend_common_expression_block;
+  mod_databend_common_storages_stage_append -> mod_databend_common_meta_client_required;
   mod_databend_common_storages_stage_append -> mod_databend_common_pipeline_core;
   mod_databend_common_storages_stage_append -> mod_databend_common_sql_plans;
   mod_databend_common_storages_stage_append -> mod_databend_storages_common_stage_write;
   mod_databend_common_storages_stage_read -> mod_databend_common_catalog_plan;
   mod_databend_common_storages_stage_read -> mod_databend_common_catalog_table_context;
   mod_databend_common_storages_stage_read -> mod_databend_common_expression_block;
-  mod_databend_common_storages_stage_read -> mod_databend_common_expression_expression;
+  mod_databend_common_storages_stage_read -> mod_databend_common_expression_types;
   mod_databend_common_storages_stage_read -> mod_databend_common_expression_utils;
   mod_databend_common_storages_stage_read -> mod_databend_common_formats_field_decoder;
   mod_databend_common_storages_stage_read -> mod_databend_common_meta_app_principal;
@@ -1217,80 +1238,79 @@ digraph architecture {
   mod_databend_common_storages_stage_streaming_load -> mod_databend_common_catalog_table_context;
   mod_databend_common_storages_stage_streaming_load -> mod_databend_common_meta_app_principal;
   mod_databend_common_storages_stage_streaming_load -> mod_databend_common_pipeline_core;
-  mod_databend_common_storages_stage_streaming_load -> mod_databend_common_storages_stage_read;
-  mod_databend_common_storages_stage_transform_generating -> mod_databend_common_pipeline_core;
-  mod_databend_common_storages_stream_stream_table -> mod_databend_common_base_obfuscator;
-  mod_databend_common_storages_system_query_log_table -> mod_databend_common_meta_client_required;
+  mod_databend_common_storages_stream_stream_table -> mod_databend_common_catalog_table;
   mod_databend_common_storages_system_table -> mod_databend_common_catalog_table_context;
   mod_databend_common_storages_system_temp_files_table -> mod_databend_common_sql_plans;
   mod_databend_common_storages_system_util -> mod_databend_common_expression_expression;
+  mod_databend_common_timezone_lib -> mod_databend_common_expression_kernels;
+  mod_databend_common_timezone_lib -> mod_databend_common_meta_types_change;
   mod_databend_common_tracing_config -> mod_databend_query_servers;
   mod_databend_common_tracing_crash_hook -> mod_databend_common_meta_client_required;
   mod_databend_common_tracing_loggers -> mod_databend_query_spillers;
-  mod_databend_common_tracing_structlog -> mod_databend_common_meta_client_required;
-  mod_databend_enterprise_query_resource_management -> mod_databend_common_management_warehouse;
+  mod_databend_common_vector_distance -> mod_databend_common_base_base;
   mod_databend_enterprise_query_resource_management -> mod_databend_enterprise_resources_management_resources_management;
-  mod_databend_enterprise_query_storages -> mod_databend_common_base_obfuscator;
   mod_databend_enterprise_query_storages -> mod_databend_common_catalog_table_context;
-  mod_databend_enterprise_query_storages -> mod_databend_common_meta_client_required;
+  mod_databend_enterprise_query_storages -> mod_databend_common_expression_filter;
   mod_databend_enterprise_query_storages -> mod_databend_common_sql_plans;
   mod_databend_enterprise_query_storages -> mod_databend_common_storage_operator;
   mod_databend_enterprise_query_storages -> mod_databend_common_storages_fuse_fuse_table;
   mod_databend_enterprise_query_storages -> mod_databend_common_storages_fuse_io;
+  mod_databend_enterprise_query_storages -> mod_databend_common_storages_stage_read;
   mod_databend_enterprise_query_storages -> mod_databend_storages_common_table_meta_meta;
   mod_databend_functions_scalar_arithmetic_arithmetic -> mod_databend_common_expression_function;
   mod_databend_functions_scalar_arithmetic_arithmetic -> mod_databend_common_expression_types;
+  mod_databend_functions_scalar_arithmetic_arithmetic -> mod_databend_common_io_decimal;
+  mod_databend_functions_scalar_datetime_datetime -> mod_databend_common_column_types;
   mod_databend_functions_scalar_datetime_datetime -> mod_databend_common_datavalues_types;
   mod_databend_functions_scalar_datetime_datetime -> mod_databend_common_expression_function;
-  mod_databend_functions_scalar_datetime_datetime -> mod_databend_common_expression_register_vectorize;
   mod_databend_functions_scalar_datetime_datetime -> mod_databend_common_expression_types;
-  mod_databend_functions_scalar_datetime_datetime -> mod_databend_common_expression_utils;
-  mod_databend_functions_scalar_datetime_datetime -> mod_databend_common_meta_kvapi_kvapi;
-  mod_databend_functions_scalar_datetime_datetime -> mod_databend_common_meta_raft_store_leveled_store;
+  mod_databend_functions_scalar_datetime_datetime -> mod_databend_common_expression_values;
   mod_databend_functions_scalar_datetime_interval -> mod_databend_common_column_types;
+  mod_databend_functions_scalar_datetime_interval -> mod_databend_common_datavalues_types;
   mod_databend_functions_scalar_datetime_interval -> mod_databend_common_expression_function;
+  mod_databend_functions_scalar_datetime_interval -> mod_databend_common_expression_types;
   mod_databend_functions_scalar_decimal_arithmetic -> mod_databend_common_expression_function;
   mod_databend_functions_scalar_decimal_arithmetic -> mod_databend_common_expression_types;
+  mod_databend_functions_scalar_decimal_arithmetic -> mod_databend_common_functions_aggregates;
   mod_databend_functions_scalar_decimal_arithmetic -> mod_databend_common_io_decimal;
   mod_databend_functions_scalar_decimal_arithmetic -> mod_databend_common_meta_kvapi_kvapi;
   mod_databend_functions_scalar_decimal_arithmetic -> mod_databend_storages_common_table_meta_meta;
-  mod_databend_functions_scalar_decimal_cast -> mod_databend_common_expression_converts;
   mod_databend_functions_scalar_decimal_cast -> mod_databend_common_expression_function;
-  mod_databend_functions_scalar_decimal_cast -> mod_databend_common_expression_register_vectorize;
   mod_databend_functions_scalar_decimal_cast -> mod_databend_common_expression_types;
   mod_databend_functions_scalar_decimal_cast -> mod_databend_common_expression_values;
+  mod_databend_functions_scalar_decimal_cast -> mod_databend_common_functions_aggregates;
   mod_databend_functions_scalar_decimal_cast -> mod_databend_common_io_decimal;
-  mod_databend_functions_scalar_decimal_cast -> mod_databend_common_meta_kvapi_kvapi;
   mod_databend_functions_scalar_decimal_cast -> mod_databend_storages_common_table_meta_meta;
   mod_databend_functions_scalar_decimal_cast_from_jsonb -> mod_databend_storages_common_table_meta_meta;
   mod_databend_functions_scalar_decimal_comparison -> mod_databend_common_expression_function;
-  mod_databend_functions_scalar_decimal_comparison -> mod_databend_common_meta_kvapi_kvapi;
-  mod_databend_functions_scalar_decimal_comparison -> mod_databend_storages_common_table_meta_meta;
+  mod_databend_functions_scalar_decimal_comparison -> mod_databend_common_expression_values;
   mod_databend_functions_scalar_decimal_hash -> mod_databend_common_expression_function;
   mod_databend_functions_scalar_decimal_hash -> mod_databend_common_expression_types;
-  mod_databend_functions_scalar_decimal_hash -> mod_databend_common_meta_kvapi_kvapi;
-  mod_databend_functions_scalar_decimal_hash -> mod_databend_storages_common_table_meta_meta;
+  mod_databend_functions_scalar_decimal_hash -> mod_databend_common_expression_values;
+  mod_databend_functions_scalar_decimal_hash -> mod_databend_common_functions_aggregates;
   mod_databend_functions_scalar_decimal_math -> mod_databend_common_expression_function;
-  mod_databend_functions_scalar_decimal_math -> mod_databend_common_expression_register_vectorize;
-  mod_databend_functions_scalar_decimal_math -> mod_databend_common_meta_kvapi_kvapi;
-  mod_databend_functions_scalar_decimal_math -> mod_databend_storages_common_table_meta_meta;
+  mod_databend_functions_scalar_decimal_math -> mod_databend_common_expression_types;
+  mod_databend_functions_scalar_decimal_math -> mod_databend_common_expression_values;
+  mod_databend_functions_scalar_geo_geo -> mod_databend_common_base_base;
   mod_databend_functions_scalar_geo_geo -> mod_databend_common_expression_function;
   mod_databend_functions_scalar_geo_geo -> mod_databend_common_expression_types;
+  mod_databend_functions_scalar_geo_geo_h3 -> mod_databend_common_expression_types;
+  mod_databend_functions_scalar_geo_geometry -> mod_databend_common_base_base;
   mod_databend_functions_scalar_geo_geometry -> mod_databend_common_exception_exception;
+  mod_databend_functions_scalar_geo_geometry -> mod_databend_common_expression_types;
   mod_databend_functions_scalar_geo_geometry -> mod_databend_common_meta_client_required;
   mod_databend_functions_scalar_numeric_basic_arithmetic_numeric_basic_arithmetic -> mod_databend_common_expression_function;
-  mod_databend_functions_scalar_numeric_basic_arithmetic_numeric_basic_arithmetic -> mod_databend_common_meta_client_required;
-  mod_databend_functions_scalar_numeric_basic_arithmetic_numeric_basic_arithmetic -> mod_databend_common_meta_raft_store_leveled_store;
   mod_databend_meta_api -> mod_databend_common_base_runtime;
   mod_databend_meta_api -> mod_databend_common_storages_system_log_queue;
+  mod_databend_meta_api -> mod_databend_meta_configs;
   mod_databend_meta_api -> mod_databend_meta_meta_node;
   mod_databend_meta_binaries_meta -> mod_databend_meta_binaries_metaverifier;
-  mod_databend_meta_binaries_meta -> mod_databend_meta_meta_node;
   mod_databend_meta_binaries_metabench -> mod_databend_common_meta_client_client_handle;
   mod_databend_meta_binaries_metabench -> mod_databend_query_servers;
   mod_databend_meta_binaries_metactl -> mod_databend_common_meta_control_args;
   mod_databend_meta_message -> mod_databend_common_meta_kvapi_kvapi;
   mod_databend_meta_metrics -> mod_databend_common_base_runtime;
+  mod_databend_meta_store -> mod_databend_common_ast_parser;
   mod_databend_meta_store -> mod_databend_meta_configs;
   mod_databend_query_catalogs -> mod_databend_common_catalog_catalog;
   mod_databend_query_catalogs -> mod_databend_query_databases;
@@ -1302,41 +1322,37 @@ digraph architecture {
   mod_databend_query_history_tables -> mod_databend_query_sessions;
   mod_databend_query_interpreters -> mod_databend_common_ast_ast;
   mod_databend_query_interpreters -> mod_databend_common_ast_parser;
-  mod_databend_query_interpreters -> mod_databend_common_base_base;
   mod_databend_query_interpreters -> mod_databend_common_base_obfuscator;
   mod_databend_query_interpreters -> mod_databend_common_base_runtime;
   mod_databend_query_interpreters -> mod_databend_common_catalog_lock;
   mod_databend_query_interpreters -> mod_databend_common_catalog_table;
   mod_databend_query_interpreters -> mod_databend_common_catalog_table_context;
-  mod_databend_query_interpreters -> mod_databend_common_cloud_control_client_config;
+  mod_databend_query_interpreters -> mod_databend_common_column_bitmap;
   mod_databend_query_interpreters -> mod_databend_common_exception_exception;
-  mod_databend_query_interpreters -> mod_databend_common_expression_schema;
-  mod_databend_query_interpreters -> mod_databend_common_license_license_manager;
   mod_databend_query_interpreters -> mod_databend_common_meta_app_principal;
   mod_databend_query_interpreters -> mod_databend_common_meta_app_schema;
   mod_databend_query_interpreters -> mod_databend_common_pipeline_core;
   mod_databend_query_interpreters -> mod_databend_common_sql_binder;
-  mod_databend_query_interpreters -> mod_databend_common_sql_metadata;
   mod_databend_query_interpreters -> mod_databend_common_sql_optimizer;
   mod_databend_query_interpreters -> mod_databend_common_sql_plans;
   mod_databend_query_interpreters -> mod_databend_common_storages_fuse_fuse_table;
   mod_databend_query_interpreters -> mod_databend_query_physical_plans;
-  mod_databend_query_interpreters -> mod_databend_query_pipelines;
+  mod_databend_query_interpreters -> mod_databend_query_servers;
   mod_databend_query_interpreters -> mod_databend_query_sessions;
   mod_databend_query_interpreters -> mod_databend_storages_common_table_meta_meta;
   mod_databend_query_physical_plans -> mod_databend_common_ast_ast;
   mod_databend_query_physical_plans -> mod_databend_common_catalog_plan;
   mod_databend_query_physical_plans -> mod_databend_common_catalog_table_context;
-  mod_databend_query_physical_plans -> mod_databend_common_datavalues_types;
+  mod_databend_query_physical_plans -> mod_databend_common_datavalues_data_schema;
   mod_databend_query_physical_plans -> mod_databend_common_expression_expression;
-  mod_databend_query_physical_plans -> mod_databend_common_expression_schema;
-  mod_databend_query_physical_plans -> mod_databend_common_expression_type_check;
+  mod_databend_query_physical_plans -> mod_databend_common_expression_types;
   mod_databend_query_physical_plans -> mod_databend_common_expression_values;
   mod_databend_query_physical_plans -> mod_databend_common_meta_app_schema;
   mod_databend_query_physical_plans -> mod_databend_common_sql_binder;
   mod_databend_query_physical_plans -> mod_databend_common_sql_executor;
   mod_databend_query_physical_plans -> mod_databend_common_sql_optimizer;
   mod_databend_query_physical_plans -> mod_databend_common_sql_plans;
+  mod_databend_query_physical_plans -> mod_databend_common_storages_stage_read;
   mod_databend_query_physical_plans -> mod_databend_query_servers;
   mod_databend_query_physical_plans -> mod_databend_storages_common_index_hnsw_index;
   mod_databend_query_physical_plans -> mod_databend_storages_common_table_meta_meta;
@@ -1348,20 +1364,21 @@ digraph architecture {
   mod_databend_query_pipelines -> mod_databend_common_catalog_runtime_filter_info;
   mod_databend_query_pipelines -> mod_databend_common_catalog_table_context;
   mod_databend_query_pipelines -> mod_databend_common_column_bitmap;
-  mod_databend_query_pipelines -> mod_databend_common_datavalues_data_field;
   mod_databend_query_pipelines -> mod_databend_common_datavalues_types;
   mod_databend_query_pipelines -> mod_databend_common_exception_exception;
   mod_databend_query_pipelines -> mod_databend_common_expression_aggregate;
   mod_databend_query_pipelines -> mod_databend_common_expression_block;
-  mod_databend_query_pipelines -> mod_databend_common_expression_evaluator;
   mod_databend_query_pipelines -> mod_databend_common_expression_expression;
   mod_databend_query_pipelines -> mod_databend_common_expression_filter;
   mod_databend_query_pipelines -> mod_databend_common_expression_function;
   mod_databend_query_pipelines -> mod_databend_common_expression_kernels;
+  mod_databend_query_pipelines -> mod_databend_common_expression_projected_block;
   mod_databend_query_pipelines -> mod_databend_common_expression_schema;
   mod_databend_query_pipelines -> mod_databend_common_expression_types;
-  mod_databend_query_pipelines -> mod_databend_common_expression_utils;
   mod_databend_query_pipelines -> mod_databend_common_expression_values;
+  mod_databend_query_pipelines -> mod_databend_common_hashtable_table1;
+  mod_databend_query_pipelines -> mod_databend_common_meta_client_required;
+  mod_databend_query_pipelines -> mod_databend_common_native_util;
   mod_databend_query_pipelines -> mod_databend_common_pipeline_basic;
   mod_databend_query_pipelines -> mod_databend_common_pipeline_core;
   mod_databend_query_pipelines -> mod_databend_common_pipeline_sinks;
@@ -1371,8 +1388,6 @@ digraph architecture {
   mod_databend_query_pipelines -> mod_databend_common_pipeline_transforms_sorts;
   mod_databend_query_pipelines -> mod_databend_common_sql_binder;
   mod_databend_query_pipelines -> mod_databend_common_sql_plans;
-  mod_databend_query_pipelines -> mod_databend_meta_binaries_meta;
-  mod_databend_query_pipelines -> mod_databend_query_interpreters;
   mod_databend_query_pipelines -> mod_databend_query_physical_plans;
   mod_databend_query_pipelines -> mod_databend_query_servers;
   mod_databend_query_pipelines -> mod_databend_query_sessions;
@@ -1383,100 +1398,98 @@ digraph architecture {
   mod_databend_query_schedulers -> mod_databend_query_servers;
   mod_databend_query_schedulers -> mod_databend_query_sessions;
   mod_databend_query_servers -> mod_databend_common_ast_ast;
-  mod_databend_query_servers -> mod_databend_common_ast_parser;
   mod_databend_query_servers -> mod_databend_common_base_base;
   mod_databend_query_servers -> mod_databend_common_base_runtime;
-  mod_databend_query_servers -> mod_databend_common_catalog_catalog;
   mod_databend_query_servers -> mod_databend_common_column_buffer;
-  mod_databend_query_servers -> mod_databend_common_config_global;
+  mod_databend_query_servers -> mod_databend_common_column_error;
   mod_databend_query_servers -> mod_databend_common_config_inner;
-  mod_databend_query_servers -> mod_databend_common_datavalues_data_field;
   mod_databend_query_servers -> mod_databend_common_exception_exception;
   mod_databend_query_servers -> mod_databend_common_expression_block;
   mod_databend_query_servers -> mod_databend_common_expression_expression;
+  mod_databend_query_servers -> mod_databend_common_expression_filter;
+  mod_databend_query_servers -> mod_databend_common_expression_schema;
+  mod_databend_query_servers -> mod_databend_common_expression_types;
   mod_databend_query_servers -> mod_databend_common_expression_values;
   mod_databend_query_servers -> mod_databend_common_formats_clickhouse;
   mod_databend_query_servers -> mod_databend_common_http_http_shutdown_handlers;
   mod_databend_query_servers -> mod_databend_common_io_format_settings;
-  mod_databend_query_servers -> mod_databend_common_meta_app_principal;
   mod_databend_query_servers -> mod_databend_common_meta_app_tenant;
   mod_databend_query_servers -> mod_databend_common_meta_client_message;
   mod_databend_query_servers -> mod_databend_common_meta_client_required;
-  mod_databend_query_servers -> mod_databend_common_meta_kvapi_kvapi;
   mod_databend_query_servers -> mod_databend_common_meta_types_cluster;
   mod_databend_query_servers -> mod_databend_common_meta_types_endpoint;
   mod_databend_query_servers -> mod_databend_common_pipeline_core;
   mod_databend_query_servers -> mod_databend_common_pipeline_transforms_processors;
-  mod_databend_query_servers -> mod_databend_common_settings_settings;
   mod_databend_query_servers -> mod_databend_common_sql_plans;
-  mod_databend_query_servers -> mod_databend_common_users_user_api;
   mod_databend_query_servers -> mod_databend_query_auth;
-  mod_databend_query_servers -> mod_databend_query_clusters;
-  mod_databend_query_servers -> mod_databend_query_history_tables;
-  mod_databend_query_servers -> mod_databend_query_interpreters;
   mod_databend_query_servers -> mod_databend_query_physical_plans;
+  mod_databend_query_servers -> mod_databend_query_pipelines;
   mod_databend_query_servers -> mod_databend_query_sessions;
-  mod_databend_query_sessions -> mod_databend_common_ast_ast;
   mod_databend_query_sessions -> mod_databend_common_base_base;
   mod_databend_query_sessions -> mod_databend_common_base_runtime;
   mod_databend_query_sessions -> mod_databend_common_catalog_runtime_filter_info;
   mod_databend_query_sessions -> mod_databend_common_catalog_table_context;
+  mod_databend_query_sessions -> mod_databend_common_meta_app_principal;
   mod_databend_query_spillers -> mod_databend_common_ast_span;
-  mod_databend_query_spillers -> mod_databend_common_base_base;
-  mod_databend_query_spillers -> mod_databend_common_base_runtime;
   mod_databend_query_spillers -> mod_databend_common_column_buffer;
+  mod_databend_query_spillers -> mod_databend_common_datavalues_data_schema;
   mod_databend_query_spillers -> mod_databend_common_expression_block;
-  mod_databend_query_spillers -> mod_databend_common_expression_schema;
   mod_databend_query_spillers -> mod_databend_common_pipeline_transforms_traits;
   mod_databend_query_spillers -> mod_databend_common_sql_plans;
   mod_databend_query_spillers -> mod_databend_query_pipelines;
   mod_databend_query_spillers -> mod_databend_query_sessions;
-  mod_databend_query_spillers -> mod_databend_storages_common_cache_temp_dir;
   mod_databend_query_table_functions -> mod_databend_common_base_obfuscator;
   mod_databend_query_table_functions -> mod_databend_common_catalog_plan;
+  mod_databend_query_table_functions -> mod_databend_common_catalog_table;
   mod_databend_query_table_functions -> mod_databend_common_catalog_table_args;
   mod_databend_query_table_functions -> mod_databend_common_catalog_table_context;
   mod_databend_query_table_functions -> mod_databend_common_catalog_table_function;
   mod_databend_query_table_functions -> mod_databend_common_expression_block;
+  mod_databend_query_table_functions -> mod_databend_common_expression_filter;
   mod_databend_query_table_functions -> mod_databend_common_expression_schema;
+  mod_databend_query_table_functions -> mod_databend_common_expression_types;
   mod_databend_query_table_functions -> mod_databend_common_expression_values;
   mod_databend_query_table_functions -> mod_databend_common_meta_app_principal;
   mod_databend_query_table_functions -> mod_databend_common_meta_app_schema;
+  mod_databend_query_table_functions -> mod_databend_common_meta_app_tenant;
+  mod_databend_query_table_functions -> mod_databend_common_meta_client_required;
   mod_databend_query_table_functions -> mod_databend_common_pipeline_sources;
   mod_databend_query_table_functions -> mod_databend_common_storage_stage;
-  mod_databend_query_table_functions -> mod_databend_common_users_user_api;
   mod_databend_query_table_functions -> mod_databend_query_servers;
-  mod_databend_query_table_functions -> mod_databend_storages_common_table_meta_meta;
   mod_databend_query_test_kits -> mod_databend_common_config_inner;
+  mod_databend_query_test_kits -> mod_databend_common_expression_types;
   mod_databend_query_test_kits -> mod_databend_common_sql_plans;
   mod_databend_query_test_kits -> mod_databend_common_storages_fuse_fuse_table;
-  mod_databend_query_test_kits -> mod_databend_common_storages_fuse_statistics;
-  mod_databend_query_test_kits -> mod_databend_query_pipelines;
   mod_databend_query_test_kits -> mod_databend_query_sessions;
   mod_databend_query_test_kits -> mod_databend_storages_common_table_meta_meta;
-  mod_databend_storages_common_blocks_parquet_rs -> mod_databend_storages_common_table_meta_meta;
+  mod_databend_storages_common_blocks_parquet_rs -> mod_databend_common_expression_schema;
   mod_databend_storages_common_blocks_parquet_rs -> mod_databend_storages_common_table_meta_table;
   mod_databend_storages_common_cache_caches -> mod_databend_storages_common_table_meta_meta;
   mod_databend_storages_common_cache_providers -> mod_databend_common_meta_client_required;
+  mod_databend_storages_common_cache_providers -> mod_databend_common_meta_types_change;
   mod_databend_storages_common_cache_providers -> mod_databend_storages_common_cache_cache;
+  mod_databend_storages_common_cache_providers -> mod_databend_storages_common_table_meta_meta;
   mod_databend_storages_common_index_bloom_index -> mod_databend_common_expression_schema;
   mod_databend_storages_common_index_eliminate_cast -> mod_databend_common_expression_expression;
   mod_databend_storages_common_index_eliminate_cast -> mod_databend_common_expression_function;
   mod_databend_storages_common_index_filters -> mod_databend_storages_common_table_meta_meta;
+  mod_databend_storages_common_index_hnsw_index -> mod_databend_common_base_base;
   mod_databend_storages_common_index_hnsw_index -> mod_databend_common_expression_types;
-  mod_databend_storages_common_index_hnsw_index -> mod_databend_common_meta_client_required;
   mod_databend_storages_common_index_hnsw_index -> mod_databend_common_meta_kvapi_kvapi;
-  mod_databend_storages_common_index_inverted_index -> mod_databend_storages_common_table_meta_meta;
+  mod_databend_storages_common_index_hnsw_index -> mod_databend_common_meta_types_change;
   mod_databend_storages_common_session_temp_table -> mod_databend_common_meta_app_schema;
   mod_databend_storages_common_session_transaction -> mod_databend_common_meta_app_schema;
-  mod_databend_storages_common_stage_read -> mod_databend_common_expression_type_check;
+  mod_databend_storages_common_stage_read -> mod_databend_common_expression_types;
   mod_databend_storages_common_stage_read -> mod_databend_storages_common_table_meta_meta;
+  mod_databend_storages_common_table_meta_meta -> mod_databend_common_ast_parser;
   mod_databend_storages_common_table_meta_meta -> mod_databend_common_expression_block;
-  mod_databend_storages_common_table_meta_meta -> mod_databend_common_expression_converts;
-  mod_databend_storages_common_table_meta_meta -> mod_databend_common_expression_expression;
+  mod_databend_storages_common_table_meta_meta -> mod_databend_common_expression_types;
   mod_databend_storages_common_table_meta_meta -> mod_databend_common_expression_values;
+  mod_databend_storages_common_table_meta_meta -> mod_databend_common_meta_types_change;
   mod_databend_storages_common_table_meta_meta -> mod_databend_common_pipeline_transforms_traits;
-  mod_databend_storages_common_table_meta_meta -> mod_databend_common_storages_fuse_io;
+  mod_databend_storages_common_table_meta_meta -> mod_databend_common_sql_plans;
   mod_databend_storages_common_table_meta_meta -> mod_databend_storages_common_cache_caches;
+  mod_databend_storages_common_table_meta_meta -> mod_databend_storages_common_cache_providers;
+  mod_databend_storages_common_table_meta_meta -> mod_databend_storages_common_table_meta_readers;
   mod_databend_storages_common_table_meta_table -> mod_databend_query_servers;
 }

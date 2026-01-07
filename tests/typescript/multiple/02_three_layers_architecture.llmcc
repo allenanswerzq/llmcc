@@ -112,6 +112,7 @@ export function handleOrder(order: Order): boolean {
       (parameter:27 id @type number)
       (parameter:28 status @type:9 OrderStatus)
       (return:29 @type void)
+      (@tdep:9 OrderStatus)
     )
   )
   (func:30 processOrder
@@ -129,12 +130,10 @@ export function handleOrder(order: Order): boolean {
   (func:37 handleGetUser
     (parameter:38 id @type number)
     (return:39 @type:34 ApiResponse)
-    (@fdep:18 getUser)
   )
   (func:41 handleOrder
     (parameter:42 order @type:5 Order)
     (return:43 @type boolean)
-    (@fdep:30 processOrder)
   )
 )
 
@@ -212,7 +211,5 @@ digraph architecture {
   n5 -> n41 [from="input", to="func"];
   n18 -> n2 [from="func", to="output"];
   n30 -> n9 [from="func", to="output"];
-  n37 -> n18 [from="caller", to="callee"];
   n37 -> n34 [from="func", to="output"];
-  n41 -> n30 [from="caller", to="callee"];
 }

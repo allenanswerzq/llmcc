@@ -30,12 +30,10 @@ export function orchestrator(input: number): number {
   (func:5 processor
     (parameter:6 value @type number)
     (return:7 @type number)
-    (@fdep:2 helper)
   )
   (func:9 orchestrator
     (parameter:10 input @type number)
     (return:11 @type number)
-    (@fdep:2 helper)
     (@fdep:5 processor)
   )
 )
@@ -57,12 +55,9 @@ digraph architecture {
         bgcolor="#fafafa";
 
     n9[label="orchestrator", path="$TMP/sample/src/lib.ts:11", sym_ty="Function", shape=ellipse];
-    n2[label="helper", path="$TMP/sample/src/lib.ts:2", sym_ty="Function", shape=ellipse];
     n5[label="processor", path="$TMP/sample/src/lib.ts:6", sym_ty="Function", shape=ellipse];
   }
 
 
-  n5 -> n2 [from="caller", to="callee"];
-  n9 -> n2 [from="caller", to="callee"];
   n9 -> n5 [from="caller", to="callee"];
 }

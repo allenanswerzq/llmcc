@@ -13,6 +13,7 @@ digraph architecture {
 
   crate_builtin_notebook_renderers[label="builtin-notebook-renderers", path="/home/yibai/llmcc/sample/repos/vscode/extensions/notebook-renderers"];
   crate_code_oss_dev[label="code-oss-dev", path="/home/yibai/llmcc/sample/repos/vscode"];
+  crate_configuration_editing[label="configuration-editing", path="/home/yibai/llmcc/sample/repos/vscode/extensions/configuration-editing"];
   crate_emmet[label="emmet", path="/home/yibai/llmcc/sample/repos/vscode/extensions/emmet"];
   crate_git[label="git", path="/home/yibai/llmcc/sample/repos/vscode/extensions/git"];
   crate_git_base[label="git-base", path="/home/yibai/llmcc/sample/repos/vscode/extensions/git-base"];
@@ -34,29 +35,29 @@ digraph architecture {
   crate_code_oss_dev -> crate_emmet;
   crate_code_oss_dev -> crate_git;
   crate_code_oss_dev -> crate_git_base;
+  crate_code_oss_dev -> crate_github;
   crate_code_oss_dev -> crate_ipynb;
   crate_code_oss_dev -> crate_markdown_language_features;
   crate_code_oss_dev -> crate_microsoft_authentication;
-  crate_code_oss_dev -> crate_npm;
   crate_code_oss_dev -> crate_simple_browser;
-  crate_code_oss_dev -> crate_terminal_suggest;
   crate_code_oss_dev -> crate_typescript_language_features;
+  crate_configuration_editing -> crate_code_oss_dev;
   crate_emmet -> crate_code_oss_dev;
   crate_git -> crate_code_oss_dev;
-  crate_git -> crate_git_base;
   crate_git -> crate_github;
+  crate_git -> crate_simple_browser;
   crate_git_base -> crate_git;
   crate_github -> crate_code_oss_dev;
   crate_github -> crate_git;
   crate_ipynb -> crate_code_oss_dev;
   crate_json_language_features -> crate_code_oss_dev;
-  crate_markdown_language_features -> crate_typescript_language_features;
+  crate_markdown_language_features -> crate_code_oss_dev;
   crate_microsoft_authentication -> crate_code_oss_dev;
   crate_npm -> crate_code_oss_dev;
+  crate_terminal_suggest -> crate_code_oss_dev;
   crate_typescript_language_features -> crate_code_oss_dev;
+  crate_typescript_language_features -> crate_markdown_language_features;
   crate_vscode_css_languageserver -> crate_code_oss_dev;
   crate_vscode_html_languageserver -> crate_code_oss_dev;
-  crate_vscode_html_languageserver -> crate_vscode_css_languageserver;
-  crate_vscode_html_languageserver -> crate_vscode_json_languageserver;
   crate_vscode_json_languageserver -> crate_code_oss_dev;
 }

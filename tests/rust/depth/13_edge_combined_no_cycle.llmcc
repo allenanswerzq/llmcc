@@ -90,21 +90,6 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_app {
-    label="app";
-    style=rounded;
-        bgcolor="#f8f8f8";
-
-    subgraph cluster_lib_rs {
-      label="lib.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n30[label="run", path="$TMP/app/src/lib.rs:5", sym_ty="Function", shape=ellipse];
-    }
-
-  }
-
   subgraph cluster_service {
     label="service";
     style=rounded;
@@ -145,7 +130,6 @@ digraph architecture {
   n2 -> n25 [from="input", to="func"];
   n6 -> n15 [from="trait", to="impl"];
   n25 -> n4 [from="func", to="output"];
-  n30 -> n25 [from="caller", to="callee"];
 }
 
 --- expect:arch-graph-depth-2 ---
@@ -162,11 +146,9 @@ digraph architecture {
   labelloc=t;
   fontsize=16;
 
-  mod_app_lib[label="app::lib", path="$TMP/app/src"];
   mod_service_lib[label="service::lib", path="$TMP/service/src"];
   mod_types_lib[label="types::lib", path="$TMP/types/src"];
 
-  mod_app_lib -> mod_service_lib;
   mod_service_lib -> mod_types_lib;
 }
 
@@ -184,10 +166,8 @@ digraph architecture {
   labelloc=t;
   fontsize=16;
 
-  crate_app[label="app", path="$TMP/app"];
   crate_service[label="service", path="$TMP/service"];
   crate_types[label="types", path="$TMP/types"];
 
-  crate_app -> crate_service;
   crate_service -> crate_types;
 }

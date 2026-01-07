@@ -230,6 +230,32 @@ impl<'a> CollectorScopes<'a> {
         Some(allocated)
     }
 
+    /// Insert a new symbol into a specific scope.
+    /// This is used for inserting module symbols into the crate scope for qualified path resolution
+    /// (e.g., `crate_b::utils::helper` needs `utils` to be in `crate_b`'s scope).
+    #[inline]
+    pub fn insert_in_scope(
+        &self,
+        scope: &'a Scope<'a>,
+        name: &str,
+        node: &HirNode<'a>,
+        kind: SymKind,
+    ) -> Option<&'a Symbol> {
+        let name_key = self.interner().intern(name);
+        let new_symbol = Symbol::new(node.id(), name_key);
+        let sym_id = new_symbol.id().0;
+        let allocated = self.arena().alloc_with_id(sym_id, new_symbol);
+        scope.insert(allocated);
+        self.init_symbol(allocated, name, node, kind);
+        tracing::trace!(
+            "insert_in_scope: created symbol '{}' id={:?} in scope {:?}",
+            name,
+            allocated.id(),
+            scope.id()
+        );
+        Some(allocated)
+    }
+
     /// Lookup symbols by name with options
     #[inline]
     pub fn lookup_symbols(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {

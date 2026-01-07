@@ -164,11 +164,13 @@ pub fn handle_order(order: Order) -> bool {
       (parameter:39 self @type:33 OrderRepository)
       (parameter:40 id @type u64)
       (parameter:41 status @type:11 OrderStatus)
+      (@tdep:11 OrderStatus)
     )
   )
   (func:42 process_order
     (parameter:43 order @type:7 Order)
     (return:44 @type:11 OrderStatus)
+    (@tdep:7 Order)
     (@tdep:11 OrderStatus)
   )
 )
@@ -187,12 +189,11 @@ pub fn handle_order(order: Order) -> bool {
     (parameter:52 id @type u64)
     (return:53 @type:48 ApiResponse)
     (@tdep:48 ApiResponse)
-    (@fdep:29 get_user)
   )
   (func:56 handle_order
     (parameter:57 order @type:7 Order)
     (return:58 @type bool)
-    (@fdep:42 process_order)
+    (@tdep:7 Order)
   )
 )
 
@@ -270,7 +271,5 @@ digraph architecture {
   n7 -> n56 [from="input", to="func"];
   n29 -> n4 [from="func", to="type_dep"];
   n42 -> n11 [from="func", to="output"];
-  n51 -> n29 [from="caller", to="callee"];
   n51 -> n48 [from="func", to="output"];
-  n56 -> n42 [from="caller", to="callee"];
 }
