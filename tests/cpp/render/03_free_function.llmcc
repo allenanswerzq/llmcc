@@ -1,0 +1,72 @@
+===============================================================================
+free-function
+===============================================================================
+Test that free functions appear in the architecture graph.
+lang: cpp
+
+--- file: sample/CMakeLists.txt ---
+cmake_minimum_required(VERSION 3.10)
+project(sample)
+
+--- file: sample/src/lib.cpp ---
+
+struct Input {};
+struct Output {};
+
+Output process_data(Input input) {
+    return Output{};
+}
+
+int helper(int x) {
+    return x * 2;
+}
+
+--- expect:block-graph ---
+(root:1 struct Input {};
+struct Output {};
+
+Output process_data(Input input) {
+    return Output{};
+}
+
+int helper(int x) {
+    return x * 2;
+}
+ ($TMP/sample/src/lib.cpp)
+  (class:2 Input)
+  (class:3 Output)
+  (func:4 process_data
+    (func:5 process_data
+      (parameter:6 input @type:2 Input)
+    )
+  )
+  (func:7 helper
+    (func:8 helper
+      (parameter:9 x @type int)
+    )
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_cpp {
+    label="lib.cpp";
+    style=rounded;
+        bgcolor="#fafafa";
+
+    n2[label="Input", path="$TMP/sample/src/lib.cpp:2", sym_ty="Struct", shape=box];
+    n5[label="process_data", path="$TMP/sample/src/lib.cpp:5"];
+  }
+
+
+  n2 -> n5 [from="input", to="func"];
+}

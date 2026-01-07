@@ -601,7 +601,7 @@ impl<'hir> HirScope<'hir> {
     pub fn scope(&self) -> &'hir Scope<'hir> {
         self.scope
             .read()
-            .unwrap_or_else(|| panic!("scope must be set for HirScope {}", self.base.id))
+            .unwrap_or_else(|| panic!("scope must be set for HirScope {} (kind_id: {})", self.base.id, self.base.kind_id))
     }
 
     pub fn opt_scope(&self) -> Option<&'hir Scope<'hir>> {

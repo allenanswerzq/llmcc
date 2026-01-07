@@ -14,6 +14,7 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 use llmcc::LlmccOptions;
 use llmcc::{LangProcessorRegistry, run_main, run_main_auto};
+use llmcc_cpp::LangCpp;
 use llmcc_dot::ComponentDepth;
 use llmcc_rust::LangRust;
 use llmcc_ts::LangTypeScript;
@@ -129,11 +130,16 @@ pub fn run(args: Cli) -> Result<()> {
         }
         "rust" => run_main::<LangRust>(&opts),
         "typescript" | "ts" => run_main::<LangTypeScript>(&opts),
+<<<<<<< HEAD
         _ => Err(format!(
             "Unknown language: {}. Use 'auto', 'rust', or 'typescript'",
             args.lang
         )
         .into()),
+=======
+        "cpp" | "c++" | "c" => run_main::<LangCpp>(&opts),
+        _ => Err(format!("Unknown language: {}", args.lang).into()),
+>>>>>>> dfe8193 (add llmcc-cpp)
     };
 
     match result {

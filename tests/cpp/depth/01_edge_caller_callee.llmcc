@@ -1,0 +1,52 @@
+===============================================================================
+edge-caller-callee
+===============================================================================
+Test that caller-callee edges are correctly generated.
+lang: cpp
+
+--- file: sample/CMakeLists.txt ---
+cmake_minimum_required(VERSION 3.10)
+project(sample)
+
+--- file: sample/src/main.cpp ---
+void helper() {}
+
+void process() {
+    helper();
+}
+
+int main() {
+    process();
+    helper();
+    return 0;
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_main_cpp {
+    label="main.cpp";
+    style=rounded;
+        bgcolor="#fafafa";
+
+    n2[label="helper", path="$TMP/sample/src/main.cpp:1", sym_ty="Function", shape=ellipse];
+    n3[label="helper", path="$TMP/sample/src/main.cpp:1"];
+    n4[label="process", path="$TMP/sample/src/main.cpp:3", sym_ty="Function", shape=ellipse];
+    n5[label="process", path="$TMP/sample/src/main.cpp:3"];
+    n7[label="main", path="$TMP/sample/src/main.cpp:7", sym_ty="Function", shape=ellipse];
+    n8[label="main", path="$TMP/sample/src/main.cpp:7"];
+  }
+
+
+  n2 -> n3 [from="caller", to="callee"];
+  n4 -> n5 [from="caller", to="callee"];
+  n7 -> n8 [from="caller", to="callee"];
+}

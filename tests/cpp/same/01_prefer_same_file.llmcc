@@ -1,0 +1,56 @@
+===============================================================================
+prefer-same-file
+===============================================================================
+Test that symbols in the same file are preferred.
+lang: cpp
+
+--- file: sample/CMakeLists.txt ---
+cmake_minimum_required(VERSION 3.10)
+project(sample)
+
+--- file: sample/src/a.cpp ---
+struct Config {
+    int value;
+};
+
+void use_config(Config c) {}
+
+--- file: sample/src/b.cpp ---
+struct Config {
+    std::string name;
+};
+
+void use_config(Config c) {}
+
+--- expect:block-graph ---
+(root:1 struct Config {
+    int value;
+};
+
+void use_config(Config c) {}
+ ($TMP/sample/src/a.cpp)
+  (class:2 Config
+    (field:3 int @type int)
+  )
+  (func:4 use_config
+    (func:5 use_config
+      (parameter:6 c @type:2 Config)
+    )
+  )
+)
+
+(root:7 struct Config {
+    std::string name;
+};
+
+void use_config(Config c) {}
+ ($TMP/sample/src/b.cpp)
+  (class:8 Config
+    (field:9 std @type name)
+  )
+  (func:10 use_config
+    (func:11 use_config
+      (parameter:12 c @type:8 Config)
+    )
+  )
+)

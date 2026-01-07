@@ -1,0 +1,121 @@
+===============================================================================
+header-impl-separation
+===============================================================================
+Test header and implementation file separation.
+lang: cpp
+
+--- file: sample/CMakeLists.txt ---
+cmake_minimum_required(VERSION 3.10)
+project(sample)
+
+--- file: sample/include/calculator.h ---
+class Calculator {
+public:
+    int add(int a, int b);
+    int subtract(int a, int b);
+    int multiply(int a, int b);
+    int divide(int a, int b);
+};
+
+--- file: sample/src/calculator.cpp ---
+#include "../include/calculator.h"
+
+int Calculator::add(int a, int b) {
+    return a + b;
+}
+
+int Calculator::subtract(int a, int b) {
+    return a - b;
+}
+
+int Calculator::multiply(int a, int b) {
+    return a * b;
+}
+
+int Calculator::divide(int a, int b) {
+    return a / b;
+}
+
+--- file: sample/src/main.cpp ---
+#include "../include/calculator.h"
+
+int main() {
+    Calculator calc;
+    int result = calc.add(1, 2);
+    return 0;
+}
+
+--- expect:block-graph ---
+(root:1 class Calculator {
+public:
+    int add(int a, int b);
+    int subtract(int a, int b);
+    int multiply(int a, int b);
+    int divide(int a, int b);
+};
+ ($TMP/sample/include/calculator.h)
+  (class:2 Calculator
+    (field:3 int @type int)
+    (field:4 int @type int)
+    (field:5 int @type int)
+    (field:6 int @type int)
+  )
+)
+
+(root:7 #include "../include/calculator.h"
+
+int Calculator::add(int a, int b) {
+    return a + b;
+}
+
+int Calculator::subtract(int a, int b) {
+    return a - b;
+}
+
+int Calculator::multiply(int a, int b) {
+    return a * b;
+}
+
+int Calculator::divide(int a, int b) {
+    return a / b;
+}
+ ($TMP/sample/src/calculator.cpp)
+  (func:8 Calculator
+    (func:9 Calculator::add(int a, int b)
+      (parameter:10 a @type int)
+      (parameter:11 b @type int)
+    )
+  )
+  (func:12 Calculator
+    (func:13 Calculator::subtract(int a, int b)
+      (parameter:14 a @type int)
+      (parameter:15 b @type int)
+    )
+  )
+  (func:16 Calculator
+    (func:17 Calculator::multiply(int a, int b)
+      (parameter:18 a @type int)
+      (parameter:19 b @type int)
+    )
+  )
+  (func:20 Calculator
+    (func:21 Calculator::divide(int a, int b)
+      (parameter:22 a @type int)
+      (parameter:23 b @type int)
+    )
+  )
+)
+
+(root:24 #include "../include/calculator.h"
+
+int main() {
+    Calculator calc;
+    int result = calc.add(1, 2);
+    return 0;
+}
+ ($TMP/sample/src/main.cpp)
+  (func:25 main
+    (func:26 main)
+    (@fdep:26 main)
+  )
+)

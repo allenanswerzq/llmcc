@@ -1,0 +1,105 @@
+===============================================================================
+simple-class
+===============================================================================
+Test that a simple class appears in the architecture graph.
+lang: cpp
+
+--- file: sample/CMakeLists.txt ---
+cmake_minimum_required(VERSION 3.10)
+project(sample)
+
+--- file: sample/src/lib.cpp ---
+
+class Animal {
+public:
+    std::string name;
+
+    Animal(std::string n) : name(n) {}
+
+    void speak() {
+        std::cout << name << std::endl;
+    }
+};
+
+class Dog : public Animal {
+public:
+    std::string breed;
+
+    Dog(std::string n, std::string b) : Animal(n), breed(b) {}
+
+    void bark() {
+        std::cout << "Woof!" << std::endl;
+    }
+};
+
+--- expect:block-graph ---
+(root:1 class Animal {
+public:
+    std::string name;
+
+    Animal(std::string n) : name(n) {}
+
+    void speak() {
+        std::cout << name << std::endl;
+    }
+};
+
+class Dog : public Animal {
+public:
+    std::string breed;
+
+    Dog(std::string n, std::string b) : Animal(n), breed(b) {}
+
+    void bark() {
+        std::cout << "Woof!" << std::endl;
+    }
+};
+ ($TMP/sample/src/lib.cpp)
+  (class:2 Animal
+    (field:3 std @type name)
+    (method:4 Animal
+      (func:5 Animal
+        (parameter:6 n @type n)
+      )
+    )
+    (method:7 speak
+      (func:8 speak)
+    )
+  )
+  (class:9 Dog @extends:2 Animal
+    (field:10 std @type breed)
+    (method:11 Dog
+      (func:12 Dog
+        (parameter:13 n @type n)
+        (parameter:14 b @type b)
+      )
+    )
+    (method:15 bark
+      (func:16 bark)
+    )
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_cpp {
+    label="lib.cpp";
+    style=rounded;
+        bgcolor="#fafafa";
+
+    n9[label="Dog", path="$TMP/sample/src/lib.cpp:13", sym_ty="Struct", shape=box];
+    n2[label="Animal", path="$TMP/sample/src/lib.cpp:2", sym_ty="Struct", shape=box];
+  }
+
+
+  n2 -> n9 [from="base", to="extends"];
+}

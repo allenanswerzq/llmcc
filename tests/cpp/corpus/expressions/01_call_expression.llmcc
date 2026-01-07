@@ -1,0 +1,31 @@
+===============================================================================
+call-expression
+===============================================================================
+Function call expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+int helper() { return 42; }
+
+void caller() {
+    int x = helper();
+    std::cout << x << std::endl;
+}
+
+--- expect:block-graph ---
+(root:1 int helper() { return 42; }
+
+void caller() {
+    int x = helper();
+    std::cout << x << std::endl;
+}
+ ($TMP/src/lib.cpp)
+  (func:2 helper
+    (func:3 helper)
+    (@fdep:3 helper)
+  )
+  (func:4 caller
+    (func:5 caller)
+    (@fdep:5 caller)
+  )
+)

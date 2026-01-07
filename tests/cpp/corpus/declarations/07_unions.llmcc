@@ -1,0 +1,40 @@
+===============================================================================
+unions
+===============================================================================
+Union declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+union Data {
+    int i;
+    float f;
+    char c;
+};
+
+union Result {
+    int success;
+    int error_code;
+};
+
+--- expect:block-graph ---
+(root:1 union Data {
+    int i;
+    float f;
+    char c;
+};
+
+union Result {
+    int success;
+    int error_code;
+};
+ ($TMP/src/lib.cpp)
+  (class:2 Data
+    (field:3 int @type int)
+    (field:4 float @type float)
+    (field:5 char @type char)
+  )
+  (class:6 Result
+    (field:7 int @type int)
+    (field:8 int @type int)
+  )
+)
