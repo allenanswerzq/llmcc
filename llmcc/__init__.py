@@ -5,7 +5,7 @@ A universal context builder for any language and document type,
 enabling Python developers to analyze code using Rust-backed compilation.
 """
 
-__version__ = "0.2.50"
+__version__ = "0.2.51"
 
 try:
     import llmcc_bindings
