@@ -1,244 +1,243 @@
-# Copilot API Bridge
+# LLMCC Agent Workspace
 
-A VS Code extension that exposes GitHub Copilot's language models as OpenAI-compatible APIs, enabling external tools like Codex CLI, Claude Code, or any OpenAI-compatible client to use your Copilot subscription.
+This workspace contains agent-related packages for llmcc - tools and infrastructure for running AI coding agents with GitHub Copilot as the LLM backend.
 
-## Features
+## Overview
 
-- 🌉 **Multiple API Formats** - OpenAI Chat Completions, OpenAI Responses API, and Anthropic Messages API
-- 🔄 **Streaming Support** - Full SSE streaming for all endpoints
-- 🎯 **Extensive Model Mapping** - GPT-5.x, GPT-4.x, Claude 4.x, Gemini, O1 models
-- ⚙️ **Configurable** - Port, auto-start, default model, CORS origins
-- 📊 **Status Bar** - Visual indicator showing server status
-
-## How It Works
+The main goal is to let you use external AI tools (Claude Code, Codex CLI, or any OpenAI-compatible client) with your GitHub Copilot subscription instead of paying for separate API access.
 
 ```
-┌─────────────────┐     HTTP      ┌──────────────────────┐     vscode.lm API     ┌─────────────────┐
-│  Codex CLI /    │ ──────────▶   │  VS Code Extension   │ ─────────────────▶    │ GitHub Copilot  │
-│  Claude Code /  │   localhost   │  (API Bridge Server) │                       │ (Claude, GPT,   │
-│  Any Client     │               │                      │                       │  Gemini, O1...) │
-└─────────────────┘               └──────────────────────┘                       └─────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                              How It All Fits Together                           │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                 │
+│   ┌─────────────┐      ┌─────────────┐      ┌─────────────┐                     │
+│   │ Claude Code │      │  Codex CLI  │      │    llcraft  │   External Clients  │
+│   └──────┬──────┘      └──────┬──────┘      └──────┬──────┘                     │
+│          │                    │                    │                            │
+│          └────────────────────┼────────────────────┘                            │
+│                               │ HTTP (OpenAI/Anthropic API)                     │
+│                               ▼                                                 │
+│   ┌─────────────────────────────────────────────────────────────────┐           │
+│   │                        bridge (VS Code Extension)               │           │
+│   │  - Translates API calls to VS Code Language Model API           │           │
+│   │  - Supports streaming, tool calls, multiple API formats         │           │
+│   └─────────────────────────────────────────┬───────────────────────┘           │
+│                                             │ vscode.lm API                     │
+│                                             ▼                                   │
+│   ┌─────────────────────────────────────────────────────────────────┐           │
+│   │                      GitHub Copilot                             │           │
+│   │  Claude, GPT-5.x, GPT-4.x, Gemini, O1 models                    │           │
+│   └─────────────────────────────────────────────────────────────────┘           │
+│                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Installation
+## Packages
 
-### Development
+### [bridge](./bridge/) - Copilot API Bridge
 
-1. Clone this repository
-2. Run `npm install`
-3. Run `npm run compile`
-4. Press F5 to launch the extension in a new VS Code window
+A VS Code extension that exposes GitHub Copilot's language models as OpenAI-compatible APIs.
 
-### From VSIX
-
-1. Build with `npx vsce package`
-2. Install the `.vsix` file in VS Code
-
-## Usage
-
-### Starting the Server
-
-The server starts automatically when VS Code opens (configurable). You can also:
-
-1. Open Command Palette (`Ctrl+Shift+P`)
-2. Run **Copilot API Bridge: Start Server**
-
-The status bar shows: `$(radio-tower) API Bridge :5168` when running.
-
-### Commands
-
-| Command | Description |
-|---------|-------------|
-| `Copilot API Bridge: Start Server` | Start the API server |
-| `Copilot API Bridge: Stop Server` | Stop the API server |
-| `Copilot API Bridge: Show Status` | Show current status |
-
-### Configuring External Tools
+**Use this when:** You want to use Claude Code, Codex CLI, or any OpenAI/Anthropic-compatible tool with your Copilot subscription.
 
 ```bash
-# Set environment variables
+# Quick start
+cd bridge
+npm install && npm run compile
+# Press F5 in VS Code to launch
+
+# Then configure your tool
 export OPENAI_API_BASE=http://localhost:5168/v1
-export OPENAI_API_KEY=dummy  # Not validated, but required by some tools
+export OPENAI_API_KEY=dummy
 ```
 
-## API Endpoints
+**Supported APIs:**
+- OpenAI Chat Completions (`/v1/chat/completions`)
+- OpenAI Responses API (`/v1/responses`) - used by Codex CLI
+- Anthropic Messages API (`/v1/messages`)
 
-### Health Check
+### [chrome](./chrome/) - Browser Automation Bridge
+
+Native messaging host for browser automation via MCP (Model Context Protocol).
+
+**Use this when:** You want AI agents to interact with web pages (scraping, testing, automation).
+
+**Works with:**
+- ✅ Claude Code (`claude --chrome`)
+- ✅ llcraft (`llcraft --chrome`)
 
 ```bash
-curl http://localhost:5168/
-# or
-curl http://localhost:5168/health
+# Install the native messaging host
+cd chrome
+npm install && npm run build
+npm run install-host      # Linux/macOS
+npm run install-host:win  # Windows
+
+# Use with Claude Code
+claude --chrome -p "Navigate to example.com and take a screenshot"
+
+# Use with llcraft
+llcraft --chrome
 ```
 
-### GET /v1/models
+**Browser tools available:** `navigate`, `read_page`, `find`, `get_page_text`, `computer` (mouse/keyboard/screenshot), `tabs_create`, `tabs_context`, `form_input`, `javascript_tool`, and more.
 
-List available models.
+### [llcraft](./llcraft/) - Code Agent REPL
+
+A persistent code agent REPL with browser automation support. Combines file/shell tools with browser control.
+
+**Use this when:** You want a terminal AI assistant that can edit code AND control the browser.
 
 ```bash
-curl http://localhost:5168/v1/models
+cd llcraft
+npm install && npm run build
+npm link  # Makes 'llcraft' available globally
+
+# Start session
+llcraft
+
+# With browser automation
+llcraft --chrome
 ```
 
-### POST /v1/chat/completions
+### [tools](./tools/) - Built-in Tool Implementations
 
-OpenAI Chat Completions API.
+Shared tool implementations used by llmcc agents. Provides filesystem operations, shell execution, and code analysis.
 
-```bash
-curl http://localhost:5168/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "claude-opus-4.5",
-    "messages": [{"role": "user", "content": "Hello!"}],
-    "stream": false
-  }'
-```
+**Available tools:**
+| Tool | Description |
+|------|-------------|
+| `bash` | Execute shell commands |
+| `read_file` | Read file contents with line ranges |
+| `write_file` | Write or create files |
+| `list_dir` | List directory contents |
+| `file_exists` | Check if file/directory exists |
+| `grep_search` | Search for patterns in files |
+| `sed` | Stream editor for text transformation |
+| `llmcc` | Code architecture graph generator |
 
-### POST /v1/responses
+## Quick Start
 
-OpenAI Responses API (used by Codex CLI).
-
-```bash
-curl http://localhost:5168/v1/responses \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "gpt-5",
-    "input": "Write hello world in Python",
-    "stream": true
-  }'
-```
-
-### POST /v1/messages
-
-Anthropic Messages API.
-
-```bash
-curl http://localhost:5168/v1/messages \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "claude-opus-4.5",
-    "max_tokens": 1024,
-    "messages": [{"role": "user", "content": "Hello!"}]
-  }'
-```
-
-## Supported Models
-
-### Claude Models
-- `claude-opus-4.5`, `claude-opus-4`, `claude-sonnet-4.5`, `claude-sonnet-4`
-- `claude-haiku-4.5`, `claude-3.5-sonnet`
-
-### GPT-5.x Models
-- `gpt-5.2`, `gpt-5.1`, `gpt-5`, `gpt-5-mini`
-- `gpt-5.1-codex`, `gpt-5.1-codex-max`, `gpt-5.1-codex-mini`, `gpt-5-codex`
-
-### GPT-4.x Models
-- `gpt-4.1`, `gpt-4o`, `gpt-4o-mini`, `gpt-4`, `gpt-4-turbo`, `gpt-3.5-turbo`
-
-### Gemini Models
-- `gemini-3-pro-preview`, `gemini-3-flash-preview`, `gemini-2.5-pro`
-
-### O1 Models
-- `o1`, `o1-preview`, `o1-mini`
-
-### Special
-- `auto` - Auto-select model
-- `copilot-fast` - Fast Copilot model
-
-## Configuration
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `copilot-api-bridge.port` | `5168` | Port for the API server |
-| `copilot-api-bridge.autoStart` | `true` | Start server when VS Code opens |
-| `copilot-api-bridge.defaultModel` | `claude-sonnet-4` | Default model when not specified |
-| `copilot-api-bridge.allowedOrigins` | `["*"]` | CORS allowed origins |
-| `copilot-api-bridge.bindAddress` | `0.0.0.0` | Bind address (use `127.0.0.1` for local-only) |
-
-## Project Structure
-
-```
-bridge/
-├── src/
-│   ├── extension.ts      # Extension entry point
-│   ├── server.ts         # HTTP server & routing
-│   ├── statusBar.ts      # Status bar manager
-│   ├── types.ts          # Types & model mapping
-│   └── handlers/
-│       ├── chatCompletions.ts  # /v1/chat/completions
-│       ├── responses.ts        # /v1/responses
-│       ├── messages.ts         # /v1/messages
-│       └── models.ts           # /v1/models
-├── scripts/              # Helper scripts
-│   ├── start-claude.ps1  # Launch Claude Code with bridge (PowerShell)
-│   ├── start-claude.sh   # Launch Claude Code with bridge (Bash/WSL)
-│   ├── start-codex.ps1   # Launch Codex CLI with bridge (PowerShell)
-│   └── start-codex.sh    # Launch Codex CLI with bridge (Bash/WSL)
-├── tests/                # Test scripts
-├── package.json
-└── tsconfig.json
-```
-
-## Quick Start Scripts
-
-Launch Claude Code or Codex CLI with environment variables pre-configured:
+### 1. Use Codex CLI with Copilot
 
 ```powershell
 # PowerShell (Windows)
-.\scripts\start-claude.ps1
+cd agent
 .\scripts\start-codex.ps1
 ```
 
 ```bash
-# Bash (Linux/macOS)
-./scripts/start-claude.sh
+# Bash (Linux/macOS/WSL)
+cd agent
 ./scripts/start-codex.sh
 ```
 
-## Limitations
+### 2. Use Claude Code with Copilot
 
-- **VS Code must be running** - Extension runs inside VS Code
-- **Rate limits apply** - Copilot subscription limits still apply
-- **Limited API parity** - Not all OpenAI/Anthropic parameters are honored
-
-## WSL Support
-
-The extension binds to `0.0.0.0` by default, allowing connections from WSL. The helper scripts automatically detect WSL and use the correct Windows host IP:
+```powershell
+# PowerShell (Windows)
+cd agent
+.\scripts\start-claude.ps1
+```
 
 ```bash
-# From WSL, run the helper script directly
+# Bash (Linux/macOS/WSL)
+cd agent
 ./scripts/start-claude.sh
-./scripts/start-codex.sh
-
-# Or manually set the environment
-export OPENAI_BASE_URL="http://$(ip route show default | awk '{print $3}'):5168/v1"
-export OPENAI_API_KEY="dummy"
 ```
-
-> **Note**: You may need to add a Windows Firewall rule to allow incoming connections on port 5168.
-
-## Security
-
-- Server binds to all interfaces (`0.0.0.0`) by default for WSL support
-- Set `bindAddress` to `127.0.0.1` to restrict to localhost only
-- No API key validation (relies on Copilot authentication)
-- Respect GitHub Copilot's Terms of Service
 
 ## Development
 
 ```bash
-# Install dependencies
+# Install all dependencies
 npm install
 
-# Compile
-npm run compile
+# Build all packages
+npm run build
 
-# Watch mode
-npm run watch
+# Build individual packages
+npm run build:bridge
+npm run build:chrome
+npm run build:llcraft
+npm run build:tools
 
-# Lint
-npm run lint
+# Watch mode for bridge development
+cd bridge && npm run watch
 ```
 
-## License
+## Testing
 
-MIT
+```bash
+# Run all tests
+npm run test
+
+# Run tests for specific packages
+npm run test:tools      # Unit tests for tools package (43 tests)
+npm run test:bridge     # Unit tests for bridge package (20 tests)
+
+# Run integration tests (requires bridge server running)
+npm run test:integration
+```
+
+### Test Structure
+
+```
+agent/
+├── tools/tests/              # Tool implementation tests
+│   └── tools.test.ts         # 43 unit tests
+├── bridge/tests/
+│   ├── unit/types.test.ts    # 20 unit tests for types & routing
+│   └── integration.test.ts   # Integration tests (require server)
+```
+
+## Workspace Structure
+
+```
+agent/
+├── package.json          # Workspace root (npm workspaces)
+├── README.md             # This file
+├── scripts/              # Quick-start scripts for Claude/Codex
+│   ├── start-claude.ps1
+│   ├── start-claude.sh
+│   ├── start-codex.ps1
+│   └── start-codex.sh
+├── bridge/               # VS Code extension
+│   ├── src/
+│   │   ├── extension.ts  # Extension entry point
+│   │   ├── server.ts     # HTTP server & routing
+│   │   ├── types.ts      # Model mapping & types
+│   │   └── handlers/     # API endpoint handlers
+│   └── tests/
+├── chrome/               # Browser automation
+│   ├── src/
+│   └── scripts/
+├── llcraft/              # Code agent REPL with browser support
+│   └── src/
+└── tools/                # Shared tool implementations
+    ├── src/index.ts      # All tool implementations
+    └── tests/
+```
+
+## Requirements
+
+- **VS Code** with GitHub Copilot extension (for bridge)
+- **Node.js** 18+
+- **GitHub Copilot subscription** (Individual, Business, or Enterprise)
+
+## Troubleshooting
+
+### Bridge server not starting
+1. Ensure GitHub Copilot extension is installed and authenticated
+2. Check VS Code Output panel → "Copilot API Bridge"
+3. Verify port 5168 is not in use
+
+### WSL connection issues
+1. Bridge binds to `0.0.0.0` by default for WSL access
+2. May need Windows Firewall rule for port 5168
+3. Scripts auto-detect Windows host IP in WSL
+
+### Model not available
+- Not all models are available in all Copilot tiers
+- Check Copilot settings for available models
+- Try `claude-sonnet-4` or `gpt-4o` as fallback
