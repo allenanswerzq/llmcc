@@ -92,8 +92,10 @@ Only use tools when necessary to complete the user's request.`;
                 const toolRequest = JSON.parse(toolCallMatch[1]);
                 const toolName = toolRequest.name;
                 const toolArgs = toolRequest.arguments || {};
+                // Extract thinking text (text before the tool block)
+                const thinkingText = content.slice(0, content.indexOf('```tool')).trim();
                 if (onToolCall) {
-                    onToolCall(toolName, JSON.stringify(toolArgs));
+                    onToolCall(toolName, JSON.stringify(toolArgs), thinkingText);
                 }
                 // Create a synthetic tool call
                 const syntheticToolCall = {

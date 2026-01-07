@@ -191,11 +191,59 @@ async function handleInput(input, session, config) {
     console.log();
     process.stdout.write(`${colors.blue}${colors.bold}llcraft${colors.reset}: `);
     try {
+        // Track lines printed for thinking text (so we can clear them)
+        let thinkingLines = 0;
         // Callback to show tool calls in real-time
-        const onToolCall = (name, args) => {
-            console.log(`\n${colors.dim}[calling ${name}...]${colors.reset}`);
+        const onToolCall = (name, args, thinking) => {
+            // Show thinking text if present
+            if (thinking) {
+                // Print thinking in dim color
+                process.stdout.write(`${colors.dim}${thinking}${colors.reset}\n`);
+                thinkingLines = thinking.split('\n').length;
+            }
+            // Parse args and show a summary
+            let summary = '';
+            try {
+                const parsed = JSON.parse(args);
+                if (name === 'run_command' && parsed.command) {
+                    summary = `: ${parsed.command}`;
+                }
+                else if (name === 'read_file' && parsed.path) {
+                    summary = `: ${parsed.path}`;
+                }
+                else if (name === 'write_file' && parsed.path) {
+                    summary = `: ${parsed.path}`;
+                }
+                else if (name === 'list_dir' && parsed.path) {
+                    summary = `: ${parsed.path}`;
+                }
+                else if (name === 'search_files' && parsed.pattern) {
+                    summary = `: ${parsed.pattern}`;
+                }
+                else if (name === 'edit_file' && parsed.path) {
+                    summary = `: ${parsed.path}`;
+                }
+                else if (name === 'navigate' && parsed.url) {
+                    summary = `: ${parsed.url}`;
+                }
+                else if (name === 'find' && parsed.query) {
+                    summary = `: ${parsed.query}`;
+                }
+                else if (name === 'computer' && parsed.action) {
+                    summary = `: ${parsed.action}`;
+                }
+            }
+            catch {
+                // Ignore parse errors
+            }
+            process.stdout.write(`${colors.yellow}[${name}${summary}]${colors.reset} `);
         };
         const response = await callAPI(session.messages, config, onToolCall);
+        // Clear thinking lines if any were printed (move cursor up and clear)
+        if (thinkingLines > 0) {
+            // Move to new line after tool indicator, then print response
+            console.log();
+        }
         // Add assistant message
         const assistantMessage = {
             role: 'assistant',

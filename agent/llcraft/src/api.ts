@@ -49,7 +49,7 @@ interface AnthropicResponse {
 export async function callAPI(
     messages: Message[],
     config: Config,
-    onToolCall?: (name: string, args: string) => void
+    onToolCall?: (name: string, args: string, thinking?: string) => void
 ): Promise<string> {
     // Convert messages to API format
     const apiMessages: APIMessage[] = messages
@@ -77,7 +77,7 @@ export async function callAPI(
 async function callOpenAIAPIWithTools(
     messages: APIMessage[],
     config: Config,
-    onToolCall?: (name: string, args: string) => void
+    onToolCall?: (name: string, args: string, thinking?: string) => void
 ): Promise<string> {
     // Collect available tools
     const availableTools = [...builtinTools];
@@ -151,8 +151,11 @@ Only use tools when necessary to complete the user's request.`;
                 const toolName = toolRequest.name;
                 const toolArgs = toolRequest.arguments || {};
 
+                // Extract thinking text (text before the tool block)
+                const thinkingText = content.slice(0, content.indexOf('```tool')).trim();
+
                 if (onToolCall) {
-                    onToolCall(toolName, JSON.stringify(toolArgs));
+                    onToolCall(toolName, JSON.stringify(toolArgs), thinkingText);
                 }
 
                 // Create a synthetic tool call
