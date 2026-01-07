@@ -33,7 +33,9 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_prisma_client___tests__[label="__tests__", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/__tests__"];
     mod_prisma_client_runtime[label="runtime", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/runtime"];
+    mod_prisma_client_scripts[label="scripts", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/scripts"];
     mod_prisma_client_utils[label="utils", path="/home/yibai/llmcc/sample/repos/prisma/packages/client/src/utils"];
   }
 
@@ -127,21 +129,22 @@ digraph architecture {
   }
 
 
-  mod_prisma_client_engine_runtime_interpreter -> mod_prisma_client_runtime;
+  mod_prisma_client___tests__ -> mod_prisma_client_scripts;
   mod_prisma_client_engine_runtime_interpreter -> mod_prisma_driver_adapter_utils_types;
-  mod_prisma_client_generator_js_TSClient -> mod_prisma_client_generator_js_utils;
-  mod_prisma_client_generator_js_TSClient -> mod_prisma_migrate_utils;
+  mod_prisma_client_generator_js_TSClient -> mod_prisma_client_generator_ts_utils;
   mod_prisma_client_generator_js_TSClient -> mod_prisma_ts_builders_TypeBuilder;
   mod_prisma_client_generator_js_generateClient -> mod_prisma_client_generator_js_TSClient;
   mod_prisma_client_generator_js_typedSql -> mod_prisma_ts_builders_TypeBuilder;
   mod_prisma_client_generator_js_utils -> mod_prisma_client_generator_js_TSClient;
   mod_prisma_client_generator_ts_TSClient -> mod_prisma_client_generator_js_TSClient;
   mod_prisma_client_generator_ts_TSClient -> mod_prisma_client_generator_js_utils;
-  mod_prisma_client_generator_ts_TSClient -> mod_prisma_migrate_utils;
+  mod_prisma_client_generator_ts_TSClient -> mod_prisma_client_generator_ts_utils;
   mod_prisma_client_generator_ts_TSClient -> mod_prisma_ts_builders_TypeBuilder;
   mod_prisma_client_generator_ts_utils -> mod_prisma_client_generator_js_TSClient;
+  mod_prisma_client_generator_ts_utils -> mod_prisma_migrate_types;
   mod_prisma_client_generator_ts_utils -> mod_prisma_query_plan_executor_log;
   mod_prisma_client_runtime -> mod_prisma_client_runtime_utils_errors;
+  mod_prisma_client_runtime -> mod_prisma_client_scripts;
   mod_prisma_client_runtime -> mod_prisma_driver_adapter_utils_types;
   mod_prisma_client_runtime -> mod_prisma_internals_utils;
   mod_prisma_client_utils -> mod_dev_env_compile;

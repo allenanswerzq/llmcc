@@ -17,7 +17,6 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_builtin_notebook_renderers_color[label="color", path="/home/yibai/llmcc/sample/repos/vscode/extensions/notebook-renderers/src"];
-    mod_builtin_notebook_renderers_index[label="index", path="/home/yibai/llmcc/sample/repos/vscode/extensions/notebook-renderers/src"];
     mod_builtin_notebook_renderers_rendererTypes[label="rendererTypes", path="/home/yibai/llmcc/sample/repos/vscode/extensions/notebook-renderers/src"];
   }
 
@@ -135,6 +134,14 @@ digraph architecture {
     mod_php_language_features_features[label="features", path="/home/yibai/llmcc/sample/repos/vscode/extensions/php-language-features/src/features"];
   }
 
+  subgraph cluster_simple_browser {
+    label="simple-browser";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_simple_browser_dispose[label="dispose", path="/home/yibai/llmcc/sample/repos/vscode/extensions/simple-browser/src"];
+  }
+
   subgraph cluster_terminal_suggest {
     label="terminal-suggest";
     style=rounded;
@@ -150,6 +157,7 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_typescript_language_features_commands[label="commands", path="/home/yibai/llmcc/sample/repos/vscode/extensions/typescript-language-features/src/commands"];
     mod_typescript_language_features_configuration[label="configuration", path="/home/yibai/llmcc/sample/repos/vscode/extensions/typescript-language-features/src/configuration"];
     mod_typescript_language_features_languageFeatures[label="languageFeatures", path="/home/yibai/llmcc/sample/repos/vscode/extensions/typescript-language-features/src/languageFeatures"];
     mod_typescript_language_features_tsServer[label="tsServer", path="/home/yibai/llmcc/sample/repos/vscode/extensions/typescript-language-features/src/tsServer"];
@@ -177,9 +185,6 @@ digraph architecture {
   }
 
 
-  mod_builtin_notebook_renderers_index -> mod_builtin_notebook_renderers_rendererTypes;
-  mod_builtin_notebook_renderers_index -> mod_code_oss_dev_workbench;
-  mod_builtin_notebook_renderers_index -> mod_git_base_util;
   mod_code_oss_dev_base -> mod_builtin_notebook_renderers_color;
   mod_code_oss_dev_base -> mod_builtin_notebook_renderers_rendererTypes;
   mod_code_oss_dev_base -> mod_code_oss_dev_editor;
@@ -187,8 +192,10 @@ digraph architecture {
   mod_code_oss_dev_base -> mod_code_oss_dev_typings;
   mod_code_oss_dev_base -> mod_code_oss_dev_vs;
   mod_code_oss_dev_base -> mod_code_oss_dev_workbench;
+  mod_code_oss_dev_base -> mod_emmet_typings;
   mod_code_oss_dev_base -> mod_git_base_util;
   mod_code_oss_dev_base -> mod_git_util;
+  mod_code_oss_dev_base -> mod_github_util;
   mod_code_oss_dev_base -> mod_ipynb_helper;
   mod_code_oss_dev_base -> mod_markdown_language_features_util;
   mod_code_oss_dev_base -> mod_typescript_language_features_utils;
@@ -203,9 +210,10 @@ digraph architecture {
   mod_code_oss_dev_editor -> mod_emmet_typings;
   mod_code_oss_dev_editor -> mod_git_base_util;
   mod_code_oss_dev_editor -> mod_git_util;
-  mod_code_oss_dev_editor -> mod_ipynb_helper;
   mod_code_oss_dev_editor -> mod_markdown_language_features_util;
+  mod_code_oss_dev_editor -> mod_php_language_features_features;
   mod_code_oss_dev_editor -> mod_typescript_language_features_utils;
+  mod_code_oss_dev_platform -> mod_builtin_notebook_renderers_color;
   mod_code_oss_dev_platform -> mod_builtin_notebook_renderers_rendererTypes;
   mod_code_oss_dev_platform -> mod_code_oss_dev_base;
   mod_code_oss_dev_platform -> mod_code_oss_dev_editor;
@@ -213,11 +221,9 @@ digraph architecture {
   mod_code_oss_dev_platform -> mod_code_oss_dev_vs;
   mod_code_oss_dev_platform -> mod_code_oss_dev_vscode_dts;
   mod_code_oss_dev_platform -> mod_code_oss_dev_workbench;
-  mod_code_oss_dev_platform -> mod_emmet_typings;
   mod_code_oss_dev_platform -> mod_git_util;
   mod_code_oss_dev_platform -> mod_ipynb_helper;
   mod_code_oss_dev_platform -> mod_markdown_language_features_util;
-  mod_code_oss_dev_platform -> mod_php_language_features_features;
   mod_code_oss_dev_platform -> mod_typescript_language_features_utils;
   mod_code_oss_dev_platform -> mod_typescript_language_features_web;
   mod_code_oss_dev_server -> mod_code_oss_dev_base;
@@ -227,12 +233,15 @@ digraph architecture {
   mod_code_oss_dev_vs -> mod_code_oss_dev_editor;
   mod_code_oss_dev_vs -> mod_code_oss_dev_platform;
   mod_code_oss_dev_vs -> mod_code_oss_dev_workbench;
+  mod_code_oss_dev_vs -> mod_git_base_util;
   mod_code_oss_dev_vscode_dts -> mod_code_oss_dev_base;
   mod_code_oss_dev_vscode_dts -> mod_code_oss_dev_editor;
   mod_code_oss_dev_vscode_dts -> mod_code_oss_dev_platform;
   mod_code_oss_dev_vscode_dts -> mod_code_oss_dev_workbench;
-  mod_code_oss_dev_vscode_dts -> mod_markdown_language_features_util;
+  mod_code_oss_dev_vscode_dts -> mod_simple_browser_dispose;
   mod_code_oss_dev_vscode_dts -> mod_typescript_language_features_configuration;
+  mod_code_oss_dev_vscode_dts -> mod_typescript_language_features_utils;
+  mod_code_oss_dev_workbench -> mod_builtin_notebook_renderers_color;
   mod_code_oss_dev_workbench -> mod_builtin_notebook_renderers_rendererTypes;
   mod_code_oss_dev_workbench -> mod_code_oss_dev_base;
   mod_code_oss_dev_workbench -> mod_code_oss_dev_code;
@@ -249,63 +258,59 @@ digraph architecture {
   mod_code_oss_dev_workbench -> mod_markdown_language_features_preview;
   mod_code_oss_dev_workbench -> mod_markdown_language_features_util;
   mod_code_oss_dev_workbench -> mod_microsoft_authentication_common;
-  mod_code_oss_dev_workbench -> mod_microsoft_authentication_node;
   mod_code_oss_dev_workbench -> mod_php_language_features_features;
+  mod_code_oss_dev_workbench -> mod_simple_browser_dispose;
   mod_code_oss_dev_workbench -> mod_typescript_language_features_languageFeatures;
   mod_code_oss_dev_workbench -> mod_typescript_language_features_tsServer;
   mod_code_oss_dev_workbench -> mod_typescript_language_features_utils;
   mod_code_oss_dev_workbench -> mod_typescript_language_features_web;
   mod_emmet_typings -> mod_code_oss_dev_editor;
   mod_emmet_util -> mod_code_oss_dev_base;
+  mod_emmet_util -> mod_code_oss_dev_workbench;
   mod_git_api -> mod_code_oss_dev_base;
   mod_git_api -> mod_git_git;
   mod_git_api -> mod_git_repository;
   mod_git_api -> mod_github_typings;
   mod_git_commands -> mod_git_git;
+  mod_git_commands -> mod_github_typings;
   mod_git_git -> mod_code_oss_dev_base;
-  mod_git_git -> mod_git_api;
   mod_git_repository -> mod_code_oss_dev_base;
   mod_git_repository -> mod_code_oss_dev_workbench;
-  mod_git_repository -> mod_git_api;
   mod_git_repository -> mod_git_util;
+  mod_git_repository -> mod_github_typings;
   mod_git_util -> mod_code_oss_dev_base;
-  mod_git_util -> mod_code_oss_dev_editor;
-  mod_git_util -> mod_code_oss_dev_platform;
-  mod_git_util -> mod_code_oss_dev_vs;
   mod_git_util -> mod_code_oss_dev_workbench;
   mod_github_typings -> mod_code_oss_dev_base;
-  mod_github_typings -> mod_git_git;
-  mod_github_util -> mod_git_git;
+  mod_github_util -> mod_github_typings;
   mod_html_language_features_client -> mod_code_oss_dev_base;
   mod_html_language_features_client -> mod_code_oss_dev_workbench;
-  mod_html_language_features_client -> mod_json_language_features_client;
   mod_ipynb_serializers -> mod_code_oss_dev_workbench;
-  mod_json_language_features_client -> mod_code_oss_dev_base;
   mod_json_language_features_client -> mod_code_oss_dev_workbench;
+  mod_json_language_features_client -> mod_simple_browser_dispose;
   mod_markdown_language_features_languageFeatures -> mod_code_oss_dev_workbench;
   mod_markdown_language_features_languageFeatures -> mod_markdown_language_features_util;
+  mod_markdown_language_features_languageFeatures -> mod_typescript_language_features_commands;
   mod_microsoft_authentication_common -> mod_code_oss_dev_base;
   mod_microsoft_authentication_common -> mod_code_oss_dev_workbench;
-  mod_microsoft_authentication_node -> mod_code_oss_dev_base;
   mod_microsoft_authentication_node -> mod_code_oss_dev_workbench;
   mod_microsoft_authentication_node -> mod_microsoft_authentication_common;
   mod_npm_tasks -> mod_code_oss_dev_base;
   mod_npm_tasks -> mod_code_oss_dev_platform;
   mod_npm_tasks -> mod_code_oss_dev_workbench;
+  mod_php_language_features_features -> mod_code_oss_dev_base;
   mod_php_language_features_features -> mod_code_oss_dev_editor;
   mod_terminal_suggest_fig -> mod_terminal_suggest_helpers;
   mod_terminal_suggest_shell -> mod_code_oss_dev_base;
   mod_typescript_language_features_languageFeatures -> mod_code_oss_dev_base;
-  mod_typescript_language_features_languageFeatures -> mod_code_oss_dev_editor;
-  mod_typescript_language_features_languageFeatures -> mod_code_oss_dev_platform;
   mod_typescript_language_features_languageFeatures -> mod_code_oss_dev_workbench;
+  mod_typescript_language_features_languageFeatures -> mod_typescript_language_features_commands;
   mod_typescript_language_features_languageFeatures -> mod_typescript_language_features_configuration;
   mod_typescript_language_features_languageFeatures -> mod_typescript_language_features_tsServer;
   mod_typescript_language_features_languageFeatures -> mod_typescript_language_features_typescriptService;
+  mod_typescript_language_features_tsServer -> mod_code_oss_dev_base;
   mod_typescript_language_features_typescriptService -> mod_typescript_language_features_tsServer;
-  mod_typescript_language_features_utils -> mod_git_util;
+  mod_typescript_language_features_utils -> mod_code_oss_dev_base;
   mod_typescript_language_features_web -> mod_code_oss_dev_base;
-  mod_vscode_api_tests_singlefolder_tests -> mod_code_oss_dev_base;
   mod_vscode_api_tests_singlefolder_tests -> mod_code_oss_dev_workbench;
   mod_vscode_api_tests_singlefolder_tests -> mod_vscode_api_tests_utils;
   mod_vscode_html_languageserver_modes -> mod_code_oss_dev_base;

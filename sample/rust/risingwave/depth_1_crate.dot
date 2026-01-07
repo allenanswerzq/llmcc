@@ -37,7 +37,6 @@ digraph architecture {
   crate_risingwave_hummock_test[label="risingwave_hummock_test", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_test"];
   crate_risingwave_hummock_trace[label="risingwave_hummock_trace", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage/hummock_trace"];
   crate_risingwave_jni_core[label="risingwave_jni_core", path="/home/yibai/llmcc/sample/repos/risingwave/src/jni_core"];
-  crate_risingwave_license[label="risingwave_license", path="/home/yibai/llmcc/sample/repos/risingwave/src/license"];
   crate_risingwave_meta[label="risingwave_meta", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta"];
   crate_risingwave_meta_model[label="risingwave_meta_model", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model"];
   crate_risingwave_meta_model_migration[label="risingwave_meta_model_migration", path="/home/yibai/llmcc/sample/repos/risingwave/src/meta/model/migration"];
@@ -49,9 +48,8 @@ digraph architecture {
   crate_risingwave_storage[label="risingwave_storage", path="/home/yibai/llmcc/sample/repos/risingwave/src/storage"];
   crate_risingwave_stream[label="risingwave_stream", path="/home/yibai/llmcc/sample/repos/risingwave/src/stream"];
   crate_rw_resource_util[label="rw_resource_util", path="/home/yibai/llmcc/sample/repos/risingwave/src/utils/resource_util"];
-  crate_sync_point[label="sync-point", path="/home/yibai/llmcc/sample/repos/risingwave/src/utils/sync-point"];
 
-  crate_lints -> crate_risingwave_frontend;
+  crate_lints -> crate_risingwave_sqlparser;
   crate_risedev -> crate_risingwave_expr_impl;
   crate_risedev -> crate_risingwave_meta;
   crate_risingwave_backup -> crate_risingwave_meta;
@@ -60,15 +58,15 @@ digraph architecture {
   crate_risingwave_batch -> crate_risingwave_connector;
   crate_risingwave_batch_executors -> crate_risingwave_batch;
   crate_risingwave_batch_executors -> crate_risingwave_common;
+  crate_risingwave_batch_executors -> crate_risingwave_common_estimate_size;
   crate_risingwave_batch_executors -> crate_risingwave_connector;
-  crate_risingwave_batch_executors -> crate_risingwave_expr;
-  crate_risingwave_batch_executors -> crate_risingwave_meta_model_migration;
-  crate_risingwave_batch_executors -> crate_risingwave_sqlparser;
   crate_risingwave_common -> crate_risingwave_common_estimate_size;
   crate_risingwave_common -> crate_risingwave_connector;
   crate_risingwave_common -> crate_risingwave_expr_impl;
   crate_risingwave_common -> crate_risingwave_frontend;
+  crate_risingwave_common -> crate_risingwave_sqlparser;
   crate_risingwave_common -> crate_risingwave_storage;
+  crate_risingwave_common -> crate_risingwave_stream;
   crate_risingwave_common_proc_macro -> crate_risingwave_sqlparser;
   crate_risingwave_compactor -> crate_risingwave_common;
   crate_risingwave_compute -> crate_risingwave_common;
@@ -77,16 +75,13 @@ digraph architecture {
   crate_risingwave_connector -> crate_risingwave_connector_codec;
   crate_risingwave_connector -> crate_risingwave_expr_impl;
   crate_risingwave_connector -> crate_risingwave_frontend;
-  crate_risingwave_connector -> crate_risingwave_license;
   crate_risingwave_connector -> crate_risingwave_meta_model_migration;
   crate_risingwave_connector -> crate_risingwave_object_store;
   crate_risingwave_connector -> crate_risingwave_sqlparser;
   crate_risingwave_connector -> crate_risingwave_storage;
   crate_risingwave_connector -> crate_risingwave_stream;
-  crate_risingwave_connector -> crate_sync_point;
   crate_risingwave_connector_codec -> crate_risingwave_common;
-  crate_risingwave_connector_codec -> crate_risingwave_sqlparser;
-  crate_risingwave_ctl -> crate_risingwave_expr_impl;
+  crate_risingwave_ctl -> crate_risingwave_common;
   crate_risingwave_ctl -> crate_risingwave_frontend;
   crate_risingwave_ctl -> crate_risingwave_hummock_sdk;
   crate_risingwave_ctl -> crate_risingwave_storage;
@@ -98,26 +93,21 @@ digraph architecture {
   crate_risingwave_expr_impl -> crate_risingwave_connector;
   crate_risingwave_expr_impl -> crate_risingwave_expr;
   crate_risingwave_expr_impl -> crate_risingwave_frontend;
-  crate_risingwave_expr_impl -> crate_risingwave_license;
   crate_risingwave_expr_impl -> crate_risingwave_sqlparser;
   crate_risingwave_expr_impl -> crate_risingwave_storage;
   crate_risingwave_expr_impl -> crate_risingwave_stream;
-  crate_risingwave_expr_macro -> crate_risingwave_license;
   crate_risingwave_expr_macro -> crate_risingwave_sqlparser;
   crate_risingwave_frontend -> crate_pgwire;
   crate_risingwave_frontend -> crate_risingwave_batch;
-  crate_risingwave_frontend -> crate_risingwave_batch_executors;
   crate_risingwave_frontend -> crate_risingwave_common;
   crate_risingwave_frontend -> crate_risingwave_connector;
   crate_risingwave_frontend -> crate_risingwave_expr;
   crate_risingwave_frontend -> crate_risingwave_expr_impl;
   crate_risingwave_frontend -> crate_risingwave_hummock_sdk;
-  crate_risingwave_frontend -> crate_risingwave_license;
   crate_risingwave_frontend -> crate_risingwave_meta;
-  crate_risingwave_frontend -> crate_risingwave_meta_model;
-  crate_risingwave_frontend -> crate_risingwave_meta_model_migration;
   crate_risingwave_frontend -> crate_risingwave_rpc_client;
   crate_risingwave_frontend -> crate_risingwave_sqlparser;
+  crate_risingwave_frontend -> crate_risingwave_storage;
   crate_risingwave_frontend -> crate_risingwave_stream;
   crate_risingwave_hummock_sdk -> crate_risingwave_common;
   crate_risingwave_hummock_sdk -> crate_risingwave_expr_impl;
@@ -127,7 +117,6 @@ digraph architecture {
   crate_risingwave_hummock_test -> crate_risingwave_meta;
   crate_risingwave_hummock_test -> crate_risingwave_storage;
   crate_risingwave_hummock_trace -> crate_risingwave_common;
-  crate_risingwave_hummock_trace -> crate_risingwave_stream;
   crate_risingwave_jni_core -> crate_risingwave_common;
   crate_risingwave_meta -> crate_risingwave_backup;
   crate_risingwave_meta -> crate_risingwave_cmd_all;
@@ -171,5 +160,5 @@ digraph architecture {
   crate_risingwave_stream -> crate_risingwave_meta_model_migration;
   crate_risingwave_stream -> crate_risingwave_sqlparser;
   crate_risingwave_stream -> crate_risingwave_storage;
-  crate_rw_resource_util -> crate_risingwave_meta;
+  crate_rw_resource_util -> crate_risingwave_connector_codec;
 }

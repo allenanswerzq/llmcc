@@ -86,6 +86,8 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_lance_jni_blocking_dataset[label="blocking_dataset", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
+    mod_lance_jni_error[label="error", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
     mod_lance_jni_namespace[label="namespace", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
   }
 
@@ -139,6 +141,7 @@ digraph architecture {
   mod_lance_dataset -> mod_lance_index_scalar;
   mod_lance_dataset -> mod_lance_index_vector;
   mod_lance_dataset -> mod_lance_io_object_store;
+  mod_lance_dataset -> mod_lance_jni_error;
   mod_lance_dataset -> mod_lance_session;
   mod_lance_dataset -> mod_lance_table_format;
   mod_lance_dataset -> mod_lance_table_io;
@@ -158,9 +161,7 @@ digraph architecture {
   mod_lance_encoding_previous -> mod_lance_encoding_encoder;
   mod_lance_encoding_previous -> mod_lance_encoding_encodings;
   mod_lance_encoding_testing -> mod_lance_core_datatypes;
-  mod_lance_encoding_testing -> mod_lance_encoding_decoder;
   mod_lance_encoding_testing -> mod_lance_encoding_encoder;
-  mod_lance_encoding_testing -> mod_lance_encoding_encodings;
   mod_lance_file_writer -> mod_lance_core_datatypes;
   mod_lance_file_writer -> mod_lance_encoding_encoder;
   mod_lance_index -> mod_lance_core_cache;
@@ -178,6 +179,7 @@ digraph architecture {
   mod_lance_index_scalar -> mod_lance_core_utils;
   mod_lance_index_scalar -> mod_lance_index_lib;
   mod_lance_index_scalar -> mod_lance_io_object_store;
+  mod_lance_index_scalar -> mod_lance_jni_error;
   mod_lance_index_vector -> mod_lance_file_writer;
   mod_lance_index_vector -> mod_lance_index;
   mod_lance_index_vector -> mod_lance_io_object_store;
@@ -191,6 +193,8 @@ digraph architecture {
   mod_lance_io -> mod_lance_io_scheduler;
   mod_lance_io -> mod_lance_table_format;
   mod_lance_io -> mod_lance_table_io;
+  mod_lance_jni_blocking_dataset -> mod_lance_dataset;
+  mod_lance_jni_namespace -> mod_lance_dataset;
   mod_lance_jni_namespace -> mod_lance_namespace_impls_rest_adapter;
   mod_lance_namespace_impls_rest_adapter -> mod_lance_io_scheduler;
   mod_lance_session -> mod_lance_core_cache;

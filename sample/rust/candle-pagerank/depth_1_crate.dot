@@ -19,6 +19,7 @@ digraph architecture {
   crate_candle_nn[label="candle-nn", path="/home/yibai/llmcc/sample/repos/candle/candle-nn"];
   crate_candle_pyo3[label="candle-pyo3", path="/home/yibai/llmcc/sample/repos/candle/candle-pyo3"];
   crate_candle_transformers[label="candle-transformers", path="/home/yibai/llmcc/sample/repos/candle/candle-transformers"];
+  crate_candle_wasm_example_llama2[label="candle-wasm-example-llama2", path="/home/yibai/llmcc/sample/repos/candle/candle-wasm-examples/llama2-c"];
   crate_candle_wasm_example_t5[label="candle-wasm-example-t5", path="/home/yibai/llmcc/sample/repos/candle/candle-wasm-examples/t5"];
   crate_candle_wasm_example_yolo[label="candle-wasm-example-yolo", path="/home/yibai/llmcc/sample/repos/candle/candle-wasm-examples/yolo"];
 
@@ -32,11 +33,12 @@ digraph architecture {
   crate_candle_nn -> crate_candle_core;
   crate_candle_nn -> crate_candle_pyo3;
   crate_candle_nn -> crate_candle_transformers;
-  crate_candle_pyo3 -> crate_candle_core;
   crate_candle_transformers -> crate_candle_core;
   crate_candle_transformers -> crate_candle_metal_kernels;
   crate_candle_transformers -> crate_candle_nn;
   crate_candle_transformers -> crate_candle_pyo3;
+  crate_candle_wasm_example_llama2 -> crate_candle_core;
+  crate_candle_wasm_example_llama2 -> crate_candle_transformers;
   crate_candle_wasm_example_t5 -> crate_candle_transformers;
   crate_candle_wasm_example_yolo -> crate_candle_core;
 }

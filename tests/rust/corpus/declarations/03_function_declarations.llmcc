@@ -27,6 +27,7 @@ fn add(x: i32, t: ComplexType<T>) -> i32 {
     (parameter:6 x @type i32)
     (parameter:7 t @type:3 ComplexType)
     (return:8 @type i32)
+    (@tdep:3 ComplexType)
   )
 )
 
@@ -99,7 +100,7 @@ fn add(x: i32, t: ComplexType<T>) -> i32 {
     (parameter:17 x @type i32)
     (parameter:18 t @type:13 ComplexType)
     (return:19 @type i32)
-    (@tdep:3 Bar)
+    (@tdep:13 ComplexType)
     (@fdep:15 free)
   )
 )
@@ -177,6 +178,7 @@ fn takes_hrtb(bar: impl for<'a> Baz<Quux<'a>>) {}
   (class:17 Result)
   (func:18 takes_impl_fn
     (parameter:19 x @type:15 FnOnce)
+    (@tdep:17 Result)
   )
   (func:20 takes_attrs
     (parameter:21 x @type i32)
@@ -194,5 +196,6 @@ fn takes_hrtb(bar: impl for<'a> Baz<Quux<'a>>) {}
   (trait:29 Baz)
   (func:30 takes_hrtb
     (parameter:31 bar @type:29 Baz)
+    (@tdep:27 Quux)
   )
 )
