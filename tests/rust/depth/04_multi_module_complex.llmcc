@@ -71,36 +71,41 @@ digraph architecture {
 
   subgraph cluster_sample {
     label="sample";
-    bgcolor="#f8f8f8";
+    style=rounded;
+        bgcolor="#f8f8f8";
 
     subgraph cluster_handlers_rs {
       label="handlers.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n30[label="handle_request", full_path="$TMP/sample/src/handlers.rs:5", sym_ty="Function", shape=ellipse];
+      n30[label="handle_request", path="$TMP/sample/src/handlers.rs:5", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_models_rs {
       label="models.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n7[label="User", full_path="$TMP/sample/src/models.rs:1", sym_ty="Struct", shape=box];
+      n7[label="User", path="$TMP/sample/src/models.rs:1", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_repository_rs {
       label="repository.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n14[label="UserRepo", full_path="$TMP/sample/src/repository.rs:3", sym_ty="Trait", shape=box];
-      n19[label="OrderRepo", full_path="$TMP/sample/src/repository.rs:7", sym_ty="Trait", shape=box];
+      n14[label="UserRepo", path="$TMP/sample/src/repository.rs:3", sym_ty="Trait", shape=box];
+      n19[label="OrderRepo", path="$TMP/sample/src/repository.rs:7", sym_ty="Trait", shape=box];
     }
 
     subgraph cluster_services_rs {
       label="services.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n25[label="UserService", full_path="$TMP/sample/src/services.rs:4", sym_ty="Struct", shape=box];
-      n27[label="OrderService", full_path="$TMP/sample/src/services.rs:8", sym_ty="Struct", shape=box];
+      n25[label="UserService", path="$TMP/sample/src/services.rs:4", sym_ty="Struct", shape=box];
+      n27[label="OrderService", path="$TMP/sample/src/services.rs:8", sym_ty="Struct", shape=box];
     }
 
   }
@@ -122,15 +127,15 @@ digraph architecture {
   concentrate=true;
 
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#666666", arrowsize=0.7];
+  edge [color="#888888", arrowsize=0.7];
 
   labelloc=t;
   fontsize=16;
 
-  mod_sample_handlers[label="sample::handlers", folder="$TMP/sample/src"];
-  mod_sample_models[label="sample::models", folder="$TMP/sample/src"];
-  mod_sample_repository[label="sample::repository", folder="$TMP/sample/src"];
-  mod_sample_services[label="sample::services", folder="$TMP/sample/src"];
+  mod_sample_handlers[label="sample::handlers", path="$TMP/sample/src"];
+  mod_sample_models[label="sample::models", path="$TMP/sample/src"];
+  mod_sample_repository[label="sample::repository", path="$TMP/sample/src"];
+  mod_sample_services[label="sample::services", path="$TMP/sample/src"];
 
   mod_sample_handlers -> mod_sample_models;
   mod_sample_handlers -> mod_sample_repository;

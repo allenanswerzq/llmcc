@@ -112,6 +112,7 @@ export function handleOrder(order: Order): boolean {
       (parameter:27 id @type number)
       (parameter:28 status @type:9 OrderStatus)
       (return:29 @type void)
+      (@tdep:9 OrderStatus)
     )
   )
   (func:30 processOrder
@@ -129,12 +130,10 @@ export function handleOrder(order: Order): boolean {
   (func:37 handleGetUser
     (parameter:38 id @type number)
     (return:39 @type:34 ApiResponse)
-    (@fdep:18 getUser)
   )
   (func:41 handleOrder
     (parameter:42 order @type:5 Order)
     (return:43 @type boolean)
-    (@fdep:30 processOrder)
   )
 )
 
@@ -151,50 +150,57 @@ digraph architecture {
 
   subgraph cluster_api {
     label="api";
-    bgcolor="#f5f5f5";
+    style=rounded;
+        bgcolor="#f5f5f5";
 
     subgraph cluster_handlers_ts {
       label="handlers.ts";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n37[label="handleGetUser", full_path="$TMP/api/handlers.ts:11", sym_ty="Function", shape=ellipse];
-      n41[label="handleOrder", full_path="$TMP/api/handlers.ts:16", sym_ty="Function", shape=ellipse];
-      n34[label="ApiResponse", full_path="$TMP/api/handlers.ts:6", sym_ty="Interface", shape=box];
+      n37[label="handleGetUser", path="$TMP/api/handlers.ts:11", sym_ty="Function", shape=ellipse];
+      n41[label="handleOrder", path="$TMP/api/handlers.ts:16", sym_ty="Function", shape=ellipse];
+      n34[label="ApiResponse", path="$TMP/api/handlers.ts:6", sym_ty="Interface", shape=box];
     }
 
   }
 
   subgraph cluster_domain {
     label="domain";
-    bgcolor="#f5f5f5";
+    style=rounded;
+        bgcolor="#f5f5f5";
 
     subgraph cluster_models_ts {
       label="models.ts";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n9[label="OrderStatus", full_path="$TMP/domain/models.ts:13", sym_ty="Enum", shape=box];
-      n2[label="User", full_path="$TMP/domain/models.ts:2", sym_ty="Interface", shape=box];
-      n5[label="Order", full_path="$TMP/domain/models.ts:7", sym_ty="Interface", shape=box];
+      n9[label="OrderStatus", path="$TMP/domain/models.ts:13", sym_ty="Enum", shape=box];
+      n2[label="User", path="$TMP/domain/models.ts:2", sym_ty="Interface", shape=box];
+      n5[label="Order", path="$TMP/domain/models.ts:7", sym_ty="Interface", shape=box];
     }
 
   }
 
   subgraph cluster_service {
     label="service";
-    bgcolor="#f5f5f5";
+    style=rounded;
+        bgcolor="#f5f5f5";
 
     subgraph cluster_order_service_ts {
       label="order-service.ts";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n30[label="processOrder", full_path="$TMP/service/order-service.ts:9", sym_ty="Function", shape=ellipse];
+      n30[label="processOrder", path="$TMP/service/order-service.ts:9", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_user_service_ts {
       label="user-service.ts";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n18[label="getUser", full_path="$TMP/service/user-service.ts:9", sym_ty="Function", shape=ellipse];
+      n18[label="getUser", path="$TMP/service/user-service.ts:9", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -205,7 +211,5 @@ digraph architecture {
   n5 -> n41 [from="input", to="func"];
   n18 -> n2 [from="func", to="output"];
   n30 -> n9 [from="func", to="output"];
-  n37 -> n18 [from="caller", to="callee"];
   n37 -> n34 [from="func", to="output"];
-  n41 -> n30 [from="caller", to="callee"];
 }

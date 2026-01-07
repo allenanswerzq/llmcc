@@ -87,6 +87,7 @@ impl EventDispatcher {
     (method:16 handle
       (parameter:17 self @type:15 EventHandler)
       (parameter:18 event @type:6 Event)
+      (@tdep:6 Event)
     )
   )
 )
@@ -102,12 +103,14 @@ impl EventDispatcher {
     (method:25 handle
       (parameter:26 self @type:20 ClickHandler)
       (parameter:27 event @type:6 Event)
+      (@tdep:6 Event)
     )
   )
   (impl:28 KeyHandler @type:22 @trait:15
     (method:29 handle
       (parameter:30 self @type:22 KeyHandler)
       (parameter:31 event @type:6 Event)
+      (@tdep:6 Event)
     )
   )
 )
@@ -121,6 +124,7 @@ impl EventDispatcher {
     (method:36 dispatch
       (parameter:37 self @type:33 EventDispatcher)
       (parameter:38 event @type:6 Event)
+      (@tdep:6 Event)
     )
     (method:40 add_handler
       (parameter:41 self @type:33 EventDispatcher)
@@ -142,28 +146,32 @@ digraph architecture {
 
   subgraph cluster_sample {
     label="sample";
-    bgcolor="#f8f8f8";
+    style=rounded;
+        bgcolor="#f8f8f8";
 
     subgraph cluster_dispatcher_rs {
       label="dispatcher.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n33[label="EventDispatcher", full_path="$TMP/sample/src/dispatcher.rs:3", sym_ty="Struct", shape=box];
+      n33[label="EventDispatcher", path="$TMP/sample/src/dispatcher.rs:3", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_events_rs {
       label="events.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n15[label="EventHandler", full_path="$TMP/sample/src/events.rs:7", sym_ty="Trait", shape=box];
+      n15[label="EventHandler", path="$TMP/sample/src/events.rs:7", sym_ty="Trait", shape=box];
     }
 
     subgraph cluster_handlers_rs {
       label="handlers.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n20[label="ClickHandler", full_path="$TMP/sample/src/handlers.rs:3", sym_ty="Struct", shape=box];
-      n22[label="KeyHandler", full_path="$TMP/sample/src/handlers.rs:7", sym_ty="Struct", shape=box];
+      n20[label="ClickHandler", path="$TMP/sample/src/handlers.rs:3", sym_ty="Struct", shape=box];
+      n22[label="KeyHandler", path="$TMP/sample/src/handlers.rs:7", sym_ty="Struct", shape=box];
     }
 
   }

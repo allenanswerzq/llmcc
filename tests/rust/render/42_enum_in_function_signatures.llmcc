@@ -69,16 +69,20 @@ pub fn handle_response(response: Response) -> bool {
   (func:16 get_user_status
     (parameter:17 user @type:5 User)
     (return:18 @type:7 Status)
+    (@tdep:5 User)
     (@tdep:7 Status)
   )
   (func:19 process_status
     (parameter:20 status @type:7 Status)
     (return:21 @type:10 Response)
+    (@tdep:5 User)
+    (@tdep:7 Status)
     (@tdep:10 Response)
   )
   (func:23 handle_response
     (parameter:24 response @type:10 Response)
     (return:25 @type bool)
+    (@tdep:10 Response)
   )
 )
 
@@ -95,24 +99,27 @@ digraph architecture {
 
   subgraph cluster_sample {
     label="sample";
-    bgcolor="#f8f8f8";
+    style=rounded;
+        bgcolor="#f8f8f8";
 
     subgraph cluster_handlers_rs {
       label="handlers.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n23[label="handle_response", full_path="$TMP/sample/src/handlers.rs:11", sym_ty="Function", shape=ellipse];
-      n16[label="get_user_status", full_path="$TMP/sample/src/handlers.rs:3", sym_ty="Function", shape=ellipse];
-      n19[label="process_status", full_path="$TMP/sample/src/handlers.rs:7", sym_ty="Function", shape=ellipse];
+      n23[label="handle_response", path="$TMP/sample/src/handlers.rs:11", sym_ty="Function", shape=ellipse];
+      n16[label="get_user_status", path="$TMP/sample/src/handlers.rs:3", sym_ty="Function", shape=ellipse];
+      n19[label="process_status", path="$TMP/sample/src/handlers.rs:7", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_types_rs {
       label="types.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n5[label="User", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
-      n10[label="Response", full_path="$TMP/sample/src/types.rs:10", sym_ty="Enum", shape=box];
-      n7[label="Status", full_path="$TMP/sample/src/types.rs:5", sym_ty="Enum", shape=box];
+      n5[label="User", path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+      n10[label="Response", path="$TMP/sample/src/types.rs:10", sym_ty="Enum", shape=box];
+      n7[label="Status", path="$TMP/sample/src/types.rs:5", sym_ty="Enum", shape=box];
     }
 
   }
@@ -123,5 +130,6 @@ digraph architecture {
   n7 -> n19 [from="input", to="func"];
   n10 -> n23 [from="input", to="func"];
   n16 -> n7 [from="func", to="output"];
+  n19 -> n5 [from="func", to="type_dep"];
   n19 -> n10 [from="func", to="output"];
 }

@@ -132,6 +132,7 @@ pub fn find_user(id: UserId) -> Result<User, StoreError> {
     (parameter:26 user_id @type:4 UserId)
     (parameter:27 password @type String)
     (return:28)
+    (@tdep:4 UserId)
     (@tdep:11 AuthError)
     (@tdep:22 Session)
   )
@@ -140,6 +141,7 @@ pub fn find_user(id: UserId) -> Result<User, StoreError> {
     (return:32)
     (@tdep:8 User)
     (@tdep:11 AuthError)
+    (@tdep:22 Session)
   )
 )
 
@@ -153,6 +155,7 @@ pub fn find_user(id: UserId) -> Result<User, StoreError> {
       (parameter:39 self @type:37 UserStore)
       (parameter:40 id @type:4 UserId)
       (return:41)
+      (@tdep:4 UserId)
       (@tdep:8 User)
       (@tdep:15 StoreError)
     )
@@ -167,12 +170,14 @@ pub fn find_user(id: UserId) -> Result<User, StoreError> {
       (parameter:47 self @type:37 UserStore)
       (parameter:48 id @type:4 UserId)
       (return:49)
+      (@tdep:4 UserId)
       (@tdep:15 StoreError)
     )
   )
   (func:50 find_user
     (parameter:51 id @type:4 UserId)
     (return:52)
+    (@tdep:4 UserId)
     (@tdep:8 User)
     (@tdep:15 StoreError)
   )
@@ -191,45 +196,51 @@ digraph architecture {
 
   subgraph cluster_auth {
     label="auth";
-    bgcolor="#f8f8f8";
+    style=rounded;
+        bgcolor="#f8f8f8";
 
     subgraph cluster_auth_rs {
       label="auth.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n30[label="validate_session", full_path="$TMP/auth/src/auth.rs:12", sym_ty="Function", shape=ellipse];
-      n22[label="Session", full_path="$TMP/auth/src/auth.rs:3", sym_ty="Struct", shape=box];
-      n25[label="authenticate", full_path="$TMP/auth/src/auth.rs:8", sym_ty="Function", shape=ellipse];
+      n30[label="validate_session", path="$TMP/auth/src/auth.rs:12", sym_ty="Function", shape=ellipse];
+      n22[label="Session", path="$TMP/auth/src/auth.rs:3", sym_ty="Struct", shape=box];
+      n25[label="authenticate", path="$TMP/auth/src/auth.rs:8", sym_ty="Function", shape=ellipse];
     }
 
   }
 
   subgraph cluster_store {
     label="store";
-    bgcolor="#f8f8f8";
+    style=rounded;
+        bgcolor="#f8f8f8";
 
     subgraph cluster_repository_rs {
       label="repository.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n50[label="find_user", full_path="$TMP/store/src/repository.rs:9", sym_ty="Function", shape=ellipse];
+      n50[label="find_user", path="$TMP/store/src/repository.rs:9", sym_ty="Function", shape=ellipse];
     }
 
   }
 
   subgraph cluster_types {
     label="types";
-    bgcolor="#f8f8f8";
+    style=rounded;
+        bgcolor="#f8f8f8";
 
     subgraph cluster_common_rs {
       label="common.rs";
-      bgcolor="#fafafa";
+      style=rounded;
+            bgcolor="#fafafa";
 
-      n4[label="UserId", full_path="$TMP/types/src/common.rs:1", sym_ty="Struct", shape=box];
-      n11[label="AuthError", full_path="$TMP/types/src/common.rs:10", sym_ty="Enum", shape=box];
-      n15[label="StoreError", full_path="$TMP/types/src/common.rs:16", sym_ty="Enum", shape=box];
-      n6[label="Email", full_path="$TMP/types/src/common.rs:3", sym_ty="Struct", shape=box];
-      n8[label="User", full_path="$TMP/types/src/common.rs:5", sym_ty="Struct", shape=box];
+      n4[label="UserId", path="$TMP/types/src/common.rs:1", sym_ty="Struct", shape=box];
+      n11[label="AuthError", path="$TMP/types/src/common.rs:10", sym_ty="Enum", shape=box];
+      n15[label="StoreError", path="$TMP/types/src/common.rs:16", sym_ty="Enum", shape=box];
+      n6[label="Email", path="$TMP/types/src/common.rs:3", sym_ty="Struct", shape=box];
+      n8[label="User", path="$TMP/types/src/common.rs:5", sym_ty="Struct", shape=box];
     }
 
   }

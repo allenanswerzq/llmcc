@@ -375,11 +375,26 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             // For top-level files (not lib.rs or main.rs), create a module symbol
             // in the crate scope that links to this file's scope.
             // This enables paths like `crate::models::Config` to resolve.
-            if file_name != "lib" && file_name != "main" && module_wrapper_scope.is_none()
-                && let Some(mod_sym) = scopes.lookup_or_insert_global(file_name, node, SymKind::Module)
-            {
-                tracing::trace!("link file '{}' as module in crate scope", file_name);
-                mod_sym.set_scope(scope.id());
+            // Also insert into the crate scope for cross-crate qualified path resolution
+            // (e.g., `crate_b::utils::helper` needs `utils` in `crate_b`'s scope).
+            if file_name != "lib" && file_name != "main" && module_wrapper_scope.is_none() {
+                // Insert into global for backward compatibility
+                if let Some(mod_sym) = scopes.insert_in_global(file_name, node, SymKind::Module) {
+                    tracing::trace!("link file '{}' as module in global scope", file_name);
+                    mod_sym.set_scope(scope.id());
+                }
+                // Also insert into crate scope for qualified path resolution like `crate_b::utils`
+                if let Some(crate_s) = crate_scope
+                    && let Some(mod_sym) =
+                        scopes.insert_in_scope(crate_s, file_name, node, SymKind::Module)
+                {
+                    tracing::trace!(
+                        "link file '{}' as module in crate scope {:?}",
+                        file_name,
+                        crate_s.id()
+                    );
+                    mod_sym.set_scope(scope.id());
+                }
             }
         }
 

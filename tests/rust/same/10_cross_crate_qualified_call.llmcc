@@ -1,0 +1,103 @@
+===============================================================================
+cross-crate-qualified-call
+===============================================================================
+Test that qualified function calls using crate name prefix (e.g., other_crate::function())
+are correctly resolved to the target crate's function.
+This tests the scenario where crate_a calls functions from crate_b using
+the fully qualified path like `crate_b::utils::helper()`.
+
+--- file: crate_a/Cargo.toml ---
+[package]
+name = "crate_a"
+
+[dependencies]
+crate_b = { path = "../crate_b" }
+
+--- file: crate_a/src/lib.rs ---
+pub mod consumer;
+
+--- file: crate_a/src/consumer.rs ---
+/// Calls helper from crate_b using qualified path
+pub fn process() -> i32 {
+    crate_b::utils::helper()  // Should resolve to crate_b's helper (id 8)
+}
+
+--- file: crate_b/Cargo.toml ---
+[package]
+name = "crate_b"
+
+--- file: crate_b/src/lib.rs ---
+pub mod utils;
+
+--- file: crate_b/src/utils.rs ---
+/// Helper function defined in crate_b
+pub fn helper() -> i32 {
+    42
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/crate_a/src/lib.rs)
+  (module:2 consumer)
+)
+
+(root:3 consumer ($TMP/crate_a/src/consumer.rs)
+  (func:4 process
+    (return:5 @type i32)
+    (@fdep:10 helper)
+  )
+)
+
+(root:7 lib ($TMP/crate_b/src/lib.rs)
+  (module:8 utils)
+)
+
+(root:9 utils ($TMP/crate_b/src/utils.rs)
+  (func:10 helper
+    (return:11 @type i32)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_crate_a {
+    label="crate_a";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_consumer_rs {
+      label="consumer.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n4[label="process", path="$TMP/crate_a/src/consumer.rs:2", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_crate_b {
+    label="crate_b";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_utils_rs {
+      label="utils.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n10[label="helper", path="$TMP/crate_b/src/utils.rs:2", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+
+  n4 -> n10 [from="caller", to="callee"];
+}
