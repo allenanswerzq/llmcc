@@ -132,7 +132,7 @@ Config is stored in `~/.llcraft/config.jsonc`:
   "baseUrl": "http://localhost:5168",
 
   // Model to use
-  "model": "claude-sonnet-4",
+  "model": "claude-opus-4.5",
   "maxTokens": 4096,
 
   // Browser automation (requires chrome package installed)

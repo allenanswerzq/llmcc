@@ -37,7 +37,7 @@ function loadConfig() {
     const defaultConfig = {
         apiKey: process.env.ANTHROPIC_API_KEY || 'copilot-bridge-key',
         baseUrl: process.env.ANTHROPIC_BASE_URL || 'http://localhost:5168',
-        model: 'claude-sonnet-4',
+        model: 'claude-opus-4.5',
         maxTokens: 4096,
         systemPrompt: `You are llcraft, a helpful coding assistant with browser automation capabilities. You help with code, answer questions, and can control the browser when needed. Be concise but thorough.`,
         chrome: false,
