@@ -1,0 +1,35 @@
+{
+  "name": "@anthropic/browser-bridge",
+  "version": "0.1.0",
+  "description": "Native messaging bridge for Claude Code browser automation - replaces Claude in Chrome extension",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "browser-bridge": "./dist/index.js",
+    "browser-bridge-mcp": "./dist/mcp-stdio.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "start": "node dist/index.js",
+    "start:mcp": "node dist/mcp-stdio.js",
+    "start:visible": "node dist/index.js --no-headless --debug",
+    "start:mcp:visible": "node dist/mcp-stdio.js --no-headless --debug",
+    "dev": "tsx src/index.ts",
+    "install-host": "bash scripts/install-host.sh",
+    "install-host:win": "powershell -ExecutionPolicy Bypass -File scripts/install-host.ps1",
+    "lint": "eslint src --ext ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.2",
+    "puppeteer": "^23.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

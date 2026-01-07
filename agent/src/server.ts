@@ -72,7 +72,7 @@ export class ApiServer {
             res.setHeader('Access-Control-Allow-Origin', origin);
         }
         res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key, anthropic-version, anthropic-beta');
 
         // Handle preflight
         if (req.method === 'OPTIONS') {
@@ -82,7 +82,14 @@ export class ApiServer {
         }
 
         const url = req.url || '/';
+        // Log all requests with headers for debugging
         console.log(`[API Bridge] ${req.method} ${url}`);
+        console.log(`[API Bridge] Headers: ${JSON.stringify({
+            'x-api-key': req.headers['x-api-key'] ? '***' : undefined,
+            'anthropic-version': req.headers['anthropic-version'],
+            'content-type': req.headers['content-type'],
+            'anthropic-beta': req.headers['anthropic-beta'],
+        })}`);
 
         try {
             // Route requests
@@ -95,6 +102,60 @@ export class ApiServer {
             } else if (url === '/v1/models' && req.method === 'GET') {
                 const models = await handleModels();
                 this.sendJson(res, 200, models);
+            } else if (url.match(/^\/v1\/models\//) && req.method === 'GET') {
+                // Handle individual model info requests like /v1/models/claude-opus-4
+                const modelId = url.replace('/v1/models/', '');
+                this.sendJson(res, 200, {
+                    id: modelId,
+                    object: 'model',
+                    created: Math.floor(Date.now() / 1000),
+                    owned_by: 'anthropic',
+                    display_name: modelId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                    type: 'model'
+                });
+            } else if (url === '/v1/account' || url === '/api/account' || url.startsWith('/v1/organizations')) {
+                // Fake account/subscription status for Claude Code
+                this.sendJson(res, 200, {
+                    id: 'org_copilot_bridge',
+                    object: 'organization',
+                    name: 'Copilot Bridge User',
+                    created_at: '2024-01-01T00:00:00Z',
+                    subscription: {
+                        status: 'active',
+                        plan: 'max',
+                        tier: 'max'
+                    },
+                    billing: {
+                        status: 'active'
+                    },
+                    rate_limits: {
+                        requests_per_minute: 1000,
+                        tokens_per_minute: 100000
+                    }
+                });
+            } else if (url === '/v1/usage' || url === '/api/usage') {
+                // Fake usage endpoint
+                this.sendJson(res, 200, {
+                    object: 'usage',
+                    usage: {
+                        input_tokens: 0,
+                        output_tokens: 0,
+                        total_tokens: 0
+                    },
+                    billing_period: {
+                        start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+                        end: new Date().toISOString()
+                    }
+                });
+            } else if (url === '/v1/beta/messages' || url.startsWith('/v1/beta/')) {
+                // Handle beta endpoints - redirect to regular messages
+                if (req.method === 'POST') {
+                    const body = await this.readBody(req);
+                    const request = JSON.parse(body);
+                    await handleMessages(request, res);
+                } else {
+                    this.sendJson(res, 200, { status: 'ok' });
+                }
             } else if (url === '/v1/chat/completions' && req.method === 'POST') {
                 const body = await this.readBody(req);
                 const request = JSON.parse(body);
@@ -112,17 +173,63 @@ export class ApiServer {
                 const body = await this.readBody(req);
                 const request = JSON.parse(body);
                 await handleResponses(request, res);
+            } else if (url === '/v1/messages/count_tokens' && req.method === 'POST') {
+                // Token counting endpoint - estimate tokens
+                const body = await this.readBody(req);
+                const request = JSON.parse(body);
+                const messages = request.messages || [];
+                const system = request.system || '';
+
+                // Rough token estimation (4 chars = 1 token)
+                let totalChars = system.length;
+                for (const msg of messages) {
+                    if (typeof msg.content === 'string') {
+                        totalChars += msg.content.length;
+                    } else if (Array.isArray(msg.content)) {
+                        for (const block of msg.content) {
+                            if (block.text) totalChars += block.text.length;
+                        }
+                    }
+                }
+                const estimatedTokens = Math.ceil(totalChars / 4);
+
+                this.sendJson(res, 200, {
+                    input_tokens: estimatedTokens
+                });
+            } else if (url === '/v1/messages' && req.method === 'POST') {
+                const body = await this.readBody(req);
+                const request = JSON.parse(body);
+                await handleMessages(request, res);
             } else if (url.startsWith('/v1/messages') && req.method === 'POST') {
+                // Handle other /v1/messages/* paths
                 const body = await this.readBody(req);
                 const request = JSON.parse(body);
                 await handleMessages(request, res);
             } else {
-                this.sendJson(res, 404, {
-                    error: {
-                        message: `Not found: ${url}`,
-                        type: 'not_found_error'
-                    }
-                });
+                // Log unknown endpoints for debugging
+                console.log(`[API Bridge] UNKNOWN ENDPOINT: ${req.method} ${url}`);
+                if (req.method === 'POST') {
+                    try {
+                        const body = await this.readBody(req);
+                        console.log(`[API Bridge] Body: ${body.substring(0, 500)}`);
+                    } catch { /* ignore */ }
+                }
+                // For unknown GET requests on v1 paths, return empty success
+                // This helps with subscription/status checks
+                if (req.method === 'GET' && url.startsWith('/v1/')) {
+                    this.sendJson(res, 200, {
+                        status: 'ok',
+                        object: 'list',
+                        data: []
+                    });
+                } else {
+                    this.sendJson(res, 404, {
+                        error: {
+                            message: `Not found: ${url}`,
+                            type: 'not_found_error'
+                        }
+                    });
+                }
             }
         } catch (error) {
             console.error('[API Bridge] Error:', error);
@@ -137,7 +244,11 @@ export class ApiServer {
     }
 
     private sendJson(res: http.ServerResponse, status: number, data: unknown): void {
-        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.writeHead(status, {
+            'Content-Type': 'application/json',
+            'request-id': `req_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+            'anthropic-organization-id': 'org_copilot_bridge'
+        });
         res.end(JSON.stringify(data));
     }
 
