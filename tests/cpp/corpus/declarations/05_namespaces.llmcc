@@ -22,22 +22,7 @@ namespace utils {
 }
 
 --- expect:block-graph ---
-(root:1 namespace outer {
-    struct A {};
-}
-
-namespace outer::inner {
-    struct B {};
-}
-
-namespace utils {
-    void helper() {}
-
-    namespace detail {
-        struct Internal {};
-    }
-}
- ($TMP/src/lib.cpp)
+(root:1 lib ($TMP/src/lib.cpp)
   (module:2 outer (inline)
     (class:3 A)
   )
@@ -45,12 +30,9 @@ namespace utils {
     (class:5 B)
   )
   (module:6 utils (inline)
-    (func:7 helper
-      (func:8 helper)
-      (@fdep:8 helper)
-    )
-    (module:9 detail (inline)
-      (class:10 Internal)
+    (func:7 helper)
+    (module:8 detail (inline)
+      (class:9 Internal)
     )
   )
 )

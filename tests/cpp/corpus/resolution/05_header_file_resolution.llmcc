@@ -1,0 +1,60 @@
+===============================================================================
+header-file-resolution
+===============================================================================
+Header file resolution.
+lang: cpp
+
+--- file: include/types.h ---
+#pragma once
+struct Point { int x, y; };
+struct Size { int width, height; };
+
+--- file: src/geometry.cpp ---
+#include "types.h"
+
+Point create_point(int x, int y) {
+    return {x, y};
+}
+
+Size create_size(int w, int h) {
+    return {w, h};
+}
+
+--- file: src/main.cpp ---
+#include "types.h"
+
+Point create_point(int x, int y);
+
+void use_geometry() {
+    Point p = create_point(10, 20);
+}
+
+--- expect:block-graph ---
+(root:1 types ($TMP/include/types.h)
+  (class:2 Point
+    (field:3 int @type int)
+  )
+  (class:4 Size
+    (field:5 int @type int)
+  )
+)
+
+(root:6 geometry ($TMP/src/geometry.cpp)
+  (func:7 create_point
+    (parameter:8 x @type int)
+    (parameter:9 y @type int)
+  )
+  (func:10 create_size
+    (parameter:11 w @type int)
+    (parameter:12 h @type int)
+  )
+)
+
+(root:13 main ($TMP/src/main.cpp)
+  (func:14 create_point
+    (parameter:15 x @type int)
+    (parameter:16 y @type int)
+  )
+  (func:17 use_geometry
+  )
+)

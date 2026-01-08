@@ -1,0 +1,22 @@
+===============================================================================
+nullptr-literal
+===============================================================================
+Nullptr literal expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void test_nullptr() {
+    int* a = nullptr;
+    void* b = nullptr;
+
+    int* c = 0;  // old style
+    int* d = NULL;
+
+    if (a == nullptr) {}
+    if (b != nullptr) {}
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test_nullptr)
+)

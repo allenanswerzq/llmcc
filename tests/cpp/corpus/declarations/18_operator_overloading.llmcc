@@ -1,0 +1,46 @@
+===============================================================================
+operator-overloading
+===============================================================================
+Operator overloading.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Vector {
+public:
+    int x, y;
+
+    Vector operator+(const Vector& other) const {
+        return {x + other.x, y + other.y};
+    }
+
+    Vector operator-(const Vector& other) const {
+        return {x - other.x, y - other.y};
+    }
+
+    bool operator==(const Vector& other) const {
+        return x == other.x && y == other.y;
+    }
+
+    int& operator[](int index) {
+        return index == 0 ? x : y;
+    }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Vector
+    (field:3 int @type int)
+    (method:4 operator+
+      (parameter:5 other @type:2 Vector)
+    )
+    (method:6 operator-
+      (parameter:7 other @type:2 Vector)
+    )
+    (method:8 operator==
+      (parameter:9 other @type:2 Vector)
+    )
+    (method:10 operator[]
+      (parameter:11 index @type int)
+    )
+  )
+)

@@ -1,11 +1,13 @@
-#![allow(clippy::collapsible_if, clippy::needless_return)]
+#![allow(
+    clippy::collapsible_if,
+    clippy::needless_return,
+    clippy::only_used_in_recursion
+)]
 
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirNode, HirScope};
 use llmcc_core::scope::Scope;
-use llmcc_core::symbol::{
-    SYM_KIND_ALL, SYM_KIND_TYPES, SymKind, SymKindSet, Symbol,
-};
+use llmcc_core::symbol::{SYM_KIND_ALL, SYM_KIND_TYPES, SymKind, SymKindSet, Symbol};
 use llmcc_resolver::{BinderScopes, ResolverOption};
 
 use crate::infer::infer_type;
@@ -528,9 +530,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
                 if let Some(field_node) = node.child_by_field(unit, LangCpp::field_field) {
                     if let Some(field_ident) = field_node.find_ident(unit) {
-                        if let Some(sym) =
-                            scopes.lookup_symbol(field_ident.name, SYM_KIND_ALL)
-                        {
+                        if let Some(sym) = scopes.lookup_symbol(field_ident.name, SYM_KIND_ALL) {
                             field_ident.set_symbol(sym);
                         }
                     }

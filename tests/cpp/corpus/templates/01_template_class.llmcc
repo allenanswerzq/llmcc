@@ -21,51 +21,16 @@ public:
 };
 
 --- expect:block-graph ---
-(root:1 template<typename T>
-class Container {
-    T value;
-public:
-    T get() const { return value; }
-    void set(T v) { value = v; }
-};
-
-template<typename K, typename V>
-class Pair {
-public:
-    K key;
-    V val;
-};
- ($TMP/src/lib.cpp)
-  (func:2 template<typename T>
-class Container {
-    T value;
-public:
-    T get() const { return value; }
-    void set(T v) { value = v; }
-};
-    (class:3 Container
-      (field:4 T @type value)
-      (method:5 get
-        (func:6 get)
-      )
-      (method:7 set
-        (func:8 set
-          (parameter:9 v @type v)
-        )
-      )
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Container
+    (field:3 T @type value)
+    (method:4 get)
+    (method:5 set
+      (parameter:6 v @type v)
     )
-    (@tdep:3 Container)
   )
-  (func:10 template<typename K, typename V>
-class Pair {
-public:
-    K key;
-    V val;
-};
-    (class:11 Pair
-      (field:12 K @type key)
-      (field:13 V @type val)
-    )
-    (@tdep:11 Pair)
+  (class:7 Pair
+    (field:8 K @type key)
+    (field:9 V @type val)
   )
 )

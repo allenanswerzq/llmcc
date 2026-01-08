@@ -1,0 +1,35 @@
+===============================================================================
+parameter-pack-expansion
+===============================================================================
+Parameter pack expansion.
+lang: cpp
+
+--- file: src/lib.cpp ---
+template<typename... Args>
+void print(Args... args) {
+    (void)sizeof...(args);
+}
+
+template<typename... Ts>
+struct TypeList {
+    static constexpr int size = sizeof...(Ts);
+};
+
+template<int... Is>
+struct IndexList {
+    static constexpr int sum = (Is + ...);
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 print
+    (parameter:3 Args)
+  )
+  (class:4 TypeList
+    (field:5 int @type int)
+  )
+  (parameter:6 int @type int)
+  (class:7 IndexList
+    (field:8 int @type int)
+  )
+)

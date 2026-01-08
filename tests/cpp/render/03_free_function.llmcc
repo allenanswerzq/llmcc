@@ -22,28 +22,14 @@ int helper(int x) {
 }
 
 --- expect:block-graph ---
-(root:1 struct Input {};
-struct Output {};
-
-Output process_data(Input input) {
-    return Output{};
-}
-
-int helper(int x) {
-    return x * 2;
-}
- ($TMP/sample/src/lib.cpp)
+(root:1 lib ($TMP/sample/src/lib.cpp)
   (class:2 Input)
   (class:3 Output)
   (func:4 process_data
-    (func:5 process_data
-      (parameter:6 input @type:2 Input)
-    )
+    (parameter:5 input @type:2 Input)
   )
-  (func:7 helper
-    (func:8 helper
-      (parameter:9 x @type int)
-    )
+  (func:6 helper
+    (parameter:7 x @type int)
   )
 )
 
@@ -64,9 +50,9 @@ digraph architecture {
         bgcolor="#fafafa";
 
     n2[label="Input", path="$TMP/sample/src/lib.cpp:2", sym_ty="Struct", shape=box];
-    n5[label="process_data", path="$TMP/sample/src/lib.cpp:5"];
+    n4[label="process_data", path="$TMP/sample/src/lib.cpp:5", sym_ty="Function", shape=ellipse];
   }
 
 
-  n2 -> n5 [from="input", to="func"];
+  n2 -> n4 [from="input", to="func"];
 }

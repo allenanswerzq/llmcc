@@ -24,36 +24,19 @@ namespace outer {
 }
 
 --- expect:block-graph ---
-(root:1 namespace outer {
-    struct Widget {};
-}
-
-namespace inner {
-    struct Widget {};
-
-    void use_widget(Widget w) {}
-}
-
-namespace outer {
-    void use_widget(Widget w) {}
-}
- ($TMP/sample/src/lib.cpp)
+(root:1 lib ($TMP/sample/src/lib.cpp)
   (module:2 outer (inline)
     (class:3 Widget)
   )
   (module:4 inner (inline)
     (class:5 Widget)
     (func:6 use_widget
-      (func:7 use_widget
-        (parameter:8 w @type:5 Widget)
-      )
+      (parameter:7 w @type:5 Widget)
     )
   )
-  (module:9 outer (inline)
-    (func:10 use_widget
-      (func:11 use_widget
-        (parameter:12 w @type:3 Widget)
-      )
+  (module:8 outer (inline)
+    (func:9 use_widget
+      (parameter:10 w @type:3 Widget)
     )
   )
 )

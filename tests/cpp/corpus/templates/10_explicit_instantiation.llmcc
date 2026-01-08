@@ -1,0 +1,46 @@
+===============================================================================
+explicit-instantiation
+===============================================================================
+Explicit template instantiation.
+lang: cpp
+
+--- file: src/lib.cpp ---
+template<typename T>
+class Stack {
+    T data[100];
+    int top;
+public:
+    void push(T val) { data[top++] = val; }
+    T pop() { return data[--top]; }
+};
+
+template class Stack<int>;
+template class Stack<double>;
+
+template<typename T>
+T add(T a, T b) { return a + b; }
+
+template int add<int>(int, int);
+template double add<double>(double, double);
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Stack
+    (field:3 T)
+    (field:4 int @type int)
+    (method:5 push
+      (parameter:6 val @type val)
+    )
+    (method:7 pop)
+  )
+  (class:8 Stack)
+  (class:9 Stack)
+  (func:10 add
+    (parameter:11 a @type a)
+    (parameter:12 b @type b)
+  )
+  (parameter:13 int @type int)
+  (parameter:14 int @type int)
+  (parameter:15 double @type double)
+  (parameter:16 double @type double)
+)

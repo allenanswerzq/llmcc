@@ -1,0 +1,37 @@
+===============================================================================
+nested-types
+===============================================================================
+Nested type declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Outer {
+public:
+    using InnerType = int;
+    typedef double RealType;
+
+    struct InnerStruct {
+        InnerType x;
+        RealType y;
+    };
+
+    class InnerClass {
+        int value;
+    };
+
+    enum InnerEnum { A, B, C };
+};
+
+Outer::InnerType x = 42;
+Outer::InnerStruct s{10, 3.14};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Outer
+    (alias:3 InnerType)
+    (alias:4 double)
+    (field:5 )
+    (field:6 )
+    (field:7 )
+  )
+)

@@ -179,9 +179,7 @@ pub fn infer_type<'tcx>(
         LangCpp::compound_statement => infer_block(unit, scopes, node),
 
         // Parenthesized expression
-        LangCpp::parenthesized_expression => {
-            infer_from_children(unit, scopes, node, &[])
-        }
+        LangCpp::parenthesized_expression => infer_from_children(unit, scopes, node, &[]),
 
         // Lambda expression
         LangCpp::lambda_expression => {
@@ -319,12 +317,11 @@ fn infer_qualified_identifier<'tcx>(
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
     // Get the name field (the final identifier in the chain)
-    if let Some(name_node) = node.child_by_field(unit, LangCpp::field_name) {
-        if let Some(ident) = name_node.find_ident(unit) {
-            if let Some(sym) = ident.opt_symbol() {
-                return Some(sym);
-            }
-        }
+    if let Some(name_node) = node.child_by_field(unit, LangCpp::field_name)
+        && let Some(ident) = name_node.find_ident(unit)
+        && let Some(sym) = ident.opt_symbol()
+    {
+        return Some(sym);
     }
 
     // Try to look up the full qualified name
@@ -343,16 +340,15 @@ fn infer_field_expression<'tcx>(
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
     // Try to get the field's symbol directly
-    if let Some(field_node) = node.child_by_field(unit, LangCpp::field_field) {
-        if let Some(field_ident) = field_node.find_ident(unit) {
-            if let Some(field_sym) = field_ident.opt_symbol() {
-                // Return the field's type if known
-                if let Some(type_id) = field_sym.type_of() {
-                    return unit.opt_get_symbol(type_id);
-                }
-                return Some(field_sym);
-            }
+    if let Some(field_node) = node.child_by_field(unit, LangCpp::field_field)
+        && let Some(field_ident) = field_node.find_ident(unit)
+        && let Some(field_sym) = field_ident.opt_symbol()
+    {
+        // Return the field's type if known
+        if let Some(type_id) = field_sym.type_of() {
+            return unit.opt_get_symbol(type_id);
         }
+        return Some(field_sym);
     }
 
     None
@@ -365,12 +361,12 @@ fn infer_subscript_expression<'tcx>(
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
     // Get the array/container type
-    if let Some(arg_node) = node.child_by_field(unit, LangCpp::field_argument) {
-        if let Some(container_type) = infer_type(unit, scopes, &arg_node) {
-            // For arrays, the element type would be in nested_types
-            // For now, return the container type
-            return Some(container_type);
-        }
+    if let Some(arg_node) = node.child_by_field(unit, LangCpp::field_argument)
+        && let Some(container_type) = infer_type(unit, scopes, &arg_node)
+    {
+        // For arrays, the element type would be in nested_types
+        // For now, return the container type
+        return Some(container_type);
     }
     None
 }
@@ -386,7 +382,10 @@ fn infer_binary_expression<'tcx>(
         let op_text = unit.hir_text(&op_node);
 
         // Comparison operators return bool
-        if matches!(op_text.as_str(), "==" | "!=" | "<" | ">" | "<=" | ">=" | "&&" | "||") {
+        if matches!(
+            op_text.as_str(),
+            "==" | "!=" | "<" | ">" | "<=" | ">=" | "&&" | "||"
+        ) {
             return get_primitive_type(scopes, "bool");
         }
     }

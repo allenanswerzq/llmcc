@@ -1,0 +1,52 @@
+===============================================================================
+perfect-forwarding
+===============================================================================
+Perfect forwarding.
+lang: cpp
+
+--- file: src/lib.cpp ---
+template<typename T>
+T&& my_forward(T& t) {
+    return static_cast<T&&>(t);
+}
+
+template<typename T, typename... Args>
+T* create(Args&&... args) {
+    return new T(my_forward<Args>(args)...);
+}
+
+class Widget {
+public:
+    Widget(int x, double y) {}
+    Widget(const Widget&) {}
+    Widget(Widget&&) noexcept {}
+};
+
+void test_forward() {
+    auto* w = create<Widget>(42, 3.14);
+    delete w;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (parameter:2 t @type t)
+  (func:4 create
+    (parameter:5 Args)
+  )
+  (class:7 Widget
+    (method:8 Widget
+      (parameter:9 x @type int)
+      (parameter:10 y @type double)
+    )
+    (method:11 Widget
+      (parameter:12 Widget @type:7 Widget)
+      (@tdep:7 Widget)
+    )
+    (method:13 Widget
+      (parameter:14 Widget @type:7 Widget)
+      (@tdep:7 Widget)
+    )
+  )
+  (func:15 test_forward
+  )
+)

@@ -67,7 +67,10 @@ impl LanguageTraitImpl for LangCpp {
     }
 
     fn supported_extensions_impl() -> &'static [&'static str] {
-        &["c", "h", "cpp", "hpp", "cc", "hh", "cxx", "hxx", "c++", "h++", "C", "H", "ipp", "inl", "tpp"]
+        &[
+            "c", "h", "cpp", "hpp", "cc", "hh", "cxx", "hxx", "c++", "h++", "C", "H", "ipp", "inl",
+            "tpp",
+        ]
     }
 
     fn manifest_name_impl() -> &'static str {
@@ -76,7 +79,9 @@ impl LanguageTraitImpl for LangCpp {
     }
 
     fn container_dirs_impl() -> &'static [&'static str] {
-        &["src", "source", "sources", "lib", "include", "inc", "headers"]
+        &[
+            "src", "source", "sources", "lib", "include", "inc", "headers",
+        ]
     }
 
     /// Check if the given parse node is a C++ test attribute.

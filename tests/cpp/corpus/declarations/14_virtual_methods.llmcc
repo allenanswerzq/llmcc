@@ -1,0 +1,32 @@
+===============================================================================
+virtual-methods
+===============================================================================
+Virtual method declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Base {
+public:
+    virtual void method() {}
+    virtual int pure_method() = 0;
+    virtual ~Base() {}
+};
+
+class Derived : public Base {
+public:
+    void method() override {}
+    int pure_method() override { return 42; }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Base
+    (method:3 method)
+    (field:4 int @type int)
+    (method:5 ~Base)
+  )
+  (class:6 Derived @extends:2 Base
+    (method:7 method)
+    (method:8 pure_method)
+  )
+)

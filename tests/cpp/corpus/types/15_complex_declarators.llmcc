@@ -1,0 +1,24 @@
+===============================================================================
+complex-declarators
+===============================================================================
+Complex declarator types.
+lang: cpp
+
+--- file: src/lib.cpp ---
+int (*func_ptr_arr[10])();
+
+int (*(*complex)(int))[10];
+
+int (*const* volatile strange);
+
+void (*signal(int sig, void (*handler)(int)))(int);
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (parameter:3 int @type int)
+  (func:4 signal
+    (parameter:5 sig @type int)
+    (parameter:6 handler @type void)
+  )
+  (parameter:7 int @type int)
+)

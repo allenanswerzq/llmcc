@@ -40,13 +40,7 @@ namespace service {
 }
 
 --- expect:block-graph ---
-(root:1 namespace model {
-    struct User {
-        int id;
-        std::string name;
-    };
-}
- ($TMP/sample/src/model/user.h)
+(root:1 user ($TMP/sample/src/model/user.h)
   (module:2 model (inline)
     (class:3 User
       (field:4 int @type int)
@@ -55,16 +49,7 @@ namespace service {
   )
 )
 
-(root:6 #include "../model/user.h"
-
-namespace repository {
-    class UserRepository {
-    public:
-        model::User find_by_id(int id);
-        void save(model::User user);
-    };
-}
- ($TMP/sample/src/repository/user_repo.h)
+(root:6 user_repo ($TMP/sample/src/repository/user_repo.h)
   (module:7 repository (inline)
     (class:8 UserRepository
       (field:9 model @type model)
@@ -73,17 +58,7 @@ namespace repository {
   )
 )
 
-(root:11 #include "../repository/user_repo.h"
-
-namespace service {
-    class UserService {
-        repository::UserRepository repo;
-    public:
-        model::User get_user(int id);
-        void create_user(model::User user);
-    };
-}
- ($TMP/sample/src/service/user_service.h)
+(root:11 user_service ($TMP/sample/src/service/user_service.h)
   (module:12 service (inline)
     (class:13 UserService
       (field:14 repository @type repository)

@@ -1,0 +1,37 @@
+===============================================================================
+cast-expressions
+===============================================================================
+C-style and C++ cast expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Base { public: virtual ~Base() {} };
+class Derived : public Base {};
+
+void test_casts() {
+    double d = 3.14;
+    int i = (int)d;
+    int j = int(d);
+
+    i = static_cast<int>(d);
+
+    void* ptr = &d;
+    double* dp = reinterpret_cast<double*>(ptr);
+
+    const int ci = 42;
+    int* pi = const_cast<int*>(&ci);
+
+    Base* base = new Derived();
+    Derived* derived = dynamic_cast<Derived*>(base);
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Base
+    (method:3 ~Base)
+  )
+  (class:4 Derived @extends:2 Base)
+  (func:5 test_casts
+    (@tdep:4 Derived)
+  )
+)

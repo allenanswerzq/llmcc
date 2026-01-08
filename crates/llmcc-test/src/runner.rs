@@ -13,8 +13,8 @@ use llmcc_core::lang_def::LanguageTraitImpl;
 use llmcc_core::symbol::reset_symbol_id_counter;
 use llmcc_dot::{ComponentDepth, render_graph};
 
-use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
 use llmcc_cpp::LangCpp;
+use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
 use llmcc_rust::LangRust;
 use llmcc_ts::LangTypeScript;
 use similar::TextDiff;

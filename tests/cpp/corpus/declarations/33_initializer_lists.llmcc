@@ -1,0 +1,51 @@
+===============================================================================
+initializer-lists
+===============================================================================
+Member initializer lists.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Point {
+    int x, y;
+public:
+    Point() : x(0), y(0) {}
+    Point(int x, int y) : x(x), y(y) {}
+};
+
+class Derived : public Point {
+    int z;
+public:
+    Derived() : Point(), z(0) {}
+    Derived(int x, int y, int z) : Point(x, y), z(z) {}
+};
+
+class Container {
+    int arr[3];
+public:
+    Container() : arr{1, 2, 3} {}
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Point
+    (field:3 int @type int)
+    (method:4 Point)
+    (method:5 Point
+      (parameter:6 x @type int)
+      (parameter:7 y @type int)
+    )
+  )
+  (class:8 Derived @extends:2 Point
+    (field:9 int @type int)
+    (method:10 Derived)
+    (method:11 Derived
+      (parameter:12 x @type int)
+      (parameter:13 y @type int)
+      (parameter:14 z @type int)
+    )
+  )
+  (class:15 Container
+    (field:16 int @type int)
+    (method:17 Container)
+  )
+)

@@ -27,66 +27,17 @@ public:
 };
 
 --- expect:block-graph ---
-(root:1 template<typename T>
-class Wrapper {
-    T data;
-public:
-    T get() { return data; }
-};
-
-template<>
-class Wrapper<int> {
-    int data;
-public:
-    int get() { return data * 2; }
-};
-
-template<typename T>
-class Wrapper<T*> {
-    T* ptr;
-public:
-    T get() { return *ptr; }
-};
- ($TMP/src/lib.cpp)
-  (func:2 template<typename T>
-class Wrapper {
-    T data;
-public:
-    T get() { return data; }
-};
-    (class:3 Wrapper
-      (field:4 T @type data)
-      (method:5 get
-        (func:6 get)
-      )
-    )
-    (@tdep:13 Wrapper)
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Wrapper
+    (field:3 T @type data)
+    (method:4 get)
   )
-  (func:7 template<>
-class Wrapper<int> {
-    int data;
-public:
-    int get() { return data * 2; }
-};
-    (class:8 Wrapper
-      (field:9 int @type int)
-      (method:10 get
-        (func:11 get)
-      )
-    )
+  (class:5 Wrapper
+    (field:6 int @type int)
+    (method:7 get)
   )
-  (func:12 template<typename T>
-class Wrapper<T*> {
-    T* ptr;
-public:
-    T get() { return *ptr; }
-};
-    (class:13 Wrapper
-      (field:14 T)
-      (method:15 get
-        (func:16 get)
-      )
-    )
-    (@tdep:13 Wrapper)
+  (class:8 Wrapper
+    (field:9 T)
+    (method:10 get)
   )
 )

@@ -1,0 +1,24 @@
+===============================================================================
+noexcept-operator
+===============================================================================
+Noexcept operator.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void may_throw() {}
+void no_throw() noexcept {}
+
+void test_noexcept() {
+    constexpr bool a = noexcept(may_throw());
+    constexpr bool b = noexcept(no_throw());
+    constexpr bool c = noexcept(42);
+    constexpr bool d = noexcept(throw 1);
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 may_throw)
+  (func:3 no_throw)
+  (func:4 test_noexcept
+  )
+)

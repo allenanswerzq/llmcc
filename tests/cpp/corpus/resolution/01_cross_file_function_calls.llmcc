@@ -1,0 +1,49 @@
+===============================================================================
+cross-file-function-calls
+===============================================================================
+Cross-file function calls resolution.
+lang: cpp
+
+--- file: src/utils.cpp ---
+namespace utils {
+    int helper(int x) { return x * 2; }
+    int process(int x) { return helper(x) + 1; }
+}
+
+--- file: src/main.cpp ---
+namespace utils {
+    int helper(int x);
+    int process(int x);
+}
+
+void use_utils() {
+    int a = utils::helper(10);
+    int b = utils::process(20);
+}
+
+--- expect:block-graph ---
+(root:1 utils ($TMP/src/utils.cpp)
+  (module:2 utils (inline)
+    (func:3 helper
+      (parameter:4 x @type int)
+    )
+    (func:5 process
+      (parameter:6 x @type int)
+    )
+  )
+)
+
+(root:8 main ($TMP/src/main.cpp)
+  (module:9 utils (inline)
+    (func:10 helper
+      (parameter:11 x @type int)
+    )
+    (func:12 process
+      (parameter:13 x @type int)
+    )
+  )
+  (func:14 use_utils
+    (@fdep:10 helper)
+    (@fdep:12 process)
+  )
+)

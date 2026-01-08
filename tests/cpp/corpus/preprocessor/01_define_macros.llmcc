@@ -1,0 +1,29 @@
+===============================================================================
+define-macros
+===============================================================================
+Define preprocessor directives.
+lang: cpp
+
+--- file: src/lib.cpp ---
+#define PI 3.14159
+#define SQUARE(x) ((x) * (x))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
+double circle_area(double r) {
+    return PI * SQUARE(r);
+}
+
+int find_max(int a, int b) {
+    return MAX(a, b);
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 circle_area
+    (parameter:3 r @type double)
+  )
+  (func:5 find_max
+    (parameter:6 a @type int)
+    (parameter:7 b @type int)
+  )
+)

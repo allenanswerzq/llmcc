@@ -1,0 +1,40 @@
+===============================================================================
+default-arguments
+===============================================================================
+Function default arguments.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void func1(int a, int b = 10) {}
+void func2(int a = 1, int b = 2, int c = 3) {}
+
+class Widget {
+public:
+    Widget(int x = 0, int y = 0) : x_(x), y_(y) {}
+    void set(int val = 42) {}
+private:
+    int x_, y_;
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 func1
+    (parameter:3 a @type int)
+    (parameter:4 int @type int)
+  )
+  (func:5 func2
+    (parameter:6 int @type int)
+    (parameter:7 int @type int)
+    (parameter:8 int @type int)
+  )
+  (class:9 Widget
+    (method:10 Widget
+      (parameter:11 int @type int)
+      (parameter:12 int @type int)
+    )
+    (method:13 set
+      (parameter:14 int @type int)
+    )
+    (field:15 int @type int)
+  )
+)

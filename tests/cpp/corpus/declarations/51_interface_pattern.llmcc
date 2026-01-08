@@ -1,0 +1,51 @@
+===============================================================================
+interface-abstract-class
+===============================================================================
+Interface/abstract class pattern.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class IDrawable {
+public:
+    virtual ~IDrawable() = default;
+    virtual void draw() = 0;
+    virtual void resize(int w, int h) = 0;
+};
+
+class ISerializable {
+public:
+    virtual ~ISerializable() = default;
+    virtual void serialize() const = 0;
+    virtual void deserialize() = 0;
+};
+
+class Widget : public IDrawable, public ISerializable {
+public:
+    void draw() override {}
+    void resize(int w, int h) override {}
+    void serialize() const override {}
+    void deserialize() override {}
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 IDrawable
+    (method:3 ~IDrawable)
+    (field:4 void @type void)
+    (field:5 void @type void)
+  )
+  (class:6 ISerializable
+    (method:7 ~ISerializable)
+    (field:8 void @type void)
+    (field:9 void @type void)
+  )
+  (class:10 Widget @extends:2 IDrawable
+    (method:11 draw)
+    (method:12 resize
+      (parameter:13 w @type int)
+      (parameter:14 h @type int)
+    )
+    (method:15 serialize)
+    (method:16 deserialize)
+  )
+)

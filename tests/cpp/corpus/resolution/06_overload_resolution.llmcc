@@ -1,0 +1,54 @@
+===============================================================================
+overload-resolution
+===============================================================================
+Overload resolution.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void func(int x) {}
+void func(double x) {}
+void func(int x, int y) {}
+
+struct Overloaded {
+    void method(int x) {}
+    void method(double x) {}
+    void method(const char* s) {}
+};
+
+void test_overload() {
+    func(42);
+    func(3.14);
+    func(1, 2);
+
+    Overloaded o;
+    o.method(10);
+    o.method(1.5);
+    o.method("hello");
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 func
+    (parameter:3 x @type int)
+  )
+  (func:4 func
+    (parameter:5 x @type double)
+  )
+  (func:6 func
+    (parameter:7 x @type int)
+    (parameter:8 y @type int)
+  )
+  (class:9 Overloaded
+    (method:10 method
+      (parameter:11 x @type int)
+    )
+    (method:12 method
+      (parameter:13 x @type double)
+    )
+    (method:14 method
+      (parameter:15 s @type char)
+    )
+  )
+  (func:16 test_overload
+  )
+)

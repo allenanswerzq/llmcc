@@ -1,0 +1,33 @@
+===============================================================================
+anonymous-namespace
+===============================================================================
+Anonymous namespace declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+namespace {
+    int internal_var = 42;
+
+    void internal_function() {}
+
+    class InternalClass {
+        int value;
+    };
+}
+
+void use_internal() {
+    internal_var = 10;
+    internal_function();
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (module:2 int (inline)
+    (func:3 internal_function)
+    (class:4 InternalClass
+      (field:5 int @type int)
+    )
+  )
+  (func:6 use_internal
+  )
+)
