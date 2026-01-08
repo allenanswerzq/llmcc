@@ -1,0 +1,40 @@
+===============================================================================
+copy-constructors
+===============================================================================
+Copy constructor declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Widget {
+    int* data;
+public:
+    Widget() : data(new int(0)) {}
+
+    Widget(const Widget& other) : data(new int(*other.data)) {}
+
+    Widget& operator=(const Widget& other) {
+        if (this != &other) {
+            delete data;
+            data = new int(*other.data);
+        }
+        return *this;
+    }
+
+    ~Widget() { delete data; }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Widget
+    (field:3 int @type int)
+    (method:4 Widget
+    )
+    (method:6 Widget
+      (parameter:7 other @type:2 Widget)
+    )
+    (method:9 operator=
+      (parameter:10 other @type:2 Widget)
+    )
+    (method:12 ~Widget)
+  )
+)

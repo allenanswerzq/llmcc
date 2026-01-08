@@ -1,0 +1,35 @@
+===============================================================================
+constexpr-functions
+===============================================================================
+Constexpr function declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+constexpr int factorial(int n) {
+    return n <= 1 ? 1 : n * factorial(n - 1);
+}
+
+constexpr double pi() { return 3.14159; }
+
+class Circle {
+    double radius;
+public:
+    constexpr Circle(double r) : radius(r) {}
+    constexpr double area() const { return pi() * radius * radius; }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 factorial
+    (parameter:3 n @type int)
+  )
+  (func:5 pi)
+  (class:6 Circle
+    (field:7 double @type double)
+    (method:8 Circle
+      (parameter:9 r @type double)
+    )
+    (method:10 area
+    )
+  )
+)

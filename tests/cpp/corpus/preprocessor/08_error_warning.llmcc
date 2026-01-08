@@ -1,0 +1,21 @@
+===============================================================================
+error-warning
+===============================================================================
+Error and warning preprocessor directives.
+lang: cpp
+
+--- file: src/lib.cpp ---
+#ifdef FORCE_ERROR
+#error "This is a compilation error"
+#endif
+
+#ifdef SHOW_WARNING
+#warning "This is a warning"
+#endif
+
+void function() {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 function)
+)

@@ -1,0 +1,42 @@
+===============================================================================
+trailing-return-type
+===============================================================================
+Trailing return type syntax.
+lang: cpp
+
+--- file: src/lib.cpp ---
+auto add(int a, int b) -> int {
+    return a + b;
+}
+
+auto lambda = [](int x) -> double {
+    return x * 1.5;
+};
+
+template<typename T, typename U>
+auto multiply(T a, U b) -> decltype(a * b) {
+    return a * b;
+}
+
+class Calculator {
+public:
+    auto compute(int x) -> int { return x * 2; }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 add
+    (parameter:3 a @type int)
+    (parameter:4 b @type int)
+  )
+  (parameter:5 x @type int)
+  (func:6 multiply
+    (parameter:7 a @type a)
+    (parameter:8 b @type b)
+  )
+  (class:9 Calculator
+    (method:10 compute
+      (parameter:11 x @type int)
+    )
+  )
+)

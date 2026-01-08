@@ -1,0 +1,26 @@
+===============================================================================
+placement-new
+===============================================================================
+Placement new expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void test_placement_new() {
+    alignas(int) char buffer[sizeof(int)];
+    int* p = new (buffer) int(42);
+
+    char large_buffer[1024];
+    struct Widget { int x, y; };
+    Widget* w = new (large_buffer) Widget{10, 20};
+    w->~Widget();
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test_placement_new
+    (class:4 Widget
+      (field:5 int @type int)
+    )
+    (@tdep:4 Widget)
+  )
+)

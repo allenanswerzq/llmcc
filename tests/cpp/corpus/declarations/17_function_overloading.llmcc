@@ -1,0 +1,45 @@
+===============================================================================
+function-overloading
+===============================================================================
+Function overloading.
+lang: cpp
+
+--- file: src/lib.cpp ---
+int add(int a, int b) { return a + b; }
+double add(double a, double b) { return a + b; }
+int add(int a, int b, int c) { return a + b + c; }
+
+class Printer {
+public:
+    void print(int x) {}
+    void print(double x) {}
+    void print(const char* s) {}
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 add
+    (parameter:3 a @type int)
+    (parameter:4 b @type int)
+  )
+  (func:5 add
+    (parameter:6 a @type double)
+    (parameter:7 b @type double)
+  )
+  (func:8 add
+    (parameter:9 a @type int)
+    (parameter:10 b @type int)
+    (parameter:11 c @type int)
+  )
+  (class:12 Printer
+    (method:13 print
+      (parameter:14 x @type int)
+    )
+    (method:15 print
+      (parameter:16 x @type double)
+    )
+    (method:17 print
+      (parameter:18 s @type char)
+    )
+  )
+)

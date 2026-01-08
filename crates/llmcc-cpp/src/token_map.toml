@@ -371,6 +371,9 @@ block_kind = "Func"
 [[nodes]]
 ts_name = "declaration"
 
+# NOTE: function_declarator is HirKind::Scope and BlockKind::Func.
+# For function pointer variable declarations like `int (*func_ptr)(int)`,
+# the collector does NOT set a symbol on the scope, so graph_builder skips creating a block.
 [[nodes]]
 ts_name = "function_declarator"
 hir_kind = "Scope"
@@ -624,10 +627,16 @@ ts_name = "storage_class_specifier"
 ts_name = "type_specifier"
 
 [[nodes]]
+ts_name = "pointer_declarator"
+
+[[nodes]]
 ts_name = "pointer_type_declarator"
 
 [[nodes]]
 ts_name = "abstract_pointer_declarator"
+
+[[nodes]]
+ts_name = "init_declarator"
 
 [[nodes]]
 ts_name = "reference_declarator"

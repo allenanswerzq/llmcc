@@ -32,16 +32,7 @@ public:
 };
 
 --- expect:block-graph ---
-(root:1 struct User {
-    int id;
-    std::string name;
-};
-
-struct Config {
-    std::string host;
-    int port;
-};
- ($TMP/sample/src/types.h)
+(root:1 types ($TMP/sample/src/types.h)
   (class:2 User
     (field:3 int @type int)
     (field:4 std @type name)
@@ -52,22 +43,11 @@ struct Config {
   )
 )
 
-(root:8 #include "types.h"
-
-class UserService {
-    Config config;
-public:
-    User getUser(int id) {
-        return User{id, "test"};
-    }
-};
- ($TMP/sample/src/service.cpp)
+(root:8 service ($TMP/sample/src/service.cpp)
   (class:9 UserService
     (field:10 Config @type:5 Config)
     (method:11 getUser
-      (func:12 getUser
-        (parameter:13 id @type int)
-      )
+      (parameter:12 id @type int)
     )
   )
 )

@@ -1,0 +1,41 @@
+===============================================================================
+dependent-name-resolution
+===============================================================================
+Dependent name resolution in templates.
+lang: cpp
+
+--- file: src/lib.cpp ---
+template<typename T>
+struct Container {
+    typename T::value_type value;
+
+    void process() {
+        T::static_method();
+    }
+
+    template<typename U>
+    void convert() {
+        typename U::result_type result;
+    }
+};
+
+struct Data {
+    using value_type = int;
+    using result_type = double;
+    static void static_method() {}
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Container
+    (field:3 T @type value)
+    (method:4 process
+    )
+    (method:6 convert)
+  )
+  (class:7 Data
+    (alias:8 value_type)
+    (alias:9 result_type)
+    (method:10 static_method)
+  )
+)

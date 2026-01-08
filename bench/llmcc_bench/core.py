@@ -489,6 +489,7 @@ def count_loc(src_dir: Path, language: str = "rust") -> int:
         "rust": "Rust",
         "typescript": "TypeScript",
         "python": "Python",
+        "cpp": "C++",
     }
     tokei_type = tokei_types.get(language, "Rust")
 
@@ -522,6 +523,7 @@ def count_loc(src_dir: Path, language: str = "rust") -> int:
         "rust": [".rs"],
         "typescript": [".ts", ".tsx"],
         "python": [".py"],
+        "cpp": [".cpp", ".cc", ".cxx", ".c", ".h", ".hpp", ".hxx"],
     }
     exts = extensions.get(language, [".rs"])
 

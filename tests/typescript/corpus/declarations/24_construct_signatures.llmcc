@@ -36,33 +36,23 @@ interface Container<T> {
 
 --- expect:block-graph ---
 (root:1 lib ($TMP/src/lib.ts)
-  (interface:2 Constructor
-    (func:3 new (): object)
+  (interface:2 Constructor)
+  (interface:3 TypedConstructor)
+  (interface:4 ParameterizedConstructor
+    (parameter:5 name @type string)
+    (parameter:6 age @type number)
   )
-  (interface:4 TypedConstructor
-    (func:5 new (): T)
+  (interface:7 GenericConstructor
+    (parameter:8 args @type any)
   )
-  (interface:6 ParameterizedConstructor
-    (func:7 new (name: string, age: number): Person
-      (parameter:8 name @type string)
-      (parameter:9 age @type number)
-    )
+  (interface:9 FactoryConstructor
+    (parameter:10 value @type value)
   )
-  (interface:10 GenericConstructor
-    (func:11 new (...args: any[]): T
-      (parameter:12 args @type any)
-    )
+  (interface:11 Person
+    (field:12 name @type string)
+    (field:13 age @type number)
   )
-  (interface:13 FactoryConstructor
-    (func:14 new <T>(value: T): Container<T>
-      (parameter:15 value @type value)
-    )
-  )
-  (interface:16 Person
-    (field:17 name @type string)
-    (field:18 age @type number)
-  )
-  (interface:19 Container
-    (field:20 value @type T)
+  (interface:14 Container
+    (field:15 value @type T)
   )
 )

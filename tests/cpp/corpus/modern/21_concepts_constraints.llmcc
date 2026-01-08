@@ -1,0 +1,40 @@
+===============================================================================
+concepts-constraints
+===============================================================================
+Concepts with constraints.
+lang: cpp
+
+--- file: src/lib.cpp ---
+template<typename T>
+concept Integral = sizeof(T) <= sizeof(long long);
+
+template<typename T>
+concept Addable = requires(T a, T b) { a + b; };
+
+template<typename T>
+requires Integral<T> && Addable<T>
+T process(T a, T b) {
+    return a + b;
+}
+
+template<Integral T>
+class IntContainer {
+    T value;
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (trait:2 Integral)
+  (trait:3 Addable
+    (parameter:4 a @type a)
+    (parameter:5 b @type b)
+  )
+  (func:6 process
+    (parameter:7 a @type a)
+    (parameter:8 b @type b)
+  )
+  (parameter:9 Integral @type T)
+  (class:10 IntContainer
+    (field:11 T @type value)
+  )
+)

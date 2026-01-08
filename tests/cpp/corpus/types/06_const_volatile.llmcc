@@ -1,0 +1,22 @@
+===============================================================================
+const-volatile-types
+===============================================================================
+Const and volatile type qualifiers.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void test_cv() {
+    const int ci = 42;
+    volatile int vi = 10;
+    const volatile int cvi = 20;
+
+    const int* pci = &ci;
+    int* const cpi = new int;
+    const int* const cpci = &ci;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test_cv
+  )
+)

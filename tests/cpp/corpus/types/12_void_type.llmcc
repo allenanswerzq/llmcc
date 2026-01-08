@@ -1,0 +1,31 @@
+===============================================================================
+void-type
+===============================================================================
+Void type usage.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void return_nothing() {}
+
+void* generic_pointer() {
+    return nullptr;
+}
+
+const void* const_generic() {
+    return nullptr;
+}
+
+void take_void_ptr(void* p) {}
+
+typedef void (*VoidFunc)();
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 return_nothing)
+  (func:3 generic_pointer)
+  (func:4 const_generic)
+  (func:5 take_void_ptr
+    (parameter:6 p @type void)
+  )
+  (alias:7 void)
+)

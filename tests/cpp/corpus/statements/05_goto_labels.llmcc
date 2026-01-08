@@ -1,0 +1,34 @@
+===============================================================================
+goto-labels
+===============================================================================
+Goto and label statements.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void process_matrix(int matrix[3][3]) {
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            if (matrix[i][j] < 0)
+                goto error;
+        }
+    }
+    return;
+
+error:
+    return;
+}
+
+void multi_cleanup() {
+    goto cleanup;
+
+cleanup:
+    return;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 process_matrix
+    (parameter:3 matrix @type int)
+  )
+  (func:4 multi_cleanup)
+)

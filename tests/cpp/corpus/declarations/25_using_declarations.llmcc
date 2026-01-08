@@ -1,0 +1,41 @@
+===============================================================================
+using-declarations
+===============================================================================
+Using declarations and directives.
+lang: cpp
+
+--- file: src/lib.cpp ---
+namespace outer {
+    namespace inner {
+        class Widget {};
+        void helper() {}
+    }
+}
+
+using namespace outer;
+using outer::inner::Widget;
+using outer::inner::helper;
+
+namespace alias = outer::inner;
+
+class User {
+    Widget w;
+    using size_type = int;
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (module:2 outer (inline)
+    (module:3 inner (inline)
+      (class:4 Widget)
+      (func:5 helper)
+    )
+  )
+  (alias:6 outer)
+  (alias:7 outer)
+  (alias:8 outer)
+  (class:9 User
+    (field:10 Widget @type:4 Widget)
+    (alias:11 size_type)
+  )
+)

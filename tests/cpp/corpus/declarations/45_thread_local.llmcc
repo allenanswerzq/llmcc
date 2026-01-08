@@ -1,0 +1,27 @@
+===============================================================================
+thread-local
+===============================================================================
+Thread local storage.
+lang: cpp
+
+--- file: src/lib.cpp ---
+thread_local int tls_counter = 0;
+
+thread_local static int static_tls = 100;
+
+class ThreadData {
+public:
+    static thread_local int per_thread_id;
+    static thread_local const char* thread_name;
+};
+
+thread_local int ThreadData::per_thread_id = 0;
+thread_local const char* ThreadData::thread_name = "unnamed";
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 ThreadData
+    (field:3 int @type int)
+    (field:4 char @type char)
+  )
+)

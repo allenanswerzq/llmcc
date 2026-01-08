@@ -1,0 +1,29 @@
+===============================================================================
+static-members
+===============================================================================
+Static member declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Counter {
+public:
+    static int count;
+    static const int MAX = 100;
+    static constexpr int MIN = 0;
+
+    static void increment() { count++; }
+    static int get_count() { return count; }
+};
+
+int Counter::count = 0;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Counter
+    (field:3 int @type int)
+    (field:4 int @type int)
+    (field:5 int @type int)
+    (method:6 increment)
+    (method:7 get_count)
+  )
+)

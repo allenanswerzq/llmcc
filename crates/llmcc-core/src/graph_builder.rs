@@ -116,6 +116,8 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         node: HirNode<'tcx>,
         kind: BlockKind,
     ) -> Option<&'tcx crate::symbol::Symbol> {
+        use crate::symbol::SymKind;
+
         // Impl blocks reference existing type symbols, not their own
         // Don't extract symbol for impl - it will be set via relation linking
         if kind == BlockKind::Impl {
@@ -123,10 +125,19 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         }
 
         // Try scope first (for class/func/enum etc.)
+        // The scope's symbol is authoritative - if a scope is set, it means
+        // the collector intentionally created this as a defining scope
         if let Some(scope) = node.as_scope()
             && let Some(sym) = scope.opt_symbol()
         {
             return Some(sym);
+        }
+
+        // For Func/Method blocks, we MUST have a scope with a symbol to create a block.
+        // This prevents constructor-style variable initializations like `Foo t(x);`
+        // from creating function blocks when `t` is actually a Variable.
+        if kind == BlockKind::Func || kind == BlockKind::Method {
+            return None;
         }
 
         // For fields, use the language's name_field to avoid finding decorator identifiers
@@ -142,7 +153,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         if kind == BlockKind::Parameter {
             for ident in node.collect_idents(&self.unit) {
                 if let Some(sym) = ident.opt_symbol()
-                    && matches!(sym.kind(), crate::symbol::SymKind::Variable)
+                    && matches!(sym.kind(), SymKind::Variable)
                 {
                     return Some(sym);
                 }
@@ -700,6 +711,21 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
     fn visit_scope(&mut self, unit: CompileUnit<'tcx>, node: HirNode<'tcx>, parent: BlockId) {
         let kind = Self::effective_block_kind(node);
         if Self::is_block_kind(kind) {
+            // For function/method blocks, only create a block if the scope has a symbol.
+            // This filters out function pointer variable declarations in C/C++ where the
+            // function_declarator node is a Scope but doesn't represent an actual function.
+            if matches!(kind, BlockKind::Func | BlockKind::Method) {
+                let has_symbol = node
+                    .as_scope()
+                    .and_then(|scope| scope.opt_scope())
+                    .and_then(|scope| scope.opt_symbol())
+                    .is_some();
+                if !has_symbol {
+                    // No symbol means this is a function pointer variable, not a function declaration
+                    self.visit_children(unit, node, parent);
+                    return;
+                }
+            }
             self.build_block(unit, node, parent, true);
         } else {
             self.visit_children(unit, node, parent);

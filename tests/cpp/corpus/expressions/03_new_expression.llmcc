@@ -15,19 +15,9 @@ void create_widgets() {
 }
 
 --- expect:block-graph ---
-(root:1 class Widget {};
-
-void create_widgets() {
-    Widget* w1 = new Widget();
-    Widget* w2 = new Widget[10];
-    delete w1;
-    delete[] w2;
-}
- ($TMP/src/lib.cpp)
+(root:1 lib ($TMP/src/lib.cpp)
   (class:2 Widget)
   (func:3 create_widgets
-    (func:4 create_widgets)
     (@tdep:2 Widget)
-    (@fdep:4 create_widgets)
   )
 )

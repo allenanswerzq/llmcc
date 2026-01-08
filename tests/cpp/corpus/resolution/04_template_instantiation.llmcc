@@ -1,0 +1,36 @@
+===============================================================================
+template-instantiation
+===============================================================================
+Template instantiation resolution.
+lang: cpp
+
+--- file: src/lib.cpp ---
+template<typename T>
+class Container {
+    T value;
+public:
+    void set(T v) { value = v; }
+    T get() const { return value; }
+};
+
+void test_templates() {
+    Container<int> int_container;
+    int_container.set(42);
+    int val = int_container.get();
+
+    Container<double> double_container;
+    double_container.set(3.14);
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Container
+    (field:3 T @type value)
+    (method:4 set
+      (parameter:5 v @type v)
+    )
+    (method:6 get)
+  )
+  (func:7 test_templates
+  )
+)

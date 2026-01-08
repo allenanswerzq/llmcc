@@ -18,34 +18,17 @@ void use_calculator() {
 }
 
 --- expect:block-graph ---
-(root:1 class Calculator {
-public:
-    int add(int a, int b) { return a + b; }
-    int multiply(int a, int b) { return a * b; }
-};
-
-void use_calculator() {
-    Calculator calc;
-    int sum = calc.add(1, 2);
-    int product = calc.multiply(3, 4);
-}
- ($TMP/src/lib.cpp)
+(root:1 lib ($TMP/src/lib.cpp)
   (class:2 Calculator
     (method:3 add
-      (func:4 add
-        (parameter:5 a @type int)
-        (parameter:6 b @type int)
-      )
+      (parameter:4 a @type int)
+      (parameter:5 b @type int)
     )
-    (method:7 multiply
-      (func:8 multiply
-        (parameter:9 a @type int)
-        (parameter:10 b @type int)
-      )
+    (method:6 multiply
+      (parameter:7 a @type int)
+      (parameter:8 b @type int)
     )
   )
-  (func:11 use_calculator
-    (func:12 use_calculator)
-    (@fdep:12 use_calculator)
+  (func:9 use_calculator
   )
 )

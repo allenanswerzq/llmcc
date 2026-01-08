@@ -1,0 +1,32 @@
+===============================================================================
+alias-templates
+===============================================================================
+Template type aliases.
+lang: cpp
+
+--- file: src/lib.cpp ---
+template<typename T>
+using Ptr = T*;
+
+template<typename T>
+using Vec = T[];
+
+template<typename K, typename V>
+struct Pair { K key; V val; };
+
+template<typename T>
+using IntPair = Pair<int, T>;
+
+Ptr<int> p;
+IntPair<double> ip;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (alias:2 Ptr)
+  (alias:3 Vec)
+  (class:4 Pair
+    (field:5 K @type key)
+    (field:6 V @type val)
+  )
+  (alias:7 IntPair)
+)

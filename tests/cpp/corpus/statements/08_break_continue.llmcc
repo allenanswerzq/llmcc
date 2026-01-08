@@ -1,0 +1,29 @@
+===============================================================================
+break-continue
+===============================================================================
+Break and continue statements.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void test_break_continue() {
+    for (int i = 0; i < 100; i++) {
+        if (i == 50) break;
+        if (i % 2 == 0) continue;
+    }
+
+    int x = 0;
+    while (true) {
+        x++;
+        if (x >= 10) break;
+    }
+
+    do {
+        x--;
+        if (x == 5) continue;
+    } while (x > 0);
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test_break_continue)
+)

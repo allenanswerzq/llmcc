@@ -15,31 +15,15 @@ Widget& get_ref();
 const Widget& get_const_ref();
 
 --- expect:block-graph ---
-(root:1 struct Widget {};
-
-void by_ref(Widget& w) {}
-void by_const_ref(const Widget& w) {}
-void by_rvalue_ref(Widget&& w) {}
-
-Widget& get_ref();
-const Widget& get_const_ref();
- ($TMP/src/lib.cpp)
+(root:1 lib ($TMP/src/lib.cpp)
   (class:2 Widget)
   (func:3 by_ref
-    (func:4 by_ref
-      (parameter:5 w @type:2 Widget)
-    )
+    (parameter:4 w @type:2 Widget)
   )
-  (func:6 by_const_ref
-    (func:7 by_const_ref
-      (parameter:8 w @type:2 Widget)
-    )
+  (func:5 by_const_ref
+    (parameter:6 w @type:2 Widget)
   )
-  (func:9 by_rvalue_ref
-    (func:10 by_rvalue_ref
-      (parameter:11 w @type:2 Widget)
-    )
+  (func:7 by_rvalue_ref
+    (parameter:8 w @type:2 Widget)
   )
-  (func:12 get_ref)
-  (func:13 get_const_ref)
 )

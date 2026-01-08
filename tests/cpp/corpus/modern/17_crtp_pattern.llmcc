@@ -1,0 +1,40 @@
+===============================================================================
+crtp-pattern
+===============================================================================
+Curiously recurring template pattern.
+lang: cpp
+
+--- file: src/lib.cpp ---
+template<typename Derived>
+class Base {
+public:
+    void interface() {
+        static_cast<Derived*>(this)->implementation();
+    }
+
+    static void static_interface() {
+        Derived::static_implementation();
+    }
+};
+
+class Derived : public Base<Derived> {
+public:
+    void implementation() {}
+    static void static_implementation() {}
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Base
+    (method:3 interface
+      (@fdep:8 implementation)
+    )
+    (method:5 static_interface
+      (@fdep:9 static_implementation)
+    )
+  )
+  (class:7 Derived @extends:2 Base
+    (func:8 implementation)
+    (func:9 static_implementation)
+  )
+)

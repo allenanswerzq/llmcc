@@ -1,0 +1,38 @@
+===============================================================================
+adl-resolution
+===============================================================================
+Argument-dependent lookup resolution.
+lang: cpp
+
+--- file: src/lib.cpp ---
+namespace ns {
+    struct Widget {};
+    void process(Widget w) {}
+
+    struct Data {};
+    void serialize(Data d) {}
+}
+
+void test_adl() {
+    ns::Widget w;
+    process(w);
+
+    ns::Data d;
+    serialize(d);
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (module:2 ns (inline)
+    (class:3 Widget)
+    (func:4 process
+      (parameter:5 w @type:3 Widget)
+    )
+    (class:6 Data)
+    (func:7 serialize
+      (parameter:8 d @type:6 Data)
+    )
+  )
+  (func:9 test_adl
+  )
+)

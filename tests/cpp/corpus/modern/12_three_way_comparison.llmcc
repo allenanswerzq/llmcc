@@ -1,0 +1,40 @@
+===============================================================================
+three-way-comparison
+===============================================================================
+Three-way comparison operator.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Value {
+    int data;
+public:
+    auto operator<=>(const Value& other) const = default;
+
+    bool operator==(const Value& other) const = default;
+};
+
+struct Point {
+    int x, y;
+
+    auto operator<=>(const Point&) const = default;
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Value
+    (field:3 int @type int)
+    (method:4 operator<=>
+      (parameter:5 other @type:2 Value)
+    )
+    (method:6 operator==
+      (parameter:7 other @type:2 Value)
+    )
+  )
+  (class:8 Point
+    (field:9 int @type int)
+    (method:10 operator<=>
+      (parameter:11 Point @type:8 Point)
+      (@tdep:8 Point)
+    )
+  )
+)

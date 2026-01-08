@@ -1,0 +1,27 @@
+===============================================================================
+while-loops
+===============================================================================
+While loops.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void test_while() {
+    int x = 0;
+    while (x < 10) {
+        x++;
+    }
+
+    while (true) {
+        break;
+    }
+
+    int* ptr = nullptr;
+    while (ptr) {
+        ptr = nullptr;
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test_while)
+)

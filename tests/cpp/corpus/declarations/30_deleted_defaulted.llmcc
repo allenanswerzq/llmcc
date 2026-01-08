@@ -1,0 +1,50 @@
+===============================================================================
+deleted-defaulted-functions
+===============================================================================
+Deleted and defaulted function declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class NonCopyable {
+public:
+    NonCopyable() = default;
+    NonCopyable(const NonCopyable&) = delete;
+    NonCopyable& operator=(const NonCopyable&) = delete;
+    NonCopyable(NonCopyable&&) = default;
+    NonCopyable& operator=(NonCopyable&&) = default;
+    ~NonCopyable() = default;
+};
+
+class Interface {
+public:
+    virtual void method() = 0;
+    void deleted_method() = delete;
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 NonCopyable
+    (method:3 NonCopyable)
+    (method:4 NonCopyable
+      (parameter:5 NonCopyable @type:2 NonCopyable)
+      (@tdep:2 NonCopyable)
+    )
+    (method:6 operator=
+      (parameter:7 NonCopyable @type:2 NonCopyable)
+      (@tdep:2 NonCopyable)
+    )
+    (method:8 NonCopyable
+      (parameter:9 NonCopyable @type:2 NonCopyable)
+      (@tdep:2 NonCopyable)
+    )
+    (method:10 operator=
+      (parameter:11 NonCopyable @type:2 NonCopyable)
+      (@tdep:2 NonCopyable)
+    )
+    (method:12 ~NonCopyable)
+  )
+  (class:13 Interface
+    (field:14 void @type void)
+    (method:15 deleted_method)
+  )
+)

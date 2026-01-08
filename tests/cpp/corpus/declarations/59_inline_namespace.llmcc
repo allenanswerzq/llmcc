@@ -1,0 +1,48 @@
+===============================================================================
+inline-namespace
+===============================================================================
+Inline namespace declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+namespace library {
+    inline namespace v2 {
+        class Widget {
+        public:
+            void newMethod() {}
+        };
+    }
+
+    namespace v1 {
+        class Widget {
+        public:
+            void oldMethod() {}
+        };
+    }
+}
+
+void use_library() {
+    library::Widget w;
+    w.newMethod();
+
+    library::v1::Widget old;
+    old.oldMethod();
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (module:2 library (inline)
+    (module:3 v2 (inline)
+      (class:4 Widget
+        (method:5 newMethod)
+      )
+    )
+    (module:6 v1 (inline)
+      (class:7 Widget
+        (method:8 oldMethod)
+      )
+    )
+  )
+  (func:9 use_library
+  )
+)

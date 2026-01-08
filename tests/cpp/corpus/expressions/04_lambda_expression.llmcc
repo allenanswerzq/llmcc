@@ -14,24 +14,10 @@ void use_lambdas() {
 }
 
 --- expect:block-graph ---
-(root:1 void use_lambdas() {
-    auto add = [](int a, int b) { return a + b; };
-
-    auto capture = [&]() { return 42; };
-
-    auto generic = [](auto x) { return x; };
-}
- ($TMP/src/lib.cpp)
+(root:1 lib ($TMP/src/lib.cpp)
   (func:2 use_lambdas
-    (func:3 use_lambdas)
-    (func:4 [](int a, int b) { return a + b; }
-      (parameter:5 a @type int)
-      (parameter:6 b @type int)
-    )
-    (func:7 [&]() { return 42; })
-    (func:8 [](auto x) { return x; }
-      (parameter:9 x @type x)
-    )
-    (@fdep:3 use_lambdas)
+    (parameter:3 a @type int)
+    (parameter:4 b @type int)
+    (parameter:5 x @type x)
   )
 )

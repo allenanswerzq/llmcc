@@ -20,50 +20,17 @@ public:
 };
 
 --- expect:block-graph ---
-(root:1 template<int N>
-class FixedArray {
-    int data[N];
-public:
-    int size() const { return N; }
-};
-
-template<typename T, int Size>
-class StaticBuffer {
-    T buffer[Size];
-public:
-    T& operator[](int i) { return buffer[i]; }
-};
- ($TMP/src/lib.cpp)
-  (func:2 template<int N>
-class FixedArray {
-    int data[N];
-public:
-    int size() const { return N; }
-};
-    (parameter:3 N @type int)
-    (class:4 FixedArray
-      (field:5 int @type int)
-      (method:6 size
-        (func:7 size)
-      )
-    )
-    (@tdep:4 FixedArray)
+(root:1 lib ($TMP/src/lib.cpp)
+  (parameter:2 N @type int)
+  (class:3 FixedArray
+    (field:4 int @type int)
+    (method:5 size)
   )
-  (func:8 template<typename T, int Size>
-class StaticBuffer {
-    T buffer[Size];
-public:
-    T& operator[](int i) { return buffer[i]; }
-};
-    (parameter:9 Size @type int)
-    (class:10 StaticBuffer
-      (field:11 T)
-      (method:12 operator[]
-        (func:13 operator[]
-          (parameter:14 i @type int)
-        )
-      )
+  (parameter:6 Size @type int)
+  (class:7 StaticBuffer
+    (field:8 T)
+    (method:9 operator[]
+      (parameter:10 i @type int)
     )
-    (@tdep:10 StaticBuffer)
   )
 )

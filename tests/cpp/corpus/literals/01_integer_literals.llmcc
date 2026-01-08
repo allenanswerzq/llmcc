@@ -1,0 +1,26 @@
+===============================================================================
+integer-literals
+===============================================================================
+Integer literal expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void test_integers() {
+    int a = 42;
+    int b = 0x2A;
+    int c = 052;
+    int d = 0b101010;
+
+    long e = 42L;
+    long long f = 42LL;
+    unsigned g = 42U;
+    unsigned long h = 42UL;
+    unsigned long long i = 42ULL;
+
+    int sep = 1'000'000;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test_integers)
+)

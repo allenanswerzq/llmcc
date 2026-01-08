@@ -1,0 +1,22 @@
+===============================================================================
+generic-selection
+===============================================================================
+Generic selection expressions (C11 in C++).
+lang: cpp
+
+--- file: src/lib.cpp ---
+#define type_name(x) _Generic((x), \
+    int: "int", \
+    double: "double", \
+    default: "unknown")
+
+void test_generic() {
+    const char* a = type_name(42);
+    const char* b = type_name(3.14);
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test_generic
+  )
+)

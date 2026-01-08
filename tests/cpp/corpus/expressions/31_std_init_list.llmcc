@@ -1,0 +1,32 @@
+===============================================================================
+std-initializer-list
+===============================================================================
+Std initializer list.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Container {
+public:
+    Container() {}
+    Container(int a, int b, int c) {}
+};
+
+void test_init_list() {
+    Container c1{1, 2, 3};
+    Container c2 = {4, 5, 6};
+
+    auto arr = {1, 2, 3, 4, 5};
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Container
+    (method:3 Container)
+    (method:4 Container
+      (parameter:5 a @type int)
+      (parameter:6 b @type int)
+      (parameter:7 c @type int)
+    )
+  )
+  (func:8 test_init_list)
+)

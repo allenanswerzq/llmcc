@@ -20,40 +20,18 @@ std::string concat(std::string a, std::string b) {
 }
 
 --- expect:block-graph ---
-(root:1 void simple_func() {}
-
-int add(int a, int b) {
-    return a + b;
-}
-
-double multiply(double x, double y) {
-    return x * y;
-}
-
-std::string concat(std::string a, std::string b) {
-    return a + b;
-}
- ($TMP/src/lib.cpp)
-  (func:2 simple_func
-    (func:3 simple_func)
-    (@fdep:3 simple_func)
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 simple_func)
+  (func:3 add
+    (parameter:4 a @type int)
+    (parameter:5 b @type int)
   )
-  (func:4 add
-    (func:5 add
-      (parameter:6 a @type int)
-      (parameter:7 b @type int)
-    )
+  (func:6 multiply
+    (parameter:7 x @type double)
+    (parameter:8 y @type double)
   )
-  (func:8 multiply
-    (func:9 multiply
-      (parameter:10 x @type double)
-      (parameter:11 y @type double)
-    )
-  )
-  (func:12 concat
-    (func:13 concat
-      (parameter:14 a @type a)
-      (parameter:15 b @type b)
-    )
+  (func:9 concat
+    (parameter:10 a @type a)
+    (parameter:11 b @type b)
   )
 )

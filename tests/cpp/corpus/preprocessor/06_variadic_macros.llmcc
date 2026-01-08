@@ -1,0 +1,21 @@
+===============================================================================
+variadic-macros
+===============================================================================
+Variadic macros.
+lang: cpp
+
+--- file: src/lib.cpp ---
+#define LOG(fmt, ...) printf(fmt, ##__VA_ARGS__)
+#define DEBUG(msg, ...) do { printf(msg, ##__VA_ARGS__); } while(0)
+
+void test() {
+    LOG("simple message\n");
+    LOG("value: %d\n", 42);
+    DEBUG("debug: %s %d\n", "test", 123);
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test
+  )
+)

@@ -42,35 +42,31 @@ interface User {
 (root:1 lib ($TMP/src/lib.ts)
   (func:2 Component
     (parameter:3 config @type any)
-    (func:4 function(target: any) {}
-      (parameter:5 target @type any)
-    )
+    (parameter:4 target @type any)
   )
-  (func:6 Injectable
-    (func:7 function(target: any) {}
-      (parameter:8 target @type any)
-    )
+  (func:5 Injectable
+    (parameter:6 target @type any)
   )
-  (func:9 Log
-    (parameter:10 target @type any)
-    (parameter:11 key @type string)
+  (func:7 Log
+    (parameter:8 target @type any)
+    (parameter:9 key @type string)
   )
-  (class:12 AppComponent
-    (field:14 title @type string)
-    (method:15 greet
-      (return:16 @type string)
+  (class:10 AppComponent
+    (field:12 title @type string)
+    (method:13 greet
+      (return:14 @type string)
     )
     (@tdep:2 Component)
   )
-  (class:17 UserService
-    (method:19 getUsers
-      (return:20 @type:21 User)
+  (class:15 UserService
+    (method:17 getUsers
+      (return:18 @type:19 User)
     )
-    (@tdep:6 Injectable)
+    (@tdep:5 Injectable)
   )
-  (interface:21 User
-    (field:22 id @type number)
-    (field:23 name @type string)
+  (interface:19 User
+    (field:20 id @type number)
+    (field:21 name @type string)
   )
 )
 
@@ -91,12 +87,12 @@ digraph architecture {
         bgcolor="#fafafa";
 
     n2[label="Component", path="$TMP/src/lib.ts:1", sym_ty="Function", shape=ellipse];
-    n12[label="AppComponent", path="$TMP/src/lib.ts:11", sym_ty="Struct", shape=box];
-    n17[label="UserService", path="$TMP/src/lib.ts:22", sym_ty="Struct", shape=box];
-    n6[label="Injectable", path="$TMP/src/lib.ts:5", sym_ty="Function", shape=ellipse];
+    n10[label="AppComponent", path="$TMP/src/lib.ts:11", sym_ty="Struct", shape=box];
+    n15[label="UserService", path="$TMP/src/lib.ts:22", sym_ty="Struct", shape=box];
+    n5[label="Injectable", path="$TMP/src/lib.ts:5", sym_ty="Function", shape=ellipse];
   }
 
 
-  n2 -> n12 [from="decorator", to="decorates"];
-  n6 -> n17 [from="decorator", to="decorates"];
+  n2 -> n10 [from="decorator", to="decorates"];
+  n5 -> n15 [from="decorator", to="decorates"];
 }

@@ -1,0 +1,27 @@
+===============================================================================
+ref-qualifiers
+===============================================================================
+Ref-qualified method declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Value {
+    int data;
+public:
+    int& get() & { return data; }
+    int get() && { return data; }
+    const int& get() const& { return data; }
+
+    Value& operator=(int v) & { data = v; return *this; }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Value
+    (field:3 int @type int)
+    (method:4 get)
+    (method:5 operator=
+      (parameter:6 v @type int)
+    )
+  )
+)

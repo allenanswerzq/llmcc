@@ -36,60 +36,26 @@ public:
 };
 
 --- expect:block-graph ---
-(root:1 class Shape {
-public:
-    virtual double area() const = 0;
-    virtual ~Shape() = default;
-};
-
-class Circle : public Shape {
-    double radius;
-public:
-    Circle(double r) : radius(r) {}
-    double area() const override {
-        return 3.14159 * radius * radius;
-    }
-};
-
-class Rectangle : public Shape {
-    double width;
-    double height;
-public:
-    Rectangle(double w, double h) : width(w), height(h) {}
-    double area() const override {
-        return width * height;
-    }
-};
- ($TMP/sample/src/lib.cpp)
+(root:1 lib ($TMP/sample/src/lib.cpp)
   (class:2 Shape
     (field:3 double @type double)
-    (method:4 ~Shape
-      (func:5 ~Shape)
-    )
+    (method:4 ~Shape)
   )
-  (class:6 Circle @extends:2 Shape
-    (field:7 double @type double)
-    (method:8 Circle
-      (func:9 Circle
-        (parameter:10 r @type double)
-      )
+  (class:5 Circle @extends:2 Shape
+    (field:6 double @type double)
+    (method:7 Circle
+      (parameter:8 r @type double)
     )
-    (method:11 area
-      (func:12 area)
-    )
+    (method:9 area)
   )
-  (class:13 Rectangle @extends:2 Shape
-    (field:14 double @type double)
-    (field:15 double @type double)
-    (method:16 Rectangle
-      (func:17 Rectangle
-        (parameter:18 w @type double)
-        (parameter:19 h @type double)
-      )
+  (class:10 Rectangle @extends:2 Shape
+    (field:11 double @type double)
+    (field:12 double @type double)
+    (method:13 Rectangle
+      (parameter:14 w @type double)
+      (parameter:15 h @type double)
     )
-    (method:20 area
-      (func:21 area)
-    )
+    (method:16 area)
   )
 )
 
@@ -109,12 +75,12 @@ digraph architecture {
     style=rounded;
         bgcolor="#fafafa";
 
-    n13[label="Rectangle", path="$TMP/sample/src/lib.cpp:17", sym_ty="Struct", shape=box];
+    n10[label="Rectangle", path="$TMP/sample/src/lib.cpp:17", sym_ty="Struct", shape=box];
     n2[label="Shape", path="$TMP/sample/src/lib.cpp:2", sym_ty="Struct", shape=box];
-    n6[label="Circle", path="$TMP/sample/src/lib.cpp:8", sym_ty="Struct", shape=box];
+    n5[label="Circle", path="$TMP/sample/src/lib.cpp:8", sym_ty="Struct", shape=box];
   }
 
 
-  n2 -> n6 [from="base", to="extends"];
-  n2 -> n13 [from="base", to="extends"];
+  n2 -> n5 [from="base", to="extends"];
+  n2 -> n10 [from="base", to="extends"];
 }

@@ -15,15 +15,7 @@ struct PointerTypes {
 void use_pointers(int* p, const char* s) {}
 
 --- expect:block-graph ---
-(root:1 struct PointerTypes {
-    int* ptr;
-    const char* str;
-    double** double_ptr;
-    void* void_ptr;
-};
-
-void use_pointers(int* p, const char* s) {}
- ($TMP/src/lib.cpp)
+(root:1 lib ($TMP/src/lib.cpp)
   (class:2 PointerTypes
     (field:3 int @type int)
     (field:4 char @type char)
@@ -31,9 +23,7 @@ void use_pointers(int* p, const char* s) {}
     (field:6 void @type void)
   )
   (func:7 use_pointers
-    (func:8 use_pointers
-      (parameter:9 p @type int)
-      (parameter:10 s @type char)
-    )
+    (parameter:8 p @type int)
+    (parameter:9 s @type char)
   )
 )

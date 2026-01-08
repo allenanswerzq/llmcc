@@ -1,0 +1,32 @@
+===============================================================================
+consteval
+===============================================================================
+Consteval immediate functions (C++20).
+lang: cpp
+
+--- file: src/lib.cpp ---
+consteval int factorial(int n) {
+    return n <= 1 ? 1 : n * factorial(n - 1);
+}
+
+consteval int square(int x) {
+    return x * x;
+}
+
+constexpr int runtime_or_compile = factorial(5);
+
+void test() {
+    constexpr int result = square(10);
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 factorial
+    (parameter:3 n @type int)
+  )
+  (func:5 square
+    (parameter:6 x @type int)
+  )
+  (func:8 test
+  )
+)

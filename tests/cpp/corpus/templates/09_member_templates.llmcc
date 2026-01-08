@@ -1,0 +1,43 @@
+===============================================================================
+member-templates
+===============================================================================
+Member templates.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Container {
+public:
+    template<typename T>
+    T convert() const { return T(); }
+
+    template<typename U>
+    void assign(U value) {}
+};
+
+template<typename T>
+class GenericContainer {
+public:
+    template<typename U>
+    U convert_to() const { return U(); }
+
+    template<typename U>
+    bool compare(const GenericContainer<U>& other) const { return true; }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Container
+    (method:3 convert
+    )
+    (method:5 assign
+      (parameter:6 value @type value)
+    )
+  )
+  (class:7 GenericContainer
+    (method:8 convert_to
+    )
+    (method:10 compare
+      (parameter:11 other @type:7 GenericContainer)
+    )
+  )
+)

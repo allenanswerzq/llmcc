@@ -1,0 +1,29 @@
+===============================================================================
+generic-lambdas
+===============================================================================
+Generic lambda expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void test_generic_lambdas() {
+    auto identity = [](auto x) { return x; };
+
+    auto add = [](auto a, auto b) { return a + b; };
+
+    auto printer = []<typename T>(T value) {};
+
+    auto constexpr_lambda = [](int x) constexpr { return x * 2; };
+
+    auto mutable_lambda = [x = 0]() mutable { return ++x; };
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test_generic_lambdas
+    (parameter:3 x @type x)
+    (parameter:4 a @type a)
+    (parameter:5 b @type b)
+    (parameter:6 value @type T)
+    (parameter:7 x @type int)
+  )
+)

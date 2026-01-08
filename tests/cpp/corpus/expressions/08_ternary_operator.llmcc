@@ -1,0 +1,27 @@
+===============================================================================
+ternary-operator
+===============================================================================
+Ternary conditional expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void test_ternary() {
+    int a = 5;
+    int b = a > 0 ? 1 : -1;
+    int c = a == 0 ? 0 : a > 0 ? 1 : -1;
+
+    auto result = true ? "yes" : "no";
+}
+
+int max(int a, int b) {
+    return a > b ? a : b;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test_ternary)
+  (func:3 max
+    (parameter:4 a @type int)
+    (parameter:5 b @type int)
+  )
+)

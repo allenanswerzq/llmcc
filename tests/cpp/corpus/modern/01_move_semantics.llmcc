@@ -1,0 +1,49 @@
+===============================================================================
+move-semantics
+===============================================================================
+Move semantics.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Buffer {
+    int* data;
+    int size;
+public:
+    Buffer(int n) : data(new int[n]), size(n) {}
+    ~Buffer() { delete[] data; }
+
+    Buffer(Buffer&& other) noexcept
+        : data(other.data), size(other.size) {
+        other.data = nullptr;
+        other.size = 0;
+    }
+
+    Buffer& operator=(Buffer&& other) noexcept {
+        if (this != &other) {
+            delete[] data;
+            data = other.data;
+            size = other.size;
+            other.data = nullptr;
+            other.size = 0;
+        }
+        return *this;
+    }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Buffer
+    (field:3 int @type int)
+    (field:4 int @type int)
+    (method:5 Buffer
+      (parameter:6 n @type int)
+    )
+    (method:8 ~Buffer)
+    (method:9 Buffer
+      (parameter:10 other @type:2 Buffer)
+    )
+    (method:11 operator=
+      (parameter:12 other @type:2 Buffer)
+    )
+  )
+)

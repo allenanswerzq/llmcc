@@ -20,27 +20,10 @@ void safe() {
 }
 
 --- expect:block-graph ---
-(root:1 void risky() {
-    throw std::runtime_error("error");
-}
-
-void safe() {
-    try {
-        risky();
-    } catch (const std::runtime_error& e) {
-        std::cerr << e.what() << std::endl;
-    } catch (...) {
-        std::cerr << "Unknown error" << std::endl;
-    }
-}
- ($TMP/src/lib.cpp)
+(root:1 lib ($TMP/src/lib.cpp)
   (func:2 risky
-    (func:3 risky)
-    (@fdep:3 risky)
   )
-  (func:5 safe
-    (func:6 safe)
-    (parameter:8 e @type e)
-    (@fdep:6 safe)
+  (func:4 safe
+    (parameter:6 e @type e)
   )
 )

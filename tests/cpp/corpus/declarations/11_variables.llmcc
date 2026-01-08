@@ -1,0 +1,22 @@
+===============================================================================
+variables
+===============================================================================
+Variable declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+int global_var = 42;
+const int CONSTANT = 100;
+static int static_var = 0;
+extern int external_var;
+
+void function() {
+    int local_var = 1;
+    const auto auto_var = 2.0;
+    static int static_local = 3;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 function)
+)

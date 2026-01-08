@@ -1,0 +1,40 @@
+===============================================================================
+designated-initializers
+===============================================================================
+Designated initializers (C++20).
+lang: cpp
+
+--- file: src/lib.cpp ---
+struct Point {
+    int x;
+    int y;
+    int z;
+};
+
+struct Config {
+    bool enabled;
+    int timeout;
+    const char* name;
+};
+
+void test_designated() {
+    Point p1 = {.x = 1, .y = 2, .z = 3};
+    Point p2 = {.x = 10};
+
+    Config cfg = {.enabled = true, .timeout = 30, .name = "test"};
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Point
+    (field:3 int @type int)
+    (field:4 int @type int)
+    (field:5 int @type int)
+  )
+  (class:6 Config
+    (field:7 bool @type bool)
+    (field:8 int @type int)
+    (field:9 char @type char)
+  )
+  (func:10 test_designated)
+)

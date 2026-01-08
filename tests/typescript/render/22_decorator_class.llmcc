@@ -26,21 +26,15 @@ class AppComponent {
 (root:1 lib ($TMP/sample/src/lib.ts)
   (func:2 Component
     (parameter:3 name @type string)
-    (func:4 function(target: any) {
-        target.componentName = name;
-    }
-      (parameter:5 target @type any)
-    )
+    (parameter:4 target @type any)
   )
-  (func:6 Injectable
-    (func:7 function(target: any) {}
-      (parameter:8 target @type any)
-    )
+  (func:5 Injectable
+    (parameter:6 target @type any)
   )
-  (class:9 AppComponent
-    (field:12 title @type string)
+  (class:7 AppComponent
+    (field:10 title @type string)
     (@tdep:2 Component)
-    (@tdep:6 Injectable)
+    (@tdep:5 Injectable)
   )
 )
 
@@ -60,12 +54,12 @@ digraph architecture {
     style=rounded;
         bgcolor="#fafafa";
 
-    n9[label="AppComponent", path="$TMP/sample/src/lib.ts:12", sym_ty="Struct", shape=box];
+    n7[label="AppComponent", path="$TMP/sample/src/lib.ts:12", sym_ty="Struct", shape=box];
     n2[label="Component", path="$TMP/sample/src/lib.ts:2", sym_ty="Function", shape=ellipse];
-    n6[label="Injectable", path="$TMP/sample/src/lib.ts:8", sym_ty="Function", shape=ellipse];
+    n5[label="Injectable", path="$TMP/sample/src/lib.ts:8", sym_ty="Function", shape=ellipse];
   }
 
 
-  n2 -> n9 [from="decorator", to="decorates"];
-  n6 -> n9 [from="decorator", to="decorates"];
+  n2 -> n7 [from="decorator", to="decorates"];
+  n5 -> n7 [from="decorator", to="decorates"];
 }

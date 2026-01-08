@@ -22,24 +22,6 @@ void range_loops() {
 }
 
 --- expect:block-graph ---
-(root:1 void range_loops() {
-    std::vector<int> numbers = {1, 2, 3, 4, 5};
-
-    for (int n : numbers) {
-        std::cout << n << std::endl;
-    }
-
-    for (const auto& n : numbers) {
-        std::cout << n << std::endl;
-    }
-
-    for (auto&& n : numbers) {
-        n *= 2;
-    }
-}
- ($TMP/src/lib.cpp)
-  (func:2 range_loops
-    (func:3 range_loops)
-    (@fdep:3 range_loops)
-  )
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 range_loops)
 )

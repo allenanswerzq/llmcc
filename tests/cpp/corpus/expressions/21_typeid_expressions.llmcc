@@ -1,0 +1,32 @@
+===============================================================================
+typeid-expressions
+===============================================================================
+Typeid expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Base { public: virtual ~Base() {} };
+class Derived : public Base {};
+
+void test_typeid() {
+    int x = 42;
+    auto& ti = typeid(x);
+    auto& ti2 = typeid(int);
+
+    Base* b = new Derived();
+    auto& ti3 = typeid(*b);
+
+    if (typeid(*b) == typeid(Derived)) {
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Base
+    (method:3 ~Base)
+  )
+  (class:4 Derived @extends:2 Base)
+  (func:5 test_typeid
+    (@tdep:4 Derived)
+  )
+)

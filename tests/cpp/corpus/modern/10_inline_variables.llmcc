@@ -1,0 +1,31 @@
+===============================================================================
+inline-variables
+===============================================================================
+Inline variables (C++17).
+lang: cpp
+
+--- file: src/lib.cpp ---
+inline int global_counter = 0;
+
+inline constexpr double PI = 3.14159;
+
+struct Settings {
+    static inline int max_size = 100;
+    static inline const char* name = "default";
+};
+
+template<typename T>
+struct Trait {
+    static inline T default_value{};
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Settings
+    (field:3 int @type int)
+    (field:4 char @type char)
+  )
+  (class:5 Trait
+    (field:6 T @type default_value)
+  )
+)

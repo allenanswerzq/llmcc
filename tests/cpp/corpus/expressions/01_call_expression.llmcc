@@ -13,19 +13,8 @@ void caller() {
 }
 
 --- expect:block-graph ---
-(root:1 int helper() { return 42; }
-
-void caller() {
-    int x = helper();
-    std::cout << x << std::endl;
-}
- ($TMP/src/lib.cpp)
-  (func:2 helper
-    (func:3 helper)
-    (@fdep:3 helper)
-  )
-  (func:4 caller
-    (func:5 caller)
-    (@fdep:5 caller)
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 helper)
+  (func:3 caller
   )
 )

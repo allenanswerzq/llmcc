@@ -1,0 +1,32 @@
+===============================================================================
+auto-decltype-types
+===============================================================================
+Auto and decltype type deduction.
+lang: cpp
+
+--- file: src/lib.cpp ---
+int getValue() { return 42; }
+
+void test_auto() {
+    auto a = 42;
+    auto b = 3.14;
+    auto c = "hello";
+    auto& d = a;
+    const auto& e = b;
+    auto* f = &a;
+}
+
+void test_decltype() {
+    int x = 0;
+    decltype(x) y = 10;
+    decltype((x)) z = x;
+    decltype(getValue()) r = getValue();
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 getValue)
+  (func:3 test_auto)
+  (func:4 test_decltype
+  )
+)

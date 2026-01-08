@@ -19,48 +19,15 @@ template<typename... Args>
 void variadic_func(Args... args) {}
 
 --- expect:block-graph ---
-(root:1 template<typename T>
-T identity(T value) {
-    return value;
-}
-
-template<typename T, typename U>
-auto add(T a, U b) -> decltype(a + b) {
-    return a + b;
-}
-
-template<typename... Args>
-void variadic_func(Args... args) {}
- ($TMP/src/lib.cpp)
-  (func:2 template<typename T>
-T identity(T value) {
-    return value;
-}
-    (func:3 identity
-      (func:4 identity
-        (parameter:5 value @type value)
-      )
-    )
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 identity
+    (parameter:3 value @type value)
   )
-  (func:6 template<typename T, typename U>
-auto add(T a, U b) -> decltype(a + b) {
-    return a + b;
-}
-    (func:7 add
-      (func:8 add
-        (parameter:9 a @type a)
-        (parameter:10 b @type b)
-      )
-    )
+  (func:4 add
+    (parameter:5 a @type a)
+    (parameter:6 b @type b)
   )
-  (func:11 template<typename... Args>
-void variadic_func(Args... args) {}
-    (func:12 variadic_func
-      (func:13 variadic_func
-        (parameter:14 Args)
-      )
-      (@fdep:13 variadic_func)
-    )
-    (@fdep:13 variadic_func)
+  (func:7 variadic_func
+    (parameter:8 Args)
   )
 )
