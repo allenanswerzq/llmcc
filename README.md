@@ -92,8 +92,8 @@ Render DOT to SVG (requires Graphviz):
 dot -Tsvg /tmp/codex_depth3_pagerank.dot -o /tmp/codex_depth3_pagerank.svg
 ```
 
-Tip: for all the sample repos + all depths, run:
+For generating sample graphs:
 
 ```bash
-./sample/generate_all.sh
+just gen rust
 ```
