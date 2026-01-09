@@ -1,0 +1,25 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  mod_leveldb_db[label="leveldb::db", path="/home/yibai/llmcc/sample/repos/leveldb/db"];
+  mod_leveldb_leveldb[label="leveldb::leveldb", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb"];
+  mod_leveldb_table[label="leveldb::table", path="/home/yibai/llmcc/sample/repos/leveldb/table"];
+  mod_leveldb_util[label="leveldb::util", path="/home/yibai/llmcc/sample/repos/leveldb/util"];
+
+  mod_leveldb_db -> mod_leveldb_leveldb;
+  mod_leveldb_db -> mod_leveldb_table;
+  mod_leveldb_db -> mod_leveldb_util;
+  mod_leveldb_leveldb -> mod_leveldb_db;
+  mod_leveldb_table -> mod_leveldb_leveldb;
+  mod_leveldb_util -> mod_leveldb_leveldb;
+}

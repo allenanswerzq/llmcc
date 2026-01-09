@@ -1,0 +1,405 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_cli {
+    label="cli";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_cli_cpp {
+      label="cli.cpp";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n12153[label="should_stop", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/cli/cli.cpp:33", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_common {
+    label="common";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_arg_cpp {
+      label="arg.cpp";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n39367[label="common_params_parser_init", path="/home/yibai/llmcc/sample/repos/llama-cpp/common/arg.cpp:905", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_arg_h {
+      label="arg.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n81212[label="common_arg", path="/home/yibai/llmcc/sample/repos/llama-cpp/common/arg.h:19", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_chat_parser_h {
+      label="chat-parser.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n5735[label="common_chat_msg_parser", path="/home/yibai/llmcc/sample/repos/llama-cpp/common/chat-parser.h:19", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_chat_h {
+      label="chat.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n5294[label="common_chat_syntax", path="/home/yibai/llmcc/sample/repos/llama-cpp/common/chat.h:167", sym_ty="Struct", shape=box];
+      n5151[label="common_chat_msg", path="/home/yibai/llmcc/sample/repos/llama-cpp/common/chat.h:34", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_common_h {
+      label="common.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n7469[label="common_params", path="/home/yibai/llmcc/sample/repos/llama-cpp/common/common.h:311", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_console_h {
+      label="console.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n25684[label="set_display", path="/home/yibai/llmcc/sample/repos/llama-cpp/common/console.h:21", sym_ty="Function", shape=ellipse];
+      n25704[label="start", path="/home/yibai/llmcc/sample/repos/llama-cpp/common/console.h:25", sym_ty="Function", shape=ellipse];
+      n25706[label="stop", path="/home/yibai/llmcc/sample/repos/llama-cpp/common/console.h:26", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_peg_parser_h {
+      label="peg-parser.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n38861[label="common_peg_arena", path="/home/yibai/llmcc/sample/repos/llama-cpp/common/peg-parser.h:266", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_completion {
+    label="completion";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_completion_cpp {
+      label="completion.cpp";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n42953[label="main", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/completion/completion.cpp:86", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_cvector_generator {
+    label="cvector-generator";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_cvector_generator_cpp {
+      label="cvector-generator.cpp";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n8265[label="to_string", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/cvector-generator/cvector-generator.cpp:299", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_ggml_cpu {
+    label="ggml-cpu";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_llamafile {
+      label="llamafile";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_sgemm_cpp {
+        label="sgemm.cpp";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n99127[label="load", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-cpu/llamafile/sgemm.cpp:415", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_ggml_opencl {
+    label="ggml-opencl";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_ggml_opencl_cpp {
+      label="ggml-opencl.cpp";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n17817[label="load_cl_kernels", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-opencl/ggml-opencl.cpp:743", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_ggml_sycl {
+    label="ggml-sycl";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_common_hpp {
+      label="common.hpp";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n75195[label="ggml_backend_sycl_context", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl/common.hpp:292", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_element_wise_cpp {
+      label="element_wise.cpp";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n23204[label="dispatch_ggml_sycl_op_unary", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl/element_wise.cpp:395", sym_ty="Function", shape=ellipse];
+      n23235[label="dispatch_ggml_sycl_op_fused_glu", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl/element_wise.cpp:427", sym_ty="Function", shape=ellipse];
+      n23358[label="ggml_sycl_op_unary", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl/element_wise.cpp:548", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_ggml_sycl_cpp {
+      label="ggml-sycl.cpp";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n36395[label="ggml_sycl_mul_mat", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl/ggml-sycl.cpp:3286", sym_ty="Function", shape=ellipse];
+      n40185[label="ggml_tensor", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl/ggml-sycl.cpp:4419", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_gguf_split {
+    label="gguf-split";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_gguf_split_cpp {
+      label="gguf-split.cpp";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n82299[label="gguf_split", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/gguf-split/gguf-split.cpp:360", sym_ty="Function", shape=ellipse];
+      n77562[label="split_params", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/gguf-split/gguf-split.cpp:37", sym_ty="Struct", shape=box];
+      n82636[label="gguf_merge", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/gguf-split/gguf-split.cpp:398", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_htp {
+    label="htp";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_htp_dma_h {
+      label="htp-dma.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n10960[label="dma_queue_pop", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-hexagon/htp/htp-dma.h:128", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_matmul_ops_c {
+      label="matmul-ops.c";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n43444[label="matmul_id", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-hexagon/htp/matmul-ops.c:1380", sym_ty="Function", shape=ellipse];
+      n44549[label="matvec_id", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-hexagon/htp/matmul-ops.c:1501", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_imatrix {
+    label="imatrix";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_imatrix_cpp {
+      label="imatrix.cpp";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n9351[label="show_statistics", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/imatrix/imatrix.cpp:1084", sym_ty="Function", shape=ellipse];
+      n9467[label="main", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/imatrix/imatrix.cpp:1191", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_quantize {
+    label="quantize";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_quantize_cpp {
+      label="quantize.cpp";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n51714[label="load_imatrix", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/quantize/quantize.cpp:218", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_server {
+    label="server";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_server_common_h {
+      label="server-common.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n47520[label="server_tokens", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/server/server-common.h:127", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_server_http_h {
+      label="server-http.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n3313[label="common_params", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/server/server-http.h:9", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_server_task_h {
+      label="server-task.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n58666[label="server_task", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/server/server-task.h:113", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_src {
+    label="src";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_ggml_c {
+      label="ggml.c";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n96201[label="ggml_arange", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml.c:5226", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_llama_context_h {
+      label="llama-context.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n37878[label="llama_context", path="/home/yibai/llmcc/sample/repos/llama-cpp/src/llama-context.h:35", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_llama_graph_h {
+      label="llama-graph.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n33554[label="ggml_tensor", path="/home/yibai/llmcc/sample/repos/llama-cpp/src/llama-graph.h:17", sym_ty="Struct", shape=box];
+      n33555[label="llama_cparams", path="/home/yibai/llmcc/sample/repos/llama-cpp/src/llama-graph.h:19", sym_ty="Struct", shape=box];
+      n35187[label="llm_graph_input_rs", path="/home/yibai/llmcc/sample/repos/llama-cpp/src/llama-graph.h:222", sym_ty="Struct", shape=box];
+      n35847[label="llm_graph_input_attn_kv", path="/home/yibai/llmcc/sample/repos/llama-cpp/src/llama-graph.h:281", sym_ty="Struct", shape=box];
+      n36645[label="llm_graph_params", path="/home/yibai/llmcc/sample/repos/llama-cpp/src/llama-graph.h:427", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_llama_hparams_h {
+      label="llama-hparams.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n5909[label="llama_swa_type", path="/home/yibai/llmcc/sample/repos/llama-cpp/src/llama-hparams.h:18", sym_ty="Enum", shape=box];
+      n5928[label="llama_hparams", path="/home/yibai/llmcc/sample/repos/llama-cpp/src/llama-hparams.h:35", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_llama_io_h {
+      label="llama-io.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n28350[label="ggml_tensor", path="/home/yibai/llmcc/sample/repos/llama-cpp/src/llama-io.h:7", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_llama_kv_cache_h {
+      label="llama-kv-cache.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n53904[label="llama_kv_cache", path="/home/yibai/llmcc/sample/repos/llama-cpp/src/llama-kv-cache.h:20", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_llama_memory_h {
+      label="llama-memory.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n20855[label="llama_memory_i", path="/home/yibai/llmcc/sample/repos/llama-cpp/src/llama-memory.h:68", sym_ty="Struct", shape=box];
+      n20179[label="llama_ubatch", path="/home/yibai/llmcc/sample/repos/llama-cpp/src/llama-memory.h:9", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+
+  n3313 -> n9351 [from="input", to="func"];
+  n5151 -> n5735 [from="field_type", to="struct"];
+  n5294 -> n5735 [from="field_type", to="struct"];
+  n5909 -> n5928 [from="field_type", to="struct"];
+  n5909 -> n53904 [from="field_type", to="struct"];
+  n5928 -> n35847 [from="field_type", to="struct"];
+  n5928 -> n36645 [from="field_type", to="struct"];
+  n7469 -> n39367 [from="input", to="func"];
+  n9351 -> n51714 [from="caller", to="callee"];
+  n9467 -> n51714 [from="caller", to="callee"];
+  n12153 -> n99127 [from="caller", to="callee"];
+  n17817 -> n8265 [from="caller", to="callee"];
+  n20179 -> n36645 [from="field_type", to="struct"];
+  n20855 -> n53904 [from="base", to="extends"];
+  n23358 -> n23204 [from="caller", to="callee"];
+  n28350 -> n53904 [from="field_type", to="struct"];
+  n33554 -> n35187 [from="field_type", to="struct"];
+  n33554 -> n35847 [from="field_type", to="struct"];
+  n33555 -> n35847 [from="field_type", to="struct"];
+  n33555 -> n36645 [from="field_type", to="struct"];
+  n36645 -> n37878 [from="field_type", to="struct"];
+  n38861 -> n5294 [from="field_type", to="struct"];
+  n39367 -> n9351 [from="caller", to="callee"];
+  n40185 -> n23204 [from="input", to="func"];
+  n40185 -> n23235 [from="input", to="func"];
+  n40185 -> n23358 [from="input", to="func"];
+  n42953 -> n25684 [from="caller", to="callee"];
+  n43444 -> n10960 [from="caller", to="callee"];
+  n44549 -> n10960 [from="caller", to="callee"];
+  n47520 -> n58666 [from="field_type", to="struct"];
+  n75195 -> n23204 [from="input", to="func"];
+  n75195 -> n23235 [from="input", to="func"];
+  n75195 -> n23358 [from="input", to="func"];
+  n75195 -> n36395 [from="input", to="func"];
+  n77562 -> n82299 [from="input", to="func"];
+  n77562 -> n82636 [from="input", to="func"];
+  n81212 -> n39367 [from="input", to="func"];
+  n96201 -> n25704 [from="caller", to="callee"];
+  n96201 -> n25706 [from="caller", to="callee"];
+}

@@ -1,0 +1,22 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  mod_spdlog_details[label="spdlog::details", path="/home/yibai/llmcc/sample/repos/spdlog/include/spdlog/details"];
+  mod_spdlog_fmt[label="spdlog::fmt", path="/home/yibai/llmcc/sample/repos/spdlog/include/spdlog/fmt"];
+  mod_spdlog_sinks[label="spdlog::sinks", path="/home/yibai/llmcc/sample/repos/spdlog/include/spdlog/sinks"];
+  mod_spdlog_spdlog[label="spdlog::spdlog", path="/home/yibai/llmcc/sample/repos/spdlog/include/spdlog"];
+
+  mod_spdlog_details -> mod_spdlog_fmt;
+  mod_spdlog_fmt -> mod_spdlog_spdlog;
+  mod_spdlog_sinks -> mod_spdlog_spdlog;
+}

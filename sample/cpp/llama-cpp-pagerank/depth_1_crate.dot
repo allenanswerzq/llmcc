@@ -1,0 +1,40 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  crate_common[label="common", path="/home/yibai/llmcc/sample/repos/llama-cpp/common"];
+  crate_cvector_generator[label="cvector-generator", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/cvector-generator"];
+  crate_ggml[label="ggml", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml"];
+  crate_ggml_cann[label="ggml-cann", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-cann"];
+  crate_ggml_cpu[label="ggml-cpu", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-cpu"];
+  crate_ggml_metal[label="ggml-metal", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-metal"];
+  crate_ggml_sycl[label="ggml-sycl", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl"];
+  crate_mtmd[label="mtmd", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/mtmd"];
+  crate_server[label="server", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/server"];
+  crate_src[label="src", path="/home/yibai/llmcc/sample/repos/llama-cpp/src"];
+
+  crate_common -> crate_cvector_generator;
+  crate_common -> crate_ggml_sycl;
+  crate_common -> crate_src;
+  crate_ggml_cann -> crate_common;
+  crate_ggml_cann -> crate_src;
+  crate_ggml_cpu -> crate_ggml_sycl;
+  crate_ggml_metal -> crate_ggml_sycl;
+  crate_ggml_sycl -> crate_ggml;
+  crate_mtmd -> crate_common;
+  crate_mtmd -> crate_ggml_sycl;
+  crate_server -> crate_common;
+  crate_src -> crate_common;
+  crate_src -> crate_cvector_generator;
+  crate_src -> crate_ggml_metal;
+  crate_src -> crate_ggml_sycl;
+}

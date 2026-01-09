@@ -8,32 +8,42 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
+  subgraph cluster_Access {
+    label="Access";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_ContextAccess_cpp {
+      label="ContextAccess.cpp";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n258527[label="getDatabase", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Access/ContextAccess.cpp:82", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
   subgraph cluster_AggregateFunctions {
     label="AggregateFunctions";
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_AggregateFunctionAvg_cpp {
-      label="AggregateFunctionAvg.cpp";
+    subgraph cluster_AggregateFunctionSum_h {
+      label="AggregateFunctionSum.h";
       style=rounded;
             bgcolor="#fafafa";
 
-      n45897[label="t", path="/home/yibai/llmcc/sample/repos/clickhouse/src/AggregateFunctions/AggregateFunctionAvg.cpp:20", sym_ty="Function", shape=ellipse];
+      n222229[label="read", path="/home/yibai/llmcc/sample/repos/clickhouse/src/AggregateFunctions/AggregateFunctionSum.h:277", sym_ty="Function", shape=ellipse];
+      n222218[label="write", path="/home/yibai/llmcc/sample/repos/clickhouse/src/AggregateFunctions/AggregateFunctionSum.h:51", sym_ty="Function", shape=ellipse];
     }
 
-  }
-
-  subgraph cluster_Backups {
-    label="Backups";
-    style=rounded;
-        bgcolor="#f8f8f8";
-
-    subgraph cluster_BackupIO_AzureBlobStorage_cpp {
-      label="BackupIO_AzureBlobStorage.cpp";
+    subgraph cluster_AggregateFunctionTTest_h {
+      label="AggregateFunctionTTest.h";
       style=rounded;
             bgcolor="#fafafa";
 
-      n185827[label="object", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Backups/BackupIO_AzureBlobStorage.cpp:277", sym_ty="Function", shape=ellipse];
+      n414498[label="ReadBuffer", path="/home/yibai/llmcc/sample/repos/clickhouse/src/AggregateFunctions/AggregateFunctionTTest.h:29", sym_ty="Struct", shape=box];
+      n414502[label="WriteBuffer", path="/home/yibai/llmcc/sample/repos/clickhouse/src/AggregateFunctions/AggregateFunctionTTest.h:30", sym_ty="Struct", shape=box];
     }
 
   }
@@ -48,13 +58,28 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
+      subgraph cluster_HugeInt_h {
+        label="HugeInt.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n426675[label="HugeInt", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Client/BuzzHouse/Utils/HugeInt.h:14", sym_ty="Struct", shape=box];
+      }
+
       subgraph cluster_RandomGenerator_h {
         label="RandomGenerator.h";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n306044[label="RandomGenerator", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Client/BuzzHouse/Generator/RandomGenerator.h:16", sym_ty="Struct", shape=box];
-        n306962[label="d", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Client/BuzzHouse/Generator/RandomGenerator.h:232", sym_ty="Function", shape=ellipse];
+        n577593[label="RandomGenerator", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Client/BuzzHouse/Generator/RandomGenerator.h:16", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_SQLCatalog_h {
+        label="SQLCatalog.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n555574[label="SQLTable", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Client/BuzzHouse/Generator/SQLCatalog.h:381", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_SQLTypes_h {
@@ -62,8 +87,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n69788[label="DecimalType", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Client/BuzzHouse/Generator/SQLTypes.h:195", sym_ty="Struct", shape=box];
-        n70343[label="TupleType", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Client/BuzzHouse/Generator/SQLTypes.h:513", sym_ty="Struct", shape=box];
+        n65826[label="SQLType", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Client/BuzzHouse/Generator/SQLTypes.h:42", sym_ty="Struct", shape=box];
+        n66591[label="TupleType", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Client/BuzzHouse/Generator/SQLTypes.h:513", sym_ty="Struct", shape=box];
       }
 
     }
@@ -80,15 +105,15 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n77827[label="get", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/CurrentMetrics.h:46", sym_ty="Function", shape=ellipse];
+      n67704[label="get", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/CurrentMetrics.h:46", sym_ty="Function", shape=ellipse];
     }
 
-    subgraph cluster_DateLUT_cpp {
-      label="DateLUT.cpp";
+    subgraph cluster_DimensionalMetrics_h {
+      label="DimensionalMetrics.h";
       style=rounded;
             bgcolor="#fafafa";
 
-      n286783[label="stream", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/DateLUT.cpp:29", sym_ty="Function", shape=ellipse];
+      n140649[label="set", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/DimensionalMetrics.h:78", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_ErrorCodes_h {
@@ -96,7 +121,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n545613[label="end", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/ErrorCodes.h:72", sym_ty="Function", shape=ellipse];
+      n374843[label="end", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/ErrorCodes.h:72", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_SettingsChanges_cpp {
@@ -104,23 +129,53 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n381069[label="find", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/SettingsChanges.cpp:15", sym_ty="Function", shape=ellipse];
+      n420969[label="find", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/SettingsChanges.cpp:15", sym_ty="Function", shape=ellipse];
     }
 
-    subgraph cluster_getHashOfLoadedBinary_cpp {
-      label="getHashOfLoadedBinary.cpp";
+    subgraph cluster_XMLUtils_h {
+      label="XMLUtils.h";
       style=rounded;
             bgcolor="#fafafa";
 
-      n382689[label="callback", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/getHashOfLoadedBinary.cpp:10", sym_ty="Function", shape=ellipse];
+      n225545[label="getString", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/XMLUtils.h:26", sym_ty="Function", shape=ellipse];
     }
 
-    subgraph cluster_parseGlobs_cpp {
-      label="parseGlobs.cpp";
+    subgraph cluster_filesystemHelpers_h {
+      label="filesystemHelpers.h";
       style=rounded;
             bgcolor="#fafafa";
 
-      n316658[label="input", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/parseGlobs.cpp:74", sym_ty="Function", shape=ellipse];
+      n331551[label="exists", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/filesystemHelpers.h:89", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_Compression {
+    label="Compression";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_CompressionCodecT64_cpp {
+      label="CompressionCodecT64.cpp";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n462389[label="load", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Compression/CompressionCodecT64.cpp:338", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_Coordination {
+    label="Coordination";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_FourLetterCommand_cpp {
+      label="FourLetterCommand.cpp";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n98845[label="print", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Coordination/FourLetterCommand.cpp:295", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -130,45 +185,20 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_MySQL {
-      label="MySQL";
-      style=rounded;
-            bgcolor="#f5f5f5";
-
-      subgraph cluster_Authentication_cpp {
-        label="Authentication.cpp";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n287141[label="data", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Core/MySQL/Authentication.cpp:151", sym_ty="Function", shape=ellipse];
-      }
-
-    }
-
     subgraph cluster_NamesAndAliases_h {
       label="NamesAndAliases.h";
       style=rounded;
             bgcolor="#fafafa";
 
-      n518651[label="get", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Core/NamesAndAliases.h:33", sym_ty="Function", shape=ellipse];
-      n518663[label="tuple_size", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Core/NamesAndAliases.h:49", sym_ty="Struct", shape=box];
+      n370173[label="get", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Core/NamesAndAliases.h:33", sym_ty="Function", shape=ellipse];
     }
 
-  }
-
-  subgraph cluster_Daemon {
-    label="Daemon";
-    style=rounded;
-        bgcolor="#f8f8f8";
-
-    subgraph cluster_GraphiteWriter_h {
-      label="GraphiteWriter.h";
+    subgraph cluster_NamesAndTypes_h {
+      label="NamesAndTypes.h";
       style=rounded;
             bgcolor="#fafafa";
 
-      n120966[label="socket_address", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Daemon/GraphiteWriter.h:44", sym_ty="Function", shape=ellipse];
-      n120972[label="socket", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Daemon/GraphiteWriter.h:45", sym_ty="Function", shape=ellipse];
-      n120976[label="str", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Daemon/GraphiteWriter.h:47", sym_ty="Function", shape=ellipse];
+      n37990[label="NameAndTypePair", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Core/NamesAndTypes.h:22", sym_ty="Struct", shape=box];
     }
 
   }
@@ -178,51 +208,34 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_DataTypeDecimalBase_h {
-      label="DataTypeDecimalBase.h";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n13605[label="DataTypePtr", path="/home/yibai/llmcc/sample/repos/clickhouse/src/DataTypes/DataTypeDecimalBase.h:171", sym_ty="Function", shape=ellipse];
-    }
-
     subgraph cluster_DataTypeNested_cpp {
       label="DataTypeNested.cpp";
       style=rounded;
             bgcolor="#fafafa";
 
-      n374893[label="create", path="/home/yibai/llmcc/sample/repos/clickhouse/src/DataTypes/DataTypeNested.cpp:35", sym_ty="Function", shape=ellipse];
-    }
-
-    subgraph cluster_Native_cpp {
-      label="Native.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n348851[label="data_type", path="/home/yibai/llmcc/sample/repos/clickhouse/src/DataTypes/Native.cpp:58", sym_ty="Function", shape=ellipse];
-    }
-
-    subgraph cluster_getLeastSupertype_cpp {
-      label="getLeastSupertype.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n421357[label="DataTypes", path="/home/yibai/llmcc/sample/repos/clickhouse/src/DataTypes/getLeastSupertype.cpp:780", sym_ty="Function", shape=ellipse];
+      n411531[label="create", path="/home/yibai/llmcc/sample/repos/clickhouse/src/DataTypes/DataTypeNested.cpp:35", sym_ty="Function", shape=ellipse];
     }
 
   }
 
-  subgraph cluster_Embedded {
-    label="Embedded";
+  subgraph cluster_Disks {
+    label="Disks";
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_RegionsHierarchy_cpp {
-      label="RegionsHierarchy.cpp";
+    subgraph cluster_DiskObjectStorage {
+      label="DiskObjectStorage";
       style=rounded;
-            bgcolor="#fafafa";
+            bgcolor="#f5f5f5";
 
-      n121472[label="types", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Dictionaries/Embedded/RegionsHierarchy.cpp:45", sym_ty="Function", shape=ellipse];
+      subgraph cluster_StoredObject_h {
+        label="StoredObject.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n181537[label="StoredObject", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Disks/DiskObjectStorage/ObjectStorages/StoredObject.h:16", sym_ty="Struct", shape=box];
+      }
+
     }
 
   }
@@ -232,12 +245,12 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_Logger_cpp {
-      label="Logger.cpp";
+    subgraph cluster_Hash_cpp {
+      label="Hash.cpp";
       style=rounded;
             bgcolor="#fafafa";
 
-      n84623[label="text", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/src/Logger.cpp:133", sym_ty="Function", shape=ellipse];
+      n298997[label="hash", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/src/Hash.cpp:21", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_Poco {
@@ -245,36 +258,13 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
-      subgraph cluster_BinaryWriter_h {
-        label="BinaryWriter.h";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n357853[label="flush", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/BinaryWriter.h:145", sym_ty="Function", shape=ellipse];
-      }
-
       subgraph cluster_Channel_h {
         label="Channel.h";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n527156[label="Message", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/Channel.h:31", sym_ty="Struct", shape=box];
-      }
-
-      subgraph cluster_Checksum_h {
-        label="Checksum.h";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n374602[label="type", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/Checksum.h:70", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_CompressedLogFile_h {
-        label="CompressedLogFile.h";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n353143[label="write", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/CompressedLogFile.h:42", sym_ty="Function", shape=ellipse];
+        n106656[label="Message", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/Channel.h:31", sym_ty="Struct", shape=box];
+        n108972[label="log", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/Channel.h:55", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_DateTime_h {
@@ -282,49 +272,23 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n195192[label="second", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/DateTime.h:192", sym_ty="Function", shape=ellipse];
-        n196144[label="isValid", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/DateTime.h:240", sym_ty="Function", shape=ellipse];
+        n584312[label="DateTime", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/DateTime.h:30", sym_ty="Function", shape=ellipse];
       }
 
-      subgraph cluster_EventChannel_h {
-        label="EventChannel.h";
+      subgraph cluster_NumericString_h {
+        label="NumericString.h";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n371116[label="log", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/EventChannel.h:43", sym_ty="Function", shape=ellipse];
+        n223039[label="Ptr", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/NumericString.h:217", sym_ty="Struct", shape=box];
       }
 
-      subgraph cluster_HashMap_h {
-        label="HashMap.h";
+      subgraph cluster_Path_h {
+        label="Path.h";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n183729[label="value", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/HashMap.h:167", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_LogFile_h {
-        label="LogFile.h";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n511264[label="size", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/LogFile.h:52", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_Notification_h {
-        label="Notification.h";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n365899[label="name", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/Notification.h:44", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_RandomStream_h {
-        label="RandomStream.h";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n503807[label="Foundation_API", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/RandomStream.h:45", sym_ty="Struct", shape=box];
-        n503806[label="std", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/RandomStream.h:45", sym_ty="Function", shape=ellipse];
+        n444010[label="Path", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/Path.h:29", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_Timespan_h {
@@ -332,7 +296,26 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n186494[label="Timespan", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/Timespan.h:212", sym_ty="Function", shape=ellipse];
+        n178731[label="Foundation_API", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/Timespan.h:29", sym_ty="Struct", shape=box];
+        n178730[label="Timespan", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/Timespan.h:29", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_Timestamp_h {
+        label="Timestamp.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n465354[label="Foundation_API", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/Timestamp.h:31", sym_ty="Struct", shape=box];
+        n465350[label="Timestamp", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/Timestamp.h:31", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_UUID_h {
+        label="UUID.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n489728[label="Foundation_API", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/UUID.h:30", sym_ty="Struct", shape=box];
+        n489727[label="UUID", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/UUID.h:30", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_Var_h {
@@ -340,11 +323,25 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n588238[label="size", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/Dynamic/Var.h:526", sym_ty="Function", shape=ellipse];
-        n589297[label="val", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/Dynamic/Var.h:647", sym_ty="Function", shape=ellipse];
-        n589630[label="Var", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/Dynamic/Var.h:894", sym_ty="Function", shape=ellipse];
+        n467503[label="Var", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/Dynamic/Var.h:39", sym_ty="Function", shape=ellipse];
       }
 
+      subgraph cluster_VarHolder_h {
+        label="VarHolder.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n114600[label="VarHolder", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco/Dynamic/VarHolder.h:106", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_String_cpp {
+      label="String.cpp";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n507646[label="remove", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/src/String.cpp:155", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -354,12 +351,12 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_FunctionsComparison_h {
-      label="FunctionsComparison.h";
+    subgraph cluster_FunctionsRandom_cpp {
+      label="FunctionsRandom.cpp";
       style=rounded;
             bgcolor="#fafafa";
 
-      n569944[label="x", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Functions/FunctionsComparison.h:1043", sym_ty="Function", shape=ellipse];
+      n298259[label="seed", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Functions/FunctionsRandom.cpp:49", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_hasAnyAllTokens_cpp {
@@ -367,48 +364,23 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n62933[label="execute", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Functions/hasAnyAllTokens.cpp:319", sym_ty="Function", shape=ellipse];
-    }
-
-    subgraph cluster_max2_cpp {
-      label="max2.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n509726[label="max", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Functions/max2.cpp:14", sym_ty="Function", shape=ellipse];
-    }
-
-    subgraph cluster_min2_cpp {
-      label="min2.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n484244[label="min", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Functions/min2.cpp:15", sym_ty="Function", shape=ellipse];
-    }
-
-    subgraph cluster_partitionId_cpp {
-      label="partitionId.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n164348[label="sample_block", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Functions/partitionId.cpp:50", sym_ty="Function", shape=ellipse];
-      n164352[label="row", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Functions/partitionId.cpp:56", sym_ty="Function", shape=ellipse];
+      n60011[label="execute", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Functions/hasAnyAllTokens.cpp:319", sym_ty="Function", shape=ellipse];
     }
 
   }
 
-  subgraph cluster_IO {
-    label="IO";
+  subgraph cluster_GatherUtils {
+    label="GatherUtils";
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_ReadHelpers_h {
-      label="ReadHelpers.h";
+    subgraph cluster_push_cpp {
+      label="push.cpp";
       style=rounded;
             bgcolor="#fafafa";
 
-      n581509[label="buf", path="/home/yibai/llmcc/sample/repos/clickhouse/src/IO/ReadHelpers.h:1953", sym_ty="Function", shape=ellipse];
-      n582361[label="buf", path="/home/yibai/llmcc/sample/repos/clickhouse/src/IO/ReadHelpers.h:2032", sym_ty="Function", shape=ellipse];
+      n206162[label="ArrayPush", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Functions/GatherUtils/push.cpp:11", sym_ty="Struct", shape=box];
+      n206195[label="push", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Functions/GatherUtils/push.cpp:26", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -418,28 +390,12 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_CapnProtoRowInputFormat_cpp {
-      label="CapnProtoRowInputFormat.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n195100[label="msg", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Processors/Formats/Impl/CapnProtoRowInputFormat.cpp:100", sym_ty="Function", shape=ellipse];
-    }
-
     subgraph cluster_NpyRowInputFormat_cpp {
       label="NpyRowInputFormat.cpp";
       style=rounded;
             bgcolor="#fafafa";
 
-      n224648[label="getNestedType", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Processors/Formats/Impl/NpyRowInputFormat.cpp:245", sym_ty="Function", shape=ellipse];
-    }
-
-    subgraph cluster_ValuesBlockInputFormat_cpp {
-      label="ValuesBlockInputFormat.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n272339[label="type", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Processors/Formats/Impl/ValuesBlockInputFormat.cpp:339", sym_ty="Function", shape=ellipse];
+      n99148[label="getNestedType", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Processors/Formats/Impl/NpyRowInputFormat.cpp:245", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -449,20 +405,12 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_ActionsDAG_cpp {
-      label="ActionsDAG.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n620629[label="arguments", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters/ActionsDAG.cpp:66", sym_ty="Function", shape=ellipse];
-    }
-
     subgraph cluster_ClusterDiscovery_cpp {
       label="ClusterDiscovery.cpp";
       style=rounded;
             bgcolor="#fafafa";
 
-      n155586[label="contains", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters/ClusterDiscovery.cpp:411", sym_ty="Function", shape=ellipse];
+      n499355[label="contains", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters/ClusterDiscovery.cpp:411", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_ConcurrentHashJoin_cpp {
@@ -470,7 +418,15 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n433106[label="getData", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters/ConcurrentHashJoin.cpp:107", sym_ty="Function", shape=ellipse];
+      n455462[label="getData", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters/ConcurrentHashJoin.cpp:107", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_Context_h {
+      label="Context.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n175442[label="Field", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters/Context.h:68", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_DatabaseCatalog_h {
@@ -478,54 +434,15 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n292301[label="DatabaseCatalog", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters/DatabaseCatalog.h:133", sym_ty="Struct", shape=box];
+      n56537[label="DatabaseCatalog", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters/DatabaseCatalog.h:133", sym_ty="Struct", shape=box];
     }
 
-    subgraph cluster_JIT {
-      label="JIT";
-      style=rounded;
-            bgcolor="#f5f5f5";
-
-      subgraph cluster_compileFunction_cpp {
-        label="compileFunction.cpp";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n456886[label="b", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters/JIT/compileFunction.cpp:425", sym_ty="Function", shape=ellipse];
-      }
-
-    }
-
-    subgraph cluster_JoinExpressionActions_h {
-      label="JoinExpressionActions.h";
+    subgraph cluster_FillingRow_h {
+      label="FillingRow.h";
       style=rounded;
             bgcolor="#fafafa";
 
-      n252858[label="std", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters/JoinExpressionActions.h:255", sym_ty="Struct", shape=box];
-    }
-
-    subgraph cluster_JoinUtils_cpp {
-      label="JoinUtils.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n147258[label="column_name", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters/JoinUtils.cpp:714", sym_ty="Function", shape=ellipse];
-    }
-
-    subgraph cluster_PredicateExpressionsOptimizer_cpp {
-      label="PredicateExpressionsOptimizer.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n72131[label="data", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters/PredicateExpressionsOptimizer.cpp:168", sym_ty="Function", shape=ellipse];
-    }
-
-    subgraph cluster_formatWithPossiblyHidingSecrets_h {
-      label="formatWithPossiblyHidingSecrets.h";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n452134[label="format", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters/formatWithPossiblyHidingSecrets.h:19", sym_ty="Function", shape=ellipse];
+      n370473[label="equals", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters/FillingRow.h:10", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -535,27 +452,14 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_Poco {
-      label="Poco";
+    subgraph cluster_pdjson_c {
+      label="pdjson.c";
       style=rounded;
-            bgcolor="#f5f5f5";
+            bgcolor="#fafafa";
 
-      subgraph cluster_Handler_h {
-        label="Handler.h";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n75250[label="key", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/JSON/include/Poco/JSON/Handler.h:64", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_PrintHandler_h {
-        label="PrintHandler.h";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n412737[label="array", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/JSON/include/Poco/JSON/PrintHandler.h:110", sym_ty="Function", shape=ellipse];
-      }
-
+      n133174[label="next", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/JSON/src/pdjson.c:483", sym_ty="Function", shape=ellipse];
+      n132186[label="json_type", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/JSON/src/pdjson.c:96", sym_ty="Enum", shape=box];
+      n132184[label="pop", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/JSON/src/pdjson.c:96", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -565,51 +469,27 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_HTTPServerConnection_cpp {
-      label="HTTPServerConnection.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n237839[label="response", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Net/src/HTTPServerConnection.cpp:143", sym_ty="Function", shape=ellipse];
-      n237746[label="session", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Net/src/HTTPServerConnection.cpp:60", sym_ty="Function", shape=ellipse];
-    }
-
     subgraph cluster_Poco {
       label="Poco";
       style=rounded;
             bgcolor="#f5f5f5";
 
-      subgraph cluster_HTTPBasicCredentials_h {
-        label="HTTPBasicCredentials.h";
+      subgraph cluster_HTTPServerRequest_h {
+        label="HTTPServerRequest.h";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n491214[label="empty", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Net/include/Poco/Net/HTTPBasicCredentials.h:75", sym_ty="Function", shape=ellipse];
+        n391946[label="HTTPRequest", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Net/include/Poco/Net/HTTPServerRequest.h:38", sym_ty="Function", shape=ellipse];
+        n391947[label="Net_API", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Net/include/Poco/Net/HTTPServerRequest.h:38", sym_ty="Struct", shape=box];
       }
 
-      subgraph cluster_Socket_h {
-        label="Socket.h";
+      subgraph cluster_SocketAddress_h {
+        label="SocketAddress.h";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n379577[label="select", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Net/include/Poco/Net/Socket.h:103", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_SocketAddressImpl_h {
-        label="SocketAddressImpl.h";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n307172[label="host", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Net/include/Poco/Net/SocketAddressImpl.h:193", sym_ty="Function", shape=ellipse];
-        n307174[label="port", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Net/include/Poco/Net/SocketAddressImpl.h:194", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_SocketNotification_h {
-        label="SocketNotification.h";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n322435[label="socket", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Net/include/Poco/Net/SocketNotification.h:49", sym_ty="Function", shape=ellipse];
+        n561083[label="IPAddress", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Net/include/Poco/Net/SocketAddress.h:36", sym_ty="Struct", shape=box];
+        n561085[label="SocketAddress", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Net/include/Poco/Net/SocketAddress.h:39", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -626,30 +506,14 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
-      subgraph cluster_HTTPSClientSession_h {
-        label="HTTPSClientSession.h";
+      subgraph cluster_SSLManager_h {
+        label="SSLManager.h";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n16991[label="abort", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/NetSSL_OpenSSL/include/Poco/Net/HTTPSClientSession.h:146", sym_ty="Function", shape=ellipse];
+        n110301[label="SSLManager", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/NetSSL_OpenSSL/include/Poco/Net/SSLManager.h:44", sym_ty="Function", shape=ellipse];
       }
 
-      subgraph cluster_SecureServerSocketImpl_h {
-        label="SecureServerSocketImpl.h";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n62860[label="context", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/NetSSL_OpenSSL/include/Poco/Net/SecureServerSocketImpl.h:120", sym_ty="Function", shape=ellipse];
-      }
-
-    }
-
-    subgraph cluster_SecureServerSocket_cpp {
-      label="SecureServerSocket.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n51668[label="address", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/NetSSL_OpenSSL/src/SecureServerSocket.cpp:78", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -664,23 +528,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n4459[label="getFunctionName", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Parsers/ASTFunction.h:122", sym_ty="Function", shape=ellipse];
-    }
-
-    subgraph cluster_ASTViewTargets_h {
-      label="ASTViewTargets.h";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n31232[label="Keyword", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Parsers/ASTViewTargets.h:10", sym_ty="Enum", shape=box];
-    }
-
-    subgraph cluster_ExpressionElementParsers_cpp {
-      label="ExpressionElementParsers.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n569517[label="first", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Parsers/ExpressionElementParsers.cpp:2248", sym_ty="Function", shape=ellipse];
+      n1068[label="getFunctionName", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Parsers/ASTFunction.h:122", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_IAST_erase_h {
@@ -688,30 +536,15 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n422690[label="erase", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Parsers/IAST_erase.h:10", sym_ty="Function", shape=ellipse];
+      n261591[label="erase", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Parsers/IAST_erase.h:10", sym_ty="Function", shape=ellipse];
     }
 
-    subgraph cluster_IParser_cpp {
-      label="IParser.cpp";
+    subgraph cluster_IParser_h {
+      label="IParser.h";
       style=rounded;
             bgcolor="#fafafa";
 
-      n498680[label="Expected", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Parsers/IParser.cpp:44", sym_ty="Function", shape=ellipse];
-    }
-
-    subgraph cluster_Kusto {
-      label="Kusto";
-      style=rounded;
-            bgcolor="#f5f5f5";
-
-      subgraph cluster_parseKQLQuery_cpp {
-        label="parseKQLQuery.cpp";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n554510[label="tokens", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Parsers/Kusto/parseKQLQuery.cpp:326", sym_ty="Function", shape=ellipse];
-      }
-
+      n484450[label="Expected", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Parsers/IParser.h:57", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_LexerStandalone_h {
@@ -719,37 +552,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n90714[label="string_view", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Parsers/LexerStandalone.h:99", sym_ty="Struct", shape=box];
-    }
-
-    subgraph cluster_parseIdentifierOrStringLiteral_cpp {
-      label="parseIdentifierOrStringLiteral.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n526400[label="pos", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Parsers/parseIdentifierOrStringLiteral.cpp:87", sym_ty="Function", shape=ellipse];
-    }
-
-  }
-
-  subgraph cluster_Processors {
-    label="Processors";
-    style=rounded;
-        bgcolor="#f8f8f8";
-
-    subgraph cluster_Merges {
-      label="Merges";
-      style=rounded;
-            bgcolor="#f5f5f5";
-
-      subgraph cluster_SummingSortedAlgorithm_cpp {
-        label="SummingSortedAlgorithm.cpp";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n356427[label="res_columns", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Processors/Merges/Algorithms/SummingSortedAlgorithm.cpp:495", sym_ty="Function", shape=ellipse];
-      }
-
+      n80516[label="string_view", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Parsers/LexerStandalone.h:99", sym_ty="Struct", shape=box];
     }
 
   }
@@ -759,12 +562,12 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_SerializationCustomSimpleText_cpp {
-      label="SerializationCustomSimpleText.cpp";
+    subgraph cluster_ISerialization_h {
+      label="ISerialization.h";
       style=rounded;
             bgcolor="#fafafa";
 
-      n63129[label="istr", path="/home/yibai/llmcc/sample/repos/clickhouse/src/DataTypes/Serializations/SerializationCustomSimpleText.cpp:29", sym_ty="Function", shape=ellipse];
+      n403441[label="ISerialization", path="/home/yibai/llmcc/sample/repos/clickhouse/src/DataTypes/Serializations/ISerialization.h:58", sym_ty="Struct", shape=box];
     }
 
   }
@@ -774,20 +577,12 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_HTTP {
-      label="HTTP";
+    subgraph cluster_HTTPHandlerRequestFilter_h {
+      label="HTTPHandlerRequestFilter.h";
       style=rounded;
-            bgcolor="#f5f5f5";
+            bgcolor="#fafafa";
 
-      subgraph cluster_HTTPServerConnection_cpp {
-        label="HTTPServerConnection.cpp";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n291457[label="session", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Server/HTTP/HTTPServerConnection.cpp:40", sym_ty="Function", shape=ellipse];
-        n291544[label="request", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Server/HTTP/HTTPServerConnection.cpp:70", sym_ty="Function", shape=ellipse];
-      }
-
+      n193047[label="getExpression", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Server/HTTPHandlerRequestFilter.h:54", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -797,12 +592,12 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_AlterCommands_cpp {
-      label="AlterCommands.cpp";
+    subgraph cluster_ConstraintsDescription_h {
+      label="ConstraintsDescription.h";
       style=rounded;
             bgcolor="#fafafa";
 
-      n559993[label="column", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Storages/AlterCommands.cpp:507", sym_ty="Function", shape=ellipse];
+      n324972[label="ConstraintsDescription", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Storages/ConstraintsDescription.h:24", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_Kafka {
@@ -815,9 +610,17 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n354285[label="Block", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Storages/Kafka/KafkaProducer.h:16", sym_ty="Struct", shape=box];
+        n77188[label="Block", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Storages/Kafka/KafkaProducer.h:16", sym_ty="Struct", shape=box];
       }
 
+    }
+
+    subgraph cluster_KeyDescription_h {
+      label="KeyDescription.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n369510[label="KeyDescription", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Storages/KeyDescription.h:17", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_MergeTree {
@@ -825,20 +628,12 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
-      subgraph cluster_MergeTreeIndexBloomFilterText_cpp {
-        label="MergeTreeIndexBloomFilterText.cpp";
+      subgraph cluster_MarkRange_h {
+        label="MarkRange.h";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n281871[label="data_type", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Storages/MergeTree/MergeTreeIndexBloomFilterText.cpp:812", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_MergeTreeIndexTextPreprocessor_cpp {
-        label="MergeTreeIndexTextPreprocessor.cpp";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n98268[label="field", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Storages/MergeTree/MergeTreeIndexTextPreprocessor.cpp:115", sym_ty="Function", shape=ellipse];
+        n136599[label="MarkRanges", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Storages/MergeTree/MarkRange.h:33", sym_ty="Struct", shape=box];
       }
 
     }
@@ -853,62 +648,45 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n59995[label="getSampleBlock", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Storages/NATS/NATSSource.cpp:26", sym_ty="Function", shape=ellipse];
+        n2128[label="getSampleBlock", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Storages/NATS/NATSSource.cpp:26", sym_ty="Function", shape=ellipse];
       }
 
     }
 
-  }
-
-  subgraph cluster_System {
-    label="System";
-    style=rounded;
-        bgcolor="#f8f8f8";
-
-    subgraph cluster_StorageSystemFilesystemCacheSettings_cpp {
-      label="StorageSystemFilesystemCacheSettings.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n484209[label="params", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Storages/System/StorageSystemFilesystemCacheSettings.cpp:40", sym_ty="Function", shape=ellipse];
-    }
-
-  }
-
-  subgraph cluster_Util {
-    label="Util";
-    style=rounded;
-        bgcolor="#f8f8f8";
-
-    subgraph cluster_Application_cpp {
-      label="Application.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n24800[label="path", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Util/src/Application.cpp:403", sym_ty="Function", shape=ellipse];
-    }
-
-    subgraph cluster_FilesystemConfiguration_cpp {
-      label="FilesystemConfiguration.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n293717[label="p", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Util/src/FilesystemConfiguration.cpp:54", sym_ty="Function", shape=ellipse];
-      n293720[label="f", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Util/src/FilesystemConfiguration.cpp:56", sym_ty="Function", shape=ellipse];
-    }
-
-    subgraph cluster_Poco {
-      label="Poco";
+    subgraph cluster_ObjectStorage {
+      label="ObjectStorage";
       style=rounded;
             bgcolor="#f5f5f5";
 
-      subgraph cluster_MapConfiguration_h {
-        label="MapConfiguration.h";
+      subgraph cluster_Mutations_h {
+        label="Mutations.h";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n488190[label="begin", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Util/include/Poco/Util/MapConfiguration.h:55", sym_ty="Function", shape=ellipse];
-        n488192[label="end", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Util/include/Poco/Util/MapConfiguration.h:56", sym_ty="Function", shape=ellipse];
+        n360404[label="alter", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Storages/ObjectStorage/DataLakes/Iceberg/Mutations.h:35", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_RocksDB {
+      label="RocksDB";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_StorageEmbeddedRocksDB_cpp {
+        label="StorageEmbeddedRocksDB.cpp";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n363049[label="create", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Storages/RocksDB/StorageEmbeddedRocksDB.cpp:724", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_StorageEmbeddedRocksDB_h {
+        label="StorageEmbeddedRocksDB.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n78459[label="DB", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Storages/RocksDB/StorageEmbeddedRocksDB.h:17", sym_ty="Struct", shape=box];
       }
 
     }
@@ -920,17 +698,43 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
+    subgraph cluster_SAX {
+      label="SAX";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_DefaultHandler_h {
+        label="DefaultHandler.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n28824[label="error", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/XML/include/Poco/SAX/DefaultHandler.h:78", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_WhitespaceFilter_h {
+        label="WhitespaceFilter.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n319053[label="comment", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/XML/include/Poco/SAX/WhitespaceFilter.h:68", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
     subgraph cluster_XML {
       label="XML";
       style=rounded;
             bgcolor="#f5f5f5";
 
-      subgraph cluster_Name_h {
-        label="Name.h";
+      subgraph cluster_ValueTraits_h {
+        label="ValueTraits.h";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n343732[label="prefix", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/XML/include/Poco/XML/Name.h:104", sym_ty="Function", shape=ellipse];
+        n49652[label="XMLStreamParser", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/XML/include/Poco/XML/ValueTraits.h:37", sym_ty="Struct", shape=box];
+        n49655[label="XMLStreamSerializer", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/XML/include/Poco/XML/ValueTraits.h:38", sym_ty="Struct", shape=box];
+        n49714[label="parse", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/XML/include/Poco/XML/ValueTraits.h:62", sym_ty="Function", shape=ellipse];
+        n49726[label="serialize", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/XML/include/Poco/XML/ValueTraits.h:64", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_XMLStreamParser_h {
@@ -938,17 +742,17 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n368896[label="AttributeValueType", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/XML/include/Poco/XML/XMLStreamParser.h:121", sym_ty="Struct", shape=box];
+        n279609[label="begin", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/XML/include/Poco/XML/XMLStreamParser.h:163", sym_ty="Function", shape=ellipse];
       }
 
     }
 
-    subgraph cluster_XMLStreamParser_cpp {
-      label="XMLStreamParser.cpp";
+    subgraph cluster_xmlparse_cpp {
+      label="xmlparse.cpp";
       style=rounded;
             bgcolor="#fafafa";
 
-      n315752[label="v", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/XML/src/XMLStreamParser.cpp:770", sym_ty="Function", shape=ellipse];
+      n433480[label="getContext", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/XML/src/xmlparse.cpp:6961", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -958,29 +762,31 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_IKeeper_cpp {
-      label="IKeeper.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n167663[label="isHardwareError", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/ZooKeeper/IKeeper.cpp:115", sym_ty="Function", shape=ellipse];
-      n167671[label="isUserError", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/ZooKeeper/IKeeper.cpp:128", sym_ty="Function", shape=ellipse];
-    }
-
     subgraph cluster_IKeeper_h {
       label="IKeeper.h";
       style=rounded;
             bgcolor="#fafafa";
 
-      n176253[label="Error", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/ZooKeeper/IKeeper.h:74", sym_ty="Enum", shape=box];
+      n162084[label="Error", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/ZooKeeper/IKeeper.h:74", sym_ty="Enum", shape=box];
     }
 
-    subgraph cluster_KeeperException_cpp {
-      label="KeeperException.cpp";
+    subgraph cluster_ZooKeeperCommon_h {
+      label="ZooKeeperCommon.h";
       style=rounded;
             bgcolor="#fafafa";
 
-      n524937[label="Exception", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/ZooKeeper/KeeperException.cpp:41", sym_ty="Function", shape=ellipse];
+      n380659[label="ReadBuffer", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/ZooKeeper/ZooKeeperCommon.h:14", sym_ty="Struct", shape=box];
+      n380660[label="WriteBuffer", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/ZooKeeper/ZooKeeperCommon.h:15", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_ZooKeeperIO_h {
+      label="ZooKeeperIO.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n139051[label="read", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/ZooKeeper/ZooKeeperIO.h:100", sym_ty="Function", shape=ellipse];
+      n138944[label="write", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/ZooKeeper/ZooKeeperIO.h:39", sym_ty="Function", shape=ellipse];
+      n138991[label="size", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/ZooKeeper/ZooKeeperIO.h:66", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -990,28 +796,12 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_JSON_h {
-      label="JSON.h";
+    subgraph cluster_TypeList_h {
+      label="TypeList.h";
       style=rounded;
             bgcolor="#fafafa";
 
-      n273456[label="JSON", path="/home/yibai/llmcc/sample/repos/clickhouse/base/base/JSON.h:197", sym_ty="Struct", shape=box];
-    }
-
-    subgraph cluster_int8_to_string_cpp {
-      label="int8_to_string.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n461965[label="to_string", path="/home/yibai/llmcc/sample/repos/clickhouse/base/base/int8_to_string.cpp:5", sym_ty="Function", shape=ellipse];
-    }
-
-    subgraph cluster_libcpp_verbose_abort_cpp {
-      label="libcpp_verbose_abort.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n430731[label="std", path="/home/yibai/llmcc/sample/repos/clickhouse/base/base/libcpp_verbose_abort.cpp:5", sym_ty="Function", shape=ellipse];
+      n150774[label="map", path="/home/yibai/llmcc/sample/repos/clickhouse/base/base/TypeList.h:24", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_range_h {
@@ -1019,30 +809,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n355677[label="range", path="/home/yibai/llmcc/sample/repos/clickhouse/base/base/range.h:53", sym_ty="Function", shape=ellipse];
-    }
-
-  }
-
-  subgraph cluster_fuzzers {
-    label="fuzzers";
-    style=rounded;
-        bgcolor="#f8f8f8";
-
-    subgraph cluster_encrypted_decompress_fuzzer_cpp {
-      label="encrypted_decompress_fuzzer.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n89934[label="generator", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Compression/fuzzers/encrypted_decompress_fuzzer.cpp:304", sym_ty="Function", shape=ellipse];
-    }
-
-    subgraph cluster_names_and_types_fuzzer_cpp {
-      label="names_and_types_fuzzer.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n446533[label="in", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Core/fuzzers/names_and_types_fuzzer.cpp:9", sym_ty="Function", shape=ellipse];
+      n395048[label="range", path="/home/yibai/llmcc/sample/repos/clickhouse/base/base/range.h:53", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -1062,24 +829,40 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n46649[label="child", path="/home/yibai/llmcc/sample/repos/clickhouse/base/glibc-compatibility/musl/posix_spawn.c:32", sym_ty="Function", shape=ellipse];
+        n49892[label="child", path="/home/yibai/llmcc/sample/repos/clickhouse/base/glibc-compatibility/musl/posix_spawn.c:32", sym_ty="Function", shape=ellipse];
       }
 
     }
 
   }
 
-  subgraph cluster_mysqlxx {
-    label="mysqlxx";
+  subgraph cluster_install {
+    label="install";
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_Value_cpp {
-      label="Value.cpp";
+    subgraph cluster_Install_cpp {
+      label="Install.cpp";
       style=rounded;
             bgcolor="#fafafa";
 
-      n66806[label="info", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/mysqlxx/Value.cpp:214", sym_ty="Function", shape=ellipse];
+      n237072[label="path", path="/home/yibai/llmcc/sample/repos/clickhouse/programs/install/Install.cpp:253", sym_ty="Function", shape=ellipse];
+      n242866[label="start", path="/home/yibai/llmcc/sample/repos/clickhouse/programs/install/Install.cpp:982", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_obfuscator {
+    label="obfuscator";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_Obfuscator_cpp {
+      label="Obfuscator.cpp";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n183067[label="transform", path="/home/yibai/llmcc/sample/repos/clickhouse/programs/obfuscator/Obfuscator.cpp:184", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -1089,37 +872,12 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_pcg_extras_hpp {
-      label="pcg_extras.hpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n275368[label="s", path="/home/yibai/llmcc/sample/repos/clickhouse/base/pcg-random/pcg_extras.hpp:168", sym_ty="Function", shape=ellipse];
-    }
-
     subgraph cluster_pcg_random_hpp {
       label="pcg_random.hpp";
       style=rounded;
             bgcolor="#fafafa";
 
-      n601127[label="baseclass", path="/home/yibai/llmcc/sample/repos/clickhouse/base/pcg-random/pcg_random.hpp:1305", sym_ty="Function", shape=ellipse];
-      n596529[label="PCG_DEFINE_CONSTANT", path="/home/yibai/llmcc/sample/repos/clickhouse/base/pcg-random/pcg_random.hpp:157", sym_ty="Function", shape=ellipse];
-      n600620[label="result_type", path="/home/yibai/llmcc/sample/repos/clickhouse/base/pcg-random/pcg_random.hpp:901", sym_ty="Function", shape=ellipse];
-    }
-
-  }
-
-  subgraph cluster_self_extracting_executable {
-    label="self-extracting-executable";
-    style=rounded;
-        bgcolor="#f8f8f8";
-
-    subgraph cluster_decompressor_cpp {
-      label="decompressor.cpp";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n184152[label="file_name", path="/home/yibai/llmcc/sample/repos/clickhouse/utils/self-extracting-executable/decompressor.cpp:248", sym_ty="Function", shape=ellipse];
+      n513287[label="PCG_DEFINE_CONSTANT", path="/home/yibai/llmcc/sample/repos/clickhouse/base/pcg-random/pcg_random.hpp:157", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -1139,22 +897,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n449204[label="getType", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Databases/DataLake/Common.h:13", sym_ty="Function", shape=ellipse];
-      }
-
-    }
-
-    subgraph cluster_Databases {
-      label="Databases";
-      style=rounded;
-            bgcolor="#f5f5f5";
-
-      subgraph cluster_DatabaseOrdinary_cpp {
-        label="DatabaseOrdinary.cpp";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n103137[label="file_path", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Databases/DatabaseOrdinary.cpp:265", sym_ty="Function", shape=ellipse];
+        n287956[label="getType", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Databases/DataLake/Common.h:13", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -1176,7 +919,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n247396[label="String", path="/home/yibai/llmcc/sample/repos/clickhouse/rust/workspace/skim/include/skim.h:23", sym_ty="Struct", shape=box];
+        n264173[label="String", path="/home/yibai/llmcc/sample/repos/clickhouse/rust/workspace/skim/include/skim.h:23", sym_ty="Struct", shape=box];
       }
 
     }
@@ -1184,128 +927,86 @@ digraph architecture {
   }
 
 
-  n4459 -> n518651 [from="caller", to="callee"];
-  n13605 -> n224648 [from="input", to="func"];
-  n13605 -> n430731 [from="caller", to="callee"];
-  n13605 -> n559993 [from="input", to="func"];
-  n31232 -> n569517 [from="input", to="func"];
-  n45897 -> n374602 [from="caller", to="callee"];
-  n51668 -> n307174 [from="caller", to="callee"];
-  n59995 -> n559993 [from="caller", to="callee"];
-  n62933 -> n433106 [from="caller", to="callee"];
-  n62933 -> n518651 [from="caller", to="callee"];
-  n63129 -> n275368 [from="caller", to="callee"];
-  n66806 -> n84623 [from="caller", to="callee"];
-  n77827 -> n430731 [from="caller", to="callee"];
-  n84623 -> n66806 [from="input", to="func"];
-  n84623 -> n195100 [from="caller", to="callee"];
-  n89934 -> n287141 [from="caller", to="callee"];
-  n89934 -> n511264 [from="caller", to="callee"];
-  n90714 -> n381069 [from="input", to="func"];
-  n98268 -> n316658 [from="caller", to="callee"];
-  n103137 -> n184152 [from="caller", to="callee"];
-  n120966 -> n120972 [from="input", to="func"];
-  n120966 -> n307172 [from="caller", to="callee"];
-  n120966 -> n307174 [from="caller", to="callee"];
-  n120972 -> n120966 [from="caller", to="callee"];
-  n120972 -> n120976 [from="input", to="func"];
-  n120972 -> n291457 [from="input", to="func"];
-  n120976 -> n120972 [from="caller", to="callee"];
-  n147258 -> n559993 [from="input", to="func"];
-  n155586 -> n488192 [from="caller", to="callee"];
-  n164348 -> n620629 [from="caller", to="callee"];
-  n164352 -> n511264 [from="caller", to="callee"];
-  n176253 -> n167663 [from="input", to="func"];
-  n176253 -> n167671 [from="input", to="func"];
-  n176253 -> n524937 [from="input", to="func"];
-  n183729 -> n75250 [from="caller", to="callee"];
-  n183729 -> n589297 [from="input", to="func"];
-  n184152 -> n103137 [from="input", to="func"];
-  n185827 -> n75250 [from="caller", to="callee"];
-  n186494 -> n379577 [from="input", to="func"];
-  n195100 -> n84623 [from="input", to="func"];
-  n195100 -> n412737 [from="caller", to="callee"];
-  n196144 -> n195192 [from="caller", to="callee"];
-  n224648 -> n518651 [from="caller", to="callee"];
-  n237746 -> n237839 [from="input", to="func"];
-  n237746 -> n322435 [from="caller", to="callee"];
-  n237839 -> n237746 [from="caller", to="callee"];
-  n247396 -> n69788 [from="field_type", to="struct"];
-  n247396 -> n70343 [from="field_type", to="struct"];
-  n247396 -> n120966 [from="input", to="func"];
-  n247396 -> n155586 [from="input", to="func"];
-  n247396 -> n286783 [from="input", to="func"];
-  n247396 -> n292301 [from="field_type", to="struct"];
-  n247396 -> n306044 [from="field_type", to="struct"];
-  n247396 -> n449204 [from="input", to="func"];
-  n252858 -> n292301 [from="field_type", to="struct"];
-  n272339 -> n348851 [from="caller", to="callee"];
-  n273456 -> n75250 [from="caller", to="callee"];
-  n275368 -> n63129 [from="input", to="func"];
-  n275368 -> n446533 [from="caller", to="callee"];
-  n286783 -> n24800 [from="caller", to="callee"];
-  n291457 -> n120972 [from="caller", to="callee"];
-  n291457 -> n291544 [from="input", to="func"];
-  n291544 -> n62860 [from="caller", to="callee"];
-  n291544 -> n291457 [from="caller", to="callee"];
-  n293717 -> n293720 [from="input", to="func"];
-  n293720 -> n293717 [from="caller", to="callee"];
-  n306962 -> n484244 [from="caller", to="callee"];
-  n306962 -> n509726 [from="caller", to="callee"];
-  n307174 -> n51668 [from="input", to="func"];
-  n307174 -> n120966 [from="input", to="func"];
-  n316658 -> n98268 [from="input", to="func"];
-  n322435 -> n237746 [from="input", to="func"];
-  n348851 -> n272339 [from="input", to="func"];
-  n348851 -> n374602 [from="caller", to="callee"];
-  n353143 -> n357853 [from="caller", to="callee"];
-  n354285 -> n59995 [from="input", to="func"];
-  n355677 -> n488192 [from="caller", to="callee"];
-  n356427 -> n484209 [from="input", to="func"];
-  n368896 -> n315752 [from="input", to="func"];
-  n374893 -> n46649 [from="caller", to="callee"];
-  n374893 -> n365899 [from="caller", to="callee"];
-  n374893 -> n374602 [from="caller", to="callee"];
-  n374893 -> n491214 [from="caller", to="callee"];
-  n374893 -> n511264 [from="caller", to="callee"];
-  n381069 -> n545613 [from="caller", to="callee"];
-  n382689 -> n287141 [from="caller", to="callee"];
-  n412737 -> n195100 [from="input", to="func"];
-  n421357 -> n121472 [from="caller", to="callee"];
-  n421357 -> n374602 [from="caller", to="callee"];
-  n421357 -> n488192 [from="caller", to="callee"];
-  n422690 -> n488192 [from="caller", to="callee"];
-  n422690 -> n511264 [from="caller", to="callee"];
-  n430731 -> n16991 [from="caller", to="callee"];
-  n430731 -> n452134 [from="caller", to="callee"];
-  n430731 -> n518663 [from="base", to="extends"];
-  n430731 -> n569944 [from="input", to="func"];
-  n433106 -> n72131 [from="caller", to="callee"];
-  n446533 -> n287141 [from="caller", to="callee"];
-  n446533 -> n511264 [from="caller", to="callee"];
-  n449204 -> n343732 [from="caller", to="callee"];
-  n456886 -> n62860 [from="caller", to="callee"];
-  n461965 -> n315752 [from="caller", to="callee"];
-  n484209 -> n356427 [from="caller", to="callee"];
-  n498680 -> n355677 [from="caller", to="callee"];
-  n498680 -> n488190 [from="caller", to="callee"];
-  n498680 -> n488192 [from="caller", to="callee"];
-  n503806 -> n503807 [from="func", to="type_dep"];
-  n524937 -> n167663 [from="caller", to="callee"];
-  n524937 -> n167671 [from="caller", to="callee"];
-  n526400 -> n554510 [from="caller", to="callee"];
-  n527156 -> n371116 [from="input", to="func"];
-  n554510 -> n526400 [from="input", to="func"];
-  n559993 -> n147258 [from="caller", to="callee"];
-  n559993 -> n281871 [from="caller", to="callee"];
-  n569944 -> n518663 [from="func", to="type_dep"];
-  n581509 -> n287141 [from="caller", to="callee"];
-  n581509 -> n511264 [from="caller", to="callee"];
-  n582361 -> n287141 [from="caller", to="callee"];
-  n582361 -> n511264 [from="caller", to="callee"];
-  n589297 -> n183729 [from="caller", to="callee"];
-  n589630 -> n588238 [from="caller", to="callee"];
-  n596529 -> n306044 [from="field_type", to="struct"];
-  n596529 -> n600620 [from="input", to="func"];
-  n600620 -> n601127 [from="caller", to="callee"];
+  n1068 -> n370173 [from="caller", to="callee"];
+  n49652 -> n49714 [from="input", to="func"];
+  n49655 -> n49726 [from="input", to="func"];
+  n60011 -> n370173 [from="caller", to="callee"];
+  n60011 -> n455462 [from="caller", to="callee"];
+  n65826 -> n66591 [from="base", to="extends"];
+  n65826 -> n66591 [from="field_type", to="struct"];
+  n67704 -> n462389 [from="caller", to="callee"];
+  n77188 -> n2128 [from="input", to="func"];
+  n77188 -> n369510 [from="field_type", to="struct"];
+  n78459 -> n577593 [from="field_type", to="struct"];
+  n80516 -> n258527 [from="input", to="func"];
+  n80516 -> n420969 [from="input", to="func"];
+  n99148 -> n370173 [from="caller", to="callee"];
+  n106656 -> n108972 [from="input", to="func"];
+  n110301 -> n138991 [from="caller", to="callee"];
+  n110301 -> n223039 [from="func", to="type_dep"];
+  n114600 -> n465350 [from="caller", to="callee"];
+  n114600 -> n584312 [from="caller", to="callee"];
+  n132184 -> n132186 [from="func", to="type_dep"];
+  n133174 -> n370173 [from="caller", to="callee"];
+  n139051 -> n162084 [from="func", to="type_dep"];
+  n140649 -> n56537 [from="field_type", to="struct"];
+  n140649 -> n484450 [from="field_type", to="struct"];
+  n150774 -> n324972 [from="field_type", to="struct"];
+  n175442 -> n370473 [from="input", to="func"];
+  n178730 -> n584312 [from="input", to="func"];
+  n178731 -> n178730 [from="input", to="func"];
+  n178731 -> n584312 [from="input", to="func"];
+  n183067 -> n298259 [from="caller", to="callee"];
+  n193047 -> n28824 [from="caller", to="callee"];
+  n206195 -> n206162 [from="func", to="type_dep"];
+  n237072 -> n242866 [from="input", to="func"];
+  n242866 -> n98845 [from="caller", to="callee"];
+  n242866 -> n225545 [from="caller", to="callee"];
+  n242866 -> n331551 [from="caller", to="callee"];
+  n242866 -> n507646 [from="caller", to="callee"];
+  n261591 -> n138991 [from="caller", to="callee"];
+  n261591 -> n374843 [from="caller", to="callee"];
+  n264173 -> n37990 [from="field_type", to="struct"];
+  n264173 -> n56537 [from="field_type", to="struct"];
+  n264173 -> n65826 [from="field_type", to="struct"];
+  n264173 -> n66591 [from="field_type", to="struct"];
+  n264173 -> n98845 [from="input", to="func"];
+  n264173 -> n136599 [from="field_type", to="struct"];
+  n264173 -> n181537 [from="field_type", to="struct"];
+  n264173 -> n287956 [from="input", to="func"];
+  n264173 -> n324972 [from="field_type", to="struct"];
+  n264173 -> n360404 [from="input", to="func"];
+  n264173 -> n403441 [from="field_type", to="struct"];
+  n264173 -> n426675 [from="field_type", to="struct"];
+  n264173 -> n499355 [from="input", to="func"];
+  n264173 -> n577593 [from="field_type", to="struct"];
+  n298997 -> n279609 [from="caller", to="callee"];
+  n363049 -> n138991 [from="caller", to="callee"];
+  n363049 -> n319053 [from="caller", to="callee"];
+  n363049 -> n433480 [from="caller", to="callee"];
+  n380659 -> n139051 [from="input", to="func"];
+  n380660 -> n138944 [from="input", to="func"];
+  n391946 -> n391947 [from="func", to="type_dep"];
+  n395048 -> n374843 [from="caller", to="callee"];
+  n411531 -> n49892 [from="caller", to="callee"];
+  n411531 -> n138991 [from="caller", to="callee"];
+  n414498 -> n222229 [from="input", to="func"];
+  n414502 -> n222218 [from="input", to="func"];
+  n420969 -> n374843 [from="caller", to="callee"];
+  n444010 -> n237072 [from="caller", to="callee"];
+  n444010 -> n374843 [from="caller", to="callee"];
+  n465350 -> n584312 [from="input", to="func"];
+  n465354 -> n114600 [from="input", to="func"];
+  n465354 -> n465350 [from="input", to="func"];
+  n467503 -> n261591 [from="caller", to="callee"];
+  n489728 -> n489727 [from="input", to="func"];
+  n499355 -> n374843 [from="caller", to="callee"];
+  n507646 -> n242866 [from="caller", to="callee"];
+  n513287 -> n181537 [from="field_type", to="struct"];
+  n513287 -> n426675 [from="field_type", to="struct"];
+  n513287 -> n555574 [from="field_type", to="struct"];
+  n513287 -> n577593 [from="field_type", to="struct"];
+  n561083 -> n561085 [from="input", to="func"];
+  n561085 -> n237072 [from="caller", to="callee"];
+  n584312 -> n178730 [from="caller", to="callee"];
 }

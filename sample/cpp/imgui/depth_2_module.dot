@@ -1,0 +1,34 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  subgraph cluster_unknown {
+    label="unknown";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_unknown_backends[label="backends", path="/home/yibai/llmcc/sample/repos/imgui/backends"];
+    mod_unknown_imgui[label="imgui", path="/home/yibai/llmcc/sample/repos/imgui"];
+    mod_unknown_imgui_draw[label="imgui_draw", path="/home/yibai/llmcc/sample/repos/imgui"];
+    mod_unknown_imgui_internal[label="imgui_internal", path="/home/yibai/llmcc/sample/repos/imgui"];
+    mod_unknown_imgui_widgets[label="imgui_widgets", path="/home/yibai/llmcc/sample/repos/imgui"];
+    mod_unknown_misc[label="misc", path="/home/yibai/llmcc/sample/repos/imgui/misc"];
+  }
+
+
+  mod_unknown_backends -> mod_unknown_imgui;
+  mod_unknown_imgui -> mod_unknown_imgui_internal;
+  mod_unknown_imgui_draw -> mod_unknown_imgui;
+  mod_unknown_imgui_draw -> mod_unknown_misc;
+  mod_unknown_imgui_internal -> mod_unknown_imgui;
+  mod_unknown_imgui_widgets -> mod_unknown_imgui_internal;
+}
