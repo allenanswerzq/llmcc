@@ -1,81 +1,23 @@
 {
-  "name": "copilot-api-bridge",
-  "displayName": "Copilot API Bridge",
-  "description": "Expose VS Code Copilot models as an OpenAI-compatible API for external tools like Codex or Claude Code",
-  "version": "0.2.4",
-  "publisher": "local",
-  "engines": {
-    "vscode": "^1.90.0"
-  },
-  "categories": [
-    "Other"
+  "name": "llmcc-agent-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Workspace for llmcc agent packages",
+  "workspaces": [
+    "bridge",
+    "chrome",
+    "llcraft",
+    "tools"
   ],
-  "activationEvents": [
-    "onStartupFinished"
-  ],
-  "main": "./out/extension.js",
-  "contributes": {
-    "commands": [
-      {
-        "command": "copilot-api-bridge.start",
-        "title": "Start Server",
-        "category": "Copilot API Bridge"
-      },
-      {
-        "command": "copilot-api-bridge.stop",
-        "title": "Stop Server",
-        "category": "Copilot API Bridge"
-      },
-      {
-        "command": "copilot-api-bridge.status",
-        "title": "Show Status",
-        "category": "Copilot API Bridge"
-      }
-    ],
-    "configuration": {
-      "title": "Copilot API Bridge",
-      "properties": {
-        "copilot-api-bridge.port": {
-          "type": "number",
-          "default": 5168,
-          "description": "Port number for the API bridge server"
-        },
-        "copilot-api-bridge.autoStart": {
-          "type": "boolean",
-          "default": true,
-          "description": "Automatically start the server when VS Code opens"
-        },
-        "copilot-api-bridge.bindAddress": {
-          "type": "string",
-          "default": "0.0.0.0",
-          "enum": ["127.0.0.1", "0.0.0.0"],
-          "description": "Bind address for the server. Use 127.0.0.1 for localhost only"
-        },
-        "copilot-api-bridge.defaultModel": {
-          "type": "string",
-          "default": "claude-sonnet-4",
-          "description": "Default model to use when not specified in request"
-        },
-        "copilot-api-bridge.allowedOrigins": {
-          "type": "array",
-          "default": ["*"],
-          "description": "Allowed CORS origins (use '*' for all)"
-        }
-      }
-    }
-  },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "lint": "eslint src --ext ts"
-  },
-  "devDependencies": {
-    "@types/node": "^20.10.0",
-    "@types/vscode": "^1.90.0",
-    "@typescript-eslint/eslint-plugin": "^7.0.0",
-    "@typescript-eslint/parser": "^7.0.0",
-    "eslint": "^8.56.0",
-    "typescript": "^5.3.0"
+    "build": "npm run build --workspaces",
+    "build:bridge": "npm run build --workspace=bridge",
+    "build:chrome": "npm run build --workspace=chrome",
+    "build:llcraft": "npm run build --workspace=llcraft",
+    "build:tools": "npm run build --workspace=tools",
+    "test": "npm run test --workspaces --if-present",
+    "test:tools": "npm run test --workspace=tools",
+    "test:bridge": "npm run test --workspace=bridge",
+    "test:integration": "npm run test:integration --workspace=bridge"
   }
 }
