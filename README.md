@@ -2,7 +2,7 @@
 
 **llmcc brings multi-depth architecture graphs for code understanding and generation.**
 
-Our goal is to build a multi-depth, tree-like context / architecture view of a codebase, so a coding agent can *walk up* (zoom out) for structure and intent, then *walk down* (zoom in) to the exact crates/modules/files/symbols it needs—getting a highly comprehensive understanding of any codebase (any programming language) and any documents.
+Our goal is to build a multi-depth, tree-like context / architecture view of a codebase, so a coding agent can *walk up* (zoom out) for structure and intent, then *walk down* (zoom in) to the exact crates/modules/files/symbols it needs—getting a highly comprehensive understanding of any codebase (any programming language).
 
 ## Why multi-depth graphs?
 
@@ -17,7 +17,7 @@ People (and coding agents) need to understand systems from different dimensions.
 
 ## Walkthrough: Codex (midterm size multi-crate rust project)
 
-This repo includes a ready-made example under [sample](sample). Download and open them in browser for the best viewing experience.
+This repo includes many examples under [sample](sample). Download and open them in browser for the best viewing experience.
 
 ### Depth 1: crate graph
 
@@ -42,11 +42,6 @@ Here's a small portion of the graph at depth 3, showing the core abstraction lay
 <p style="height: 200px; text-align: center;">
 	<img src="doc/codex.jpg" alt="codex core logic" style="max-width: 100%; height: auto;" />
 </p>
-
-If you open those .dot/.svg files, you’ll see the same system from different “altitudes”, which is exactly what you want when:
-- orienting yourself in an unfamiliar repo
-- deciding *where* to make a change
-- generating a focused context pack for an coding agents
 
 
 ## Performance
