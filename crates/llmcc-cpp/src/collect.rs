@@ -23,6 +23,47 @@ fn is_method_context(parent: Option<&Symbol>) -> bool {
     })
 }
 
+/// Check if a declarator uses a qualified name (e.g., `Foo::bar` or `Foo::Bar::baz`).
+/// This indicates an out-of-class method definition like `void Foo::method() { ... }`.
+fn has_qualified_name<'tcx>(unit: &CompileUnit<'tcx>, node: &HirNode<'tcx>) -> bool {
+    has_qualified_name_impl(unit, node, 0)
+}
+
+fn has_qualified_name_impl<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    node: &HirNode<'tcx>,
+    depth: usize,
+) -> bool {
+    // Prevent infinite recursion
+    if depth > 20 {
+        return false;
+    }
+
+    // Check the declarator field for nested declarators
+    if let Some(decl) = node.child_by_field(unit, LangCpp::field_declarator) {
+        return has_qualified_name_impl(unit, &decl, depth + 1);
+    }
+
+    // Check the name field for qualified_identifier (for constructors like Widget::Widget())
+    // The name field may contain the qualified identifier when the declarator doesn't
+    if let Some(name) = node.child_by_field(unit, LangCpp::field_name)
+        && name.kind_id() == LangCpp::qualified_identifier
+        && name.child_by_field(unit, LangCpp::field_scope).is_some()
+    {
+        return true;
+    }
+
+    // Check if this node is a qualified_identifier with a scope field
+    // This means it has `Foo::` prefix, indicating out-of-class definition
+    if node.kind_id() == LangCpp::qualified_identifier
+        && node.child_by_field(unit, LangCpp::field_scope).is_some()
+    {
+        return true;
+    }
+
+    false
+}
+
 #[derive(Debug)]
 pub struct CollectorVisitor<'tcx> {
     scope_map: HashMap<ScopeId, &'tcx Scope<'tcx>>,
@@ -253,27 +294,21 @@ impl<'tcx> CollectorVisitor<'tcx> {
     /// This indicates a constructor call in "most vexing parse" situations.
     /// e.g., `Foo t(x)` has parameter_list with just identifier `x`
     /// vs `Foo t(int x)` has parameter_list with parameter_declaration containing type `int`
+    /// vs `void test(...)` has a C-style variadic `...` which is a valid function declaration
     fn has_only_identifier_params(&self, params: &HirNode<'tcx>, unit: &CompileUnit<'tcx>) -> bool {
         let children = params.children(unit);
 
         // Filter to only semantic nodes (skip syntax tokens like parentheses and commas)
-        // Syntax tokens typically have very low kind_ids (< 20) in tree-sitter
-        let semantic_children: Vec<_> = children
-            .iter()
-            .filter(|c| {
-                let kind = c.kind_id();
-                // Skip common syntax tokens: ( ) , ; etc.
-                // These have low kind IDs in the tree-sitter grammar
-                kind > 20
-            })
-            .collect();
+        // Syntax tokens have HirKind::Text or HirKind::Comment (is_trivia)
+        let semantic_children: Vec<_> = children.iter().filter(|c| !c.is_trivia()).collect();
 
         if semantic_children.is_empty() {
             // Empty parameter list is fine for function declarations: `void foo();`
             return false;
         }
 
-        // Check each child - if we find any proper parameter_declaration, this is a function declaration
+        // Check each child - if we find any proper parameter_declaration or variadic syntax,
+        // this is a function declaration
         for child in semantic_children {
             let kind = child.kind_id();
             // These are proper parameter declarations
@@ -282,6 +317,13 @@ impl<'tcx> CollectorVisitor<'tcx> {
                 || kind == LangCpp::variadic_parameter_declaration
                 || kind == LangCpp::explicit_object_parameter_declaration
             {
+                return false;
+            }
+            // C-style variadic `...` (e.g., `void printf(const char* fmt, ...)`)
+            // The `...` token has a small kind_id that may conflict with field IDs,
+            // so we check the text content
+            let text = unit.hir_text(child);
+            if text == "..." {
                 return false;
             }
         }
@@ -336,9 +378,8 @@ impl<'tcx> CollectorVisitor<'tcx> {
             // Check first child if no declarator field
             for &child_id in node.child_ids() {
                 let child = unit.hir_node(child_id);
-                // Skip parentheses tokens
-                if child.kind_id() != 5 && child.kind_id() != 8 {
-                    // ( and )
+                // Skip syntax tokens (parentheses, etc.)
+                if !child.is_trivia() {
                     return self.is_direct_function_declarator(&child, unit);
                 }
             }
@@ -365,11 +406,9 @@ impl<'tcx> CollectorVisitor<'tcx> {
         // Check children for parenthesized_declarator without field
         for &child_id in node.child_ids() {
             let child = unit.hir_node(child_id);
-            if child.kind_id() != 5 && child.kind_id() != 8 {
-                // Skip ( and )
-                if self.contains_function_declarator(&child, unit) {
-                    return true;
-                }
+            // Skip syntax tokens (parentheses, etc.)
+            if !child.is_trivia() && self.contains_function_declarator(&child, unit) {
+                return true;
             }
         }
 
@@ -424,9 +463,8 @@ impl<'tcx> CollectorVisitor<'tcx> {
         if node.kind_id() == LangCpp::parenthesized_declarator {
             let children = node.children(unit);
             for child in children {
-                // Skip punctuation
-                if child.kind_id() == 5 || child.kind_id() == 8 {
-                    // ( or )
+                // Skip syntax tokens (parentheses, etc.)
+                if child.is_trivia() {
                     continue;
                 }
                 if let Some(found) = self.find_nested_function_declarator(&child, unit) {
@@ -777,7 +815,10 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
         };
 
         // Determine if this is a method or a free function
-        let kind = if is_method_context(parent) {
+        // It's a method if:
+        // 1. Parent is a class/struct (in-class definition), OR
+        // 2. Declarator has qualified name like `Foo::bar` (out-of-class definition)
+        let kind = if is_method_context(parent) || has_qualified_name(unit, &decl_node) {
             SymKind::Method
         } else {
             SymKind::Function
@@ -795,6 +836,11 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
                 return;
             }
         };
+
+        // Force set the kind - this is important for out-of-class method definitions
+        // where the symbol might have been created earlier with a different kind
+        // (e.g., as an unresolved type reference or forward declaration)
+        sym.set_kind(kind);
 
         self.visit_with_scope(unit, node, scopes, sym, sn, name_ident);
 
@@ -914,13 +960,20 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
                     && let Some(name_ident) = self.get_declarator_name(unit, &func_decl)
                 {
                     // Determine if this is a method or free function
-                    let kind = if is_method_context(parent) {
+                    // A function is a method if:
+                    // 1. It's defined inside a class/struct (is_method_context), OR
+                    // 2. It has a qualified name like "Foo::bar" (out-of-class method declaration)
+                    let kind = if is_method_context(parent) || has_qualified_name(unit, &decl_node)
+                    {
                         SymKind::Method
                     } else {
                         SymKind::Function
                     };
 
                     if let Some(sym) = scopes.lookup_or_insert(name_ident.name, &func_decl, kind) {
+                        // Force set the kind for function declarations as well
+                        sym.set_kind(kind);
+
                         // Set up the scope for this function declaration
                         // The HirScope node needs to have its scope set for graph_builder to create a block
                         if let Some(scope_node) = func_decl.as_scope() {

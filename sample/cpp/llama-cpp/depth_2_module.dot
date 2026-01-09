@@ -1,0 +1,282 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  subgraph cluster_cli {
+    label="cli";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_cli_cli[label="cli", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/cli"];
+  }
+
+  subgraph cluster_common {
+    label="common";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_common_arg[label="arg", path="/home/yibai/llmcc/sample/repos/llama-cpp/common"];
+    mod_common_chat[label="chat", path="/home/yibai/llmcc/sample/repos/llama-cpp/common"];
+    mod_common_chat_parser[label="chat-parser", path="/home/yibai/llmcc/sample/repos/llama-cpp/common"];
+    mod_common_chat_parser_xml_toolcall[label="chat-parser-xml-toolcall", path="/home/yibai/llmcc/sample/repos/llama-cpp/common"];
+    mod_common_chat_peg_parser[label="chat-peg-parser", path="/home/yibai/llmcc/sample/repos/llama-cpp/common"];
+    mod_common_common[label="common", path="/home/yibai/llmcc/sample/repos/llama-cpp/common"];
+    mod_common_console[label="console", path="/home/yibai/llmcc/sample/repos/llama-cpp/common"];
+    mod_common_json_schema_to_grammar[label="json-schema-to-grammar", path="/home/yibai/llmcc/sample/repos/llama-cpp/common"];
+    mod_common_llguidance[label="llguidance", path="/home/yibai/llmcc/sample/repos/llama-cpp/common"];
+    mod_common_log[label="log", path="/home/yibai/llmcc/sample/repos/llama-cpp/common"];
+    mod_common_preset[label="preset", path="/home/yibai/llmcc/sample/repos/llama-cpp/common"];
+    mod_common_regex_partial[label="regex-partial", path="/home/yibai/llmcc/sample/repos/llama-cpp/common"];
+    mod_common_sampling[label="sampling", path="/home/yibai/llmcc/sample/repos/llama-cpp/common"];
+    mod_common_speculative[label="speculative", path="/home/yibai/llmcc/sample/repos/llama-cpp/common"];
+  }
+
+  subgraph cluster_ggml {
+    label="ggml";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_ggml_ggml[label="ggml", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/include"];
+  }
+
+  subgraph cluster_ggml_cann {
+    label="ggml-cann";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_ggml_cann_acl_tensor[label="acl_tensor", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-cann"];
+    mod_ggml_cann_aclnn_ops[label="aclnn_ops", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-cann"];
+    mod_ggml_cann_common[label="common", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-cann"];
+    mod_ggml_cann_ggml_cann[label="ggml-cann", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-cann"];
+  }
+
+  subgraph cluster_ggml_cpu {
+    label="ggml-cpu";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_ggml_cpu_amx[label="amx", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-cpu/amx"];
+    mod_ggml_cpu_ggml_cpu[label="ggml-cpu", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-cpu"];
+    mod_ggml_cpu_ops[label="ops", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-cpu"];
+  }
+
+  subgraph cluster_ggml_metal {
+    label="ggml-metal";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_ggml_metal_ggml_metal_ops[label="ggml-metal-ops", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-metal"];
+  }
+
+  subgraph cluster_ggml_sycl {
+    label="ggml-sycl";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_ggml_sycl_binbcast[label="binbcast", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl"];
+    mod_ggml_sycl_common[label="common", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl"];
+    mod_ggml_sycl_concat[label="concat", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl"];
+    mod_ggml_sycl_convert[label="convert", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl"];
+    mod_ggml_sycl_cpy[label="cpy", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl"];
+    mod_ggml_sycl_dpct[label="dpct", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl/dpct"];
+    mod_ggml_sycl_element_wise[label="element_wise", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl"];
+    mod_ggml_sycl_getrows[label="getrows", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl"];
+    mod_ggml_sycl_ggml_sycl[label="ggml-sycl", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl"];
+    mod_ggml_sycl_mmq[label="mmq", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl"];
+    mod_ggml_sycl_norm[label="norm", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl"];
+    mod_ggml_sycl_pad[label="pad", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl"];
+    mod_ggml_sycl_rope[label="rope", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl"];
+    mod_ggml_sycl_set_rows[label="set_rows", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl"];
+    mod_ggml_sycl_softmax[label="softmax", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl"];
+    mod_ggml_sycl_wkv[label="wkv", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl"];
+  }
+
+  subgraph cluster_ggml_zdnn {
+    label="ggml-zdnn";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_ggml_zdnn_common[label="common", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-zdnn"];
+    mod_ggml_zdnn_ggml_zdnn[label="ggml-zdnn", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-zdnn"];
+  }
+
+  subgraph cluster_htp {
+    label="htp";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_htp_act_ops[label="act-ops", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-hexagon/htp"];
+    mod_htp_htp_dma[label="htp-dma", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-hexagon/htp"];
+    mod_htp_matmul_ops[label="matmul-ops", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-hexagon/htp"];
+  }
+
+  subgraph cluster_imatrix {
+    label="imatrix";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_imatrix_imatrix[label="imatrix", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/imatrix"];
+  }
+
+  subgraph cluster_llama_bench {
+    label="llama-bench";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_llama_bench_llama_bench[label="llama-bench", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/llama-bench"];
+  }
+
+  subgraph cluster_mtmd {
+    label="mtmd";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_mtmd_clip_graph[label="clip-graph", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/mtmd"];
+    mod_mtmd_models[label="models", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/mtmd/models"];
+    mod_mtmd_mtmd[label="mtmd", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/mtmd"];
+    mod_mtmd_mtmd_cli[label="mtmd-cli", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/mtmd"];
+  }
+
+  subgraph cluster_perplexity {
+    label="perplexity";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_perplexity_perplexity[label="perplexity", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/perplexity"];
+  }
+
+  subgraph cluster_server {
+    label="server";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_server_server_context[label="server-context", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/server"];
+    mod_server_server_http[label="server-http", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/server"];
+    mod_server_server_models[label="server-models", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/server"];
+    mod_server_server_queue[label="server-queue", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/server"];
+    mod_server_server_task[label="server-task", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/server"];
+  }
+
+  subgraph cluster_src {
+    label="src";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_src_ggml[label="ggml", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src"];
+    mod_src_llama_adapter[label="llama-adapter", path="/home/yibai/llmcc/sample/repos/llama-cpp/src"];
+    mod_src_llama_context[label="llama-context", path="/home/yibai/llmcc/sample/repos/llama-cpp/src"];
+    mod_src_llama_graph[label="llama-graph", path="/home/yibai/llmcc/sample/repos/llama-cpp/src"];
+    mod_src_llama_hparams[label="llama-hparams", path="/home/yibai/llmcc/sample/repos/llama-cpp/src"];
+    mod_src_llama_impl[label="llama-impl", path="/home/yibai/llmcc/sample/repos/llama-cpp/src"];
+    mod_src_llama_io[label="llama-io", path="/home/yibai/llmcc/sample/repos/llama-cpp/src"];
+    mod_src_llama_kv_cache[label="llama-kv-cache", path="/home/yibai/llmcc/sample/repos/llama-cpp/src"];
+    mod_src_llama_kv_cache_iswa[label="llama-kv-cache-iswa", path="/home/yibai/llmcc/sample/repos/llama-cpp/src"];
+    mod_src_llama_memory[label="llama-memory", path="/home/yibai/llmcc/sample/repos/llama-cpp/src"];
+    mod_src_llama_memory_hybrid[label="llama-memory-hybrid", path="/home/yibai/llmcc/sample/repos/llama-cpp/src"];
+    mod_src_llama_memory_recurrent[label="llama-memory-recurrent", path="/home/yibai/llmcc/sample/repos/llama-cpp/src"];
+    mod_src_llama_model[label="llama-model", path="/home/yibai/llmcc/sample/repos/llama-cpp/src"];
+    mod_src_llama_sampling[label="llama-sampling", path="/home/yibai/llmcc/sample/repos/llama-cpp/src"];
+    mod_src_models[label="models", path="/home/yibai/llmcc/sample/repos/llama-cpp/src/models"];
+  }
+
+  subgraph cluster_tts {
+    label="tts";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_tts_tts[label="tts", path="/home/yibai/llmcc/sample/repos/llama-cpp/tools/tts"];
+  }
+
+
+  mod_cli_cli -> mod_common_console;
+  mod_common_arg -> mod_common_common;
+  mod_common_chat -> mod_common_common;
+  mod_common_chat_parser -> mod_common_chat;
+  mod_common_chat_parser -> mod_common_regex_partial;
+  mod_common_chat_parser_xml_toolcall -> mod_common_chat_parser;
+  mod_common_chat_peg_parser -> mod_common_chat;
+  mod_common_json_schema_to_grammar -> mod_ggml_sycl_dpct;
+  mod_common_llguidance -> mod_common_sampling;
+  mod_common_llguidance -> mod_common_speculative;
+  mod_common_log -> mod_common_console;
+  mod_common_preset -> mod_common_arg;
+  mod_ggml_cann_acl_tensor -> mod_src_llama_impl;
+  mod_ggml_cann_aclnn_ops -> mod_common_console;
+  mod_ggml_cann_aclnn_ops -> mod_ggml_cann_common;
+  mod_ggml_cann_common -> mod_ggml_cann_ggml_cann;
+  mod_ggml_cann_ggml_cann -> mod_ggml_cann_common;
+  mod_ggml_cpu_amx -> mod_ggml_sycl_dpct;
+  mod_ggml_cpu_ops -> mod_ggml_cpu_ggml_cpu;
+  mod_ggml_metal_ggml_metal_ops -> mod_ggml_sycl_dpct;
+  mod_ggml_sycl_binbcast -> mod_ggml_sycl_common;
+  mod_ggml_sycl_binbcast -> mod_ggml_sycl_ggml_sycl;
+  mod_ggml_sycl_common -> mod_ggml_sycl_dpct;
+  mod_ggml_sycl_common -> mod_ggml_sycl_ggml_sycl;
+  mod_ggml_sycl_concat -> mod_ggml_sycl_common;
+  mod_ggml_sycl_concat -> mod_ggml_sycl_ggml_sycl;
+  mod_ggml_sycl_convert -> mod_ggml_sycl_ggml_sycl;
+  mod_ggml_sycl_cpy -> mod_ggml_sycl_common;
+  mod_ggml_sycl_cpy -> mod_ggml_sycl_ggml_sycl;
+  mod_ggml_sycl_element_wise -> mod_ggml_sycl_common;
+  mod_ggml_sycl_element_wise -> mod_ggml_sycl_dpct;
+  mod_ggml_sycl_element_wise -> mod_ggml_sycl_ggml_sycl;
+  mod_ggml_sycl_getrows -> mod_ggml_sycl_common;
+  mod_ggml_sycl_getrows -> mod_ggml_sycl_ggml_sycl;
+  mod_ggml_sycl_ggml_sycl -> mod_ggml_ggml;
+  mod_ggml_sycl_ggml_sycl -> mod_ggml_sycl_common;
+  mod_ggml_sycl_ggml_sycl -> mod_ggml_sycl_dpct;
+  mod_ggml_sycl_mmq -> mod_ggml_sycl_dpct;
+  mod_ggml_sycl_norm -> mod_ggml_sycl_common;
+  mod_ggml_sycl_norm -> mod_ggml_sycl_ggml_sycl;
+  mod_ggml_sycl_pad -> mod_ggml_sycl_common;
+  mod_ggml_sycl_pad -> mod_ggml_sycl_ggml_sycl;
+  mod_ggml_sycl_rope -> mod_ggml_sycl_common;
+  mod_ggml_sycl_rope -> mod_ggml_sycl_dpct;
+  mod_ggml_sycl_rope -> mod_ggml_sycl_ggml_sycl;
+  mod_ggml_sycl_set_rows -> mod_ggml_sycl_common;
+  mod_ggml_sycl_set_rows -> mod_ggml_sycl_ggml_sycl;
+  mod_ggml_sycl_softmax -> mod_ggml_sycl_common;
+  mod_ggml_sycl_softmax -> mod_ggml_sycl_ggml_sycl;
+  mod_ggml_sycl_wkv -> mod_ggml_sycl_common;
+  mod_ggml_sycl_wkv -> mod_ggml_sycl_ggml_sycl;
+  mod_ggml_zdnn_ggml_zdnn -> mod_ggml_zdnn_common;
+  mod_htp_act_ops -> mod_htp_htp_dma;
+  mod_htp_matmul_ops -> mod_htp_htp_dma;
+  mod_imatrix_imatrix -> mod_server_server_http;
+  mod_mtmd_clip_graph -> mod_mtmd_models;
+  mod_mtmd_mtmd_cli -> mod_mtmd_mtmd;
+  mod_perplexity_perplexity -> mod_ggml_sycl_dpct;
+  mod_perplexity_perplexity -> mod_llama_bench_llama_bench;
+  mod_perplexity_perplexity -> mod_server_server_http;
+  mod_server_server_context -> mod_server_server_http;
+  mod_server_server_context -> mod_server_server_queue;
+  mod_server_server_context -> mod_server_server_task;
+  mod_server_server_models -> mod_common_preset;
+  mod_server_server_models -> mod_server_server_http;
+  mod_server_server_task -> mod_common_chat;
+  mod_src_ggml -> mod_common_console;
+  mod_src_llama_adapter -> mod_src_llama_io;
+  mod_src_llama_context -> mod_src_llama_adapter;
+  mod_src_llama_context -> mod_src_llama_graph;
+  mod_src_llama_graph -> mod_src_llama_hparams;
+  mod_src_llama_graph -> mod_src_llama_memory;
+  mod_src_llama_graph -> mod_src_models;
+  mod_src_llama_io -> mod_src_llama_context;
+  mod_src_llama_kv_cache -> mod_src_llama_io;
+  mod_src_llama_kv_cache -> mod_src_llama_memory;
+  mod_src_llama_kv_cache_iswa -> mod_src_llama_memory;
+  mod_src_llama_memory_hybrid -> mod_src_llama_memory;
+  mod_src_llama_memory_recurrent -> mod_src_llama_memory;
+  mod_src_llama_model -> mod_src_llama_hparams;
+  mod_src_models -> mod_src_llama_io;
+  mod_tts_tts -> mod_src_llama_sampling;
+}
