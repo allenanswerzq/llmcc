@@ -1,0 +1,389 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  subgraph cluster_agave_install {
+    label="agave-install";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_agave_install_command[label="command", path="/home/yibai/llmcc/sample/repos/solana/install/src"];
+  }
+
+  subgraph cluster_agave_syscalls {
+    label="agave-syscalls";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_agave_syscalls_lib[label="lib", path="/home/yibai/llmcc/sample/repos/solana/syscalls/src"];
+  }
+
+  subgraph cluster_agave_validator {
+    label="agave-validator";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_agave_validator_bootstrap[label="bootstrap", path="/home/yibai/llmcc/sample/repos/solana/validator/src"];
+  }
+
+  subgraph cluster_agave_votor {
+    label="agave-votor";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_agave_votor_consensus_pool[label="consensus_pool", path="/home/yibai/llmcc/sample/repos/solana/votor/src"];
+  }
+
+  subgraph cluster_agave_xdp_ebpf {
+    label="agave-xdp-ebpf";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_agave_xdp_ebpf_bin[label="bin", path="/home/yibai/llmcc/sample/repos/solana/xdp-ebpf/src/bin"];
+  }
+
+  subgraph cluster_solana_account_decoder_client_types {
+    label="solana-account-decoder-client-types";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_account_decoder_client_types_token[label="token", path="/home/yibai/llmcc/sample/repos/solana/account-decoder-client-types/src"];
+  }
+
+  subgraph cluster_solana_accounts_db {
+    label="solana-accounts-db";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_accounts_db_accounts_db[label="accounts_db", path="/home/yibai/llmcc/sample/repos/solana/accounts-db/src"];
+    mod_solana_accounts_db_accounts_index[label="accounts_index", path="/home/yibai/llmcc/sample/repos/solana/accounts-db/src/accounts_index"];
+  }
+
+  subgraph cluster_solana_clap_v3_utils {
+    label="solana-clap-v3-utils";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_clap_v3_utils_input_parsers[label="input_parsers", path="/home/yibai/llmcc/sample/repos/solana/clap-v3-utils/src/input_parsers"];
+  }
+
+  subgraph cluster_solana_cli {
+    label="solana-cli";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_cli_cli[label="cli", path="/home/yibai/llmcc/sample/repos/solana/cli/src"];
+    mod_solana_cli_cluster_query[label="cluster_query", path="/home/yibai/llmcc/sample/repos/solana/cli/src"];
+    mod_solana_cli_program[label="program", path="/home/yibai/llmcc/sample/repos/solana/cli/src"];
+    mod_solana_cli_stake[label="stake", path="/home/yibai/llmcc/sample/repos/solana/cli/src"];
+  }
+
+  subgraph cluster_solana_cli_output {
+    label="solana-cli-output";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_cli_output_cli_output[label="cli_output", path="/home/yibai/llmcc/sample/repos/solana/cli-output/src"];
+    mod_solana_cli_output_display[label="display", path="/home/yibai/llmcc/sample/repos/solana/cli-output/src"];
+  }
+
+  subgraph cluster_solana_core {
+    label="solana-core";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_core_banking_stage[label="banking_stage", path="/home/yibai/llmcc/sample/repos/solana/core/src"];
+    mod_solana_core_consensus[label="consensus", path="/home/yibai/llmcc/sample/repos/solana/core/src/consensus"];
+    mod_solana_core_repair[label="repair", path="/home/yibai/llmcc/sample/repos/solana/core/src/repair"];
+    mod_solana_core_validator[label="validator", path="/home/yibai/llmcc/sample/repos/solana/core/src"];
+  }
+
+  subgraph cluster_solana_entry {
+    label="solana-entry";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_entry_entry[label="entry", path="/home/yibai/llmcc/sample/repos/solana/entry/src"];
+    mod_solana_entry_wincode[label="wincode", path="/home/yibai/llmcc/sample/repos/solana/entry/src"];
+  }
+
+  subgraph cluster_solana_gossip {
+    label="solana-gossip";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_gossip_cluster_info[label="cluster_info", path="/home/yibai/llmcc/sample/repos/solana/gossip/src"];
+  }
+
+  subgraph cluster_solana_ledger {
+    label="solana-ledger";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_ledger_blockstore[label="blockstore", path="/home/yibai/llmcc/sample/repos/solana/ledger/src/blockstore"];
+    mod_solana_ledger_blockstore_db[label="blockstore_db", path="/home/yibai/llmcc/sample/repos/solana/ledger/src"];
+    mod_solana_ledger_blockstore_meta[label="blockstore_meta", path="/home/yibai/llmcc/sample/repos/solana/ledger/src"];
+    mod_solana_ledger_blockstore_processor[label="blockstore_processor", path="/home/yibai/llmcc/sample/repos/solana/ledger/src"];
+    mod_solana_ledger_shred[label="shred", path="/home/yibai/llmcc/sample/repos/solana/ledger/src"];
+  }
+
+  subgraph cluster_solana_perf {
+    label="solana-perf";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_perf_packet[label="packet", path="/home/yibai/llmcc/sample/repos/solana/perf/src"];
+  }
+
+  subgraph cluster_solana_program_runtime {
+    label="solana-program-runtime";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_program_runtime_cpi[label="cpi", path="/home/yibai/llmcc/sample/repos/solana/program-runtime/src"];
+    mod_solana_program_runtime_invoke_context[label="invoke_context", path="/home/yibai/llmcc/sample/repos/solana/program-runtime/src"];
+    mod_solana_program_runtime_loaded_programs[label="loaded_programs", path="/home/yibai/llmcc/sample/repos/solana/program-runtime/src"];
+  }
+
+  subgraph cluster_solana_remote_wallet {
+    label="solana-remote-wallet";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_remote_wallet_remote_wallet[label="remote_wallet", path="/home/yibai/llmcc/sample/repos/solana/remote-wallet/src"];
+  }
+
+  subgraph cluster_solana_rpc {
+    label="solana-rpc";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_rpc_rpc[label="rpc", path="/home/yibai/llmcc/sample/repos/solana/rpc/src"];
+    mod_solana_rpc_rpc_subscription_tracker[label="rpc_subscription_tracker", path="/home/yibai/llmcc/sample/repos/solana/rpc/src"];
+    mod_solana_rpc_rpc_subscriptions[label="rpc_subscriptions", path="/home/yibai/llmcc/sample/repos/solana/rpc/src"];
+  }
+
+  subgraph cluster_solana_rpc_client {
+    label="solana-rpc-client";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_rpc_client_nonblocking[label="nonblocking", path="/home/yibai/llmcc/sample/repos/solana/rpc-client/src/nonblocking"];
+    mod_solana_rpc_client_rpc_client[label="rpc_client", path="/home/yibai/llmcc/sample/repos/solana/rpc-client/src"];
+    mod_solana_rpc_client_rpc_sender[label="rpc_sender", path="/home/yibai/llmcc/sample/repos/solana/rpc-client/src"];
+  }
+
+  subgraph cluster_solana_rpc_client_types {
+    label="solana-rpc-client-types";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_rpc_client_types_config[label="config", path="/home/yibai/llmcc/sample/repos/solana/rpc-client-types/src"];
+    mod_solana_rpc_client_types_response[label="response", path="/home/yibai/llmcc/sample/repos/solana/rpc-client-types/src"];
+  }
+
+  subgraph cluster_solana_runtime {
+    label="solana-runtime";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_runtime_bank[label="bank", path="/home/yibai/llmcc/sample/repos/solana/runtime/src/bank"];
+    mod_solana_runtime_bank_forks[label="bank_forks", path="/home/yibai/llmcc/sample/repos/solana/runtime/src"];
+    mod_solana_runtime_serde_snapshot[label="serde_snapshot", path="/home/yibai/llmcc/sample/repos/solana/runtime/src"];
+    mod_solana_runtime_snapshot_utils[label="snapshot_utils", path="/home/yibai/llmcc/sample/repos/solana/runtime/src"];
+  }
+
+  subgraph cluster_solana_storage_bigtable {
+    label="solana-storage-bigtable";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_storage_bigtable_proto[label="proto", path="/home/yibai/llmcc/sample/repos/solana/storage-bigtable/proto"];
+  }
+
+  subgraph cluster_solana_streamer {
+    label="solana-streamer";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_streamer_nonblocking[label="nonblocking", path="/home/yibai/llmcc/sample/repos/solana/streamer/src/nonblocking"];
+  }
+
+  subgraph cluster_solana_tokens {
+    label="solana-tokens";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_tokens_commands[label="commands", path="/home/yibai/llmcc/sample/repos/solana/tokens/src"];
+  }
+
+  subgraph cluster_solana_transaction_status_client_types {
+    label="solana-transaction-status-client-types";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_transaction_status_client_types_lib[label="lib", path="/home/yibai/llmcc/sample/repos/solana/transaction-status-client-types/src"];
+  }
+
+  subgraph cluster_solana_turbine {
+    label="solana-turbine";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_turbine_broadcast_stage[label="broadcast_stage", path="/home/yibai/llmcc/sample/repos/solana/turbine/src/broadcast_stage"];
+  }
+
+  subgraph cluster_solana_unified_scheduler_logic {
+    label="solana-unified-scheduler-logic";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_unified_scheduler_logic_lib[label="lib", path="/home/yibai/llmcc/sample/repos/solana/unified-scheduler-logic/src"];
+  }
+
+  subgraph cluster_solana_unified_scheduler_pool {
+    label="solana-unified-scheduler-pool";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_unified_scheduler_pool_lib[label="lib", path="/home/yibai/llmcc/sample/repos/solana/unified-scheduler-pool/src"];
+  }
+
+  subgraph cluster_solana_vote_program {
+    label="solana-vote-program";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_solana_vote_program_vote_state[label="vote_state", path="/home/yibai/llmcc/sample/repos/solana/programs/vote/src/vote_state"];
+  }
+
+  subgraph cluster_xtask {
+    label="xtask";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_xtask_commands[label="commands", path="/home/yibai/llmcc/sample/repos/solana/ci/xtask/src/commands"];
+  }
+
+
+  mod_agave_install_command -> mod_solana_rpc_client_rpc_client;
+  mod_agave_syscalls_lib -> mod_solana_ledger_shred;
+  mod_agave_syscalls_lib -> mod_solana_program_runtime_invoke_context;
+  mod_agave_validator_bootstrap -> mod_agave_install_command;
+  mod_agave_validator_bootstrap -> mod_solana_core_validator;
+  mod_agave_validator_bootstrap -> mod_solana_gossip_cluster_info;
+  mod_agave_validator_bootstrap -> mod_solana_rpc_client_rpc_client;
+  mod_agave_votor_consensus_pool -> mod_solana_gossip_cluster_info;
+  mod_solana_accounts_db_accounts_db -> mod_agave_xdp_ebpf_bin;
+  mod_solana_accounts_db_accounts_db -> mod_solana_accounts_db_accounts_index;
+  mod_solana_clap_v3_utils_input_parsers -> mod_solana_remote_wallet_remote_wallet;
+  mod_solana_cli_cli -> mod_solana_cli_output_cli_output;
+  mod_solana_cli_cli -> mod_solana_rpc_client_rpc_client;
+  mod_solana_cli_cli -> mod_solana_rpc_client_types_config;
+  mod_solana_cli_cli -> mod_solana_turbine_broadcast_stage;
+  mod_solana_cli_cluster_query -> mod_solana_cli_cli;
+  mod_solana_cli_cluster_query -> mod_solana_remote_wallet_remote_wallet;
+  mod_solana_cli_cluster_query -> mod_solana_rpc_client_nonblocking;
+  mod_solana_cli_cluster_query -> mod_solana_rpc_client_types_config;
+  mod_solana_cli_output_cli_output -> mod_solana_rpc_client_types_response;
+  mod_solana_cli_output_cli_output -> mod_solana_transaction_status_client_types_lib;
+  mod_solana_cli_output_cli_output -> mod_solana_turbine_broadcast_stage;
+  mod_solana_cli_output_display -> mod_solana_entry_wincode;
+  mod_solana_cli_output_display -> mod_solana_transaction_status_client_types_lib;
+  mod_solana_cli_program -> mod_solana_cli_cli;
+  mod_solana_cli_program -> mod_solana_cli_output_cli_output;
+  mod_solana_cli_program -> mod_solana_ledger_shred;
+  mod_solana_cli_program -> mod_solana_rpc_client_nonblocking;
+  mod_solana_cli_program -> mod_solana_rpc_client_rpc_client;
+  mod_solana_cli_stake -> mod_solana_cli_cli;
+  mod_solana_cli_stake -> mod_solana_cli_output_cli_output;
+  mod_solana_cli_stake -> mod_solana_remote_wallet_remote_wallet;
+  mod_solana_cli_stake -> mod_solana_rpc_client_rpc_client;
+  mod_solana_cli_stake -> mod_solana_rpc_client_types_response;
+  mod_solana_core_banking_stage -> mod_solana_core_validator;
+  mod_solana_core_banking_stage -> mod_solana_runtime_bank;
+  mod_solana_core_banking_stage -> mod_solana_runtime_bank_forks;
+  mod_solana_core_consensus -> mod_solana_ledger_blockstore;
+  mod_solana_core_consensus -> mod_solana_ledger_blockstore_processor;
+  mod_solana_core_consensus -> mod_solana_runtime_bank;
+  mod_solana_core_repair -> mod_solana_core_consensus;
+  mod_solana_core_repair -> mod_solana_gossip_cluster_info;
+  mod_solana_core_repair -> mod_solana_ledger_blockstore;
+  mod_solana_core_repair -> mod_solana_perf_packet;
+  mod_solana_core_repair -> mod_solana_runtime_bank_forks;
+  mod_solana_core_validator -> mod_agave_install_command;
+  mod_solana_core_validator -> mod_solana_core_consensus;
+  mod_solana_core_validator -> mod_solana_core_repair;
+  mod_solana_core_validator -> mod_solana_gossip_cluster_info;
+  mod_solana_core_validator -> mod_solana_ledger_blockstore;
+  mod_solana_core_validator -> mod_solana_ledger_blockstore_processor;
+  mod_solana_core_validator -> mod_solana_runtime_bank;
+  mod_solana_core_validator -> mod_solana_runtime_bank_forks;
+  mod_solana_core_validator -> mod_solana_unified_scheduler_pool_lib;
+  mod_solana_entry_entry -> mod_solana_entry_wincode;
+  mod_solana_gossip_cluster_info -> mod_solana_perf_packet;
+  mod_solana_ledger_blockstore -> mod_solana_entry_entry;
+  mod_solana_ledger_blockstore -> mod_solana_ledger_blockstore_db;
+  mod_solana_ledger_blockstore -> mod_solana_ledger_shred;
+  mod_solana_ledger_blockstore -> mod_solana_transaction_status_client_types_lib;
+  mod_solana_ledger_blockstore_db -> mod_solana_ledger_blockstore;
+  mod_solana_ledger_blockstore_meta -> mod_solana_ledger_shred;
+  mod_solana_ledger_blockstore_processor -> mod_agave_install_command;
+  mod_solana_ledger_blockstore_processor -> mod_solana_entry_entry;
+  mod_solana_ledger_blockstore_processor -> mod_solana_entry_wincode;
+  mod_solana_ledger_blockstore_processor -> mod_solana_ledger_blockstore;
+  mod_solana_ledger_blockstore_processor -> mod_solana_runtime_bank;
+  mod_solana_ledger_blockstore_processor -> mod_solana_runtime_bank_forks;
+  mod_solana_ledger_shred -> mod_solana_entry_entry;
+  mod_solana_ledger_shred -> mod_solana_perf_packet;
+  mod_solana_ledger_shred -> mod_solana_runtime_bank;
+  mod_solana_program_runtime_cpi -> mod_solana_program_runtime_invoke_context;
+  mod_solana_program_runtime_invoke_context -> mod_solana_program_runtime_loaded_programs;
+  mod_solana_rpc_client_nonblocking -> mod_solana_rpc_client_rpc_sender;
+  mod_solana_rpc_client_nonblocking -> mod_solana_rpc_client_types_response;
+  mod_solana_rpc_client_types_config -> mod_solana_runtime_bank;
+  mod_solana_rpc_client_types_config -> mod_solana_transaction_status_client_types_lib;
+  mod_solana_rpc_client_types_response -> mod_solana_transaction_status_client_types_lib;
+  mod_solana_rpc_rpc -> mod_solana_ledger_blockstore;
+  mod_solana_rpc_rpc -> mod_solana_ledger_shred;
+  mod_solana_rpc_rpc -> mod_solana_runtime_bank;
+  mod_solana_rpc_rpc -> mod_solana_storage_bigtable_proto;
+  mod_solana_rpc_rpc_subscription_tracker -> mod_solana_rpc_rpc_subscriptions;
+  mod_solana_rpc_rpc_subscriptions -> mod_solana_rpc_client_types_response;
+  mod_solana_rpc_rpc_subscriptions -> mod_solana_rpc_rpc_subscription_tracker;
+  mod_solana_rpc_rpc_subscriptions -> mod_solana_runtime_bank;
+  mod_solana_rpc_rpc_subscriptions -> mod_solana_runtime_bank_forks;
+  mod_solana_runtime_bank -> mod_solana_runtime_bank_forks;
+  mod_solana_runtime_bank -> mod_solana_transaction_status_client_types_lib;
+  mod_solana_runtime_bank_forks -> mod_solana_runtime_bank;
+  mod_solana_runtime_serde_snapshot -> mod_solana_accounts_db_accounts_db;
+  mod_solana_runtime_serde_snapshot -> mod_solana_runtime_bank;
+  mod_solana_runtime_serde_snapshot -> mod_solana_runtime_snapshot_utils;
+  mod_solana_runtime_snapshot_utils -> mod_solana_accounts_db_accounts_db;
+  mod_solana_runtime_snapshot_utils -> mod_solana_perf_packet;
+  mod_solana_runtime_snapshot_utils -> mod_solana_runtime_bank;
+  mod_solana_runtime_snapshot_utils -> mod_solana_runtime_serde_snapshot;
+  mod_solana_runtime_snapshot_utils -> mod_solana_unified_scheduler_pool_lib;
+  mod_solana_streamer_nonblocking -> mod_agave_install_command;
+  mod_solana_streamer_nonblocking -> mod_solana_perf_packet;
+  mod_solana_tokens_commands -> mod_solana_rpc_client_rpc_client;
+  mod_solana_transaction_status_client_types_lib -> mod_solana_account_decoder_client_types_token;
+  mod_solana_transaction_status_client_types_lib -> mod_solana_entry_wincode;
+  mod_solana_turbine_broadcast_stage -> mod_solana_gossip_cluster_info;
+  mod_solana_turbine_broadcast_stage -> mod_solana_ledger_blockstore;
+  mod_solana_turbine_broadcast_stage -> mod_solana_ledger_shred;
+  mod_solana_unified_scheduler_pool_lib -> mod_solana_ledger_blockstore_processor;
+  mod_solana_unified_scheduler_pool_lib -> mod_solana_unified_scheduler_logic_lib;
+  mod_solana_vote_program_vote_state -> mod_solana_perf_packet;
+  mod_solana_vote_program_vote_state -> mod_solana_rpc_rpc_subscription_tracker;
+  mod_xtask_commands -> mod_agave_install_command;
+}

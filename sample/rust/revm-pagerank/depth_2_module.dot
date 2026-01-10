@@ -1,0 +1,71 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  mod_op_revm_precompiles[label="op-revm::precompiles", path="/home/yibai/llmcc/sample/repos/revm/crates/op-revm/src"];
+  mod_op_revm_transaction[label="op-revm::transaction", path="/home/yibai/llmcc/sample/repos/revm/crates/op-revm/src/transaction"];
+  mod_revm_context_interface_cfg[label="revm-context-interface::cfg", path="/home/yibai/llmcc/sample/repos/revm/crates/context/interface/src"];
+  mod_revm_context_interface_host[label="revm-context-interface::host", path="/home/yibai/llmcc/sample/repos/revm/crates/context/interface/src"];
+  mod_revm_context_interface_journaled_state[label="revm-context-interface::journaled_state", path="/home/yibai/llmcc/sample/repos/revm/crates/context/interface/src"];
+  mod_revm_context_interface_result[label="revm-context-interface::result", path="/home/yibai/llmcc/sample/repos/revm/crates/context/interface/src"];
+  mod_revm_context_journal[label="revm-context::journal", path="/home/yibai/llmcc/sample/repos/revm/crates/context/src"];
+  mod_revm_context_tx[label="revm-context::tx", path="/home/yibai/llmcc/sample/repos/revm/crates/context/src"];
+  mod_revm_database_interface_lib[label="revm-database-interface::lib", path="/home/yibai/llmcc/sample/repos/revm/crates/database/interface/src"];
+  mod_revm_database_states[label="revm-database::states", path="/home/yibai/llmcc/sample/repos/revm/crates/database/src/states"];
+  mod_revm_interpreter_instruction_context[label="revm-interpreter::instruction_context", path="/home/yibai/llmcc/sample/repos/revm/crates/interpreter/src"];
+  mod_revm_interpreter_instruction_result[label="revm-interpreter::instruction_result", path="/home/yibai/llmcc/sample/repos/revm/crates/interpreter/src"];
+  mod_revm_interpreter_instructions[label="revm-interpreter::instructions", path="/home/yibai/llmcc/sample/repos/revm/crates/interpreter/src"];
+  mod_revm_interpreter_interpreter[label="revm-interpreter::interpreter", path="/home/yibai/llmcc/sample/repos/revm/crates/interpreter/src"];
+  mod_revm_interpreter_interpreter_action[label="revm-interpreter::interpreter_action", path="/home/yibai/llmcc/sample/repos/revm/crates/interpreter/src/interpreter_action"];
+  mod_revm_interpreter_interpreter_types[label="revm-interpreter::interpreter_types", path="/home/yibai/llmcc/sample/repos/revm/crates/interpreter/src"];
+  mod_revm_precompile_bls12_381[label="revm-precompile::bls12_381", path="/home/yibai/llmcc/sample/repos/revm/crates/precompile/src/bls12_381"];
+  mod_revm_precompile_bn254[label="revm-precompile::bn254", path="/home/yibai/llmcc/sample/repos/revm/crates/precompile/src/bn254"];
+  mod_revm_precompile_interface[label="revm-precompile::interface", path="/home/yibai/llmcc/sample/repos/revm/crates/precompile/src"];
+  mod_revm_precompile_kzg_point_evaluation[label="revm-precompile::kzg_point_evaluation", path="/home/yibai/llmcc/sample/repos/revm/crates/precompile/src/kzg_point_evaluation"];
+  mod_revm_precompile_lib[label="revm-precompile::lib", path="/home/yibai/llmcc/sample/repos/revm/crates/precompile/src"];
+  mod_revm_primitives_hardfork[label="revm-primitives::hardfork", path="/home/yibai/llmcc/sample/repos/revm/crates/primitives/src"];
+  mod_revm_statetest_types_blockchain[label="revm-statetest-types::blockchain", path="/home/yibai/llmcc/sample/repos/revm/crates/statetest-types/src"];
+  mod_revme_cmd[label="revme::cmd", path="/home/yibai/llmcc/sample/repos/revm/bins/revme/src/cmd"];
+  mod_revme_statetest[label="revme::statetest", path="/home/yibai/llmcc/sample/repos/revm/bins/revme/src/cmd/statetest"];
+
+  mod_op_revm_precompiles -> mod_revm_precompile_lib;
+  mod_op_revm_transaction -> mod_revm_context_tx;
+  mod_revm_context_interface_cfg -> mod_revm_primitives_hardfork;
+  mod_revm_context_journal -> mod_revm_context_interface_journaled_state;
+  mod_revm_database_states -> mod_revm_database_interface_lib;
+  mod_revm_interpreter_instruction_result -> mod_revm_context_interface_result;
+  mod_revm_interpreter_instructions -> mod_revm_context_interface_cfg;
+  mod_revm_interpreter_instructions -> mod_revm_context_interface_host;
+  mod_revm_interpreter_instructions -> mod_revm_interpreter_instruction_context;
+  mod_revm_interpreter_instructions -> mod_revm_interpreter_instruction_result;
+  mod_revm_interpreter_instructions -> mod_revm_interpreter_interpreter;
+  mod_revm_interpreter_instructions -> mod_revm_interpreter_interpreter_types;
+  mod_revm_interpreter_instructions -> mod_revm_primitives_hardfork;
+  mod_revm_interpreter_interpreter -> mod_revm_context_interface_cfg;
+  mod_revm_interpreter_interpreter -> mod_revm_interpreter_instruction_result;
+  mod_revm_interpreter_interpreter -> mod_revm_interpreter_interpreter_action;
+  mod_revm_interpreter_interpreter -> mod_revm_interpreter_interpreter_types;
+  mod_revm_interpreter_interpreter -> mod_revm_primitives_hardfork;
+  mod_revm_interpreter_interpreter_action -> mod_revm_interpreter_interpreter;
+  mod_revm_precompile_bls12_381 -> mod_revm_precompile_interface;
+  mod_revm_precompile_bn254 -> mod_revm_precompile_interface;
+  mod_revm_precompile_kzg_point_evaluation -> mod_revm_precompile_interface;
+  mod_revme_cmd -> mod_revm_context_interface_journaled_state;
+  mod_revme_cmd -> mod_revm_database_states;
+  mod_revme_cmd -> mod_revm_interpreter_instructions;
+  mod_revme_cmd -> mod_revm_statetest_types_blockchain;
+  mod_revme_statetest -> mod_revm_context_interface_result;
+  mod_revme_statetest -> mod_revm_context_tx;
+  mod_revme_statetest -> mod_revm_database_states;
+  mod_revme_statetest -> mod_revm_interpreter_instructions;
+  mod_revme_statetest -> mod_revm_primitives_hardfork;
+}

@@ -45,6 +45,7 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_lance_encoding_buffer[label="buffer", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
     mod_lance_encoding_compression[label="compression", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
     mod_lance_encoding_data[label="data", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
     mod_lance_encoding_decoder[label="decoder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src"];
@@ -59,6 +60,8 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_lance_file_previous[label="previous", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/previous"];
+    mod_lance_file_reader[label="reader", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src"];
     mod_lance_file_writer[label="writer", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src"];
   }
 
@@ -67,6 +70,7 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_lance_index_frag_reuse[label="frag_reuse", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src"];
     mod_lance_index_lib[label="lib", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src"];
     mod_lance_index_scalar[label="scalar", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src"];
     mod_lance_index_vector[label="vector", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector"];
@@ -77,8 +81,11 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_lance_io_encodings[label="encodings", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src"];
     mod_lance_io_object_store[label="object_store", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/object_store"];
     mod_lance_io_scheduler[label="scheduler", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src"];
+    mod_lance_io_traits[label="traits", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src"];
+    mod_lance_io_utils[label="utils", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src"];
   }
 
   subgraph cluster_lance_jni {
@@ -86,7 +93,6 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_lance_jni_blocking_dataset[label="blocking_dataset", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
     mod_lance_jni_error[label="error", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
     mod_lance_jni_namespace[label="namespace", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src"];
   }
@@ -138,6 +144,8 @@ digraph architecture {
   mod_lance_datagen_generator -> mod_lance_core_datatypes;
   mod_lance_dataset -> mod_lance_core_datatypes;
   mod_lance_dataset -> mod_lance_core_utils;
+  mod_lance_dataset -> mod_lance_file_reader;
+  mod_lance_dataset -> mod_lance_index_frag_reuse;
   mod_lance_dataset -> mod_lance_index_scalar;
   mod_lance_dataset -> mod_lance_index_vector;
   mod_lance_dataset -> mod_lance_io_object_store;
@@ -148,26 +156,32 @@ digraph architecture {
   mod_lance_dataset -> mod_lance_table_rowids;
   mod_lance_encoding_compression -> mod_lance_encoding_data;
   mod_lance_encoding_compression -> mod_lance_encoding_encodings;
+  mod_lance_encoding_data -> mod_lance_encoding_buffer;
   mod_lance_encoding_decoder -> mod_lance_core_cache;
   mod_lance_encoding_decoder -> mod_lance_core_datatypes;
   mod_lance_encoding_decoder -> mod_lance_encoding_previous;
+  mod_lance_encoding_encodings -> mod_lance_encoding_buffer;
   mod_lance_encoding_encodings -> mod_lance_encoding_compression;
   mod_lance_encoding_encodings -> mod_lance_encoding_data;
   mod_lance_encoding_encodings -> mod_lance_encoding_decoder;
   mod_lance_encoding_encodings -> mod_lance_encoding_encoder;
   mod_lance_encoding_previous -> mod_lance_core_datatypes;
+  mod_lance_encoding_previous -> mod_lance_encoding_buffer;
   mod_lance_encoding_previous -> mod_lance_encoding_data;
   mod_lance_encoding_previous -> mod_lance_encoding_decoder;
   mod_lance_encoding_previous -> mod_lance_encoding_encoder;
   mod_lance_encoding_previous -> mod_lance_encoding_encodings;
   mod_lance_encoding_testing -> mod_lance_core_datatypes;
   mod_lance_encoding_testing -> mod_lance_encoding_encoder;
+  mod_lance_file_previous -> mod_lance_core_datatypes;
+  mod_lance_file_previous -> mod_lance_file_reader;
   mod_lance_file_writer -> mod_lance_core_datatypes;
   mod_lance_file_writer -> mod_lance_encoding_encoder;
   mod_lance_index -> mod_lance_core_cache;
   mod_lance_index -> mod_lance_core_datatypes;
   mod_lance_index -> mod_lance_core_utils;
   mod_lance_index -> mod_lance_dataset;
+  mod_lance_index -> mod_lance_index_frag_reuse;
   mod_lance_index -> mod_lance_index_lib;
   mod_lance_index -> mod_lance_index_scalar;
   mod_lance_index -> mod_lance_index_vector;
@@ -177,6 +191,7 @@ digraph architecture {
   mod_lance_index_scalar -> mod_lance_core_cache;
   mod_lance_index_scalar -> mod_lance_core_datatypes;
   mod_lance_index_scalar -> mod_lance_core_utils;
+  mod_lance_index_scalar -> mod_lance_index_frag_reuse;
   mod_lance_index_scalar -> mod_lance_index_lib;
   mod_lance_index_scalar -> mod_lance_io_object_store;
   mod_lance_index_scalar -> mod_lance_jni_error;
@@ -193,8 +208,9 @@ digraph architecture {
   mod_lance_io -> mod_lance_io_scheduler;
   mod_lance_io -> mod_lance_table_format;
   mod_lance_io -> mod_lance_table_io;
-  mod_lance_jni_blocking_dataset -> mod_lance_dataset;
-  mod_lance_jni_namespace -> mod_lance_dataset;
+  mod_lance_io_encodings -> mod_lance_io_traits;
+  mod_lance_io_scheduler -> mod_lance_io_traits;
+  mod_lance_io_utils -> mod_lance_io_traits;
   mod_lance_jni_namespace -> mod_lance_namespace_impls_rest_adapter;
   mod_lance_namespace_impls_rest_adapter -> mod_lance_io_scheduler;
   mod_lance_session -> mod_lance_core_cache;

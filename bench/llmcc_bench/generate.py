@@ -29,34 +29,47 @@ def compute_top_k(loc: int, depth: int) -> int:
     """
     Compute top-K values based on LoC and depth.
     Larger codebases get larger top-K to keep graphs readable.
+
+    LoC tiers:
+    - XL: >800K (substrate, aptos, sui)
+    - L:  >400K (solana, databend, risingwave)
+    - M:  >200K (reth, lighthouse, rust-analyzer)
+    - S:  >50K  (foundry, cairo, snarkvm)
+    - XS: <=50K (revm, alloy, smaller libs)
     """
     if depth == 1:  # Crate level
-        if loc > 400000:
-            return 25
-        elif loc > 200000:
-            return 20
-        elif loc > 50000:
-            return 15
-        else:
-            return 10
-    elif depth == 2:  # Module level
-        if loc > 400000:
-            return 50
-        elif loc > 200000:
+        if loc > 800000:
             return 40
-        elif loc > 50000:
+        elif loc > 400000:
             return 30
-        else:
-            return 20
-    elif depth == 3:  # File level
-        if loc > 400000:
-            return 300
         elif loc > 200000:
-            return 250
+            return 25
         elif loc > 50000:
-            return 200
+            return 20
         else:
-            return 150
+            return 15
+    elif depth == 2:  # Module level
+        if loc > 800000:
+            return 80
+        elif loc > 400000:
+            return 60
+        elif loc > 200000:
+            return 50
+        elif loc > 50000:
+            return 40
+        else:
+            return 30
+    elif depth == 3:  # File level
+        if loc > 800000:
+            return 500
+        elif loc > 400000:
+            return 400
+        elif loc > 200000:
+            return 300
+        elif loc > 50000:
+            return 250
+        else:
+            return 200
     return 0
 
 

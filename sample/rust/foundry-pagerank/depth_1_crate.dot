@@ -1,0 +1,71 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  crate_anvil[label="anvil", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil"];
+  crate_anvil_rpc[label="anvil-rpc", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/rpc"];
+  crate_cast[label="cast", path="/home/yibai/llmcc/sample/repos/foundry/crates/cast"];
+  crate_chisel[label="chisel", path="/home/yibai/llmcc/sample/repos/foundry/crates/chisel"];
+  crate_forge[label="forge", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge"];
+  crate_forge_fmt[label="forge-fmt", path="/home/yibai/llmcc/sample/repos/foundry/crates/fmt"];
+  crate_forge_script[label="forge-script", path="/home/yibai/llmcc/sample/repos/foundry/crates/script"];
+  crate_forge_verify[label="forge-verify", path="/home/yibai/llmcc/sample/repos/foundry/crates/verify"];
+  crate_foundry_cheatcodes[label="foundry-cheatcodes", path="/home/yibai/llmcc/sample/repos/foundry/crates/cheatcodes"];
+  crate_foundry_cli[label="foundry-cli", path="/home/yibai/llmcc/sample/repos/foundry/crates/cli"];
+  crate_foundry_common[label="foundry-common", path="/home/yibai/llmcc/sample/repos/foundry/crates/common"];
+  crate_foundry_config[label="foundry-config", path="/home/yibai/llmcc/sample/repos/foundry/crates/config"];
+  crate_foundry_evm[label="foundry-evm", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/evm"];
+  crate_foundry_evm_core[label="foundry-evm-core", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core"];
+  crate_foundry_evm_fuzz[label="foundry-evm-fuzz", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/fuzz"];
+  crate_foundry_evm_traces[label="foundry-evm-traces", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/traces"];
+  crate_foundry_test_utils[label="foundry-test-utils", path="/home/yibai/llmcc/sample/repos/foundry/crates/test-utils"];
+  crate_foundry_wallets[label="foundry-wallets", path="/home/yibai/llmcc/sample/repos/foundry/crates/wallets"];
+
+  crate_anvil -> crate_anvil_rpc;
+  crate_anvil -> crate_foundry_cheatcodes;
+  crate_anvil -> crate_foundry_evm;
+  crate_cast -> crate_foundry_cheatcodes;
+  crate_cast -> crate_foundry_cli;
+  crate_cast -> crate_foundry_common;
+  crate_cast -> crate_foundry_config;
+  crate_cast -> crate_foundry_evm;
+  crate_cast -> crate_foundry_wallets;
+  crate_chisel -> crate_foundry_evm;
+  crate_forge -> crate_forge_fmt;
+  crate_forge -> crate_forge_verify;
+  crate_forge -> crate_foundry_cli;
+  crate_forge -> crate_foundry_common;
+  crate_forge -> crate_foundry_config;
+  crate_forge -> crate_foundry_evm;
+  crate_forge -> crate_foundry_evm_core;
+  crate_forge -> crate_foundry_evm_fuzz;
+  crate_forge_fmt -> crate_foundry_common;
+  crate_forge_fmt -> crate_foundry_config;
+  crate_forge_script -> crate_cast;
+  crate_forge_verify -> crate_foundry_config;
+  crate_foundry_cheatcodes -> crate_forge_fmt;
+  crate_foundry_cheatcodes -> crate_foundry_common;
+  crate_foundry_cheatcodes -> crate_foundry_config;
+  crate_foundry_cheatcodes -> crate_foundry_evm;
+  crate_foundry_cli -> crate_foundry_common;
+  crate_foundry_cli -> crate_foundry_config;
+  crate_foundry_cli -> crate_foundry_evm;
+  crate_foundry_config -> crate_foundry_cheatcodes;
+  crate_foundry_evm -> crate_foundry_config;
+  crate_foundry_evm -> crate_foundry_evm_core;
+  crate_foundry_evm -> crate_foundry_evm_fuzz;
+  crate_foundry_evm -> crate_foundry_evm_traces;
+  crate_foundry_evm_core -> crate_anvil;
+  crate_foundry_evm_traces -> crate_foundry_common;
+  crate_foundry_test_utils -> crate_forge_fmt;
+  crate_foundry_test_utils -> crate_foundry_common;
+}

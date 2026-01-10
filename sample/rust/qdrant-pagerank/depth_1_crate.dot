@@ -14,6 +14,8 @@ digraph architecture {
   crate_api[label="api", path="/home/yibai/llmcc/sample/repos/qdrant/lib/api"];
   crate_collection[label="collection", path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection"];
   crate_common[label="common", path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/common"];
+  crate_gridstore[label="gridstore", path="/home/yibai/llmcc/sample/repos/qdrant/lib/gridstore"];
+  crate_memory[label="memory", path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/memory"];
   crate_qdrant[label="qdrant", path="/home/yibai/llmcc/sample/repos/qdrant"];
   crate_qdrant_edge_py[label="qdrant-edge-py", path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python"];
   crate_segment[label="segment", path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment"];
@@ -37,10 +39,13 @@ digraph architecture {
   crate_qdrant_edge_py -> crate_shard;
   crate_segment -> crate_api;
   crate_segment -> crate_common;
+  crate_segment -> crate_gridstore;
+  crate_segment -> crate_memory;
   crate_shard -> crate_api;
-  crate_shard -> crate_collection;
   crate_shard -> crate_common;
+  crate_shard -> crate_gridstore;
   crate_shard -> crate_segment;
   crate_storage -> crate_api;
   crate_storage -> crate_collection;
+  crate_storage -> crate_segment;
 }

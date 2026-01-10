@@ -19,6 +19,14 @@ digraph architecture {
     mod_ruff_commands[label="commands", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff/src/commands"];
   }
 
+  subgraph cluster_ruff_annotate_snippets {
+    label="ruff_annotate_snippets";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_ruff_annotate_snippets_renderer[label="renderer", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_annotate_snippets/src/renderer"];
+  }
+
   subgraph cluster_ruff_db {
     label="ruff_db";
     style=rounded;
@@ -48,6 +56,7 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_ruff_linter_checkers[label="checkers", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_linter/src/checkers"];
+    mod_ruff_linter_docstrings[label="docstrings", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_linter/src/docstrings"];
     mod_ruff_linter_flake8_bandit[label="flake8_bandit", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_linter/src/rules/flake8_bandit"];
     mod_ruff_linter_flake8_bugbear[label="flake8_bugbear", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_linter/src/rules/flake8_bugbear"];
     mod_ruff_linter_flake8_comprehensions[label="flake8_comprehensions", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_linter/src/rules/flake8_comprehensions"];
@@ -56,6 +65,8 @@ digraph architecture {
     mod_ruff_linter_flake8_simplify[label="flake8_simplify", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_linter/src/rules/flake8_simplify"];
     mod_ruff_linter_flake8_use_pathlib[label="flake8_use_pathlib", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_linter/src/rules/flake8_use_pathlib"];
     mod_ruff_linter_isort[label="isort", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_linter/src/rules/isort"];
+    mod_ruff_linter_noqa[label="noqa", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_linter/src"];
+    mod_ruff_linter_pep8_naming[label="pep8_naming", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_linter/src/rules/pep8_naming"];
     mod_ruff_linter_pycodestyle[label="pycodestyle", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_linter/src/rules/pycodestyle"];
     mod_ruff_linter_pydocstyle[label="pydocstyle", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_linter/src/rules/pydocstyle"];
     mod_ruff_linter_pyflakes[label="pyflakes", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_linter/src/rules/pyflakes"];
@@ -74,6 +85,7 @@ digraph architecture {
 
     mod_ruff_python_ast_comparable[label="comparable", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_ast/src"];
     mod_ruff_python_ast_generated[label="generated", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_ast/src"];
+    mod_ruff_python_ast_node_index[label="node_index", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_ast/src"];
     mod_ruff_python_ast_nodes[label="nodes", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_ast/src"];
     mod_ruff_python_ast_token[label="token", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_ast/src"];
     mod_ruff_python_ast_visitor[label="visitor", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_ast/src/visitor"];
@@ -87,6 +99,7 @@ digraph architecture {
     mod_ruff_python_formatter_comments[label="comments", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_formatter/src/comments"];
     mod_ruff_python_formatter_expression[label="expression", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_formatter/src/expression"];
     mod_ruff_python_formatter_statement[label="statement", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_formatter/src/statement"];
+    mod_ruff_python_formatter_string[label="string", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_python_formatter/src/string"];
   }
 
   subgraph cluster_ruff_python_literal {
@@ -132,6 +145,22 @@ digraph architecture {
     mod_ruff_text_size_size[label="size", path="/home/yibai/llmcc/sample/repos/ruff/crates/ruff_text_size/src"];
   }
 
+  subgraph cluster_ty_ide {
+    label="ty_ide";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_ty_ide_completion[label="completion", path="/home/yibai/llmcc/sample/repos/ruff/crates/ty_ide/src"];
+  }
+
+  subgraph cluster_ty_module_resolver {
+    label="ty_module_resolver";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_ty_module_resolver_resolve[label="resolve", path="/home/yibai/llmcc/sample/repos/ruff/crates/ty_module_resolver/src"];
+  }
+
   subgraph cluster_ty_project {
     label="ty_project";
     style=rounded;
@@ -146,6 +175,7 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_ty_python_semantic_db[label="db", path="/home/yibai/llmcc/sample/repos/ruff/crates/ty_python_semantic/src"];
+    mod_ty_python_semantic_place[label="place", path="/home/yibai/llmcc/sample/repos/ruff/crates/ty_python_semantic/src"];
     mod_ty_python_semantic_semantic_index[label="semantic_index", path="/home/yibai/llmcc/sample/repos/ruff/crates/ty_python_semantic/src"];
     mod_ty_python_semantic_types[label="types", path="/home/yibai/llmcc/sample/repos/ruff/crates/ty_python_semantic/src/types"];
   }
@@ -155,6 +185,7 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_ty_server_server[label="server", path="/home/yibai/llmcc/sample/repos/ruff/crates/ty_server/src/server"];
     mod_ty_server_session[label="session", path="/home/yibai/llmcc/sample/repos/ruff/crates/ty_server/src/session"];
   }
 
@@ -167,9 +198,12 @@ digraph architecture {
   }
 
 
+  mod_ruff_annotate_snippets_renderer -> mod_ruff_linter_flake8_pyi;
+  mod_ruff_annotate_snippets_renderer -> mod_ruff_python_ast_generated;
   mod_ruff_commands -> mod_ruff_db_system;
   mod_ruff_commands -> mod_ruff_linter_flake8_pyi;
   mod_ruff_commands -> mod_ruff_linter_settings;
+  mod_ruff_commands -> mod_ty_wasm_lib;
   mod_ruff_db_diagnostic -> mod_ruff_db_files;
   mod_ruff_db_diagnostic -> mod_ruff_python_ast_generated;
   mod_ruff_db_diagnostic -> mod_ruff_text_size_size;
@@ -180,10 +214,12 @@ digraph architecture {
   mod_ruff_formatter_builders -> mod_ruff_linter_ruff;
   mod_ruff_formatter_builders -> mod_ruff_python_ast_generated;
   mod_ruff_formatter_formatter -> mod_ruff_formatter_buffer;
-  mod_ruff_formatter_lib -> mod_ty_wasm_lib;
+  mod_ruff_formatter_lib -> mod_ruff_text_size_range;
   mod_ruff_formatter_printer -> mod_ruff_formatter_format_element;
   mod_ruff_formatter_printer -> mod_ruff_formatter_lib;
   mod_ruff_formatter_printer -> mod_ruff_python_ast_generated;
+  mod_ruff_linter_checkers -> mod_ruff_db_diagnostic;
+  mod_ruff_linter_checkers -> mod_ruff_linter_docstrings;
   mod_ruff_linter_checkers -> mod_ruff_linter_flake8_bandit;
   mod_ruff_linter_checkers -> mod_ruff_linter_flake8_bugbear;
   mod_ruff_linter_checkers -> mod_ruff_linter_flake8_comprehensions;
@@ -191,6 +227,8 @@ digraph architecture {
   mod_ruff_linter_checkers -> mod_ruff_linter_flake8_pytest_style;
   mod_ruff_linter_checkers -> mod_ruff_linter_flake8_simplify;
   mod_ruff_linter_checkers -> mod_ruff_linter_flake8_use_pathlib;
+  mod_ruff_linter_checkers -> mod_ruff_linter_noqa;
+  mod_ruff_linter_checkers -> mod_ruff_linter_pep8_naming;
   mod_ruff_linter_checkers -> mod_ruff_linter_pycodestyle;
   mod_ruff_linter_checkers -> mod_ruff_linter_pydocstyle;
   mod_ruff_linter_checkers -> mod_ruff_linter_pyflakes;
@@ -200,10 +238,12 @@ digraph architecture {
   mod_ruff_linter_checkers -> mod_ruff_linter_ruff;
   mod_ruff_linter_checkers -> mod_ruff_linter_settings;
   mod_ruff_linter_checkers -> mod_ruff_python_ast_generated;
-  mod_ruff_linter_checkers -> mod_ruff_python_semantic_analyze;
   mod_ruff_linter_checkers -> mod_ruff_python_semantic_model;
+  mod_ruff_linter_checkers -> mod_ruff_text_size_range;
+  mod_ruff_linter_checkers -> mod_ruff_text_size_size;
   mod_ruff_linter_checkers -> mod_ty_python_semantic_semantic_index;
-  mod_ruff_linter_checkers -> mod_ty_wasm_lib;
+  mod_ruff_linter_checkers -> mod_ty_python_semantic_types;
+  mod_ruff_linter_docstrings -> mod_ty_python_semantic_semantic_index;
   mod_ruff_linter_flake8_bandit -> mod_ruff_linter_checkers;
   mod_ruff_linter_flake8_bandit -> mod_ruff_linter_flake8_pyi;
   mod_ruff_linter_flake8_bandit -> mod_ruff_linter_pyupgrade;
@@ -214,6 +254,7 @@ digraph architecture {
   mod_ruff_linter_flake8_bandit -> mod_ruff_python_literal_float;
   mod_ruff_linter_flake8_bandit -> mod_ruff_python_semantic_model;
   mod_ruff_linter_flake8_bandit -> mod_ruff_text_size_range;
+  mod_ruff_linter_flake8_bandit -> mod_ty_python_semantic_semantic_index;
   mod_ruff_linter_flake8_bandit -> mod_ty_wasm_lib;
   mod_ruff_linter_flake8_bugbear -> mod_ruff_db_diagnostic;
   mod_ruff_linter_flake8_bugbear -> mod_ruff_linter_checkers;
@@ -227,12 +268,17 @@ digraph architecture {
   mod_ruff_linter_flake8_bugbear -> mod_ruff_python_semantic_analyze;
   mod_ruff_linter_flake8_bugbear -> mod_ruff_python_semantic_model;
   mod_ruff_linter_flake8_bugbear -> mod_ruff_text_size_range;
-  mod_ruff_linter_flake8_bugbear -> mod_ty_wasm_lib;
+  mod_ruff_linter_flake8_bugbear -> mod_ruff_text_size_size;
+  mod_ruff_linter_flake8_bugbear -> mod_ty_python_semantic_semantic_index;
   mod_ruff_linter_flake8_comprehensions -> mod_ruff_linter_checkers;
+  mod_ruff_linter_flake8_comprehensions -> mod_ruff_linter_docstrings;
   mod_ruff_linter_flake8_comprehensions -> mod_ruff_linter_violation;
   mod_ruff_linter_flake8_comprehensions -> mod_ruff_python_ast_comparable;
   mod_ruff_linter_flake8_comprehensions -> mod_ruff_python_ast_generated;
   mod_ruff_linter_flake8_comprehensions -> mod_ruff_text_size_range;
+  mod_ruff_linter_flake8_comprehensions -> mod_ruff_text_size_size;
+  mod_ruff_linter_flake8_comprehensions -> mod_ty_python_semantic_semantic_index;
+  mod_ruff_linter_flake8_comprehensions -> mod_ty_python_semantic_types;
   mod_ruff_linter_flake8_pyi -> mod_ruff_db_diagnostic;
   mod_ruff_linter_flake8_pyi -> mod_ruff_linter_checkers;
   mod_ruff_linter_flake8_pyi -> mod_ruff_linter_refurb;
@@ -241,7 +287,6 @@ digraph architecture {
   mod_ruff_linter_flake8_pyi -> mod_ruff_python_ast_comparable;
   mod_ruff_linter_flake8_pyi -> mod_ruff_python_ast_generated;
   mod_ruff_linter_flake8_pyi -> mod_ruff_python_ast_nodes;
-  mod_ruff_linter_flake8_pyi -> mod_ruff_python_semantic_analyze;
   mod_ruff_linter_flake8_pyi -> mod_ruff_python_semantic_model;
   mod_ruff_linter_flake8_pyi -> mod_ruff_text_size_range;
   mod_ruff_linter_flake8_pyi -> mod_ty_python_semantic_semantic_index;
@@ -255,11 +300,10 @@ digraph architecture {
   mod_ruff_linter_flake8_pytest_style -> mod_ruff_python_ast_generated;
   mod_ruff_linter_flake8_pytest_style -> mod_ruff_python_ast_nodes;
   mod_ruff_linter_flake8_pytest_style -> mod_ruff_python_ast_visitor;
+  mod_ruff_linter_flake8_pytest_style -> mod_ruff_python_semantic_model;
   mod_ruff_linter_flake8_pytest_style -> mod_ruff_text_size_range;
-  mod_ruff_linter_flake8_pytest_style -> mod_ruff_text_size_size;
-  mod_ruff_linter_flake8_pytest_style -> mod_ty_python_semantic_semantic_index;
   mod_ruff_linter_flake8_pytest_style -> mod_ty_python_semantic_types;
-  mod_ruff_linter_flake8_pytest_style -> mod_ty_wasm_lib;
+  mod_ruff_linter_flake8_simplify -> mod_ruff_db_diagnostic;
   mod_ruff_linter_flake8_simplify -> mod_ruff_linter_checkers;
   mod_ruff_linter_flake8_simplify -> mod_ruff_linter_flake8_pyi;
   mod_ruff_linter_flake8_simplify -> mod_ruff_linter_refurb;
@@ -267,6 +311,9 @@ digraph architecture {
   mod_ruff_linter_flake8_simplify -> mod_ruff_python_ast_comparable;
   mod_ruff_linter_flake8_simplify -> mod_ruff_python_ast_generated;
   mod_ruff_linter_flake8_simplify -> mod_ruff_python_ast_nodes;
+  mod_ruff_linter_flake8_simplify -> mod_ruff_text_size_range;
+  mod_ruff_linter_flake8_simplify -> mod_ruff_text_size_size;
+  mod_ruff_linter_flake8_simplify -> mod_ty_project_metadata;
   mod_ruff_linter_flake8_simplify -> mod_ty_python_semantic_semantic_index;
   mod_ruff_linter_flake8_simplify -> mod_ty_python_semantic_types;
   mod_ruff_linter_flake8_simplify -> mod_ty_wasm_lib;
@@ -275,12 +322,29 @@ digraph architecture {
   mod_ruff_linter_flake8_use_pathlib -> mod_ruff_linter_violation;
   mod_ruff_linter_flake8_use_pathlib -> mod_ruff_python_ast_comparable;
   mod_ruff_linter_flake8_use_pathlib -> mod_ruff_python_ast_generated;
+  mod_ruff_linter_flake8_use_pathlib -> mod_ruff_python_semantic_model;
+  mod_ruff_linter_flake8_use_pathlib -> mod_ruff_text_size_range;
   mod_ruff_linter_isort -> mod_ruff_db_diagnostic;
   mod_ruff_linter_isort -> mod_ruff_linter_checkers;
   mod_ruff_linter_isort -> mod_ruff_linter_settings;
   mod_ruff_linter_isort -> mod_ruff_python_ast_generated;
   mod_ruff_linter_isort -> mod_ruff_python_ast_token;
   mod_ruff_linter_isort -> mod_ruff_text_size_range;
+  mod_ruff_linter_isort -> mod_ruff_text_size_size;
+  mod_ruff_linter_noqa -> mod_ruff_db_diagnostic;
+  mod_ruff_linter_noqa -> mod_ruff_formatter_printer;
+  mod_ruff_linter_noqa -> mod_ruff_python_ast_generated;
+  mod_ruff_linter_noqa -> mod_ruff_text_size_range;
+  mod_ruff_linter_noqa -> mod_ruff_text_size_size;
+  mod_ruff_linter_pep8_naming -> mod_ruff_linter_checkers;
+  mod_ruff_linter_pep8_naming -> mod_ruff_linter_violation;
+  mod_ruff_linter_pep8_naming -> mod_ruff_python_ast_comparable;
+  mod_ruff_linter_pep8_naming -> mod_ruff_python_ast_generated;
+  mod_ruff_linter_pep8_naming -> mod_ruff_python_ast_nodes;
+  mod_ruff_linter_pep8_naming -> mod_ruff_python_semantic_model;
+  mod_ruff_linter_pep8_naming -> mod_ruff_text_size_range;
+  mod_ruff_linter_pep8_naming -> mod_ty_python_semantic_semantic_index;
+  mod_ruff_linter_pep8_naming -> mod_ty_python_semantic_types;
   mod_ruff_linter_pycodestyle -> mod_ruff_formatter_builders;
   mod_ruff_linter_pycodestyle -> mod_ruff_linter_checkers;
   mod_ruff_linter_pycodestyle -> mod_ruff_linter_flake8_pyi;
@@ -292,16 +356,19 @@ digraph architecture {
   mod_ruff_linter_pycodestyle -> mod_ruff_python_semantic_model;
   mod_ruff_linter_pycodestyle -> mod_ruff_text_size_range;
   mod_ruff_linter_pycodestyle -> mod_ruff_text_size_size;
+  mod_ruff_linter_pycodestyle -> mod_ty_python_semantic_semantic_index;
   mod_ruff_linter_pycodestyle -> mod_ty_wasm_lib;
   mod_ruff_linter_pydocstyle -> mod_ruff_db_diagnostic;
   mod_ruff_linter_pydocstyle -> mod_ruff_linter_checkers;
+  mod_ruff_linter_pydocstyle -> mod_ruff_linter_docstrings;
   mod_ruff_linter_pydocstyle -> mod_ruff_linter_flake8_pyi;
   mod_ruff_linter_pydocstyle -> mod_ruff_linter_refurb;
   mod_ruff_linter_pydocstyle -> mod_ruff_linter_violation;
   mod_ruff_linter_pydocstyle -> mod_ruff_python_ast_generated;
+  mod_ruff_linter_pydocstyle -> mod_ruff_python_ast_token;
+  mod_ruff_linter_pydocstyle -> mod_ruff_python_literal_float;
   mod_ruff_linter_pydocstyle -> mod_ruff_text_size_range;
   mod_ruff_linter_pydocstyle -> mod_ruff_text_size_size;
-  mod_ruff_linter_pydocstyle -> mod_ty_wasm_lib;
   mod_ruff_linter_pyflakes -> mod_ruff_linter_checkers;
   mod_ruff_linter_pyflakes -> mod_ruff_linter_flake8_pyi;
   mod_ruff_linter_pyflakes -> mod_ruff_linter_violation;
@@ -311,11 +378,14 @@ digraph architecture {
   mod_ruff_linter_pyflakes -> mod_ruff_python_ast_token;
   mod_ruff_linter_pyflakes -> mod_ruff_text_size_range;
   mod_ruff_linter_pyflakes -> mod_ruff_text_size_size;
+  mod_ruff_linter_pyflakes -> mod_ty_project_metadata;
   mod_ruff_linter_pyflakes -> mod_ty_python_semantic_semantic_index;
   mod_ruff_linter_pyflakes -> mod_ty_wasm_lib;
   mod_ruff_linter_pylint -> mod_ruff_db_diagnostic;
   mod_ruff_linter_pylint -> mod_ruff_linter_checkers;
+  mod_ruff_linter_pylint -> mod_ruff_linter_docstrings;
   mod_ruff_linter_pylint -> mod_ruff_linter_flake8_pyi;
+  mod_ruff_linter_pylint -> mod_ruff_linter_pep8_naming;
   mod_ruff_linter_pylint -> mod_ruff_linter_pyupgrade;
   mod_ruff_linter_pylint -> mod_ruff_linter_refurb;
   mod_ruff_linter_pylint -> mod_ruff_linter_settings;
@@ -328,9 +398,11 @@ digraph architecture {
   mod_ruff_linter_pylint -> mod_ruff_python_semantic_analyze;
   mod_ruff_linter_pylint -> mod_ruff_python_semantic_model;
   mod_ruff_linter_pylint -> mod_ruff_text_size_range;
+  mod_ruff_linter_pylint -> mod_ruff_text_size_size;
   mod_ruff_linter_pylint -> mod_ty_python_semantic_semantic_index;
   mod_ruff_linter_pylint -> mod_ty_python_semantic_types;
   mod_ruff_linter_pylint -> mod_ty_wasm_lib;
+  mod_ruff_linter_pyupgrade -> mod_ruff_formatter_builders;
   mod_ruff_linter_pyupgrade -> mod_ruff_linter_checkers;
   mod_ruff_linter_pyupgrade -> mod_ruff_linter_flake8_pyi;
   mod_ruff_linter_pyupgrade -> mod_ruff_linter_refurb;
@@ -345,6 +417,7 @@ digraph architecture {
   mod_ruff_linter_pyupgrade -> mod_ruff_python_semantic_model;
   mod_ruff_linter_pyupgrade -> mod_ruff_text_size_range;
   mod_ruff_linter_pyupgrade -> mod_ruff_text_size_size;
+  mod_ruff_linter_pyupgrade -> mod_ty_project_metadata;
   mod_ruff_linter_pyupgrade -> mod_ty_python_semantic_semantic_index;
   mod_ruff_linter_pyupgrade -> mod_ty_wasm_lib;
   mod_ruff_linter_refurb -> mod_ruff_db_diagnostic;
@@ -363,6 +436,7 @@ digraph architecture {
   mod_ruff_linter_refurb -> mod_ty_wasm_lib;
   mod_ruff_linter_ruff -> mod_ruff_linter_checkers;
   mod_ruff_linter_ruff -> mod_ruff_linter_flake8_pyi;
+  mod_ruff_linter_ruff -> mod_ruff_linter_noqa;
   mod_ruff_linter_ruff -> mod_ruff_linter_pyupgrade;
   mod_ruff_linter_ruff -> mod_ruff_linter_refurb;
   mod_ruff_linter_ruff -> mod_ruff_linter_settings;
@@ -371,8 +445,6 @@ digraph architecture {
   mod_ruff_linter_ruff -> mod_ruff_python_ast_generated;
   mod_ruff_linter_ruff -> mod_ruff_python_ast_nodes;
   mod_ruff_linter_ruff -> mod_ruff_python_ast_token;
-  mod_ruff_linter_ruff -> mod_ruff_python_literal_float;
-  mod_ruff_linter_ruff -> mod_ruff_python_semantic_analyze;
   mod_ruff_linter_ruff -> mod_ruff_python_semantic_model;
   mod_ruff_linter_ruff -> mod_ruff_text_size_range;
   mod_ruff_linter_ruff -> mod_ruff_text_size_size;
@@ -382,60 +454,76 @@ digraph architecture {
   mod_ruff_linter_settings -> mod_ruff_python_ast_generated;
   mod_ruff_python_ast_comparable -> mod_ruff_python_ast_generated;
   mod_ruff_python_ast_comparable -> mod_ruff_python_formatter_expression;
+  mod_ruff_python_ast_nodes -> mod_ruff_formatter_lib;
   mod_ruff_python_ast_nodes -> mod_ruff_linter_flake8_pyi;
   mod_ruff_python_ast_nodes -> mod_ruff_python_ast_generated;
+  mod_ruff_python_ast_nodes -> mod_ruff_python_ast_node_index;
   mod_ruff_python_ast_nodes -> mod_ruff_text_size_range;
   mod_ruff_python_ast_token -> mod_ruff_linter_flake8_pyi;
   mod_ruff_python_ast_token -> mod_ruff_python_ast_generated;
   mod_ruff_python_ast_token -> mod_ruff_python_ast_nodes;
+  mod_ruff_python_ast_token -> mod_ruff_text_size_range;
   mod_ruff_python_ast_visitor -> mod_ruff_linter_checkers;
-  mod_ruff_python_ast_visitor -> mod_ruff_linter_flake8_pyi;
+  mod_ruff_python_ast_visitor -> mod_ruff_linter_docstrings;
   mod_ruff_python_ast_visitor -> mod_ruff_python_ast_generated;
   mod_ruff_python_ast_visitor -> mod_ruff_python_ast_nodes;
   mod_ruff_python_formatter_comments -> mod_ruff_commands;
-  mod_ruff_python_formatter_comments -> mod_ruff_formatter_formatter;
+  mod_ruff_python_formatter_comments -> mod_ruff_formatter_lib;
   mod_ruff_python_formatter_comments -> mod_ruff_linter_flake8_pyi;
   mod_ruff_python_formatter_comments -> mod_ruff_linter_refurb;
   mod_ruff_python_formatter_comments -> mod_ruff_python_ast_comparable;
   mod_ruff_python_formatter_comments -> mod_ruff_python_ast_generated;
   mod_ruff_python_formatter_comments -> mod_ruff_python_ast_nodes;
   mod_ruff_python_formatter_comments -> mod_ruff_python_ast_visitor;
-  mod_ruff_python_formatter_comments -> mod_ruff_text_size_range;
-  mod_ruff_python_formatter_comments -> mod_ruff_text_size_size;
   mod_ruff_python_formatter_comments -> mod_ty_python_semantic_types;
+  mod_ruff_python_formatter_comments -> mod_ty_wasm_lib;
   mod_ruff_python_formatter_expression -> mod_ruff_commands;
   mod_ruff_python_formatter_expression -> mod_ruff_formatter_builders;
-  mod_ruff_python_formatter_expression -> mod_ruff_formatter_formatter;
   mod_ruff_python_formatter_expression -> mod_ruff_formatter_lib;
   mod_ruff_python_formatter_expression -> mod_ruff_python_ast_comparable;
   mod_ruff_python_formatter_expression -> mod_ruff_python_ast_generated;
   mod_ruff_python_formatter_expression -> mod_ruff_python_formatter_comments;
   mod_ruff_python_formatter_statement -> mod_ruff_commands;
-  mod_ruff_python_formatter_statement -> mod_ruff_formatter_formatter;
   mod_ruff_python_formatter_statement -> mod_ruff_formatter_lib;
   mod_ruff_python_formatter_statement -> mod_ruff_linter_flake8_pyi;
   mod_ruff_python_formatter_statement -> mod_ruff_python_ast_comparable;
   mod_ruff_python_formatter_statement -> mod_ruff_python_ast_generated;
   mod_ruff_python_formatter_statement -> mod_ruff_python_ast_nodes;
   mod_ruff_python_formatter_statement -> mod_ruff_python_formatter_comments;
-  mod_ruff_python_formatter_statement -> mod_ty_python_semantic_types;
+  mod_ruff_python_formatter_statement -> mod_ty_wasm_lib;
+  mod_ruff_python_formatter_string -> mod_ruff_formatter_lib;
+  mod_ruff_python_formatter_string -> mod_ruff_linter_flake8_pyi;
+  mod_ruff_python_formatter_string -> mod_ruff_python_ast_generated;
+  mod_ruff_python_formatter_string -> mod_ruff_python_ast_nodes;
+  mod_ruff_python_formatter_string -> mod_ruff_text_size_size;
   mod_ruff_python_parser_parser -> mod_ruff_python_ast_generated;
   mod_ruff_python_parser_parser -> mod_ruff_python_ast_nodes;
-  mod_ruff_python_parser_parser -> mod_ruff_text_size_range;
   mod_ruff_python_semantic_analyze -> mod_ruff_linter_flake8_pyi;
   mod_ruff_python_semantic_analyze -> mod_ruff_linter_refurb;
   mod_ruff_python_semantic_analyze -> mod_ruff_python_ast_comparable;
   mod_ruff_python_semantic_analyze -> mod_ruff_python_ast_generated;
   mod_ruff_python_semantic_analyze -> mod_ruff_python_ast_nodes;
   mod_ruff_python_semantic_analyze -> mod_ruff_python_semantic_model;
+  mod_ruff_python_semantic_analyze -> mod_ty_module_resolver_resolve;
   mod_ruff_python_semantic_analyze -> mod_ty_python_semantic_semantic_index;
   mod_ruff_python_semantic_analyze -> mod_ty_python_semantic_types;
-  mod_ruff_python_semantic_analyze -> mod_ty_wasm_lib;
-  mod_ruff_python_semantic_model -> mod_ruff_text_size_range;
   mod_ruff_server_server -> mod_ruff_server_session;
   mod_ruff_server_session -> mod_ruff_python_ast_generated;
+  mod_ty_ide_completion -> mod_ruff_db_files;
+  mod_ty_ide_completion -> mod_ruff_formatter_builders;
+  mod_ty_ide_completion -> mod_ruff_python_ast_generated;
+  mod_ty_ide_completion -> mod_ruff_text_size_size;
+  mod_ty_ide_completion -> mod_ty_python_semantic_types;
+  mod_ty_module_resolver_resolve -> mod_ruff_db_files;
+  mod_ty_module_resolver_resolve -> mod_ruff_db_system;
+  mod_ty_module_resolver_resolve -> mod_ruff_linter_flake8_pyi;
+  mod_ty_module_resolver_resolve -> mod_ruff_python_formatter_comments;
+  mod_ty_project_metadata -> mod_ruff_db_diagnostic;
   mod_ty_project_metadata -> mod_ruff_db_system;
-  mod_ty_project_metadata -> mod_ty_wasm_lib;
+  mod_ty_python_semantic_place -> mod_ruff_db_files;
+  mod_ty_python_semantic_place -> mod_ty_python_semantic_db;
+  mod_ty_python_semantic_place -> mod_ty_python_semantic_semantic_index;
+  mod_ty_python_semantic_place -> mod_ty_python_semantic_types;
   mod_ty_python_semantic_semantic_index -> mod_ruff_db_files;
   mod_ty_python_semantic_semantic_index -> mod_ruff_linter_flake8_pyi;
   mod_ty_python_semantic_semantic_index -> mod_ruff_python_ast_generated;
@@ -450,8 +538,11 @@ digraph architecture {
   mod_ty_python_semantic_types -> mod_ruff_python_ast_nodes;
   mod_ty_python_semantic_types -> mod_ruff_text_size_range;
   mod_ty_python_semantic_types -> mod_ty_python_semantic_db;
+  mod_ty_python_semantic_types -> mod_ty_python_semantic_place;
   mod_ty_python_semantic_types -> mod_ty_python_semantic_semantic_index;
-  mod_ty_python_semantic_types -> mod_ty_wasm_lib;
+  mod_ty_server_server -> mod_ruff_db_diagnostic;
+  mod_ty_server_server -> mod_ruff_db_files;
+  mod_ty_server_server -> mod_ty_server_session;
   mod_ty_server_session -> mod_ruff_db_system;
   mod_ty_server_session -> mod_ruff_python_ast_generated;
   mod_ty_server_session -> mod_ruff_server_session;

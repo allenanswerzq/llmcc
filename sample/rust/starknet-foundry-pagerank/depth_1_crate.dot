@@ -1,0 +1,46 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  crate_cheatnet[label="cheatnet", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet"];
+  crate_conversions[label="conversions", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions"];
+  crate_data_transformer[label="data-transformer", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer"];
+  crate_debugging[label="debugging", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging"];
+  crate_forge[label="forge", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge"];
+  crate_forge_runner[label="forge_runner", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner"];
+  crate_foundry_ui[label="foundry-ui", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/foundry-ui"];
+  crate_runtime[label="runtime", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/runtime"];
+  crate_scarb_api[label="scarb-api", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/scarb-api"];
+  crate_sncast[label="sncast", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast"];
+  crate_snforge_scarb_plugin[label="snforge_scarb_plugin", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin"];
+  crate_snforge_scarb_plugin_deprecated[label="snforge_scarb_plugin_deprecated", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated"];
+  crate_universal_sierra_compiler_api[label="universal-sierra-compiler-api", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/universal-sierra-compiler-api"];
+
+  crate_cheatnet -> crate_conversions;
+  crate_cheatnet -> crate_debugging;
+  crate_cheatnet -> crate_runtime;
+  crate_cheatnet -> crate_sncast;
+  crate_cheatnet -> crate_snforge_scarb_plugin;
+  crate_cheatnet -> crate_snforge_scarb_plugin_deprecated;
+  crate_conversions -> crate_snforge_scarb_plugin_deprecated;
+  crate_data_transformer -> crate_conversions;
+  crate_forge -> crate_forge_runner;
+  crate_forge -> crate_foundry_ui;
+  crate_forge -> crate_sncast;
+  crate_forge_runner -> crate_cheatnet;
+  crate_forge_runner -> crate_universal_sierra_compiler_api;
+  crate_sncast -> crate_conversions;
+  crate_sncast -> crate_foundry_ui;
+  crate_sncast -> crate_scarb_api;
+  crate_sncast -> crate_snforge_scarb_plugin;
+  crate_sncast -> crate_snforge_scarb_plugin_deprecated;
+}

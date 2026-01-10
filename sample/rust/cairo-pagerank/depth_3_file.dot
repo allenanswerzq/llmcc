@@ -1,0 +1,1504 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_cairo_lang_casm {
+    label="cairo-lang-casm";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_cell_expression_rs {
+      label="cell_expression.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n58962[label="CellExpression", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-casm/src/cell_expression.rs:29", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_hints {
+      label="hints";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n49224[label="CoreHint", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-casm/src/hints/mod.rs:129", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_operand_rs {
+      label="operand.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n55441[label="DerefOrImmediate", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-casm/src/operand.rs:104", sym_ty="Enum", shape=box];
+      n54665[label="ResOperand", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-casm/src/operand.rs:39", sym_ty="Enum", shape=box];
+      n54980[label="CellRef", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-casm/src/operand.rs:82", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_cairo_lang_compiler {
+    label="cairo-lang-compiler";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_db_rs {
+      label="db.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n59558[label="RootDatabaseBuilder", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-compiler/src/db.rs:117", sym_ty="Struct", shape=box];
+      n59261[label="RootDatabase", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-compiler/src/db.rs:70", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_diagnostics_rs {
+      label="diagnostics.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n1531[label="DiagnosticCallback", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-compiler/src/diagnostics.rs:26", sym_ty="Trait", shape=box];
+      n1565[label="DiagnosticsReporter", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-compiler/src/diagnostics.rs:39", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_cairo_lang_debug {
+    label="cairo-lang-debug";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_debug_rs {
+      label="debug.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n62638[label="DebugWithDb", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-debug/src/debug.rs:14", sym_ty="Trait", shape=box];
+    }
+
+  }
+
+  subgraph cluster_cairo_lang_defs {
+    label="cairo-lang-defs";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_cache {
+      label="cache";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n4762[label="DefCacheLoadingContext", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-defs/src/cache/mod.rs:138", sym_ty="Struct", shape=box];
+        n6357[label="DefCacheLoadingData", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-defs/src/cache/mod.rs:230", sym_ty="Struct", shape=box];
+        n6735[label="DefCacheSavingContext", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-defs/src/cache/mod.rs:313", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_diagnostic_utils_rs {
+      label="diagnostic_utils.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n28817[label="StableLocation", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-defs/src/diagnostic_utils.rs:13", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_ids_rs {
+      label="ids.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n7183[label="ModuleId", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-defs/src/ids.rs:296", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_patcher_rs {
+      label="patcher.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n7424[label="RewriteNode", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-defs/src/patcher.rs:11", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_plugin_rs {
+      label="plugin.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n37676[label="PluginDiagnostic", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-defs/src/plugin.rs:103", sym_ty="Struct", shape=box];
+      n38068[label="MacroPluginMetadata", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-defs/src/plugin.rs:171", sym_ty="Struct", shape=box];
+      n38111[label="MacroPlugin", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-defs/src/plugin.rs:183", sym_ty="Trait", shape=box];
+      n37609[label="PluginResult", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-defs/src/plugin.rs:92", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_cairo_lang_diagnostics {
+    label="cairo-lang-diagnostics";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_diagnostics_rs {
+      label="diagnostics.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n1060[label="DiagnosticAdded", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-diagnostics/src/diagnostics.rs:119", sym_ty="Struct", shape=box];
+      n1062[label="skip_diagnostic", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-diagnostics/src/diagnostics.rs:121", sym_ty="Function", shape=ellipse];
+      n1380[label="Diagnostics", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-diagnostics/src/diagnostics.rs:262", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_cairo_lang_doc {
+    label="cairo-lang-doc";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_signature_errors_rs {
+      label="signature_errors.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n12541[label="SignatureError", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-doc/src/signature_errors.rs:6", sym_ty="Enum", shape=box];
+    }
+
+  }
+
+  subgraph cluster_cairo_lang_filesystem {
+    label="cairo-lang-filesystem";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_cfg_rs {
+      label="cfg.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n62151[label="Cfg", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-filesystem/src/cfg.rs:8", sym_ty="Struct", shape=box];
+      n62864[label="CfgSet", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-filesystem/src/cfg.rs:80", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_ids_rs {
+      label="ids.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n24798[label="SpanInFile", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-filesystem/src/ids.rs:524", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_span_rs {
+      label="span.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n60953[label="TextOffset", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-filesystem/src/span.rs:101", sym_ty="Struct", shape=box];
+      n61365[label="TextSpan", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-filesystem/src/span.rs:146", sym_ty="Struct", shape=box];
+      n60472[label="TextWidth", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-filesystem/src/span.rs:32", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_cairo_lang_formatter {
+    label="cairo-lang-formatter";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_formatter_impl_rs {
+      label="formatter_impl.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n7987[label="BreakLinePointIndentation", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-formatter/src/formatter_impl.rs:149", sym_ty="Enum", shape=box];
+      n8078[label="BreakLinePointProperties", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-formatter/src/formatter_impl.rs:182", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_cairo_lang_lowering {
+    label="cairo-lang-lowering";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_cache {
+      label="cache";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n28675[label="CacheLoadingContext", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-lowering/src/cache/mod.rs:192", sym_ty="Struct", shape=box];
+        n29235[label="CacheSavingContext", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-lowering/src/cache/mod.rs:255", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_diagnostic_rs {
+      label="diagnostic.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n23613[label="LoweringDiagnosticKind", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-lowering/src/diagnostic.rs:208", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_lower {
+      label="lower";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_block_builder_rs {
+        label="block_builder.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n43716[label="BlockBuilder", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-lowering/src/lower/block_builder.rs:26", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_context_rs {
+        label="context.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n32713[label="LoweringContext", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-lowering/src/lower/context.rs:136", sym_ty="Struct", shape=box];
+        n33376[label="LoweredExpr", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-lowering/src/lower/context.rs:228", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_graph_rs {
+        label="graph.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n23038[label="FlowControlVar", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-lowering/src/lower/flow_control/graph.rs:41", sym_ty="Struct", shape=box];
+        n23385[label="NodeId", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-lowering/src/lower/flow_control/graph.rs:78", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_lower_graph_rs {
+        label="lower_graph.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n1040[label="LowerGraphContext", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-lowering/src/lower/flow_control/lower_graph.rs:57", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_objects {
+      label="objects";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_blocks_rs {
+        label="blocks.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n10637[label="BlockId", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-lowering/src/objects/blocks.rs:10", sym_ty="Struct", shape=box];
+        n10803[label="Blocks", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-lowering/src/objects/blocks.rs:35", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_objects_rs {
+      label="objects.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n48689[label="VarUsage", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-lowering/src/objects.rs:137", sym_ty="Struct", shape=box];
+      n48721[label="Lowered", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-lowering/src/objects.rs:144", sym_ty="Struct", shape=box];
+      n48936[label="VarRemapping", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-lowering/src/objects.rs:183", sym_ty="Struct", shape=box];
+      n49052[label="Block", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-lowering/src/objects.rs:202", sym_ty="Struct", shape=box];
+      n49624[label="Statement", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-lowering/src/objects.rs:290", sym_ty="Enum", shape=box];
+    }
+
+  }
+
+  subgraph cluster_cairo_lang_parser {
+    label="cairo-lang-parser";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_diagnostic_rs {
+      label="diagnostic.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n3517[label="ParserDiagnosticKind", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-parser/src/diagnostic.rs:97", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_lexer_rs {
+      label="lexer.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n36998[label="LexerTerminal", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-parser/src/lexer.rs:349", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_parser_rs {
+      label="parser.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n98334[label="Parser", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-parser/src/parser.rs:47", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_cairo_lang_semantic {
+    label="cairo-lang-semantic";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_cache {
+      label="cache";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n23887[label="SemanticCacheLoadingContext", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/cache/mod.rs:191", sym_ty="Struct", shape=box];
+        n24302[label="SemanticCacheLoadingData", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/cache/mod.rs:240", sym_ty="Struct", shape=box];
+        n24587[label="SemanticCacheSavingContext", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/cache/mod.rs:282", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_corelib_rs {
+      label="corelib.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n41986[label="core_info", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/corelib.rs:1158", sym_ty="Function", shape=ellipse];
+      n39663[label="CoreInfo", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/corelib.rs:909", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_diagnostic_rs {
+      label="diagnostic.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n33844[label="SemanticDiagnostic", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/diagnostic.rs:142", sym_ty="Struct", shape=box];
+      n38988[label="SemanticDiagnosticKind", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/diagnostic.rs:1496", sym_ty="Enum", shape=box];
+      n33004[label="SemanticDiagnostics", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/diagnostic.rs:41", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_expr {
+      label="expr";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_compute_rs {
+        label="compute.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n94663[label="ComputationContext", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/expr/compute.rs:215", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_inference_rs {
+        label="inference.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n1650[label="LocalImplVarId", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/expr/inference.rs:143", sym_ty="Struct", shape=box];
+        n1808[label="InferenceVar", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/expr/inference.rs:180", sym_ty="Enum", shape=box];
+        n1835[label="InferenceError", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/expr/inference.rs:190", sym_ty="Enum", shape=box];
+        n3136[label="Inference", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/expr/inference.rs:556", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_objects_rs {
+        label="objects.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n49912[label="Expr", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/expr/objects.rs:140", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_items {
+      label="items";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_attribute_rs {
+        label="attribute.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n47889[label="SemanticQueryAttrs", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/items/attribute.rs:45", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_constant_rs {
+        label="constant.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n18061[label="ConstValue", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/items/constant.rs:193", sym_ty="Enum", shape=box];
+        n18465[label="ImplConstantId", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/items/constant.rs:266", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_enm_rs {
+        label="enm.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n659[label="ConcreteVariant", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/items/enm.rs:122", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_functions_rs {
+        label="functions.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n22850[label="GenericFunctionId", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/items/functions.rs:80", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_generics_rs {
+        label="generics.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n48654[label="GenericParam", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/items/generics.rs:160", sym_ty="Enum", shape=box];
+        n49377[label="GenericParamsData", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/items/generics.rs:258", sym_ty="Struct", shape=box];
+        n47823[label="GenericArgumentId", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/items/generics.rs:49", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_imp_rs {
+        label="imp.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n96431[label="ImplImplId", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/items/imp.rs:354", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_plugin_rs {
+      label="plugin.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n16608[label="AnalyzerPlugin", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/plugin.rs:13", sym_ty="Trait", shape=box];
+      n16748[label="PluginSuite", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/plugin.rs:38", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_resolve {
+      label="resolve";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_item_rs {
+        label="item.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n63529[label="ResolvedGenericItem", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/resolve/item.rs:21", sym_ty="Enum", shape=box];
+        n63963[label="ResolvedConcreteItem", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/resolve/item.rs:88", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n12664[label="ResolverData", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/resolve/mod.rs:181", sym_ty="Struct", shape=box];
+        n13185[label="Resolver", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/resolve/mod.rs:277", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_substitution_rs {
+      label="substitution.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n11171[label="SemanticRewriter", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/substitution.rs:258", sym_ty="Trait", shape=box];
+      n9799[label="GenericSubstitution", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/substitution.rs:58", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_types_rs {
+      label="types.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n20368[label="ConcreteTypeId", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/types.rs:314", sym_ty="Enum", shape=box];
+      n18135[label="TypeLongId", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/types.rs:45", sym_ty="Enum", shape=box];
+    }
+
+  }
+
+  subgraph cluster_cairo_lang_sierra {
+    label="cairo-lang-sierra";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_extensions {
+      label="extensions";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_error_rs {
+        label="error.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n8916[label="SpecializationError", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra/src/extensions/error.rs:11", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_lib_func_rs {
+        label="lib_func.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n55646[label="SignatureOnlyGenericLibfunc", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra/src/extensions/lib_func.rs:200", sym_ty="Trait", shape=box];
+        n56266[label="NoGenericArgsGenericLibfunc", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra/src/extensions/lib_func.rs:273", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_types_rs {
+        label="types.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n63548[label="TypeInfo", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra/src/extensions/types.rs:150", sym_ty="Struct", shape=box];
+        n62689[label="NamedType", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra/src/extensions/types.rs:49", sym_ty="Trait", shape=box];
+        n62939[label="NoGenericArgsGenericType", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra/src/extensions/types.rs:84", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_utils_rs {
+        label="utils.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n57058[label="Range", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra/src/extensions/modules/utils.rs:44", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_program_rs {
+      label="program.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n2215[label="ConcreteTypeLongId", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra/src/program.rs:163", sym_ty="Struct", shape=box];
+      n2312[label="StatementIdx", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra/src/program.rs:237", sym_ty="Struct", shape=box];
+      n2331[label="GenericArg", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra/src/program.rs:249", sym_ty="Enum", shape=box];
+      n2557[label="GenBranchTarget", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra/src/program.rs:305", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_program_registry_rs {
+      label="program_registry.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n8319[label="ProgramRegistryError", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra/src/program_registry.rs:28", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_test_utils_rs {
+      label="test_utils.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n356[label="build_bijective_mapping", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra/src/test_utils.rs:9", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_cairo_lang_sierra_ap_change {
+    label="cairo-lang-sierra-ap-change";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_generate_equations_rs {
+      label="generate_equations.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n61617[label="Var", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra-ap-change/src/generate_equations.rs:12", sym_ty="Enum", shape=box];
+    }
+
+  }
+
+  subgraph cluster_cairo_lang_sierra_generator {
+    label="cairo-lang-sierra-generator";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_expr_generator_context_rs {
+      label="expr_generator_context.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n35141[label="ExprGeneratorContext", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra-generator/src/expr_generator_context.rs:21", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_store_variables {
+      label="store_variables";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_known_stack_rs {
+        label="known_stack.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n34873[label="KnownStack", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra-generator/src/store_variables/known_stack.rs:14", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_state_rs {
+        label="state.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n59296[label="VariablesState", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra-generator/src/store_variables/state.rs:52", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_test_utils_rs {
+      label="test_utils.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n14106[label="SierraGenDatabaseForTesting", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra-generator/src/test_utils.rs:31", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_cairo_lang_sierra_to_casm {
+    label="cairo-lang-sierra-to-casm";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_compiler_rs {
+      label="compiler.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n14334[label="CompilationError", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra-to-casm/src/compiler.rs:44", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_invocations {
+      label="invocations";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n46125[label="CompiledInvocationBuilder", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra-to-casm/src/invocations/mod.rs:375", sym_ty="Struct", shape=box];
+        n44420[label="InvocationError", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra-to-casm/src/invocations/mod.rs:72", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_references_rs {
+      label="references.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n62517[label="ReferenceExpression", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra-to-casm/src/references.rs:99", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_cairo_lang_starknet {
+    label="cairo-lang-starknet";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_abi_rs {
+      label="abi.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n42144[label="AbiBuilder", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-starknet/src/abi.rs:74", sym_ty="Struct", shape=box];
+      n47382[label="ABIError", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-starknet/src/abi.rs:874", sym_ty="Enum", shape=box];
+      n47999[label="Source", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-starknet/src/abi.rs:964", sym_ty="Enum", shape=box];
+    }
+
+  }
+
+  subgraph cluster_cairo_lang_starknet_classes {
+    label="cairo-lang-starknet-classes";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_abi_rs {
+      label="abi.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n50958[label="Item", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-starknet-classes/src/abi.rs:71", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_casm_contract_class_rs {
+      label="casm_contract_class.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n40229[label="StarknetSierraCompilationError", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-starknet-classes/src/casm_contract_class.rs:64", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_compiler_version_rs {
+      label="compiler_version.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n12254[label="VersionId", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-starknet-classes/src/compiler_version.rs:8", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_felt252_serde_rs {
+      label="felt252_serde.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n32902[label="Felt252SerdeError", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-starknet-classes/src/felt252_serde.rs:45", sym_ty="Enum", shape=box];
+    }
+
+  }
+
+  subgraph cluster_cairo_lang_syntax {
+    label="cairo-lang-syntax";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_attribute {
+      label="attribute";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_structured_rs {
+        label="structured.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n55529[label="Attribute", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/attribute/structured.rs:11", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_node {
+      label="node";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_ast_rs {
+        label="ast.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n70864[label="ModuleItem", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:12934", sym_ty="Enum", shape=box];
+        n71368[label="AttributeList", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:13540", sym_ty="Struct", shape=box];
+        n72217[label="ItemConstant", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:14593", sym_ty="Struct", shape=box];
+        n74022[label="ImplItem", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:16761", sym_ty="Enum", shape=box];
+        n74312[label="ItemImplAlias", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:17104", sym_ty="Struct", shape=box];
+        n35427[label="ExprPath", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:2085", sym_ty="Struct", shape=box];
+        n35698[label="ExprPathPtr", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:2116", sym_ty="Struct", shape=box];
+        n35898[label="ExprPathGreen", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:2133", sym_ty="Struct", shape=box];
+        n10644[label="Trivia", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:24", sym_ty="Struct", shape=box];
+        n80551[label="TerminalIdentifier", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:24824", sym_ty="Struct", shape=box];
+        n80587[label="TerminalIdentifierPtr", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:24865", sym_ty="Struct", shape=box];
+        n80605[label="TerminalIdentifierGreen", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:24882", sym_ty="Struct", shape=box];
+        n80703[label="TerminalLiteralNumber", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:25007", sym_ty="Struct", shape=box];
+        n80855[label="TerminalShortString", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:25189", sym_ty="Struct", shape=box];
+        n81007[label="TerminalString", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:25368", sym_ty="Struct", shape=box];
+        n81311[label="TerminalConst", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:25722", sym_ty="Struct", shape=box];
+        n81463[label="TerminalElse", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:25901", sym_ty="Struct", shape=box];
+        n81919[label="TerminalFalse", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:26430", sym_ty="Struct", shape=box];
+        n82071[label="TerminalFunction", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:26609", sym_ty="Struct", shape=box];
+        n82831[label="TerminalImpl", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:27492", sym_ty="Struct", shape=box];
+        n83135[label="TerminalLet", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:27846", sym_ty="Struct", shape=box];
+        n14977[label="Expr", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:279", sym_ty="Enum", shape=box];
+        n44438[label="BinaryOperator", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:2987", sym_ty="Enum", shape=box];
+        n85111[label="TerminalTrue", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:30157", sym_ty="Struct", shape=box];
+        n44814[label="BinaryOperatorPtr", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:3016", sym_ty="Struct", shape=box];
+        n85263[label="TerminalType", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:30332", sym_ty="Struct", shape=box];
+        n15242[label="ExprPtr", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:308", sym_ty="Struct", shape=box];
+        n85719[label="TerminalAnd", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:30857", sym_ty="Struct", shape=box];
+        n86479[label="TerminalColon", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:31748", sym_ty="Struct", shape=box];
+        n86631[label="TerminalColonColon", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:31927", sym_ty="Struct", shape=box];
+        n86837[label="TerminalCommaGreen", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:32164", sym_ty="Struct", shape=box];
+        n87239[label="TerminalDollar", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:32639", sym_ty="Struct", shape=box];
+        n87427[label="TerminalDotPtr", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:32859", sym_ty="Struct", shape=box];
+        n87445[label="TerminalDotGreen", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:32876", sym_ty="Struct", shape=box];
+        n47684[label="BinaryOperatorGreen", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:3292", sym_ty="Struct", shape=box];
+        n87543[label="TerminalDotDot", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:32993", sym_ty="Struct", shape=box];
+        n87847[label="TerminalEndOfFile", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:33351", sym_ty="Struct", shape=box];
+        n87999[label="TerminalEq", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:33530", sym_ty="Struct", shape=box];
+        n88455[label="TerminalGT", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:34055", sym_ty="Struct", shape=box];
+        n88759[label="TerminalLBrace", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:34405", sym_ty="Struct", shape=box];
+        n88911[label="TerminalLBrack", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:34584", sym_ty="Struct", shape=box];
+        n89215[label="TerminalLParen", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:34938", sym_ty="Struct", shape=box];
+        n89367[label="TerminalLT", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:35117", sym_ty="Struct", shape=box];
+        n89519[label="TerminalMatchArrow", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:35292", sym_ty="Struct", shape=box];
+        n89671[label="TerminalMinus", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:35471", sym_ty="Struct", shape=box];
+        n90279[label="TerminalMul", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:36183", sym_ty="Struct", shape=box];
+        n90583[label="TerminalNeq", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:36537", sym_ty="Struct", shape=box];
+        n90735[label="TerminalNot", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:36712", sym_ty="Struct", shape=box];
+        n91039[label="TerminalOr", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:37066", sym_ty="Struct", shape=box];
+        n91343[label="TerminalPlus", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:37416", sym_ty="Struct", shape=box];
+        n91647[label="TerminalQuestionMark", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:37773", sym_ty="Struct", shape=box];
+        n91799[label="TerminalRBrace", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:37952", sym_ty="Struct", shape=box];
+        n91951[label="TerminalRBrack", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:38131", sym_ty="Struct", shape=box];
+        n92103[label="TerminalRParen", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:38310", sym_ty="Struct", shape=box];
+        n92255[label="TerminalSemicolon", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:38489", sym_ty="Struct", shape=box];
+        n92407[label="TerminalUnderscore", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:38668", sym_ty="Struct", shape=box];
+        n93337[label="TokenNode", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:39734", sym_ty="Enum", shape=box];
+        n93500[label="TokenNodePtr", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:39818", sym_ty="Struct", shape=box];
+        n94327[label="TokenNodeGreen", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:40644", sym_ty="Struct", shape=box];
+        n55212[label="ExprBlock", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:4178", sym_ty="Struct", shape=box];
+        n10831[label="TriviaPtr", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:47", sym_ty="Struct", shape=box];
+        n19359[label="ExprGreen", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:584", sym_ty="Struct", shape=box];
+        n66660[label="PatternGreen", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ast.rs:7695", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_element_list_rs {
+        label="element_list.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n7075[label="ElementList", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/element_list.rs:11", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_helpers_rs {
+        label="helpers.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n57133[label="QueryAttrs", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/helpers.rs:279", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_ids_rs {
+        label="ids.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n21092[label="SyntaxStablePtrId", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/ids.rs:23", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_iter_rs {
+        label="iter.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n13401[label="WalkEvent", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/iter.rs:7", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_kind_rs {
+        label="kind.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n30669[label="SyntaxKind", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/kind.rs:17", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n55639[label="TypedSyntaxNode", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/mod.rs:590", sym_ty="Trait", shape=box];
+        n55811[label="Terminal", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/mod.rs:607", sym_ty="Trait", shape=box];
+        n56158[label="TypedStablePtr", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/mod.rs:629", sym_ty="Trait", shape=box];
+        n51225[label="SyntaxNode", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node/mod.rs:95", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_cairo_lang_test_utils {
+    label="cairo-lang-test-utils";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_parse_test_file_rs {
+      label="parse_test_file.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n32517[label="TestRunnerResult", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-test-utils/src/parse_test_file.rs:247", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_cairo_lang_utils {
+    label="cairo-lang-utils";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_bigint_rs {
+      label="bigint.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n59536[label="BigUintAsHex", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-utils/src/bigint.rs:17", sym_ty="Struct", shape=box];
+      n60038[label="BigUint", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-utils/src/bigint.rs:93", sym_ty="Struct", shape=box];
+      n60089[label="BigInt", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-utils/src/bigint.rs:99", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_deque_rs {
+      label="deque.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n19343[label="Deque", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-utils/src/deque.rs:10", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n57090[label="CloneableDatabase", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-utils/src/lib.rs:73", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_ordered_hash_map_rs {
+      label="ordered_hash_map.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n59915[label="OrderedHashMap", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-utils/src/ordered_hash_map.rs:14", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_ordered_hash_set_rs {
+      label="ordered_hash_set.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n17360[label="OrderedHashSet", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-utils/src/ordered_hash_set.rs:14", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_unordered_hash_map_rs {
+      label="unordered_hash_map.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n3241[label="UnorderedHashMap", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-utils/src/unordered_hash_map.rs:38", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_unordered_hash_set_rs {
+      label="unordered_hash_set.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n6520[label="UnorderedHashSet", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-utils/src/unordered_hash_set.rs:21", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_get_lowering {
+    label="get-lowering";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_main_rs {
+      label="main.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n19195[label="main", path="/home/yibai/llmcc/sample/repos/cairo/crates/bin/get-lowering/src/main.rs:237", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+
+  n356 -> n2215 [from="func", to="type_dep"];
+  n356 -> n20368 [from="func", to="type_dep"];
+  n659 -> n18061 [from="field_type", to="enum"];
+  n659 -> n63963 [from="field_type", to="enum"];
+  n1060 -> n1835 [from="field_type", to="enum"];
+  n1060 -> n12541 [from="field_type", to="enum"];
+  n1060 -> n18061 [from="field_type", to="enum"];
+  n1060 -> n18135 [from="field_type", to="enum"];
+  n1060 -> n47382 [from="type_arg", to="impl"];
+  n1062 -> n1060 [from="func", to="output"];
+  n1380 -> n48721 [from="field_type", to="struct"];
+  n1380 -> n49377 [from="field_type", to="struct"];
+  n1531 -> n1565 [from="bound", to="generic"];
+  n1650 -> n1808 [from="field_type", to="enum"];
+  n1650 -> n19343 [from="type_arg", to="generic"];
+  n1650 -> n59915 [from="type_arg", to="generic"];
+  n1808 -> n1835 [from="field_type", to="enum"];
+  n1835 -> n23613 [from="field_type", to="enum"];
+  n1835 -> n38988 [from="field_type", to="enum"];
+  n2215 -> n63548 [from="field_type", to="struct"];
+  n2312 -> n8319 [from="field_type", to="enum"];
+  n2312 -> n14334 [from="field_type", to="enum"];
+  n2312 -> n46125 [from="field_type", to="struct"];
+  n2331 -> n2215 [from="type_dep", to="struct"];
+  n2557 -> n2312 [from="base", to="extends"];
+  n2557 -> n2312 [from="type_arg", to="generic"];
+  n2557 -> n3241 [from="type_arg", to="generic"];
+  n2557 -> n6520 [from="type_arg", to="generic"];
+  n2557 -> n8319 [from="field_type", to="enum"];
+  n2557 -> n14334 [from="field_type", to="enum"];
+  n2557 -> n46125 [from="type_arg", to="impl"];
+  n2557 -> n59915 [from="type_arg", to="generic"];
+  n2557 -> n61617 [from="field_type", to="enum"];
+  n3241 -> n1040 [from="field_type", to="struct"];
+  n6357 -> n4762 [from="field_type", to="struct"];
+  n6357 -> n24302 [from="type_dep", to="struct"];
+  n6735 -> n24587 [from="field_type", to="struct"];
+  n7075 -> n10644 [from="field_type", to="struct"];
+  n7075 -> n71368 [from="field_type", to="struct"];
+  n7183 -> n12664 [from="field_type", to="struct"];
+  n7183 -> n33004 [from="field_type", to="struct"];
+  n7183 -> n33844 [from="field_type", to="struct"];
+  n7183 -> n39663 [from="field_type", to="struct"];
+  n7183 -> n63529 [from="field_type", to="enum"];
+  n7183 -> n63963 [from="field_type", to="enum"];
+  n7987 -> n8078 [from="field_type", to="struct"];
+  n10637 -> n10803 [from="type_arg", to="impl"];
+  n10637 -> n43716 [from="field_type", to="struct"];
+  n10803 -> n48721 [from="field_type", to="struct"];
+  n10831 -> n21092 [from="type_arg", to="generic"];
+  n10831 -> n21092 [from="type_arg", to="impl"];
+  n11171 -> n3136 [from="trait", to="impl"];
+  n12254 -> n40229 [from="field_type", to="enum"];
+  n12664 -> n13185 [from="field_type", to="struct"];
+  n12664 -> n49377 [from="type_dep", to="struct"];
+  n13185 -> n94663 [from="field_type", to="struct"];
+  n13401 -> n7075 [from="type_arg", to="generic"];
+  n13401 -> n7075 [from="type_arg", to="impl"];
+  n13401 -> n7424 [from="field_type", to="enum"];
+  n13401 -> n21092 [from="field_type", to="struct"];
+  n13401 -> n35427 [from="type_arg", to="impl"];
+  n13401 -> n51225 [from="base", to="extends"];
+  n13401 -> n51225 [from="type_arg", to="generic"];
+  n13401 -> n51225 [from="type_dep", to="struct"];
+  n13401 -> n55212 [from="type_arg", to="impl"];
+  n13401 -> n59915 [from="type_arg", to="generic"];
+  n13401 -> n72217 [from="type_arg", to="impl"];
+  n13401 -> n74312 [from="type_arg", to="impl"];
+  n13401 -> n80551 [from="type_arg", to="impl"];
+  n13401 -> n80703 [from="type_arg", to="impl"];
+  n13401 -> n80855 [from="type_arg", to="impl"];
+  n13401 -> n81007 [from="type_arg", to="impl"];
+  n13401 -> n81311 [from="type_arg", to="impl"];
+  n13401 -> n81463 [from="type_arg", to="impl"];
+  n13401 -> n81919 [from="type_arg", to="impl"];
+  n13401 -> n82071 [from="type_arg", to="impl"];
+  n13401 -> n82831 [from="type_arg", to="impl"];
+  n13401 -> n83135 [from="type_arg", to="impl"];
+  n13401 -> n85111 [from="type_arg", to="impl"];
+  n13401 -> n85263 [from="type_arg", to="impl"];
+  n13401 -> n85719 [from="type_arg", to="impl"];
+  n13401 -> n86479 [from="type_arg", to="impl"];
+  n13401 -> n86631 [from="type_arg", to="impl"];
+  n13401 -> n87239 [from="type_arg", to="impl"];
+  n13401 -> n87543 [from="type_arg", to="impl"];
+  n13401 -> n87847 [from="type_arg", to="impl"];
+  n13401 -> n87999 [from="type_arg", to="impl"];
+  n13401 -> n88455 [from="type_arg", to="impl"];
+  n13401 -> n88759 [from="type_arg", to="impl"];
+  n13401 -> n88911 [from="type_arg", to="impl"];
+  n13401 -> n89215 [from="type_arg", to="impl"];
+  n13401 -> n89367 [from="type_arg", to="impl"];
+  n13401 -> n89519 [from="type_arg", to="impl"];
+  n13401 -> n89671 [from="type_arg", to="impl"];
+  n13401 -> n90279 [from="type_arg", to="impl"];
+  n13401 -> n90583 [from="type_arg", to="impl"];
+  n13401 -> n90735 [from="type_arg", to="impl"];
+  n13401 -> n91039 [from="type_arg", to="impl"];
+  n13401 -> n91343 [from="type_arg", to="impl"];
+  n13401 -> n91647 [from="type_arg", to="impl"];
+  n13401 -> n91799 [from="type_arg", to="impl"];
+  n13401 -> n91951 [from="type_arg", to="impl"];
+  n13401 -> n92103 [from="type_arg", to="impl"];
+  n13401 -> n92255 [from="type_arg", to="impl"];
+  n13401 -> n92407 [from="type_arg", to="impl"];
+  n15242 -> n21092 [from="type_arg", to="generic"];
+  n15242 -> n21092 [from="type_arg", to="impl"];
+  n16608 -> n16748 [from="bound", to="generic"];
+  n16608 -> n16748 [from="field_type", to="struct"];
+  n16748 -> n59558 [from="field_type", to="struct"];
+  n17360 -> n12664 [from="field_type", to="struct"];
+  n17360 -> n38068 [from="field_type", to="struct"];
+  n17360 -> n42144 [from="field_type", to="struct"];
+  n17360 -> n59915 [from="type_arg", to="generic"];
+  n18061 -> n3136 [from="type_arg", to="impl"];
+  n18135 -> n3136 [from="type_arg", to="impl"];
+  n18135 -> n20368 [from="type_arg", to="impl"];
+  n18465 -> n18061 [from="field_type", to="enum"];
+  n19195 -> n35427 [from="func", to="type_dep"];
+  n19195 -> n59558 [from="func", to="type_dep"];
+  n19343 -> n98334 [from="field_type", to="struct"];
+  n20368 -> n2331 [from="field_type", to="enum"];
+  n20368 -> n3241 [from="type_arg", to="generic"];
+  n20368 -> n8319 [from="field_type", to="enum"];
+  n20368 -> n8916 [from="field_type", to="enum"];
+  n20368 -> n18135 [from="field_type", to="enum"];
+  n20368 -> n40229 [from="field_type", to="enum"];
+  n20368 -> n44420 [from="field_type", to="enum"];
+  n20368 -> n59915 [from="type_arg", to="generic"];
+  n20368 -> n59915 [from="type_arg", to="impl"];
+  n21092 -> n3241 [from="type_arg", to="generic"];
+  n21092 -> n10831 [from="field_type", to="struct"];
+  n21092 -> n15242 [from="field_type", to="struct"];
+  n21092 -> n23613 [from="field_type", to="enum"];
+  n21092 -> n28817 [from="field_type", to="struct"];
+  n21092 -> n35698 [from="field_type", to="struct"];
+  n21092 -> n37676 [from="field_type", to="struct"];
+  n21092 -> n37676 [from="type_arg", to="generic"];
+  n21092 -> n44814 [from="field_type", to="struct"];
+  n21092 -> n80587 [from="field_type", to="struct"];
+  n21092 -> n87427 [from="field_type", to="struct"];
+  n21092 -> n93500 [from="field_type", to="struct"];
+  n22850 -> n1835 [from="field_type", to="enum"];
+  n22850 -> n39663 [from="field_type", to="struct"];
+  n22850 -> n63529 [from="field_type", to="enum"];
+  n23038 -> n3241 [from="type_arg", to="generic"];
+  n23385 -> n1040 [from="field_type", to="struct"];
+  n23385 -> n3241 [from="type_arg", to="generic"];
+  n24302 -> n23887 [from="field_type", to="struct"];
+  n24302 -> n28675 [from="type_dep", to="struct"];
+  n24587 -> n29235 [from="field_type", to="struct"];
+  n28817 -> n3241 [from="type_arg", to="generic"];
+  n28817 -> n33844 [from="field_type", to="struct"];
+  n30669 -> n3517 [from="field_type", to="enum"];
+  n30669 -> n13401 [from="type_arg", to="generic"];
+  n30669 -> n13401 [from="type_arg", to="impl"];
+  n30669 -> n36998 [from="field_type", to="struct"];
+  n30669 -> n51225 [from="type_dep", to="struct"];
+  n32713 -> n1040 [from="field_type", to="struct"];
+  n32902 -> n40229 [from="field_type", to="enum"];
+  n33004 -> n94663 [from="field_type", to="struct"];
+  n33844 -> n1380 [from="type_arg", to="generic"];
+  n34873 -> n59296 [from="field_type", to="struct"];
+  n35427 -> n14977 [from="field_type", to="enum"];
+  n35698 -> n15242 [from="type_arg", to="impl"];
+  n35698 -> n21092 [from="type_arg", to="generic"];
+  n35698 -> n21092 [from="type_arg", to="impl"];
+  n35698 -> n55529 [from="field_type", to="struct"];
+  n35898 -> n19359 [from="type_arg", to="impl"];
+  n35898 -> n66660 [from="type_arg", to="impl"];
+  n36998 -> n19343 [from="type_arg", to="generic"];
+  n37676 -> n37609 [from="type_dep", to="struct"];
+  n37676 -> n38988 [from="field_type", to="enum"];
+  n38111 -> n16748 [from="bound", to="generic"];
+  n38111 -> n16748 [from="field_type", to="struct"];
+  n38988 -> n33844 [from="field_type", to="struct"];
+  n41986 -> n39663 [from="func", to="type_dep"];
+  n43716 -> n3241 [from="type_arg", to="generic"];
+  n44420 -> n14334 [from="field_type", to="enum"];
+  n44814 -> n21092 [from="type_arg", to="generic"];
+  n44814 -> n21092 [from="type_arg", to="impl"];
+  n47382 -> n42144 [from="type_dep", to="struct"];
+  n47823 -> n1835 [from="field_type", to="enum"];
+  n47823 -> n59915 [from="type_arg", to="generic"];
+  n47889 -> n7183 [from="trait", to="impl"];
+  n47999 -> n47382 [from="field_type", to="enum"];
+  n48654 -> n49377 [from="type_dep", to="struct"];
+  n48689 -> n3241 [from="type_arg", to="generic"];
+  n48689 -> n33376 [from="field_type", to="enum"];
+  n48689 -> n59915 [from="type_arg", to="generic"];
+  n48721 -> n35141 [from="field_type", to="struct"];
+  n48721 -> n59915 [from="type_arg", to="generic"];
+  n49624 -> n49052 [from="type_dep", to="struct"];
+  n49912 -> n3241 [from="type_arg", to="generic"];
+  n49912 -> n21092 [from="type_arg", to="impl"];
+  n50958 -> n17360 [from="type_arg", to="generic"];
+  n51225 -> n7075 [from="field_type", to="struct"];
+  n51225 -> n7424 [from="field_type", to="enum"];
+  n51225 -> n35427 [from="field_type", to="struct"];
+  n51225 -> n55212 [from="field_type", to="struct"];
+  n51225 -> n72217 [from="field_type", to="struct"];
+  n51225 -> n74312 [from="field_type", to="struct"];
+  n51225 -> n80551 [from="field_type", to="struct"];
+  n51225 -> n80703 [from="field_type", to="struct"];
+  n51225 -> n80855 [from="field_type", to="struct"];
+  n51225 -> n81007 [from="field_type", to="struct"];
+  n51225 -> n81311 [from="field_type", to="struct"];
+  n51225 -> n81463 [from="field_type", to="struct"];
+  n51225 -> n81919 [from="field_type", to="struct"];
+  n51225 -> n82071 [from="field_type", to="struct"];
+  n51225 -> n82831 [from="field_type", to="struct"];
+  n51225 -> n83135 [from="field_type", to="struct"];
+  n51225 -> n85111 [from="field_type", to="struct"];
+  n51225 -> n85263 [from="field_type", to="struct"];
+  n51225 -> n85719 [from="field_type", to="struct"];
+  n51225 -> n86479 [from="field_type", to="struct"];
+  n51225 -> n86631 [from="field_type", to="struct"];
+  n51225 -> n87239 [from="field_type", to="struct"];
+  n51225 -> n87543 [from="field_type", to="struct"];
+  n51225 -> n87847 [from="field_type", to="struct"];
+  n51225 -> n87999 [from="field_type", to="struct"];
+  n51225 -> n88455 [from="field_type", to="struct"];
+  n51225 -> n88759 [from="field_type", to="struct"];
+  n51225 -> n88911 [from="field_type", to="struct"];
+  n51225 -> n89215 [from="field_type", to="struct"];
+  n51225 -> n89367 [from="field_type", to="struct"];
+  n51225 -> n89519 [from="field_type", to="struct"];
+  n51225 -> n89671 [from="field_type", to="struct"];
+  n51225 -> n90279 [from="field_type", to="struct"];
+  n51225 -> n90583 [from="field_type", to="struct"];
+  n51225 -> n90735 [from="field_type", to="struct"];
+  n51225 -> n91039 [from="field_type", to="struct"];
+  n51225 -> n91343 [from="field_type", to="struct"];
+  n51225 -> n91647 [from="field_type", to="struct"];
+  n51225 -> n91799 [from="field_type", to="struct"];
+  n51225 -> n91951 [from="field_type", to="struct"];
+  n51225 -> n92103 [from="field_type", to="struct"];
+  n51225 -> n92255 [from="field_type", to="struct"];
+  n51225 -> n92407 [from="field_type", to="struct"];
+  n54665 -> n49224 [from="field_type", to="enum"];
+  n54980 -> n49224 [from="field_type", to="enum"];
+  n54980 -> n54665 [from="field_type", to="enum"];
+  n54980 -> n55441 [from="field_type", to="enum"];
+  n54980 -> n55441 [from="type_arg", to="generic"];
+  n54980 -> n58962 [from="field_type", to="enum"];
+  n55212 -> n14977 [from="field_type", to="enum"];
+  n55441 -> n54665 [from="type_arg", to="generic"];
+  n55441 -> n54665 [from="type_arg", to="impl"];
+  n55441 -> n58962 [from="field_type", to="enum"];
+  n55639 -> n10644 [from="trait", to="impl"];
+  n55639 -> n14977 [from="trait", to="impl"];
+  n55639 -> n35427 [from="trait", to="impl"];
+  n55639 -> n44438 [from="trait", to="impl"];
+  n55639 -> n55212 [from="trait", to="impl"];
+  n55639 -> n70864 [from="trait", to="impl"];
+  n55639 -> n71368 [from="trait", to="impl"];
+  n55639 -> n72217 [from="trait", to="impl"];
+  n55639 -> n74022 [from="trait", to="impl"];
+  n55639 -> n74312 [from="trait", to="impl"];
+  n55639 -> n80551 [from="trait", to="impl"];
+  n55639 -> n80703 [from="trait", to="impl"];
+  n55639 -> n80855 [from="trait", to="impl"];
+  n55639 -> n81007 [from="trait", to="impl"];
+  n55639 -> n81311 [from="trait", to="impl"];
+  n55639 -> n81463 [from="trait", to="impl"];
+  n55639 -> n81919 [from="trait", to="impl"];
+  n55639 -> n82071 [from="trait", to="impl"];
+  n55639 -> n82831 [from="trait", to="impl"];
+  n55639 -> n83135 [from="trait", to="impl"];
+  n55639 -> n85111 [from="trait", to="impl"];
+  n55639 -> n85263 [from="trait", to="impl"];
+  n55639 -> n85719 [from="trait", to="impl"];
+  n55639 -> n86479 [from="trait", to="impl"];
+  n55639 -> n86631 [from="trait", to="impl"];
+  n55639 -> n87239 [from="trait", to="impl"];
+  n55639 -> n87543 [from="trait", to="impl"];
+  n55639 -> n87847 [from="trait", to="impl"];
+  n55639 -> n87999 [from="trait", to="impl"];
+  n55639 -> n88455 [from="trait", to="impl"];
+  n55639 -> n88759 [from="trait", to="impl"];
+  n55639 -> n88911 [from="trait", to="impl"];
+  n55639 -> n89215 [from="trait", to="impl"];
+  n55639 -> n89367 [from="trait", to="impl"];
+  n55639 -> n89519 [from="trait", to="impl"];
+  n55639 -> n89671 [from="trait", to="impl"];
+  n55639 -> n90279 [from="trait", to="impl"];
+  n55639 -> n90583 [from="trait", to="impl"];
+  n55639 -> n90735 [from="trait", to="impl"];
+  n55639 -> n91039 [from="trait", to="impl"];
+  n55639 -> n91343 [from="trait", to="impl"];
+  n55639 -> n91647 [from="trait", to="impl"];
+  n55639 -> n91799 [from="trait", to="impl"];
+  n55639 -> n91951 [from="trait", to="impl"];
+  n55639 -> n92103 [from="trait", to="impl"];
+  n55639 -> n92255 [from="trait", to="impl"];
+  n55639 -> n92407 [from="trait", to="impl"];
+  n55639 -> n93337 [from="trait", to="impl"];
+  n55646 -> n56266 [from="trait", to="impl"];
+  n55811 -> n80551 [from="trait", to="impl"];
+  n55811 -> n80703 [from="trait", to="impl"];
+  n55811 -> n80855 [from="trait", to="impl"];
+  n55811 -> n81007 [from="trait", to="impl"];
+  n55811 -> n81311 [from="trait", to="impl"];
+  n55811 -> n81463 [from="trait", to="impl"];
+  n55811 -> n81919 [from="trait", to="impl"];
+  n55811 -> n82071 [from="trait", to="impl"];
+  n55811 -> n82831 [from="trait", to="impl"];
+  n55811 -> n83135 [from="trait", to="impl"];
+  n55811 -> n85111 [from="trait", to="impl"];
+  n55811 -> n85263 [from="trait", to="impl"];
+  n55811 -> n85719 [from="trait", to="impl"];
+  n55811 -> n86479 [from="trait", to="impl"];
+  n55811 -> n86631 [from="trait", to="impl"];
+  n55811 -> n87239 [from="trait", to="impl"];
+  n55811 -> n87543 [from="trait", to="impl"];
+  n55811 -> n87847 [from="trait", to="impl"];
+  n55811 -> n87999 [from="trait", to="impl"];
+  n55811 -> n88455 [from="trait", to="impl"];
+  n55811 -> n88759 [from="trait", to="impl"];
+  n55811 -> n88911 [from="trait", to="impl"];
+  n55811 -> n89215 [from="trait", to="impl"];
+  n55811 -> n89367 [from="trait", to="impl"];
+  n55811 -> n89519 [from="trait", to="impl"];
+  n55811 -> n89671 [from="trait", to="impl"];
+  n55811 -> n90279 [from="trait", to="impl"];
+  n55811 -> n90583 [from="trait", to="impl"];
+  n55811 -> n90735 [from="trait", to="impl"];
+  n55811 -> n91039 [from="trait", to="impl"];
+  n55811 -> n91343 [from="trait", to="impl"];
+  n55811 -> n91647 [from="trait", to="impl"];
+  n55811 -> n91799 [from="trait", to="impl"];
+  n55811 -> n91951 [from="trait", to="impl"];
+  n55811 -> n92103 [from="trait", to="impl"];
+  n55811 -> n92255 [from="trait", to="impl"];
+  n55811 -> n92407 [from="trait", to="impl"];
+  n56158 -> n10831 [from="trait", to="impl"];
+  n56158 -> n15242 [from="trait", to="impl"];
+  n56158 -> n35698 [from="trait", to="impl"];
+  n56158 -> n44814 [from="trait", to="impl"];
+  n56158 -> n80587 [from="trait", to="impl"];
+  n56158 -> n87427 [from="trait", to="impl"];
+  n56158 -> n93500 [from="trait", to="impl"];
+  n57090 -> n14106 [from="trait", to="impl"];
+  n57090 -> n59261 [from="trait", to="impl"];
+  n57133 -> n51225 [from="trait", to="impl"];
+  n58962 -> n59915 [from="type_arg", to="generic"];
+  n58962 -> n62517 [from="type_dep", to="struct"];
+  n59296 -> n59915 [from="type_arg", to="generic"];
+  n59915 -> n3241 [from="type_arg", to="generic"];
+  n59915 -> n6357 [from="field_type", to="struct"];
+  n59915 -> n6520 [from="type_arg", to="generic"];
+  n59915 -> n9799 [from="field_type", to="struct"];
+  n59915 -> n10637 [from="base", to="extends"];
+  n59915 -> n10637 [from="type_arg", to="generic"];
+  n59915 -> n10803 [from="type_arg", to="impl"];
+  n59915 -> n12664 [from="field_type", to="struct"];
+  n59915 -> n16748 [from="field_type", to="struct"];
+  n59915 -> n17360 [from="type_arg", to="generic"];
+  n59915 -> n24302 [from="field_type", to="struct"];
+  n59915 -> n32517 [from="field_type", to="struct"];
+  n59915 -> n32713 [from="field_type", to="struct"];
+  n59915 -> n34873 [from="field_type", to="struct"];
+  n59915 -> n35141 [from="type_dep", to="struct"];
+  n59915 -> n43716 [from="type_arg", to="impl"];
+  n59915 -> n48936 [from="field_type", to="struct"];
+  n59915 -> n59296 [from="field_type", to="struct"];
+  n60038 -> n40229 [from="field_type", to="enum"];
+  n60038 -> n59536 [from="field_type", to="struct"];
+  n60038 -> n60089 [from="field_type", to="struct"];
+  n60038 -> n60089 [from="type_arg", to="generic"];
+  n60089 -> n2331 [from="field_type", to="enum"];
+  n60089 -> n8916 [from="field_type", to="enum"];
+  n60089 -> n18061 [from="field_type", to="enum"];
+  n60089 -> n57058 [from="field_type", to="struct"];
+  n60089 -> n58962 [from="field_type", to="enum"];
+  n60472 -> n60953 [from="field_type", to="struct"];
+  n60472 -> n98334 [from="field_type", to="struct"];
+  n60953 -> n61365 [from="field_type", to="struct"];
+  n60953 -> n61365 [from="type_arg", to="generic"];
+  n60953 -> n98334 [from="field_type", to="struct"];
+  n61365 -> n7424 [from="field_type", to="enum"];
+  n61365 -> n24798 [from="field_type", to="struct"];
+  n62151 -> n62864 [from="type_arg", to="impl"];
+  n62517 -> n59915 [from="type_arg", to="impl"];
+  n62638 -> n659 [from="trait", to="impl"];
+  n62638 -> n7183 [from="trait", to="impl"];
+  n62638 -> n17360 [from="trait", to="impl"];
+  n62638 -> n18135 [from="trait", to="impl"];
+  n62638 -> n18465 [from="trait", to="impl"];
+  n62638 -> n20368 [from="trait", to="impl"];
+  n62638 -> n22850 [from="trait", to="impl"];
+  n62638 -> n24798 [from="trait", to="impl"];
+  n62638 -> n28817 [from="trait", to="impl"];
+  n62638 -> n43716 [from="trait", to="impl"];
+  n62638 -> n47823 [from="trait", to="impl"];
+  n62638 -> n48654 [from="trait", to="impl"];
+  n62638 -> n55529 [from="trait", to="impl"];
+  n62638 -> n59915 [from="trait", to="impl"];
+  n62638 -> n96431 [from="trait", to="impl"];
+  n62689 -> n62939 [from="trait", to="impl"];
+  n62864 -> n38068 [from="field_type", to="struct"];
+  n62864 -> n59558 [from="type_dep", to="struct"];
+  n62864 -> n94663 [from="type_dep", to="struct"];
+  n63529 -> n3241 [from="type_arg", to="generic"];
+  n63963 -> n3241 [from="type_arg", to="generic"];
+  n72217 -> n70864 [from="field_type", to="enum"];
+  n72217 -> n74022 [from="field_type", to="enum"];
+  n74312 -> n70864 [from="field_type", to="enum"];
+  n74312 -> n74022 [from="field_type", to="enum"];
+  n80551 -> n93337 [from="field_type", to="enum"];
+  n80587 -> n21092 [from="type_arg", to="generic"];
+  n80587 -> n21092 [from="type_arg", to="impl"];
+  n80587 -> n93500 [from="type_arg", to="impl"];
+  n80605 -> n94327 [from="type_arg", to="impl"];
+  n80703 -> n14977 [from="field_type", to="enum"];
+  n80703 -> n93337 [from="field_type", to="enum"];
+  n80855 -> n14977 [from="field_type", to="enum"];
+  n80855 -> n93337 [from="field_type", to="enum"];
+  n81007 -> n14977 [from="field_type", to="enum"];
+  n81007 -> n93337 [from="field_type", to="enum"];
+  n81311 -> n93337 [from="field_type", to="enum"];
+  n81463 -> n93337 [from="field_type", to="enum"];
+  n81919 -> n14977 [from="field_type", to="enum"];
+  n81919 -> n93337 [from="field_type", to="enum"];
+  n82071 -> n93337 [from="field_type", to="enum"];
+  n82831 -> n93337 [from="field_type", to="enum"];
+  n83135 -> n93337 [from="field_type", to="enum"];
+  n85111 -> n14977 [from="field_type", to="enum"];
+  n85111 -> n93337 [from="field_type", to="enum"];
+  n85263 -> n93337 [from="field_type", to="enum"];
+  n85719 -> n44438 [from="field_type", to="enum"];
+  n85719 -> n93337 [from="field_type", to="enum"];
+  n86479 -> n93337 [from="field_type", to="enum"];
+  n86631 -> n93337 [from="field_type", to="enum"];
+  n86837 -> n94327 [from="type_arg", to="impl"];
+  n87239 -> n93337 [from="field_type", to="enum"];
+  n87427 -> n21092 [from="type_arg", to="generic"];
+  n87427 -> n21092 [from="type_arg", to="impl"];
+  n87427 -> n44814 [from="type_arg", to="impl"];
+  n87427 -> n93500 [from="type_arg", to="impl"];
+  n87445 -> n47684 [from="type_arg", to="impl"];
+  n87445 -> n94327 [from="type_arg", to="impl"];
+  n87543 -> n44438 [from="field_type", to="enum"];
+  n87543 -> n93337 [from="field_type", to="enum"];
+  n87847 -> n93337 [from="field_type", to="enum"];
+  n87999 -> n44438 [from="field_type", to="enum"];
+  n87999 -> n93337 [from="field_type", to="enum"];
+  n88455 -> n44438 [from="field_type", to="enum"];
+  n88455 -> n93337 [from="field_type", to="enum"];
+  n88759 -> n93337 [from="field_type", to="enum"];
+  n88911 -> n93337 [from="field_type", to="enum"];
+  n89215 -> n93337 [from="field_type", to="enum"];
+  n89367 -> n44438 [from="field_type", to="enum"];
+  n89367 -> n93337 [from="field_type", to="enum"];
+  n89519 -> n93337 [from="field_type", to="enum"];
+  n89671 -> n44438 [from="field_type", to="enum"];
+  n89671 -> n93337 [from="field_type", to="enum"];
+  n90279 -> n44438 [from="field_type", to="enum"];
+  n90279 -> n93337 [from="field_type", to="enum"];
+  n90583 -> n44438 [from="field_type", to="enum"];
+  n90583 -> n93337 [from="field_type", to="enum"];
+  n90735 -> n44438 [from="field_type", to="enum"];
+  n90735 -> n93337 [from="field_type", to="enum"];
+  n91039 -> n44438 [from="field_type", to="enum"];
+  n91039 -> n93337 [from="field_type", to="enum"];
+  n91343 -> n44438 [from="field_type", to="enum"];
+  n91343 -> n93337 [from="field_type", to="enum"];
+  n91647 -> n93337 [from="field_type", to="enum"];
+  n91799 -> n93337 [from="field_type", to="enum"];
+  n91951 -> n93337 [from="field_type", to="enum"];
+  n92103 -> n93337 [from="field_type", to="enum"];
+  n92255 -> n93337 [from="field_type", to="enum"];
+  n92407 -> n14977 [from="field_type", to="enum"];
+  n92407 -> n93337 [from="field_type", to="enum"];
+  n93500 -> n21092 [from="type_arg", to="generic"];
+  n93500 -> n21092 [from="type_arg", to="impl"];
+}

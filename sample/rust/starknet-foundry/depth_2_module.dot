@@ -1,0 +1,248 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  subgraph cluster_cheatnet {
+    label="cheatnet";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_cheatnet_call_to_blockifier_runtime_extension[label="call_to_blockifier_runtime_extension", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/call_to_blockifier_runtime_extension"];
+    mod_cheatnet_deprecated_cheatable_starknet_extension[label="deprecated_cheatable_starknet_extension", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/deprecated_cheatable_starknet_extension"];
+    mod_cheatnet_forge_config_extension[label="forge_config_extension", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/forge_config_extension"];
+    mod_cheatnet_forge_runtime_extension[label="forge_runtime_extension", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/forge_runtime_extension"];
+    mod_cheatnet_forking[label="forking", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/forking"];
+    mod_cheatnet_native[label="native", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/native"];
+    mod_cheatnet_predeployment[label="predeployment", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/predeployment"];
+    mod_cheatnet_state[label="state", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src"];
+    mod_cheatnet_trace_data[label="trace_data", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src"];
+  }
+
+  subgraph cluster_conversions {
+    label="conversions";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_conversions_byte_array[label="byte_array", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions/src"];
+    mod_conversions_felt[label="felt", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions/src"];
+    mod_conversions_padded_felt[label="padded_felt", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions/src"];
+    mod_conversions_serde[label="serde", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions/src/serde"];
+  }
+
+  subgraph cluster_data_transformer {
+    label="data-transformer";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_data_transformer_cairo_types[label="cairo_types", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/cairo_types"];
+    mod_data_transformer_reverse_transformer[label="reverse_transformer", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/reverse_transformer"];
+    mod_data_transformer_transformer[label="transformer", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/transformer"];
+  }
+
+  subgraph cluster_debugging {
+    label="debugging";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_debugging_trace[label="trace", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/trace"];
+    mod_debugging_tree[label="tree", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/tree"];
+  }
+
+  subgraph cluster_forge {
+    label="forge";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_forge_block_number_map[label="block_number_map", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src"];
+    mod_forge_clean[label="clean", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src"];
+    mod_forge_lib[label="lib", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src"];
+    mod_forge_new[label="new", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src"];
+    mod_forge_profile_validation[label="profile_validation", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/profile_validation"];
+    mod_forge_run_tests[label="run_tests", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/run_tests"];
+    mod_forge_test_filter[label="test_filter", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src"];
+    mod_forge_warn[label="warn", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src"];
+  }
+
+  subgraph cluster_forge_runner {
+    label="forge_runner";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_forge_runner_build_trace_data[label="build_trace_data", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src"];
+    mod_forge_runner_expected_result[label="expected_result", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src"];
+    mod_forge_runner_forge_config[label="forge_config", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src"];
+    mod_forge_runner_gas[label="gas", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/gas"];
+    mod_forge_runner_lib[label="lib", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src"];
+    mod_forge_runner_package_tests[label="package_tests", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/package_tests"];
+    mod_forge_runner_running[label="running", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/running"];
+    mod_forge_runner_test_case_summary[label="test_case_summary", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src"];
+    mod_forge_runner_test_target_summary[label="test_target_summary", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src"];
+  }
+
+  subgraph cluster_foundry_ui {
+    label="foundry-ui";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_foundry_ui_components[label="components", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/foundry-ui/src/components"];
+    mod_foundry_ui_lib[label="lib", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/foundry-ui/src"];
+    mod_foundry_ui_message[label="message", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/foundry-ui/src"];
+  }
+
+  subgraph cluster_runtime {
+    label="runtime";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_runtime_lib[label="lib", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/runtime/src"];
+  }
+
+  subgraph cluster_scarb_api {
+    label="scarb-api";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_scarb_api_metadata[label="metadata", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/scarb-api/src"];
+  }
+
+  subgraph cluster_sncast {
+    label="sncast";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sncast_helpers[label="helpers", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers"];
+    mod_sncast_lib[label="lib", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src"];
+    mod_sncast_main[label="main", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src"];
+    mod_sncast_response[label="response", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response"];
+    mod_sncast_starknet_commands[label="starknet_commands", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands"];
+    mod_sncast_state[label="state", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/state"];
+  }
+
+  subgraph cluster_snforge_scarb_plugin {
+    label="snforge_scarb_plugin";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_snforge_scarb_plugin_args[label="args", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src"];
+    mod_snforge_scarb_plugin_attributes[label="attributes", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src"];
+    mod_snforge_scarb_plugin_cairo_expression[label="cairo_expression", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src"];
+    mod_snforge_scarb_plugin_types[label="types", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src"];
+  }
+
+  subgraph cluster_snforge_scarb_plugin_deprecated {
+    label="snforge_scarb_plugin_deprecated";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_snforge_scarb_plugin_deprecated_args[label="args", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src"];
+    mod_snforge_scarb_plugin_deprecated_attributes[label="attributes", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src"];
+    mod_snforge_scarb_plugin_deprecated_cairo_expression[label="cairo_expression", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src"];
+    mod_snforge_scarb_plugin_deprecated_parse[label="parse", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src"];
+    mod_snforge_scarb_plugin_deprecated_types[label="types", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src"];
+  }
+
+  subgraph cluster_universal_sierra_compiler_api {
+    label="universal-sierra-compiler-api";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_universal_sierra_compiler_api_compile[label="compile", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/universal-sierra-compiler-api/src"];
+    mod_universal_sierra_compiler_api_lib[label="lib", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/universal-sierra-compiler-api/src"];
+    mod_universal_sierra_compiler_api_representation[label="representation", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/universal-sierra-compiler-api/src"];
+  }
+
+
+  mod_cheatnet_call_to_blockifier_runtime_extension -> mod_cheatnet_state;
+  mod_cheatnet_call_to_blockifier_runtime_extension -> mod_debugging_trace;
+  mod_cheatnet_call_to_blockifier_runtime_extension -> mod_sncast_starknet_commands;
+  mod_cheatnet_call_to_blockifier_runtime_extension -> mod_snforge_scarb_plugin_types;
+  mod_cheatnet_deprecated_cheatable_starknet_extension -> mod_cheatnet_state;
+  mod_cheatnet_forge_config_extension -> mod_conversions_byte_array;
+  mod_cheatnet_forge_runtime_extension -> mod_cheatnet_call_to_blockifier_runtime_extension;
+  mod_cheatnet_forge_runtime_extension -> mod_cheatnet_state;
+  mod_cheatnet_forge_runtime_extension -> mod_cheatnet_trace_data;
+  mod_cheatnet_forge_runtime_extension -> mod_debugging_trace;
+  mod_cheatnet_forge_runtime_extension -> mod_runtime_lib;
+  mod_cheatnet_forge_runtime_extension -> mod_sncast_starknet_commands;
+  mod_cheatnet_forge_runtime_extension -> mod_snforge_scarb_plugin_deprecated_types;
+  mod_cheatnet_native -> mod_cheatnet_state;
+  mod_cheatnet_predeployment -> mod_debugging_trace;
+  mod_cheatnet_state -> mod_cheatnet_forge_runtime_extension;
+  mod_cheatnet_state -> mod_debugging_trace;
+  mod_cheatnet_state -> mod_snforge_scarb_plugin_deprecated_types;
+  mod_conversions_byte_array -> mod_snforge_scarb_plugin_deprecated_types;
+  mod_data_transformer_reverse_transformer -> mod_conversions_serde;
+  mod_data_transformer_reverse_transformer -> mod_data_transformer_cairo_types;
+  mod_data_transformer_reverse_transformer -> mod_snforge_scarb_plugin_types;
+  mod_data_transformer_transformer -> mod_conversions_serde;
+  mod_data_transformer_transformer -> mod_data_transformer_cairo_types;
+  mod_data_transformer_transformer -> mod_snforge_scarb_plugin_deprecated_types;
+  mod_debugging_trace -> mod_debugging_tree;
+  mod_forge_clean -> mod_foundry_ui_lib;
+  mod_forge_new -> mod_forge_lib;
+  mod_forge_profile_validation -> mod_forge_lib;
+  mod_forge_run_tests -> mod_cheatnet_forge_config_extension;
+  mod_forge_run_tests -> mod_forge_block_number_map;
+  mod_forge_run_tests -> mod_forge_runner_forge_config;
+  mod_forge_run_tests -> mod_forge_runner_package_tests;
+  mod_forge_run_tests -> mod_forge_runner_test_target_summary;
+  mod_forge_run_tests -> mod_forge_test_filter;
+  mod_forge_run_tests -> mod_foundry_ui_lib;
+  mod_forge_run_tests -> mod_foundry_ui_message;
+  mod_forge_runner_build_trace_data -> mod_cheatnet_forge_runtime_extension;
+  mod_forge_runner_build_trace_data -> mod_cheatnet_forking;
+  mod_forge_runner_gas -> mod_forge_runner_test_case_summary;
+  mod_forge_runner_lib -> mod_forge_runner_forge_config;
+  mod_forge_runner_lib -> mod_forge_runner_test_case_summary;
+  mod_forge_runner_package_tests -> mod_cheatnet_forge_config_extension;
+  mod_forge_runner_package_tests -> mod_forge_runner_expected_result;
+  mod_forge_runner_running -> mod_cheatnet_forking;
+  mod_forge_runner_running -> mod_cheatnet_trace_data;
+  mod_forge_runner_running -> mod_forge_runner_forge_config;
+  mod_forge_runner_running -> mod_forge_runner_package_tests;
+  mod_forge_runner_running -> mod_forge_runner_test_case_summary;
+  mod_forge_runner_running -> mod_universal_sierra_compiler_api_representation;
+  mod_forge_warn -> mod_foundry_ui_lib;
+  mod_foundry_ui_components -> mod_foundry_ui_message;
+  mod_sncast_helpers -> mod_scarb_api_metadata;
+  mod_sncast_helpers -> mod_sncast_lib;
+  mod_sncast_helpers -> mod_sncast_response;
+  mod_sncast_lib -> mod_sncast_helpers;
+  mod_sncast_lib -> mod_sncast_response;
+  mod_sncast_lib -> mod_snforge_scarb_plugin_deprecated_types;
+  mod_sncast_lib -> mod_snforge_scarb_plugin_types;
+  mod_sncast_main -> mod_sncast_helpers;
+  mod_sncast_main -> mod_sncast_response;
+  mod_sncast_main -> mod_sncast_starknet_commands;
+  mod_sncast_response -> mod_conversions_padded_felt;
+  mod_sncast_response -> mod_foundry_ui_message;
+  mod_sncast_response -> mod_sncast_helpers;
+  mod_sncast_response -> mod_sncast_lib;
+  mod_sncast_response -> mod_snforge_scarb_plugin_deprecated_types;
+  mod_sncast_starknet_commands -> mod_foundry_ui_message;
+  mod_sncast_starknet_commands -> mod_runtime_lib;
+  mod_sncast_starknet_commands -> mod_sncast_helpers;
+  mod_sncast_starknet_commands -> mod_sncast_lib;
+  mod_sncast_starknet_commands -> mod_sncast_main;
+  mod_sncast_starknet_commands -> mod_sncast_response;
+  mod_sncast_starknet_commands -> mod_sncast_state;
+  mod_sncast_starknet_commands -> mod_snforge_scarb_plugin_deprecated_parse;
+  mod_sncast_starknet_commands -> mod_snforge_scarb_plugin_deprecated_types;
+  mod_sncast_starknet_commands -> mod_snforge_scarb_plugin_types;
+  mod_sncast_state -> mod_sncast_response;
+  mod_snforge_scarb_plugin_attributes -> mod_snforge_scarb_plugin_args;
+  mod_snforge_scarb_plugin_deprecated_attributes -> mod_snforge_scarb_plugin_deprecated_args;
+  mod_snforge_scarb_plugin_deprecated_types -> mod_conversions_felt;
+  mod_snforge_scarb_plugin_deprecated_types -> mod_snforge_scarb_plugin_deprecated_cairo_expression;
+  mod_snforge_scarb_plugin_types -> mod_snforge_scarb_plugin_cairo_expression;
+  mod_universal_sierra_compiler_api_lib -> mod_universal_sierra_compiler_api_compile;
+}

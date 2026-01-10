@@ -28,7 +28,10 @@ digraph architecture {
     mod_collection_collection[label="collection", path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/collection"];
     mod_collection_collection_manager[label="collection_manager", path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/collection_manager"];
     mod_collection_common[label="common", path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/common"];
+    mod_collection_config[label="config", path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src"];
+    mod_collection_grouping[label="grouping", path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/grouping"];
     mod_collection_operations[label="operations", path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/operations"];
+    mod_collection_problems[label="problems", path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/problems"];
     mod_collection_shards[label="shards", path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/shards"];
   }
 
@@ -61,8 +64,17 @@ digraph architecture {
     mod_qdrant_edge_py_config[label="config", path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src/config"];
     mod_qdrant_edge_py_filter[label="filter", path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src/types/filter"];
     mod_qdrant_edge_py_query[label="query", path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src"];
+    mod_qdrant_edge_py_repr[label="repr", path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src"];
     mod_qdrant_edge_py_search[label="search", path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src"];
     mod_qdrant_edge_py_types[label="types", path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src/types"];
+  }
+
+  subgraph cluster_quantization {
+    label="quantization";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_quantization_encoded_vectors_u8[label="encoded_vectors_u8", path="/home/yibai/llmcc/sample/repos/qdrant/lib/quantization/src"];
   }
 
   subgraph cluster_segment {
@@ -91,6 +103,7 @@ digraph architecture {
 
     mod_shard_operations[label="operations", path="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/operations"];
     mod_shard_query[label="query", path="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/query"];
+    mod_shard_segment_holder[label="segment_holder", path="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/segment_holder"];
     mod_shard_update[label="update", path="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src"];
   }
 
@@ -108,50 +121,62 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_storage_consensus[label="consensus", path="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/content_manager/consensus"];
     mod_storage_content_manager[label="content_manager", path="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/content_manager"];
+    mod_storage_dispatcher[label="dispatcher", path="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src"];
     mod_storage_rbac[label="rbac", path="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/rbac"];
+    mod_storage_snapshots[label="snapshots", path="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/content_manager/snapshots"];
     mod_storage_toc[label="toc", path="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/content_manager/toc"];
   }
 
 
   mod_api_grpc -> mod_collection_operations;
+  mod_api_grpc -> mod_segment_data_types;
   mod_api_grpc -> mod_segment_types;
   mod_api_grpc -> mod_segment_vector_storage;
   mod_api_rest -> mod_api_grpc;
-  mod_api_rest -> mod_collection_operations;
   mod_api_rest -> mod_segment_json_path;
   mod_api_rest -> mod_segment_types;
   mod_collection_collection -> mod_collection_operations;
   mod_collection_collection -> mod_shard_query;
   mod_collection_collection_manager -> mod_api_grpc;
+  mod_collection_collection_manager -> mod_collection_config;
   mod_collection_collection_manager -> mod_segment_common;
-  mod_collection_collection_manager -> mod_segment_data_types;
   mod_collection_collection_manager -> mod_segment_segment;
   mod_collection_collection_manager -> mod_segment_types;
   mod_collection_common -> mod_collection_operations;
+  mod_collection_grouping -> mod_api_grpc;
+  mod_collection_grouping -> mod_collection_operations;
+  mod_collection_grouping -> mod_segment_json_path;
   mod_collection_operations -> mod_api_grpc;
   mod_collection_operations -> mod_api_rest;
   mod_collection_operations -> mod_collection_common;
+  mod_collection_operations -> mod_collection_config;
   mod_collection_operations -> mod_collection_shards;
   mod_collection_operations -> mod_segment_data_types;
   mod_collection_operations -> mod_segment_index;
   mod_collection_operations -> mod_segment_types;
   mod_collection_operations -> mod_segment_vector_storage;
   mod_collection_operations -> mod_shard_query;
-  mod_collection_operations -> mod_storage_rbac;
+  mod_collection_problems -> mod_segment_types;
   mod_collection_shards -> mod_api_grpc;
   mod_collection_shards -> mod_collection_common;
+  mod_collection_shards -> mod_collection_config;
   mod_collection_shards -> mod_collection_operations;
   mod_collection_shards -> mod_segment_index;
+  mod_collection_shards -> mod_segment_types;
   mod_collection_shards -> mod_shard_operations;
   mod_qdrant_actix -> mod_api_grpc;
   mod_qdrant_actix -> mod_api_rest;
   mod_qdrant_actix -> mod_collection_common;
   mod_qdrant_actix -> mod_collection_operations;
+  mod_qdrant_actix -> mod_common_counter;
   mod_qdrant_actix -> mod_qdrant_common;
   mod_qdrant_actix -> mod_qdrant_settings;
   mod_qdrant_actix -> mod_qdrant_tracing;
+  mod_qdrant_actix -> mod_segment_vector_storage;
   mod_qdrant_actix -> mod_storage_content_manager;
+  mod_qdrant_actix -> mod_storage_dispatcher;
   mod_qdrant_actix -> mod_storage_rbac;
   mod_qdrant_actix -> mod_storage_toc;
   mod_qdrant_common -> mod_api_grpc;
@@ -166,32 +191,41 @@ digraph architecture {
   mod_qdrant_common -> mod_segment_vector_storage;
   mod_qdrant_common -> mod_shard_operations;
   mod_qdrant_common -> mod_storage_content_manager;
+  mod_qdrant_common -> mod_storage_dispatcher;
   mod_qdrant_common -> mod_storage_rbac;
   mod_qdrant_common -> mod_storage_toc;
   mod_qdrant_edge_py_config -> mod_api_grpc;
+  mod_qdrant_edge_py_config -> mod_qdrant_edge_py_repr;
   mod_qdrant_edge_py_config -> mod_segment_types;
   mod_qdrant_edge_py_filter -> mod_api_grpc;
+  mod_qdrant_edge_py_filter -> mod_qdrant_edge_py_repr;
   mod_qdrant_edge_py_filter -> mod_segment_types;
+  mod_qdrant_edge_py_query -> mod_qdrant_edge_py_repr;
   mod_qdrant_edge_py_query -> mod_segment_data_types;
   mod_qdrant_edge_py_query -> mod_segment_vector_storage;
   mod_qdrant_edge_py_query -> mod_shard_query;
+  mod_qdrant_edge_py_search -> mod_qdrant_edge_py_repr;
   mod_qdrant_edge_py_search -> mod_segment_types;
+  mod_qdrant_edge_py_types -> mod_qdrant_edge_py_repr;
+  mod_qdrant_edge_py_types -> mod_segment_data_types;
   mod_qdrant_edge_py_types -> mod_shard_operations;
   mod_qdrant_tonic -> mod_api_grpc;
+  mod_qdrant_tonic -> mod_api_rest;
   mod_qdrant_tonic -> mod_collection_common;
   mod_qdrant_tonic -> mod_collection_operations;
   mod_qdrant_tonic -> mod_qdrant_common;
   mod_qdrant_tonic -> mod_qdrant_settings;
   mod_qdrant_tonic -> mod_segment_vector_storage;
+  mod_qdrant_tonic -> mod_storage_dispatcher;
   mod_qdrant_tonic -> mod_storage_rbac;
   mod_qdrant_tonic -> mod_storage_toc;
+  mod_quantization_encoded_vectors_u8 -> mod_segment_data_types;
   mod_segment_common -> mod_segment_data_types;
   mod_segment_common -> mod_segment_index;
   mod_segment_common -> mod_segment_types;
   mod_segment_data_types -> mod_api_grpc;
   mod_segment_data_types -> mod_segment_types;
   mod_segment_data_types -> mod_segment_vector_storage;
-  mod_segment_data_types -> mod_sparse_common;
   mod_segment_fixtures -> mod_api_grpc;
   mod_segment_fixtures -> mod_segment_data_types;
   mod_segment_fixtures -> mod_segment_index;
@@ -215,6 +249,7 @@ digraph architecture {
   mod_segment_segment_constructor -> mod_segment_types;
   mod_segment_segment_constructor -> mod_segment_vector_storage;
   mod_segment_spaces -> mod_api_grpc;
+  mod_segment_spaces -> mod_segment_data_types;
   mod_segment_types -> mod_api_grpc;
   mod_segment_types -> mod_segment_data_types;
   mod_segment_vector_storage -> mod_common_counter;
@@ -223,13 +258,11 @@ digraph architecture {
   mod_segment_vector_storage -> mod_segment_spaces;
   mod_segment_vector_storage -> mod_segment_types;
   mod_shard_operations -> mod_api_grpc;
-  mod_shard_operations -> mod_api_rest;
   mod_shard_operations -> mod_collection_operations;
   mod_shard_operations -> mod_segment_data_types;
   mod_shard_operations -> mod_segment_json_path;
   mod_shard_query -> mod_api_grpc;
   mod_shard_query -> mod_api_rest;
-  mod_shard_query -> mod_collection_operations;
   mod_shard_query -> mod_common_counter;
   mod_shard_query -> mod_segment_data_types;
   mod_shard_query -> mod_segment_index;
@@ -238,10 +271,17 @@ digraph architecture {
   mod_shard_update -> mod_api_grpc;
   mod_shard_update -> mod_common_counter;
   mod_shard_update -> mod_shard_operations;
+  mod_shard_update -> mod_shard_segment_holder;
   mod_sparse_index -> mod_sparse_common;
   mod_storage_content_manager -> mod_api_grpc;
   mod_storage_content_manager -> mod_collection_operations;
   mod_storage_content_manager -> mod_collection_shards;
   mod_storage_content_manager -> mod_segment_index;
+  mod_storage_content_manager -> mod_storage_consensus;
+  mod_storage_content_manager -> mod_storage_dispatcher;
   mod_storage_content_manager -> mod_storage_rbac;
+  mod_storage_snapshots -> mod_collection_operations;
+  mod_storage_snapshots -> mod_storage_content_manager;
+  mod_storage_snapshots -> mod_storage_dispatcher;
+  mod_storage_snapshots -> mod_storage_rbac;
 }

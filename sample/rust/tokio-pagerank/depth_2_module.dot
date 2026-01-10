@@ -52,10 +52,10 @@ digraph architecture {
 
     mod_tokio_util_io[label="io", path="/home/yibai/llmcc/sample/repos/tokio/tokio-util/src/io"];
     mod_tokio_util_sync[label="sync", path="/home/yibai/llmcc/sample/repos/tokio/tokio-util/src/sync"];
+    mod_tokio_util_util[label="util", path="/home/yibai/llmcc/sample/repos/tokio/tokio-util/src/util"];
   }
 
 
-  mod_tokio_fs -> mod_tokio_runtime;
   mod_tokio_fs -> mod_tokio_sync;
   mod_tokio_io -> mod_tokio_runtime;
   mod_tokio_loom -> mod_tokio_runtime;
@@ -65,13 +65,13 @@ digraph architecture {
   mod_tokio_net -> mod_tokio_io;
   mod_tokio_net -> mod_tokio_time;
   mod_tokio_process -> mod_tokio_io;
+  mod_tokio_process -> mod_tokio_runtime;
   mod_tokio_runtime -> mod_tokio_io;
   mod_tokio_runtime -> mod_tokio_loom;
   mod_tokio_runtime -> mod_tokio_sync;
   mod_tokio_runtime -> mod_tokio_time;
   mod_tokio_runtime -> mod_tokio_util;
   mod_tokio_signal -> mod_tokio_runtime;
-  mod_tokio_signal -> mod_tokio_sync;
   mod_tokio_stream_wrappers -> mod_tokio_runtime;
   mod_tokio_sync -> mod_tokio_loom;
   mod_tokio_sync -> mod_tokio_runtime;
@@ -82,5 +82,7 @@ digraph architecture {
   mod_tokio_util -> mod_tokio_runtime;
   mod_tokio_util -> mod_tokio_sync;
   mod_tokio_util_io -> mod_tokio_io;
+  mod_tokio_util_sync -> mod_tokio_loom;
   mod_tokio_util_sync -> mod_tokio_sync;
+  mod_tokio_util_util -> mod_tokio_io;
 }

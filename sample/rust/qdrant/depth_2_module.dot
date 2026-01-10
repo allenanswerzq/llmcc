@@ -46,9 +46,7 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_common_bitpacking[label="bitpacking", path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/common/src"];
     mod_common_counter[label="counter", path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/common/src/counter"];
-    mod_common_num_traits[label="num_traits", path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/common/src"];
     mod_common_save_on_disk[label="save_on_disk", path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/common/src"];
     mod_common_types[label="types", path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/common/src"];
     mod_common_validation[label="validation", path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/common/src"];
@@ -87,6 +85,8 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_memory_madvise[label="madvise", path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/memory/src"];
+    mod_memory_mmap_ops[label="mmap_ops", path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/memory/src"];
     mod_memory_mmap_type[label="mmap_type", path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/memory/src"];
   }
 
@@ -124,6 +124,14 @@ digraph architecture {
     mod_qdrant_edge_py_repr[label="repr", path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src"];
     mod_qdrant_edge_py_search[label="search", path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src"];
     mod_qdrant_edge_py_types[label="types", path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src/types"];
+  }
+
+  subgraph cluster_quantization {
+    label="quantization";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_quantization_encoded_vectors_u8[label="encoded_vectors_u8", path="/home/yibai/llmcc/sample/repos/qdrant/lib/quantization/src"];
   }
 
   subgraph cluster_segment {
@@ -191,19 +199,17 @@ digraph architecture {
   mod_api_rest -> mod_api_grpc;
   mod_api_rest -> mod_segment_json_path;
   mod_api_rest -> mod_segment_types;
-  mod_collection_collection -> mod_api_grpc;
+  mod_collection_collection -> mod_collection_operations;
   mod_collection_collection -> mod_shard_payload_index_schema;
   mod_collection_collection -> mod_shard_query;
-  mod_collection_collection_manager -> mod_api_grpc;
   mod_collection_collection_manager -> mod_collection_config;
   mod_collection_collection_manager -> mod_segment_common;
-  mod_collection_collection_manager -> mod_segment_data_types;
   mod_collection_collection_manager -> mod_segment_segment;
   mod_collection_collection_manager -> mod_segment_types;
   mod_collection_collection_state -> mod_collection_shards;
   mod_collection_common -> mod_collection_operations;
   mod_collection_discovery -> mod_collection_operations;
-  mod_collection_grouping -> mod_api_rest;
+  mod_collection_grouping -> mod_api_grpc;
   mod_collection_grouping -> mod_collection_operations;
   mod_collection_grouping -> mod_segment_json_path;
   mod_collection_operations -> mod_api_grpc;
@@ -218,6 +224,7 @@ digraph architecture {
   mod_collection_operations -> mod_shard_query;
   mod_collection_problems -> mod_segment_types;
   mod_collection_recommendations -> mod_collection_operations;
+  mod_collection_recommendations -> mod_segment_data_types;
   mod_collection_shards -> mod_api_grpc;
   mod_collection_shards -> mod_collection_common;
   mod_collection_shards -> mod_collection_config;
@@ -229,12 +236,12 @@ digraph architecture {
   mod_collection_shards -> mod_shard_operations;
   mod_collection_shards -> mod_shard_payload_index_schema;
   mod_collection_telemetry -> mod_collection_config;
-  mod_common_bitpacking -> mod_common_num_traits;
   mod_common_validation -> mod_collection_operations;
   mod_common_validation -> mod_segment_index;
   mod_gpu_instance -> mod_gpu_allocation_callbacks;
   mod_gpu_instance -> mod_gpu_debug_messenger;
   mod_issues_dashboard -> mod_issues_issue;
+  mod_memory_mmap_ops -> mod_memory_madvise;
   mod_memory_mmap_type -> mod_segment_index;
   mod_qdrant_actix -> mod_api_grpc;
   mod_qdrant_actix -> mod_api_rest;
@@ -243,7 +250,6 @@ digraph architecture {
   mod_qdrant_actix -> mod_qdrant_common;
   mod_qdrant_actix -> mod_qdrant_settings;
   mod_qdrant_actix -> mod_qdrant_tracing;
-  mod_qdrant_actix -> mod_segment_vector_storage;
   mod_qdrant_actix -> mod_storage_content_manager;
   mod_qdrant_actix -> mod_storage_dispatcher;
   mod_qdrant_actix -> mod_storage_rbac;
@@ -294,6 +300,7 @@ digraph architecture {
   mod_qdrant_tonic -> mod_storage_dispatcher;
   mod_qdrant_tonic -> mod_storage_rbac;
   mod_qdrant_tonic -> mod_storage_toc;
+  mod_quantization_encoded_vectors_u8 -> mod_segment_data_types;
   mod_segment_common -> mod_memory_mmap_type;
   mod_segment_common -> mod_segment_data_types;
   mod_segment_common -> mod_segment_index;
@@ -327,6 +334,7 @@ digraph architecture {
   mod_segment_segment_constructor -> mod_segment_types;
   mod_segment_segment_constructor -> mod_segment_vector_storage;
   mod_segment_spaces -> mod_api_grpc;
+  mod_segment_spaces -> mod_segment_data_types;
   mod_segment_types -> mod_api_grpc;
   mod_segment_types -> mod_segment_data_types;
   mod_segment_vector_storage -> mod_common_counter;
@@ -343,7 +351,6 @@ digraph architecture {
   mod_shard_operations -> mod_segment_json_path;
   mod_shard_query -> mod_api_grpc;
   mod_shard_query -> mod_api_rest;
-  mod_shard_query -> mod_collection_operations;
   mod_shard_query -> mod_common_counter;
   mod_shard_query -> mod_segment_data_types;
   mod_shard_query -> mod_segment_index;
@@ -351,11 +358,10 @@ digraph architecture {
   mod_shard_query -> mod_segment_vector_storage;
   mod_shard_query -> mod_shard_search;
   mod_shard_retrieve -> mod_segment_data_types;
-  mod_shard_search -> mod_api_grpc;
   mod_shard_search -> mod_segment_types;
-  mod_shard_update -> mod_api_grpc;
   mod_shard_update -> mod_common_counter;
   mod_shard_update -> mod_gridstore_fixtures;
+  mod_shard_update -> mod_segment_types;
   mod_shard_update -> mod_shard_operations;
   mod_shard_update -> mod_shard_segment_holder;
   mod_sparse_index -> mod_sparse_common;

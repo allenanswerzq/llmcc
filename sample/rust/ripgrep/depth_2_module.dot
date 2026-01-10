@@ -46,15 +46,14 @@ digraph architecture {
 
   mod_globset_lib -> mod_grep_regex_matcher;
   mod_grep_cli_decompress -> mod_grep_cli_process;
-  mod_grep_cli_decompress -> mod_ignore_lib;
   mod_grep_cli_hostname -> mod_grep_pcre2_error;
   mod_grep_cli_lib -> mod_grep_cli_process;
   mod_grep_cli_wtr -> mod_ripgrep_crates;
   mod_grep_pcre2_matcher -> mod_grep_matcher_lib;
   mod_grep_printer_color -> mod_ripgrep_crates;
   mod_grep_printer_standard -> mod_grep_printer_util;
-  mod_grep_printer_util -> mod_globset_lib;
   mod_grep_printer_util -> mod_grep_matcher_lib;
+  mod_grep_printer_util -> mod_grep_pcre2_error;
   mod_grep_printer_util -> mod_grep_printer_jsont;
   mod_grep_printer_util -> mod_grep_searcher_searcher;
   mod_grep_regex_config -> mod_grep_matcher_lib;
@@ -67,24 +66,23 @@ digraph architecture {
   mod_grep_searcher_searcher -> mod_grep_searcher_line_buffer;
   mod_grep_searcher_searcher -> mod_grep_searcher_sink;
   mod_grep_searcher_testutil -> mod_grep_matcher_lib;
-  mod_grep_searcher_testutil -> mod_grep_searcher_searcher;
   mod_ignore_dir -> mod_ignore_gitignore;
   mod_ignore_dir -> mod_ignore_lib;
   mod_ignore_dir -> mod_ignore_overrides;
   mod_ignore_dir -> mod_ignore_types;
   mod_ignore_gitignore -> mod_globset_lib;
   mod_ignore_overrides -> mod_ignore_gitignore;
-  mod_ignore_pathutil -> mod_ignore_lib;
   mod_ignore_pathutil -> mod_ignore_walk;
   mod_ignore_walk -> mod_grep_cli_process;
   mod_ignore_walk -> mod_ignore_dir;
   mod_ignore_walk -> mod_ignore_lib;
   mod_ignore_walk -> mod_ripgrep_crates;
-  mod_ripgrep_crates -> mod_grep_cli_wtr;
+  mod_ripgrep_crates -> mod_grep_cli_process;
   mod_ripgrep_crates -> mod_grep_matcher_lib;
   mod_ripgrep_crates -> mod_grep_printer_color;
   mod_ripgrep_crates -> mod_grep_printer_hyperlink;
   mod_ripgrep_crates -> mod_grep_searcher_searcher;
+  mod_ripgrep_crates -> mod_ignore_lib;
   mod_ripgrep_crates -> mod_ignore_overrides;
   mod_ripgrep_crates -> mod_ignore_types;
 }

@@ -1,0 +1,310 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  subgraph cluster_cairo_lang_casm {
+    label="cairo-lang-casm";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_cairo_lang_casm_operand[label="operand", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-casm/src"];
+  }
+
+  subgraph cluster_cairo_lang_defs {
+    label="cairo-lang-defs";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_cairo_lang_defs_cache[label="cache", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-defs/src/cache"];
+    mod_cairo_lang_defs_db[label="db", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-defs/src"];
+    mod_cairo_lang_defs_ids[label="ids", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-defs/src"];
+    mod_cairo_lang_defs_plugin[label="plugin", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-defs/src"];
+  }
+
+  subgraph cluster_cairo_lang_diagnostics {
+    label="cairo-lang-diagnostics";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_cairo_lang_diagnostics_diagnostics[label="diagnostics", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-diagnostics/src"];
+  }
+
+  subgraph cluster_cairo_lang_filesystem {
+    label="cairo-lang-filesystem";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_cairo_lang_filesystem_db[label="db", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-filesystem/src"];
+    mod_cairo_lang_filesystem_ids[label="ids", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-filesystem/src"];
+    mod_cairo_lang_filesystem_span[label="span", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-filesystem/src"];
+  }
+
+  subgraph cluster_cairo_lang_formatter {
+    label="cairo-lang-formatter";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_cairo_lang_formatter_formatter_impl[label="formatter_impl", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-formatter/src"];
+  }
+
+  subgraph cluster_cairo_lang_lowering {
+    label="cairo-lang-lowering";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_cairo_lang_lowering_cache[label="cache", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-lowering/src/cache"];
+    mod_cairo_lang_lowering_lower[label="lower", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-lowering/src/lower"];
+    mod_cairo_lang_lowering_objects[label="objects", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-lowering/src"];
+    mod_cairo_lang_lowering_optimizations[label="optimizations", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-lowering/src/optimizations"];
+  }
+
+  subgraph cluster_cairo_lang_parser {
+    label="cairo-lang-parser";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_cairo_lang_parser_parser[label="parser", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-parser/src"];
+  }
+
+  subgraph cluster_cairo_lang_plugins {
+    label="cairo-lang-plugins";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_cairo_lang_plugins_plugins[label="plugins", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-plugins/src/plugins"];
+  }
+
+  subgraph cluster_cairo_lang_runner {
+    label="cairo-lang-runner";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_cairo_lang_runner_casm_run[label="casm_run", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-runner/src/casm_run"];
+  }
+
+  subgraph cluster_cairo_lang_semantic {
+    label="cairo-lang-semantic";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_cairo_lang_semantic_cache[label="cache", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/cache"];
+    mod_cairo_lang_semantic_corelib[label="corelib", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src"];
+    mod_cairo_lang_semantic_db[label="db", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src"];
+    mod_cairo_lang_semantic_diagnostic[label="diagnostic", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src"];
+    mod_cairo_lang_semantic_expr[label="expr", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/expr"];
+    mod_cairo_lang_semantic_items[label="items", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/items"];
+    mod_cairo_lang_semantic_resolve[label="resolve", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src/resolve"];
+    mod_cairo_lang_semantic_substitution[label="substitution", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src"];
+    mod_cairo_lang_semantic_types[label="types", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-semantic/src"];
+  }
+
+  subgraph cluster_cairo_lang_sierra {
+    label="cairo-lang-sierra";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_cairo_lang_sierra_extensions[label="extensions", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra/src/extensions"];
+    mod_cairo_lang_sierra_int[label="int", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra/src/extensions/modules/int"];
+    mod_cairo_lang_sierra_program[label="program", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra/src"];
+    mod_cairo_lang_sierra_simulation[label="simulation", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra/src/simulation"];
+    mod_cairo_lang_sierra_starknet[label="starknet", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra/src/extensions/modules/starknet"];
+  }
+
+  subgraph cluster_cairo_lang_sierra_generator {
+    label="cairo-lang-sierra-generator";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_cairo_lang_sierra_generator_utils[label="utils", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra-generator/src"];
+  }
+
+  subgraph cluster_cairo_lang_sierra_to_casm {
+    label="cairo-lang-sierra-to-casm";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_cairo_lang_sierra_to_casm_invocations[label="invocations", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-sierra-to-casm/src/invocations"];
+  }
+
+  subgraph cluster_cairo_lang_starknet {
+    label="cairo-lang-starknet";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_cairo_lang_starknet_plugin[label="plugin", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-starknet/src/plugin"];
+    mod_cairo_lang_starknet_starknet_module[label="starknet_module", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-starknet/src/plugin/starknet_module"];
+  }
+
+  subgraph cluster_cairo_lang_starknet_classes {
+    label="cairo-lang-starknet-classes";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_cairo_lang_starknet_classes_abi[label="abi", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-starknet-classes/src"];
+  }
+
+  subgraph cluster_cairo_lang_syntax {
+    label="cairo-lang-syntax";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_cairo_lang_syntax_node[label="node", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax/src/node"];
+  }
+
+  subgraph cluster_cairo_lang_utils {
+    label="cairo-lang-utils";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_cairo_lang_utils_bigint[label="bigint", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-utils/src"];
+    mod_cairo_lang_utils_ordered_hash_map[label="ordered_hash_map", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-utils/src"];
+  }
+
+  subgraph cluster_starknet_sierra_upgrade_validate {
+    label="starknet-sierra-upgrade-validate";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_starknet_sierra_upgrade_validate_main[label="main", path="/home/yibai/llmcc/sample/repos/cairo/crates/bin/starknet-sierra-upgrade-validate/src"];
+  }
+
+
+  mod_cairo_lang_defs_cache -> mod_cairo_lang_utils_ordered_hash_map;
+  mod_cairo_lang_defs_db -> mod_cairo_lang_defs_ids;
+  mod_cairo_lang_defs_db -> mod_cairo_lang_defs_plugin;
+  mod_cairo_lang_defs_db -> mod_cairo_lang_diagnostics_diagnostics;
+  mod_cairo_lang_defs_db -> mod_cairo_lang_filesystem_ids;
+  mod_cairo_lang_defs_db -> mod_cairo_lang_lowering_objects;
+  mod_cairo_lang_defs_db -> mod_cairo_lang_syntax_node;
+  mod_cairo_lang_defs_db -> mod_cairo_lang_utils_ordered_hash_map;
+  mod_cairo_lang_filesystem_db -> mod_cairo_lang_filesystem_ids;
+  mod_cairo_lang_filesystem_db -> mod_cairo_lang_filesystem_span;
+  mod_cairo_lang_filesystem_db -> mod_cairo_lang_utils_ordered_hash_map;
+  mod_cairo_lang_filesystem_ids -> mod_cairo_lang_filesystem_span;
+  mod_cairo_lang_formatter_formatter_impl -> mod_cairo_lang_syntax_node;
+  mod_cairo_lang_lowering_cache -> mod_cairo_lang_defs_cache;
+  mod_cairo_lang_lowering_cache -> mod_cairo_lang_semantic_cache;
+  mod_cairo_lang_lowering_cache -> mod_cairo_lang_utils_ordered_hash_map;
+  mod_cairo_lang_lowering_lower -> mod_cairo_lang_diagnostics_diagnostics;
+  mod_cairo_lang_lowering_lower -> mod_cairo_lang_lowering_objects;
+  mod_cairo_lang_lowering_lower -> mod_cairo_lang_semantic_corelib;
+  mod_cairo_lang_lowering_lower -> mod_cairo_lang_semantic_expr;
+  mod_cairo_lang_lowering_lower -> mod_cairo_lang_semantic_items;
+  mod_cairo_lang_lowering_lower -> mod_cairo_lang_semantic_types;
+  mod_cairo_lang_lowering_lower -> mod_cairo_lang_sierra_program;
+  mod_cairo_lang_lowering_lower -> mod_cairo_lang_syntax_node;
+  mod_cairo_lang_lowering_lower -> mod_cairo_lang_utils_bigint;
+  mod_cairo_lang_lowering_lower -> mod_cairo_lang_utils_ordered_hash_map;
+  mod_cairo_lang_lowering_objects -> mod_cairo_lang_utils_ordered_hash_map;
+  mod_cairo_lang_lowering_optimizations -> mod_cairo_lang_lowering_objects;
+  mod_cairo_lang_lowering_optimizations -> mod_cairo_lang_semantic_items;
+  mod_cairo_lang_lowering_optimizations -> mod_cairo_lang_semantic_types;
+  mod_cairo_lang_lowering_optimizations -> mod_cairo_lang_sierra_program;
+  mod_cairo_lang_lowering_optimizations -> mod_cairo_lang_syntax_node;
+  mod_cairo_lang_lowering_optimizations -> mod_cairo_lang_utils_ordered_hash_map;
+  mod_cairo_lang_parser_parser -> mod_cairo_lang_filesystem_span;
+  mod_cairo_lang_parser_parser -> mod_cairo_lang_syntax_node;
+  mod_cairo_lang_plugins_plugins -> mod_cairo_lang_defs_plugin;
+  mod_cairo_lang_plugins_plugins -> mod_cairo_lang_lowering_lower;
+  mod_cairo_lang_plugins_plugins -> mod_cairo_lang_sierra_program;
+  mod_cairo_lang_plugins_plugins -> mod_cairo_lang_sierra_to_casm_invocations;
+  mod_cairo_lang_plugins_plugins -> mod_cairo_lang_syntax_node;
+  mod_cairo_lang_runner_casm_run -> mod_cairo_lang_casm_operand;
+  mod_cairo_lang_runner_casm_run -> mod_cairo_lang_filesystem_span;
+  mod_cairo_lang_runner_casm_run -> mod_cairo_lang_syntax_node;
+  mod_cairo_lang_runner_casm_run -> mod_cairo_lang_utils_bigint;
+  mod_cairo_lang_semantic_cache -> mod_cairo_lang_defs_cache;
+  mod_cairo_lang_semantic_cache -> mod_cairo_lang_utils_ordered_hash_map;
+  mod_cairo_lang_semantic_corelib -> mod_cairo_lang_defs_ids;
+  mod_cairo_lang_semantic_corelib -> mod_cairo_lang_semantic_diagnostic;
+  mod_cairo_lang_semantic_corelib -> mod_cairo_lang_semantic_expr;
+  mod_cairo_lang_semantic_corelib -> mod_cairo_lang_semantic_items;
+  mod_cairo_lang_semantic_corelib -> mod_cairo_lang_semantic_types;
+  mod_cairo_lang_semantic_corelib -> mod_cairo_lang_syntax_node;
+  mod_cairo_lang_semantic_db -> mod_cairo_lang_defs_ids;
+  mod_cairo_lang_semantic_db -> mod_cairo_lang_diagnostics_diagnostics;
+  mod_cairo_lang_semantic_db -> mod_cairo_lang_semantic_diagnostic;
+  mod_cairo_lang_semantic_db -> mod_cairo_lang_semantic_items;
+  mod_cairo_lang_semantic_db -> mod_cairo_lang_semantic_resolve;
+  mod_cairo_lang_semantic_db -> mod_cairo_lang_utils_ordered_hash_map;
+  mod_cairo_lang_semantic_diagnostic -> mod_cairo_lang_defs_ids;
+  mod_cairo_lang_semantic_expr -> mod_cairo_lang_defs_ids;
+  mod_cairo_lang_semantic_expr -> mod_cairo_lang_diagnostics_diagnostics;
+  mod_cairo_lang_semantic_expr -> mod_cairo_lang_semantic_corelib;
+  mod_cairo_lang_semantic_expr -> mod_cairo_lang_semantic_diagnostic;
+  mod_cairo_lang_semantic_expr -> mod_cairo_lang_semantic_items;
+  mod_cairo_lang_semantic_expr -> mod_cairo_lang_semantic_resolve;
+  mod_cairo_lang_semantic_expr -> mod_cairo_lang_semantic_substitution;
+  mod_cairo_lang_semantic_expr -> mod_cairo_lang_semantic_types;
+  mod_cairo_lang_semantic_expr -> mod_cairo_lang_sierra_program;
+  mod_cairo_lang_semantic_expr -> mod_cairo_lang_starknet_classes_abi;
+  mod_cairo_lang_semantic_expr -> mod_cairo_lang_syntax_node;
+  mod_cairo_lang_semantic_expr -> mod_cairo_lang_utils_ordered_hash_map;
+  mod_cairo_lang_semantic_items -> mod_cairo_lang_defs_ids;
+  mod_cairo_lang_semantic_items -> mod_cairo_lang_diagnostics_diagnostics;
+  mod_cairo_lang_semantic_items -> mod_cairo_lang_filesystem_span;
+  mod_cairo_lang_semantic_items -> mod_cairo_lang_semantic_corelib;
+  mod_cairo_lang_semantic_items -> mod_cairo_lang_semantic_diagnostic;
+  mod_cairo_lang_semantic_items -> mod_cairo_lang_semantic_expr;
+  mod_cairo_lang_semantic_items -> mod_cairo_lang_semantic_resolve;
+  mod_cairo_lang_semantic_items -> mod_cairo_lang_semantic_types;
+  mod_cairo_lang_semantic_items -> mod_cairo_lang_sierra_program;
+  mod_cairo_lang_semantic_items -> mod_cairo_lang_sierra_to_casm_invocations;
+  mod_cairo_lang_semantic_items -> mod_cairo_lang_starknet_classes_abi;
+  mod_cairo_lang_semantic_items -> mod_cairo_lang_syntax_node;
+  mod_cairo_lang_semantic_items -> mod_cairo_lang_utils_bigint;
+  mod_cairo_lang_semantic_items -> mod_cairo_lang_utils_ordered_hash_map;
+  mod_cairo_lang_semantic_resolve -> mod_cairo_lang_defs_ids;
+  mod_cairo_lang_semantic_resolve -> mod_cairo_lang_semantic_diagnostic;
+  mod_cairo_lang_semantic_resolve -> mod_cairo_lang_semantic_items;
+  mod_cairo_lang_semantic_substitution -> mod_cairo_lang_semantic_items;
+  mod_cairo_lang_semantic_types -> mod_cairo_lang_semantic_diagnostic;
+  mod_cairo_lang_semantic_types -> mod_cairo_lang_semantic_expr;
+  mod_cairo_lang_semantic_types -> mod_cairo_lang_semantic_resolve;
+  mod_cairo_lang_semantic_types -> mod_cairo_lang_syntax_node;
+  mod_cairo_lang_sierra_extensions -> mod_cairo_lang_semantic_types;
+  mod_cairo_lang_sierra_extensions -> mod_cairo_lang_sierra_program;
+  mod_cairo_lang_sierra_extensions -> mod_cairo_lang_sierra_starknet;
+  mod_cairo_lang_sierra_extensions -> mod_cairo_lang_starknet_classes_abi;
+  mod_cairo_lang_sierra_extensions -> mod_cairo_lang_utils_bigint;
+  mod_cairo_lang_sierra_generator_utils -> mod_cairo_lang_semantic_types;
+  mod_cairo_lang_sierra_int -> mod_cairo_lang_sierra_extensions;
+  mod_cairo_lang_sierra_program -> mod_cairo_lang_semantic_types;
+  mod_cairo_lang_sierra_simulation -> mod_cairo_lang_sierra_extensions;
+  mod_cairo_lang_sierra_simulation -> mod_cairo_lang_sierra_program;
+  mod_cairo_lang_sierra_starknet -> mod_cairo_lang_semantic_types;
+  mod_cairo_lang_sierra_starknet -> mod_cairo_lang_sierra_extensions;
+  mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_casm_operand;
+  mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_filesystem_span;
+  mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_semantic_types;
+  mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_sierra_extensions;
+  mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_sierra_program;
+  mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_starknet_classes_abi;
+  mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_syntax_node;
+  mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_utils_bigint;
+  mod_cairo_lang_starknet_plugin -> mod_cairo_lang_defs_plugin;
+  mod_cairo_lang_starknet_plugin -> mod_cairo_lang_sierra_program;
+  mod_cairo_lang_starknet_plugin -> mod_cairo_lang_starknet_starknet_module;
+  mod_cairo_lang_starknet_plugin -> mod_cairo_lang_syntax_node;
+  mod_cairo_lang_starknet_starknet_module -> mod_cairo_lang_defs_plugin;
+  mod_cairo_lang_starknet_starknet_module -> mod_cairo_lang_starknet_plugin;
+  mod_cairo_lang_starknet_starknet_module -> mod_cairo_lang_syntax_node;
+  mod_cairo_lang_syntax_node -> mod_cairo_lang_filesystem_span;
+  mod_cairo_lang_syntax_node -> mod_cairo_lang_semantic_expr;
+  mod_cairo_lang_utils_ordered_hash_map -> mod_cairo_lang_defs_cache;
+  mod_cairo_lang_utils_ordered_hash_map -> mod_cairo_lang_lowering_cache;
+  mod_cairo_lang_utils_ordered_hash_map -> mod_cairo_lang_lowering_objects;
+  mod_cairo_lang_utils_ordered_hash_map -> mod_cairo_lang_semantic_cache;
+  mod_cairo_lang_utils_ordered_hash_map -> mod_cairo_lang_semantic_expr;
+  mod_cairo_lang_utils_ordered_hash_map -> mod_cairo_lang_semantic_items;
+  mod_starknet_sierra_upgrade_validate_main -> mod_cairo_lang_utils_bigint;
+}

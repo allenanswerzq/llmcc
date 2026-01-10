@@ -1,0 +1,67 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  crate_alloy_consensus[label="alloy-consensus", path="/home/yibai/llmcc/sample/repos/alloy/crates/consensus"];
+  crate_alloy_contract[label="alloy-contract", path="/home/yibai/llmcc/sample/repos/alloy/crates/contract"];
+  crate_alloy_eips[label="alloy-eips", path="/home/yibai/llmcc/sample/repos/alloy/crates/eips"];
+  crate_alloy_genesis[label="alloy-genesis", path="/home/yibai/llmcc/sample/repos/alloy/crates/genesis"];
+  crate_alloy_json_rpc[label="alloy-json-rpc", path="/home/yibai/llmcc/sample/repos/alloy/crates/json-rpc"];
+  crate_alloy_network[label="alloy-network", path="/home/yibai/llmcc/sample/repos/alloy/crates/network"];
+  crate_alloy_network_primitives[label="alloy-network-primitives", path="/home/yibai/llmcc/sample/repos/alloy/crates/network-primitives"];
+  crate_alloy_node_bindings[label="alloy-node-bindings", path="/home/yibai/llmcc/sample/repos/alloy/crates/node-bindings"];
+  crate_alloy_provider[label="alloy-provider", path="/home/yibai/llmcc/sample/repos/alloy/crates/provider"];
+  crate_alloy_pubsub[label="alloy-pubsub", path="/home/yibai/llmcc/sample/repos/alloy/crates/pubsub"];
+  crate_alloy_rpc_client[label="alloy-rpc-client", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-client"];
+  crate_alloy_rpc_types_beacon[label="alloy-rpc-types-beacon", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-beacon"];
+  crate_alloy_rpc_types_engine[label="alloy-rpc-types-engine", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-engine"];
+  crate_alloy_rpc_types_eth[label="alloy-rpc-types-eth", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-eth"];
+  crate_alloy_rpc_types_mev[label="alloy-rpc-types-mev", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-mev"];
+  crate_alloy_rpc_types_trace[label="alloy-rpc-types-trace", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-trace"];
+  crate_alloy_serde[label="alloy-serde", path="/home/yibai/llmcc/sample/repos/alloy/crates/serde"];
+  crate_alloy_signer[label="alloy-signer", path="/home/yibai/llmcc/sample/repos/alloy/crates/signer"];
+  crate_alloy_transport[label="alloy-transport", path="/home/yibai/llmcc/sample/repos/alloy/crates/transport"];
+
+  crate_alloy_consensus -> crate_alloy_contract;
+  crate_alloy_consensus -> crate_alloy_eips;
+  crate_alloy_consensus -> crate_alloy_rpc_types_engine;
+  crate_alloy_consensus -> crate_alloy_signer;
+  crate_alloy_contract -> crate_alloy_provider;
+  crate_alloy_eips -> crate_alloy_consensus;
+  crate_alloy_eips -> crate_alloy_contract;
+  crate_alloy_eips -> crate_alloy_signer;
+  crate_alloy_network -> crate_alloy_eips;
+  crate_alloy_node_bindings -> crate_alloy_genesis;
+  crate_alloy_provider -> crate_alloy_eips;
+  crate_alloy_provider -> crate_alloy_json_rpc;
+  crate_alloy_provider -> crate_alloy_network;
+  crate_alloy_provider -> crate_alloy_network_primitives;
+  crate_alloy_provider -> crate_alloy_rpc_client;
+  crate_alloy_provider -> crate_alloy_signer;
+  crate_alloy_pubsub -> crate_alloy_json_rpc;
+  crate_alloy_rpc_client -> crate_alloy_transport;
+  crate_alloy_rpc_types_beacon -> crate_alloy_consensus;
+  crate_alloy_rpc_types_beacon -> crate_alloy_contract;
+  crate_alloy_rpc_types_beacon -> crate_alloy_eips;
+  crate_alloy_rpc_types_beacon -> crate_alloy_rpc_types_engine;
+  crate_alloy_rpc_types_engine -> crate_alloy_eips;
+  crate_alloy_rpc_types_engine -> crate_alloy_rpc_types_beacon;
+  crate_alloy_rpc_types_eth -> crate_alloy_consensus;
+  crate_alloy_rpc_types_eth -> crate_alloy_eips;
+  crate_alloy_rpc_types_eth -> crate_alloy_network_primitives;
+  crate_alloy_rpc_types_mev -> crate_alloy_eips;
+  crate_alloy_rpc_types_trace -> crate_alloy_rpc_types_eth;
+  crate_alloy_serde -> crate_alloy_contract;
+  crate_alloy_serde -> crate_alloy_network_primitives;
+  crate_alloy_serde -> crate_alloy_signer;
+  crate_alloy_transport -> crate_alloy_json_rpc;
+}

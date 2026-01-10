@@ -1,0 +1,373 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  subgraph cluster_alloy_consensus {
+    label="alloy-consensus";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_consensus_block[label="block", path="/home/yibai/llmcc/sample/repos/alloy/crates/consensus/src/block"];
+    mod_alloy_consensus_crypto[label="crypto", path="/home/yibai/llmcc/sample/repos/alloy/crates/consensus/src"];
+    mod_alloy_consensus_error[label="error", path="/home/yibai/llmcc/sample/repos/alloy/crates/consensus/src"];
+    mod_alloy_consensus_extended[label="extended", path="/home/yibai/llmcc/sample/repos/alloy/crates/consensus/src"];
+    mod_alloy_consensus_receipt[label="receipt", path="/home/yibai/llmcc/sample/repos/alloy/crates/consensus/src/receipt"];
+    mod_alloy_consensus_signed[label="signed", path="/home/yibai/llmcc/sample/repos/alloy/crates/consensus/src"];
+    mod_alloy_consensus_transaction[label="transaction", path="/home/yibai/llmcc/sample/repos/alloy/crates/consensus/src/transaction"];
+  }
+
+  subgraph cluster_alloy_consensus_any {
+    label="alloy-consensus-any";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_consensus_any_block[label="block", path="/home/yibai/llmcc/sample/repos/alloy/crates/consensus-any/src/block"];
+    mod_alloy_consensus_any_receipt[label="receipt", path="/home/yibai/llmcc/sample/repos/alloy/crates/consensus-any/src/receipt"];
+  }
+
+  subgraph cluster_alloy_contract {
+    label="alloy-contract";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_contract_error[label="error", path="/home/yibai/llmcc/sample/repos/alloy/crates/contract/src"];
+    mod_alloy_contract_event[label="event", path="/home/yibai/llmcc/sample/repos/alloy/crates/contract/src"];
+  }
+
+  subgraph cluster_alloy_eips {
+    label="alloy-eips";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_eips_eip1898[label="eip1898", path="/home/yibai/llmcc/sample/repos/alloy/crates/eips/src"];
+    mod_alloy_eips_eip2718[label="eip2718", path="/home/yibai/llmcc/sample/repos/alloy/crates/eips/src"];
+    mod_alloy_eips_eip4844[label="eip4844", path="/home/yibai/llmcc/sample/repos/alloy/crates/eips/src/eip4844"];
+    mod_alloy_eips_eip4895[label="eip4895", path="/home/yibai/llmcc/sample/repos/alloy/crates/eips/src"];
+    mod_alloy_eips_eip6110[label="eip6110", path="/home/yibai/llmcc/sample/repos/alloy/crates/eips/src"];
+    mod_alloy_eips_eip7002[label="eip7002", path="/home/yibai/llmcc/sample/repos/alloy/crates/eips/src"];
+    mod_alloy_eips_eip7251[label="eip7251", path="/home/yibai/llmcc/sample/repos/alloy/crates/eips/src"];
+    mod_alloy_eips_eip7594[label="eip7594", path="/home/yibai/llmcc/sample/repos/alloy/crates/eips/src/eip7594"];
+    mod_alloy_eips_eip7685[label="eip7685", path="/home/yibai/llmcc/sample/repos/alloy/crates/eips/src"];
+    mod_alloy_eips_eip7840[label="eip7840", path="/home/yibai/llmcc/sample/repos/alloy/crates/eips/src"];
+    mod_alloy_eips_eip7892[label="eip7892", path="/home/yibai/llmcc/sample/repos/alloy/crates/eips/src"];
+  }
+
+  subgraph cluster_alloy_genesis {
+    label="alloy-genesis";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_genesis_lib[label="lib", path="/home/yibai/llmcc/sample/repos/alloy/crates/genesis/src"];
+  }
+
+  subgraph cluster_alloy_json_rpc {
+    label="alloy-json-rpc";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_json_rpc_lib[label="lib", path="/home/yibai/llmcc/sample/repos/alloy/crates/json-rpc/src"];
+    mod_alloy_json_rpc_notification[label="notification", path="/home/yibai/llmcc/sample/repos/alloy/crates/json-rpc/src"];
+    mod_alloy_json_rpc_packet[label="packet", path="/home/yibai/llmcc/sample/repos/alloy/crates/json-rpc/src"];
+    mod_alloy_json_rpc_request[label="request", path="/home/yibai/llmcc/sample/repos/alloy/crates/json-rpc/src"];
+    mod_alloy_json_rpc_response[label="response", path="/home/yibai/llmcc/sample/repos/alloy/crates/json-rpc/src/response"];
+    mod_alloy_json_rpc_result[label="result", path="/home/yibai/llmcc/sample/repos/alloy/crates/json-rpc/src"];
+  }
+
+  subgraph cluster_alloy_network {
+    label="alloy-network";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_network_any[label="any", path="/home/yibai/llmcc/sample/repos/alloy/crates/network/src/any"];
+    mod_alloy_network_ethereum[label="ethereum", path="/home/yibai/llmcc/sample/repos/alloy/crates/network/src/ethereum"];
+    mod_alloy_network_lib[label="lib", path="/home/yibai/llmcc/sample/repos/alloy/crates/network/src"];
+    mod_alloy_network_transaction[label="transaction", path="/home/yibai/llmcc/sample/repos/alloy/crates/network/src/transaction"];
+  }
+
+  subgraph cluster_alloy_network_primitives {
+    label="alloy-network-primitives";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_network_primitives_block[label="block", path="/home/yibai/llmcc/sample/repos/alloy/crates/network-primitives/src"];
+    mod_alloy_network_primitives_traits[label="traits", path="/home/yibai/llmcc/sample/repos/alloy/crates/network-primitives/src"];
+    mod_alloy_network_primitives_tx_builders[label="tx_builders", path="/home/yibai/llmcc/sample/repos/alloy/crates/network-primitives/src"];
+  }
+
+  subgraph cluster_alloy_node_bindings {
+    label="alloy-node-bindings";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_node_bindings_nodes[label="nodes", path="/home/yibai/llmcc/sample/repos/alloy/crates/node-bindings/src/nodes"];
+  }
+
+  subgraph cluster_alloy_provider {
+    label="alloy-provider";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_provider_blocks[label="blocks", path="/home/yibai/llmcc/sample/repos/alloy/crates/provider/src"];
+    mod_alloy_provider_builder[label="builder", path="/home/yibai/llmcc/sample/repos/alloy/crates/provider/src"];
+    mod_alloy_provider_ext[label="ext", path="/home/yibai/llmcc/sample/repos/alloy/crates/provider/src/ext"];
+    mod_alloy_provider_fillers[label="fillers", path="/home/yibai/llmcc/sample/repos/alloy/crates/provider/src/fillers"];
+    mod_alloy_provider_heart[label="heart", path="/home/yibai/llmcc/sample/repos/alloy/crates/provider/src"];
+    mod_alloy_provider_layers[label="layers", path="/home/yibai/llmcc/sample/repos/alloy/crates/provider/src/layers"];
+    mod_alloy_provider_provider[label="provider", path="/home/yibai/llmcc/sample/repos/alloy/crates/provider/src/provider"];
+  }
+
+  subgraph cluster_alloy_pubsub {
+    label="alloy-pubsub";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_pubsub_handle[label="handle", path="/home/yibai/llmcc/sample/repos/alloy/crates/pubsub/src"];
+    mod_alloy_pubsub_managers[label="managers", path="/home/yibai/llmcc/sample/repos/alloy/crates/pubsub/src/managers"];
+    mod_alloy_pubsub_service[label="service", path="/home/yibai/llmcc/sample/repos/alloy/crates/pubsub/src"];
+  }
+
+  subgraph cluster_alloy_rpc_client {
+    label="alloy-rpc-client";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_rpc_client_batch[label="batch", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-client/src"];
+    mod_alloy_rpc_client_call[label="call", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-client/src"];
+  }
+
+  subgraph cluster_alloy_rpc_types_admin {
+    label="alloy-rpc-types-admin";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_rpc_types_admin_admin[label="admin", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-admin/src"];
+  }
+
+  subgraph cluster_alloy_rpc_types_beacon {
+    label="alloy-rpc-types-beacon";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_rpc_types_beacon_events[label="events", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-beacon/src/events"];
+    mod_alloy_rpc_types_beacon_header[label="header", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-beacon/src"];
+    mod_alloy_rpc_types_beacon_payload[label="payload", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-beacon/src"];
+    mod_alloy_rpc_types_beacon_relay[label="relay", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-beacon/src"];
+    mod_alloy_rpc_types_beacon_requests[label="requests", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-beacon/src"];
+    mod_alloy_rpc_types_beacon_withdrawals[label="withdrawals", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-beacon/src"];
+  }
+
+  subgraph cluster_alloy_rpc_types_engine {
+    label="alloy-rpc-types-engine";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_rpc_types_engine_forkchoice[label="forkchoice", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-engine/src"];
+    mod_alloy_rpc_types_engine_jwt[label="jwt", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-engine/src"];
+    mod_alloy_rpc_types_engine_payload[label="payload", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-engine/src"];
+  }
+
+  subgraph cluster_alloy_rpc_types_eth {
+    label="alloy-rpc-types-eth";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_rpc_types_eth_block[label="block", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-eth/src"];
+    mod_alloy_rpc_types_eth_raw_log[label="raw_log", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-eth/src"];
+    mod_alloy_rpc_types_eth_transaction[label="transaction", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-eth/src/transaction"];
+  }
+
+  subgraph cluster_alloy_rpc_types_mev {
+    label="alloy-rpc-types-mev";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_rpc_types_mev_common[label="common", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-mev/src"];
+    mod_alloy_rpc_types_mev_eth_calls[label="eth_calls", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-mev/src"];
+    mod_alloy_rpc_types_mev_mev_calls[label="mev_calls", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-mev/src"];
+    mod_alloy_rpc_types_mev_mevshare[label="mevshare", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-mev/src"];
+    mod_alloy_rpc_types_mev_stats[label="stats", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-mev/src"];
+    mod_alloy_rpc_types_mev_u256_numeric_string[label="u256_numeric_string", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-mev/src"];
+  }
+
+  subgraph cluster_alloy_rpc_types_trace {
+    label="alloy-rpc-types-trace";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_rpc_types_trace_otterscan[label="otterscan", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-trace/src"];
+    mod_alloy_rpc_types_trace_parity[label="parity", path="/home/yibai/llmcc/sample/repos/alloy/crates/rpc-types-trace/src"];
+  }
+
+  subgraph cluster_alloy_serde {
+    label="alloy-serde";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_serde_checksum[label="checksum", path="/home/yibai/llmcc/sample/repos/alloy/crates/serde/src"];
+    mod_alloy_serde_displayfromstr[label="displayfromstr", path="/home/yibai/llmcc/sample/repos/alloy/crates/serde/src"];
+    mod_alloy_serde_lib[label="lib", path="/home/yibai/llmcc/sample/repos/alloy/crates/serde/src"];
+    mod_alloy_serde_optional[label="optional", path="/home/yibai/llmcc/sample/repos/alloy/crates/serde/src"];
+    mod_alloy_serde_other[label="other", path="/home/yibai/llmcc/sample/repos/alloy/crates/serde/src/other"];
+    mod_alloy_serde_quantity[label="quantity", path="/home/yibai/llmcc/sample/repos/alloy/crates/serde/src"];
+    mod_alloy_serde_storage[label="storage", path="/home/yibai/llmcc/sample/repos/alloy/crates/serde/src"];
+    mod_alloy_serde_ttd[label="ttd", path="/home/yibai/llmcc/sample/repos/alloy/crates/serde/src"];
+  }
+
+  subgraph cluster_alloy_signer {
+    label="alloy-signer";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_signer_error[label="error", path="/home/yibai/llmcc/sample/repos/alloy/crates/signer/src"];
+    mod_alloy_signer_signer[label="signer", path="/home/yibai/llmcc/sample/repos/alloy/crates/signer/src"];
+  }
+
+  subgraph cluster_alloy_signer_local {
+    label="alloy-signer-local";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_signer_local_lib[label="lib", path="/home/yibai/llmcc/sample/repos/alloy/crates/signer-local/src"];
+  }
+
+  subgraph cluster_alloy_signer_trezor {
+    label="alloy-signer-trezor";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_signer_trezor_signer[label="signer", path="/home/yibai/llmcc/sample/repos/alloy/crates/signer-trezor/src"];
+    mod_alloy_signer_trezor_types[label="types", path="/home/yibai/llmcc/sample/repos/alloy/crates/signer-trezor/src"];
+  }
+
+  subgraph cluster_alloy_transport {
+    label="alloy-transport";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_transport_boxed[label="boxed", path="/home/yibai/llmcc/sample/repos/alloy/crates/transport/src"];
+    mod_alloy_transport_layers[label="layers", path="/home/yibai/llmcc/sample/repos/alloy/crates/transport/src/layers"];
+  }
+
+  subgraph cluster_alloy_transport_http {
+    label="alloy-transport-http";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_alloy_transport_http_layers[label="layers", path="/home/yibai/llmcc/sample/repos/alloy/crates/transport-http/src/layers"];
+  }
+
+
+  mod_alloy_consensus_any_block -> mod_alloy_consensus_block;
+  mod_alloy_consensus_any_receipt -> mod_alloy_consensus_receipt;
+  mod_alloy_consensus_any_receipt -> mod_alloy_eips_eip2718;
+  mod_alloy_consensus_block -> mod_alloy_eips_eip4895;
+  mod_alloy_consensus_block -> mod_alloy_rpc_types_engine_payload;
+  mod_alloy_consensus_crypto -> mod_alloy_consensus_signed;
+  mod_alloy_consensus_crypto -> mod_alloy_contract_error;
+  mod_alloy_consensus_extended -> mod_alloy_consensus_transaction;
+  mod_alloy_consensus_extended -> mod_alloy_eips_eip2718;
+  mod_alloy_consensus_receipt -> mod_alloy_eips_eip2718;
+  mod_alloy_consensus_signed -> mod_alloy_consensus_transaction;
+  mod_alloy_consensus_signed -> mod_alloy_eips_eip2718;
+  mod_alloy_consensus_transaction -> mod_alloy_consensus_error;
+  mod_alloy_consensus_transaction -> mod_alloy_consensus_signed;
+  mod_alloy_consensus_transaction -> mod_alloy_eips_eip2718;
+  mod_alloy_consensus_transaction -> mod_alloy_rpc_types_eth_transaction;
+  mod_alloy_consensus_transaction -> mod_alloy_signer_error;
+  mod_alloy_contract_event -> mod_alloy_rpc_types_eth_raw_log;
+  mod_alloy_eips_eip1898 -> mod_alloy_json_rpc_request;
+  mod_alloy_eips_eip1898 -> mod_alloy_signer_error;
+  mod_alloy_eips_eip4844 -> mod_alloy_contract_error;
+  mod_alloy_eips_eip4844 -> mod_alloy_eips_eip7594;
+  mod_alloy_eips_eip4844 -> mod_alloy_signer_error;
+  mod_alloy_eips_eip7594 -> mod_alloy_consensus_transaction;
+  mod_alloy_eips_eip7892 -> mod_alloy_eips_eip7840;
+  mod_alloy_genesis_lib -> mod_alloy_eips_eip7840;
+  mod_alloy_genesis_lib -> mod_alloy_serde_other;
+  mod_alloy_genesis_lib -> mod_alloy_signer_error;
+  mod_alloy_json_rpc_packet -> mod_alloy_json_rpc_request;
+  mod_alloy_json_rpc_response -> mod_alloy_json_rpc_request;
+  mod_alloy_json_rpc_result -> mod_alloy_json_rpc_response;
+  mod_alloy_network_any -> mod_alloy_eips_eip2718;
+  mod_alloy_network_any -> mod_alloy_serde_other;
+  mod_alloy_network_any -> mod_alloy_signer_error;
+  mod_alloy_network_ethereum -> mod_alloy_network_lib;
+  mod_alloy_network_ethereum -> mod_alloy_network_transaction;
+  mod_alloy_network_transaction -> mod_alloy_network_lib;
+  mod_alloy_node_bindings_nodes -> mod_alloy_genesis_lib;
+  mod_alloy_provider_blocks -> mod_alloy_provider_heart;
+  mod_alloy_provider_ext -> mod_alloy_eips_eip1898;
+  mod_alloy_provider_ext -> mod_alloy_network_lib;
+  mod_alloy_provider_ext -> mod_alloy_rpc_client_call;
+  mod_alloy_provider_ext -> mod_alloy_rpc_types_trace_parity;
+  mod_alloy_provider_ext -> mod_alloy_signer_signer;
+  mod_alloy_provider_fillers -> mod_alloy_provider_provider;
+  mod_alloy_provider_layers -> mod_alloy_network_lib;
+  mod_alloy_provider_layers -> mod_alloy_node_bindings_nodes;
+  mod_alloy_provider_layers -> mod_alloy_provider_builder;
+  mod_alloy_provider_layers -> mod_alloy_provider_provider;
+  mod_alloy_provider_provider -> mod_alloy_eips_eip1898;
+  mod_alloy_provider_provider -> mod_alloy_json_rpc_lib;
+  mod_alloy_provider_provider -> mod_alloy_network_lib;
+  mod_alloy_provider_provider -> mod_alloy_network_primitives_block;
+  mod_alloy_provider_provider -> mod_alloy_provider_builder;
+  mod_alloy_provider_provider -> mod_alloy_rpc_client_call;
+  mod_alloy_pubsub_handle -> mod_alloy_json_rpc_notification;
+  mod_alloy_pubsub_managers -> mod_alloy_json_rpc_request;
+  mod_alloy_pubsub_service -> mod_alloy_pubsub_managers;
+  mod_alloy_rpc_client_batch -> mod_alloy_json_rpc_packet;
+  mod_alloy_rpc_types_admin_admin -> mod_alloy_signer_error;
+  mod_alloy_rpc_types_beacon_events -> mod_alloy_rpc_types_beacon_header;
+  mod_alloy_rpc_types_beacon_payload -> mod_alloy_consensus_transaction;
+  mod_alloy_rpc_types_beacon_payload -> mod_alloy_eips_eip4895;
+  mod_alloy_rpc_types_beacon_payload -> mod_alloy_rpc_types_engine_payload;
+  mod_alloy_rpc_types_beacon_payload -> mod_alloy_signer_error;
+  mod_alloy_rpc_types_beacon_relay -> mod_alloy_rpc_types_beacon_requests;
+  mod_alloy_rpc_types_beacon_relay -> mod_alloy_rpc_types_engine_payload;
+  mod_alloy_rpc_types_beacon_requests -> mod_alloy_eips_eip6110;
+  mod_alloy_rpc_types_beacon_requests -> mod_alloy_eips_eip7002;
+  mod_alloy_rpc_types_beacon_requests -> mod_alloy_eips_eip7251;
+  mod_alloy_rpc_types_beacon_withdrawals -> mod_alloy_eips_eip4895;
+  mod_alloy_rpc_types_beacon_withdrawals -> mod_alloy_signer_error;
+  mod_alloy_rpc_types_engine_forkchoice -> mod_alloy_rpc_types_engine_payload;
+  mod_alloy_rpc_types_engine_payload -> mod_alloy_eips_eip4895;
+  mod_alloy_rpc_types_engine_payload -> mod_alloy_eips_eip7685;
+  mod_alloy_rpc_types_engine_payload -> mod_alloy_rpc_types_beacon_payload;
+  mod_alloy_rpc_types_eth_block -> mod_alloy_network_primitives_traits;
+  mod_alloy_rpc_types_eth_transaction -> mod_alloy_consensus_receipt;
+  mod_alloy_rpc_types_eth_transaction -> mod_alloy_consensus_transaction;
+  mod_alloy_rpc_types_eth_transaction -> mod_alloy_eips_eip7594;
+  mod_alloy_rpc_types_eth_transaction -> mod_alloy_network_primitives_traits;
+  mod_alloy_rpc_types_eth_transaction -> mod_alloy_network_primitives_tx_builders;
+  mod_alloy_rpc_types_mev_eth_calls -> mod_alloy_rpc_types_mev_common;
+  mod_alloy_rpc_types_mev_mev_calls -> mod_alloy_rpc_types_mev_common;
+  mod_alloy_rpc_types_mev_mevshare -> mod_alloy_signer_error;
+  mod_alloy_rpc_types_mev_stats -> mod_alloy_rpc_types_mev_common;
+  mod_alloy_rpc_types_mev_u256_numeric_string -> mod_alloy_contract_error;
+  mod_alloy_rpc_types_trace_otterscan -> mod_alloy_consensus_block;
+  mod_alloy_rpc_types_trace_otterscan -> mod_alloy_eips_eip4895;
+  mod_alloy_rpc_types_trace_otterscan -> mod_alloy_network_primitives_block;
+  mod_alloy_serde_checksum -> mod_alloy_signer_error;
+  mod_alloy_serde_displayfromstr -> mod_alloy_signer_error;
+  mod_alloy_serde_lib -> mod_alloy_signer_error;
+  mod_alloy_serde_optional -> mod_alloy_signer_error;
+  mod_alloy_serde_quantity -> mod_alloy_json_rpc_request;
+  mod_alloy_serde_quantity -> mod_alloy_signer_error;
+  mod_alloy_serde_storage -> mod_alloy_signer_error;
+  mod_alloy_serde_ttd -> mod_alloy_contract_error;
+  mod_alloy_signer_local_lib -> mod_alloy_network_transaction;
+  mod_alloy_signer_trezor_signer -> mod_alloy_signer_trezor_types;
+  mod_alloy_transport_boxed -> mod_alloy_consensus_transaction;
+  mod_alloy_transport_boxed -> mod_alloy_eips_eip2718;
+  mod_alloy_transport_http_layers -> mod_alloy_rpc_types_engine_jwt;
+  mod_alloy_transport_layers -> mod_alloy_json_rpc_packet;
+}

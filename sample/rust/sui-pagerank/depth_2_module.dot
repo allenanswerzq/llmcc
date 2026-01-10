@@ -1,0 +1,852 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  subgraph cluster_move_analyzer {
+    label="move-analyzer";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_move_analyzer_symbols[label="symbols", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-analyzer/src/symbols"];
+  }
+
+  subgraph cluster_move_binary_format {
+    label="move-binary-format";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_move_binary_format_deserializer[label="deserializer", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-binary-format/src"];
+    mod_move_binary_format_file_format[label="file_format", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-binary-format/src"];
+    mod_move_binary_format_file_format_common[label="file_format_common", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-binary-format/src"];
+    mod_move_binary_format_normalized[label="normalized", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-binary-format/src"];
+    mod_move_binary_format_serializer[label="serializer", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-binary-format/src"];
+  }
+
+  subgraph cluster_move_compiler {
+    label="move-compiler";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_move_compiler_cfgir[label="cfgir", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-compiler/src/cfgir"];
+    mod_move_compiler_diagnostics[label="diagnostics", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-compiler/src/diagnostics"];
+    mod_move_compiler_expansion[label="expansion", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-compiler/src/expansion"];
+    mod_move_compiler_hlir[label="hlir", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-compiler/src/hlir"];
+    mod_move_compiler_naming[label="naming", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-compiler/src/naming"];
+    mod_move_compiler_parser[label="parser", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-compiler/src/parser"];
+    mod_move_compiler_shared[label="shared", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-compiler/src/shared"];
+    mod_move_compiler_sui_mode[label="sui_mode", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-compiler/src/sui_mode"];
+    mod_move_compiler_to_bytecode[label="to_bytecode", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-compiler/src/to_bytecode"];
+    mod_move_compiler_typing[label="typing", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-compiler/src/typing"];
+  }
+
+  subgraph cluster_move_core_types {
+    label="move-core-types";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_move_core_types_account_address[label="account_address", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-core-types/src"];
+    mod_move_core_types_identifier[label="identifier", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-core-types/src"];
+    mod_move_core_types_language_storage[label="language_storage", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-core-types/src"];
+  }
+
+  subgraph cluster_move_ir_to_bytecode_syntax {
+    label="move-ir-to-bytecode-syntax";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_move_ir_to_bytecode_syntax_syntax[label="syntax", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-ir-to-bytecode-syntax/src"];
+  }
+
+  subgraph cluster_move_ir_types {
+    label="move-ir-types";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_move_ir_types_ast[label="ast", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-ir-types/src"];
+    mod_move_ir_types_location[label="location", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-ir-types/src"];
+  }
+
+  subgraph cluster_move_model {
+    label="move-model";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_move_model_model[label="model", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-model/src"];
+    mod_move_model_symbol[label="symbol", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-model/src"];
+  }
+
+  subgraph cluster_move_model_2 {
+    label="move-model-2";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_move_model_2_summary[label="summary", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-model-2/src"];
+  }
+
+  subgraph cluster_move_package_alt {
+    label="move-package-alt";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_move_package_alt_package[label="package", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-package-alt/src/package"];
+    mod_move_package_alt_schema[label="schema", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-package-alt/src/schema"];
+  }
+
+  subgraph cluster_move_regex_borrow_graph {
+    label="move-regex-borrow-graph";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_move_regex_borrow_graph_collections[label="collections", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-regex-borrow-graph/src"];
+  }
+
+  subgraph cluster_move_stackless_bytecode {
+    label="move-stackless-bytecode";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_move_stackless_bytecode_access_path[label="access_path", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-stackless-bytecode/src"];
+    mod_move_stackless_bytecode_stackless_bytecode[label="stackless_bytecode", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-stackless-bytecode/src"];
+  }
+
+  subgraph cluster_move_symbol_pool {
+    label="move-symbol-pool";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_move_symbol_pool_symbol[label="symbol", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-symbol-pool/src"];
+  }
+
+  subgraph cluster_move_vm_types {
+    label="move-vm-types";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_move_vm_types_values[label="values", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-vm-types/src/values"];
+  }
+
+  subgraph cluster_move_vm_types_v0 {
+    label="move-vm-types-v0";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_move_vm_types_v0_values[label="values", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/move-execution/v0/crates/move-vm-types/src/values"];
+  }
+
+  subgraph cluster_move_vm_types_v1 {
+    label="move-vm-types-v1";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_move_vm_types_v1_values[label="values", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/move-execution/v1/crates/move-vm-types/src/values"];
+  }
+
+  subgraph cluster_move_vm_types_v2 {
+    label="move-vm-types-v2";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_move_vm_types_v2_values[label="values", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/move-execution/v2/crates/move-vm-types/src/values"];
+  }
+
+  subgraph cluster_sui {
+    label="sui";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_client_commands[label="client_commands", path="/home/yibai/llmcc/sample/repos/sui/crates/sui/src"];
+    mod_sui_client_ptb[label="client_ptb", path="/home/yibai/llmcc/sample/repos/sui/crates/sui/src/client_ptb"];
+  }
+
+  subgraph cluster_sui_adapter_latest {
+    label="sui-adapter-latest";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_adapter_latest_programmable_transactions[label="programmable_transactions", path="/home/yibai/llmcc/sample/repos/sui/sui-execution/latest/sui-adapter/src/programmable_transactions"];
+    mod_sui_adapter_latest_static_programmable_transactions[label="static_programmable_transactions", path="/home/yibai/llmcc/sample/repos/sui/sui-execution/latest/sui-adapter/src/static_programmable_transactions"];
+  }
+
+  subgraph cluster_sui_adapter_v0 {
+    label="sui-adapter-v0";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_adapter_v0_programmable_transactions[label="programmable_transactions", path="/home/yibai/llmcc/sample/repos/sui/sui-execution/v0/sui-adapter/src/programmable_transactions"];
+  }
+
+  subgraph cluster_sui_adapter_v1 {
+    label="sui-adapter-v1";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_adapter_v1_programmable_transactions[label="programmable_transactions", path="/home/yibai/llmcc/sample/repos/sui/sui-execution/v1/sui-adapter/src/programmable_transactions"];
+  }
+
+  subgraph cluster_sui_adapter_v2 {
+    label="sui-adapter-v2";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_adapter_v2_programmable_transactions[label="programmable_transactions", path="/home/yibai/llmcc/sample/repos/sui/sui-execution/v2/sui-adapter/src/programmable_transactions"];
+  }
+
+  subgraph cluster_sui_benchmark {
+    label="sui-benchmark";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_benchmark_workloads[label="workloads", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-benchmark/src/workloads"];
+  }
+
+  subgraph cluster_sui_config {
+    label="sui-config";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_config_node[label="node", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-config/src"];
+  }
+
+  subgraph cluster_sui_core {
+    label="sui-core";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_core_authority[label="authority", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-core/src/authority"];
+    mod_sui_core_checkpoints[label="checkpoints", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-core/src/checkpoints"];
+    mod_sui_core_execution_cache[label="execution_cache", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-core/src/execution_cache"];
+    mod_sui_core_unit_tests[label="unit_tests", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-core/src/unit_tests"];
+  }
+
+  subgraph cluster_sui_data_store {
+    label="sui-data-store";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_data_store_gql_queries[label="gql_queries", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-data-store/src"];
+  }
+
+  subgraph cluster_sui_display {
+    label="sui-display";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_display_v2[label="v2", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-display/src/v2"];
+  }
+
+  subgraph cluster_sui_indexer_alt_consistent_store {
+    label="sui-indexer-alt-consistent-store";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_indexer_alt_consistent_store_rpc[label="rpc", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-indexer-alt-consistent-store/src/rpc"];
+  }
+
+  subgraph cluster_sui_indexer_alt_graphql {
+    label="sui-indexer-alt-graphql";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_indexer_alt_graphql_api[label="api", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-indexer-alt-graphql/src/api"];
+    mod_sui_indexer_alt_graphql_extensions[label="extensions", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-indexer-alt-graphql/src/extensions"];
+    mod_sui_indexer_alt_graphql_scalars[label="scalars", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-indexer-alt-graphql/src/api/scalars"];
+    mod_sui_indexer_alt_graphql_transaction_kind[label="transaction_kind", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-indexer-alt-graphql/src/api/types/transaction_kind"];
+  }
+
+  subgraph cluster_sui_indexer_alt_jsonrpc {
+    label="sui-indexer-alt-jsonrpc";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_indexer_alt_jsonrpc_api[label="api", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-indexer-alt-jsonrpc/src/api"];
+  }
+
+  subgraph cluster_sui_json_rpc_types {
+    label="sui-json-rpc-types";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_json_rpc_types_lib[label="lib", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-json-rpc-types/src"];
+    mod_sui_json_rpc_types_sui_transaction[label="sui_transaction", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-json-rpc-types/src"];
+  }
+
+  subgraph cluster_sui_kvstore {
+    label="sui-kvstore";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_kvstore_bigtable[label="bigtable", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-kvstore/src/bigtable"];
+  }
+
+  subgraph cluster_sui_move_natives_latest {
+    label="sui-move-natives-latest";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_move_natives_latest_crypto[label="crypto", path="/home/yibai/llmcc/sample/repos/sui/sui-execution/latest/sui-move-natives/src/crypto"];
+  }
+
+  subgraph cluster_sui_move_natives_v2 {
+    label="sui-move-natives-v2";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_move_natives_v2_crypto[label="crypto", path="/home/yibai/llmcc/sample/repos/sui/sui-execution/v2/sui-move-natives/src/crypto"];
+  }
+
+  subgraph cluster_sui_name_service {
+    label="sui-name-service";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_name_service_lib[label="lib", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-name-service/src"];
+  }
+
+  subgraph cluster_sui_node {
+    label="sui-node";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_node_admin[label="admin", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-node/src"];
+  }
+
+  subgraph cluster_sui_package_dump {
+    label="sui-package-dump";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_package_dump_query[label="query", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-package-dump/src"];
+  }
+
+  subgraph cluster_sui_protocol_config {
+    label="sui-protocol-config";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_protocol_config_lib[label="lib", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-protocol-config/src"];
+  }
+
+  subgraph cluster_sui_rosetta {
+    label="sui-rosetta";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_rosetta_types[label="types", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-rosetta/src"];
+  }
+
+  subgraph cluster_sui_rpc_loadgen {
+    label="sui-rpc-loadgen";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_rpc_loadgen_payload[label="payload", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-rpc-loadgen/src/payload"];
+  }
+
+  subgraph cluster_sui_types {
+    label="sui-types";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_types_base_types[label="base_types", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-types/src"];
+    mod_sui_types_crypto[label="crypto", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-types/src"];
+    mod_sui_types_digests[label="digests", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-types/src"];
+    mod_sui_types_effects[label="effects", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-types/src/effects"];
+    mod_sui_types_error[label="error", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-types/src"];
+    mod_sui_types_messages_grpc[label="messages_grpc", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-types/src"];
+    mod_sui_types_object[label="object", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-types/src/object"];
+    mod_sui_types_storage[label="storage", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-types/src/storage"];
+    mod_sui_types_sui_serde[label="sui_serde", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-types/src"];
+    mod_sui_types_sui_system_state[label="sui_system_state", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-types/src/sui_system_state"];
+    mod_sui_types_transaction[label="transaction", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-types/src"];
+  }
+
+  subgraph cluster_test_generation {
+    label="test-generation";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_test_generation_transitions[label="transitions", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/test-generation/src"];
+  }
+
+  subgraph cluster_typed_store {
+    label="typed-store";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_typed_store_rocks[label="rocks", path="/home/yibai/llmcc/sample/repos/sui/crates/typed-store/src/rocks"];
+  }
+
+
+  mod_move_analyzer_symbols -> mod_move_compiler_diagnostics;
+  mod_move_analyzer_symbols -> mod_move_compiler_expansion;
+  mod_move_analyzer_symbols -> mod_move_compiler_parser;
+  mod_move_analyzer_symbols -> mod_move_compiler_shared;
+  mod_move_analyzer_symbols -> mod_move_compiler_typing;
+  mod_move_analyzer_symbols -> mod_move_ir_types_ast;
+  mod_move_analyzer_symbols -> mod_move_ir_types_location;
+  mod_move_analyzer_symbols -> mod_move_model_2_summary;
+  mod_move_analyzer_symbols -> mod_move_model_symbol;
+  mod_move_analyzer_symbols -> mod_move_regex_borrow_graph_collections;
+  mod_move_analyzer_symbols -> mod_move_symbol_pool_symbol;
+  mod_move_analyzer_symbols -> mod_sui_adapter_latest_static_programmable_transactions;
+  mod_move_analyzer_symbols -> mod_sui_indexer_alt_graphql_scalars;
+  mod_move_analyzer_symbols -> mod_sui_json_rpc_types_lib;
+  mod_move_analyzer_symbols -> mod_sui_kvstore_bigtable;
+  mod_move_binary_format_deserializer -> mod_move_binary_format_file_format;
+  mod_move_binary_format_deserializer -> mod_move_binary_format_file_format_common;
+  mod_move_binary_format_normalized -> mod_move_binary_format_file_format;
+  mod_move_binary_format_normalized -> mod_move_core_types_identifier;
+  mod_move_binary_format_normalized -> mod_sui_indexer_alt_graphql_api;
+  mod_move_binary_format_serializer -> mod_move_binary_format_file_format;
+  mod_move_binary_format_serializer -> mod_move_binary_format_file_format_common;
+  mod_move_binary_format_serializer -> mod_move_binary_format_normalized;
+  mod_move_compiler_cfgir -> mod_move_compiler_diagnostics;
+  mod_move_compiler_cfgir -> mod_move_compiler_expansion;
+  mod_move_compiler_cfgir -> mod_move_compiler_hlir;
+  mod_move_compiler_cfgir -> mod_move_compiler_naming;
+  mod_move_compiler_cfgir -> mod_move_compiler_parser;
+  mod_move_compiler_cfgir -> mod_move_compiler_shared;
+  mod_move_compiler_cfgir -> mod_move_compiler_sui_mode;
+  mod_move_compiler_cfgir -> mod_move_compiler_to_bytecode;
+  mod_move_compiler_cfgir -> mod_move_compiler_typing;
+  mod_move_compiler_cfgir -> mod_move_ir_types_ast;
+  mod_move_compiler_cfgir -> mod_move_ir_types_location;
+  mod_move_compiler_cfgir -> mod_move_symbol_pool_symbol;
+  mod_move_compiler_cfgir -> mod_sui_adapter_latest_static_programmable_transactions;
+  mod_move_compiler_cfgir -> mod_sui_indexer_alt_graphql_api;
+  mod_move_compiler_cfgir -> mod_sui_kvstore_bigtable;
+  mod_move_compiler_diagnostics -> mod_move_compiler_shared;
+  mod_move_compiler_diagnostics -> mod_sui_kvstore_bigtable;
+  mod_move_compiler_expansion -> mod_move_compiler_cfgir;
+  mod_move_compiler_expansion -> mod_move_compiler_diagnostics;
+  mod_move_compiler_expansion -> mod_move_compiler_hlir;
+  mod_move_compiler_expansion -> mod_move_compiler_naming;
+  mod_move_compiler_expansion -> mod_move_compiler_parser;
+  mod_move_compiler_expansion -> mod_move_compiler_shared;
+  mod_move_compiler_expansion -> mod_move_compiler_sui_mode;
+  mod_move_compiler_expansion -> mod_move_compiler_typing;
+  mod_move_compiler_expansion -> mod_move_ir_types_ast;
+  mod_move_compiler_expansion -> mod_move_ir_types_location;
+  mod_move_compiler_expansion -> mod_move_model_2_summary;
+  mod_move_compiler_expansion -> mod_move_model_symbol;
+  mod_move_compiler_expansion -> mod_move_symbol_pool_symbol;
+  mod_move_compiler_expansion -> mod_sui_adapter_latest_static_programmable_transactions;
+  mod_move_compiler_expansion -> mod_sui_client_ptb;
+  mod_move_compiler_expansion -> mod_sui_display_v2;
+  mod_move_compiler_expansion -> mod_sui_kvstore_bigtable;
+  mod_move_compiler_hlir -> mod_move_compiler_cfgir;
+  mod_move_compiler_hlir -> mod_move_compiler_diagnostics;
+  mod_move_compiler_hlir -> mod_move_compiler_expansion;
+  mod_move_compiler_hlir -> mod_move_compiler_naming;
+  mod_move_compiler_hlir -> mod_move_compiler_shared;
+  mod_move_compiler_hlir -> mod_move_compiler_sui_mode;
+  mod_move_compiler_hlir -> mod_move_compiler_to_bytecode;
+  mod_move_compiler_hlir -> mod_move_compiler_typing;
+  mod_move_compiler_hlir -> mod_move_ir_types_ast;
+  mod_move_compiler_hlir -> mod_move_ir_types_location;
+  mod_move_compiler_hlir -> mod_move_model_symbol;
+  mod_move_compiler_hlir -> mod_move_stackless_bytecode_access_path;
+  mod_move_compiler_hlir -> mod_move_symbol_pool_symbol;
+  mod_move_compiler_hlir -> mod_sui_adapter_latest_static_programmable_transactions;
+  mod_move_compiler_hlir -> mod_sui_display_v2;
+  mod_move_compiler_hlir -> mod_sui_indexer_alt_graphql_api;
+  mod_move_compiler_hlir -> mod_sui_kvstore_bigtable;
+  mod_move_compiler_naming -> mod_move_compiler_cfgir;
+  mod_move_compiler_naming -> mod_move_compiler_diagnostics;
+  mod_move_compiler_naming -> mod_move_compiler_expansion;
+  mod_move_compiler_naming -> mod_move_compiler_hlir;
+  mod_move_compiler_naming -> mod_move_compiler_parser;
+  mod_move_compiler_naming -> mod_move_compiler_shared;
+  mod_move_compiler_naming -> mod_move_compiler_sui_mode;
+  mod_move_compiler_naming -> mod_move_compiler_to_bytecode;
+  mod_move_compiler_naming -> mod_move_compiler_typing;
+  mod_move_compiler_naming -> mod_move_ir_types_ast;
+  mod_move_compiler_naming -> mod_move_ir_types_location;
+  mod_move_compiler_naming -> mod_move_model_2_summary;
+  mod_move_compiler_naming -> mod_move_symbol_pool_symbol;
+  mod_move_compiler_naming -> mod_sui_adapter_latest_static_programmable_transactions;
+  mod_move_compiler_naming -> mod_sui_client_ptb;
+  mod_move_compiler_naming -> mod_sui_indexer_alt_graphql_api;
+  mod_move_compiler_naming -> mod_sui_kvstore_bigtable;
+  mod_move_compiler_parser -> mod_move_compiler_cfgir;
+  mod_move_compiler_parser -> mod_move_compiler_diagnostics;
+  mod_move_compiler_parser -> mod_move_compiler_expansion;
+  mod_move_compiler_parser -> mod_move_compiler_hlir;
+  mod_move_compiler_parser -> mod_move_compiler_naming;
+  mod_move_compiler_parser -> mod_move_compiler_shared;
+  mod_move_compiler_parser -> mod_move_compiler_sui_mode;
+  mod_move_compiler_parser -> mod_move_compiler_typing;
+  mod_move_compiler_parser -> mod_move_ir_types_ast;
+  mod_move_compiler_parser -> mod_move_ir_types_location;
+  mod_move_compiler_parser -> mod_move_model_2_summary;
+  mod_move_compiler_parser -> mod_move_model_symbol;
+  mod_move_compiler_parser -> mod_move_symbol_pool_symbol;
+  mod_move_compiler_parser -> mod_sui_client_ptb;
+  mod_move_compiler_parser -> mod_sui_json_rpc_types_lib;
+  mod_move_compiler_parser -> mod_sui_kvstore_bigtable;
+  mod_move_compiler_shared -> mod_move_compiler_cfgir;
+  mod_move_compiler_shared -> mod_move_compiler_diagnostics;
+  mod_move_compiler_shared -> mod_move_compiler_expansion;
+  mod_move_compiler_shared -> mod_move_compiler_hlir;
+  mod_move_compiler_shared -> mod_move_compiler_naming;
+  mod_move_compiler_shared -> mod_move_compiler_parser;
+  mod_move_compiler_shared -> mod_move_compiler_sui_mode;
+  mod_move_compiler_shared -> mod_move_compiler_typing;
+  mod_move_compiler_shared -> mod_move_ir_types_ast;
+  mod_move_compiler_shared -> mod_move_ir_types_location;
+  mod_move_compiler_shared -> mod_move_model_symbol;
+  mod_move_compiler_shared -> mod_move_symbol_pool_symbol;
+  mod_move_compiler_shared -> mod_sui_client_ptb;
+  mod_move_compiler_shared -> mod_sui_indexer_alt_graphql_api;
+  mod_move_compiler_shared -> mod_sui_json_rpc_types_lib;
+  mod_move_compiler_shared -> mod_sui_kvstore_bigtable;
+  mod_move_compiler_sui_mode -> mod_move_compiler_cfgir;
+  mod_move_compiler_sui_mode -> mod_move_compiler_diagnostics;
+  mod_move_compiler_sui_mode -> mod_move_compiler_expansion;
+  mod_move_compiler_sui_mode -> mod_move_compiler_hlir;
+  mod_move_compiler_sui_mode -> mod_move_compiler_shared;
+  mod_move_compiler_sui_mode -> mod_move_compiler_typing;
+  mod_move_compiler_sui_mode -> mod_move_ir_types_ast;
+  mod_move_compiler_sui_mode -> mod_move_ir_types_location;
+  mod_move_compiler_sui_mode -> mod_move_model_2_summary;
+  mod_move_compiler_sui_mode -> mod_sui_adapter_latest_static_programmable_transactions;
+  mod_move_compiler_sui_mode -> mod_sui_kvstore_bigtable;
+  mod_move_compiler_to_bytecode -> mod_move_binary_format_file_format;
+  mod_move_compiler_to_bytecode -> mod_move_compiler_cfgir;
+  mod_move_compiler_to_bytecode -> mod_move_compiler_expansion;
+  mod_move_compiler_to_bytecode -> mod_move_compiler_hlir;
+  mod_move_compiler_to_bytecode -> mod_move_compiler_parser;
+  mod_move_compiler_to_bytecode -> mod_move_compiler_shared;
+  mod_move_compiler_to_bytecode -> mod_move_ir_types_ast;
+  mod_move_compiler_to_bytecode -> mod_move_ir_types_location;
+  mod_move_compiler_to_bytecode -> mod_move_model_2_summary;
+  mod_move_compiler_to_bytecode -> mod_move_symbol_pool_symbol;
+  mod_move_compiler_typing -> mod_move_binary_format_normalized;
+  mod_move_compiler_typing -> mod_move_compiler_cfgir;
+  mod_move_compiler_typing -> mod_move_compiler_diagnostics;
+  mod_move_compiler_typing -> mod_move_compiler_expansion;
+  mod_move_compiler_typing -> mod_move_compiler_hlir;
+  mod_move_compiler_typing -> mod_move_compiler_naming;
+  mod_move_compiler_typing -> mod_move_compiler_parser;
+  mod_move_compiler_typing -> mod_move_compiler_shared;
+  mod_move_compiler_typing -> mod_move_compiler_sui_mode;
+  mod_move_compiler_typing -> mod_move_compiler_to_bytecode;
+  mod_move_compiler_typing -> mod_move_ir_types_ast;
+  mod_move_compiler_typing -> mod_move_ir_types_location;
+  mod_move_compiler_typing -> mod_move_model_2_summary;
+  mod_move_compiler_typing -> mod_move_model_symbol;
+  mod_move_compiler_typing -> mod_move_stackless_bytecode_access_path;
+  mod_move_compiler_typing -> mod_move_symbol_pool_symbol;
+  mod_move_compiler_typing -> mod_sui_adapter_latest_static_programmable_transactions;
+  mod_move_compiler_typing -> mod_sui_display_v2;
+  mod_move_compiler_typing -> mod_sui_indexer_alt_graphql_extensions;
+  mod_move_compiler_typing -> mod_sui_json_rpc_types_lib;
+  mod_move_compiler_typing -> mod_sui_kvstore_bigtable;
+  mod_move_compiler_typing -> mod_sui_protocol_config_lib;
+  mod_move_core_types_language_storage -> mod_move_core_types_account_address;
+  mod_move_core_types_language_storage -> mod_move_core_types_identifier;
+  mod_move_core_types_language_storage -> mod_sui_indexer_alt_graphql_api;
+  mod_move_core_types_language_storage -> mod_sui_types_base_types;
+  mod_move_ir_to_bytecode_syntax_syntax -> mod_move_binary_format_normalized;
+  mod_move_ir_to_bytecode_syntax_syntax -> mod_move_compiler_expansion;
+  mod_move_ir_to_bytecode_syntax_syntax -> mod_move_compiler_naming;
+  mod_move_ir_to_bytecode_syntax_syntax -> mod_move_compiler_parser;
+  mod_move_ir_to_bytecode_syntax_syntax -> mod_move_core_types_account_address;
+  mod_move_ir_to_bytecode_syntax_syntax -> mod_move_ir_types_ast;
+  mod_move_ir_to_bytecode_syntax_syntax -> mod_move_ir_types_location;
+  mod_move_ir_to_bytecode_syntax_syntax -> mod_move_symbol_pool_symbol;
+  mod_move_ir_to_bytecode_syntax_syntax -> mod_sui_indexer_alt_graphql_api;
+  mod_move_ir_to_bytecode_syntax_syntax -> mod_sui_kvstore_bigtable;
+  mod_move_ir_types_ast -> mod_move_compiler_shared;
+  mod_move_ir_types_ast -> mod_move_ir_types_location;
+  mod_move_ir_types_ast -> mod_move_model_symbol;
+  mod_move_ir_types_ast -> mod_sui_indexer_alt_graphql_api;
+  mod_move_ir_types_ast -> mod_sui_json_rpc_types_lib;
+  mod_move_ir_types_ast -> mod_sui_kvstore_bigtable;
+  mod_move_ir_types_location -> mod_move_ir_types_ast;
+  mod_move_model_2_summary -> mod_move_core_types_account_address;
+  mod_move_model_2_summary -> mod_move_symbol_pool_symbol;
+  mod_move_model_2_summary -> mod_sui_json_rpc_types_lib;
+  mod_move_model_2_summary -> mod_sui_kvstore_bigtable;
+  mod_move_model_model -> mod_move_binary_format_file_format;
+  mod_move_model_model -> mod_move_model_symbol;
+  mod_move_package_alt_package -> mod_move_package_alt_schema;
+  mod_move_package_alt_package -> mod_move_regex_borrow_graph_collections;
+  mod_move_package_alt_package -> mod_sui_json_rpc_types_lib;
+  mod_move_package_alt_package -> mod_sui_kvstore_bigtable;
+  mod_move_package_alt_schema -> mod_move_core_types_account_address;
+  mod_move_package_alt_schema -> mod_sui_indexer_alt_graphql_api;
+  mod_move_package_alt_schema -> mod_sui_kvstore_bigtable;
+  mod_move_stackless_bytecode_access_path -> mod_move_model_model;
+  mod_move_stackless_bytecode_stackless_bytecode -> mod_move_model_model;
+  mod_move_vm_types_v0_values -> mod_sui_indexer_alt_graphql_api;
+  mod_move_vm_types_v0_values -> mod_sui_indexer_alt_jsonrpc_api;
+  mod_move_vm_types_v1_values -> mod_sui_indexer_alt_graphql_api;
+  mod_move_vm_types_v1_values -> mod_sui_indexer_alt_jsonrpc_api;
+  mod_move_vm_types_v2_values -> mod_sui_indexer_alt_graphql_api;
+  mod_move_vm_types_v2_values -> mod_sui_indexer_alt_jsonrpc_api;
+  mod_move_vm_types_values -> mod_sui_indexer_alt_graphql_api;
+  mod_sui_adapter_latest_programmable_transactions -> mod_move_binary_format_file_format;
+  mod_sui_adapter_latest_programmable_transactions -> mod_move_core_types_identifier;
+  mod_sui_adapter_latest_programmable_transactions -> mod_move_core_types_language_storage;
+  mod_sui_adapter_latest_programmable_transactions -> mod_move_stackless_bytecode_access_path;
+  mod_sui_adapter_latest_programmable_transactions -> mod_sui_adapter_latest_static_programmable_transactions;
+  mod_sui_adapter_latest_programmable_transactions -> mod_sui_indexer_alt_graphql_api;
+  mod_sui_adapter_latest_programmable_transactions -> mod_sui_indexer_alt_graphql_scalars;
+  mod_sui_adapter_latest_programmable_transactions -> mod_sui_kvstore_bigtable;
+  mod_sui_adapter_latest_programmable_transactions -> mod_sui_package_dump_query;
+  mod_sui_adapter_latest_programmable_transactions -> mod_sui_types_base_types;
+  mod_sui_adapter_latest_programmable_transactions -> mod_sui_types_error;
+  mod_sui_adapter_latest_programmable_transactions -> mod_sui_types_storage;
+  mod_sui_adapter_latest_programmable_transactions -> mod_sui_types_transaction;
+  mod_sui_adapter_latest_static_programmable_transactions -> mod_move_compiler_naming;
+  mod_sui_adapter_latest_static_programmable_transactions -> mod_move_compiler_shared;
+  mod_sui_adapter_latest_static_programmable_transactions -> mod_move_core_types_account_address;
+  mod_sui_adapter_latest_static_programmable_transactions -> mod_move_core_types_identifier;
+  mod_sui_adapter_latest_static_programmable_transactions -> mod_move_core_types_language_storage;
+  mod_sui_adapter_latest_static_programmable_transactions -> mod_move_model_2_summary;
+  mod_sui_adapter_latest_static_programmable_transactions -> mod_sui_adapter_latest_programmable_transactions;
+  mod_sui_adapter_latest_static_programmable_transactions -> mod_sui_client_ptb;
+  mod_sui_adapter_latest_static_programmable_transactions -> mod_sui_indexer_alt_graphql_api;
+  mod_sui_adapter_latest_static_programmable_transactions -> mod_sui_indexer_alt_graphql_transaction_kind;
+  mod_sui_adapter_latest_static_programmable_transactions -> mod_sui_json_rpc_types_lib;
+  mod_sui_adapter_latest_static_programmable_transactions -> mod_sui_types_base_types;
+  mod_sui_adapter_latest_static_programmable_transactions -> mod_sui_types_object;
+  mod_sui_adapter_latest_static_programmable_transactions -> mod_sui_types_sui_serde;
+  mod_sui_adapter_latest_static_programmable_transactions -> mod_sui_types_transaction;
+  mod_sui_adapter_v0_programmable_transactions -> mod_move_binary_format_normalized;
+  mod_sui_adapter_v0_programmable_transactions -> mod_move_compiler_shared;
+  mod_sui_adapter_v0_programmable_transactions -> mod_move_core_types_account_address;
+  mod_sui_adapter_v0_programmable_transactions -> mod_move_core_types_identifier;
+  mod_sui_adapter_v0_programmable_transactions -> mod_move_core_types_language_storage;
+  mod_sui_adapter_v0_programmable_transactions -> mod_sui_client_ptb;
+  mod_sui_adapter_v0_programmable_transactions -> mod_sui_indexer_alt_graphql_api;
+  mod_sui_adapter_v0_programmable_transactions -> mod_sui_indexer_alt_graphql_extensions;
+  mod_sui_adapter_v0_programmable_transactions -> mod_sui_json_rpc_types_lib;
+  mod_sui_adapter_v0_programmable_transactions -> mod_sui_package_dump_query;
+  mod_sui_adapter_v0_programmable_transactions -> mod_sui_types_base_types;
+  mod_sui_adapter_v0_programmable_transactions -> mod_sui_types_object;
+  mod_sui_adapter_v0_programmable_transactions -> mod_sui_types_storage;
+  mod_sui_adapter_v1_programmable_transactions -> mod_move_compiler_shared;
+  mod_sui_adapter_v1_programmable_transactions -> mod_move_core_types_account_address;
+  mod_sui_adapter_v1_programmable_transactions -> mod_move_core_types_identifier;
+  mod_sui_adapter_v1_programmable_transactions -> mod_move_core_types_language_storage;
+  mod_sui_adapter_v1_programmable_transactions -> mod_sui_indexer_alt_graphql_api;
+  mod_sui_adapter_v1_programmable_transactions -> mod_sui_json_rpc_types_lib;
+  mod_sui_adapter_v1_programmable_transactions -> mod_sui_package_dump_query;
+  mod_sui_adapter_v1_programmable_transactions -> mod_sui_types_base_types;
+  mod_sui_adapter_v1_programmable_transactions -> mod_sui_types_storage;
+  mod_sui_adapter_v1_programmable_transactions -> mod_sui_types_transaction;
+  mod_sui_adapter_v2_programmable_transactions -> mod_move_binary_format_normalized;
+  mod_sui_adapter_v2_programmable_transactions -> mod_move_compiler_shared;
+  mod_sui_adapter_v2_programmable_transactions -> mod_move_core_types_account_address;
+  mod_sui_adapter_v2_programmable_transactions -> mod_move_core_types_identifier;
+  mod_sui_adapter_v2_programmable_transactions -> mod_move_core_types_language_storage;
+  mod_sui_adapter_v2_programmable_transactions -> mod_sui_adapter_latest_static_programmable_transactions;
+  mod_sui_adapter_v2_programmable_transactions -> mod_sui_indexer_alt_graphql_api;
+  mod_sui_adapter_v2_programmable_transactions -> mod_sui_json_rpc_types_lib;
+  mod_sui_adapter_v2_programmable_transactions -> mod_sui_types_base_types;
+  mod_sui_adapter_v2_programmable_transactions -> mod_sui_types_object;
+  mod_sui_adapter_v2_programmable_transactions -> mod_sui_types_storage;
+  mod_sui_adapter_v2_programmable_transactions -> mod_sui_types_transaction;
+  mod_sui_benchmark_workloads -> mod_sui_indexer_alt_graphql_api;
+  mod_sui_benchmark_workloads -> mod_sui_json_rpc_types_lib;
+  mod_sui_benchmark_workloads -> mod_sui_package_dump_query;
+  mod_sui_benchmark_workloads -> mod_sui_types_base_types;
+  mod_sui_benchmark_workloads -> mod_sui_types_sui_serde;
+  mod_sui_client_commands -> mod_move_package_alt_package;
+  mod_sui_client_commands -> mod_move_regex_borrow_graph_collections;
+  mod_sui_client_commands -> mod_move_stackless_bytecode_access_path;
+  mod_sui_client_commands -> mod_sui_client_ptb;
+  mod_sui_client_commands -> mod_sui_indexer_alt_graphql_api;
+  mod_sui_client_commands -> mod_sui_indexer_alt_graphql_transaction_kind;
+  mod_sui_client_commands -> mod_sui_json_rpc_types_lib;
+  mod_sui_client_commands -> mod_sui_json_rpc_types_sui_transaction;
+  mod_sui_client_commands -> mod_sui_kvstore_bigtable;
+  mod_sui_client_commands -> mod_sui_package_dump_query;
+  mod_sui_client_commands -> mod_sui_types_base_types;
+  mod_sui_client_commands -> mod_sui_types_digests;
+  mod_sui_client_ptb -> mod_move_core_types_language_storage;
+  mod_sui_client_ptb -> mod_sui_indexer_alt_graphql_api;
+  mod_sui_client_ptb -> mod_sui_json_rpc_types_lib;
+  mod_sui_client_ptb -> mod_sui_kvstore_bigtable;
+  mod_sui_config_node -> mod_sui_json_rpc_types_lib;
+  mod_sui_config_node -> mod_sui_kvstore_bigtable;
+  mod_sui_config_node -> mod_sui_types_crypto;
+  mod_sui_core_authority -> mod_sui_config_node;
+  mod_sui_core_authority -> mod_sui_data_store_gql_queries;
+  mod_sui_core_authority -> mod_sui_indexer_alt_graphql_api;
+  mod_sui_core_authority -> mod_sui_json_rpc_types_lib;
+  mod_sui_core_authority -> mod_sui_node_admin;
+  mod_sui_core_authority -> mod_sui_protocol_config_lib;
+  mod_sui_core_authority -> mod_sui_types_base_types;
+  mod_sui_core_authority -> mod_sui_types_digests;
+  mod_sui_core_authority -> mod_sui_types_error;
+  mod_sui_core_authority -> mod_sui_types_storage;
+  mod_sui_core_authority -> mod_sui_types_sui_serde;
+  mod_sui_core_authority -> mod_sui_types_sui_system_state;
+  mod_sui_core_authority -> mod_sui_types_transaction;
+  mod_sui_core_authority -> mod_typed_store_rocks;
+  mod_sui_core_checkpoints -> mod_move_compiler_shared;
+  mod_sui_core_checkpoints -> mod_sui_core_authority;
+  mod_sui_core_checkpoints -> mod_sui_core_execution_cache;
+  mod_sui_core_checkpoints -> mod_sui_data_store_gql_queries;
+  mod_sui_core_checkpoints -> mod_sui_types_digests;
+  mod_sui_core_checkpoints -> mod_typed_store_rocks;
+  mod_sui_core_execution_cache -> mod_sui_core_authority;
+  mod_sui_core_execution_cache -> mod_sui_json_rpc_types_lib;
+  mod_sui_core_execution_cache -> mod_sui_types_base_types;
+  mod_sui_core_execution_cache -> mod_sui_types_digests;
+  mod_sui_core_execution_cache -> mod_sui_types_effects;
+  mod_sui_core_execution_cache -> mod_sui_types_storage;
+  mod_sui_core_unit_tests -> mod_move_binary_format_file_format;
+  mod_sui_core_unit_tests -> mod_move_compiler_expansion;
+  mod_sui_core_unit_tests -> mod_move_compiler_shared;
+  mod_sui_core_unit_tests -> mod_move_core_types_language_storage;
+  mod_sui_core_unit_tests -> mod_move_regex_borrow_graph_collections;
+  mod_sui_core_unit_tests -> mod_sui_adapter_latest_programmable_transactions;
+  mod_sui_core_unit_tests -> mod_sui_adapter_latest_static_programmable_transactions;
+  mod_sui_core_unit_tests -> mod_sui_client_ptb;
+  mod_sui_core_unit_tests -> mod_sui_core_authority;
+  mod_sui_core_unit_tests -> mod_sui_data_store_gql_queries;
+  mod_sui_core_unit_tests -> mod_sui_indexer_alt_graphql_api;
+  mod_sui_core_unit_tests -> mod_sui_indexer_alt_graphql_scalars;
+  mod_sui_core_unit_tests -> mod_sui_indexer_alt_graphql_transaction_kind;
+  mod_sui_core_unit_tests -> mod_sui_json_rpc_types_lib;
+  mod_sui_core_unit_tests -> mod_sui_package_dump_query;
+  mod_sui_core_unit_tests -> mod_sui_types_base_types;
+  mod_sui_core_unit_tests -> mod_sui_types_crypto;
+  mod_sui_core_unit_tests -> mod_sui_types_digests;
+  mod_sui_core_unit_tests -> mod_sui_types_effects;
+  mod_sui_core_unit_tests -> mod_sui_types_error;
+  mod_sui_core_unit_tests -> mod_sui_types_object;
+  mod_sui_core_unit_tests -> mod_sui_types_sui_serde;
+  mod_sui_data_store_gql_queries -> mod_sui_json_rpc_types_lib;
+  mod_sui_data_store_gql_queries -> mod_sui_kvstore_bigtable;
+  mod_sui_display_v2 -> mod_move_core_types_account_address;
+  mod_sui_display_v2 -> mod_move_core_types_language_storage;
+  mod_sui_display_v2 -> mod_sui_json_rpc_types_lib;
+  mod_sui_indexer_alt_consistent_store_rpc -> mod_sui_json_rpc_types_lib;
+  mod_sui_indexer_alt_graphql_api -> mod_move_compiler_naming;
+  mod_sui_indexer_alt_graphql_api -> mod_sui_indexer_alt_graphql_scalars;
+  mod_sui_indexer_alt_graphql_api -> mod_sui_json_rpc_types_lib;
+  mod_sui_indexer_alt_graphql_api -> mod_sui_kvstore_bigtable;
+  mod_sui_indexer_alt_graphql_api -> mod_sui_types_base_types;
+  mod_sui_indexer_alt_graphql_api -> mod_sui_types_sui_system_state;
+  mod_sui_indexer_alt_graphql_extensions -> mod_sui_name_service_lib;
+  mod_sui_indexer_alt_graphql_scalars -> mod_move_vm_types_values;
+  mod_sui_indexer_alt_graphql_scalars -> mod_sui_json_rpc_types_lib;
+  mod_sui_indexer_alt_graphql_scalars -> mod_sui_types_base_types;
+  mod_sui_indexer_alt_graphql_transaction_kind -> mod_sui_indexer_alt_graphql_api;
+  mod_sui_indexer_alt_graphql_transaction_kind -> mod_sui_indexer_alt_graphql_scalars;
+  mod_sui_indexer_alt_jsonrpc_api -> mod_sui_types_base_types;
+  mod_sui_json_rpc_types_lib -> mod_sui_kvstore_bigtable;
+  mod_sui_json_rpc_types_lib -> mod_sui_types_base_types;
+  mod_sui_json_rpc_types_sui_transaction -> mod_move_core_types_language_storage;
+  mod_sui_json_rpc_types_sui_transaction -> mod_sui_indexer_alt_graphql_api;
+  mod_sui_json_rpc_types_sui_transaction -> mod_sui_json_rpc_types_lib;
+  mod_sui_json_rpc_types_sui_transaction -> mod_sui_kvstore_bigtable;
+  mod_sui_json_rpc_types_sui_transaction -> mod_sui_package_dump_query;
+  mod_sui_json_rpc_types_sui_transaction -> mod_sui_types_base_types;
+  mod_sui_json_rpc_types_sui_transaction -> mod_sui_types_digests;
+  mod_sui_json_rpc_types_sui_transaction -> mod_sui_types_effects;
+  mod_sui_json_rpc_types_sui_transaction -> mod_sui_types_transaction;
+  mod_sui_kvstore_bigtable -> mod_sui_client_ptb;
+  mod_sui_kvstore_bigtable -> mod_sui_json_rpc_types_lib;
+  mod_sui_move_natives_latest_crypto -> mod_move_binary_format_normalized;
+  mod_sui_move_natives_latest_crypto -> mod_move_compiler_sui_mode;
+  mod_sui_move_natives_latest_crypto -> mod_move_core_types_account_address;
+  mod_sui_move_natives_latest_crypto -> mod_move_model_2_summary;
+  mod_sui_move_natives_latest_crypto -> mod_move_stackless_bytecode_access_path;
+  mod_sui_move_natives_latest_crypto -> mod_move_vm_types_v0_values;
+  mod_sui_move_natives_latest_crypto -> mod_move_vm_types_v1_values;
+  mod_sui_move_natives_latest_crypto -> mod_sui_kvstore_bigtable;
+  mod_sui_move_natives_v2_crypto -> mod_move_core_types_account_address;
+  mod_sui_move_natives_v2_crypto -> mod_move_model_2_summary;
+  mod_sui_move_natives_v2_crypto -> mod_move_vm_types_v0_values;
+  mod_sui_move_natives_v2_crypto -> mod_move_vm_types_v1_values;
+  mod_sui_move_natives_v2_crypto -> mod_move_vm_types_values;
+  mod_sui_move_natives_v2_crypto -> mod_sui_kvstore_bigtable;
+  mod_sui_name_service_lib -> mod_sui_data_store_gql_queries;
+  mod_sui_name_service_lib -> mod_sui_json_rpc_types_lib;
+  mod_sui_node_admin -> mod_sui_indexer_alt_consistent_store_rpc;
+  mod_sui_node_admin -> mod_sui_kvstore_bigtable;
+  mod_sui_package_dump_query -> mod_sui_kvstore_bigtable;
+  mod_sui_rosetta_types -> mod_sui_indexer_alt_graphql_transaction_kind;
+  mod_sui_rosetta_types -> mod_sui_json_rpc_types_lib;
+  mod_sui_rosetta_types -> mod_sui_kvstore_bigtable;
+  mod_sui_rosetta_types -> mod_sui_package_dump_query;
+  mod_sui_rpc_loadgen_payload -> mod_sui_json_rpc_types_lib;
+  mod_sui_rpc_loadgen_payload -> mod_sui_json_rpc_types_sui_transaction;
+  mod_sui_rpc_loadgen_payload -> mod_sui_kvstore_bigtable;
+  mod_sui_rpc_loadgen_payload -> mod_sui_package_dump_query;
+  mod_sui_rpc_loadgen_payload -> mod_sui_types_base_types;
+  mod_sui_rpc_loadgen_payload -> mod_sui_types_crypto;
+  mod_sui_rpc_loadgen_payload -> mod_sui_types_digests;
+  mod_sui_types_base_types -> mod_move_core_types_account_address;
+  mod_sui_types_base_types -> mod_move_core_types_language_storage;
+  mod_sui_types_base_types -> mod_sui_indexer_alt_graphql_api;
+  mod_sui_types_base_types -> mod_sui_json_rpc_types_lib;
+  mod_sui_types_base_types -> mod_sui_types_digests;
+  mod_sui_types_base_types -> mod_sui_types_object;
+  mod_sui_types_base_types -> mod_sui_types_storage;
+  mod_sui_types_crypto -> mod_sui_indexer_alt_graphql_api;
+  mod_sui_types_crypto -> mod_sui_types_base_types;
+  mod_sui_types_effects -> mod_sui_types_base_types;
+  mod_sui_types_effects -> mod_sui_types_digests;
+  mod_sui_types_error -> mod_sui_json_rpc_types_lib;
+  mod_sui_types_error -> mod_sui_kvstore_bigtable;
+  mod_sui_types_error -> mod_sui_types_base_types;
+  mod_sui_types_error -> mod_sui_types_digests;
+  mod_sui_types_messages_grpc -> mod_sui_kvstore_bigtable;
+  mod_sui_types_messages_grpc -> mod_sui_types_digests;
+  mod_sui_types_messages_grpc -> mod_sui_types_effects;
+  mod_sui_types_messages_grpc -> mod_sui_types_error;
+  mod_sui_types_messages_grpc -> mod_sui_types_object;
+  mod_sui_types_object -> mod_move_core_types_language_storage;
+  mod_sui_types_object -> mod_sui_indexer_alt_graphql_api;
+  mod_sui_types_object -> mod_sui_json_rpc_types_lib;
+  mod_sui_types_object -> mod_sui_types_base_types;
+  mod_sui_types_object -> mod_sui_types_sui_serde;
+  mod_sui_types_storage -> mod_move_core_types_language_storage;
+  mod_sui_types_storage -> mod_sui_json_rpc_types_lib;
+  mod_sui_types_storage -> mod_sui_types_base_types;
+  mod_sui_types_storage -> mod_sui_types_digests;
+  mod_sui_types_storage -> mod_sui_types_effects;
+  mod_sui_types_storage -> mod_sui_types_object;
+  mod_sui_types_storage -> mod_sui_types_transaction;
+  mod_sui_types_sui_serde -> mod_move_core_types_language_storage;
+  mod_sui_types_sui_serde -> mod_sui_types_storage;
+  mod_sui_types_sui_system_state -> mod_sui_json_rpc_types_lib;
+  mod_sui_types_sui_system_state -> mod_sui_kvstore_bigtable;
+  mod_sui_types_sui_system_state -> mod_sui_types_base_types;
+  mod_sui_types_sui_system_state -> mod_sui_types_error;
+  mod_sui_types_sui_system_state -> mod_sui_types_storage;
+  mod_sui_types_transaction -> mod_sui_indexer_alt_graphql_api;
+  mod_sui_types_transaction -> mod_sui_json_rpc_types_lib;
+  mod_sui_types_transaction -> mod_sui_types_base_types;
+  mod_sui_types_transaction -> mod_sui_types_crypto;
+  mod_sui_types_transaction -> mod_sui_types_digests;
+  mod_sui_types_transaction -> mod_sui_types_object;
+  mod_test_generation_transitions -> mod_move_binary_format_file_format;
+  mod_test_generation_transitions -> mod_move_compiler_expansion;
+  mod_test_generation_transitions -> mod_move_compiler_shared;
+  mod_typed_store_rocks -> mod_move_compiler_shared;
+  mod_typed_store_rocks -> mod_move_regex_borrow_graph_collections;
+  mod_typed_store_rocks -> mod_sui_core_authority;
+  mod_typed_store_rocks -> mod_sui_indexer_alt_consistent_store_rpc;
+  mod_typed_store_rocks -> mod_sui_indexer_alt_graphql_api;
+  mod_typed_store_rocks -> mod_sui_json_rpc_types_lib;
+  mod_typed_store_rocks -> mod_sui_kvstore_bigtable;
+  mod_typed_store_rocks -> mod_sui_types_base_types;
+  mod_typed_store_rocks -> mod_sui_types_digests;
+}

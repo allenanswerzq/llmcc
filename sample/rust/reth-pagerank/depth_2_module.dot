@@ -1,0 +1,319 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  subgraph cluster_reth_chainspec {
+    label="reth-chainspec";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_chainspec_spec[label="spec", path="/home/yibai/llmcc/sample/repos/reth/crates/chainspec/src"];
+  }
+
+  subgraph cluster_reth_cli_commands {
+    label="reth-cli-commands";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_cli_commands_db[label="db", path="/home/yibai/llmcc/sample/repos/reth/crates/cli/commands/src/db"];
+    mod_reth_cli_commands_stage[label="stage", path="/home/yibai/llmcc/sample/repos/reth/crates/cli/commands/src/stage"];
+  }
+
+  subgraph cluster_reth_codecs {
+    label="reth-codecs";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_codecs_alloy[label="alloy", path="/home/yibai/llmcc/sample/repos/reth/crates/storage/codecs/src/alloy"];
+  }
+
+  subgraph cluster_reth_config {
+    label="reth-config";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_config_config[label="config", path="/home/yibai/llmcc/sample/repos/reth/crates/config/src"];
+  }
+
+  subgraph cluster_reth_consensus {
+    label="reth-consensus";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_consensus_lib[label="lib", path="/home/yibai/llmcc/sample/repos/reth/crates/consensus/consensus/src"];
+  }
+
+  subgraph cluster_reth_db_api {
+    label="reth-db-api";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_db_api_models[label="models", path="/home/yibai/llmcc/sample/repos/reth/crates/storage/db-api/src/models"];
+    mod_reth_db_api_table[label="table", path="/home/yibai/llmcc/sample/repos/reth/crates/storage/db-api/src"];
+  }
+
+  subgraph cluster_reth_e2e_test_utils {
+    label="reth-e2e-test-utils";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_e2e_test_utils_testsuite[label="testsuite", path="/home/yibai/llmcc/sample/repos/reth/crates/e2e-test-utils/src/testsuite"];
+  }
+
+  subgraph cluster_reth_engine_tree {
+    label="reth-engine-tree";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_engine_tree_tree[label="tree", path="/home/yibai/llmcc/sample/repos/reth/crates/engine/tree/src/tree"];
+  }
+
+  subgraph cluster_reth_eth_wire_types {
+    label="reth-eth-wire-types";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_eth_wire_types_broadcast[label="broadcast", path="/home/yibai/llmcc/sample/repos/reth/crates/net/eth-wire-types/src"];
+    mod_reth_eth_wire_types_message[label="message", path="/home/yibai/llmcc/sample/repos/reth/crates/net/eth-wire-types/src"];
+  }
+
+  subgraph cluster_reth_network {
+    label="reth-network";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_network_session[label="session", path="/home/yibai/llmcc/sample/repos/reth/crates/net/network/src/session"];
+    mod_reth_network_transactions[label="transactions", path="/home/yibai/llmcc/sample/repos/reth/crates/net/network/src/transactions"];
+  }
+
+  subgraph cluster_reth_node_api {
+    label="reth-node-api";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_node_api_node[label="node", path="/home/yibai/llmcc/sample/repos/reth/crates/node/api/src"];
+  }
+
+  subgraph cluster_reth_node_builder {
+    label="reth-node-builder";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_node_builder_builder[label="builder", path="/home/yibai/llmcc/sample/repos/reth/crates/node/builder/src/builder"];
+    mod_reth_node_builder_components[label="components", path="/home/yibai/llmcc/sample/repos/reth/crates/node/builder/src/components"];
+    mod_reth_node_builder_launch[label="launch", path="/home/yibai/llmcc/sample/repos/reth/crates/node/builder/src/launch"];
+    mod_reth_node_builder_rpc[label="rpc", path="/home/yibai/llmcc/sample/repos/reth/crates/node/builder/src"];
+  }
+
+  subgraph cluster_reth_node_core {
+    label="reth-node-core";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_node_core_args[label="args", path="/home/yibai/llmcc/sample/repos/reth/crates/node/core/src/args"];
+  }
+
+  subgraph cluster_reth_primitives_traits {
+    label="reth-primitives-traits";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_primitives_traits_block[label="block", path="/home/yibai/llmcc/sample/repos/reth/crates/primitives-traits/src/block"];
+    mod_reth_primitives_traits_header[label="header", path="/home/yibai/llmcc/sample/repos/reth/crates/primitives-traits/src/header"];
+    mod_reth_primitives_traits_serde_bincode_compat[label="serde_bincode_compat", path="/home/yibai/llmcc/sample/repos/reth/crates/primitives-traits/src"];
+    mod_reth_primitives_traits_transaction[label="transaction", path="/home/yibai/llmcc/sample/repos/reth/crates/primitives-traits/src/transaction"];
+  }
+
+  subgraph cluster_reth_provider {
+    label="reth-provider";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_provider_providers[label="providers", path="/home/yibai/llmcc/sample/repos/reth/crates/storage/provider/src/providers"];
+    mod_reth_provider_test_utils[label="test_utils", path="/home/yibai/llmcc/sample/repos/reth/crates/storage/provider/src/test_utils"];
+  }
+
+  subgraph cluster_reth_prune {
+    label="reth-prune";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_prune_segments[label="segments", path="/home/yibai/llmcc/sample/repos/reth/crates/prune/prune/src/segments"];
+  }
+
+  subgraph cluster_reth_rpc {
+    label="reth-rpc";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_rpc_eth[label="eth", path="/home/yibai/llmcc/sample/repos/reth/crates/rpc/rpc/src/eth"];
+  }
+
+  subgraph cluster_reth_rpc_builder {
+    label="reth-rpc-builder";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_rpc_builder_lib[label="lib", path="/home/yibai/llmcc/sample/repos/reth/crates/rpc/rpc-builder/src"];
+  }
+
+  subgraph cluster_reth_rpc_eth_api {
+    label="reth-rpc-eth-api";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_rpc_eth_api_helpers[label="helpers", path="/home/yibai/llmcc/sample/repos/reth/crates/rpc/rpc-eth-api/src/helpers"];
+  }
+
+  subgraph cluster_reth_rpc_eth_types {
+    label="reth-rpc-eth-types";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_rpc_eth_types_cache[label="cache", path="/home/yibai/llmcc/sample/repos/reth/crates/rpc/rpc-eth-types/src/cache"];
+    mod_reth_rpc_eth_types_error[label="error", path="/home/yibai/llmcc/sample/repos/reth/crates/rpc/rpc-eth-types/src/error"];
+  }
+
+  subgraph cluster_reth_stages {
+    label="reth-stages";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_stages_stages[label="stages", path="/home/yibai/llmcc/sample/repos/reth/crates/stages/stages/src/stages"];
+  }
+
+  subgraph cluster_reth_static_file_types {
+    label="reth-static-file-types";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_static_file_types_segment[label="segment", path="/home/yibai/llmcc/sample/repos/reth/crates/static-file/types/src"];
+  }
+
+  subgraph cluster_reth_storage_errors {
+    label="reth-storage-errors";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_storage_errors_db[label="db", path="/home/yibai/llmcc/sample/repos/reth/crates/storage/errors/src"];
+  }
+
+  subgraph cluster_reth_tasks {
+    label="reth-tasks";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_tasks_lib[label="lib", path="/home/yibai/llmcc/sample/repos/reth/crates/tasks/src"];
+  }
+
+  subgraph cluster_reth_transaction_pool {
+    label="reth-transaction-pool";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_transaction_pool_blobstore[label="blobstore", path="/home/yibai/llmcc/sample/repos/reth/crates/transaction-pool/src/blobstore"];
+    mod_reth_transaction_pool_pool[label="pool", path="/home/yibai/llmcc/sample/repos/reth/crates/transaction-pool/src/pool"];
+    mod_reth_transaction_pool_traits[label="traits", path="/home/yibai/llmcc/sample/repos/reth/crates/transaction-pool/src"];
+    mod_reth_transaction_pool_validate[label="validate", path="/home/yibai/llmcc/sample/repos/reth/crates/transaction-pool/src/validate"];
+  }
+
+  subgraph cluster_reth_trie {
+    label="reth-trie";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_trie_trie_cursor[label="trie_cursor", path="/home/yibai/llmcc/sample/repos/reth/crates/trie/trie/src/trie_cursor"];
+  }
+
+  subgraph cluster_reth_trie_common {
+    label="reth-trie-common";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_trie_common_hashed_state[label="hashed_state", path="/home/yibai/llmcc/sample/repos/reth/crates/trie/common/src"];
+    mod_reth_trie_common_updates[label="updates", path="/home/yibai/llmcc/sample/repos/reth/crates/trie/common/src"];
+  }
+
+
+  mod_reth_chainspec_spec -> mod_reth_e2e_test_utils_testsuite;
+  mod_reth_cli_commands_db -> mod_reth_db_api_table;
+  mod_reth_cli_commands_db -> mod_reth_provider_providers;
+  mod_reth_cli_commands_db -> mod_reth_static_file_types_segment;
+  mod_reth_cli_commands_stage -> mod_reth_consensus_lib;
+  mod_reth_cli_commands_stage -> mod_reth_node_core_args;
+  mod_reth_cli_commands_stage -> mod_reth_provider_providers;
+  mod_reth_cli_commands_stage -> mod_reth_storage_errors_db;
+  mod_reth_consensus_lib -> mod_reth_primitives_traits_transaction;
+  mod_reth_db_api_models -> mod_reth_db_api_table;
+  mod_reth_engine_tree_tree -> mod_reth_consensus_lib;
+  mod_reth_engine_tree_tree -> mod_reth_eth_wire_types_message;
+  mod_reth_engine_tree_tree -> mod_reth_primitives_traits_block;
+  mod_reth_engine_tree_tree -> mod_reth_provider_test_utils;
+  mod_reth_engine_tree_tree -> mod_reth_stages_stages;
+  mod_reth_engine_tree_tree -> mod_reth_storage_errors_db;
+  mod_reth_engine_tree_tree -> mod_reth_trie_common_hashed_state;
+  mod_reth_engine_tree_tree -> mod_reth_trie_common_updates;
+  mod_reth_engine_tree_tree -> mod_reth_trie_trie_cursor;
+  mod_reth_eth_wire_types_message -> mod_reth_eth_wire_types_broadcast;
+  mod_reth_network_session -> mod_reth_eth_wire_types_message;
+  mod_reth_network_session -> mod_reth_tasks_lib;
+  mod_reth_network_transactions -> mod_reth_eth_wire_types_broadcast;
+  mod_reth_node_builder_builder -> mod_reth_node_api_node;
+  mod_reth_node_builder_builder -> mod_reth_node_builder_components;
+  mod_reth_node_builder_builder -> mod_reth_tasks_lib;
+  mod_reth_node_builder_components -> mod_reth_node_api_node;
+  mod_reth_node_builder_components -> mod_reth_node_builder_builder;
+  mod_reth_node_builder_components -> mod_reth_transaction_pool_blobstore;
+  mod_reth_node_builder_components -> mod_reth_transaction_pool_traits;
+  mod_reth_node_builder_launch -> mod_reth_node_api_node;
+  mod_reth_node_builder_launch -> mod_reth_node_builder_builder;
+  mod_reth_node_builder_rpc -> mod_reth_node_api_node;
+  mod_reth_node_builder_rpc -> mod_reth_rpc_builder_lib;
+  mod_reth_node_core_args -> mod_reth_network_transactions;
+  mod_reth_primitives_traits_block -> mod_reth_primitives_traits_header;
+  mod_reth_primitives_traits_block -> mod_reth_primitives_traits_serde_bincode_compat;
+  mod_reth_primitives_traits_block -> mod_reth_rpc_eth_types_cache;
+  mod_reth_primitives_traits_header -> mod_reth_primitives_traits_serde_bincode_compat;
+  mod_reth_primitives_traits_transaction -> mod_reth_stages_stages;
+  mod_reth_provider_providers -> mod_reth_chainspec_spec;
+  mod_reth_provider_providers -> mod_reth_db_api_models;
+  mod_reth_provider_providers -> mod_reth_primitives_traits_transaction;
+  mod_reth_provider_providers -> mod_reth_static_file_types_segment;
+  mod_reth_provider_providers -> mod_reth_storage_errors_db;
+  mod_reth_provider_providers -> mod_reth_trie_common_hashed_state;
+  mod_reth_provider_providers -> mod_reth_trie_common_updates;
+  mod_reth_provider_test_utils -> mod_reth_chainspec_spec;
+  mod_reth_provider_test_utils -> mod_reth_codecs_alloy;
+  mod_reth_provider_test_utils -> mod_reth_primitives_traits_block;
+  mod_reth_provider_test_utils -> mod_reth_primitives_traits_serde_bincode_compat;
+  mod_reth_provider_test_utils -> mod_reth_provider_providers;
+  mod_reth_provider_test_utils -> mod_reth_rpc_eth_types_cache;
+  mod_reth_provider_test_utils -> mod_reth_stages_stages;
+  mod_reth_prune_segments -> mod_reth_storage_errors_db;
+  mod_reth_rpc_builder_lib -> mod_reth_tasks_lib;
+  mod_reth_rpc_eth -> mod_reth_primitives_traits_header;
+  mod_reth_rpc_eth -> mod_reth_rpc_eth_api_helpers;
+  mod_reth_rpc_eth -> mod_reth_rpc_eth_types_cache;
+  mod_reth_rpc_eth -> mod_reth_tasks_lib;
+  mod_reth_rpc_eth_types_cache -> mod_reth_primitives_traits_block;
+  mod_reth_rpc_eth_types_error -> mod_reth_primitives_traits_transaction;
+  mod_reth_stages_stages -> mod_reth_config_config;
+  mod_reth_stages_stages -> mod_reth_consensus_lib;
+  mod_reth_stages_stages -> mod_reth_primitives_traits_transaction;
+  mod_reth_stages_stages -> mod_reth_provider_providers;
+  mod_reth_transaction_pool_pool -> mod_reth_transaction_pool_traits;
+  mod_reth_transaction_pool_pool -> mod_reth_transaction_pool_validate;
+  mod_reth_transaction_pool_traits -> mod_reth_primitives_traits_block;
+  mod_reth_transaction_pool_validate -> mod_reth_transaction_pool_blobstore;
+  mod_reth_transaction_pool_validate -> mod_reth_transaction_pool_traits;
+  mod_reth_trie_common_updates -> mod_reth_stages_stages;
+}

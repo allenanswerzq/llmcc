@@ -1,0 +1,544 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  subgraph cluster_anvil {
+    label="anvil";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_anvil_cmd[label="cmd", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src"];
+    mod_anvil_config[label="config", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src"];
+    mod_anvil_eth[label="eth", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth"];
+    mod_anvil_evm[label="evm", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src"];
+    mod_anvil_lib[label="lib", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src"];
+    mod_anvil_pubsub[label="pubsub", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src"];
+    mod_anvil_server[label="server", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/server"];
+    mod_anvil_service[label="service", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src"];
+    mod_anvil_shutdown[label="shutdown", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src"];
+    mod_anvil_tasks[label="tasks", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/tasks"];
+  }
+
+  subgraph cluster_anvil_core {
+    label="anvil-core";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_anvil_core_eth[label="eth", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/core/src/eth"];
+  }
+
+  subgraph cluster_anvil_rpc {
+    label="anvil-rpc";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_anvil_rpc_error[label="error", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/rpc/src"];
+    mod_anvil_rpc_request[label="request", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/rpc/src"];
+    mod_anvil_rpc_response[label="response", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/rpc/src"];
+  }
+
+  subgraph cluster_anvil_server {
+    label="anvil-server";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_anvil_server_config[label="config", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/server/src"];
+    mod_anvil_server_handler[label="handler", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/server/src"];
+    mod_anvil_server_ipc[label="ipc", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/server/src"];
+    mod_anvil_server_lib[label="lib", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/server/src"];
+  }
+
+  subgraph cluster_cast {
+    label="cast";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_cast_args[label="args", path="/home/yibai/llmcc/sample/repos/foundry/crates/cast/src"];
+    mod_cast_cmd[label="cmd", path="/home/yibai/llmcc/sample/repos/foundry/crates/cast/src/cmd"];
+    mod_cast_opts[label="opts", path="/home/yibai/llmcc/sample/repos/foundry/crates/cast/src"];
+    mod_cast_rlp_converter[label="rlp_converter", path="/home/yibai/llmcc/sample/repos/foundry/crates/cast/src"];
+    mod_cast_tx[label="tx", path="/home/yibai/llmcc/sample/repos/foundry/crates/cast/src"];
+  }
+
+  subgraph cluster_chisel {
+    label="chisel";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_chisel_args[label="args", path="/home/yibai/llmcc/sample/repos/foundry/crates/chisel/src"];
+    mod_chisel_dispatcher[label="dispatcher", path="/home/yibai/llmcc/sample/repos/foundry/crates/chisel/src"];
+    mod_chisel_executor[label="executor", path="/home/yibai/llmcc/sample/repos/foundry/crates/chisel/src"];
+    mod_chisel_opts[label="opts", path="/home/yibai/llmcc/sample/repos/foundry/crates/chisel/src"];
+  }
+
+  subgraph cluster_forge {
+    label="forge";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_forge_args[label="args", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge/src"];
+    mod_forge_cmd[label="cmd", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge/src/cmd"];
+    mod_forge_coverage[label="coverage", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge/src"];
+    mod_forge_gas_report[label="gas_report", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge/src"];
+    mod_forge_multi_runner[label="multi_runner", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge/src"];
+    mod_forge_opts[label="opts", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge/src"];
+    mod_forge_result[label="result", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge/src"];
+    mod_forge_runner[label="runner", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge/src"];
+  }
+
+  subgraph cluster_forge_fmt {
+    label="forge-fmt";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_forge_fmt_lib[label="lib", path="/home/yibai/llmcc/sample/repos/foundry/crates/fmt/src"];
+    mod_forge_fmt_state[label="state", path="/home/yibai/llmcc/sample/repos/foundry/crates/fmt/src/state"];
+  }
+
+  subgraph cluster_forge_lint {
+    label="forge-lint";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_forge_lint_linter[label="linter", path="/home/yibai/llmcc/sample/repos/foundry/crates/lint/src/linter"];
+    mod_forge_lint_sol[label="sol", path="/home/yibai/llmcc/sample/repos/foundry/crates/lint/src/sol"];
+  }
+
+  subgraph cluster_forge_script {
+    label="forge-script";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_forge_script_broadcast[label="broadcast", path="/home/yibai/llmcc/sample/repos/foundry/crates/script/src"];
+    mod_forge_script_build[label="build", path="/home/yibai/llmcc/sample/repos/foundry/crates/script/src"];
+    mod_forge_script_execute[label="execute", path="/home/yibai/llmcc/sample/repos/foundry/crates/script/src"];
+    mod_forge_script_lib[label="lib", path="/home/yibai/llmcc/sample/repos/foundry/crates/script/src"];
+    mod_forge_script_multi_sequence[label="multi_sequence", path="/home/yibai/llmcc/sample/repos/foundry/crates/script/src"];
+    mod_forge_script_simulate[label="simulate", path="/home/yibai/llmcc/sample/repos/foundry/crates/script/src"];
+    mod_forge_script_verify[label="verify", path="/home/yibai/llmcc/sample/repos/foundry/crates/script/src"];
+  }
+
+  subgraph cluster_forge_script_sequence {
+    label="forge-script-sequence";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_forge_script_sequence_sequence[label="sequence", path="/home/yibai/llmcc/sample/repos/foundry/crates/script-sequence/src"];
+  }
+
+  subgraph cluster_forge_verify {
+    label="forge-verify";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_forge_verify_etherscan[label="etherscan", path="/home/yibai/llmcc/sample/repos/foundry/crates/verify/src/etherscan"];
+    mod_forge_verify_retry[label="retry", path="/home/yibai/llmcc/sample/repos/foundry/crates/verify/src"];
+    mod_forge_verify_types[label="types", path="/home/yibai/llmcc/sample/repos/foundry/crates/verify/src"];
+    mod_forge_verify_utils[label="utils", path="/home/yibai/llmcc/sample/repos/foundry/crates/verify/src"];
+    mod_forge_verify_verify[label="verify", path="/home/yibai/llmcc/sample/repos/foundry/crates/verify/src"];
+  }
+
+  subgraph cluster_foundry_cheatcodes {
+    label="foundry-cheatcodes";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_foundry_cheatcodes_crypto[label="crypto", path="/home/yibai/llmcc/sample/repos/foundry/crates/cheatcodes/src"];
+    mod_foundry_cheatcodes_error[label="error", path="/home/yibai/llmcc/sample/repos/foundry/crates/cheatcodes/src"];
+    mod_foundry_cheatcodes_evm[label="evm", path="/home/yibai/llmcc/sample/repos/foundry/crates/cheatcodes/src"];
+    mod_foundry_cheatcodes_fs[label="fs", path="/home/yibai/llmcc/sample/repos/foundry/crates/cheatcodes/src"];
+    mod_foundry_cheatcodes_inspector[label="inspector", path="/home/yibai/llmcc/sample/repos/foundry/crates/cheatcodes/src/inspector"];
+    mod_foundry_cheatcodes_json[label="json", path="/home/yibai/llmcc/sample/repos/foundry/crates/cheatcodes/src"];
+    mod_foundry_cheatcodes_lib[label="lib", path="/home/yibai/llmcc/sample/repos/foundry/crates/cheatcodes/src"];
+    mod_foundry_cheatcodes_script[label="script", path="/home/yibai/llmcc/sample/repos/foundry/crates/cheatcodes/src"];
+    mod_foundry_cheatcodes_test[label="test", path="/home/yibai/llmcc/sample/repos/foundry/crates/cheatcodes/src"];
+    mod_foundry_cheatcodes_utils[label="utils", path="/home/yibai/llmcc/sample/repos/foundry/crates/cheatcodes/src"];
+  }
+
+  subgraph cluster_foundry_cheatcodes_spec {
+    label="foundry-cheatcodes-spec";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_foundry_cheatcodes_spec_function[label="function", path="/home/yibai/llmcc/sample/repos/foundry/crates/cheatcodes/spec/src"];
+    mod_foundry_cheatcodes_spec_items[label="items", path="/home/yibai/llmcc/sample/repos/foundry/crates/cheatcodes/spec/src"];
+    mod_foundry_cheatcodes_spec_lib[label="lib", path="/home/yibai/llmcc/sample/repos/foundry/crates/cheatcodes/spec/src"];
+  }
+
+  subgraph cluster_foundry_cli {
+    label="foundry-cli";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_foundry_cli_opts[label="opts", path="/home/yibai/llmcc/sample/repos/foundry/crates/cli/src/opts"];
+    mod_foundry_cli_utils[label="utils", path="/home/yibai/llmcc/sample/repos/foundry/crates/cli/src/utils"];
+  }
+
+  subgraph cluster_foundry_common {
+    label="foundry-common";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_foundry_common_abi[label="abi", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src"];
+    mod_foundry_common_build[label="build", path="/home/yibai/llmcc/sample/repos/foundry/crates/common"];
+    mod_foundry_common_comments[label="comments", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src/comments"];
+    mod_foundry_common_compile[label="compile", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src"];
+    mod_foundry_common_contracts[label="contracts", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src"];
+    mod_foundry_common_fs[label="fs", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src"];
+    mod_foundry_common_io[label="io", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src/io"];
+    mod_foundry_common_preprocessor[label="preprocessor", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src/preprocessor"];
+    mod_foundry_common_selectors[label="selectors", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src"];
+    mod_foundry_common_serde_helpers[label="serde_helpers", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src"];
+    mod_foundry_common_slot_identifier[label="slot_identifier", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src"];
+    mod_foundry_common_traits[label="traits", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src"];
+    mod_foundry_common_transactions[label="transactions", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src"];
+    mod_foundry_common_utils[label="utils", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src"];
+  }
+
+  subgraph cluster_foundry_common_fmt {
+    label="foundry-common-fmt";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_foundry_common_fmt_dynamic[label="dynamic", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/fmt/src"];
+    mod_foundry_common_fmt_ui[label="ui", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/fmt/src"];
+  }
+
+  subgraph cluster_foundry_config {
+    label="foundry-config";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_foundry_config_compilation[label="compilation", path="/home/yibai/llmcc/sample/repos/foundry/crates/config/src"];
+    mod_foundry_config_error[label="error", path="/home/yibai/llmcc/sample/repos/foundry/crates/config/src"];
+    mod_foundry_config_fmt[label="fmt", path="/home/yibai/llmcc/sample/repos/foundry/crates/config/src"];
+    mod_foundry_config_fuzz[label="fuzz", path="/home/yibai/llmcc/sample/repos/foundry/crates/config/src"];
+    mod_foundry_config_invariant[label="invariant", path="/home/yibai/llmcc/sample/repos/foundry/crates/config/src"];
+    mod_foundry_config_lib[label="lib", path="/home/yibai/llmcc/sample/repos/foundry/crates/config/src"];
+    mod_foundry_config_lint[label="lint", path="/home/yibai/llmcc/sample/repos/foundry/crates/config/src"];
+    mod_foundry_config_providers[label="providers", path="/home/yibai/llmcc/sample/repos/foundry/crates/config/src/providers"];
+    mod_foundry_config_utils[label="utils", path="/home/yibai/llmcc/sample/repos/foundry/crates/config/src"];
+  }
+
+  subgraph cluster_foundry_debugger {
+    label="foundry-debugger";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_foundry_debugger_debugger[label="debugger", path="/home/yibai/llmcc/sample/repos/foundry/crates/debugger/src"];
+    mod_foundry_debugger_tui[label="tui", path="/home/yibai/llmcc/sample/repos/foundry/crates/debugger/src/tui"];
+  }
+
+  subgraph cluster_foundry_evm {
+    label="foundry-evm";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_foundry_evm_executors[label="executors", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/evm/src/executors"];
+    mod_foundry_evm_inspectors[label="inspectors", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/evm/src/inspectors"];
+  }
+
+  subgraph cluster_foundry_evm_core {
+    label="foundry-evm-core";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_foundry_evm_core_backend[label="backend", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/backend"];
+    mod_foundry_evm_core_env[label="env", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src"];
+    mod_foundry_evm_core_evm[label="evm", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src"];
+    mod_foundry_evm_core_fork[label="fork", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/fork"];
+    mod_foundry_evm_core_ic[label="ic", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src"];
+    mod_foundry_evm_core_lib[label="lib", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src"];
+    mod_foundry_evm_core_opts[label="opts", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src"];
+    mod_foundry_evm_core_state_snapshot[label="state_snapshot", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src"];
+    mod_foundry_evm_core_utils[label="utils", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src"];
+  }
+
+  subgraph cluster_foundry_evm_coverage {
+    label="foundry-evm-coverage";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_foundry_evm_coverage_analysis[label="analysis", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/coverage/src"];
+    mod_foundry_evm_coverage_anchors[label="anchors", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/coverage/src"];
+    mod_foundry_evm_coverage_inspector[label="inspector", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/coverage/src"];
+    mod_foundry_evm_coverage_lib[label="lib", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/coverage/src"];
+  }
+
+  subgraph cluster_foundry_evm_fuzz {
+    label="foundry-evm-fuzz";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_foundry_evm_fuzz_inspector[label="inspector", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/fuzz/src"];
+    mod_foundry_evm_fuzz_invariant[label="invariant", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/fuzz/src/invariant"];
+    mod_foundry_evm_fuzz_lib[label="lib", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/fuzz/src"];
+    mod_foundry_evm_fuzz_strategies[label="strategies", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/fuzz/src/strategies"];
+  }
+
+  subgraph cluster_foundry_evm_networks {
+    label="foundry-evm-networks";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_foundry_evm_networks_lib[label="lib", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/networks/src"];
+  }
+
+  subgraph cluster_foundry_evm_traces {
+    label="foundry-evm-traces";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_foundry_evm_traces_decoder[label="decoder", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/traces/src/decoder"];
+    mod_foundry_evm_traces_identifier[label="identifier", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/traces/src/identifier"];
+    mod_foundry_evm_traces_lib[label="lib", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/traces/src"];
+  }
+
+  subgraph cluster_foundry_macros {
+    label="foundry-macros";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_foundry_macros_cheatcodes[label="cheatcodes", path="/home/yibai/llmcc/sample/repos/foundry/crates/macros/src"];
+  }
+
+  subgraph cluster_foundry_primitives {
+    label="foundry-primitives";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_foundry_primitives_network[label="network", path="/home/yibai/llmcc/sample/repos/foundry/crates/primitives/src/network"];
+    mod_foundry_primitives_transaction[label="transaction", path="/home/yibai/llmcc/sample/repos/foundry/crates/primitives/src/transaction"];
+  }
+
+  subgraph cluster_foundry_test_utils {
+    label="foundry-test-utils";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_foundry_test_utils_lib[label="lib", path="/home/yibai/llmcc/sample/repos/foundry/crates/test-utils/src"];
+    mod_foundry_test_utils_prj[label="prj", path="/home/yibai/llmcc/sample/repos/foundry/crates/test-utils/src"];
+    mod_foundry_test_utils_rpc[label="rpc", path="/home/yibai/llmcc/sample/repos/foundry/crates/test-utils/src"];
+    mod_foundry_test_utils_script[label="script", path="/home/yibai/llmcc/sample/repos/foundry/crates/test-utils/src"];
+    mod_foundry_test_utils_ui_runner[label="ui_runner", path="/home/yibai/llmcc/sample/repos/foundry/crates/test-utils/src"];
+    mod_foundry_test_utils_util[label="util", path="/home/yibai/llmcc/sample/repos/foundry/crates/test-utils/src"];
+  }
+
+  subgraph cluster_foundry_wallets {
+    label="foundry-wallets";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_foundry_wallets_opts[label="opts", path="/home/yibai/llmcc/sample/repos/foundry/crates/wallets/src"];
+    mod_foundry_wallets_signer[label="signer", path="/home/yibai/llmcc/sample/repos/foundry/crates/wallets/src"];
+    mod_foundry_wallets_utils[label="utils", path="/home/yibai/llmcc/sample/repos/foundry/crates/wallets/src"];
+    mod_foundry_wallets_wallet_multi[label="wallet_multi", path="/home/yibai/llmcc/sample/repos/foundry/crates/wallets/src/wallet_multi"];
+  }
+
+
+  mod_anvil_cmd -> mod_anvil_eth;
+  mod_anvil_config -> mod_anvil_eth;
+  mod_anvil_config -> mod_anvil_evm;
+  mod_anvil_core_eth -> mod_foundry_cheatcodes_spec_items;
+  mod_anvil_core_eth -> mod_foundry_primitives_transaction;
+  mod_anvil_eth -> mod_anvil_config;
+  mod_anvil_eth -> mod_anvil_core_eth;
+  mod_anvil_eth -> mod_anvil_evm;
+  mod_anvil_eth -> mod_foundry_cheatcodes_error;
+  mod_anvil_eth -> mod_foundry_common_io;
+  mod_anvil_eth -> mod_foundry_evm_inspectors;
+  mod_anvil_eth -> mod_foundry_evm_networks_lib;
+  mod_anvil_eth -> mod_foundry_evm_traces_decoder;
+  mod_anvil_eth -> mod_foundry_primitives_network;
+  mod_anvil_eth -> mod_foundry_primitives_transaction;
+  mod_anvil_lib -> mod_anvil_config;
+  mod_anvil_lib -> mod_anvil_eth;
+  mod_anvil_lib -> mod_anvil_shutdown;
+  mod_anvil_pubsub -> mod_anvil_core_eth;
+  mod_anvil_pubsub -> mod_anvil_eth;
+  mod_anvil_rpc_response -> mod_anvil_rpc_error;
+  mod_anvil_rpc_response -> mod_anvil_rpc_request;
+  mod_anvil_server -> mod_anvil_eth;
+  mod_anvil_server -> mod_anvil_rpc_response;
+  mod_anvil_server -> mod_anvil_server_config;
+  mod_anvil_server_handler -> mod_anvil_rpc_request;
+  mod_anvil_server_handler -> mod_anvil_rpc_response;
+  mod_anvil_server_handler -> mod_anvil_server_lib;
+  mod_anvil_server_handler -> mod_foundry_common_utils;
+  mod_anvil_server_lib -> mod_anvil_server_config;
+  mod_anvil_service -> mod_anvil_eth;
+  mod_anvil_tasks -> mod_anvil_shutdown;
+  mod_cast_args -> mod_foundry_cli_utils;
+  mod_cast_args -> mod_foundry_common_fs;
+  mod_cast_args -> mod_foundry_common_io;
+  mod_cast_cmd -> mod_cast_tx;
+  mod_cast_cmd -> mod_forge_cmd;
+  mod_cast_cmd -> mod_foundry_cheatcodes_error;
+  mod_cast_cmd -> mod_foundry_cli_opts;
+  mod_cast_cmd -> mod_foundry_common_io;
+  mod_cast_cmd -> mod_foundry_config_lib;
+  mod_cast_cmd -> mod_foundry_wallets_opts;
+  mod_cast_opts -> mod_cast_cmd;
+  mod_cast_opts -> mod_foundry_cli_opts;
+  mod_cast_tx -> mod_foundry_cli_opts;
+  mod_chisel_args -> mod_chisel_dispatcher;
+  mod_chisel_args -> mod_chisel_opts;
+  mod_chisel_args -> mod_foundry_cli_utils;
+  mod_chisel_executor -> mod_foundry_evm_inspectors;
+  mod_chisel_opts -> mod_foundry_cli_opts;
+  mod_forge_args -> mod_foundry_cli_utils;
+  mod_forge_cmd -> mod_anvil_rpc_request;
+  mod_forge_cmd -> mod_forge_coverage;
+  mod_forge_cmd -> mod_forge_fmt_lib;
+  mod_forge_cmd -> mod_forge_gas_report;
+  mod_forge_cmd -> mod_forge_result;
+  mod_forge_cmd -> mod_foundry_cheatcodes_error;
+  mod_forge_cmd -> mod_foundry_cli_opts;
+  mod_forge_cmd -> mod_foundry_cli_utils;
+  mod_forge_cmd -> mod_foundry_common_compile;
+  mod_forge_cmd -> mod_foundry_common_io;
+  mod_forge_cmd -> mod_foundry_config_lib;
+  mod_forge_fmt_lib -> mod_foundry_common_comments;
+  mod_forge_fmt_lib -> mod_foundry_common_io;
+  mod_forge_fmt_lib -> mod_foundry_config_fmt;
+  mod_forge_fmt_state -> mod_foundry_common_comments;
+  mod_forge_fmt_state -> mod_foundry_config_fmt;
+  mod_forge_lint_sol -> mod_forge_lint_linter;
+  mod_forge_lint_sol -> mod_foundry_config_lint;
+  mod_forge_multi_runner -> mod_foundry_common_traits;
+  mod_forge_multi_runner -> mod_foundry_config_lib;
+  mod_forge_multi_runner -> mod_foundry_evm_core_fork;
+  mod_forge_multi_runner -> mod_foundry_evm_networks_lib;
+  mod_forge_multi_runner -> mod_foundry_evm_traces_lib;
+  mod_forge_opts -> mod_forge_cmd;
+  mod_forge_opts -> mod_forge_verify_verify;
+  mod_forge_result -> mod_foundry_evm_coverage_lib;
+  mod_forge_result -> mod_foundry_evm_executors;
+  mod_forge_result -> mod_foundry_evm_fuzz_lib;
+  mod_forge_runner -> mod_forge_multi_runner;
+  mod_forge_runner -> mod_forge_result;
+  mod_forge_runner -> mod_foundry_evm_executors;
+  mod_forge_runner -> mod_foundry_evm_fuzz_lib;
+  mod_forge_script_broadcast -> mod_forge_script_lib;
+  mod_forge_script_build -> mod_cast_cmd;
+  mod_forge_script_build -> mod_forge_script_lib;
+  mod_forge_script_execute -> mod_cast_cmd;
+  mod_forge_script_execute -> mod_forge_script_build;
+  mod_forge_script_execute -> mod_forge_script_lib;
+  mod_forge_script_lib -> mod_foundry_cli_opts;
+  mod_forge_script_multi_sequence -> mod_forge_script_sequence_sequence;
+  mod_forge_script_simulate -> mod_cast_cmd;
+  mod_forge_script_simulate -> mod_forge_script_build;
+  mod_forge_script_simulate -> mod_forge_script_execute;
+  mod_forge_script_simulate -> mod_forge_script_lib;
+  mod_forge_script_verify -> mod_forge_script_lib;
+  mod_forge_script_verify -> mod_forge_script_sequence_sequence;
+  mod_forge_verify_etherscan -> mod_anvil_rpc_request;
+  mod_forge_verify_utils -> mod_forge_verify_types;
+  mod_forge_verify_utils -> mod_foundry_common_io;
+  mod_forge_verify_utils -> mod_foundry_config_lib;
+  mod_forge_verify_utils -> mod_foundry_evm_core_env;
+  mod_forge_verify_utils -> mod_foundry_evm_executors;
+  mod_forge_verify_verify -> mod_forge_verify_retry;
+  mod_forge_verify_verify -> mod_foundry_cli_opts;
+  mod_foundry_cheatcodes_crypto -> mod_foundry_cheatcodes_inspector;
+  mod_foundry_cheatcodes_crypto -> mod_foundry_common_io;
+  mod_foundry_cheatcodes_crypto -> mod_foundry_common_selectors;
+  mod_foundry_cheatcodes_evm -> mod_foundry_cheatcodes_inspector;
+  mod_foundry_cheatcodes_evm -> mod_foundry_cheatcodes_lib;
+  mod_foundry_cheatcodes_evm -> mod_foundry_config_lib;
+  mod_foundry_cheatcodes_evm -> mod_foundry_evm_inspectors;
+  mod_foundry_cheatcodes_fs -> mod_foundry_cheatcodes_error;
+  mod_foundry_cheatcodes_fs -> mod_foundry_cheatcodes_inspector;
+  mod_foundry_cheatcodes_inspector -> mod_foundry_cheatcodes_evm;
+  mod_foundry_cheatcodes_inspector -> mod_foundry_cheatcodes_lib;
+  mod_foundry_cheatcodes_inspector -> mod_foundry_cheatcodes_script;
+  mod_foundry_cheatcodes_json -> mod_foundry_common_fmt_dynamic;
+  mod_foundry_cheatcodes_json -> mod_foundry_evm_core_env;
+  mod_foundry_cheatcodes_script -> mod_foundry_cheatcodes_lib;
+  mod_foundry_cheatcodes_spec_lib -> mod_foundry_common_io;
+  mod_foundry_cheatcodes_test -> mod_foundry_cheatcodes_inspector;
+  mod_foundry_cheatcodes_utils -> mod_foundry_cheatcodes_inspector;
+  mod_foundry_cli_utils -> mod_anvil_eth;
+  mod_foundry_cli_utils -> mod_foundry_common_io;
+  mod_foundry_cli_utils -> mod_foundry_config_lib;
+  mod_foundry_cli_utils -> mod_foundry_evm_executors;
+  mod_foundry_cli_utils -> mod_foundry_evm_inspectors;
+  mod_foundry_cli_utils -> mod_foundry_evm_traces_decoder;
+  mod_foundry_common_abi -> mod_foundry_cheatcodes_spec_function;
+  mod_foundry_common_abi -> mod_foundry_cheatcodes_spec_items;
+  mod_foundry_common_build -> mod_foundry_common_io;
+  mod_foundry_common_comments -> mod_anvil_server_ipc;
+  mod_foundry_common_fs -> mod_cast_rlp_converter;
+  mod_foundry_common_preprocessor -> mod_foundry_evm_coverage_lib;
+  mod_foundry_common_serde_helpers -> mod_foundry_cheatcodes_spec_items;
+  mod_foundry_common_slot_identifier -> mod_foundry_cheatcodes_error;
+  mod_foundry_common_transactions -> mod_foundry_common_fmt_ui;
+  mod_foundry_config_error -> mod_foundry_cheatcodes_error;
+  mod_foundry_config_invariant -> mod_foundry_config_fuzz;
+  mod_foundry_config_lib -> mod_foundry_cheatcodes_error;
+  mod_foundry_config_lib -> mod_foundry_config_compilation;
+  mod_foundry_config_providers -> mod_foundry_cheatcodes_spec_items;
+  mod_foundry_config_utils -> mod_forge_fmt_lib;
+  mod_foundry_config_utils -> mod_foundry_cheatcodes_error;
+  mod_foundry_config_utils -> mod_foundry_config_lib;
+  mod_foundry_debugger_tui -> mod_foundry_debugger_debugger;
+  mod_foundry_evm_core_backend -> mod_anvil_eth;
+  mod_foundry_evm_core_backend -> mod_foundry_evm_core_env;
+  mod_foundry_evm_core_backend -> mod_foundry_evm_core_fork;
+  mod_foundry_evm_core_backend -> mod_foundry_evm_core_state_snapshot;
+  mod_foundry_evm_core_evm -> mod_foundry_evm_core_backend;
+  mod_foundry_evm_core_evm -> mod_foundry_evm_core_lib;
+  mod_foundry_evm_core_fork -> mod_anvil_eth;
+  mod_foundry_evm_core_state_snapshot -> mod_foundry_evm_core_backend;
+  mod_foundry_evm_core_utils -> mod_foundry_evm_core_env;
+  mod_foundry_evm_coverage_analysis -> mod_foundry_evm_coverage_lib;
+  mod_foundry_evm_coverage_anchors -> mod_foundry_evm_core_ic;
+  mod_foundry_evm_coverage_anchors -> mod_foundry_evm_coverage_lib;
+  mod_foundry_evm_coverage_inspector -> mod_foundry_evm_coverage_lib;
+  mod_foundry_evm_coverage_lib -> mod_anvil_rpc_request;
+  mod_foundry_evm_executors -> mod_foundry_common_contracts;
+  mod_foundry_evm_executors -> mod_foundry_config_fuzz;
+  mod_foundry_evm_executors -> mod_foundry_config_invariant;
+  mod_foundry_evm_executors -> mod_foundry_evm_core_opts;
+  mod_foundry_evm_executors -> mod_foundry_evm_coverage_lib;
+  mod_foundry_evm_executors -> mod_foundry_evm_fuzz_invariant;
+  mod_foundry_evm_executors -> mod_foundry_evm_fuzz_lib;
+  mod_foundry_evm_executors -> mod_foundry_evm_inspectors;
+  mod_foundry_evm_executors -> mod_foundry_evm_traces_lib;
+  mod_foundry_evm_fuzz_invariant -> mod_foundry_cheatcodes_spec_function;
+  mod_foundry_evm_fuzz_invariant -> mod_foundry_evm_fuzz_lib;
+  mod_foundry_evm_fuzz_lib -> mod_foundry_evm_traces_lib;
+  mod_foundry_evm_fuzz_strategies -> mod_foundry_cheatcodes_spec_function;
+  mod_foundry_evm_fuzz_strategies -> mod_foundry_evm_fuzz_invariant;
+  mod_foundry_evm_fuzz_strategies -> mod_foundry_evm_fuzz_lib;
+  mod_foundry_evm_inspectors -> mod_foundry_cheatcodes_spec_lib;
+  mod_foundry_evm_inspectors -> mod_foundry_evm_core_lib;
+  mod_foundry_evm_inspectors -> mod_foundry_evm_fuzz_inspector;
+  mod_foundry_evm_inspectors -> mod_foundry_evm_networks_lib;
+  mod_foundry_evm_inspectors -> mod_foundry_evm_traces_lib;
+  mod_foundry_evm_traces_decoder -> mod_foundry_cheatcodes_spec_items;
+  mod_foundry_evm_traces_decoder -> mod_foundry_common_io;
+  mod_foundry_evm_traces_identifier -> mod_foundry_common_selectors;
+  mod_foundry_evm_traces_lib -> mod_foundry_common_io;
+  mod_foundry_macros_cheatcodes -> mod_foundry_config_lib;
+  mod_foundry_test_utils_prj -> mod_foundry_common_io;
+  mod_foundry_test_utils_rpc -> mod_foundry_common_io;
+  mod_foundry_test_utils_script -> mod_foundry_test_utils_prj;
+  mod_foundry_test_utils_ui_runner -> mod_foundry_config_lib;
+  mod_foundry_test_utils_util -> mod_forge_fmt_lib;
+  mod_foundry_test_utils_util -> mod_foundry_common_io;
+  mod_foundry_test_utils_util -> mod_foundry_test_utils_lib;
+  mod_foundry_wallets_utils -> mod_foundry_evm_core_env;
+  mod_foundry_wallets_utils -> mod_foundry_wallets_signer;
+  mod_foundry_wallets_wallet_multi -> mod_foundry_wallets_signer;
+}

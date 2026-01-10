@@ -1,0 +1,1708 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_anvil {
+    label="anvil";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_config_rs {
+      label="config.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n43695[label="NodeConfig", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/config.rs:102", sym_ty="Struct", shape=box];
+      n49902[label="AccountGenerator", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/config.rs:1577", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_eth {
+      label="eth";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_api_rs {
+        label="api.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n49288[label="EthApi", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/api.rs:107", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_cheats_rs {
+        label="cheats.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n5889[label="CheatsManager", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/backend/cheats.rs:23", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_rs {
+        label="db.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n15400[label="StateDb", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/backend/db.rs:314", sym_ty="Struct", shape=box];
+        n13229[label="MaybeFullDatabase", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/backend/db.rs:39", sym_ty="Trait", shape=box];
+        n16638[label="SerializableState", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/backend/db.rs:485", sym_ty="Struct", shape=box];
+        n17745[label="SerializableHistoricalStates", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/backend/db.rs:649", sym_ty="Struct", shape=box];
+        n13725[label="Db", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/backend/db.rs:90", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_env_rs {
+        label="env.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n15703[label="Env", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/backend/env.rs:9", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_error_rs {
+        label="error.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n12457[label="InvalidTransactionError", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/error.rs:232", sym_ty="Enum", shape=box];
+        n10419[label="BlockchainError", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/error.rs:27", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_fees_rs {
+        label="fees.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n9155[label="FeeManager", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/fees.rs:41", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_fork_rs {
+        label="fork.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n24330[label="ClientFork", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/backend/fork.rs:42", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_info_rs {
+        label="info.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n4331[label="StorageInfo", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/backend/info.rs:16", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_miner_rs {
+        label="miner.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n33235[label="MiningMode", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/miner.rs:127", sym_ty="Enum", shape=box];
+        n32554[label="Miner", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/miner.rs:20", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n27492[label="DatabaseRef", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/backend/mem/mod.rs:147", sym_ty="Trait", shape=box];
+        n27771[label="Backend", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/backend/mem/mod.rs:185", sym_ty="Struct", shape=box];
+        n27968[label="Pool", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/pool/mod.rs:50", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_sign_rs {
+        label="sign.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n18403[label="Signer", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/sign.rs:13", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_storage_rs {
+        label="storage.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n18085[label="InMemoryBlockStates", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/backend/mem/storage.rs:48", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_time_rs {
+        label="time.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n41963[label="TimeManager", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/backend/time.rs:15", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_transactions_rs {
+        label="transactions.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n7686[label="PendingPoolTransaction", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/pool/transactions.rs:274", sym_ty="Struct", shape=box];
+        n8373[label="ReadyTransactions", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/pool/transactions.rs:383", sym_ty="Struct", shape=box];
+        n10158[label="ReadyTransaction", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/pool/transactions.rs:714", sym_ty="Struct", shape=box];
+        n6312[label="PoolTransaction", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/eth/pool/transactions.rs:72", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_evm_rs {
+      label="evm.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n31033[label="PrecompileFactory", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/evm.rs:7", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_filter_rs {
+      label="filter.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n41466[label="Filters", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/filter.rs:28", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n25406[label="try_spawn", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/lib.rs:138", sym_ty="Function", shape=ellipse];
+      n26210[label="NodeHandle", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/lib.rs:278", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_logging_rs {
+      label="logging.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n32804[label="LoggingManager", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/src/logging.rs:53", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_anvil_core {
+    label="anvil-core";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_eth {
+      label="eth";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n43079[label="EthRequest", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/core/src/eth/mod.rs:39", sym_ty="Enum", shape=box];
+        n27913[label="PendingTransaction", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/core/src/eth/transaction/mod.rs:162", sym_ty="Struct", shape=box];
+        n26788[label="MaybeImpersonatedTransaction", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/core/src/eth/transaction/mod.rs:22", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_anvil_rpc {
+    label="anvil-rpc";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_error_rs {
+      label="error.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n25425[label="RpcError", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/rpc/src/error.rs:8", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_request_rs {
+      label="request.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n22011[label="Version", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/rpc/src/request.rs:93", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_response_rs {
+      label="response.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n34252[label="ResponseResult", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/rpc/src/response.rs:38", sym_ty="Enum", shape=box];
+      n34545[label="Response", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/rpc/src/response.rs:67", sym_ty="Enum", shape=box];
+    }
+
+  }
+
+  subgraph cluster_anvil_server {
+    label="anvil-server";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_config_rs {
+      label="config.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n27485[label="ServerConfig", path="/home/yibai/llmcc/sample/repos/foundry/crates/anvil/server/src/config.rs:8", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_cast {
+    label="cast";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_args_rs {
+      label="args.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n45498[label="run", path="/home/yibai/llmcc/sample/repos/foundry/crates/cast/src/args.rs:33", sym_ty="Function", shape=ellipse];
+      n45605[label="run_command", path="/home/yibai/llmcc/sample/repos/foundry/crates/cast/src/args.rs:50", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_base_rs {
+      label="base.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n35980[label="Base", path="/home/yibai/llmcc/sample/repos/foundry/crates/cast/src/base.rs:18", sym_ty="Enum", shape=box];
+      n37336[label="NumberWithBase", path="/home/yibai/llmcc/sample/repos/foundry/crates/cast/src/base.rs:199", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_cmd {
+      label="cmd";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n13124[label="WalletSubcommands", path="/home/yibai/llmcc/sample/repos/foundry/crates/cast/src/cmd/wallet/mod.rs:30", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_debug_rs {
+      label="debug.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n12349[label="handle_traces", path="/home/yibai/llmcc/sample/repos/foundry/crates/cast/src/debug.rs:17", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_opts_rs {
+      label="opts.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n45473[label="CastSubcommand", path="/home/yibai/llmcc/sample/repos/foundry/crates/cast/src/opts.rs:36", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_tx_rs {
+      label="tx.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n4134[label="SenderKind", path="/home/yibai/llmcc/sample/repos/foundry/crates/cast/src/tx.rs:61", sym_ty="Enum", shape=box];
+    }
+
+  }
+
+  subgraph cluster_chisel {
+    label="chisel";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_args_rs {
+      label="args.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n41696[label="run", path="/home/yibai/llmcc/sample/repos/foundry/crates/chisel/src/args.rs:14", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_bin {
+      label="bin";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_main_rs {
+        label="main.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n19971[label="main", path="/home/yibai/llmcc/sample/repos/foundry/crates/chisel/bin/main.rs:8", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_dispatcher_rs {
+      label="dispatcher.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n1416[label="ChiselDispatcher", path="/home/yibai/llmcc/sample/repos/foundry/crates/chisel/src/dispatcher.rs:51", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_solidity_helper_rs {
+      label="solidity_helper.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n5335[label="SolidityHelper", path="/home/yibai/llmcc/sample/repos/foundry/crates/chisel/src/solidity_helper.rs:35", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_forge {
+    label="forge";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_args_rs {
+      label="args.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n22210[label="run", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge/src/args.rs:13", sym_ty="Function", shape=ellipse];
+      n22266[label="setup", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge/src/args.rs:23", sym_ty="Function", shape=ellipse];
+      n22314[label="run_command", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge/src/args.rs:31", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_cmd {
+      label="cmd";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_bind_rs {
+        label="bind.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n30745[label="Filter", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge/src/cmd/bind.rs:264", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_lockfile_rs {
+      label="lockfile.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n19320[label="Lockfile", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge/src/lockfile.rs:19", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_multi_runner_rs {
+      label="multi_runner.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n12637[label="MultiContractRunnerBuilder", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge/src/multi_runner.rs:406", sym_ty="Struct", shape=box];
+      n9851[label="MultiContractRunner", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge/src/multi_runner.rs:54", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_opts_rs {
+      label="opts.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n4058[label="ForgeSubcommand", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge/src/opts.rs:34", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_result_rs {
+      label="result.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n25933[label="SuiteResult", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge/src/result.rs:221", sym_ty="Struct", shape=box];
+      n24185[label="TestOutcome", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge/src/result.rs:32", sym_ty="Struct", shape=box];
+      n27351[label="TestResult", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge/src/result.rs:388", sym_ty="Struct", shape=box];
+      n30029[label="TestSetup", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge/src/result.rs:890", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_runner_rs {
+      label="runner.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n9096[label="FunctionRunner", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge/src/runner.rs:460", sym_ty="Struct", shape=box];
+      n5537[label="ContractRunner", path="/home/yibai/llmcc/sample/repos/foundry/crates/forge/src/runner.rs:57", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_forge_fmt {
+    label="forge-fmt";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n37144[label="format", path="/home/yibai/llmcc/sample/repos/foundry/crates/fmt/src/lib.rs:119", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_pp {
+      label="pp";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n12378[label="BreakToken", path="/home/yibai/llmcc/sample/repos/foundry/crates/fmt/src/pp/mod.rs:41", sym_ty="Struct", shape=box];
+        n12488[label="Token", path="/home/yibai/llmcc/sample/repos/foundry/crates/fmt/src/pp/mod.rs:57", sym_ty="Enum", shape=box];
+        n12608[label="Printer", path="/home/yibai/llmcc/sample/repos/foundry/crates/fmt/src/pp/mod.rs:76", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_ring_rs {
+        label="ring.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n724[label="RingBuffer", path="/home/yibai/llmcc/sample/repos/foundry/crates/fmt/src/pp/ring.rs:7", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_state {
+      label="state";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_common_rs {
+        label="common.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n49238[label="ListFormat", path="/home/yibai/llmcc/sample/repos/foundry/crates/fmt/src/state/common.rs:782", sym_ty="Struct", shape=box];
+        n49273[label="ListFormatKind", path="/home/yibai/llmcc/sample/repos/foundry/crates/fmt/src/state/common.rs:799", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n40219[label="State", path="/home/yibai/llmcc/sample/repos/foundry/crates/fmt/src/state/mod.rs:100", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_forge_lint {
+    label="forge-lint";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_sol {
+      label="sol";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n1855[label="SolLint", path="/home/yibai/llmcc/sample/repos/foundry/crates/lint/src/sol/mod.rs:358", sym_ty="Struct", shape=box];
+        n728[label="SolidityLinter", path="/home/yibai/llmcc/sample/repos/foundry/crates/lint/src/sol/mod.rs:55", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_forge_script {
+    label="forge-script";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n32310[label="ScriptConfig", path="/home/yibai/llmcc/sample/repos/foundry/crates/script/src/lib.rs:575", sym_ty="Struct", shape=box];
+      n28867[label="ScriptArgs", path="/home/yibai/llmcc/sample/repos/foundry/crates/script/src/lib.rs:78", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_verify_rs {
+      label="verify.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n19883[label="verify_contracts", path="/home/yibai/llmcc/sample/repos/foundry/crates/script/src/verify.rs:180", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_forge_script_sequence {
+    label="forge-script-sequence";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_sequence_rs {
+      label="sequence.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n30776[label="ScriptSequence", path="/home/yibai/llmcc/sample/repos/foundry/crates/script-sequence/src/sequence.rs:27", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_transaction_rs {
+      label="transaction.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n30890[label="TransactionWithMetadata", path="/home/yibai/llmcc/sample/repos/foundry/crates/script-sequence/src/transaction.rs:18", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_forge_verify {
+    label="forge-verify";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_provider_rs {
+      label="provider.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n2721[label="VerificationContext", path="/home/yibai/llmcc/sample/repos/foundry/crates/verify/src/provider.rs:23", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_verify_rs {
+      label="verify.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n32508[label="VerifyArgs", path="/home/yibai/llmcc/sample/repos/foundry/crates/verify/src/verify.rs:64", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_foundry_cheatcodes {
+    label="foundry-cheatcodes";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_config_rs {
+      label="config.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n7661[label="CheatsConfig", path="/home/yibai/llmcc/sample/repos/foundry/crates/cheatcodes/src/config.rs:20", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_error_rs {
+      label="error.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n6823[label="Error", path="/home/yibai/llmcc/sample/repos/foundry/crates/cheatcodes/src/error.rs:71", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_inspector_rs {
+      label="inspector.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n53390[label="Cheatcodes", path="/home/yibai/llmcc/sample/repos/foundry/crates/cheatcodes/src/inspector.rs:379", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n34894[label="CheatsCtxt", path="/home/yibai/llmcc/sample/repos/foundry/crates/cheatcodes/src/lib.rs:129", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_script_rs {
+      label="script.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n31406[label="Wallets", path="/home/yibai/llmcc/sample/repos/foundry/crates/cheatcodes/src/script.rs:303", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_foundry_cheatcodes_spec {
+    label="foundry-cheatcodes-spec";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_function_rs {
+      label="function.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n3877[label="Function", path="/home/yibai/llmcc/sample/repos/foundry/crates/cheatcodes/spec/src/function.rs:9", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_items_rs {
+      label="items.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n32453[label="Event", path="/home/yibai/llmcc/sample/repos/foundry/crates/cheatcodes/spec/src/items.rs:28", sym_ty="Struct", shape=box];
+      n32304[label="Error", path="/home/yibai/llmcc/sample/repos/foundry/crates/cheatcodes/spec/src/items.rs:8", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_foundry_cli {
+    label="foundry-cli";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_opts {
+      label="opts";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_evm_rs {
+        label="evm.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n3344[label="id", path="/home/yibai/llmcc/sample/repos/foundry/crates/cli/src/opts/evm.rs:264", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_rpc_rs {
+        label="rpc.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n20073[label="EtherscanOpts", path="/home/yibai/llmcc/sample/repos/foundry/crates/cli/src/opts/rpc.rs:129", sym_ty="Struct", shape=box];
+        n19142[label="RpcOpts", path="/home/yibai/llmcc/sample/repos/foundry/crates/cli/src/opts/rpc.rs:21", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_utils {
+      label="utils";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n18281[label="now", path="/home/yibai/llmcc/sample/repos/foundry/crates/cli/src/utils/mod.rs:186", sym_ty="Function", shape=ellipse];
+        n18316[label="common_setup", path="/home/yibai/llmcc/sample/repos/foundry/crates/cli/src/utils/mod.rs:191", sym_ty="Function", shape=ellipse];
+        n19304[label="Git", path="/home/yibai/llmcc/sample/repos/foundry/crates/cli/src/utils/mod.rs:322", sym_ty="Struct", shape=box];
+        n17571[label="subscriber", path="/home/yibai/llmcc/sample/repos/foundry/crates/cli/src/utils/mod.rs:86", sym_ty="Function", shape=ellipse];
+        n17642[label="env_filter", path="/home/yibai/llmcc/sample/repos/foundry/crates/cli/src/utils/mod.rs:93", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_foundry_common {
+    label="foundry-common";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_comments {
+      label="comments";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_comment_rs {
+        label="comment.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n4872[label="Comment", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src/comments/comment.rs:36", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n4830[label="Comments", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src/comments/mod.rs:17", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_contracts_rs {
+      label="contracts.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n19095[label="ContractsByArtifact", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src/contracts.rs:171", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_fs_rs {
+      label="fs.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n7229[label="read", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src/fs.rs:28", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_io {
+      label="io";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_shell_rs {
+        label="shell.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n17237[label="ColorChoice", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src/io/shell.rs:157", sym_ty="Enum", shape=box];
+        n16581[label="is_json", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src/io/shell.rs:42", sym_ty="Function", shape=ellipse];
+        n19618[label="supports_color", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src/io/shell.rs:501", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_stdin_rs {
+        label="stdin.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n16274[label="unwrap", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src/io/stdin.rs:11", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_mapping_slots_rs {
+      label="mapping_slots.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n25378[label="MappingSlots", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src/mapping_slots.rs:12", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_selectors_rs {
+      label="selectors.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n5369[label="Signature", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src/selectors.rs:581", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_traits_rs {
+      label="traits.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n11[label="TestFilter", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src/traits.rs:9", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_transactions_rs {
+      label="transactions.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n13459[label="TransactionMaybeSigned", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/src/transactions.rs:183", sym_ty="Enum", shape=box];
+    }
+
+  }
+
+  subgraph cluster_foundry_common_fmt {
+    label="foundry-common-fmt";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_ui_rs {
+      label="ui.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n39807[label="UIfmt", path="/home/yibai/llmcc/sample/repos/foundry/crates/common/fmt/src/ui.rs:32", sym_ty="Trait", shape=box];
+    }
+
+  }
+
+  subgraph cluster_foundry_config {
+    label="foundry-config";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_error_rs {
+      label="error.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n23923[label="SolidityErrorCode", path="/home/yibai/llmcc/sample/repos/foundry/crates/config/src/error.rs:104", sym_ty="Enum", shape=box];
+      n23293[label="ExtractConfigError", path="/home/yibai/llmcc/sample/repos/foundry/crates/config/src/error.rs:9", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_filter_rs {
+      label="filter.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n21470[label="GlobMatcher", path="/home/yibai/llmcc/sample/repos/foundry/crates/config/src/filter.rs:29", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_fmt_rs {
+      label="fmt.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n10184[label="FormatterConfig", path="/home/yibai/llmcc/sample/repos/foundry/crates/config/src/fmt.rs:7", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_inline {
+      label="inline";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n42637[label="InlineConfig", path="/home/yibai/llmcc/sample/repos/foundry/crates/config/src/inline/mod.rs:44", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_invariant_rs {
+      label="invariant.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n21697[label="InvariantConfig", path="/home/yibai/llmcc/sample/repos/foundry/crates/config/src/invariant.rs:9", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n119[label="Config", path="/home/yibai/llmcc/sample/repos/foundry/crates/config/src/lib.rs:166", sym_ty="Struct", shape=box];
+      n500[label="DenyLevel", path="/home/yibai/llmcc/sample/repos/foundry/crates/config/src/lib.rs:574", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_lint_rs {
+      label="lint.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n32090[label="Severity", path="/home/yibai/llmcc/sample/repos/foundry/crates/config/src/lint.rs:50", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_utils_rs {
+      label="utils.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n32922[label="load_config", path="/home/yibai/llmcc/sample/repos/foundry/crates/config/src/utils.rs:21", sym_ty="Function", shape=ellipse];
+      n32942[label="load_config_with_root", path="/home/yibai/llmcc/sample/repos/foundry/crates/config/src/utils.rs:26", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_foundry_debugger {
+    label="foundry-debugger";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_builder_rs {
+      label="builder.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n23687[label="DebuggerBuilder", path="/home/yibai/llmcc/sample/repos/foundry/crates/debugger/src/builder.rs:12", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_debugger_rs {
+      label="debugger.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n2032[label="DebuggerContext", path="/home/yibai/llmcc/sample/repos/foundry/crates/debugger/src/debugger.rs:10", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_node_rs {
+      label="node.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n20180[label="DebugNode", path="/home/yibai/llmcc/sample/repos/foundry/crates/debugger/src/node.rs:8", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_tui {
+      label="tui";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_context_rs {
+        label="context.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n3276[label="TUIContext", path="/home/yibai/llmcc/sample/repos/foundry/crates/debugger/src/tui/context.rs:19", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_foundry_evm {
+    label="foundry-evm";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_executors {
+      label="executors";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_builder_rs {
+        label="builder.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n24237[label="ExecutorBuilder", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/evm/src/executors/builder.rs:14", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n33458[label="InvariantTest", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/evm/src/executors/invariant/mod.rs:148", sym_ty="Struct", shape=box];
+        n45875[label="RawCallResult", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/evm/src/executors/mod.rs:834", sym_ty="Struct", shape=box];
+        n40613[label="Executor", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/evm/src/executors/mod.rs:92", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_inspectors {
+      label="inspectors";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_stack_rs {
+        label="stack.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n26159[label="InspectorData", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/evm/src/inspectors/stack.rs:276", sym_ty="Struct", shape=box];
+        n26301[label="InspectorStack", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/evm/src/inspectors/stack.rs:309", sym_ty="Struct", shape=box];
+        n26650[label="InspectorStackRefMut", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/evm/src/inspectors/stack.rs:356", sym_ty="Struct", shape=box];
+        n25033[label="InspectorStackBuilder", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/evm/src/inspectors/stack.rs:42", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_foundry_evm_core {
+    label="foundry-evm-core";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_backend {
+      label="backend";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_cow_rs {
+        label="cow.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n20377[label="CowBackend", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/backend/cow.rs:45", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_in_memory_db_rs {
+        label="in_memory_db.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n34487[label="MemDb", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/backend/in_memory_db.rs:23", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n49854[label="Fork", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/backend/mod.rs:1593", sym_ty="Struct", shape=box];
+        n49891[label="BackendInner", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/backend/mod.rs:1612", sym_ty="Struct", shape=box];
+        n45006[label="Backend", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/backend/mod.rs:436", sym_ty="Struct", shape=box];
+        n43026[label="DatabaseExt", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/backend/mod.rs:80", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_snapshot_rs {
+        label="snapshot.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n389[label="StateSnapshot", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/backend/snapshot.rs:12", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_buffer_rs {
+      label="buffer.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n36353[label="BufferKind", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/buffer.rs:6", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_decode_rs {
+      label="decode.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n35225[label="RevertDecoder", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/decode.rs:63", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_env_rs {
+      label="env.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n22944[label="Env", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/env.rs:10", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_evm_rs {
+      label="evm.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n32935[label="FoundryEvm", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/evm.rs:119", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_fork {
+      label="fork";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_database_rs {
+        label="database.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n4429[label="ForkDbStateSnapshot", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/fork/database.rs:206", sym_ty="Struct", shape=box];
+        n34[label="ForkedDatabase", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/fork/database.rs:26", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n17572[label="CreateFork", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/fork/mod.rs:14", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_multi_rs {
+        label="multi.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n29192[label="Request", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/fork/multi.rs:212", sym_ty="Enum", shape=box];
+        n27111[label="ForkId", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/fork/multi.rs:34", sym_ty="Struct", shape=box];
+        n27645[label="MultiFork", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/fork/multi.rs:70", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n622[label="InspectorExt", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/lib.rs:49", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_opts_rs {
+      label="opts.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n14123[label="EvmOpts", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/opts.rs:23", sym_ty="Struct", shape=box];
+      n15168[label="Env", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/opts.rs:273", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_state_snapshot_rs {
+      label="state_snapshot.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n34381[label="StateSnapshots", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/core/src/state_snapshot.rs:7", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_foundry_evm_coverage {
+    label="foundry-evm-coverage";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_analysis_rs {
+      label="analysis.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n5474[label="SourceVisitor", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/coverage/src/analysis.rs:20", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n24930[label="HitMaps", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/coverage/src/lib.rs:169", sym_ty="Struct", shape=box];
+      n25726[label="HitMap", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/coverage/src/lib.rs:214", sym_ty="Struct", shape=box];
+      n26197[label="ContractId", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/coverage/src/lib.rs:285", sym_ty="Struct", shape=box];
+      n26778[label="CoverageItem", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/coverage/src/lib.rs:375", sym_ty="Struct", shape=box];
+      n23916[label="CoverageReport", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/coverage/src/lib.rs:39", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_foundry_evm_fuzz {
+    label="foundry-evm-fuzz";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_invariant {
+      label="invariant";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n26743[label="FuzzRunIdentifiedContracts", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/fuzz/src/invariant/mod.rs:22", sym_ty="Struct", shape=box];
+        n27490[label="TargetedContracts", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/fuzz/src/invariant/mod.rs:99", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n40347[label="FuzzCase", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/fuzz/src/lib.rs:309", sym_ty="Struct", shape=box];
+      n40406[label="FuzzedCases", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/fuzz/src/lib.rs:321", sym_ty="Struct", shape=box];
+      n40986[label="FuzzFixtures", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/fuzz/src/lib.rs:395", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_strategies {
+      label="strategies";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_state_rs {
+        label="state.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n5259[label="FuzzDictionary", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/fuzz/src/strategies/state.rs:144", sym_ty="Struct", shape=box];
+        n4646[label="EvmFuzzState", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/fuzz/src/strategies/state.rs:33", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_foundry_evm_networks {
+    label="foundry-evm-networks";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n3000[label="NetworkConfigs", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/networks/src/lib.rs:23", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_foundry_evm_traces {
+    label="foundry-evm-traces";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_debug {
+      label="debug";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_sources_rs {
+        label="sources.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n2273[label="ContractSources", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/traces/src/debug/sources.rs:124", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_decoder {
+      label="decoder";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n1315[label="CallTraceDecoder", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/traces/src/decoder/mod.rs:118", sym_ty="Struct", shape=box];
+        n972[label="CallTraceDecoderBuilder", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/traces/src/decoder/mod.rs:34", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_identifier {
+      label="identifier";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_signatures_rs {
+        label="signatures.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n10718[label="SignaturesIdentifier", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/traces/src/identifier/signatures.rs:152", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n5898[label="TraceMode", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/traces/src/lib.rs:302", sym_ty="Enum", shape=box];
+      n4184[label="SparsedTraceArena", path="/home/yibai/llmcc/sample/repos/foundry/crates/evm/traces/src/lib.rs:61", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_foundry_primitives {
+    label="foundry-primitives";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_network {
+      label="network";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_receipt_rs {
+        label="receipt.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n20690[label="FoundryTxReceipt", path="/home/yibai/llmcc/sample/repos/foundry/crates/primitives/src/network/receipt.rs:13", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_transaction {
+      label="transaction";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_envelope_rs {
+        label="envelope.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n39490[label="FoundryTxEnvelope", path="/home/yibai/llmcc/sample/repos/foundry/crates/primitives/src/transaction/envelope.rs:30", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_receipt_rs {
+        label="receipt.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n9071[label="FoundryReceiptEnvelope", path="/home/yibai/llmcc/sample/repos/foundry/crates/primitives/src/transaction/receipt.rs:19", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_request_rs {
+        label="request.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n35291[label="FoundryTransactionRequest", path="/home/yibai/llmcc/sample/repos/foundry/crates/primitives/src/transaction/request.rs:22", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_foundry_test_utils {
+    label="foundry-test-utils";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_filter_rs {
+      label="filter.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n13721[label="Filter", path="/home/yibai/llmcc/sample/repos/foundry/crates/test-utils/src/filter.rs:6", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_prj_rs {
+      label="prj.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n34874[label="TestProject", path="/home/yibai/llmcc/sample/repos/foundry/crates/test-utils/src/prj.rs:170", sym_ty="Struct", shape=box];
+      n38047[label="TestCommand", path="/home/yibai/llmcc/sample/repos/foundry/crates/test-utils/src/prj.rs:540", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_script_rs {
+      label="script.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n26644[label="ScriptTester", path="/home/yibai/llmcc/sample/repos/foundry/crates/test-utils/src/script.rs:31", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_foundry_wallets {
+    label="foundry-wallets";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_error_rs {
+      label="error.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n31511[label="WalletSignerError", path="/home/yibai/llmcc/sample/repos/foundry/crates/wallets/src/error.rs:29", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_opts_rs {
+      label="opts.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n15898[label="WalletOpts", path="/home/yibai/llmcc/sample/repos/foundry/crates/wallets/src/opts.rs:18", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_signer_rs {
+      label="signer.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n25047[label="WalletSigner", path="/home/yibai/llmcc/sample/repos/foundry/crates/wallets/src/signer.rs:38", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_wallet_browser {
+      label="wallet_browser";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_error_rs {
+        label="error.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n17419[label="BrowserWalletError", path="/home/yibai/llmcc/sample/repos/foundry/crates/wallets/src/wallet_browser/error.rs:4", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_server_rs {
+        label="server.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n33169[label="BrowserWalletServer", path="/home/yibai/llmcc/sample/repos/foundry/crates/wallets/src/wallet_browser/server.rs:27", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_signer_rs {
+        label="signer.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n43460[label="BrowserSigner", path="/home/yibai/llmcc/sample/repos/foundry/crates/wallets/src/wallet_browser/signer.rs:23", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_state_rs {
+        label="state.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n25919[label="BrowserWalletState", path="/home/yibai/llmcc/sample/repos/foundry/crates/wallets/src/wallet_browser/state.rs:15", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_wallet_multi {
+      label="wallet_multi";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n8035[label="MultiWallet", path="/home/yibai/llmcc/sample/repos/foundry/crates/wallets/src/wallet_multi/mod.rs:16", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+
+  n11 -> n13721 [from="trait", to="impl"];
+  n119 -> n2721 [from="field_type", to="struct"];
+  n119 -> n12349 [from="input", to="func"];
+  n119 -> n12637 [from="type_dep", to="struct"];
+  n119 -> n19883 [from="input", to="func"];
+  n119 -> n32310 [from="field_type", to="struct"];
+  n389 -> n4429 [from="field_type", to="struct"];
+  n500 -> n119 [from="field_type", to="struct"];
+  n622 -> n26301 [from="trait", to="impl"];
+  n622 -> n26650 [from="trait", to="impl"];
+  n622 -> n53390 [from="trait", to="impl"];
+  n724 -> n12608 [from="field_type", to="struct"];
+  n1315 -> n972 [from="field_type", to="struct"];
+  n1315 -> n24185 [from="type_dep", to="struct"];
+  n1315 -> n27771 [from="type_dep", to="struct"];
+  n1855 -> n728 [from="type_dep", to="struct"];
+  n2032 -> n3276 [from="field_type", to="struct"];
+  n2273 -> n2032 [from="field_type", to="struct"];
+  n2273 -> n23687 [from="type_arg", to="impl"];
+  n3000 -> n119 [from="field_type", to="struct"];
+  n3000 -> n12637 [from="type_arg", to="impl"];
+  n3000 -> n14123 [from="field_type", to="struct"];
+  n3000 -> n15703 [from="field_type", to="struct"];
+  n3000 -> n25033 [from="type_arg", to="impl"];
+  n3000 -> n43695 [from="field_type", to="struct"];
+  n3344 -> n6823 [from="func", to="type_dep"];
+  n3877 -> n1315 [from="type_dep", to="struct"];
+  n4184 -> n26159 [from="type_dep", to="struct"];
+  n4184 -> n45875 [from="type_dep", to="struct"];
+  n4429 -> n34 [from="type_dep", to="struct"];
+  n4646 -> n33458 [from="field_type", to="struct"];
+  n4830 -> n40219 [from="field_type", to="struct"];
+  n4872 -> n4830 [from="type_dep", to="struct"];
+  n5259 -> n4646 [from="type_dep", to="struct"];
+  n5335 -> n1416 [from="field_type", to="struct"];
+  n5369 -> n13124 [from="field_type", to="enum"];
+  n5369 -> n25047 [from="type_arg", to="impl"];
+  n5369 -> n43460 [from="type_arg", to="impl"];
+  n5537 -> n9096 [from="field_type", to="struct"];
+  n5889 -> n27771 [from="field_type", to="struct"];
+  n5898 -> n25033 [from="type_arg", to="impl"];
+  n6312 -> n7686 [from="type_dep", to="struct"];
+  n6312 -> n32554 [from="type_dep", to="struct"];
+  n6823 -> n35225 [from="type_dep", to="struct"];
+  n7661 -> n25033 [from="type_arg", to="impl"];
+  n7661 -> n53390 [from="type_dep", to="struct"];
+  n9155 -> n27771 [from="field_type", to="struct"];
+  n9851 -> n5537 [from="field_type", to="struct"];
+  n9851 -> n24185 [from="type_dep", to="struct"];
+  n10158 -> n8373 [from="type_dep", to="struct"];
+  n10184 -> n119 [from="field_type", to="struct"];
+  n10184 -> n37144 [from="input", to="func"];
+  n10184 -> n40219 [from="type_dep", to="struct"];
+  n10718 -> n1315 [from="type_dep", to="struct"];
+  n10718 -> n53390 [from="type_dep", to="struct"];
+  n12349 -> n2273 [from="func", to="type_dep"];
+  n12378 -> n12488 [from="field_type", to="enum"];
+  n12457 -> n10419 [from="field_type", to="enum"];
+  n12488 -> n12608 [from="type_dep", to="struct"];
+  n13124 -> n45473 [from="field_type", to="enum"];
+  n13229 -> n34 [from="trait", to="impl"];
+  n13229 -> n4429 [from="trait", to="impl"];
+  n13229 -> n15400 [from="trait", to="impl"];
+  n13229 -> n34487 [from="trait", to="impl"];
+  n13459 -> n30890 [from="field_type", to="struct"];
+  n13725 -> n34 [from="trait", to="impl"];
+  n13725 -> n24330 [from="bound", to="generic"];
+  n13725 -> n24330 [from="field_type", to="struct"];
+  n13725 -> n27771 [from="bound", to="generic"];
+  n13725 -> n27771 [from="field_type", to="struct"];
+  n13725 -> n34487 [from="trait", to="impl"];
+  n14123 -> n7661 [from="field_type", to="struct"];
+  n14123 -> n17572 [from="field_type", to="struct"];
+  n14123 -> n32310 [from="field_type", to="struct"];
+  n15168 -> n14123 [from="field_type", to="struct"];
+  n15400 -> n18085 [from="type_dep", to="struct"];
+  n15703 -> n27771 [from="type_dep", to="struct"];
+  n15703 -> n40613 [from="field_type", to="struct"];
+  n15703 -> n45875 [from="field_type", to="struct"];
+  n15898 -> n13124 [from="field_type", to="enum"];
+  n16638 -> n43695 [from="type_dep", to="struct"];
+  n17419 -> n31511 [from="field_type", to="enum"];
+  n17571 -> n17642 [from="caller", to="callee"];
+  n17572 -> n9851 [from="type_dep", to="struct"];
+  n17572 -> n12637 [from="type_dep", to="struct"];
+  n17642 -> n16274 [from="caller", to="callee"];
+  n17745 -> n16638 [from="type_dep", to="struct"];
+  n18085 -> n27771 [from="type_dep", to="struct"];
+  n18403 -> n25047 [from="trait", to="impl"];
+  n18403 -> n43460 [from="trait", to="impl"];
+  n18403 -> n49288 [from="bound", to="generic"];
+  n18403 -> n49288 [from="field_type", to="struct"];
+  n19095 -> n7661 [from="type_dep", to="struct"];
+  n19095 -> n9851 [from="field_type", to="struct"];
+  n19142 -> n13124 [from="field_type", to="enum"];
+  n19142 -> n32508 [from="field_type", to="struct"];
+  n19142 -> n45473 [from="field_type", to="enum"];
+  n19304 -> n19320 [from="type_dep", to="struct"];
+  n19618 -> n17237 [from="func", to="type_dep"];
+  n19971 -> n41696 [from="caller", to="callee"];
+  n20073 -> n32508 [from="field_type", to="struct"];
+  n20073 -> n45473 [from="field_type", to="enum"];
+  n20180 -> n2032 [from="type_dep", to="struct"];
+  n20180 -> n23687 [from="type_dep", to="struct"];
+  n21470 -> n119 [from="type_dep", to="struct"];
+  n21697 -> n119 [from="field_type", to="struct"];
+  n22011 -> n2721 [from="field_type", to="struct"];
+  n22011 -> n23916 [from="type_dep", to="struct"];
+  n22011 -> n26197 [from="field_type", to="struct"];
+  n22210 -> n22266 [from="caller", to="callee"];
+  n22266 -> n17571 [from="caller", to="callee"];
+  n22266 -> n18316 [from="caller", to="callee"];
+  n22314 -> n16581 [from="caller", to="callee"];
+  n22314 -> n22210 [from="caller", to="callee"];
+  n22944 -> n17572 [from="field_type", to="struct"];
+  n23923 -> n119 [from="type_dep", to="struct"];
+  n24330 -> n27771 [from="type_dep", to="struct"];
+  n24930 -> n26159 [from="type_dep", to="struct"];
+  n24930 -> n27351 [from="type_dep", to="struct"];
+  n24930 -> n30029 [from="type_dep", to="struct"];
+  n24930 -> n45875 [from="type_dep", to="struct"];
+  n25033 -> n24237 [from="field_type", to="struct"];
+  n25047 -> n4134 [from="field_type", to="enum"];
+  n25047 -> n8035 [from="type_dep", to="struct"];
+  n25378 -> n4646 [from="type_dep", to="struct"];
+  n25378 -> n53390 [from="type_dep", to="struct"];
+  n25406 -> n26159 [from="func", to="type_dep"];
+  n25406 -> n27968 [from="func", to="type_dep"];
+  n25425 -> n10419 [from="field_type", to="enum"];
+  n25425 -> n34252 [from="field_type", to="enum"];
+  n25425 -> n34545 [from="type_arg", to="impl"];
+  n25726 -> n23916 [from="type_dep", to="struct"];
+  n25919 -> n33169 [from="type_dep", to="struct"];
+  n25933 -> n24185 [from="type_dep", to="struct"];
+  n26197 -> n23916 [from="type_dep", to="struct"];
+  n26301 -> n40613 [from="field_type", to="struct"];
+  n26743 -> n33458 [from="field_type", to="struct"];
+  n26778 -> n5474 [from="type_dep", to="struct"];
+  n26788 -> n27913 [from="field_type", to="struct"];
+  n27111 -> n29192 [from="field_type", to="enum"];
+  n27111 -> n49891 [from="type_dep", to="struct"];
+  n27351 -> n9096 [from="field_type", to="struct"];
+  n27351 -> n25933 [from="type_dep", to="struct"];
+  n27485 -> n43695 [from="field_type", to="struct"];
+  n27490 -> n26743 [from="type_dep", to="struct"];
+  n27492 -> n34 [from="trait", to="impl"];
+  n27492 -> n4429 [from="trait", to="impl"];
+  n27492 -> n15400 [from="trait", to="impl"];
+  n27492 -> n20377 [from="trait", to="impl"];
+  n27492 -> n34487 [from="trait", to="impl"];
+  n27492 -> n45006 [from="trait", to="impl"];
+  n27645 -> n45006 [from="field_type", to="struct"];
+  n27771 -> n4331 [from="type_dep", to="struct"];
+  n27913 -> n6312 [from="field_type", to="struct"];
+  n27968 -> n49288 [from="type_dep", to="struct"];
+  n28867 -> n4058 [from="field_type", to="enum"];
+  n29192 -> n27645 [from="type_dep", to="struct"];
+  n30029 -> n9096 [from="field_type", to="struct"];
+  n30745 -> n43079 [from="field_type", to="enum"];
+  n30776 -> n19883 [from="input", to="func"];
+  n30890 -> n30776 [from="type_dep", to="struct"];
+  n31033 -> n27771 [from="bound", to="generic"];
+  n31033 -> n27771 [from="field_type", to="struct"];
+  n31033 -> n43695 [from="bound", to="generic"];
+  n31033 -> n43695 [from="field_type", to="struct"];
+  n31406 -> n53390 [from="type_dep", to="struct"];
+  n32090 -> n728 [from="type_dep", to="struct"];
+  n32090 -> n1855 [from="field_type", to="struct"];
+  n32304 -> n23293 [from="trait", to="impl"];
+  n32304 -> n31511 [from="field_type", to="enum"];
+  n32453 -> n1315 [from="type_dep", to="struct"];
+  n32508 -> n4058 [from="field_type", to="enum"];
+  n32554 -> n49288 [from="field_type", to="struct"];
+  n32804 -> n49288 [from="field_type", to="struct"];
+  n32922 -> n119 [from="func", to="type_dep"];
+  n32922 -> n32942 [from="caller", to="callee"];
+  n32942 -> n119 [from="func", to="type_dep"];
+  n33169 -> n43460 [from="type_dep", to="struct"];
+  n33235 -> n32554 [from="type_dep", to="struct"];
+  n34381 -> n34 [from="type_dep", to="struct"];
+  n34381 -> n34487 [from="field_type", to="struct"];
+  n34381 -> n49891 [from="field_type", to="struct"];
+  n34874 -> n38047 [from="field_type", to="struct"];
+  n35225 -> n1315 [from="field_type", to="struct"];
+  n35225 -> n9851 [from="field_type", to="struct"];
+  n35980 -> n37336 [from="field_type", to="struct"];
+  n36353 -> n3276 [from="field_type", to="struct"];
+  n38047 -> n26644 [from="field_type", to="struct"];
+  n39490 -> n26788 [from="field_type", to="struct"];
+  n39490 -> n35291 [from="type_arg", to="impl"];
+  n39807 -> n9071 [from="trait", to="impl"];
+  n39807 -> n13459 [from="trait", to="impl"];
+  n39807 -> n20690 [from="trait", to="impl"];
+  n40347 -> n40406 [from="type_dep", to="struct"];
+  n40613 -> n5537 [from="field_type", to="struct"];
+  n40613 -> n9096 [from="type_dep", to="struct"];
+  n40986 -> n30029 [from="field_type", to="struct"];
+  n41466 -> n49288 [from="field_type", to="struct"];
+  n41963 -> n27771 [from="field_type", to="struct"];
+  n42637 -> n40219 [from="field_type", to="struct"];
+  n43026 -> n20377 [from="trait", to="impl"];
+  n43026 -> n32935 [from="bound", to="generic"];
+  n43026 -> n32935 [from="field_type", to="struct"];
+  n43026 -> n45006 [from="trait", to="impl"];
+  n43460 -> n25047 [from="field_type", to="enum"];
+  n43695 -> n25406 [from="input", to="func"];
+  n43695 -> n26210 [from="field_type", to="struct"];
+  n43695 -> n27771 [from="type_dep", to="struct"];
+  n45006 -> n20377 [from="type_dep", to="struct"];
+  n45006 -> n32310 [from="type_dep", to="struct"];
+  n45006 -> n40613 [from="field_type", to="struct"];
+  n45605 -> n7229 [from="caller", to="callee"];
+  n45605 -> n16274 [from="caller", to="callee"];
+  n45605 -> n16581 [from="caller", to="callee"];
+  n45605 -> n18281 [from="caller", to="callee"];
+  n45605 -> n26159 [from="func", to="type_dep"];
+  n45605 -> n32922 [from="caller", to="callee"];
+  n45605 -> n45498 [from="caller", to="callee"];
+  n49273 -> n49238 [from="field_type", to="struct"];
+  n49854 -> n49891 [from="type_dep", to="struct"];
+  n49891 -> n45006 [from="field_type", to="struct"];
+  n49902 -> n43695 [from="type_dep", to="struct"];
+  n53390 -> n34894 [from="field_type", to="struct"];
+}

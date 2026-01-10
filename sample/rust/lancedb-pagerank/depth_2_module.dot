@@ -13,11 +13,15 @@ digraph architecture {
 
   mod_lancedb_arrow[label="lancedb::arrow", path="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
   mod_lancedb_connection[label="lancedb::connection", path="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
+  mod_lancedb_data[label="lancedb::data", path="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/data"];
   mod_lancedb_database[label="lancedb::database", path="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
   mod_lancedb_dataloader[label="lancedb::dataloader", path="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/dataloader"];
   mod_lancedb_embeddings[label="lancedb::embeddings", path="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/embeddings"];
   mod_lancedb_index[label="lancedb::index", path="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/index"];
   mod_lancedb_nodejs_table[label="lancedb-nodejs::table", path="/home/yibai/llmcc/sample/repos/lancedb/nodejs/src"];
+  mod_lancedb_python_connection[label="lancedb-python::connection", path="/home/yibai/llmcc/sample/repos/lancedb/python/src"];
+  mod_lancedb_python_lib[label="lancedb-python::lib", path="/home/yibai/llmcc/sample/repos/lancedb/python/src"];
+  mod_lancedb_python_query[label="lancedb-python::query", path="/home/yibai/llmcc/sample/repos/lancedb/python/src"];
   mod_lancedb_python_table[label="lancedb-python::table", path="/home/yibai/llmcc/sample/repos/lancedb/python/src"];
   mod_lancedb_query[label="lancedb::query", path="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src"];
   mod_lancedb_remote[label="lancedb::remote", path="/home/yibai/llmcc/sample/repos/lancedb/rust/lancedb/src/remote"];
@@ -27,13 +31,17 @@ digraph architecture {
 
   mod_lancedb_connection -> mod_lancedb_database;
   mod_lancedb_connection -> mod_lancedb_embeddings;
+  mod_lancedb_data -> mod_lancedb_arrow;
   mod_lancedb_dataloader -> mod_lancedb_table;
   mod_lancedb_embeddings -> mod_lancedb_arrow;
   mod_lancedb_index -> mod_lancedb_table;
   mod_lancedb_nodejs_table -> mod_lancedb_table;
+  mod_lancedb_python_lib -> mod_lancedb_python_query;
+  mod_lancedb_python_lib -> mod_lancedb_python_table;
   mod_lancedb_python_table -> mod_lancedb_table;
   mod_lancedb_query -> mod_lancedb_rerankers;
   mod_lancedb_query -> mod_lancedb_table;
+  mod_lancedb_remote -> mod_lancedb_python_connection;
   mod_lancedb_remote -> mod_lancedb_table;
   mod_lancedb_table -> mod_lancedb_arrow;
   mod_lancedb_table -> mod_lancedb_database;
