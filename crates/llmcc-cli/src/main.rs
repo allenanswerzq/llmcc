@@ -13,10 +13,23 @@ static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 use llmcc_cli::LlmccOptions;
-use llmcc_cli::run_main;
+use llmcc_cli::{LangProcessorRegistry, run_main, run_main_auto};
 use llmcc_dot::ComponentDepth;
 use llmcc_rust::LangRust;
 use llmcc_ts::LangTypeScript;
+
+/// Build the default language registry with all supported languages.
+/// To add a new language, simply add a new `registry.register::<LangXxx>("xxx")` line.
+fn build_language_registry() -> LangProcessorRegistry {
+    let mut registry = LangProcessorRegistry::new();
+    registry.register::<LangRust>("rust");
+    registry.register::<LangTypeScript>("typescript");
+    // Add more languages here:
+    // registry.register::<LangGo>("go");
+    // registry.register::<LangPython>("python");
+    // ...
+    registry
+}
 
 #[derive(Parser, Debug)]
 #[command(
@@ -48,8 +61,8 @@ pub struct Cli {
     )]
     dirs: Vec<String>,
 
-    /// Language to use: 'rust', 'typescript' (or 'ts')
-    #[arg(long, value_name = "LANG", default_value = "rust")]
+    /// Language to use: 'auto' (detect from extensions), 'rust', 'typescript' (or 'ts')
+    #[arg(long, value_name = "LANG", default_value = "auto")]
     lang: String,
 
     /// Print intermediate representation (IR)
@@ -110,9 +123,17 @@ pub fn run(args: Cli) -> Result<()> {
     };
 
     let result = match args.lang.as_str() {
+        "auto" => {
+            let registry = build_language_registry();
+            run_main_auto(&opts, &registry)
+        }
         "rust" => run_main::<LangRust>(&opts),
         "typescript" | "ts" => run_main::<LangTypeScript>(&opts),
-        _ => Err(format!("Unknown language: {}", args.lang).into()),
+        _ => Err(format!(
+            "Unknown language: {}. Use 'auto', 'rust', or 'typescript'",
+            args.lang
+        )
+        .into()),
     };
 
     match result {

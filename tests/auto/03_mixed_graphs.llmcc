@@ -1,0 +1,375 @@
+===============================================================================
+rust-and-typescript-both-with-deps
+===============================================================================
+Both Rust and TypeScript have internal dependencies, producing nodes from both
+languages on the same merged graph.
+lang: auto
+
+--- file: rust-api/Cargo.toml ---
+[package]
+name = "rust-api"
+version = "0.1.0"
+
+--- file: rust-api/src/lib.rs ---
+pub mod handlers;
+
+pub struct Server {
+    pub port: u16,
+}
+
+--- file: rust-api/src/handlers.rs ---
+use crate::Server;
+
+pub fn start(server: &Server) {
+    println!("Starting on port {}", server.port);
+}
+
+--- file: rust-core/Cargo.toml ---
+[package]
+name = "rust-core"
+version = "0.1.0"
+
+--- file: rust-core/src/lib.rs ---
+pub struct Config {
+    pub debug: bool,
+}
+
+--- file: rust-api-2/Cargo.toml ---
+[package]
+name = "rust-api-2"
+version = "0.1.0"
+
+[dependencies]
+rust-core = { path = "../rust-core" }
+
+--- file: rust-api-2/src/lib.rs ---
+use rust_core::Config;
+
+pub fn load_config() -> Config {
+    Config { debug: true }
+}
+
+--- file: ts-app/package.json ---
+{
+  "name": "ts-app",
+  "version": "1.0.0"
+}
+
+--- file: ts-app/src/index.ts ---
+import { ApiClient } from './client';
+import { Logger } from './logger';
+
+export function bootstrap() {
+    const client = new ApiClient();
+    const logger = new Logger();
+}
+
+--- file: ts-app/src/client.ts ---
+import { Logger } from './logger';
+
+export class ApiClient {
+    private logger = new Logger();
+
+    call() {
+        this.logger.log("calling");
+    }
+}
+
+--- file: ts-app/src/logger.ts ---
+export class Logger {
+    log(msg: string) {
+        console.log(msg);
+    }
+}
+
+--- file: ts-utils/package.json ---
+{
+  "name": "ts-utils",
+  "version": "1.0.0"
+}
+
+--- file: ts-utils/src/helpers.ts ---
+export function format(s: string): string {
+    return s.trim();
+}
+
+--- file: ts-main/package.json ---
+{
+  "name": "ts-main",
+  "version": "1.0.0"
+}
+
+--- file: ts-main/src/app.ts ---
+import { format } from '../../ts-utils/src/helpers';
+
+export function run() {
+    console.log(format("  hello  "));
+}
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  crate_rust_api_2[label="rust-api-2", path="$TMP/rust-api-2"];
+  crate_rust_core[label="rust-core", path="$TMP/rust-core"];
+  crate_rust_api_2 -> crate_rust_core;
+  crate_ts_main[label="ts-main", path="$TMP/ts-main"];
+  crate_ts_utils[label="ts-utils", path="$TMP/ts-utils"];
+  crate_ts_main -> crate_ts_utils;
+}
+
+
+===============================================================================
+full-stack-project
+===============================================================================
+Simulates a full-stack project with Rust backend and TypeScript frontend,
+both having multiple packages with dependencies.
+lang: auto
+
+--- file: backend/core/Cargo.toml ---
+[package]
+name = "backend-core"
+version = "0.1.0"
+
+--- file: backend/core/src/lib.rs ---
+pub struct User {
+    pub id: u64,
+    pub name: String,
+}
+
+pub trait Repository {
+    fn find(&self, id: u64) -> Option<User>;
+}
+
+--- file: backend/api/Cargo.toml ---
+[package]
+name = "backend-api"
+version = "0.1.0"
+
+[dependencies]
+backend-core = { path = "../core" }
+
+--- file: backend/api/src/lib.rs ---
+use backend_core::{User, Repository};
+
+pub struct ApiHandler<R: Repository> {
+    repo: R,
+}
+
+impl<R: Repository> ApiHandler<R> {
+    pub fn get_user(&self, id: u64) -> Option<User> {
+        self.repo.find(id)
+    }
+}
+
+--- file: frontend/shared/package.json ---
+{
+  "name": "shared",
+  "version": "1.0.0"
+}
+
+--- file: frontend/shared/src/types.ts ---
+export interface UserDto {
+    id: number;
+    name: string;
+}
+
+export interface ApiResponse<T> {
+    data: T;
+    status: number;
+}
+
+--- file: frontend/webapp/package.json ---
+{
+  "name": "webapp",
+  "version": "1.0.0"
+}
+
+--- file: frontend/webapp/src/api.ts ---
+import { UserDto, ApiResponse } from '../../shared/src/types';
+
+export async function fetchUser(id: number): Promise<ApiResponse<UserDto>> {
+    const response = await fetch(`/api/users/${id}`);
+    return response.json();
+}
+
+--- file: frontend/webapp/src/components.ts ---
+import { UserDto } from '../../shared/src/types';
+import { fetchUser } from './api';
+
+export class UserComponent {
+    async render(id: number) {
+        const result = await fetchUser(id);
+        console.log(result.data.name);
+    }
+}
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  crate_backend_api[label="backend-api", path="$TMP/backend/api"];
+  crate_backend_core[label="backend-core", path="$TMP/backend/core"];
+  crate_backend_api -> crate_backend_core;
+  crate_shared[label="shared", path="$TMP/frontend/shared"];
+  crate_webapp[label="webapp", path="$TMP/frontend/webapp"];
+  crate_webapp -> crate_shared;
+}
+
+
+===============================================================================
+microservices-architecture
+===============================================================================
+Multiple Rust services and TypeScript clients, all with internal dependencies.
+lang: auto
+
+--- file: services/auth/Cargo.toml ---
+[package]
+name = "auth-service"
+version = "0.1.0"
+
+--- file: services/auth/src/lib.rs ---
+pub struct Token {
+    pub value: String,
+}
+
+pub fn verify(token: &Token) -> bool {
+    !token.value.is_empty()
+}
+
+--- file: services/gateway/Cargo.toml ---
+[package]
+name = "gateway-service"
+version = "0.1.0"
+
+[dependencies]
+auth-service = { path = "../auth" }
+
+--- file: services/gateway/src/lib.rs ---
+use auth_service::{Token, verify};
+
+pub fn process_request(token: &Token) -> bool {
+    verify(token)
+}
+
+--- file: services/users/Cargo.toml ---
+[package]
+name = "users-service"
+version = "0.1.0"
+
+[dependencies]
+auth-service = { path = "../auth" }
+
+--- file: services/users/src/lib.rs ---
+use auth_service::Token;
+
+pub struct User {
+    pub id: u64,
+}
+
+pub fn get_user_for_token(_token: &Token) -> Option<User> {
+    Some(User { id: 1 })
+}
+
+--- file: clients/admin/package.json ---
+{
+  "name": "admin-client",
+  "version": "1.0.0"
+}
+
+--- file: clients/admin/src/auth.ts ---
+export class AuthManager {
+    private token: string | null = null;
+
+    login(token: string) {
+        this.token = token;
+    }
+
+    getToken(): string | null {
+        return this.token;
+    }
+}
+
+--- file: clients/admin/src/api.ts ---
+import { AuthManager } from './auth';
+
+export class AdminApi {
+    constructor(private auth: AuthManager) {}
+
+    async makeRequest(path: string) {
+        const token = this.auth.getToken();
+        return fetch(path, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+    }
+}
+
+--- file: clients/admin/src/dashboard.ts ---
+import { AdminApi } from './api';
+import { AuthManager } from './auth';
+
+export class Dashboard {
+    private api: AdminApi;
+
+    constructor() {
+        const auth = new AuthManager();
+        this.api = new AdminApi(auth);
+    }
+
+    async load() {
+        await this.api.makeRequest('/dashboard');
+    }
+}
+
+--- file: clients/mobile/package.json ---
+{
+  "name": "mobile-client",
+  "version": "1.0.0"
+}
+
+--- file: clients/mobile/src/app.ts ---
+export class MobileApp {
+    start() {
+        console.log("Mobile app starting");
+    }
+}
+
+--- file: clients/sdk/package.json ---
+{
+  "name": "client-sdk",
+  "version": "1.0.0"
+}
+
+--- file: clients/sdk/src/client.ts ---
+export class SdkClient {
+    baseUrl: string;
+
+    constructor(url: string) {
+        this.baseUrl = url;
+    }
+}
+
+--- file: clients/mobile-v2/package.json ---
+{
+  "name": "mobile-v2",
+  "version": "1.0.0"
+}
+
+--- file: clients/mobile-v2/src/app.ts ---
+import { SdkClient } from '../../sdk/src/client';
+
+export class MobileAppV2 {
+    private client: SdkClient;
+
+    constructor() {
+        this.client = new SdkClient("https://api.example.com");
+    }
+}
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  crate_auth_service[label="auth-service", path="$TMP/services/auth"];
+  crate_gateway_service[label="gateway-service", path="$TMP/services/gateway"];
+  crate_users_service[label="users-service", path="$TMP/services/users"];
+  crate_gateway_service -> crate_auth_service;
+  crate_users_service -> crate_auth_service;
+  crate_client_sdk[label="client-sdk", path="$TMP/clients/sdk"];
+  crate_mobile_v2[label="mobile-v2", path="$TMP/clients/mobile-v2"];
+  crate_mobile_v2 -> crate_client_sdk;
+}
