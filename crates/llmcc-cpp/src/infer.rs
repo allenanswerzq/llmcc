@@ -1,5 +1,3 @@
-use std::cell::Cell;
-
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::symbol::{SYM_KIND_TYPES, SymKind, SymKindSet, Symbol};
@@ -10,44 +8,29 @@ use crate::token::LangCpp;
 /// Maximum recursion depth for type inference to prevent exponential blowup
 const MAX_INFER_DEPTH: u32 = 16;
 
-thread_local! {
-    static INFER_DEPTH: Cell<u32> = const { Cell::new(0) };
-}
-
-/// Guard that increments depth on creation and decrements on drop
-struct DepthGuard;
-
-impl DepthGuard {
-    fn try_new() -> Option<Self> {
-        INFER_DEPTH.with(|depth| {
-            let current = depth.get();
-            if current >= MAX_INFER_DEPTH {
-                None
-            } else {
-                depth.set(current + 1);
-                Some(DepthGuard)
-            }
-        })
-    }
-}
-
-impl Drop for DepthGuard {
-    fn drop(&mut self) {
-        INFER_DEPTH.with(|depth| {
-            depth.set(depth.get().saturating_sub(1));
-        });
-    }
-}
-
-/// Infer the type of any C/C++ AST node
+/// Infer the type of any C/C++ AST node.
+/// Public entry point that starts recursion at depth 0.
 #[tracing::instrument(skip_all)]
 pub fn infer_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
+    infer_type_impl(unit, scopes, node, 0)
+}
+
+/// Internal implementation with explicit depth tracking.
+/// This is panic-safe: if the function panics, no state needs cleanup.
+fn infer_type_impl<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+    depth: u32,
+) -> Option<&'tcx Symbol> {
     // Depth limit to prevent exponential recursion on complex types
-    let _guard = DepthGuard::try_new()?;
+    if depth >= MAX_INFER_DEPTH {
+        return None;
+    }
 
     match node.kind_id() {
         // Literal types
@@ -70,7 +53,7 @@ pub fn infer_type<'tcx>(
             // For sized types, try to find the base type
             for child in node.children(unit) {
                 if child.kind_id() == LangCpp::primitive_type {
-                    return infer_type(unit, scopes, &child);
+                    return infer_type_impl(unit, scopes, &child, depth + 1);
                 }
             }
             // Default to int for things like "unsigned"
@@ -113,7 +96,7 @@ pub fn infer_type<'tcx>(
         }
 
         // Template type: vector<int>, map<string, int>, etc.
-        LangCpp::template_type => infer_template_type(unit, scopes, node),
+        LangCpp::template_type => infer_template_type(unit, scopes, node, depth + 1),
 
         // Qualified identifier: std::vector, foo::Bar
         LangCpp::qualified_identifier => infer_qualified_identifier(unit, scopes, node),
@@ -121,7 +104,7 @@ pub fn infer_type<'tcx>(
         // Call expression: func(args)
         LangCpp::call_expression => node
             .child_by_field(unit, LangCpp::field_function)
-            .and_then(|func_node| infer_type(unit, scopes, &func_node))
+            .and_then(|func_node| infer_type_impl(unit, scopes, &func_node, depth + 1))
             .and_then(|sym| {
                 if sym.kind() == SymKind::Function
                     && let Some(ret_id) = sym.type_of()
@@ -137,7 +120,7 @@ pub fn infer_type<'tcx>(
             for child in node.children(unit) {
                 if !child.is_trivia()
                     && child.kind() != HirKind::Text
-                    && let Some(sym) = infer_type(unit, scopes, &child)
+                    && let Some(sym) = infer_type_impl(unit, scopes, &child, depth + 1)
                 {
                     return Some(sym);
                 }
@@ -149,37 +132,37 @@ pub fn infer_type<'tcx>(
         LangCpp::field_expression => infer_field_expression(unit, scopes, node),
 
         // Subscript expression: arr[i]
-        LangCpp::subscript_expression => infer_subscript_expression(unit, scopes, node),
+        LangCpp::subscript_expression => infer_subscript_expression(unit, scopes, node, depth + 1),
 
         // Binary expression: a + b, a == b, etc.
-        LangCpp::binary_expression => infer_binary_expression(unit, scopes, node),
+        LangCpp::binary_expression => infer_binary_expression(unit, scopes, node, depth + 1),
 
         // Unary expression: *ptr, &value, -a, !b
         LangCpp::unary_expression | LangCpp::pointer_expression => {
-            infer_from_children(unit, scopes, node, &[])
+            infer_from_children(unit, scopes, node, &[], depth + 1)
         }
 
         // Conditional expression: cond ? a : b
         LangCpp::conditional_expression => node
             .child_by_field(unit, LangCpp::field_consequence)
-            .and_then(|conseq_node| infer_type(unit, scopes, &conseq_node)),
+            .and_then(|conseq_node| infer_type_impl(unit, scopes, &conseq_node, depth + 1)),
 
         // Cast expression: (Type)value
         LangCpp::cast_expression => {
             // First child should be the type
             for child in node.children(unit) {
                 if !child.is_trivia() && child.kind() != HirKind::Text {
-                    return infer_type(unit, scopes, &child);
+                    return infer_type_impl(unit, scopes, &child, depth + 1);
                 }
             }
             None
         }
 
         // Compound statement (block)
-        LangCpp::compound_statement => infer_block(unit, scopes, node),
+        LangCpp::compound_statement => infer_block(unit, scopes, node, depth + 1),
 
         // Parenthesized expression
-        LangCpp::parenthesized_expression => infer_from_children(unit, scopes, node, &[]),
+        LangCpp::parenthesized_expression => infer_from_children(unit, scopes, node, &[], depth + 1),
 
         // Lambda expression
         LangCpp::lambda_expression => {
@@ -190,7 +173,7 @@ pub fn infer_type<'tcx>(
         // Decltype
         LangCpp::decltype => {
             // decltype(expr) - infer type from the expression
-            infer_from_children(unit, scopes, node, &[])
+            infer_from_children(unit, scopes, node, &[], depth + 1)
         }
 
         // Auto type - can't infer without more context
@@ -200,7 +183,7 @@ pub fn infer_type<'tcx>(
         LangCpp::type_descriptor => {
             // Type descriptor wraps a type, find the actual type
             for child in node.children(unit) {
-                if let Some(sym) = infer_type(unit, scopes, &child) {
+                if let Some(sym) = infer_type_impl(unit, scopes, &child, depth + 1) {
                     return Some(sym);
                 }
             }
@@ -234,6 +217,7 @@ fn infer_block<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     for child in node.children(unit).into_iter().rev() {
         if is_syntactic_noise(unit, &child) {
@@ -245,19 +229,19 @@ fn infer_block<'tcx>(
         if kind_id == LangCpp::return_statement {
             // Return type from return statement
             if let Some(value_node) = child.child_by_field(unit, LangCpp::field_value) {
-                return infer_type(unit, scopes, &value_node);
+                return infer_type_impl(unit, scopes, &value_node, depth + 1);
             }
             continue;
         }
 
         if kind_id == LangCpp::expression_statement {
-            if let Some(sym) = infer_from_children(unit, scopes, &child, &[]) {
+            if let Some(sym) = infer_from_children(unit, scopes, &child, &[], depth + 1) {
                 return Some(sym);
             }
             continue;
         }
 
-        if let Some(sym) = infer_type(unit, scopes, &child) {
+        if let Some(sym) = infer_type_impl(unit, scopes, &child, depth + 1) {
             return Some(sym);
         }
     }
@@ -271,6 +255,7 @@ fn infer_from_children<'tcx>(
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
     skip_kinds: &[u16],
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     for child in node.children(unit) {
         if is_syntactic_noise(unit, &child) {
@@ -279,7 +264,7 @@ fn infer_from_children<'tcx>(
         if skip_kinds.contains(&child.kind_id()) {
             continue;
         }
-        if let Some(sym) = infer_type(unit, scopes, &child) {
+        if let Some(sym) = infer_type_impl(unit, scopes, &child, depth + 1) {
             return Some(sym);
         }
     }
@@ -291,10 +276,11 @@ fn infer_template_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     // Get the base type (e.g., 'vector' from 'vector<int>')
     if let Some(name_node) = node.child_by_field(unit, LangCpp::field_name) {
-        return infer_type(unit, scopes, &name_node);
+        return infer_type_impl(unit, scopes, &name_node, depth + 1);
     }
 
     // Fall back to first identifier
@@ -359,10 +345,11 @@ fn infer_subscript_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     // Get the array/container type
     if let Some(arg_node) = node.child_by_field(unit, LangCpp::field_argument)
-        && let Some(container_type) = infer_type(unit, scopes, &arg_node)
+        && let Some(container_type) = infer_type_impl(unit, scopes, &arg_node, depth + 1)
     {
         // For arrays, the element type would be in nested_types
         // For now, return the container type
@@ -376,6 +363,7 @@ fn infer_binary_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     // Get the operator
     if let Some(op_node) = node.child_by_field(unit, LangCpp::field_operator) {
@@ -392,7 +380,7 @@ fn infer_binary_expression<'tcx>(
 
     // For arithmetic operators, infer from the left operand
     if let Some(left_node) = node.child_by_field(unit, LangCpp::field_left) {
-        return infer_type(unit, scopes, &left_node);
+        return infer_type_impl(unit, scopes, &left_node, depth + 1);
     }
 
     None

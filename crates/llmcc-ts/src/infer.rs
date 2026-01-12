@@ -1,5 +1,3 @@
-use std::cell::Cell;
-
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::symbol::{SYM_KIND_TYPES, SymKind, SymKindSet, Symbol};
@@ -11,44 +9,29 @@ use crate::token::LangTypeScript;
 /// on complex TypeScript types (like zod's 4500-line schemas.ts)
 const MAX_INFER_DEPTH: u32 = 16;
 
-thread_local! {
-    static INFER_DEPTH: Cell<u32> = const { Cell::new(0) };
-}
-
-/// Guard that increments depth on creation and decrements on drop
-struct DepthGuard;
-
-impl DepthGuard {
-    fn try_new() -> Option<Self> {
-        INFER_DEPTH.with(|depth| {
-            let current = depth.get();
-            if current >= MAX_INFER_DEPTH {
-                None
-            } else {
-                depth.set(current + 1);
-                Some(DepthGuard)
-            }
-        })
-    }
-}
-
-impl Drop for DepthGuard {
-    fn drop(&mut self) {
-        INFER_DEPTH.with(|depth| {
-            depth.set(depth.get().saturating_sub(1));
-        });
-    }
-}
-
-/// Infer the type of any TypeScript AST node
+/// Infer the type of any TypeScript AST node.
+/// Public entry point that starts recursion at depth 0.
 #[tracing::instrument(skip_all)]
 pub fn infer_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
+    infer_type_impl(unit, scopes, node, 0)
+}
+
+/// Internal implementation with explicit depth tracking.
+/// This is panic-safe: if the function panics, no state needs cleanup.
+fn infer_type_impl<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+    depth: u32,
+) -> Option<&'tcx Symbol> {
     // Depth limit to prevent exponential recursion on complex types
-    let _guard = DepthGuard::try_new()?;
+    if depth >= MAX_INFER_DEPTH {
+        return None;
+    }
 
     match node.kind_id() {
         // Literal types - check text content
@@ -111,42 +94,42 @@ pub fn infer_type<'tcx>(
         }
 
         // Statement block
-        LangTypeScript::statement_block => infer_block(unit, scopes, node),
+        LangTypeScript::statement_block => infer_block(unit, scopes, node, depth + 1),
 
         // Generic type: Array<T>, Promise<R>, Map<K, V>, etc.
-        LangTypeScript::generic_type => infer_generic_type(unit, scopes, node),
+        LangTypeScript::generic_type => infer_generic_type(unit, scopes, node, depth + 1),
 
         // Array type: T[]
-        LangTypeScript::array_type => infer_array_type(unit, scopes, node),
+        LangTypeScript::array_type => infer_array_type(unit, scopes, node, depth + 1),
 
         // Tuple type: [T1, T2, T3]
         LangTypeScript::tuple_type => infer_tuple_type(unit, scopes, node),
 
         // Union type: T | U
-        LangTypeScript::union_type => infer_union_type(unit, scopes, node),
+        LangTypeScript::union_type => infer_union_type(unit, scopes, node, depth + 1),
 
         // Intersection type: T & U
-        LangTypeScript::intersection_type => infer_intersection_type(unit, scopes, node),
+        LangTypeScript::intersection_type => infer_intersection_type(unit, scopes, node, depth + 1),
 
         // Function type: (a: T) => R
-        LangTypeScript::function_type => infer_function_type(unit, scopes, node),
+        LangTypeScript::function_type => infer_function_type(unit, scopes, node, depth + 1),
 
         // Object type: { name: string; age: number }
         LangTypeScript::object_type => infer_object_type(unit, scopes, node),
 
         // Literal type: "hello" | 42 | true
-        LangTypeScript::literal_type => infer_literal_type(unit, scopes, node),
+        LangTypeScript::literal_type => infer_literal_type(unit, scopes, node, depth + 1),
 
         // Type annotation: : Type
         LangTypeScript::type_annotation => node
             .child_by_field(unit, LangTypeScript::field_type)
-            .and_then(|ty_node| infer_type(unit, scopes, &ty_node))
-            .or_else(|| infer_from_children(unit, scopes, node, &[])),
+            .and_then(|ty_node| infer_type_impl(unit, scopes, &ty_node, depth + 1))
+            .or_else(|| infer_from_children(unit, scopes, node, &[], depth + 1)),
 
         // Call expression: func(args)
         LangTypeScript::call_expression => node
             .child_by_field(unit, LangTypeScript::field_function)
-            .and_then(|func_node| infer_type(unit, scopes, &func_node))
+            .and_then(|func_node| infer_type_impl(unit, scopes, &func_node, depth + 1))
             .and_then(|sym| {
                 if sym.kind() == SymKind::Function
                     && let Some(ret_id) = sym.type_of()
@@ -162,7 +145,7 @@ pub fn infer_type<'tcx>(
             for child in node.children(unit) {
                 if !child.is_trivia()
                     && child.kind() != HirKind::Text
-                    && let Some(sym) = infer_type(unit, scopes, &child)
+                    && let Some(sym) = infer_type_impl(unit, scopes, &child, depth + 1)
                 {
                     return Some(sym);
                 }
@@ -171,57 +154,61 @@ pub fn infer_type<'tcx>(
         }
 
         // Member expression: obj.prop or obj["prop"]
-        LangTypeScript::member_expression => infer_member_expression(unit, scopes, node),
+        LangTypeScript::member_expression => infer_member_expression(unit, scopes, node, depth + 1),
 
         // Subscript expression: arr[i]
-        LangTypeScript::subscript_expression => infer_subscript_expression(unit, scopes, node),
+        LangTypeScript::subscript_expression => {
+            infer_subscript_expression(unit, scopes, node, depth + 1)
+        }
 
         // Binary expression: a + b, a === b, etc.
-        LangTypeScript::binary_expression => infer_binary_expression(unit, scopes, node),
+        LangTypeScript::binary_expression => infer_binary_expression(unit, scopes, node, depth + 1),
 
         // Unary expression: -a, !b, typeof x
         LangTypeScript::unary_expression => {
             // Get the operand from children
-            infer_from_children(unit, scopes, node, &[])
+            infer_from_children(unit, scopes, node, &[], depth + 1)
         }
 
         // Ternary expression: cond ? a : b
         LangTypeScript::ternary_expression => node
             .child_by_field(unit, LangTypeScript::field_consequence)
-            .and_then(|conseq_node| infer_type(unit, scopes, &conseq_node)),
+            .and_then(|conseq_node| infer_type_impl(unit, scopes, &conseq_node, depth + 1)),
 
         // Await expression: await promise
-        LangTypeScript::await_expression => infer_await_expression(unit, scopes, node),
+        LangTypeScript::await_expression => infer_await_expression(unit, scopes, node, depth + 1),
 
         // As expression (type cast): expr as Type
         LangTypeScript::as_expression => node
             .child_by_field(unit, LangTypeScript::field_type)
-            .and_then(|ty_node| infer_type(unit, scopes, &ty_node)),
+            .and_then(|ty_node| infer_type_impl(unit, scopes, &ty_node, depth + 1)),
 
         // Type assertion: <Type>expr
         LangTypeScript::type_assertion => node
             .child_by_field(unit, LangTypeScript::field_type)
-            .and_then(|ty_node| infer_type(unit, scopes, &ty_node)),
+            .and_then(|ty_node| infer_type_impl(unit, scopes, &ty_node, depth + 1)),
 
         // Satisfies expression: expr satisfies Type
         LangTypeScript::satisfies_expression => node
             .child_by_field(unit, LangTypeScript::field_type)
-            .and_then(|ty_node| infer_type(unit, scopes, &ty_node)),
+            .and_then(|ty_node| infer_type_impl(unit, scopes, &ty_node, depth + 1)),
 
         // Arrow function: (params) => body
-        LangTypeScript::arrow_function => infer_arrow_function(unit, scopes, node),
+        LangTypeScript::arrow_function => infer_arrow_function(unit, scopes, node, depth + 1),
 
         // Function expression: function(params) { body }
-        LangTypeScript::function_expression => infer_function_expression(unit, scopes, node),
+        LangTypeScript::function_expression => {
+            infer_function_expression(unit, scopes, node, depth + 1)
+        }
 
         // Object: { key: value }
-        LangTypeScript::object => infer_from_children(unit, scopes, node, &[]),
+        LangTypeScript::object => infer_from_children(unit, scopes, node, &[], depth + 1),
 
         // Array: [elem1, elem2, ...]
-        LangTypeScript::array => infer_array_expression(unit, scopes, node),
+        LangTypeScript::array => infer_array_expression(unit, scopes, node, depth + 1),
 
         // Conditional type: T extends U ? X : Y
-        LangTypeScript::conditional_type => infer_conditional_type(unit, scopes, node),
+        LangTypeScript::conditional_type => infer_conditional_type(unit, scopes, node, depth + 1),
 
         // Infer type: infer T
         LangTypeScript::infer_type => None, // Returns the inferred type parameter
@@ -285,6 +272,7 @@ fn infer_block<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     for child in node.children(unit).into_iter().rev() {
         if is_syntactic_noise(unit, &child) {
@@ -302,13 +290,13 @@ fn infer_block<'tcx>(
 
         // For return statements, get the returned value's type
         if kind_id == LangTypeScript::return_statement {
-            if let Some(sym) = infer_from_children(unit, scopes, &child, &[]) {
+            if let Some(sym) = infer_from_children(unit, scopes, &child, &[], depth + 1) {
                 return Some(sym);
             }
             continue;
         }
 
-        if let Some(sym) = infer_type(unit, scopes, &child) {
+        if let Some(sym) = infer_type_impl(unit, scopes, &child, depth + 1) {
             return Some(sym);
         }
     }
@@ -321,10 +309,11 @@ fn infer_generic_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     // The generic_type has structure: type<type_arguments>
     let type_node = node.child_by_field(unit, LangTypeScript::field_name)?;
-    let outer_type = infer_type(unit, scopes, &type_node);
+    let outer_type = infer_type_impl(unit, scopes, &type_node, depth + 1);
 
     // Check if outer type is a wrapper type that should be unwrapped
     let outer_name = unit.hir_text(&type_node);
@@ -363,7 +352,7 @@ fn infer_generic_type<'tcx>(
                 if child.is_trivia() {
                     continue;
                 }
-                if let Some(inner_type) = infer_type(unit, scopes, &child) {
+                if let Some(inner_type) = infer_type_impl(unit, scopes, &child, depth + 1) {
                     return Some(inner_type);
                 }
             }
@@ -375,7 +364,8 @@ fn infer_generic_type<'tcx>(
                     if inner_child.is_trivia() {
                         continue;
                     }
-                    if let Some(inner_type) = infer_type(unit, scopes, &inner_child) {
+                    if let Some(inner_type) = infer_type_impl(unit, scopes, &inner_child, depth + 1)
+                    {
                         return Some(inner_type);
                     }
                 }
@@ -388,7 +378,7 @@ fn infer_generic_type<'tcx>(
             if child.is_trivia() {
                 continue;
             }
-            if let Some(inner_type) = infer_type(unit, scopes, &child)
+            if let Some(inner_type) = infer_type_impl(unit, scopes, &child, depth + 1)
                 && inner_type.kind().is_defined_type()
             {
                 return Some(inner_type);
@@ -405,6 +395,7 @@ fn infer_array_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     // Try to get the CompositeType symbol that was created for this array type
     if let Some(sn) = node.as_scope()
@@ -421,7 +412,7 @@ fn infer_array_type<'tcx>(
     let children = node.children(unit);
     for child in children {
         if !child.is_trivia()
-            && let Some(elem_type) = infer_type(unit, scopes, &child)
+            && let Some(elem_type) = infer_type_impl(unit, scopes, &child, depth + 1)
         {
             return Some(elem_type);
         }
@@ -455,13 +446,14 @@ fn infer_union_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     // For union types, try to find a defined type
     for child in node.children(unit) {
         if child.is_trivia() {
             continue;
         }
-        if let Some(sym) = infer_type(unit, scopes, &child)
+        if let Some(sym) = infer_type_impl(unit, scopes, &child, depth + 1)
             && sym.kind().is_defined_type()
         {
             return Some(sym);
@@ -469,7 +461,7 @@ fn infer_union_type<'tcx>(
     }
 
     // If no defined type found, return first type
-    infer_from_children(unit, scopes, node, &[])
+    infer_from_children(unit, scopes, node, &[], depth + 1)
 }
 
 /// Infer intersection type: T & U
@@ -477,9 +469,10 @@ fn infer_intersection_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     // For intersection types, return first type
-    infer_from_children(unit, scopes, node, &[])
+    infer_from_children(unit, scopes, node, &[], depth + 1)
 }
 
 /// Infer function type: (a: T) => R
@@ -487,10 +480,11 @@ fn infer_function_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     // Try return type first
     if let Some(ret_node) = node.child_by_field(unit, LangTypeScript::field_return_type)
-        && let Some(ret_sym) = infer_type(unit, scopes, &ret_node)
+        && let Some(ret_sym) = infer_type_impl(unit, scopes, &ret_node, depth + 1)
     {
         return Some(ret_sym);
     }
@@ -523,9 +517,10 @@ fn infer_literal_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     // Get the underlying literal and infer its primitive type
-    infer_from_children(unit, scopes, node, &[])
+    infer_from_children(unit, scopes, node, &[], depth + 1)
 }
 
 /// Infer member expression: obj.prop
@@ -533,9 +528,10 @@ fn infer_member_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     let obj_node = node.child_by_field(unit, LangTypeScript::field_object)?;
-    let obj_type = infer_type(unit, scopes, &obj_node)?;
+    let obj_type = infer_type_impl(unit, scopes, &obj_node, depth + 1)?;
 
     let prop_node = node.child_by_field(unit, LangTypeScript::field_property)?;
     let prop_ident = prop_node.find_ident(unit)?;
@@ -557,9 +553,10 @@ fn infer_subscript_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     let obj_node = node.child_by_field(unit, LangTypeScript::field_object)?;
-    let obj_type = infer_type(unit, scopes, &obj_node)?;
+    let obj_type = infer_type_impl(unit, scopes, &obj_node, depth + 1)?;
 
     // For indexed access, get first nested type
     if let Some(nested) = obj_type.nested_types()
@@ -576,6 +573,7 @@ fn infer_binary_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     let left_node = node.child_by_field(unit, LangTypeScript::field_left)?;
 
@@ -595,11 +593,13 @@ fn infer_binary_expression<'tcx>(
         // Logical operators return boolean
         "&&" | "||" => get_primitive_type(scopes, "boolean"),
         // Arithmetic operators preserve left operand type
-        "+" | "-" | "*" | "/" | "%" | "**" => infer_type(unit, scopes, &left_node),
+        "+" | "-" | "*" | "/" | "%" | "**" => {
+            infer_type_impl(unit, scopes, &left_node, depth + 1)
+        }
         // Bitwise operators return number
         "&" | "|" | "^" | "<<" | ">>" | ">>>" => get_primitive_type(scopes, "number"),
         // Nullish coalescing
-        "??" => infer_type(unit, scopes, &left_node),
+        "??" => infer_type_impl(unit, scopes, &left_node, depth + 1),
         _ => None,
     }
 }
@@ -609,9 +609,10 @@ fn infer_await_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     let inner_node = node.child_by_field(unit, LangTypeScript::field_value)?;
-    let promise_type = infer_type(unit, scopes, &inner_node)?;
+    let promise_type = infer_type_impl(unit, scopes, &inner_node, depth + 1)?;
 
     // For Promise<T>, get T from nested_types
     if let Some(nested) = promise_type.nested_types()
@@ -628,17 +629,18 @@ fn infer_arrow_function<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     // Check for explicit return type annotation
     if let Some(ret_node) = node.child_by_field(unit, LangTypeScript::field_return_type)
-        && let Some(ret_sym) = infer_type(unit, scopes, &ret_node)
+        && let Some(ret_sym) = infer_type_impl(unit, scopes, &ret_node, depth + 1)
     {
         return Some(ret_sym);
     }
 
     // Try to infer from body
     if let Some(body_node) = node.child_by_field(unit, LangTypeScript::field_body) {
-        return infer_type(unit, scopes, &body_node);
+        return infer_type_impl(unit, scopes, &body_node, depth + 1);
     }
 
     None
@@ -649,17 +651,18 @@ fn infer_function_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     // Check for explicit return type annotation
     if let Some(ret_node) = node.child_by_field(unit, LangTypeScript::field_return_type)
-        && let Some(ret_sym) = infer_type(unit, scopes, &ret_node)
+        && let Some(ret_sym) = infer_type_impl(unit, scopes, &ret_node, depth + 1)
     {
         return Some(ret_sym);
     }
 
     // Try to infer from body
     if let Some(body_node) = node.child_by_field(unit, LangTypeScript::field_body) {
-        return infer_block(unit, scopes, &body_node);
+        return infer_block(unit, scopes, &body_node, depth + 1);
     }
 
     None
@@ -670,12 +673,13 @@ fn infer_array_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     // Infer from first element
     for child in node.children(unit) {
         if !child.is_trivia()
             && child.kind() != HirKind::Text
-            && let Some(elem_type) = infer_type(unit, scopes, &child)
+            && let Some(elem_type) = infer_type_impl(unit, scopes, &child, depth + 1)
         {
             return Some(elem_type);
         }
@@ -688,10 +692,11 @@ fn infer_conditional_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     // Return the consequence type (X in T extends U ? X : Y)
     if let Some(conseq) = node.child_by_field(unit, LangTypeScript::field_consequence) {
-        return infer_type(unit, scopes, &conseq);
+        return infer_type_impl(unit, scopes, &conseq, depth + 1);
     }
     None
 }
@@ -718,6 +723,7 @@ fn infer_from_children<'tcx>(
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
     skip_fields: &[u16],
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     for child in node.children(unit) {
         if skip_fields.contains(&child.field_id()) {
@@ -728,7 +734,7 @@ fn infer_from_children<'tcx>(
             continue;
         }
 
-        if let Some(sym) = infer_type(unit, scopes, &child) {
+        if let Some(sym) = infer_type_impl(unit, scopes, &child, depth + 1) {
             return Some(sym);
         }
     }
