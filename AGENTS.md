@@ -29,7 +29,6 @@ llmcc -d <directory> --graph --depth <0-3> [options]
 - **Understanding unfamiliar codebases** - Run at depth 1-2 to see high-level architecture
 - **Before making changes** - Analyze at depth 3 to understand dependencies
 - **Identifying important code** - Use `--pagerank-top-k` to find central components
-- **Documenting architecture** - Generate graphs for documentation
 
 ### Examples
 
