@@ -13,7 +13,7 @@ static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 use llmcc_cli::LlmccOptions;
-use llmcc_cli::{run_main, run_main_auto, LangProcessorRegistry};
+use llmcc_cli::{LangProcessorRegistry, run_main, run_main_auto};
 use llmcc_dot::ComponentDepth;
 use llmcc_rust::LangRust;
 use llmcc_ts::LangTypeScript;
@@ -129,7 +129,11 @@ pub fn run(args: Cli) -> Result<()> {
         }
         "rust" => run_main::<LangRust>(&opts),
         "typescript" | "ts" => run_main::<LangTypeScript>(&opts),
-        _ => Err(format!("Unknown language: {}. Use 'auto', 'rust', or 'typescript'", args.lang).into()),
+        _ => Err(format!(
+            "Unknown language: {}. Use 'auto', 'rust', or 'typescript'",
+            args.lang
+        )
+        .into()),
     };
 
     match result {

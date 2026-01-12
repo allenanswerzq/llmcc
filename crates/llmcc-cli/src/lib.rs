@@ -115,7 +115,8 @@ pub struct LlmccOptions {
 
 /// Type alias for a language processing function.
 /// Takes options and files, returns DOT output or error.
-pub type LangProcessor = Arc<dyn Fn(&LlmccOptions, &[String]) -> Result<Option<String>, DynError> + Send + Sync>;
+pub type LangProcessor =
+    Arc<dyn Fn(&LlmccOptions, &[String]) -> Result<Option<String>, DynError> + Send + Sync>;
 
 /// A registered language with its processor.
 pub struct RegisteredLang {
@@ -152,9 +153,8 @@ impl LangProcessorRegistry {
         let extensions = L::supported_extensions();
 
         // Create a type-erased processor closure
-        let processor: LangProcessor = Arc::new(move |opts, files| {
-            run_main_with_files::<L>(opts, files)
-        });
+        let processor: LangProcessor =
+            Arc::new(move |opts, files| run_main_with_files::<L>(opts, files));
 
         self.languages.push(RegisteredLang {
             name,
@@ -178,13 +178,13 @@ impl LangProcessorRegistry {
 
         for file in files {
             let path = std::path::Path::new(file);
-            if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
-                if let Some(&idx) = self.extension_map.get(ext) {
-                    partitions
-                        .entry(self.languages[idx].name)
-                        .or_default()
-                        .push(file.clone());
-                }
+            if let Some(ext) = path.extension().and_then(|e| e.to_str())
+                && let Some(&idx) = self.extension_map.get(ext)
+            {
+                partitions
+                    .entry(self.languages[idx].name)
+                    .or_default()
+                    .push(file.clone());
             }
         }
 
@@ -193,7 +193,8 @@ impl LangProcessorRegistry {
 
     /// Get the processor for a language by name
     pub fn get_processor(&self, name: &str) -> Option<&LangProcessor> {
-        self.languages.iter()
+        self.languages
+            .iter()
             .find(|l| l.name == name)
             .map(|l| &l.processor)
     }
@@ -211,7 +212,10 @@ impl LangProcessorRegistry {
 
 /// Run llmcc with automatic multi-language detection using registry.
 /// Discovers files, partitions by language, processes each, and merges results.
-pub fn run_main_auto(opts: &LlmccOptions, registry: &LangProcessorRegistry) -> Result<Option<String>, DynError> {
+pub fn run_main_auto(
+    opts: &LlmccOptions,
+    registry: &LangProcessorRegistry,
+) -> Result<Option<String>, DynError> {
     validate_options(opts)?;
 
     // Gather all extensions from the registry
@@ -240,7 +244,8 @@ pub fn run_main_auto(opts: &LlmccOptions, registry: &LangProcessorRegistry) -> R
             continue;
         }
 
-        let processor = registry.get_processor(lang_name)
+        let processor = registry
+            .get_processor(lang_name)
             .ok_or_else(|| format!("No processor for language: {}", lang_name))?;
 
         let lang_opts = LlmccOptions {
@@ -371,7 +376,9 @@ fn discover_files_with_extensions(
     );
 
     if requested_files.is_empty() {
-        return Err("No input files found. Check that the directory contains supported file types.".into());
+        return Err(
+            "No input files found. Check that the directory contains supported file types.".into(),
+        );
     }
 
     Ok(requested_files)
@@ -458,7 +465,11 @@ where
     L: LanguageTraitImpl,
 {
     let parse_start = Instant::now();
-    info!("Parsing {} {} files", files.len(), L::supported_extensions().first().unwrap_or(&"unknown"));
+    info!(
+        "Parsing {} {} files",
+        files.len(),
+        L::supported_extensions().first().unwrap_or(&"unknown")
+    );
 
     let cc = profile_phase("parsing", || {
         CompileCtxt::from_files_with_order::<L>(files, FileOrder::BySizeDescending)

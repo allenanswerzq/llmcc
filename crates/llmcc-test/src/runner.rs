@@ -1604,7 +1604,10 @@ fn strip_numeric_prefix_from_path(path: &str) -> String {
 
 /// Auto-mode pipeline that processes both Rust and TypeScript files
 /// and merges their architecture graphs.
-fn collect_pipeline_auto(project_root: &Path, options: &PipelineOptions) -> Result<PipelineSummary> {
+fn collect_pipeline_auto(
+    project_root: &Path,
+    options: &PipelineOptions,
+) -> Result<PipelineSummary> {
     // Check if we have files for each language (don't pass file_paths,
     // let each pipeline discover its own files to preserve logical path handling)
     let rust_files = discover_language_files::<LangRust>(project_root, options.parallel)?;

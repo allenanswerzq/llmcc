@@ -134,21 +134,18 @@ impl LanguageRegistry {
     }
 
     /// Partition files by their language handler
-    pub fn partition_files<'a>(
-        &'a self,
-        files: &[String],
-    ) -> HashMap<&'static str, Vec<String>> {
+    pub fn partition_files(&self, files: &[String]) -> HashMap<&'static str, Vec<String>> {
         let mut partitions: HashMap<&'static str, Vec<String>> = HashMap::new();
 
         for file in files {
             let path = std::path::Path::new(file);
-            if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
-                if let Some(handler) = self.get_by_extension(ext) {
-                    partitions
-                        .entry(handler.name())
-                        .or_default()
-                        .push(file.clone());
-                }
+            if let Some(ext) = path.extension().and_then(|e| e.to_str())
+                && let Some(handler) = self.get_by_extension(ext)
+            {
+                partitions
+                    .entry(handler.name())
+                    .or_default()
+                    .push(file.clone());
             }
         }
 
@@ -243,6 +240,6 @@ mod tests {
 
         assert_eq!(partitions.get("rust").map(|v| v.len()), Some(2));
         assert_eq!(partitions.get("typescript").map(|v| v.len()), Some(1));
-        assert!(partitions.get("python").is_none());
+        assert!(!partitions.contains_key("python"));
     }
 }
