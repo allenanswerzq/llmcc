@@ -1,0 +1,112 @@
+===============================================================================
+multi-crate-dependencies
+===============================================================================
+Test auto mode with multiple Rust crates that have dependencies between them,
+plus TypeScript packages with imports. This should produce non-empty graphs.
+lang: auto
+
+--- file: common/Cargo.toml ---
+[package]
+name = "common"
+version = "0.1.0"
+
+--- file: common/src/lib.rs ---
+pub struct SharedType {
+    pub value: i32,
+}
+
+--- file: app/Cargo.toml ---
+[package]
+name = "app"
+version = "0.1.0"
+
+[dependencies]
+common = { path = "../common" }
+
+--- file: app/src/lib.rs ---
+use common::SharedType;
+
+pub fn process(data: &SharedType) -> i32 {
+    data.value * 2
+}
+
+--- file: frontend/package.json ---
+{
+  "name": "frontend",
+  "version": "1.0.0"
+}
+
+--- file: frontend/src/index.ts ---
+import { utils } from './utils';
+
+export function main() {
+    utils.run();
+}
+
+--- file: frontend/src/utils.ts ---
+export const utils = {
+    run: () => console.log("running")
+};
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  crate_app[label="app", path="$TMP/app"];
+  crate_common[label="common", path="$TMP/common"];
+
+  crate_app -> crate_common;
+}
+
+
+===============================================================================
+cross-language-project
+===============================================================================
+A mixed Rust/TypeScript project showing both languages in the output.
+lang: auto
+
+--- file: core/Cargo.toml ---
+[package]
+name = "core"
+version = "0.1.0"
+
+--- file: core/src/lib.rs ---
+pub fn compute() -> i32 { 42 }
+
+--- file: web/package.json ---
+{
+  "name": "web",
+  "version": "1.0.0"
+}
+
+--- file: web/src/app.ts ---
+export class App {
+    start() {}
+}
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+
+}

@@ -1,0 +1,134 @@
+===============================================================================
+mixed-rust-typescript-basic
+===============================================================================
+Test that auto mode can process a project with both Rust and TypeScript files.
+lang: auto
+
+--- file: backend/Cargo.toml ---
+[package]
+name = "backend"
+version = "0.1.0"
+
+--- file: backend/src/lib.rs ---
+pub mod utils;
+
+pub struct Config {
+    pub name: String,
+    pub value: i32,
+}
+
+--- file: backend/src/utils.rs ---
+pub fn helper() -> i32 {
+    42
+}
+
+--- file: frontend/package.json ---
+{
+  "name": "frontend",
+  "version": "1.0.0"
+}
+
+--- file: frontend/src/index.ts ---
+import { api } from './api';
+
+export function main() {
+    api.call();
+}
+
+--- file: frontend/src/api.ts ---
+export const api = {
+    call: () => console.log("called")
+};
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+
+}
+
+
+===============================================================================
+rust-only-in-auto
+===============================================================================
+Auto mode with only Rust files should work identically to explicit rust mode.
+lang: auto
+
+--- file: Cargo.toml ---
+[package]
+name = "simple"
+version = "0.1.0"
+
+--- file: src/lib.rs ---
+pub fn hello() -> &'static str {
+    "hello"
+}
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+
+}
+
+
+===============================================================================
+typescript-only-in-auto
+===============================================================================
+Auto mode with only TypeScript files should work identically to explicit typescript mode.
+lang: auto
+
+--- file: package.json ---
+{
+  "name": "webapp",
+  "version": "1.0.0"
+}
+
+--- file: src/app.ts ---
+export class App {
+    run() {
+        console.log("running");
+    }
+}
+
+--- file: src/utils.ts ---
+export function format(s: string): string {
+    return s.trim();
+}
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+
+}

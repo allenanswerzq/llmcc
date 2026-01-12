@@ -438,6 +438,7 @@ fn build_pipeline_summary(
     let mut summary = match case.lang.as_str() {
         "rust" => collect_pipeline::<LangRust>(project.root(), &options)?,
         "typescript" | "ts" => collect_pipeline::<LangTypeScript>(project.root(), &options)?,
+        "auto" => collect_pipeline_auto(project.root(), &options)?,
         other => {
             return Err(anyhow!(
                 "unsupported lang '{}' requested by {}",
@@ -1599,6 +1600,159 @@ fn strip_numeric_prefix_from_path(path: &str) -> String {
     }
 
     path.to_string_lossy().to_string()
+}
+
+/// Auto-mode pipeline that processes both Rust and TypeScript files
+/// and merges their architecture graphs.
+fn collect_pipeline_auto(project_root: &Path, options: &PipelineOptions) -> Result<PipelineSummary> {
+    // Check if we have files for each language (don't pass file_paths,
+    // let each pipeline discover its own files to preserve logical path handling)
+    let rust_files = discover_language_files::<LangRust>(project_root, options.parallel)?;
+    let ts_files = discover_language_files::<LangTypeScript>(project_root, options.parallel)?;
+
+    // We need to process each language separately and merge the arch graphs
+    let mut arch_graphs: Vec<String> = Vec::new();
+    let mut arch_graphs_d0: Vec<String> = Vec::new();
+    let mut arch_graphs_d1: Vec<String> = Vec::new();
+    let mut arch_graphs_d2: Vec<String> = Vec::new();
+    let mut arch_graphs_d3: Vec<String> = Vec::new();
+
+    // Process Rust files if any exist (don't set file_paths to preserve logical paths)
+    if !rust_files.is_empty() {
+        let summary = collect_pipeline::<LangRust>(project_root, options)?;
+        if let Some(graph) = summary.arch_graph_dot {
+            arch_graphs.push(graph);
+        }
+        if let Some(graph) = summary.arch_graph_depth_0 {
+            arch_graphs_d0.push(graph);
+        }
+        if let Some(graph) = summary.arch_graph_depth_1 {
+            arch_graphs_d1.push(graph);
+        }
+        if let Some(graph) = summary.arch_graph_depth_2 {
+            arch_graphs_d2.push(graph);
+        }
+        if let Some(graph) = summary.arch_graph_depth_3 {
+            arch_graphs_d3.push(graph);
+        }
+    }
+
+    // Process TypeScript files if any exist
+    if !ts_files.is_empty() {
+        let summary = collect_pipeline::<LangTypeScript>(project_root, options)?;
+        if let Some(graph) = summary.arch_graph_dot {
+            arch_graphs.push(graph);
+        }
+        if let Some(graph) = summary.arch_graph_depth_0 {
+            arch_graphs_d0.push(graph);
+        }
+        if let Some(graph) = summary.arch_graph_depth_1 {
+            arch_graphs_d1.push(graph);
+        }
+        if let Some(graph) = summary.arch_graph_depth_2 {
+            arch_graphs_d2.push(graph);
+        }
+        if let Some(graph) = summary.arch_graph_depth_3 {
+            arch_graphs_d3.push(graph);
+        }
+    }
+
+    // Merge arch graphs
+    let merged_arch = if arch_graphs.is_empty() {
+        None
+    } else if arch_graphs.len() == 1 {
+        Some(arch_graphs.into_iter().next().unwrap())
+    } else {
+        Some(merge_dot_graphs(&arch_graphs))
+    };
+
+    let merged_d0 = merge_if_multiple(arch_graphs_d0);
+    let merged_d1 = merge_if_multiple(arch_graphs_d1);
+    let merged_d2 = merge_if_multiple(arch_graphs_d2);
+    let merged_d3 = merge_if_multiple(arch_graphs_d3);
+
+    Ok(PipelineSummary {
+        symbols: None,
+        symbol_types: None,
+        block_relations: None,
+        dep_graph_dot: None,
+        arch_graph_dot: merged_arch,
+        arch_graph_depth_0: merged_d0,
+        arch_graph_depth_1: merged_d1,
+        arch_graph_depth_2: merged_d2,
+        arch_graph_depth_3: merged_d3,
+        block_list: None,
+        block_deps: None,
+        symbol_deps: None,
+        block_graph: None,
+        temp_dir_path: None,
+    })
+}
+
+fn merge_if_multiple(graphs: Vec<String>) -> Option<String> {
+    if graphs.is_empty() {
+        None
+    } else if graphs.len() == 1 {
+        Some(graphs.into_iter().next().unwrap())
+    } else {
+        Some(merge_dot_graphs(&graphs))
+    }
+}
+
+/// Merge multiple DOT graphs into one
+fn merge_dot_graphs(graphs: &[String]) -> String {
+    use std::fmt::Write;
+
+    let mut merged = String::new();
+    let _ = writeln!(merged, "digraph architecture {{");
+    let _ = writeln!(merged, "  rankdir=TB;");
+    let _ = writeln!(merged, "  ranksep=0.8;");
+    let _ = writeln!(merged, "  nodesep=0.4;");
+    let _ = writeln!(merged, "  splines=ortho;");
+    let _ = writeln!(merged, "  concentrate=true;");
+    let _ = writeln!(merged);
+    let _ = writeln!(
+        merged,
+        r##"  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];"##
+    );
+    let _ = writeln!(merged, r##"  edge [color="#888888", arrowsize=0.7];"##);
+    let _ = writeln!(merged);
+    let _ = writeln!(merged, "  labelloc=t;");
+    let _ = writeln!(merged, "  fontsize=16;");
+    let _ = writeln!(merged);
+
+    for output in graphs {
+        let lines: Vec<&str> = output.lines().collect();
+        let mut in_content = false;
+        for line in &lines {
+            let trimmed = line.trim();
+            if trimmed.starts_with("digraph")
+                || trimmed.starts_with("rankdir")
+                || trimmed.starts_with("ranksep")
+                || trimmed.starts_with("nodesep")
+                || trimmed.starts_with("splines")
+                || trimmed.starts_with("concentrate")
+                || trimmed.starts_with("node [")
+                || trimmed.starts_with("edge [")
+                || trimmed.starts_with("labelloc")
+                || trimmed.starts_with("fontsize")
+                || trimmed.is_empty()
+            {
+                in_content = true;
+                continue;
+            }
+            if trimmed == "}" {
+                continue;
+            }
+            if in_content {
+                let _ = writeln!(merged, "{}", line);
+            }
+        }
+        let _ = writeln!(merged);
+    }
+
+    let _ = writeln!(merged, "}}");
+    merged
 }
 
 fn render_block_graph(project: &ProjectGraph) -> String {
