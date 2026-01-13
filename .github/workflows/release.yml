@@ -30,7 +30,8 @@ jobs:
     permissions:
       contents: read
     env:
-      CRATES: bumpalo-herd llmcc-core llmcc-rust llmcc-python llmcc llmcc-bindings
+      # Order matters! Dependencies must be published before dependents
+      CRATES: bumpalo-herd llmcc-tree llmcc-core llmcc-resolver llmcc-collect llmcc-rust llmcc-ts llmcc-dot llmcc-cli llmcc-bindings
     steps:
       - uses: actions/checkout@v4
         with:
