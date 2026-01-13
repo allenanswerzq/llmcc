@@ -167,6 +167,26 @@ release version:
         echo "  ok: setup.py"
     fi
 
+    # Update npm package versions
+    echo "Updating npm package versions..."
+    if [ -f "{{root}}/npm/package.json" ]; then
+        sed -i.bak 's/"version": "[^"]*"/"version": "'$VERSION'"/' "{{root}}/npm/package.json"
+        rm -f "{{root}}/npm/package.json.bak"
+        for dep in darwin-arm64 darwin-x64 linux-arm64-gnu linux-x64-gnu win32-x64-msvc; do
+            sed -i.bak 's/"@llmcc\/'$dep'": "[^"]*"/"@llmcc\/'$dep'": "'$VERSION'"/' "{{root}}/npm/package.json"
+            rm -f "{{root}}/npm/package.json.bak"
+        done
+        git add "{{root}}/npm/package.json"
+        echo "  ok: npm/package.json"
+
+        for dir in {{root}}/npm/platforms/*/; do
+            sed -i.bak 's/"version": "[^"]*"/"version": "'$VERSION'"/' "$dir/package.json"
+            rm -f "$dir/package.json.bak"
+            git add "$dir/package.json"
+        done
+        echo "  ok: npm/platforms/*/package.json"
+    fi
+
     env \
         PYO3_PYTHON="$(python3 -c 'import sys; print(sys.executable)')" \
         RUSTFLAGS="$(if [[ '$OSTYPE' == 'darwin'* ]]; then echo '-C link-arg=-undefined -C link-arg=dynamic_lookup'; fi)" \
@@ -186,3 +206,25 @@ release version:
     echo ""
     echo "Release $VERSION published!"
     echo ""
+
+# Build npm package for current platform
+npm-build:
+    chmod +x {{root}}/scripts/npm-build.sh
+    {{root}}/scripts/npm-build.sh
+
+# Update npm package version
+npm-version version:
+    #!/bin/bash
+    set -e
+    VERSION="{{version}}"
+    echo "Updating npm package version to $VERSION..."
+    sed -i.bak 's/"version": "[^"]*"/"version": "'$VERSION'"/' "{{root}}/npm/package.json"
+    rm -f "{{root}}/npm/package.json.bak"
+    echo "  ok: Updated npm/package.json to $VERSION"
+
+# Publish npm package (binaries must be on GitHub releases first)
+npm-publish:
+    #!/bin/bash
+    set -e
+    cd "{{root}}/npm"
+    npm publish
