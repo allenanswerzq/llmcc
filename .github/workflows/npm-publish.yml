@@ -119,21 +119,21 @@ jobs:
           REQUIRED_ASSETS=("llmcc-linux-x64" "llmcc-linux-arm64" "llmcc-darwin-x64" "llmcc-darwin-arm64" "llmcc-win32-x64.exe")
           MAX_ATTEMPTS=30
           SLEEP_SECONDS=10
-          
+
           echo "Waiting for release assets for tag: $TAG"
-          
+
           for ((attempt=1; attempt<=MAX_ATTEMPTS; attempt++)); do
             echo "Attempt $attempt/$MAX_ATTEMPTS: Checking release assets..."
-            
+
             # Get release assets using gh CLI
             ASSETS=$(gh release view "$TAG" --json assets --jq '.assets[].name' 2>/dev/null || echo "")
-            
+
             if [ -z "$ASSETS" ]; then
               echo "  Release not found yet, waiting..."
               sleep $SLEEP_SECONDS
               continue
             fi
-            
+
             # Check if all required assets are present
             ALL_FOUND=true
             for asset in "${REQUIRED_ASSETS[@]}"; do
@@ -144,16 +144,16 @@ jobs:
                 echo "  Found: $asset"
               fi
             done
-            
+
             if [ "$ALL_FOUND" = true ]; then
               echo "All required assets are available!"
               exit 0
             fi
-            
+
             echo "  Some assets missing, waiting ${SLEEP_SECONDS}s..."
             sleep $SLEEP_SECONDS
           done
-          
+
           echo "ERROR: Timed out waiting for release assets after $((MAX_ATTEMPTS * SLEEP_SECONDS)) seconds"
           exit 1
 
