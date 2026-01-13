@@ -79,6 +79,8 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -87,11 +89,14 @@ jobs:
         with:
           path: binaries
 
+      - name: List binaries
+        run: find binaries -type f
+
       - name: Upload binaries to release
         uses: softprops/action-gh-release@v1
-        if: github.event_name == 'release'
         with:
           files: binaries/**/*
+          tag_name: ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -105,6 +110,9 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
+
+      - name: Wait for release assets to be available
+        run: sleep 30
 
       - name: Publish to npm
         env:
