@@ -18,9 +18,8 @@ fn main() -> Result<()> {
     let contents = llmcc_tree::generate_tokens(
         "TypeScript",
         tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into(),
-        // Use the node-types.json from tree-sitter-typescript
-        &manifest_dir
-            .join("../../third_party/tree-sitter-typescript/typescript/src/node-types.json"),
+        // Use the node-types.json bundled with this crate
+        &manifest_dir.join("./src/node-types.json"),
         &config_path,
     )?;
 
