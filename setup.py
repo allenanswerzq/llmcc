@@ -9,7 +9,7 @@ from setuptools import setup, find_packages
 setup(
     name="llmcc",
     version="0.2.51",
-    description="LLM Context Compiler - Universal context builder for any language and document type",
+    description="llmcc brings multi-depth architecture graphs for code understanding and generation.",
     long_description=open("README.md").read() if __import__("os").path.exists("README.md") else "",
     long_description_content_type="text/markdown",
     author="llmcc contributors",

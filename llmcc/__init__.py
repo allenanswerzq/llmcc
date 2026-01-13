@@ -1,7 +1,7 @@
 """
-llmcc - LLM Context Compiler
+llmcc - Multi-depth Architecture Graphs
 
-A universal context builder for any language and document type,
+llmcc brings multi-depth architecture graphs for code understanding and generation,
 enabling Python developers to analyze code using Rust-backed compilation.
 """
 

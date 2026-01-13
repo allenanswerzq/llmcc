@@ -2,7 +2,16 @@
 
 **llmcc brings multi-depth architecture graphs for code understanding and generation.**
 
-Our goal is to build a multi-depth, tree-like context / architecture view of a codebase, so a coding agent can *walk up* (zoom out) for structure and intent, then *walk down* (zoom in) to the exact crates/modules/files/symbols it needs—getting a highly comprehensive understanding of any codebase (any programming language), currently support rust/typescript.
+Our goal is to build a multi-depth, tree-like context / architecture view of a codebase, so a coding agent can *walk up* (zoom out) for structure and intent, then *walk down* (zoom in) to the exact crates/modules/files/symbols it needs—getting a highly comprehensive understanding of any codebase (any programming language).
+
+## Supported Languages
+
+| Language | Status | Notes |
+|----------|--------|-------|
+| Rust | ✅ Supported | Full support for crates, modules, and symbols |
+| TypeScript | ✅ Supported | Includes TSX, supports ES modules |
+| C++ | 🔜 Planned | Coming soon |
+| Python | 🔜 Planned | Coming soon |
 
 ## Why multi-depth graphs?
 
