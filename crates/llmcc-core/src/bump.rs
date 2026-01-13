@@ -22,7 +22,7 @@ macro_rules! declare_arena {
         /// The actual data container: thread-safe, allocation-aware.
         /// Uses 'static lifetime for storage since we use raw pointers internally.
         pub struct ArenaInner {
-            pub herd: bumpalo_herd::Herd,
+            pub herd: llmcc_bumpalo::Herd,
             // DashMap for each type - stores raw pointers for concurrent insert & lookup
             $( pub $field: dashmap::DashMap<usize, *const ()>, )*
         }
@@ -46,7 +46,7 @@ macro_rules! declare_arena {
             /// Create a fresh ArenaInner.
             pub fn new() -> Self {
                 Self {
-                    herd: bumpalo_herd::Herd::new(),
+                    herd: llmcc_bumpalo::Herd::new(),
                     // Use 256 shards to reduce contention at high thread counts
                     $( $field: dashmap::DashMap::with_hasher_and_shard_amount(std::hash::RandomState::new(), 256), )*
                 }
@@ -56,7 +56,7 @@ macro_rules! declare_arena {
             #[allow(dead_code)]
             pub fn new_with_capacity(cap: usize) -> Self {
                 Self {
-                    herd: bumpalo_herd::Herd::new(),
+                    herd: llmcc_bumpalo::Herd::new(),
                     $( $field: dashmap::DashMap::with_capacity_and_hasher_and_shard_amount(cap, std::hash::RandomState::new(), 256), )*
                 }
             }
@@ -86,7 +86,7 @@ macro_rules! declare_arena {
             /// Uses thread_local to cache the Member per thread, avoiding mutex contention.
             #[inline]
             pub fn alloc_in_herd<T>(&self, value: T) -> &T {
-                // PERFORMANCE CRITICAL: bumpalo_herd::Herd::get() contains a mutex.
+                // PERFORMANCE CRITICAL: llmcc_bumpalo::Herd::get() contains a mutex.
                 // Calling it millions of times causes severe lock contention at high thread counts.
                 // We use thread_local to cache the Member per-thread.
                 //
@@ -100,7 +100,7 @@ macro_rules! declare_arena {
                 use std::mem::ManuallyDrop;
 
                 thread_local! {
-                    static CACHED: std::cell::RefCell<Option<(usize, ManuallyDrop<bumpalo_herd::Member<'static>>)>> =
+                    static CACHED: std::cell::RefCell<Option<(usize, ManuallyDrop<llmcc_bumpalo::Member<'static>>)>> =
                         const { std::cell::RefCell::new(None) };
                 }
 
@@ -121,7 +121,7 @@ macro_rules! declare_arena {
                         // SAFETY: We use ManuallyDrop so Member::drop never runs.
                         // The Herd owns the memory and will free it.
                         let static_member = unsafe {
-                            std::mem::transmute::<bumpalo_herd::Member<'_>, bumpalo_herd::Member<'static>>(member)
+                            std::mem::transmute::<llmcc_bumpalo::Member<'_>, llmcc_bumpalo::Member<'static>>(member)
                         };
                         *borrow = Some((herd_ptr, ManuallyDrop::new(static_member)));
                     }
@@ -138,7 +138,7 @@ macro_rules! declare_arena {
                 use std::mem::ManuallyDrop;
 
                 thread_local! {
-                    static CACHED_STR: std::cell::RefCell<Option<(usize, ManuallyDrop<bumpalo_herd::Member<'static>>)>> =
+                    static CACHED_STR: std::cell::RefCell<Option<(usize, ManuallyDrop<llmcc_bumpalo::Member<'static>>)>> =
                         const { std::cell::RefCell::new(None) };
                 }
 
@@ -155,7 +155,7 @@ macro_rules! declare_arena {
                     if need_new {
                         let member = self.herd.get();
                         let static_member = unsafe {
-                            std::mem::transmute::<bumpalo_herd::Member<'_>, bumpalo_herd::Member<'static>>(member)
+                            std::mem::transmute::<llmcc_bumpalo::Member<'_>, llmcc_bumpalo::Member<'static>>(member)
                         };
                         *borrow = Some((herd_ptr, ManuallyDrop::new(static_member)));
                     }
@@ -271,7 +271,7 @@ macro_rules! declare_arena {
                 #[inline]
                 fn insert_with_id(self, arena: &'a ArenaInner, id: usize) -> &'a Self {
                     // PERFORMANCE: Use alloc_with_member to avoid repeated herd.get() calls
-                    // The bumpalo_herd::Member is cached per-thread
+                    // The llmcc_bumpalo::Member is cached per-thread
                     let r: &'a Self = arena.alloc_in_herd(self);
                     // Store raw pointer as *const () to avoid lifetime issues
                     arena.$field.insert(id, r as *const Self as *const ());
