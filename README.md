@@ -67,18 +67,42 @@ Excerpt (PageRank timing, depth=3, top-200):
 | ruff | 1661 | 418K | 1.73s |
 | codex | 617 | 224K | 0.46s |
 
-## CLI: generate graphs
+## Installation
 
-Build the binary:
+### npm / npx (Recommended)
+
+The easiest way to use llmcc is via npm. No build required:
 
 ```bash
-cargo build --release
+# Run directly without installing
+npx llmcc-cli --help
+
+# Or install globally
+npm install -g llmcc-cli
+llmcc --help
 ```
+
+### Cargo (Rust)
+
+```bash
+cargo install llmcc
+```
+
+### From Source
+
+```bash
+git clone https://github.com/allenanswerzq/llmcc.git
+cd llmcc
+cargo build --release
+./target/release/llmcc --help
+```
+
+## CLI: generate graphs
 
 Generate a crate-level graph for Codex (DOT to stdout):
 
 ```bash
-./target/release/llmcc \
+llmcc \
 	-d sample/repos/codex/codex-rs \
 	--graph \
 	--depth 1
@@ -87,7 +111,7 @@ Generate a crate-level graph for Codex (DOT to stdout):
 Generate a PageRank-filtered file+symbol graph (write to a file):
 
 ```bash
-./target/release/llmcc \
+llmcc \
 	-d sample/repos/codex/codex-rs \
 	--graph \
 	--depth 3 \
