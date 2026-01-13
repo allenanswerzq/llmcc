@@ -1,6 +1,6 @@
 #![allow(clippy::useless_conversion)]
 #![allow(unsafe_op_in_unsafe_fn)]
-use llmcc_cli::{LlmccOptions, run_main};
+use llmcc::{LlmccOptions, run_main};
 use llmcc_dot::ComponentDepth;
 // use llmcc_python::LangPython;  // TODO: will be added back in the future
 use llmcc_rust::LangRust;

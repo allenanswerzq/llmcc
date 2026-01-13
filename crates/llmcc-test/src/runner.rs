@@ -3,7 +3,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, anyhow};
-use llmcc_cli::{GraphOptions, ProcessingOptions};
+use llmcc::{GraphOptions, ProcessingOptions};
 use llmcc_core::ProjectGraph;
 use llmcc_core::block::reset_block_id_counter;
 use llmcc_core::context::{CompileCtxt, CompileUnit};
@@ -22,7 +22,7 @@ use walkdir::WalkDir;
 
 use crate::corpus::{Corpus, CorpusCase, CorpusFile};
 
-pub use llmcc_cli::{
+pub use llmcc::{
     GraphOptions as SharedGraphOptions, ProcessingOptions as SharedProcessingOptions,
 };
 

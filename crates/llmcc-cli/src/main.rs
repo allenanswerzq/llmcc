@@ -12,8 +12,8 @@ static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-use llmcc_cli::LlmccOptions;
-use llmcc_cli::{LangProcessorRegistry, run_main, run_main_auto};
+use llmcc::LlmccOptions;
+use llmcc::{LangProcessorRegistry, run_main, run_main_auto};
 use llmcc_dot::ComponentDepth;
 use llmcc_rust::LangRust;
 use llmcc_ts::LangTypeScript;
