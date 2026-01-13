@@ -5,7 +5,7 @@ llmcc brings multi-depth architecture graphs for code understanding and generati
 enabling Python developers to analyze code using Rust-backed compilation.
 """
 
-__version__ = "0.2.60"
+__version__ = "0.2.61"
 
 try:
     import llmcc_bindings
