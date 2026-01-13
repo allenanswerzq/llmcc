@@ -22,9 +22,7 @@ use walkdir::WalkDir;
 
 use crate::corpus::{Corpus, CorpusCase, CorpusFile};
 
-pub use llmcc::{
-    GraphOptions as SharedGraphOptions, ProcessingOptions as SharedProcessingOptions,
-};
+pub use llmcc::{GraphOptions as SharedGraphOptions, ProcessingOptions as SharedProcessingOptions};
 
 #[derive(Clone)]
 #[allow(dead_code)]
