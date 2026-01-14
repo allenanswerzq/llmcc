@@ -25,10 +25,7 @@ fn build_language_registry() -> LangProcessorRegistry {
     let mut registry = LangProcessorRegistry::new();
     registry.register::<LangRust>("rust");
     registry.register::<LangTypeScript>("typescript");
-    // Add more languages here:
-    // registry.register::<LangGo>("go");
-    // registry.register::<LangPython>("python");
-    // ...
+    registry.register::<LangCpp>("cpp");
     registry
 }
 
@@ -130,16 +127,12 @@ pub fn run(args: Cli) -> Result<()> {
         }
         "rust" => run_main::<LangRust>(&opts),
         "typescript" | "ts" => run_main::<LangTypeScript>(&opts),
-<<<<<<< HEAD
+        "cpp" | "c++" | "c" => run_main::<LangCpp>(&opts),
         _ => Err(format!(
-            "Unknown language: {}. Use 'auto', 'rust', or 'typescript'",
+            "Unknown language: {}. Use 'auto', 'rust', 'typescript', or 'cpp'",
             args.lang
         )
         .into()),
-=======
-        "cpp" | "c++" | "c" => run_main::<LangCpp>(&opts),
-        _ => Err(format!("Unknown language: {}", args.lang).into()),
->>>>>>> dfe8193 (add llmcc-cpp)
     };
 
     match result {

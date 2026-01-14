@@ -34,19 +34,18 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 
 [target.'cfg(not(target_env = "msvc"))'.dependencies]
-tikv-jemallocator = { version = "0.6", features = ["unprefixed_malloc_on_supported_platforms"] }
+tikv-jemallocator.workspace = true
 
 [target.'cfg(target_env = "msvc")'.dependencies]
-mimalloc = "0.1"
+mimalloc.workspace = true
 
 [features]
 default = []
 profile = ["pprof"]
 
 [dependencies.pprof]
-version = "0.15"
-features = ["flamegraph", "criterion"]
+workspace = true
 optional = true
 
 [dev-dependencies]
-tempfile = "3"
+tempfile.workspace = true
