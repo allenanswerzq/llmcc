@@ -1,0 +1,209 @@
+# Codex benchmark tasks
+# Tasks for benchmarking agent performance on openai/codex
+
+[[tasks]]
+id = "codex-find-tool-execution"
+repo = "openai/codex"
+category = "exploration"
+difficulty = "easy"
+description = """
+Find where tool execution happens in the Codex codebase.
+
+Codex is an AI coding agent that executes tools. Find:
+1. The main file/module responsible for executing tools
+2. The function or struct that dispatches tool calls
+3. How tool results are collected and returned
+
+Report the file paths and key type/function names.
+"""
+expected_answer = ["tool", "execute", "dispatch"]
+max_tool_calls = 20
+tags = ["tools", "exploration", "core"]
+
+[[tasks]]
+id = "codex-find-context-building"
+repo = "openai/codex"
+category = "exploration"
+difficulty = "medium"
+description = """
+Find how Codex builds context for LLM requests.
+
+Look for:
+1. How file contents are collected and formatted
+2. How system prompts are constructed
+3. How conversation history is managed
+4. Any context window management/truncation logic
+
+Report the relevant modules and key functions.
+"""
+expected_answer = ["context", "prompt", "message"]
+max_tool_calls = 30
+tags = ["context", "llm", "exploration"]
+
+[[tasks]]
+id = "codex-find-sandbox"
+repo = "openai/codex"
+category = "exploration"
+difficulty = "medium"
+description = """
+Find how Codex implements sandboxing for code execution.
+
+Codex needs to safely execute terminal commands. Find:
+1. The sandbox implementation (Docker, VM, process isolation, etc.)
+2. How file system access is restricted
+3. How network access is controlled
+4. Security policies and configurations
+
+Report the relevant files and describe the sandboxing approach.
+"""
+expected_answer = ["sandbox", "container", "isolation"]
+max_tool_calls = 25
+tags = ["security", "sandbox", "exploration"]
+
+[[tasks]]
+id = "codex-add-tool-timing"
+repo = "openai/codex"
+category = "small"
+difficulty = "easy"
+description = """
+Add timing information to tool execution logs.
+
+Modify the tool execution code to:
+1. Record the start time before executing a tool
+2. Record the end time after execution completes
+3. Log the duration in milliseconds
+4. Include the tool name in the log message
+
+Use appropriate logging (tracing crate if Rust).
+"""
+expected_files = ["src/"]
+validation_command = "grep -r 'duration\\|elapsed\\|timing' src/"
+max_tool_calls = 35
+tags = ["logging", "tools", "small-change"]
+
+[[tasks]]
+id = "codex-add-file-read-limit"
+repo = "openai/codex"
+category = "small"
+difficulty = "medium"
+description = """
+Add a configurable maximum file size limit for the read_file tool.
+
+Implement:
+1. A configuration option for max_file_read_bytes (default: 1MB)
+2. Check file size before reading
+3. Return an error if file exceeds the limit
+4. Include the file size and limit in the error message
+
+This prevents accidentally reading huge files into context.
+"""
+expected_files = ["src/"]
+validation_command = "grep -r 'max.*file\\|file.*limit\\|size.*limit' src/"
+max_tool_calls = 40
+tags = ["tools", "config", "safety"]
+
+[[tasks]]
+id = "codex-add-grep-context-lines"
+repo = "openai/codex"
+category = "small"
+difficulty = "medium"
+description = """
+Add context lines option to the grep/search tool.
+
+Modify the search functionality to:
+1. Accept an optional 'context_lines' parameter (default: 0)
+2. Return N lines before and after each match
+3. Handle overlapping context (don't duplicate lines)
+4. Update the tool documentation/schema
+
+This is similar to grep's -C flag.
+"""
+expected_files = ["src/"]
+validation_command = "grep -r 'context.*line\\|before\\|after' src/"
+max_tool_calls = 45
+tags = ["tools", "search", "feature"]
+
+[[tasks]]
+id = "codex-add-command-timeout"
+repo = "openai/codex"
+category = "medium"
+difficulty = "medium"
+description = """
+Add a configurable timeout for terminal command execution.
+
+Implement:
+1. A configuration option for command_timeout_seconds (default: 300)
+2. Kill the process if it exceeds the timeout
+3. Return a clear error message indicating timeout
+4. Include the command and timeout duration in the error
+5. Ensure proper cleanup of child processes
+
+This prevents runaway commands from blocking the agent.
+"""
+expected_files = ["src/"]
+validation_command = "grep -r 'timeout\\|kill\\|duration' src/"
+max_tool_calls = 50
+tags = ["terminal", "timeout", "safety"]
+
+[[tasks]]
+id = "codex-add-workspace-stats"
+repo = "openai/codex"
+category = "medium"
+difficulty = "medium"
+description = """
+Add a workspace statistics command/tool that reports:
+
+1. Total number of files
+2. Lines of code by language
+3. Number of directories
+4. Largest files (top 5)
+5. Git status summary (if git repo)
+
+This helps the agent understand the scope of the workspace.
+Create either a new tool or a CLI subcommand.
+"""
+expected_files = ["src/"]
+validation_command = "grep -r 'stats\\|statistics\\|summary' src/"
+max_tool_calls = 60
+tags = ["tools", "workspace", "feature"]
+
+[[tasks]]
+id = "codex-improve-error-messages"
+repo = "openai/codex"
+category = "small"
+difficulty = "easy"
+description = """
+Improve error messages in the file reading tool.
+
+Find the file reading implementation and enhance error messages to include:
+1. The full file path that failed
+2. The specific error type (not found, permission denied, etc.)
+3. Suggested actions (check path, check permissions)
+
+Make errors more actionable for debugging.
+"""
+expected_files = ["src/"]
+max_tool_calls = 30
+tags = ["errors", "ux", "small-change"]
+
+[[tasks]]
+id = "codex-add-dry-run-mode"
+repo = "openai/codex"
+category = "medium"
+difficulty = "hard"
+description = """
+Add a dry-run mode for file modifications.
+
+Implement:
+1. A --dry-run flag for the CLI
+2. When enabled, show what changes would be made without applying them
+3. Display diffs for file edits
+4. Show files that would be created/deleted
+5. Log commands that would be executed
+
+This is useful for previewing agent actions before applying them.
+"""
+expected_files = ["src/"]
+validation_command = "grep -r 'dry.run\\|preview\\|simulate' src/"
+max_tool_calls = 70
+tags = ["cli", "safety", "feature"]

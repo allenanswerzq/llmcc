@@ -1,0 +1,166 @@
+# Tokio benchmark tasks
+# Tasks for benchmarking agent performance on tokio-rs/tokio
+
+[[tasks]]
+id = "tokio-find-spawn-blocking"
+repo = "tokio-rs/tokio"
+category = "exploration"
+difficulty = "easy"
+description = """
+Find the file and function where `spawn_blocking` is implemented.
+
+Your goal is to locate the core implementation of tokio's spawn_blocking function,
+which is used to run blocking code on a dedicated thread pool.
+
+Report:
+1. The file path where spawn_blocking is implemented
+2. The main function/struct that handles the blocking task execution
+"""
+expected_answer = ["tokio/src/runtime/blocking/pool.rs", "BlockingPool"]
+max_tool_calls = 20
+tags = ["runtime", "blocking", "exploration"]
+
+[[tasks]]
+id = "tokio-find-select-macro"
+repo = "tokio-rs/tokio"
+category = "exploration"
+difficulty = "medium"
+description = """
+Find how the tokio::select! macro is implemented.
+
+The select! macro allows waiting on multiple async operations.
+Find:
+1. The macro definition
+2. The core polling logic that drives the select behavior
+"""
+expected_answer = ["tokio/src/macros/select.rs", "tokio-macros"]
+max_tool_calls = 25
+tags = ["macro", "async", "exploration"]
+
+[[tasks]]
+id = "tokio-add-timeout-debug-log"
+repo = "tokio-rs/tokio"
+category = "small"
+difficulty = "easy"
+description = """
+Add a debug log message in tokio::time::timeout when a timeout expires.
+
+Modify the timeout implementation to log a debug message when the timeout
+fires before the inner future completes. Use tracing::debug! macro.
+
+The log message should include:
+- The duration of the timeout
+- A message indicating the timeout expired
+"""
+expected_files = ["tokio/src/time/timeout.rs"]
+validation_command = "grep -r 'debug!' tokio/src/time/timeout.rs"
+max_tool_calls = 30
+tags = ["time", "logging", "small-change"]
+
+[[tasks]]
+id = "tokio-add-mpsc-len"
+repo = "tokio-rs/tokio"
+category = "small"
+difficulty = "medium"
+description = """
+Add a `len()` method to tokio::sync::mpsc::Receiver that returns the current
+number of messages in the channel buffer.
+
+This should:
+1. Add a public `len(&self) -> usize` method to Receiver
+2. Add appropriate documentation
+3. The method should return the number of pending messages
+
+Note: You may need to check if the underlying channel implementation
+exposes this information.
+"""
+expected_files = ["tokio/src/sync/mpsc/bounded.rs", "tokio/src/sync/mpsc/chan.rs"]
+validation_command = "grep -r 'pub fn len' tokio/src/sync/mpsc/"
+max_tool_calls = 40
+tags = ["sync", "mpsc", "api-addition"]
+
+[[tasks]]
+id = "tokio-document-runtime-builder"
+repo = "tokio-rs/tokio"
+category = "small"
+difficulty = "easy"
+description = """
+Improve the documentation for Runtime::builder() by adding an example
+that shows how to configure a multi-threaded runtime with:
+- 4 worker threads
+- A custom thread name prefix
+- Thread stack size of 4MB
+
+Add this example to the existing documentation.
+"""
+expected_files = ["tokio/src/runtime/builder.rs"]
+validation_command = "grep -A 20 '# Example' tokio/src/runtime/builder.rs | grep 'worker_threads'"
+max_tool_calls = 25
+tags = ["docs", "runtime"]
+
+[[tasks]]
+id = "tokio-add-oneshot-try-recv"
+repo = "tokio-rs/tokio"
+category = "medium"
+difficulty = "medium"
+description = """
+Add a `try_recv()` method to tokio::sync::oneshot::Receiver.
+
+This method should:
+1. Return `Result<T, TryRecvError>` immediately without blocking
+2. TryRecvError should have variants for Empty and Closed
+3. Include documentation with examples
+4. Add unit tests for the new method
+
+This is similar to std::sync::mpsc::Receiver::try_recv().
+"""
+expected_files = [
+    "tokio/src/sync/oneshot.rs"
+]
+validation_command = "cargo check -p tokio --features sync"
+max_tool_calls = 50
+tags = ["sync", "oneshot", "api-addition"]
+
+[[tasks]]
+id = "tokio-fix-doc-typos"
+repo = "tokio-rs/tokio"
+category = "small"
+difficulty = "easy"
+description = """
+Find and fix documentation typos in the tokio::sync module.
+
+Look for common typos like:
+- "recieve" -> "receive"
+- "occured" -> "occurred"
+- "seperate" -> "separate"
+- Double words like "the the"
+
+Fix at least 3 typos if found, or report that no typos were found.
+"""
+expected_files = ["tokio/src/sync/"]
+max_tool_calls = 30
+tags = ["docs", "typos"]
+
+[[tasks]]
+id = "tokio-add-task-id"
+repo = "tokio-rs/tokio"
+category = "medium"
+difficulty = "hard"
+description = """
+Add a way to get a unique task ID for the currently running tokio task.
+
+Implement:
+1. A `task::id()` function that returns an opaque TaskId
+2. TaskId should implement Debug, Clone, Copy, Eq, Hash
+3. Each spawned task should have a unique ID
+4. The ID should be accessible from within the task
+
+This is useful for debugging and logging in async applications.
+"""
+expected_files = [
+    "tokio/src/task/mod.rs",
+    "tokio/src/task/id.rs"
+]
+validation_command = "cargo check -p tokio --features rt"
+max_tool_calls = 60
+tags = ["task", "api-addition", "runtime"]

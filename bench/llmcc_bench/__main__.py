@@ -10,6 +10,8 @@ Commands:
     generate    Generate architecture graphs
     clean       Clean up generated files
     info        Show system and configuration info
+    compare     Run A/B comparison benchmarks (agent benchmark)
+    report      Generate reports from benchmark results
 """
 
 import argparse
@@ -193,6 +195,114 @@ def cmd_info(args, config: Config) -> int:
     return 0
 
 
+def cmd_compare(args, config: Config) -> int:
+    """Run A/B comparison benchmarks."""
+    import asyncio
+    from datetime import datetime
+    from .agent.config import (
+        GRAPH_CONFIGS,
+        Condition,
+        ExperimentConfig,
+        RunLimits,
+    )
+    from .agent.runner import MockAgentRunner
+    from .agent.tasks import get_task_by_id, load_tasks
+    from .compare import run_comparison
+
+    # Determine conditions
+    conditions = [Condition.BASELINE, Condition.WITH_LLMCC]
+    if args.baseline_only:
+        conditions = [Condition.BASELINE]
+    elif args.llmcc_only:
+        conditions = [Condition.WITH_LLMCC]
+
+    # Determine repo and tasks
+    if args.task:
+        task = get_task_by_id(args.task)
+        if task is None:
+            print(f"Task not found: {args.task}")
+            return 1
+        repo = task.repo
+        task_ids = [args.task]
+    else:
+        repo = args.repo
+        task_ids = None
+
+    # Create config
+    exp_config = ExperimentConfig(
+        repo=repo,
+        repo_path=args.repo_path,
+        runs_per_condition=args.runs,
+        conditions=conditions,
+        graph_config=GRAPH_CONFIGS[args.graph_config],
+        run_limits=RunLimits(
+            max_tool_calls=args.max_tool_calls,
+        ),
+        task_ids=task_ids,
+    )
+
+    # Create output directory
+    if args.output:
+        output_dir = args.output
+    else:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        repo_name = repo.split("/")[-1]
+        output_dir = config.sample_dir.parent / "bench" / "results" / f"{timestamp}_{repo_name}"
+
+    # Create runner
+    if args.runner == "mock":
+        runner = MockAgentRunner(seed=args.seed)
+    elif args.runner == "claude":
+        from .agent.runner import ClaudeAgentRunner
+        runner = ClaudeAgentRunner(
+            model=getattr(args, 'model', 'opus'),
+            timeout=getattr(args, 'timeout', 600),
+        )
+    elif args.runner == "codex":
+        from .agent.runner import CodexAgentRunner
+        runner = CodexAgentRunner(
+            model=getattr(args, 'model', 'o3'),
+            timeout=getattr(args, 'timeout', 600),
+        )
+    else:
+        print(f"Unknown runner: {args.runner}")
+        return 1
+
+    print(f"llmcc Agent Benchmark")
+    print(f"=" * 50)
+    print(f"Repository: {repo}")
+    print(f"Conditions: {[c.value for c in conditions]}")
+    print(f"Runs per condition: {args.runs}")
+    print(f"Graph config: {args.graph_config}")
+    print(f"Runner: {args.runner}")
+    print(f"Output: {output_dir}")
+    print()
+
+    # Run benchmark
+    asyncio.run(run_comparison(exp_config, runner, output_dir))
+
+    return 0
+
+
+def cmd_report(args, config: Config) -> int:
+    """Generate reports from benchmark results."""
+    from .agent.report import generate_report
+
+    report = generate_report(args.input, args.format)
+
+    if report is None:
+        print("Error: Could not generate report. Check that results directory exists.")
+        return 1
+
+    if args.output:
+        args.output.write_text(report)
+        print(f"Report written to: {args.output}")
+    else:
+        print(report)
+
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="llmcc-bench",
@@ -311,6 +421,106 @@ def main() -> int:
     # info command
     subparsers.add_parser("info", help="Show system and configuration info")
 
+    # compare command (agent benchmark)
+    compare_parser = subparsers.add_parser(
+        "compare",
+        help="Run A/B comparison benchmarks for llmcc effectiveness"
+    )
+    compare_group = compare_parser.add_mutually_exclusive_group(required=True)
+    compare_group.add_argument(
+        "--task",
+        help="Specific task ID to run",
+    )
+    compare_group.add_argument(
+        "--repo",
+        help="Repository to run all tasks for (e.g., 'tokio-rs/tokio')",
+    )
+    compare_parser.add_argument(
+        "--runs",
+        type=int,
+        default=3,
+        help="Number of runs per condition (default: 3)",
+    )
+    compare_parser.add_argument(
+        "--graph-config",
+        choices=["minimal", "compact", "standard", "detailed", "full"],
+        default="standard",
+        help="Graph configuration preset (default: standard)",
+    )
+    compare_parser.add_argument(
+        "--baseline-only",
+        action="store_true",
+        help="Only run baseline condition (no graph)",
+    )
+    compare_parser.add_argument(
+        "--llmcc-only",
+        action="store_true",
+        help="Only run with_llmcc condition",
+    )
+    compare_parser.add_argument(
+        "--runner",
+        choices=["mock", "claude", "codex"],
+        default="mock",
+        help="Agent runner to use (default: mock)",
+    )
+    compare_parser.add_argument(
+        "--model",
+        type=str,
+        default=None,
+        help="Model to use (claude: opus/sonnet, codex: o3/o4-mini)",
+    )
+    compare_parser.add_argument(
+        "--timeout",
+        type=float,
+        default=600,
+        help="Timeout per run in seconds (default: 600)",
+    )
+    compare_parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Random seed for reproducibility (mock runner only)",
+    )
+    compare_parser.add_argument(
+        "--max-tool-calls",
+        type=int,
+        default=100,
+        help="Maximum tool calls per run (default: 100)",
+    )
+    compare_parser.add_argument(
+        "-o", "--output",
+        type=Path,
+        help="Output directory for results",
+    )
+    compare_parser.add_argument(
+        "--repo-path",
+        type=Path,
+        help="Local path to repository (skip automatic lookup)",
+    )
+
+    # report command
+    report_parser = subparsers.add_parser(
+        "report",
+        help="Generate reports from benchmark results"
+    )
+    report_parser.add_argument(
+        "-i", "--input",
+        type=Path,
+        required=True,
+        help="Results directory to summarize",
+    )
+    report_parser.add_argument(
+        "-f", "--format",
+        choices=["markdown", "json"],
+        default="markdown",
+        help="Output format (default: markdown)",
+    )
+    report_parser.add_argument(
+        "-o", "--output",
+        type=Path,
+        help="Output file (default: stdout)",
+    )
+
     args = parser.parse_args()
 
     if not args.command:
@@ -336,6 +546,8 @@ def main() -> int:
         "generate": cmd_generate,
         "clean": cmd_clean,
         "info": cmd_info,
+        "compare": cmd_compare,
+        "report": cmd_report,
     }
 
     handler = commands.get(args.command)

@@ -6,12 +6,14 @@ Our goal is to build a multi-depth, tree-like context / architecture view of a c
 
 ## Supported Languages
 
-| Language | Status | Notes |
-|----------|--------|-------|
-| Rust | ✅ Supported | Full support for crates, modules, and symbols |
-| TypeScript | ✅ Supported | Includes TSX, supports ES modules |
-| C++ | 🔜 Planned | Coming soon |
-| Python | 🔜 Planned | Coming soon |
+| Language | Status |
+|----------|--------|
+| Rust | ✅ Supported |
+| TypeScript | ✅ Supported |
+| C++ | 🔜 Planned |
+| Python | 🔜 Planned |
+| Go | 🔜 Planned |
+| more |
 
 ## Why multi-depth graphs?
 
@@ -74,9 +76,6 @@ Excerpt (PageRank timing, depth=3, top-200):
 The easiest way to use llmcc is via npm. No build required:
 
 ```bash
-# Run directly without installing
-npx llmcc-cli --help
-
 # Or install globally
 npm install -g llmcc-cli
 llmcc --help
