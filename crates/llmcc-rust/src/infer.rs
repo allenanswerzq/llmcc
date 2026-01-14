@@ -121,15 +121,14 @@ fn infer_type_impl<'tcx>(
         LangRust::binary_expression => infer_binary_expression(unit, scopes, node, depth + 1),
 
         // Reference expression: &value
-        LangRust::reference_expression => {
-            infer_from_children(unit, scopes, node, &[], depth + 1).and_then(|sym| {
+        LangRust::reference_expression => infer_from_children(unit, scopes, node, &[], depth + 1)
+            .and_then(|sym| {
                 if let Some(type_id) = sym.type_of() {
                     unit.opt_get_symbol(type_id)
                 } else {
                     Some(sym)
                 }
-            })
-        }
+            }),
 
         // Unary expression: -a, !b,
         LangRust::unary_expression => node

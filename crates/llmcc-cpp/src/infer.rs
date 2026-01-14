@@ -162,7 +162,9 @@ fn infer_type_impl<'tcx>(
         LangCpp::compound_statement => infer_block(unit, scopes, node, depth + 1),
 
         // Parenthesized expression
-        LangCpp::parenthesized_expression => infer_from_children(unit, scopes, node, &[], depth + 1),
+        LangCpp::parenthesized_expression => {
+            infer_from_children(unit, scopes, node, &[], depth + 1)
+        }
 
         // Lambda expression
         LangCpp::lambda_expression => {

@@ -593,9 +593,7 @@ fn infer_binary_expression<'tcx>(
         // Logical operators return boolean
         "&&" | "||" => get_primitive_type(scopes, "boolean"),
         // Arithmetic operators preserve left operand type
-        "+" | "-" | "*" | "/" | "%" | "**" => {
-            infer_type_impl(unit, scopes, &left_node, depth + 1)
-        }
+        "+" | "-" | "*" | "/" | "%" | "**" => infer_type_impl(unit, scopes, &left_node, depth + 1),
         // Bitwise operators return number
         "&" | "|" | "^" | "<<" | ">>" | ">>>" => get_primitive_type(scopes, "number"),
         // Nullish coalescing
