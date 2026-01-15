@@ -8,18 +8,13 @@ fn main() -> Result<()> {
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR")?);
     let config_path = manifest_dir.join("./src/token_map.toml");
 
-    // tree-sitter-typescript provides node-types.json in its package
-    // For now, we'll generate from the grammar at runtime
-    // TODO: Extract node-types.json from tree-sitter-typescript package
-
     println!("cargo:rerun-if-changed={}", config_path.display());
 
-    // Generate TypeScript token definitions
-    let contents = llmcc_tree::generate_tokens(
+    // Use TYPESCRIPT_NODE_TYPES constant from tree-sitter-typescript crate (no local file needed)
+    let contents = llmcc_tree::generate_tokens_from_str(
         "TypeScript",
         tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into(),
-        // Use the node-types.json bundled with this crate
-        &manifest_dir.join("./src/node-types.json"),
+        tree_sitter_typescript::TYPESCRIPT_NODE_TYPES,
         &config_path,
     )?;
 
