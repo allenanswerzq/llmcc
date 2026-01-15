@@ -1,0 +1,52 @@
+===============================================================================
+package-module-hierarchy
+===============================================================================
+Test package and module hierarchy at depth 2.
+lang: cpp
+
+--- file: sample/CMakeLists.txt ---
+cmake_minimum_required(VERSION 3.10)
+project(sample)
+
+--- file: sample/src/models/user.cpp ---
+namespace models {
+    struct User {
+        int id;
+        std::string name;
+    };
+}
+
+--- file: sample/src/models/profile.cpp ---
+namespace models {
+    struct Profile {
+        std::string bio;
+    };
+}
+
+--- file: sample/src/services/user_service.cpp ---
+#include "../models/user.cpp"
+#include "../models/profile.cpp"
+
+namespace services {
+    struct UserService {
+        models::User user;
+        models::Profile profile;
+    };
+}
+
+--- expect:arch-graph-depth-2 ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+
+}

@@ -1,0 +1,594 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_leveldb {
+    label="leveldb";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_db {
+      label="db";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_autocompact_test_cc {
+        label="autocompact_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n2778[label="AutoCompactTest", path="/home/yibai/llmcc/sample/repos/leveldb/db/autocompact_test.cc:13", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_builder_h {
+        label="builder.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n6398[label="Options", path="/home/yibai/llmcc/sample/repos/leveldb/db/builder.h:12", sym_ty="Struct", shape=box];
+        n6399[label="FileMetaData", path="/home/yibai/llmcc/sample/repos/leveldb/db/builder.h:13", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_c_cc {
+        label="c.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n7735[label="leveldb_filterpolicy_t", path="/home/yibai/llmcc/sample/repos/leveldb/db/c.cc:109", sym_ty="Struct", shape=box];
+        n7767[label="leveldb_env_t", path="/home/yibai/llmcc/sample/repos/leveldb/db/c.cc:142", sym_ty="Struct", shape=box];
+        n7671[label="leveldb_t", path="/home/yibai/llmcc/sample/repos/leveldb/db/c.cc:49", sym_ty="Struct", shape=box];
+        n7673[label="leveldb_iterator_t", path="/home/yibai/llmcc/sample/repos/leveldb/db/c.cc:52", sym_ty="Struct", shape=box];
+        n7675[label="leveldb_writebatch_t", path="/home/yibai/llmcc/sample/repos/leveldb/db/c.cc:55", sym_ty="Struct", shape=box];
+        n7678[label="leveldb_snapshot_t", path="/home/yibai/llmcc/sample/repos/leveldb/db/c.cc:58", sym_ty="Struct", shape=box];
+        n7681[label="leveldb_readoptions_t", path="/home/yibai/llmcc/sample/repos/leveldb/db/c.cc:61", sym_ty="Struct", shape=box];
+        n7685[label="leveldb_writeoptions_t", path="/home/yibai/llmcc/sample/repos/leveldb/db/c.cc:64", sym_ty="Struct", shape=box];
+        n7688[label="leveldb_options_t", path="/home/yibai/llmcc/sample/repos/leveldb/db/c.cc:67", sym_ty="Struct", shape=box];
+        n7692[label="leveldb_cache_t", path="/home/yibai/llmcc/sample/repos/leveldb/db/c.cc:70", sym_ty="Struct", shape=box];
+        n7711[label="leveldb_comparator_t", path="/home/yibai/llmcc/sample/repos/leveldb/db/c.cc:89", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_corruption_test_cc {
+        label="corruption_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n3964[label="CorruptionTest", path="/home/yibai/llmcc/sample/repos/leveldb/db/corruption_test.cc:23", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_impl_cc {
+        label="db_impl.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n897[label="CompactionState", path="/home/yibai/llmcc/sample/repos/leveldb/db/db_impl.cc:54", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_test_cc {
+        label="db_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n1140[label="DBTest", path="/home/yibai/llmcc/sample/repos/leveldb/db/db_test.cc:260", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_dbformat_h {
+        label="dbformat.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n10035[label="ValueType", path="/home/yibai/llmcc/sample/repos/leveldb/db/dbformat.h:54", sym_ty="Enum", shape=box];
+        n10234[label="ParsedInternalKey", path="/home/yibai/llmcc/sample/repos/leveldb/db/dbformat.h:69", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_fault_injection_test_cc {
+        label="fault_injection_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n10173[label="FaultInjectionTest", path="/home/yibai/llmcc/sample/repos/leveldb/db/fault_injection_test.cc:364", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_log_reader_h {
+        label="log_reader.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n5901[label="SequentialFile", path="/home/yibai/llmcc/sample/repos/leveldb/db/log_reader.h:16", sym_ty="Struct", shape=box];
+        n5905[label="Reader", path="/home/yibai/llmcc/sample/repos/leveldb/db/log_reader.h:20", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_log_test_cc {
+        label="log_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n7355[label="LogTest", path="/home/yibai/llmcc/sample/repos/leveldb/db/log_test.cc:39", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_log_writer_h {
+        label="log_writer.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n2281[label="Writer", path="/home/yibai/llmcc/sample/repos/leveldb/db/log_writer.h:20", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_memtable_cc {
+        label="memtable.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n1940[label="MemTableIterator", path="/home/yibai/llmcc/sample/repos/leveldb/db/memtable.cc:46", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_memtable_h {
+        label="memtable.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n105[label="InternalKeyComparator", path="/home/yibai/llmcc/sample/repos/leveldb/db/memtable.h:17", sym_ty="Struct", shape=box];
+        n276[label="MemTable", path="/home/yibai/llmcc/sample/repos/leveldb/db/memtable.h:20", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_recovery_test_cc {
+        label="recovery_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n8948[label="RecoveryTest", path="/home/yibai/llmcc/sample/repos/leveldb/db/recovery_test.cc:18", sym_ty="Struct", shape=box];
+        n9679[label="TEST_F", path="/home/yibai/llmcc/sample/repos/leveldb/db/recovery_test.cc:325", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_table_cache_h {
+        label="table_cache.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n8747[label="TableCache", path="/home/yibai/llmcc/sample/repos/leveldb/db/table_cache.h:22", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_version_set_h {
+        label="version_set.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n9634[label="Version", path="/home/yibai/llmcc/sample/repos/leveldb/db/version_set.h:60", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_version_set_test_cc {
+        label="version_set_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n3811[label="AddBoundaryInputsTest", path="/home/yibai/llmcc/sample/repos/leveldb/db/version_set_test.cc:181", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_helpers {
+      label="helpers";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_memenv_h {
+        label="memenv.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n8846[label="Env", path="/home/yibai/llmcc/sample/repos/leveldb/helpers/memenv/memenv.h:12", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_memenv_test_cc {
+        label="memenv_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n10031[label="MemEnvTest", path="/home/yibai/llmcc/sample/repos/leveldb/helpers/memenv/memenv_test.cc:18", sym_ty="Struct", shape=box];
+        n10040[label="TEST_F", path="/home/yibai/llmcc/sample/repos/leveldb/helpers/memenv/memenv_test.cc:26", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_leveldb {
+      label="leveldb";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_cache_h {
+        label="cache.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n5933[label="LEVELDB_EXPORT", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/cache.h:34", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_h {
+        label="db.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n2186[label="WriteOptions", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/db.h:23", sym_ty="Struct", shape=box];
+        n2918[label="LEVELDB_EXPORT", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/db.h:29", sym_ty="Struct", shape=box];
+        n2917[label="Snapshot", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/db.h:29", sym_ty="Function", shape=ellipse];
+        n3125[label="LEVELDB_EXPORT", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/db.h:35", sym_ty="Struct", shape=box];
+        n3124[label="Range", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/db.h:35", sym_ty="Function", shape=ellipse];
+        n3245[label="DB", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/db.h:46", sym_ty="Function", shape=ellipse];
+        n3247[label="LEVELDB_EXPORT", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/db.h:46", sym_ty="Struct", shape=box];
+        n3269[label="DB", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/db.h:58", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_env_h {
+        label="env.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n4733[label="SequentialFile", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/env.h:222", sym_ty="Function", shape=ellipse];
+        n5617[label="RandomAccessFile", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/env.h:252", sym_ty="Function", shape=ellipse];
+        n6124[label="WritableFile", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/env.h:277", sym_ty="Function", shape=ellipse];
+        n6231[label="FileLock", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/env.h:307", sym_ty="Function", shape=ellipse];
+        n6232[label="LEVELDB_EXPORT", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/env.h:307", sym_ty="Struct", shape=box];
+        n6237[label="FileLock", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/env.h:311", sym_ty="Function", shape=ellipse];
+        n6768[label="EnvWrapper", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/env.h:335", sym_ty="Function", shape=ellipse];
+        n6937[label="NewAppendableFile", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/env.h:355", sym_ty="Function", shape=ellipse];
+        n6941[label="FileExists", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/env.h:358", sym_ty="Function", shape=ellipse];
+        n6949[label="RemoveFile", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/env.h:365", sym_ty="Function", shape=ellipse];
+        n6952[label="CreateDir", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/env.h:368", sym_ty="Function", shape=ellipse];
+        n7026[label="SleepForMicroseconds", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/env.h:397", sym_ty="Function", shape=ellipse];
+        n289[label="Slice", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/env.h:48", sym_ty="Struct", shape=box];
+        n291[label="Env", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/env.h:51", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_iterator_h {
+        label="iterator.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n7386[label="Iterator", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/iterator.h:24", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_slice_h {
+        label="slice.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n3423[label="Slice", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/slice.h:27", sym_ty="Function", shape=ellipse];
+        n3495[label="Slice", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/slice.h:42", sym_ty="Function", shape=ellipse];
+        n3520[label="data", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/slice.h:46", sym_ty="Function", shape=ellipse];
+        n3521[label="size", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/slice.h:49", sym_ty="Function", shape=ellipse];
+        n4022[label="starts_with", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/slice.h:87", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_status_h {
+        label="status.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n5003[label="Status", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/status.h:33", sym_ty="Function", shape=ellipse];
+        n5659[label="NotFound", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/status.h:40", sym_ty="Function", shape=ellipse];
+        n5670[label="Corruption", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/status.h:43", sym_ty="Function", shape=ellipse];
+        n5700[label="IOError", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/status.h:52", sym_ty="Function", shape=ellipse];
+        n5982[label="ok", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/status.h:57", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_table_h {
+        label="table.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n1437[label="RandomAccessFile", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/table.h:19", sym_ty="Struct", shape=box];
+        n1915[label="Table", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/table.h:26", sym_ty="Function", shape=ellipse];
+        n2398[label="Table", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/table.h:67", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_table_builder_h {
+        label="table_builder.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n889[label="TableBuilder", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/table_builder.h:28", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_write_batch_h {
+        label="write_batch.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n2316[label="Slice", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/write_batch.h:31", sym_ty="Struct", shape=box];
+        n2318[label="LEVELDB_EXPORT", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/write_batch.h:33", sym_ty="Struct", shape=box];
+        n2317[label="WriteBatch", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/write_batch.h:33", sym_ty="Function", shape=ellipse];
+        n2325[label="WriteBatch", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/write_batch.h:45", sym_ty="Function", shape=ellipse];
+        n2330[label="Put", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/write_batch.h:51", sym_ty="Function", shape=ellipse];
+        n2333[label="Delete", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/write_batch.h:54", sym_ty="Function", shape=ellipse];
+        n2488[label="Append", path="/home/yibai/llmcc/sample/repos/leveldb/include/leveldb/write_batch.h:70", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_port {
+      label="port";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_port_example_h {
+        label="port_example.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n706[label="LOCKABLE", path="/home/yibai/llmcc/sample/repos/leveldb/port/port_example.h:24", sym_ty="Struct", shape=box];
+        n705[label="Mutex", path="/home/yibai/llmcc/sample/repos/leveldb/port/port_example.h:24", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_table {
+      label="table";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_block_h {
+        label="block.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n5864[label="Block", path="/home/yibai/llmcc/sample/repos/leveldb/table/block.h:18", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_block_builder_h {
+        label="block_builder.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n918[label="BlockBuilder", path="/home/yibai/llmcc/sample/repos/leveldb/table/block_builder.h:17", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_filter_block_h {
+        label="filter_block.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n4269[label="FilterPolicy", path="/home/yibai/llmcc/sample/repos/leveldb/table/filter_block.h:22", sym_ty="Struct", shape=box];
+        n4275[label="FilterBlockBuilder", path="/home/yibai/llmcc/sample/repos/leveldb/table/filter_block.h:30", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_filter_block_test_cc {
+        label="filter_block_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n5652[label="FilterBlockTest", path="/home/yibai/llmcc/sample/repos/leveldb/table/filter_block_test.cc:39", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_iterator_wrapper_h {
+        label="iterator_wrapper.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n6784[label="IteratorWrapper", path="/home/yibai/llmcc/sample/repos/leveldb/table/iterator_wrapper.h:17", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_merger_h {
+        label="merger.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n8395[label="Comparator", path="/home/yibai/llmcc/sample/repos/leveldb/table/merger.h:10", sym_ty="Struct", shape=box];
+        n8396[label="Iterator", path="/home/yibai/llmcc/sample/repos/leveldb/table/merger.h:11", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_table_test_cc {
+        label="table_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n4784[label="KeyConvertingIterator", path="/home/yibai/llmcc/sample/repos/leveldb/table/table_test.cc:260", sym_ty="Struct", shape=box];
+        n5094[label="Harness", path="/home/yibai/llmcc/sample/repos/leveldb/table/table_test.cc:407", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_two_level_iterator_h {
+        label="two_level_iterator.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n6315[label="ReadOptions", path="/home/yibai/llmcc/sample/repos/leveldb/table/two_level_iterator.h:12", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_util {
+      label="util";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_arena_h {
+        label="arena.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n8373[label="Arena", path="/home/yibai/llmcc/sample/repos/leveldb/util/arena.h:16", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_bloom_test_cc {
+        label="bloom_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n5489[label="BloomTest", path="/home/yibai/llmcc/sample/repos/leveldb/util/bloom_test.cc:20", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_cache_test_cc {
+        label="cache_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n1184[label="TEST_F", path="/home/yibai/llmcc/sample/repos/leveldb/util/cache_test.cc:203", sym_ty="Function", shape=ellipse];
+        n382[label="CacheTest", path="/home/yibai/llmcc/sample/repos/leveldb/util/cache_test.cc:27", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_env_posix_test_cc {
+        label="env_posix_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n10657[label="EnvPosixTest", path="/home/yibai/llmcc/sample/repos/leveldb/util/env_posix_test.cc:172", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_env_test_cc {
+        label="env_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n471[label="EnvTest", path="/home/yibai/llmcc/sample/repos/leveldb/util/env_test.cc:17", sym_ty="Struct", shape=box];
+        n718[label="TEST_F", path="/home/yibai/llmcc/sample/repos/leveldb/util/env_test.cc:71", sym_ty="Function", shape=ellipse];
+        n750[label="TEST_F", path="/home/yibai/llmcc/sample/repos/leveldb/util/env_test.cc:95", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_logging_h {
+        label="logging.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n4336[label="Slice", path="/home/yibai/llmcc/sample/repos/leveldb/util/logging.h:19", sym_ty="Struct", shape=box];
+        n4339[label="WritableFile", path="/home/yibai/llmcc/sample/repos/leveldb/util/logging.h:20", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mutexlock_h {
+        label="mutexlock.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n7185[label="MutexLock", path="/home/yibai/llmcc/sample/repos/leveldb/util/mutexlock.h:23", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+  }
+
+
+  n105 -> n3811 [from="field_type", to="struct"];
+  n289 -> n4733 [from="input", to="func"];
+  n289 -> n5617 [from="input", to="func"];
+  n289 -> n6124 [from="input", to="func"];
+  n291 -> n6124 [from="caller", to="callee"];
+  n382 -> n1184 [from="input", to="func"];
+  n471 -> n718 [from="input", to="func"];
+  n471 -> n750 [from="input", to="func"];
+  n705 -> n706 [from="func", to="type_dep"];
+  n1437 -> n1915 [from="input", to="func"];
+  n1915 -> n2398 [from="caller", to="callee"];
+  n2186 -> n3245 [from="input", to="func"];
+  n2186 -> n7685 [from="field_type", to="struct"];
+  n2281 -> n7355 [from="field_type", to="struct"];
+  n2316 -> n2317 [from="input", to="func"];
+  n2316 -> n2330 [from="input", to="func"];
+  n2316 -> n2333 [from="input", to="func"];
+  n2317 -> n2318 [from="func", to="type_dep"];
+  n2318 -> n2325 [from="input", to="func"];
+  n2318 -> n7675 [from="field_type", to="struct"];
+  n2325 -> n2488 [from="input", to="func"];
+  n2398 -> n1915 [from="input", to="func"];
+  n2917 -> n2918 [from="func", to="type_dep"];
+  n2917 -> n3245 [from="input", to="func"];
+  n2918 -> n7678 [from="field_type", to="struct"];
+  n3124 -> n3125 [from="func", to="type_dep"];
+  n3124 -> n3245 [from="input", to="func"];
+  n3245 -> n3247 [from="func", to="type_dep"];
+  n3245 -> n3269 [from="caller", to="callee"];
+  n3247 -> n1140 [from="field_type", to="struct"];
+  n3247 -> n2778 [from="field_type", to="struct"];
+  n3247 -> n3964 [from="field_type", to="struct"];
+  n3247 -> n7671 [from="field_type", to="struct"];
+  n3247 -> n8948 [from="field_type", to="struct"];
+  n3247 -> n10173 [from="field_type", to="struct"];
+  n3269 -> n3245 [from="input", to="func"];
+  n3423 -> n3495 [from="caller", to="callee"];
+  n3423 -> n3520 [from="caller", to="callee"];
+  n3423 -> n3521 [from="caller", to="callee"];
+  n3495 -> n3423 [from="input", to="func"];
+  n3495 -> n4022 [from="input", to="func"];
+  n4269 -> n1140 [from="field_type", to="struct"];
+  n4269 -> n4275 [from="field_type", to="struct"];
+  n4269 -> n5489 [from="field_type", to="struct"];
+  n4269 -> n5652 [from="field_type", to="struct"];
+  n4269 -> n7735 [from="base", to="extends"];
+  n4336 -> n889 [from="input", to="func"];
+  n4336 -> n918 [from="field_type", to="struct"];
+  n4336 -> n1915 [from="input", to="func"];
+  n4336 -> n3245 [from="input", to="func"];
+  n4336 -> n4275 [from="field_type", to="struct"];
+  n4336 -> n5659 [from="input", to="func"];
+  n4336 -> n5670 [from="input", to="func"];
+  n4336 -> n5700 [from="input", to="func"];
+  n4336 -> n5905 [from="field_type", to="struct"];
+  n4336 -> n6784 [from="field_type", to="struct"];
+  n4336 -> n7386 [from="input", to="func"];
+  n4336 -> n10234 [from="field_type", to="struct"];
+  n4339 -> n897 [from="field_type", to="struct"];
+  n4339 -> n7355 [from="field_type", to="struct"];
+  n5003 -> n2281 [from="field_type", to="struct"];
+  n5003 -> n4784 [from="field_type", to="struct"];
+  n5003 -> n8747 [from="field_type", to="struct"];
+  n5003 -> n9634 [from="field_type", to="struct"];
+  n5901 -> n5905 [from="field_type", to="struct"];
+  n5901 -> n7355 [from="field_type", to="struct"];
+  n5905 -> n7355 [from="field_type", to="struct"];
+  n5933 -> n382 [from="field_type", to="struct"];
+  n5933 -> n2778 [from="field_type", to="struct"];
+  n5933 -> n3964 [from="field_type", to="struct"];
+  n5933 -> n7692 [from="field_type", to="struct"];
+  n5933 -> n8747 [from="field_type", to="struct"];
+  n5933 -> n10173 [from="field_type", to="struct"];
+  n6124 -> n6937 [from="input", to="func"];
+  n6231 -> n6232 [from="func", to="type_dep"];
+  n6231 -> n6237 [from="caller", to="callee"];
+  n6237 -> n6231 [from="input", to="func"];
+  n6315 -> n7681 [from="field_type", to="struct"];
+  n6398 -> n889 [from="input", to="func"];
+  n6398 -> n1140 [from="field_type", to="struct"];
+  n6398 -> n2778 [from="field_type", to="struct"];
+  n6398 -> n3964 [from="field_type", to="struct"];
+  n6398 -> n5094 [from="field_type", to="struct"];
+  n6398 -> n7688 [from="field_type", to="struct"];
+  n6398 -> n8747 [from="field_type", to="struct"];
+  n6398 -> n10173 [from="field_type", to="struct"];
+  n6399 -> n9634 [from="field_type", to="struct"];
+  n6768 -> n291 [from="caller", to="callee"];
+  n6768 -> n1140 [from="field_type", to="struct"];
+  n6768 -> n5003 [from="caller", to="callee"];
+  n6768 -> n6937 [from="caller", to="callee"];
+  n6768 -> n6941 [from="caller", to="callee"];
+  n6768 -> n6949 [from="caller", to="callee"];
+  n6768 -> n6952 [from="caller", to="callee"];
+  n6768 -> n7026 [from="caller", to="callee"];
+  n6768 -> n10173 [from="field_type", to="struct"];
+  n7185 -> n705 [from="caller", to="callee"];
+  n8373 -> n276 [from="field_type", to="struct"];
+  n8395 -> n7711 [from="base", to="extends"];
+  n8396 -> n276 [from="field_type", to="struct"];
+  n8396 -> n1940 [from="base", to="extends"];
+  n8396 -> n4784 [from="base", to="extends"];
+  n8396 -> n4784 [from="field_type", to="struct"];
+  n8396 -> n5864 [from="field_type", to="struct"];
+  n8396 -> n6784 [from="field_type", to="struct"];
+  n8396 -> n7673 [from="field_type", to="struct"];
+  n8396 -> n8747 [from="field_type", to="struct"];
+  n8846 -> n471 [from="field_type", to="struct"];
+  n8846 -> n7767 [from="field_type", to="struct"];
+  n8846 -> n8948 [from="field_type", to="struct"];
+  n8846 -> n10031 [from="field_type", to="struct"];
+  n8846 -> n10657 [from="field_type", to="struct"];
+  n8948 -> n9679 [from="input", to="func"];
+  n10031 -> n10040 [from="input", to="func"];
+  n10035 -> n10234 [from="field_type", to="struct"];
+  n10040 -> n2488 [from="caller", to="callee"];
+  n10040 -> n3521 [from="caller", to="callee"];
+  n10040 -> n5982 [from="caller", to="callee"];
+  n10040 -> n6941 [from="caller", to="callee"];
+  n10040 -> n6949 [from="caller", to="callee"];
+  n10040 -> n6952 [from="caller", to="callee"];
+}

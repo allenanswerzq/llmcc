@@ -1,0 +1,42 @@
+===============================================================================
+auto-return-type
+===============================================================================
+Auto return type deduction.
+lang: cpp
+
+--- file: src/lib.cpp ---
+auto add(int a, int b) {
+    return a + b;
+}
+
+auto lambda = [](int x) { return x * 2; };
+
+template<typename T, typename U>
+auto combine(T t, U u) -> decltype(t + u) {
+    return t + u;
+}
+
+class Calculator {
+public:
+    auto calculate(int x) -> int {
+        return x * x;
+    }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 add
+    (parameter:3 a @type int)
+    (parameter:4 b @type int)
+  )
+  (parameter:5 x @type int)
+  (func:6 combine
+    (parameter:7 t @type t)
+    (parameter:8 u @type u)
+  )
+  (class:9 Calculator
+    (method:10 calculate
+      (parameter:11 x @type int)
+    )
+  )
+)

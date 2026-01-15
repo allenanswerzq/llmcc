@@ -1,0 +1,23 @@
+===============================================================================
+lambda-expression
+===============================================================================
+Lambda expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void use_lambdas() {
+    auto add = [](int a, int b) { return a + b; };
+
+    auto capture = [&]() { return 42; };
+
+    auto generic = [](auto x) { return x; };
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 use_lambdas
+    (parameter:3 a @type int)
+    (parameter:4 b @type int)
+    (parameter:5 x @type x)
+  )
+)

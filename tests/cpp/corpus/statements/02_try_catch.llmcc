@@ -1,0 +1,29 @@
+===============================================================================
+try-catch
+===============================================================================
+Exception handling statements.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void risky() {
+    throw std::runtime_error("error");
+}
+
+void safe() {
+    try {
+        risky();
+    } catch (const std::runtime_error& e) {
+        std::cerr << e.what() << std::endl;
+    } catch (...) {
+        std::cerr << "Unknown error" << std::endl;
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 risky
+  )
+  (func:4 safe
+    (parameter:6 e @type e)
+  )
+)

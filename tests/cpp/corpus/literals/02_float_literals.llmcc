@@ -1,0 +1,26 @@
+===============================================================================
+float-literals
+===============================================================================
+Floating point literal expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void test_floats() {
+    float a = 3.14f;
+    double b = 3.14159;
+    long double c = 3.14159L;
+
+    double d = 1e10;
+    double e = 1.5e-3;
+    double f = 2.0E+6;
+
+    float g = 0x1.fp10;
+    double h = 0x1.ABCp-5;
+
+    double sep = 3.141'592'653;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test_floats)
+)

@@ -1,0 +1,36 @@
+===============================================================================
+mutable-members
+===============================================================================
+Mutable member declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Cache {
+    mutable int access_count;
+    mutable bool dirty;
+    int value;
+
+public:
+    int get() const {
+        access_count++;
+        return value;
+    }
+
+    void set(int v) {
+        value = v;
+        dirty = true;
+    }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Cache
+    (field:3 int @type int)
+    (field:4 bool @type bool)
+    (field:5 int @type int)
+    (method:6 get)
+    (method:7 set
+      (parameter:8 v @type int)
+    )
+  )
+)

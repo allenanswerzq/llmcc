@@ -1,0 +1,33 @@
+===============================================================================
+init-statements
+===============================================================================
+Init statements in if/switch (C++17).
+lang: cpp
+
+--- file: src/lib.cpp ---
+int get_value() { return 42; }
+
+void test_init_if() {
+    if (int x = get_value(); x > 0) {
+    }
+
+    if (auto* ptr = new int(10); ptr != nullptr) {
+        delete ptr;
+    }
+}
+
+void test_init_switch() {
+    switch (int val = get_value(); val) {
+        case 42: break;
+        default: break;
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 get_value)
+  (func:3 test_init_if
+  )
+  (func:6 test_init_switch
+  )
+)

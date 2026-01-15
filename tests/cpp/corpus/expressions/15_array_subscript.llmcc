@@ -1,0 +1,24 @@
+===============================================================================
+array-subscript
+===============================================================================
+Array subscript expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void test_subscript() {
+    int arr[5] = {1, 2, 3, 4, 5};
+    int a = arr[0];
+    arr[1] = 10;
+
+    int* ptr = arr;
+    int b = ptr[2];
+    int c = *(ptr + 3);
+
+    int matrix[3][3] = {{1,2,3}, {4,5,6}, {7,8,9}};
+    int d = matrix[1][2];
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test_subscript)
+)

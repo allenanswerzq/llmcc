@@ -1,0 +1,32 @@
+===============================================================================
+constructor-init
+===============================================================================
+Constructor-style variable initialization should NOT create function blocks.
+This is the "most vexing parse" case where C++ syntax is ambiguous.
+lang: cpp
+
+--- file: src/lib.cpp ---
+struct Foo {
+    Foo(int x) {}
+    bool isInt() { return true; }
+};
+
+bool check(int type) {
+    // This is a variable declaration, NOT a function declaration
+    const Foo t(type);
+    return t.isInt();
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Foo
+    (method:3 Foo
+      (parameter:4 x @type int)
+    )
+    (method:5 isInt)
+  )
+  (func:6 check
+    (parameter:7 type @type int)
+    (parameter:8 type)
+  )
+)

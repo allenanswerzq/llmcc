@@ -1,0 +1,30 @@
+===============================================================================
+final-override
+===============================================================================
+Final and override specifiers.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Base {
+public:
+    virtual void normal() {}
+    virtual void overridden() {}
+    virtual void final_method() final {}
+};
+
+class Derived final : public Base {
+public:
+    void overridden() override {}
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Base
+    (method:3 normal)
+    (method:4 overridden)
+    (method:5 final_method)
+  )
+  (class:6 Derived @extends:2 Base
+    (method:7 overridden)
+  )
+)

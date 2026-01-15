@@ -14,6 +14,7 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 use llmcc::LlmccOptions;
 use llmcc::{LangProcessorRegistry, run_main, run_main_auto};
+use llmcc_cpp::LangCpp;
 use llmcc_dot::ComponentDepth;
 use llmcc_rust::LangRust;
 use llmcc_ts::LangTypeScript;
@@ -24,10 +25,7 @@ fn build_language_registry() -> LangProcessorRegistry {
     let mut registry = LangProcessorRegistry::new();
     registry.register::<LangRust>("rust");
     registry.register::<LangTypeScript>("typescript");
-    // Add more languages here:
-    // registry.register::<LangGo>("go");
-    // registry.register::<LangPython>("python");
-    // ...
+    registry.register::<LangCpp>("cpp");
     registry
 }
 
@@ -129,8 +127,9 @@ pub fn run(args: Cli) -> Result<()> {
         }
         "rust" => run_main::<LangRust>(&opts),
         "typescript" | "ts" => run_main::<LangTypeScript>(&opts),
+        "cpp" | "c++" | "c" => run_main::<LangCpp>(&opts),
         _ => Err(format!(
-            "Unknown language: {}. Use 'auto', 'rust', or 'typescript'",
+            "Unknown language: {}. Use 'auto', 'rust', 'typescript', or 'cpp'",
             args.lang
         )
         .into()),

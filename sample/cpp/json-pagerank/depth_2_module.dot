@@ -1,0 +1,28 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  mod_json_conversions[label="json::conversions", path="/home/yibai/llmcc/sample/repos/json/include/nlohmann/detail/conversions"];
+  mod_json_input[label="json::input", path="/home/yibai/llmcc/sample/repos/json/include/nlohmann/detail/input"];
+  mod_json_iterators[label="json::iterators", path="/home/yibai/llmcc/sample/repos/json/include/nlohmann/detail/iterators"];
+  mod_json_meta[label="json::meta", path="/home/yibai/llmcc/sample/repos/json/include/nlohmann/detail/meta"];
+  mod_json_nlohmann[label="json::nlohmann", path="/home/yibai/llmcc/sample/repos/json/include/nlohmann"];
+  mod_json_output[label="json::output", path="/home/yibai/llmcc/sample/repos/json/include/nlohmann/detail/output"];
+  mod_unknown_unknown[label="unknown::unknown", path="/home/yibai/llmcc/sample/repos/json/single_include/nlohmann"];
+
+  mod_json_conversions -> mod_json_meta;
+  mod_json_conversions -> mod_unknown_unknown;
+  mod_json_input -> mod_unknown_unknown;
+  mod_json_iterators -> mod_unknown_unknown;
+  mod_json_nlohmann -> mod_unknown_unknown;
+  mod_json_output -> mod_unknown_unknown;
+}

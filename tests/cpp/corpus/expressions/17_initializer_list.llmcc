@@ -1,0 +1,27 @@
+===============================================================================
+initializer-list-expressions
+===============================================================================
+Initializer list expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void test_init_list() {
+    int arr[] = {1, 2, 3};
+    int matrix[2][2] = {{1, 2}, {3, 4}};
+
+    struct Point { int x, y; };
+    Point p = {10, 20};
+    Point points[] = {{1, 2}, {3, 4}, {5, 6}};
+
+    auto list = {1, 2, 3, 4, 5};
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test_init_list
+    (class:3 Point
+      (field:4 int @type int)
+    )
+    (@tdep:3 Point)
+  )
+)

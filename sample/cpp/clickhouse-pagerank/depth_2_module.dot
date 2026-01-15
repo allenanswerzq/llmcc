@@ -1,0 +1,465 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  subgraph cluster_Analyzer {
+    label="Analyzer";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_Analyzer_Passes[label="Passes", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Analyzer/Passes"];
+  }
+
+  subgraph cluster_Client {
+    label="Client";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_Client_BuzzHouse[label="BuzzHouse", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Client/BuzzHouse"];
+  }
+
+  subgraph cluster_Common {
+    label="Common";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_Common_DimensionalMetrics[label="DimensionalMetrics", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common"];
+    mod_Common_ErrorCodes[label="ErrorCodes", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common"];
+    mod_Common_HashTable[label="HashTable", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/HashTable"];
+    mod_Common_ProfileEvents[label="ProfileEvents", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common"];
+  }
+
+  subgraph cluster_Compression {
+    label="Compression";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_Compression_CompressionCodecT64[label="CompressionCodecT64", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Compression"];
+  }
+
+  subgraph cluster_Core {
+    label="Core";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_Core_Field[label="Field", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Core"];
+    mod_Core_NamesAndAliases[label="NamesAndAliases", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Core"];
+  }
+
+  subgraph cluster_Disks {
+    label="Disks";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_Disks_DiskObjectStorage[label="DiskObjectStorage", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Disks/DiskObjectStorage"];
+    mod_Disks_IO[label="IO", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Disks/IO"];
+  }
+
+  subgraph cluster_Foundation {
+    label="Foundation";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_Foundation_Poco[label="Poco", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Foundation/include/Poco"];
+  }
+
+  subgraph cluster_Functions {
+    label="Functions";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_Functions_FunctionsConversion[label="FunctionsConversion", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Functions"];
+  }
+
+  subgraph cluster_IO {
+    label="IO";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_IO_ReadHelpers[label="ReadHelpers", path="/home/yibai/llmcc/sample/repos/clickhouse/src/IO"];
+    mod_IO_S3[label="S3", path="/home/yibai/llmcc/sample/repos/clickhouse/src/IO/S3"];
+    mod_IO_WriteHelpers[label="WriteHelpers", path="/home/yibai/llmcc/sample/repos/clickhouse/src/IO"];
+  }
+
+  subgraph cluster_Impl {
+    label="Impl";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_Impl_Parquet[label="Parquet", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Processors/Formats/Impl/Parquet"];
+  }
+
+  subgraph cluster_Interpreters {
+    label="Interpreters";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_Interpreters_Cache[label="Cache", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters/Cache"];
+    mod_Interpreters_ConcurrentHashJoin[label="ConcurrentHashJoin", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters"];
+    mod_Interpreters_Context[label="Context", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters"];
+  }
+
+  subgraph cluster_JSON {
+    label="JSON";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_JSON_pdjson[label="pdjson", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/JSON/src"];
+  }
+
+  subgraph cluster_Net {
+    label="Net";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_Net_Poco[label="Poco", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Net/include/Poco"];
+  }
+
+  subgraph cluster_Parsers {
+    label="Parsers";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_Parsers_Access[label="Access", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Parsers/Access"];
+    mod_Parsers_Kusto[label="Kusto", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Parsers/Kusto"];
+    mod_Parsers_LexerStandalone[label="LexerStandalone", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Parsers"];
+  }
+
+  subgraph cluster_Processors {
+    label="Processors";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_Processors_QueryPlan[label="QueryPlan", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Processors/QueryPlan"];
+    mod_Processors_Transforms[label="Transforms", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Processors/Transforms"];
+  }
+
+  subgraph cluster_Serializations {
+    label="Serializations";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_Serializations_SerializationCustomSimpleText[label="SerializationCustomSimpleText", path="/home/yibai/llmcc/sample/repos/clickhouse/src/DataTypes/Serializations"];
+  }
+
+  subgraph cluster_Storages {
+    label="Storages";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_Storages_Kafka[label="Kafka", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Storages/Kafka"];
+    mod_Storages_MergeTree[label="MergeTree", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Storages/MergeTree"];
+    mod_Storages_ObjectStorage[label="ObjectStorage", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Storages/ObjectStorage"];
+  }
+
+  subgraph cluster_Util {
+    label="Util";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_Util_Poco[label="Poco", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Util/include/Poco"];
+  }
+
+  subgraph cluster_XML {
+    label="XML";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_XML_DOM[label="DOM", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/XML/include/Poco/DOM"];
+    mod_XML_SAX[label="SAX", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/XML/include/Poco/SAX"];
+    mod_XML_XML[label="XML", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/XML/include/Poco/XML"];
+    mod_XML_xmlparse[label="xmlparse", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/XML/src"];
+  }
+
+  subgraph cluster_ZooKeeper {
+    label="ZooKeeper";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_ZooKeeper_IKeeper[label="IKeeper", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/ZooKeeper"];
+    mod_ZooKeeper_ZooKeeperIO[label="ZooKeeperIO", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/ZooKeeper"];
+  }
+
+  subgraph cluster_glibc_compatibility {
+    label="glibc-compatibility";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_glibc_compatibility_musl[label="musl", path="/home/yibai/llmcc/sample/repos/clickhouse/base/glibc-compatibility/musl"];
+  }
+
+  subgraph cluster_install {
+    label="install";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_install_Install[label="Install", path="/home/yibai/llmcc/sample/repos/clickhouse/programs/install"];
+  }
+
+  subgraph cluster_libfarmhash {
+    label="libfarmhash";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_libfarmhash_farmhash[label="farmhash", path="/home/yibai/llmcc/sample/repos/clickhouse/contrib/libfarmhash"];
+  }
+
+  subgraph cluster_openssl_cmake {
+    label="openssl-cmake";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_openssl_cmake_openssl[label="openssl", path="/home/yibai/llmcc/sample/repos/clickhouse/contrib/openssl-cmake/common/include/openssl"];
+  }
+
+  subgraph cluster_pcg_random {
+    label="pcg-random";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_pcg_random_pcg_random[label="pcg_random", path="/home/yibai/llmcc/sample/repos/clickhouse/base/pcg-random"];
+  }
+
+  subgraph cluster_src {
+    label="src";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_src_Databases[label="Databases", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Databases"];
+  }
+
+  subgraph cluster_unknown {
+    label="unknown";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_unknown_unknown[label="unknown", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Columns"];
+  }
+
+  subgraph cluster_workspace {
+    label="workspace";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_workspace_skim[label="skim", path="/home/yibai/llmcc/sample/repos/clickhouse/rust/workspace/skim"];
+  }
+
+
+  mod_Analyzer_Passes -> mod_Common_DimensionalMetrics;
+  mod_Analyzer_Passes -> mod_Common_ErrorCodes;
+  mod_Analyzer_Passes -> mod_Compression_CompressionCodecT64;
+  mod_Analyzer_Passes -> mod_Core_NamesAndAliases;
+  mod_Analyzer_Passes -> mod_XML_XML;
+  mod_Analyzer_Passes -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Analyzer_Passes -> mod_glibc_compatibility_musl;
+  mod_Analyzer_Passes -> mod_workspace_skim;
+  mod_Client_BuzzHouse -> mod_Common_DimensionalMetrics;
+  mod_Client_BuzzHouse -> mod_Common_ErrorCodes;
+  mod_Client_BuzzHouse -> mod_Compression_CompressionCodecT64;
+  mod_Client_BuzzHouse -> mod_Disks_DiskObjectStorage;
+  mod_Client_BuzzHouse -> mod_Foundation_Poco;
+  mod_Client_BuzzHouse -> mod_JSON_pdjson;
+  mod_Client_BuzzHouse -> mod_Storages_ObjectStorage;
+  mod_Client_BuzzHouse -> mod_XML_DOM;
+  mod_Client_BuzzHouse -> mod_XML_SAX;
+  mod_Client_BuzzHouse -> mod_XML_XML;
+  mod_Client_BuzzHouse -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Client_BuzzHouse -> mod_install_Install;
+  mod_Client_BuzzHouse -> mod_pcg_random_pcg_random;
+  mod_Client_BuzzHouse -> mod_workspace_skim;
+  mod_Common_ErrorCodes -> mod_Parsers_LexerStandalone;
+  mod_Common_HashTable -> mod_Parsers_LexerStandalone;
+  mod_Common_ProfileEvents -> mod_Parsers_LexerStandalone;
+  mod_Core_Field -> mod_Parsers_LexerStandalone;
+  mod_Core_Field -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Core_Field -> mod_unknown_unknown;
+  mod_Core_Field -> mod_workspace_skim;
+  mod_Disks_DiskObjectStorage -> mod_Common_ErrorCodes;
+  mod_Disks_DiskObjectStorage -> mod_Core_NamesAndAliases;
+  mod_Disks_DiskObjectStorage -> mod_Disks_IO;
+  mod_Disks_DiskObjectStorage -> mod_Foundation_Poco;
+  mod_Disks_DiskObjectStorage -> mod_IO_S3;
+  mod_Disks_DiskObjectStorage -> mod_Interpreters_Cache;
+  mod_Disks_DiskObjectStorage -> mod_install_Install;
+  mod_Disks_DiskObjectStorage -> mod_pcg_random_pcg_random;
+  mod_Disks_DiskObjectStorage -> mod_workspace_skim;
+  mod_Disks_IO -> mod_Disks_DiskObjectStorage;
+  mod_Disks_IO -> mod_Interpreters_Cache;
+  mod_Disks_IO -> mod_workspace_skim;
+  mod_Foundation_Poco -> mod_Common_ErrorCodes;
+  mod_Foundation_Poco -> mod_XML_DOM;
+  mod_Foundation_Poco -> mod_XML_XML;
+  mod_Foundation_Poco -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Foundation_Poco -> mod_install_Install;
+  mod_Functions_FunctionsConversion -> mod_Core_NamesAndAliases;
+  mod_Functions_FunctionsConversion -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Functions_FunctionsConversion -> mod_unknown_unknown;
+  mod_IO_ReadHelpers -> mod_Common_ErrorCodes;
+  mod_IO_ReadHelpers -> mod_Compression_CompressionCodecT64;
+  mod_IO_ReadHelpers -> mod_Foundation_Poco;
+  mod_IO_ReadHelpers -> mod_IO_WriteHelpers;
+  mod_IO_ReadHelpers -> mod_Parsers_LexerStandalone;
+  mod_IO_ReadHelpers -> mod_ZooKeeper_ZooKeeperIO;
+  mod_IO_ReadHelpers -> mod_workspace_skim;
+  mod_IO_S3 -> mod_Common_ErrorCodes;
+  mod_IO_S3 -> mod_Foundation_Poco;
+  mod_IO_S3 -> mod_Parsers_Kusto;
+  mod_IO_S3 -> mod_Parsers_LexerStandalone;
+  mod_IO_S3 -> mod_XML_DOM;
+  mod_IO_S3 -> mod_XML_SAX;
+  mod_IO_S3 -> mod_ZooKeeper_ZooKeeperIO;
+  mod_IO_S3 -> mod_pcg_random_pcg_random;
+  mod_IO_S3 -> mod_workspace_skim;
+  mod_IO_WriteHelpers -> mod_Common_ErrorCodes;
+  mod_IO_WriteHelpers -> mod_Foundation_Poco;
+  mod_IO_WriteHelpers -> mod_Parsers_LexerStandalone;
+  mod_IO_WriteHelpers -> mod_Util_Poco;
+  mod_IO_WriteHelpers -> mod_XML_XML;
+  mod_IO_WriteHelpers -> mod_ZooKeeper_ZooKeeperIO;
+  mod_IO_WriteHelpers -> mod_workspace_skim;
+  mod_Impl_Parquet -> mod_Common_ErrorCodes;
+  mod_Impl_Parquet -> mod_Compression_CompressionCodecT64;
+  mod_Impl_Parquet -> mod_Core_NamesAndAliases;
+  mod_Impl_Parquet -> mod_Foundation_Poco;
+  mod_Impl_Parquet -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Impl_Parquet -> mod_unknown_unknown;
+  mod_Impl_Parquet -> mod_workspace_skim;
+  mod_Interpreters_Cache -> mod_workspace_skim;
+  mod_Interpreters_ConcurrentHashJoin -> mod_Common_ErrorCodes;
+  mod_Interpreters_ConcurrentHashJoin -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Interpreters_Context -> mod_Foundation_Poco;
+  mod_Interpreters_Context -> mod_install_Install;
+  mod_Interpreters_Context -> mod_workspace_skim;
+  mod_JSON_pdjson -> mod_Core_NamesAndAliases;
+  mod_Net_Poco -> mod_Foundation_Poco;
+  mod_Net_Poco -> mod_install_Install;
+  mod_Parsers_Access -> mod_Core_NamesAndAliases;
+  mod_Parsers_Access -> mod_Parsers_LexerStandalone;
+  mod_Parsers_Access -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Parsers_Access -> mod_workspace_skim;
+  mod_Parsers_Kusto -> mod_Common_ErrorCodes;
+  mod_Parsers_Kusto -> mod_XML_XML;
+  mod_Parsers_Kusto -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Parsers_Kusto -> mod_workspace_skim;
+  mod_Processors_QueryPlan -> mod_Analyzer_Passes;
+  mod_Processors_QueryPlan -> mod_Common_DimensionalMetrics;
+  mod_Processors_QueryPlan -> mod_Common_ErrorCodes;
+  mod_Processors_QueryPlan -> mod_Common_ProfileEvents;
+  mod_Processors_QueryPlan -> mod_Compression_CompressionCodecT64;
+  mod_Processors_QueryPlan -> mod_Core_NamesAndAliases;
+  mod_Processors_QueryPlan -> mod_Disks_IO;
+  mod_Processors_QueryPlan -> mod_Foundation_Poco;
+  mod_Processors_QueryPlan -> mod_Functions_FunctionsConversion;
+  mod_Processors_QueryPlan -> mod_Interpreters_ConcurrentHashJoin;
+  mod_Processors_QueryPlan -> mod_JSON_pdjson;
+  mod_Processors_QueryPlan -> mod_Net_Poco;
+  mod_Processors_QueryPlan -> mod_Parsers_LexerStandalone;
+  mod_Processors_QueryPlan -> mod_Processors_Transforms;
+  mod_Processors_QueryPlan -> mod_Storages_MergeTree;
+  mod_Processors_QueryPlan -> mod_XML_XML;
+  mod_Processors_QueryPlan -> mod_XML_xmlparse;
+  mod_Processors_QueryPlan -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Processors_QueryPlan -> mod_glibc_compatibility_musl;
+  mod_Processors_QueryPlan -> mod_libfarmhash_farmhash;
+  mod_Processors_QueryPlan -> mod_unknown_unknown;
+  mod_Processors_QueryPlan -> mod_workspace_skim;
+  mod_Processors_Transforms -> mod_Common_ErrorCodes;
+  mod_Processors_Transforms -> mod_Compression_CompressionCodecT64;
+  mod_Processors_Transforms -> mod_Core_NamesAndAliases;
+  mod_Processors_Transforms -> mod_Foundation_Poco;
+  mod_Processors_Transforms -> mod_Processors_QueryPlan;
+  mod_Processors_Transforms -> mod_Storages_MergeTree;
+  mod_Processors_Transforms -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Processors_Transforms -> mod_unknown_unknown;
+  mod_Processors_Transforms -> mod_workspace_skim;
+  mod_Serializations_SerializationCustomSimpleText -> mod_Util_Poco;
+  mod_Serializations_SerializationCustomSimpleText -> mod_workspace_skim;
+  mod_Storages_Kafka -> mod_Common_ErrorCodes;
+  mod_Storages_Kafka -> mod_Core_NamesAndAliases;
+  mod_Storages_Kafka -> mod_Foundation_Poco;
+  mod_Storages_Kafka -> mod_XML_SAX;
+  mod_Storages_Kafka -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Storages_Kafka -> mod_workspace_skim;
+  mod_Storages_MergeTree -> mod_Common_DimensionalMetrics;
+  mod_Storages_MergeTree -> mod_Common_ErrorCodes;
+  mod_Storages_MergeTree -> mod_Common_ProfileEvents;
+  mod_Storages_MergeTree -> mod_Compression_CompressionCodecT64;
+  mod_Storages_MergeTree -> mod_Core_NamesAndAliases;
+  mod_Storages_MergeTree -> mod_Disks_IO;
+  mod_Storages_MergeTree -> mod_Foundation_Poco;
+  mod_Storages_MergeTree -> mod_Interpreters_ConcurrentHashJoin;
+  mod_Storages_MergeTree -> mod_JSON_pdjson;
+  mod_Storages_MergeTree -> mod_Parsers_LexerStandalone;
+  mod_Storages_MergeTree -> mod_Processors_QueryPlan;
+  mod_Storages_MergeTree -> mod_Processors_Transforms;
+  mod_Storages_MergeTree -> mod_Storages_Kafka;
+  mod_Storages_MergeTree -> mod_Storages_ObjectStorage;
+  mod_Storages_MergeTree -> mod_XML_SAX;
+  mod_Storages_MergeTree -> mod_XML_XML;
+  mod_Storages_MergeTree -> mod_XML_xmlparse;
+  mod_Storages_MergeTree -> mod_ZooKeeper_IKeeper;
+  mod_Storages_MergeTree -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Storages_MergeTree -> mod_glibc_compatibility_musl;
+  mod_Storages_MergeTree -> mod_install_Install;
+  mod_Storages_MergeTree -> mod_pcg_random_pcg_random;
+  mod_Storages_MergeTree -> mod_src_Databases;
+  mod_Storages_MergeTree -> mod_unknown_unknown;
+  mod_Storages_MergeTree -> mod_workspace_skim;
+  mod_Storages_ObjectStorage -> mod_Common_DimensionalMetrics;
+  mod_Storages_ObjectStorage -> mod_Common_ErrorCodes;
+  mod_Storages_ObjectStorage -> mod_Common_ProfileEvents;
+  mod_Storages_ObjectStorage -> mod_Core_NamesAndAliases;
+  mod_Storages_ObjectStorage -> mod_Foundation_Poco;
+  mod_Storages_ObjectStorage -> mod_Parsers_LexerStandalone;
+  mod_Storages_ObjectStorage -> mod_Processors_QueryPlan;
+  mod_Storages_ObjectStorage -> mod_Storages_Kafka;
+  mod_Storages_ObjectStorage -> mod_Storages_MergeTree;
+  mod_Storages_ObjectStorage -> mod_Util_Poco;
+  mod_Storages_ObjectStorage -> mod_XML_SAX;
+  mod_Storages_ObjectStorage -> mod_XML_XML;
+  mod_Storages_ObjectStorage -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Storages_ObjectStorage -> mod_glibc_compatibility_musl;
+  mod_Storages_ObjectStorage -> mod_install_Install;
+  mod_Storages_ObjectStorage -> mod_unknown_unknown;
+  mod_Storages_ObjectStorage -> mod_workspace_skim;
+  mod_Util_Poco -> mod_Core_NamesAndAliases;
+  mod_Util_Poco -> mod_Foundation_Poco;
+  mod_Util_Poco -> mod_XML_DOM;
+  mod_Util_Poco -> mod_install_Install;
+  mod_XML_DOM -> mod_Foundation_Poco;
+  mod_XML_DOM -> mod_XML_SAX;
+  mod_XML_SAX -> mod_Foundation_Poco;
+  mod_XML_SAX -> mod_XML_DOM;
+  mod_XML_SAX -> mod_XML_XML;
+  mod_XML_XML -> mod_XML_SAX;
+  mod_XML_XML -> mod_ZooKeeper_ZooKeeperIO;
+  mod_XML_xmlparse -> mod_XML_XML;
+  mod_XML_xmlparse -> mod_ZooKeeper_ZooKeeperIO;
+  mod_XML_xmlparse -> mod_install_Install;
+  mod_ZooKeeper_IKeeper -> mod_workspace_skim;
+  mod_ZooKeeper_ZooKeeperIO -> mod_ZooKeeper_IKeeper;
+  mod_glibc_compatibility_musl -> mod_Client_BuzzHouse;
+  mod_glibc_compatibility_musl -> mod_Foundation_Poco;
+  mod_glibc_compatibility_musl -> mod_pcg_random_pcg_random;
+  mod_install_Install -> mod_Foundation_Poco;
+  mod_install_Install -> mod_ZooKeeper_ZooKeeperIO;
+  mod_install_Install -> mod_workspace_skim;
+  mod_libfarmhash_farmhash -> mod_pcg_random_pcg_random;
+  mod_openssl_cmake_openssl -> mod_pcg_random_pcg_random;
+  mod_pcg_random_pcg_random -> mod_Common_ErrorCodes;
+  mod_src_Databases -> mod_Core_NamesAndAliases;
+  mod_src_Databases -> mod_Foundation_Poco;
+  mod_src_Databases -> mod_Parsers_LexerStandalone;
+  mod_src_Databases -> mod_ZooKeeper_ZooKeeperIO;
+  mod_src_Databases -> mod_workspace_skim;
+  mod_unknown_unknown -> mod_Impl_Parquet;
+}

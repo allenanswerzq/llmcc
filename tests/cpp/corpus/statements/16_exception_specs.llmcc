@@ -1,0 +1,38 @@
+===============================================================================
+exception-specs
+===============================================================================
+Exception specifications.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void may_throw() {}
+void no_throw() noexcept {}
+void conditional() noexcept(true) {}
+
+class Widget {
+public:
+    Widget() noexcept = default;
+    ~Widget() noexcept = default;
+
+    void safe() noexcept {}
+    void unsafe() {}
+
+    Widget(Widget&&) noexcept = default;
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 may_throw)
+  (func:3 no_throw)
+  (func:4 conditional)
+  (class:5 Widget
+    (method:6 Widget)
+    (method:7 ~Widget)
+    (method:8 safe)
+    (method:9 unsafe)
+    (method:10 Widget
+      (parameter:11 Widget @type:5 Widget)
+      (@tdep:5 Widget)
+    )
+  )
+)

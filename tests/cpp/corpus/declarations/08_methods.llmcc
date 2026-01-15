@@ -1,0 +1,45 @@
+===============================================================================
+methods
+===============================================================================
+Class methods.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Calculator {
+public:
+    int add(int a, int b) {
+        return a + b;
+    }
+
+    int subtract(int a, int b) {
+        return a - b;
+    }
+
+    static int multiply(int a, int b) {
+        return a * b;
+    }
+
+private:
+    int internal_helper() {
+        return 0;
+    }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Calculator
+    (method:3 add
+      (parameter:4 a @type int)
+      (parameter:5 b @type int)
+    )
+    (method:6 subtract
+      (parameter:7 a @type int)
+      (parameter:8 b @type int)
+    )
+    (method:9 multiply
+      (parameter:10 a @type int)
+      (parameter:11 b @type int)
+    )
+    (method:12 internal_helper)
+  )
+)

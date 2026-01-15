@@ -1,0 +1,49 @@
+===============================================================================
+namespace
+===============================================================================
+Test that namespace definitions appear correctly.
+lang: cpp
+
+--- file: sample/CMakeLists.txt ---
+cmake_minimum_required(VERSION 3.10)
+project(sample)
+
+--- file: sample/src/lib.cpp ---
+
+namespace math {
+    struct Vector {
+        double x;
+        double y;
+    };
+
+    double dot(Vector a, Vector b) {
+        return a.x * b.x + a.y * b.y;
+    }
+}
+
+namespace physics {
+    struct Particle {
+        math::Vector position;
+        math::Vector velocity;
+    };
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.cpp)
+  (module:2 math (inline)
+    (class:3 Vector
+      (field:4 double @type double)
+      (field:5 double @type double)
+    )
+    (func:6 dot
+      (parameter:7 a @type:3 Vector)
+      (parameter:8 b @type:3 Vector)
+    )
+  )
+  (module:9 physics (inline)
+    (class:10 Particle
+      (field:11 math @type:3 Vector)
+      (field:12 math @type:3 Vector)
+    )
+  )
+)

@@ -1,0 +1,27 @@
+===============================================================================
+multiline-macros
+===============================================================================
+Multiline macro definitions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+#define MULTI_LINE_MACRO(x, y) \
+    do { \
+        int a = x; \
+        int b = y; \
+        (void)(a + b); \
+    } while(0)
+
+#define DECLARE_CLASS(name) \
+    class name { \
+    public: \
+        name() {} \
+        ~name() {} \
+    };
+
+DECLARE_CLASS(Widget)
+DECLARE_CLASS(Button)
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+)

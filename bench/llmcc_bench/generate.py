@@ -188,7 +188,10 @@ def generate_graphs(
         if depth == 2 and loc > 50000:
             cmd.extend(["--cluster-by-crate", "--short-labels"])
 
-        result = run_command(cmd, capture=True)
+        # Use larger stack size for C++ projects (they can have deep ASTs)
+        env = {"RUST_MIN_STACK": "16777216"} if project.language == "cpp" else None
+
+        result = run_command(cmd, capture=True, env=env)
         if result.returncode != 0:
             if verbose:
                 print(f"      Error: {result.stderr}")

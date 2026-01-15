@@ -1,0 +1,40 @@
+===============================================================================
+singleton-pattern
+===============================================================================
+Singleton pattern.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Singleton {
+public:
+    static Singleton& instance() {
+        static Singleton inst;
+        return inst;
+    }
+
+    Singleton(const Singleton&) = delete;
+    Singleton& operator=(const Singleton&) = delete;
+
+    void doWork() {}
+
+private:
+    Singleton() = default;
+    ~Singleton() = default;
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Singleton
+    (method:3 Singleton
+      (parameter:4 Singleton @type:2 Singleton)
+      (@tdep:2 Singleton)
+    )
+    (method:5 operator=
+      (parameter:6 Singleton @type:2 Singleton)
+      (@tdep:2 Singleton)
+    )
+    (method:7 doWork)
+    (method:8 Singleton)
+    (method:9 ~Singleton)
+  )
+)

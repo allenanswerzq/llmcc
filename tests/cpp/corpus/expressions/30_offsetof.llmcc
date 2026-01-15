@@ -1,0 +1,30 @@
+===============================================================================
+offsetof-expression
+===============================================================================
+Offsetof expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+struct Data {
+    int a;
+    double b;
+    char c;
+};
+
+void test_offsetof() {
+    auto offset_a = __builtin_offsetof(Data, a);
+    auto offset_b = __builtin_offsetof(Data, b);
+    auto offset_c = __builtin_offsetof(Data, c);
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Data
+    (field:3 int @type int)
+    (field:4 double @type double)
+    (field:5 char @type char)
+  )
+  (func:6 test_offsetof
+    (@tdep:2 Data)
+  )
+)

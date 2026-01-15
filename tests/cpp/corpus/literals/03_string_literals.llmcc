@@ -1,0 +1,25 @@
+===============================================================================
+string-literals
+===============================================================================
+String literal expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void test_strings() {
+    const char* a = "hello";
+    const char* b = "hello\nworld";
+    const char* c = "tab\there";
+    const char* d = "quote\"here";
+
+    const wchar_t* e = L"wide string";
+    const char* f = u8"utf8 string";
+    const char16_t* g = u"utf16 string";
+    const char32_t* h = U"utf32 string";
+
+    const char* concat = "hello " "world";
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test_strings)
+)

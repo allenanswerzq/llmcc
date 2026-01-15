@@ -1,0 +1,37 @@
+===============================================================================
+rvalue-reference-types
+===============================================================================
+Rvalue reference types.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void by_rvalue(int&& x) {}
+
+class Movable {
+public:
+    Movable() {}
+    Movable(Movable&& other) noexcept {}
+    Movable& operator=(Movable&& other) noexcept { return *this; }
+};
+
+template<typename T>
+void forward_ref(T&& t) {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 by_rvalue
+    (parameter:3 x @type int)
+  )
+  (class:4 Movable
+    (method:5 Movable)
+    (method:6 Movable
+      (parameter:7 other @type:4 Movable)
+    )
+    (method:8 operator=
+      (parameter:9 other @type:4 Movable)
+    )
+  )
+  (func:10 forward_ref
+    (parameter:11 t @type t)
+  )
+)

@@ -1,0 +1,24 @@
+===============================================================================
+type-aliases
+===============================================================================
+Type alias declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+typedef int Integer;
+typedef double Real;
+
+using String = std::string;
+using IntVector = std::vector<int>;
+
+template<typename T>
+using Vec = std::vector<T>;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (alias:2 int)
+  (alias:3 double)
+  (alias:4 String)
+  (alias:5 IntVector)
+  (alias:6 Vec)
+)

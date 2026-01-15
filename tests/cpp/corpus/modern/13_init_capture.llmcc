@@ -1,0 +1,30 @@
+===============================================================================
+init-capture
+===============================================================================
+Lambda init capture.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void test_init_capture() {
+    int x = 10;
+    auto by_value = [y = x]() { return y; };
+
+    auto by_move = [ptr = new int(42)]() {
+        return *ptr;
+    };
+
+    auto renamed = [captured_x = x, doubled = x * 2]() {
+        return captured_x + doubled;
+    };
+
+    int counter = 0;
+    auto incrementer = [&count = counter]() mutable {
+        return ++count;
+    };
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test_init_capture
+  )
+)

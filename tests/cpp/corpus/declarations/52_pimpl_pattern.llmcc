@@ -1,0 +1,56 @@
+===============================================================================
+pimpl-pattern
+===============================================================================
+PIMPL idiom pattern.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Widget {
+public:
+    Widget();
+    ~Widget();
+
+    Widget(const Widget&) = delete;
+    Widget& operator=(const Widget&) = delete;
+
+    void doSomething();
+
+private:
+    class Impl;
+    Impl* pImpl;
+};
+
+class Widget::Impl {
+public:
+    int data;
+    void internalMethod() {}
+};
+
+Widget::Widget() : pImpl(new Impl()) {}
+Widget::~Widget() { delete pImpl; }
+void Widget::doSomething() { pImpl->internalMethod(); }
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Widget
+    (method:3 Widget)
+    (method:4 Widget
+      (parameter:5 Widget)
+    )
+    (method:6 operator=
+      (parameter:7 Widget)
+    )
+    (field:8 void @type void)
+    (field:9 )
+    (field:10 Impl @type Impl)
+  )
+  (class:11 Impl
+    (field:12 int @type int)
+    (method:13 internalMethod)
+  )
+  (method:14 Widget
+  )
+  (method:16 ~Widget)
+  (method:17 doSomething
+  )
+)

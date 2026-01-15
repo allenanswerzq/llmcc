@@ -1,0 +1,38 @@
+===============================================================================
+deducing-this
+===============================================================================
+Deducing this (C++23).
+lang: cpp
+
+--- file: src/lib.cpp ---
+struct Widget {
+    template<typename Self>
+    auto& getValue(this Self&& self) {
+        return self.value;
+    }
+
+    int value;
+};
+
+struct Builder {
+    template<typename Self>
+    Self&& set(this Self&& self, int v) {
+        self.data = v;
+        return static_cast<Self&&>(self);
+    }
+
+    int data;
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Widget
+    (parameter:3 self @type self)
+    (field:4 int @type int)
+  )
+  (class:5 Builder
+    (parameter:6 self @type self)
+    (parameter:7 v @type int)
+    (field:9 int @type int)
+  )
+)

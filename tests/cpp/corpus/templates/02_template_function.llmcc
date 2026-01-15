@@ -1,0 +1,33 @@
+===============================================================================
+template-function
+===============================================================================
+Template function declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+template<typename T>
+T identity(T value) {
+    return value;
+}
+
+template<typename T, typename U>
+auto add(T a, U b) -> decltype(a + b) {
+    return a + b;
+}
+
+template<typename... Args>
+void variadic_func(Args... args) {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 identity
+    (parameter:3 value @type value)
+  )
+  (func:4 add
+    (parameter:5 a @type a)
+    (parameter:6 b @type b)
+  )
+  (func:7 variadic_func
+    (parameter:8 Args)
+  )
+)

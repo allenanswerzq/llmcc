@@ -1,0 +1,36 @@
+===============================================================================
+template-non-type
+===============================================================================
+Non-type template parameters.
+lang: cpp
+
+--- file: src/lib.cpp ---
+template<int N>
+class FixedArray {
+    int data[N];
+public:
+    int size() const { return N; }
+};
+
+template<typename T, int Size>
+class StaticBuffer {
+    T buffer[Size];
+public:
+    T& operator[](int i) { return buffer[i]; }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (parameter:2 N @type int)
+  (class:3 FixedArray
+    (field:4 int @type int)
+    (method:5 size)
+  )
+  (parameter:6 Size @type int)
+  (class:7 StaticBuffer
+    (field:8 T)
+    (method:9 operator[]
+      (parameter:10 i @type int)
+    )
+  )
+)

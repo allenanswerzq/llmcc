@@ -1,0 +1,38 @@
+===============================================================================
+namespaces
+===============================================================================
+Namespace declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+namespace outer {
+    struct A {};
+}
+
+namespace outer::inner {
+    struct B {};
+}
+
+namespace utils {
+    void helper() {}
+
+    namespace detail {
+        struct Internal {};
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (module:2 outer (inline)
+    (class:3 A)
+  )
+  (module:4 outer (inline)
+    (class:5 B)
+  )
+  (module:6 utils (inline)
+    (func:7 helper)
+    (module:8 detail (inline)
+      (class:9 Internal)
+    )
+  )
+)

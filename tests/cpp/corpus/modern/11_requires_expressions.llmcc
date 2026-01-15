@@ -1,0 +1,38 @@
+===============================================================================
+requires-expressions
+===============================================================================
+Requires expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+template<typename T>
+concept Hashable = requires(T a) {
+    { a.hash() } -> Numeric;
+};
+
+template<typename T>
+concept Container = requires(T c) {
+    c.size();
+    c.begin();
+    c.end();
+    typename T::value_type;
+    { c.empty() } -> bool;
+};
+
+template<typename T>
+requires requires(T x) { x + x; }
+T double_value(T x) { return x + x; }
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (trait:2 Hashable
+    (parameter:3 a @type a)
+  )
+  (trait:5 Container
+    (parameter:6 c @type c)
+  )
+  (parameter:11 x @type x)
+  (func:12 double_value
+    (parameter:13 x @type x)
+  )
+)

@@ -112,9 +112,9 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
         let kind_id = node.kind_id();
         let kind = Language::hir_kind(kind_id);
 
-        // Skip collecting children for leaf node types (Text, Identifier)
+        // Skip collecting children for leaf node types (Text, Identifier, Comment)
         // This provides a massive performance improvement for large array/object literals
-        let children = if matches!(kind, HirKind::Text | HirKind::Identifier) {
+        let children = if matches!(kind, HirKind::Text | HirKind::Identifier | HirKind::Comment) {
             SmallVec::new()
         } else {
             self.collect_children(node, id)
@@ -129,7 +129,7 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
                 let allocated = self.arena.alloc(hir_file);
                 HirNode::File(allocated)
             }
-            HirKind::Text => {
+            HirKind::Text | HirKind::Comment => {
                 let text = self.get_text(&base);
                 let hir_text = HirText::new(base, text);
                 let allocated = self.arena.alloc(hir_text);

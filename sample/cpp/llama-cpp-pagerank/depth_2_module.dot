@@ -1,0 +1,71 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  subgraph cluster_common {
+    label="common";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_common_chat[label="chat", path="/home/yibai/llmcc/sample/repos/llama-cpp/common"];
+    mod_common_common[label="common", path="/home/yibai/llmcc/sample/repos/llama-cpp/common"];
+  }
+
+  subgraph cluster_ggml_cpu {
+    label="ggml-cpu";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_ggml_cpu_amx[label="amx", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-cpu/amx"];
+    mod_ggml_cpu_ggml_cpu[label="ggml-cpu", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-cpu"];
+    mod_ggml_cpu_ops[label="ops", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-cpu"];
+  }
+
+  subgraph cluster_ggml_metal {
+    label="ggml-metal";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_ggml_metal_ggml_metal_ops[label="ggml-metal-ops", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-metal"];
+  }
+
+  subgraph cluster_ggml_sycl {
+    label="ggml-sycl";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_ggml_sycl_dpct[label="dpct", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl/dpct"];
+    mod_ggml_sycl_element_wise[label="element_wise", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl"];
+    mod_ggml_sycl_ggml_sycl[label="ggml-sycl", path="/home/yibai/llmcc/sample/repos/llama-cpp/ggml/src/ggml-sycl"];
+  }
+
+  subgraph cluster_src {
+    label="src";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_src_llama_context[label="llama-context", path="/home/yibai/llmcc/sample/repos/llama-cpp/src"];
+    mod_src_llama_graph[label="llama-graph", path="/home/yibai/llmcc/sample/repos/llama-cpp/src"];
+    mod_src_models[label="models", path="/home/yibai/llmcc/sample/repos/llama-cpp/src/models"];
+  }
+
+
+  mod_common_chat -> mod_common_common;
+  mod_ggml_cpu_amx -> mod_ggml_sycl_dpct;
+  mod_ggml_cpu_ops -> mod_ggml_cpu_ggml_cpu;
+  mod_ggml_metal_ggml_metal_ops -> mod_ggml_sycl_dpct;
+  mod_ggml_sycl_element_wise -> mod_ggml_sycl_dpct;
+  mod_ggml_sycl_element_wise -> mod_ggml_sycl_ggml_sycl;
+  mod_ggml_sycl_ggml_sycl -> mod_ggml_sycl_dpct;
+  mod_src_llama_context -> mod_src_llama_graph;
+  mod_src_llama_graph -> mod_src_models;
+}

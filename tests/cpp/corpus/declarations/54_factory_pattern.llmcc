@@ -1,0 +1,51 @@
+===============================================================================
+factory-pattern
+===============================================================================
+Factory pattern.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Product {
+public:
+    virtual ~Product() = default;
+    virtual void operation() = 0;
+};
+
+class ConcreteProductA : public Product {
+public:
+    void operation() override {}
+};
+
+class ConcreteProductB : public Product {
+public:
+    void operation() override {}
+};
+
+class Factory {
+public:
+    static Product* create(int type) {
+        if (type == 0) return new ConcreteProductA();
+        return new ConcreteProductB();
+    }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Product
+    (method:3 ~Product)
+    (field:4 void @type void)
+  )
+  (class:5 ConcreteProductA @extends:2 Product
+    (method:6 operation)
+  )
+  (class:7 ConcreteProductB @extends:2 Product
+    (method:8 operation)
+  )
+  (class:9 Factory
+    (method:10 create
+      (parameter:11 type @type int)
+      (@tdep:5 ConcreteProductA)
+      (@tdep:7 ConcreteProductB)
+    )
+  )
+)

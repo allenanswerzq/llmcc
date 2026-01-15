@@ -1,0 +1,59 @@
+===============================================================================
+strategy-pattern
+===============================================================================
+Strategy pattern.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Strategy {
+public:
+    virtual ~Strategy() = default;
+    virtual int execute(int a, int b) = 0;
+};
+
+class AddStrategy : public Strategy {
+public:
+    int execute(int a, int b) override { return a + b; }
+};
+
+class MultiplyStrategy : public Strategy {
+public:
+    int execute(int a, int b) override { return a * b; }
+};
+
+class Context {
+    Strategy* strategy;
+public:
+    void setStrategy(Strategy* s) { strategy = s; }
+    int compute(int a, int b) { return strategy->execute(a, b); }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Strategy
+    (method:3 ~Strategy)
+    (field:4 int @type int)
+  )
+  (class:5 AddStrategy @extends:2 Strategy
+    (method:6 execute
+      (parameter:7 a @type int)
+      (parameter:8 b @type int)
+    )
+  )
+  (class:9 MultiplyStrategy @extends:2 Strategy
+    (method:10 execute
+      (parameter:11 a @type int)
+      (parameter:12 b @type int)
+    )
+  )
+  (class:13 Context
+    (field:14 Strategy @type:2 Strategy)
+    (method:15 setStrategy
+      (parameter:16 s @type:2 Strategy)
+    )
+    (method:17 compute
+      (parameter:18 a @type int)
+      (parameter:19 b @type int)
+    )
+  )
+)
