@@ -1,0 +1,32 @@
+===============================================================================
+bitfields
+===============================================================================
+Bitfield declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+struct Flags {
+    unsigned int enabled : 1;
+    unsigned int mode : 3;
+    unsigned int priority : 4;
+};
+
+struct PackedData {
+    int a : 8;
+    int b : 8;
+    int c : 16;
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Flags
+    (field:3 int @type int)
+    (field:4 int @type int)
+    (field:5 int @type int)
+  )
+  (class:6 PackedData
+    (field:7 int @type int)
+    (field:8 int @type int)
+    (field:9 int @type int)
+  )
+)

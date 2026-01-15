@@ -5,6 +5,9 @@ use llmcc_resolver::BinderScopes;
 
 use crate::token::LangRust;
 
+/// Maximum inference recursion depth to prevent stack overflow.
+const MAX_INFER_DEPTH: u32 = 16;
+
 /// Infer the type of any AST node
 #[tracing::instrument(skip_all)]
 pub fn infer_type<'tcx>(
@@ -12,6 +15,20 @@ pub fn infer_type<'tcx>(
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
+    infer_type_impl(unit, scopes, node, 0)
+}
+
+/// Internal implementation with explicit depth tracking.
+fn infer_type_impl<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+    depth: u32,
+) -> Option<&'tcx Symbol> {
+    if depth >= MAX_INFER_DEPTH {
+        return None;
+    }
+
     match node.kind_id() {
         // Literal types
         LangRust::boolean_literal => get_primitive_type(scopes, "bool"),
@@ -43,34 +60,34 @@ pub fn infer_type<'tcx>(
         }
 
         // Block expressions
-        LangRust::block => infer_block(unit, scopes, node),
+        LangRust::block => infer_block(unit, scopes, node, depth + 1),
 
         // Generic type with turbofish: Vec::<T>::new()
         LangRust::generic_type_with_turbofish => node
             .child_by_field(unit, LangRust::field_type)
-            .and_then(|ty_node| infer_type(unit, scopes, &ty_node)),
+            .and_then(|ty_node| infer_type_impl(unit, scopes, &ty_node, depth + 1)),
 
         // Generic type: Vec<T>, Option<String>, etc.
-        LangRust::generic_type => infer_generic_type(unit, scopes, node),
+        LangRust::generic_type => infer_generic_type(unit, scopes, node, depth + 1),
 
         // Array expression: [1, 2, 3] or [1; 5]
-        LangRust::array_expression => infer_array_expression(unit, scopes, node),
+        LangRust::array_expression => infer_array_expression(unit, scopes, node, depth + 1),
 
         // Range expression: 1..5, 1..=5, 1.., ..5, etc.
-        LangRust::range_expression => infer_range_expression(unit, scopes, node),
+        LangRust::range_expression => infer_range_expression(unit, scopes, node, depth + 1),
 
         // Tuple expression: (a, b, c)
-        LangRust::tuple_expression => infer_tuple_expression(unit, scopes, node),
+        LangRust::tuple_expression => infer_tuple_expression(unit, scopes, node, depth + 1),
 
         // Struct expression: Struct { field: value }
-        LangRust::struct_expression => infer_struct_expression(unit, scopes, node),
+        LangRust::struct_expression => infer_struct_expression(unit, scopes, node, depth + 1),
 
         // Field expression: obj.field or obj[index]
-        LangRust::field_expression => infer_field_expression(unit, scopes, node),
+        LangRust::field_expression => infer_field_expression(unit, scopes, node, depth + 1),
 
         // Scoped identifier: module::Type or foo::bar::baz
-        LangRust::scoped_identifier => infer_scoped_identifier(unit, scopes, node),
-        LangRust::scoped_type_identifier => infer_scoped_identifier(unit, scopes, node),
+        LangRust::scoped_identifier => infer_scoped_identifier(unit, scopes, node, depth + 1),
+        LangRust::scoped_type_identifier => infer_scoped_identifier(unit, scopes, node, depth + 1),
 
         // Identifier
         LangRust::identifier => {
@@ -87,7 +104,7 @@ pub fn infer_type<'tcx>(
         // Call expression: func(args)
         LangRust::call_expression | LangRust::field_identifier => node
             .child_by_field(unit, LangRust::field_function)
-            .and_then(|func_node| infer_type(unit, scopes, &func_node))
+            .and_then(|func_node| infer_type_impl(unit, scopes, &func_node, depth + 1))
             .and_then(|sym| {
                 if sym.kind() == SymKind::Function
                     && let Some(ret_id) = sym.type_of()
@@ -98,51 +115,50 @@ pub fn infer_type<'tcx>(
             }),
 
         // Index expression: arr[i]
-        LangRust::index_expression => infer_index_expression(unit, scopes, node),
+        LangRust::index_expression => infer_index_expression(unit, scopes, node, depth + 1),
 
         // Binary expression: a + b, a == b, etc.
-        LangRust::binary_expression => infer_binary_expression(unit, scopes, node),
+        LangRust::binary_expression => infer_binary_expression(unit, scopes, node, depth + 1),
 
         // Reference expression: &value
-        LangRust::reference_expression => {
-            infer_from_children(unit, scopes, node, &[]).and_then(|sym| {
+        LangRust::reference_expression => infer_from_children(unit, scopes, node, &[], depth + 1)
+            .and_then(|sym| {
                 if let Some(type_id) = sym.type_of() {
                     unit.opt_get_symbol(type_id)
                 } else {
                     Some(sym)
                 }
-            })
-        }
+            }),
 
         // Unary expression: -a, !b,
         LangRust::unary_expression => node
             .child_by_field(unit, LangRust::field_argument)
-            .and_then(|arg_node| infer_type(unit, scopes, &arg_node))
-            .or_else(|| infer_from_children(unit, scopes, node, &[])),
+            .and_then(|arg_node| infer_type_impl(unit, scopes, &arg_node, depth + 1))
+            .or_else(|| infer_from_children(unit, scopes, node, &[], depth + 1)),
 
         // Expression statements simply forward their inner expression type
-        LangRust::expression_statement => infer_from_children(unit, scopes, node, &[]),
+        LangRust::expression_statement => infer_from_children(unit, scopes, node, &[], depth + 1),
 
         // Type cast expression: expr as Type
         LangRust::type_cast_expression => node
             .child_by_field(unit, LangRust::field_type)
-            .and_then(|ty_node| infer_type(unit, scopes, &ty_node)),
+            .and_then(|ty_node| infer_type_impl(unit, scopes, &ty_node, depth + 1)),
 
         // If expression: if cond { ... } else { ... }
-        LangRust::if_expression => infer_if_expression(unit, scopes, node),
+        LangRust::if_expression => infer_if_expression(unit, scopes, node, depth + 1),
 
         // Type nodes
-        LangRust::array_type => infer_array_type(unit, scopes, node),
-        LangRust::tuple_type => infer_tuple_type(unit, scopes, node),
-        LangRust::function_type => infer_function_type(unit, scopes, node),
-        LangRust::reference_type => infer_reference_type(unit, scopes, node),
-        LangRust::pointer_type => infer_pointer_type(unit, scopes, node),
+        LangRust::array_type => infer_array_type(unit, scopes, node, depth + 1),
+        LangRust::tuple_type => infer_tuple_type(unit, scopes, node, depth + 1),
+        LangRust::function_type => infer_function_type(unit, scopes, node, depth + 1),
+        LangRust::reference_type => infer_reference_type(unit, scopes, node, depth + 1),
+        LangRust::pointer_type => infer_pointer_type(unit, scopes, node, depth + 1),
         // impl Trait - get the trait from the "trait" field
-        LangRust::abstract_type => infer_abstract_type(unit, scopes, node),
+        LangRust::abstract_type => infer_abstract_type(unit, scopes, node, depth + 1),
         // Bounded type: 'a + Clone, T: Clone + Debug
-        LangRust::bounded_type => infer_bounded_type(unit, scopes, node),
+        LangRust::bounded_type => infer_bounded_type(unit, scopes, node, depth + 1),
         // Trait bounds: Into<T> + Clone - returns first non-lifetime type
-        LangRust::trait_bounds => infer_trait_bounds(unit, scopes, node),
+        LangRust::trait_bounds => infer_trait_bounds(unit, scopes, node, depth + 1),
 
         _ => {
             if let Some(ident) = node.find_ident(unit) {
@@ -171,6 +187,7 @@ fn infer_block<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     for child in node.children(unit).into_iter().rev() {
         if is_syntactic_noise(unit, &child) {
@@ -184,13 +201,13 @@ fn infer_block<'tcx>(
         }
 
         if kind_id == LangRust::expression_statement {
-            if let Some(sym) = infer_from_children(unit, scopes, &child, &[]) {
+            if let Some(sym) = infer_from_children(unit, scopes, &child, &[], depth + 1) {
                 return Some(sym);
             }
             continue;
         }
 
-        if let Some(sym) = infer_type(unit, scopes, &child) {
+        if let Some(sym) = infer_type_impl(unit, scopes, &child, depth + 1) {
             return Some(sym);
         }
     }
@@ -203,8 +220,9 @@ fn infer_array_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
-    infer_from_children(unit, scopes, node, &[LangRust::field_length])
+    infer_from_children(unit, scopes, node, &[LangRust::field_length], depth + 1)
 }
 
 /// Infer range expression type: 1..5 -> Range<i32>
@@ -212,8 +230,10 @@ fn infer_range_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
-    infer_from_children(unit, scopes, node, &[]).or_else(|| get_primitive_type(scopes, "i32"))
+    infer_from_children(unit, scopes, node, &[], depth + 1)
+        .or_else(|| get_primitive_type(scopes, "i32"))
 }
 
 /// Infer tuple expression type: (a, b, c) -> (TypeA, TypeB, TypeC)
@@ -221,6 +241,7 @@ fn infer_tuple_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     let children = node.children(unit);
 
@@ -228,7 +249,7 @@ fn infer_tuple_expression<'tcx>(
     let mut _elem_types = Vec::new();
     for child in children {
         if !child.is_trivia()
-            && let Some(elem_type) = infer_type(unit, scopes, &child)
+            && let Some(elem_type) = infer_type_impl(unit, scopes, &child, depth + 1)
         {
             _elem_types.push(elem_type);
         }
@@ -244,9 +265,10 @@ fn infer_struct_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     if let Some(name_node) = node.child_by_field(unit, LangRust::field_name)
-        && let Some(sym) = infer_type(unit, scopes, &name_node)
+        && let Some(sym) = infer_type_impl(unit, scopes, &name_node, depth + 1)
         && SYM_KIND_TYPES.contains(sym.kind())
     {
         tracing::trace!("inferring struct type from name node");
@@ -262,9 +284,10 @@ fn infer_field_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     let value_node = node.child_by_field(unit, LangRust::field_value)?;
-    let obj_type = infer_type(unit, scopes, &value_node)?;
+    let obj_type = infer_type_impl(unit, scopes, &value_node, depth + 1)?;
 
     let field_node = node.child_by_field(unit, LangRust::field_field)?;
     let field_ident = field_node.find_ident(unit)?;
@@ -301,6 +324,7 @@ fn infer_scoped_identifier<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    _depth: u32,
 ) -> Option<&'tcx Symbol> {
     let idents = node.collect_idents(unit);
 
@@ -337,9 +361,10 @@ fn infer_index_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     let value_node = node.child_by_field(unit, LangRust::field_value)?;
-    let obj_type = infer_type(unit, scopes, &value_node)?;
+    let obj_type = infer_type_impl(unit, scopes, &value_node, depth + 1)?;
 
     // For indexed access, get first nested type
     if let Some(nested) = obj_type.nested_types()
@@ -357,6 +382,7 @@ fn infer_binary_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     let children = node.children(unit);
     let left_node = children.first()?;
@@ -375,7 +401,7 @@ fn infer_binary_expression<'tcx>(
         | LangRust::Text_MINUS
         | LangRust::Text_STAR
         | LangRust::Text_SLASH
-        | LangRust::Text_PERCENT => infer_type(unit, scopes, left_node),
+        | LangRust::Text_PERCENT => infer_type_impl(unit, scopes, left_node, depth + 1),
 
         _ => None,
     }
@@ -386,9 +412,10 @@ fn infer_if_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     if let Some(consequence) = node.child_by_field(unit, LangRust::field_consequence) {
-        return infer_block(unit, scopes, &consequence);
+        return infer_block(unit, scopes, &consequence, depth + 1);
     }
     None
 }
@@ -398,6 +425,7 @@ fn infer_array_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     // Try to get the CompositeType symbol that was created for this array type
     if let Some(sn) = node.as_scope()
@@ -412,7 +440,7 @@ fn infer_array_type<'tcx>(
 
     // Fallback: get element type
     let elem_node = node.child_by_field(unit, LangRust::field_element)?;
-    infer_type(unit, scopes, &elem_node)
+    infer_type_impl(unit, scopes, &elem_node, depth + 1)
 }
 
 /// Infer tuple type annotation: (T1, T2, T3)
@@ -420,6 +448,7 @@ fn infer_tuple_type<'tcx>(
     _unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    _depth: u32,
 ) -> Option<&'tcx Symbol> {
     // Try to get the CompositeType symbol that was created for this tuple type
     if let Some(sn) = node.as_scope()
@@ -442,16 +471,17 @@ fn infer_function_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     // For function_type, check if there's a trait field (e.g., FnOnce() -> T)
     // If so, return the trait. Otherwise return the return type.
     if let Some(trait_node) = node.child_by_field(unit, LangRust::field_trait) {
-        return infer_type(unit, scopes, &trait_node);
+        return infer_type_impl(unit, scopes, &trait_node, depth + 1);
     }
 
     // Try return type first (for fn(T) -> U syntax)
     if let Some(ret_node) = node.child_by_field(unit, LangRust::field_return_type)
-        && let Some(ret_sym) = infer_type(unit, scopes, &ret_node)
+        && let Some(ret_sym) = infer_type_impl(unit, scopes, &ret_node, depth + 1)
     {
         return Some(ret_sym);
     }
@@ -464,7 +494,7 @@ fn infer_function_type<'tcx>(
                 continue;
             }
             // Each child might be a type directly
-            if let Some(param_type) = infer_type(unit, scopes, &child) {
+            if let Some(param_type) = infer_type_impl(unit, scopes, &child, depth + 1) {
                 return Some(param_type);
             }
         }
@@ -483,10 +513,11 @@ fn infer_generic_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     // The generic_type has structure: type<type_arguments>
     let type_node = node.child_by_field(unit, LangRust::field_type)?;
-    let outer_type = infer_type(unit, scopes, &type_node);
+    let outer_type = infer_type_impl(unit, scopes, &type_node, depth + 1);
 
     // If outer type is a defined type (Struct/Enum/Trait), use it
     if let Some(outer) = outer_type
@@ -503,7 +534,7 @@ fn infer_generic_type<'tcx>(
             if child.is_trivia() || child.kind_id() == LangRust::lifetime {
                 continue;
             }
-            if let Some(inner_type) = infer_type(unit, scopes, &child) {
+            if let Some(inner_type) = infer_type_impl(unit, scopes, &child, depth + 1) {
                 // Use inner type if it's a defined type
                 if inner_type.kind().is_defined_type() {
                     return Some(inner_type);
@@ -521,11 +552,12 @@ fn infer_reference_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     // The reference_type has structure: & [mutable_specifier] type
     // We need to get the inner type via the "type" field
     node.child_by_field(unit, LangRust::field_type)
-        .and_then(|type_node| infer_type(unit, scopes, &type_node))
+        .and_then(|type_node| infer_type_impl(unit, scopes, &type_node, depth + 1))
 }
 
 /// Infer pointer type annotation: *const T or *mut T
@@ -533,11 +565,12 @@ fn infer_pointer_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     // The pointer_type has structure: * [const|mut] type
     // We need to get the inner type via the "type" field
     node.child_by_field(unit, LangRust::field_type)
-        .and_then(|type_node| infer_type(unit, scopes, &type_node))
+        .and_then(|type_node| infer_type_impl(unit, scopes, &type_node, depth + 1))
 }
 
 /// Infer abstract type (impl Trait): impl Trait or impl for<'a> Trait
@@ -545,11 +578,12 @@ fn infer_abstract_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     // The abstract_type has structure: impl [for<'a>] Trait
     // Get the trait from the "trait" field and let infer_type handle generics
     let trait_node = node.child_by_field(unit, LangRust::field_trait)?;
-    infer_type(unit, scopes, &trait_node)
+    infer_type_impl(unit, scopes, &trait_node, depth + 1)
 }
 
 /// Infer bounded type: 'a + Clone, T: Clone + Debug
@@ -558,6 +592,7 @@ fn infer_bounded_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     // bounded_type contains multiple bounds separated by +
     // We want to find the actual trait type, skipping lifetimes
@@ -570,7 +605,7 @@ fn infer_bounded_type<'tcx>(
             continue;
         }
         // Try to infer type from this child
-        if let Some(sym) = infer_type(unit, scopes, &child) {
+        if let Some(sym) = infer_type_impl(unit, scopes, &child, depth + 1) {
             return Some(sym);
         }
     }
@@ -582,6 +617,7 @@ fn infer_trait_bounds<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     // trait_bounds contains type children - get the first non-lifetime one
     for child in node.children(unit) {
@@ -590,7 +626,7 @@ fn infer_trait_bounds<'tcx>(
             continue;
         }
         // Let infer_type handle all type kinds including generic_type
-        if let Some(sym) = infer_type(unit, scopes, &child) {
+        if let Some(sym) = infer_type_impl(unit, scopes, &child, depth + 1) {
             return Some(sym);
         }
     }
@@ -619,6 +655,7 @@ fn infer_from_children<'tcx>(
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
     skip_fields: &[u16],
+    depth: u32,
 ) -> Option<&'tcx Symbol> {
     for child in node.children(unit) {
         if skip_fields.contains(&child.field_id()) {
@@ -629,7 +666,7 @@ fn infer_from_children<'tcx>(
             continue;
         }
 
-        if let Some(sym) = infer_type(unit, scopes, &child) {
+        if let Some(sym) = infer_type_impl(unit, scopes, &child, depth + 1) {
             return Some(sym);
         }
     }

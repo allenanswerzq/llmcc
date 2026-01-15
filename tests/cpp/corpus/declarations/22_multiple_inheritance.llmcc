@@ -1,0 +1,44 @@
+===============================================================================
+multiple-inheritance
+===============================================================================
+Multiple inheritance declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class A {
+public:
+    virtual void methodA() {}
+};
+
+class B {
+public:
+    virtual void methodB() {}
+};
+
+class C : public A, public B {
+public:
+    void methodA() override {}
+    void methodB() override {}
+};
+
+class D : public A, protected B {
+public:
+    void combined() {}
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 A
+    (method:3 methodA)
+  )
+  (class:4 B
+    (method:5 methodB)
+  )
+  (class:6 C @extends:2 A
+    (method:7 methodA)
+    (method:8 methodB)
+  )
+  (class:9 D @extends:2 A
+    (method:10 combined)
+  )
+)

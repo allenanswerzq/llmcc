@@ -1,0 +1,38 @@
+===============================================================================
+function-pointer-types
+===============================================================================
+Function pointer types.
+lang: cpp
+
+--- file: src/lib.cpp ---
+int add(int a, int b) { return a + b; }
+
+void test_func_ptr() {
+    int (*fptr)(int, int) = add;
+
+    void (*simple)();
+    int (*with_params)(int, double, char);
+    double (*returns_double)();
+}
+
+typedef int (*BinaryOp)(int, int);
+BinaryOp operation = add;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 add
+    (parameter:3 a @type int)
+    (parameter:4 b @type int)
+  )
+  (func:5 test_func_ptr
+    (parameter:6 int @type int)
+    (parameter:7 int @type int)
+    (parameter:9 int @type int)
+    (parameter:10 double @type double)
+    (parameter:11 char @type char)
+  )
+  (alias:13 int
+    (parameter:14 int @type int)
+    (parameter:15 int @type int)
+  )
+)

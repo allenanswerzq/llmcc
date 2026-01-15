@@ -1,0 +1,38 @@
+===============================================================================
+concepts-basic
+===============================================================================
+C++20 concepts.
+lang: cpp
+
+--- file: src/lib.cpp ---
+template<typename T>
+concept Numeric = sizeof(T) <= 8;
+
+template<typename T>
+concept Addable = requires(T a, T b) {
+    { a + b } -> Numeric;
+};
+
+template<Numeric T>
+T square(T x) { return x * x; }
+
+template<Addable T>
+T add(T a, T b) { return a + b; }
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (trait:2 Numeric)
+  (trait:3 Addable
+    (parameter:4 a @type a)
+    (parameter:5 b @type b)
+  )
+  (parameter:6 Numeric @type T)
+  (func:7 square
+    (parameter:8 x @type x)
+  )
+  (parameter:9 Addable @type T)
+  (func:10 add
+    (parameter:11 a @type a)
+    (parameter:12 b @type b)
+  )
+)

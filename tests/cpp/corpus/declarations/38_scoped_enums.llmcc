@@ -1,0 +1,41 @@
+===============================================================================
+scoped-enums
+===============================================================================
+Scoped enum declarations (enum class).
+lang: cpp
+
+--- file: src/lib.cpp ---
+enum class Color { Red, Green, Blue };
+
+enum class Status : int {
+    Ok = 0,
+    Error = 1,
+    Pending = 2
+};
+
+enum struct Direction {
+    Up,
+    Down,
+    Left,
+    Right
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (enum:2 Color
+    (field:3 Red @type:3 Red)
+    (field:4 Green @type:4 Green)
+    (field:5 Blue @type:5 Blue)
+  )
+  (enum:6 Status
+    (field:7 Ok @type:7 Ok)
+    (field:8 Error @type:8 Error)
+    (field:9 Pending @type:9 Pending)
+  )
+  (enum:10 Direction
+    (field:11 Up @type:11 Up)
+    (field:12 Down @type:12 Down)
+    (field:13 Left @type:13 Left)
+    (field:14 Right @type:14 Right)
+  )
+)

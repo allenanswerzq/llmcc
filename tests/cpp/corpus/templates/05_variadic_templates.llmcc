@@ -1,0 +1,33 @@
+===============================================================================
+variadic-templates
+===============================================================================
+Variadic template declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+template<typename... Args>
+void print_all(Args... args) {}
+
+template<typename T, typename... Rest>
+T first(T first, Rest... rest) {
+    return first;
+}
+
+template<typename... Types>
+struct Tuple {};
+
+template<typename... Args>
+auto count() { return sizeof...(Args); }
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 print_all
+    (parameter:3 Args)
+  )
+  (func:4 first
+    (parameter:5 first @type first)
+    (parameter:6 Rest)
+  )
+  (class:7 Tuple)
+  (func:8 count)
+)

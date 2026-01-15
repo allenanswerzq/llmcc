@@ -1,0 +1,53 @@
+===============================================================================
+builder-pattern
+===============================================================================
+Builder pattern.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Product {
+public:
+    int partA;
+    int partB;
+    int partC;
+};
+
+class Builder {
+protected:
+    Product product;
+public:
+    virtual ~Builder() = default;
+    virtual Builder& buildPartA(int v) = 0;
+    virtual Builder& buildPartB(int v) = 0;
+    virtual Builder& buildPartC(int v) = 0;
+    Product build() { return product; }
+};
+
+class ConcreteBuilder : public Builder {
+public:
+    Builder& buildPartA(int v) override { product.partA = v; return *this; }
+    Builder& buildPartB(int v) override { product.partB = v; return *this; }
+    Builder& buildPartC(int v) override { product.partC = v; return *this; }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Product
+    (field:3 int @type int)
+    (field:4 int @type int)
+    (field:5 int @type int)
+  )
+  (class:6 Builder
+    (field:7 Product @type:2 Product)
+    (method:8 ~Builder)
+    (field:9 Builder @type:6 Builder)
+    (field:10 Builder @type:6 Builder)
+    (field:11 Builder @type:6 Builder)
+    (method:12 build)
+  )
+  (class:13 ConcreteBuilder @extends:6 Builder
+    (parameter:14 v @type int)
+    (parameter:15 v @type int)
+    (parameter:16 v @type int)
+  )
+)

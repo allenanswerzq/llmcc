@@ -13,6 +13,7 @@ use llmcc_core::lang_def::LanguageTraitImpl;
 use llmcc_core::symbol::reset_symbol_id_counter;
 use llmcc_dot::{ComponentDepth, render_graph};
 
+use llmcc_cpp::LangCpp;
 use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
 use llmcc_rust::LangRust;
 use llmcc_ts::LangTypeScript;
@@ -436,6 +437,7 @@ fn build_pipeline_summary(
     let mut summary = match case.lang.as_str() {
         "rust" => collect_pipeline::<LangRust>(project.root(), &options)?,
         "typescript" | "ts" => collect_pipeline::<LangTypeScript>(project.root(), &options)?,
+        "cpp" | "c++" | "c" => collect_pipeline::<LangCpp>(project.root(), &options)?,
         "auto" => collect_pipeline_auto(project.root(), &options)?,
         other => {
             return Err(anyhow!(

@@ -1,0 +1,70 @@
+===============================================================================
+raii-pattern
+===============================================================================
+RAII pattern.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class FileHandle {
+    int fd;
+public:
+    explicit FileHandle(const char* path) : fd(0) {}
+    ~FileHandle() { if (fd >= 0) {} }
+
+    FileHandle(const FileHandle&) = delete;
+    FileHandle& operator=(const FileHandle&) = delete;
+
+    FileHandle(FileHandle&& other) noexcept : fd(other.fd) {
+        other.fd = -1;
+    }
+
+    int get() const { return fd; }
+};
+
+class MutexLock {
+    int* mutex;
+public:
+    explicit MutexLock(int& m) : mutex(&m) {}
+    ~MutexLock() {}
+
+    MutexLock(const MutexLock&) = delete;
+    MutexLock& operator=(const MutexLock&) = delete;
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 FileHandle
+    (field:3 int @type int)
+    (method:4 FileHandle
+      (parameter:5 path @type char)
+    )
+    (method:6 ~FileHandle)
+    (method:7 FileHandle
+      (parameter:8 FileHandle @type:2 FileHandle)
+      (@tdep:2 FileHandle)
+    )
+    (method:9 operator=
+      (parameter:10 FileHandle @type:2 FileHandle)
+      (@tdep:2 FileHandle)
+    )
+    (method:11 FileHandle
+      (parameter:12 other @type:2 FileHandle)
+    )
+    (method:13 get)
+  )
+  (class:14 MutexLock
+    (field:15 int @type int)
+    (method:16 MutexLock
+      (parameter:17 m @type int)
+    )
+    (method:18 ~MutexLock)
+    (method:19 MutexLock
+      (parameter:20 MutexLock @type:14 MutexLock)
+      (@tdep:14 MutexLock)
+    )
+    (method:21 operator=
+      (parameter:22 MutexLock @type:14 MutexLock)
+      (@tdep:14 MutexLock)
+    )
+  )
+)

@@ -1,0 +1,35 @@
+===============================================================================
+alignas-specifier
+===============================================================================
+Alignas specifier.
+lang: cpp
+
+--- file: src/lib.cpp ---
+struct alignas(16) AlignedStruct {
+    float data[4];
+};
+
+alignas(32) int aligned_array[8];
+
+class alignas(64) CacheAligned {
+    char data[64];
+};
+
+struct MixedAlign {
+    alignas(8) int a;
+    alignas(4) short b;
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 AlignedStruct
+    (field:3 float @type float)
+  )
+  (class:4 CacheAligned
+    (field:5 char @type char)
+  )
+  (class:6 MixedAlign
+    (field:7 int @type int)
+    (field:8 b @type int)
+  )
+)

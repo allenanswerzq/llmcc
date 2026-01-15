@@ -1,0 +1,48 @@
+===============================================================================
+edge-input-output
+===============================================================================
+Test that function input/output type edges are correctly generated.
+lang: cpp
+
+--- file: sample/CMakeLists.txt ---
+cmake_minimum_required(VERSION 3.10)
+project(sample)
+
+--- file: sample/src/lib.cpp ---
+struct Input {};
+struct Output {};
+struct Config {};
+
+Output process(Input input, Config config) {
+    return Output{};
+}
+
+Input create_input() {
+    return Input{};
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_cpp {
+    label="lib.cpp";
+    style=rounded;
+        bgcolor="#fafafa";
+
+    n2[label="Input", path="$TMP/sample/src/lib.cpp:1", sym_ty="Struct", shape=box];
+    n4[label="Config", path="$TMP/sample/src/lib.cpp:3", sym_ty="Struct", shape=box];
+    n5[label="process", path="$TMP/sample/src/lib.cpp:5", sym_ty="Function", shape=ellipse];
+  }
+
+
+  n2 -> n5 [from="input", to="func"];
+  n4 -> n5 [from="input", to="func"];
+}

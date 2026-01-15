@@ -1,0 +1,932 @@
+# C/C++ token mappings for llmcc
+# Maps tree-sitter node types to HirKind and BlockKind
+
+default_hir_kind = "Internal"
+
+#
+# Text tokens - literal syntax elements
+#
+[[text_tokens]]
+name = "Text_class"
+literal = "class"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_struct"
+literal = "struct"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_namespace"
+literal = "namespace"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_template"
+literal = "template"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_typedef"
+literal = "typedef"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_using"
+literal = "using"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_enum"
+literal = "enum"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_union"
+literal = "union"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_public"
+literal = "public"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_private"
+literal = "private"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_protected"
+literal = "protected"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_virtual"
+literal = "virtual"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_static"
+literal = "static"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_const"
+literal = "const"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_constexpr"
+literal = "constexpr"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_inline"
+literal = "inline"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_extern"
+literal = "extern"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_return"
+literal = "return"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_if"
+literal = "if"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_else"
+literal = "else"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_for"
+literal = "for"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_while"
+literal = "while"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_do"
+literal = "do"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_switch"
+literal = "switch"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_case"
+literal = "case"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_default"
+literal = "default"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_break"
+literal = "break"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_continue"
+literal = "continue"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_try"
+literal = "try"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_catch"
+literal = "catch"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_throw"
+literal = "throw"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_new"
+literal = "new"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_delete"
+literal = "delete"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_LPAREN"
+literal = "("
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_RPAREN"
+literal = ")"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_LBRACE"
+literal = "{"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_RBRACE"
+literal = "}"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_LBRACKET"
+literal = "["
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_RBRACKET"
+literal = "]"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_SEMI"
+literal = ";"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_COLON"
+literal = ":"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_COLONCOLON"
+literal = "::"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_COMMA"
+literal = ","
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_DOT"
+literal = "."
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_ARROW"
+literal = "->"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_EQ"
+literal = "="
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_EQEQ"
+literal = "=="
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_NE"
+literal = "!="
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_LT"
+literal = "<"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_GT"
+literal = ">"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_LE"
+literal = "<="
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_GE"
+literal = ">="
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_AMP"
+literal = "&"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_AMPAMP"
+literal = "&&"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_PIPE"
+literal = "|"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_PIPEPIPE"
+literal = "||"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_STAR"
+literal = "*"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_PLUS"
+literal = "+"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_MINUS"
+literal = "-"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_SLASH"
+literal = "/"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_PERCENT"
+literal = "%"
+hir_kind = "Text"
+
+[[text_tokens]]
+name = "Text_QUESTION"
+literal = "?"
+hir_kind = "Text"
+
+#
+# Node tokens - AST node types
+#
+
+# Root
+[[nodes]]
+ts_name = "translation_unit"
+hir_kind = "Scope"
+block_kind = "Root"
+
+# Namespace
+[[nodes]]
+ts_name = "namespace_definition"
+hir_kind = "Scope"
+block_kind = "Module"
+
+# Class/Struct/Union specifiers
+[[nodes]]
+ts_name = "class_specifier"
+hir_kind = "Scope"
+block_kind = "Class"
+
+[[nodes]]
+ts_name = "struct_specifier"
+hir_kind = "Scope"
+block_kind = "Class"
+
+[[nodes]]
+ts_name = "union_specifier"
+hir_kind = "Scope"
+block_kind = "Class"
+
+# Enum
+[[nodes]]
+ts_name = "enum_specifier"
+hir_kind = "Scope"
+block_kind = "Enum"
+
+[[nodes]]
+ts_name = "enumerator"
+hir_kind = "Scope"
+block_kind = "Field"
+
+[[nodes]]
+ts_name = "enumerator_list"
+
+# Function definitions and declarations
+[[nodes]]
+ts_name = "function_definition"
+hir_kind = "Scope"
+block_kind = "Func"
+
+[[nodes]]
+ts_name = "declaration"
+
+# NOTE: function_declarator is HirKind::Scope and BlockKind::Func.
+# For function pointer variable declarations like `int (*func_ptr)(int)`,
+# the collector does NOT set a symbol on the scope, so graph_builder skips creating a block.
+[[nodes]]
+ts_name = "function_declarator"
+hir_kind = "Scope"
+block_kind = "Func"
+
+# Template declarations
+[[nodes]]
+ts_name = "template_declaration"
+hir_kind = "Scope"
+block_kind = "Func"
+
+[[nodes]]
+ts_name = "template_function"
+hir_kind = "Scope"
+block_kind = "Func"
+
+[[nodes]]
+ts_name = "template_method"
+hir_kind = "Scope"
+block_kind = "Func"
+
+[[nodes]]
+ts_name = "template_type"
+
+[[nodes]]
+ts_name = "template_parameter_list"
+
+[[nodes]]
+ts_name = "template_argument_list"
+
+[[nodes]]
+ts_name = "type_parameter_declaration"
+hir_kind = "Scope"
+
+[[nodes]]
+ts_name = "variadic_type_parameter_declaration"
+hir_kind = "Scope"
+
+[[nodes]]
+ts_name = "optional_type_parameter_declaration"
+hir_kind = "Scope"
+
+[[nodes]]
+ts_name = "template_template_parameter_declaration"
+hir_kind = "Scope"
+
+[[nodes]]
+ts_name = "explicit_object_parameter_declaration"
+hir_kind = "Scope"
+
+# Type aliases
+[[nodes]]
+ts_name = "type_definition"
+hir_kind = "Scope"
+block_kind = "Alias"
+
+[[nodes]]
+ts_name = "alias_declaration"
+hir_kind = "Scope"
+block_kind = "Alias"
+
+# Concept (C++20)
+[[nodes]]
+ts_name = "concept_definition"
+hir_kind = "Scope"
+block_kind = "Trait"
+
+# Field declarations
+[[nodes]]
+ts_name = "field_declaration"
+block_kind = "Field"
+
+[[nodes]]
+ts_name = "field_declaration_list"
+hir_kind = "Scope"
+
+# Parameters
+[[nodes]]
+ts_name = "parameter_list"
+
+[[nodes]]
+ts_name = "parameter_declaration"
+block_kind = "Parameter"
+
+[[nodes]]
+ts_name = "optional_parameter_declaration"
+block_kind = "Parameter"
+
+[[nodes]]
+ts_name = "variadic_parameter_declaration"
+block_kind = "Parameter"
+
+# Statements
+[[nodes]]
+ts_name = "compound_statement"
+hir_kind = "Scope"
+block_kind = "Scope"
+
+[[nodes]]
+ts_name = "return_statement"
+
+[[nodes]]
+ts_name = "if_statement"
+
+[[nodes]]
+ts_name = "for_statement"
+
+[[nodes]]
+ts_name = "for_range_loop"
+
+[[nodes]]
+ts_name = "while_statement"
+
+[[nodes]]
+ts_name = "do_statement"
+
+[[nodes]]
+ts_name = "switch_statement"
+
+[[nodes]]
+ts_name = "case_statement"
+
+[[nodes]]
+ts_name = "break_statement"
+
+[[nodes]]
+ts_name = "continue_statement"
+
+[[nodes]]
+ts_name = "try_statement"
+
+[[nodes]]
+ts_name = "catch_clause"
+hir_kind = "Scope"
+
+[[nodes]]
+ts_name = "throw_statement"
+
+[[nodes]]
+ts_name = "expression_statement"
+
+# Expressions
+[[nodes]]
+ts_name = "call_expression"
+block_kind = "Call"
+
+[[nodes]]
+ts_name = "new_expression"
+block_kind = "Call"
+
+[[nodes]]
+ts_name = "delete_expression"
+
+[[nodes]]
+ts_name = "field_expression"
+
+[[nodes]]
+ts_name = "subscript_expression"
+
+[[nodes]]
+ts_name = "assignment_expression"
+
+[[nodes]]
+ts_name = "binary_expression"
+
+[[nodes]]
+ts_name = "unary_expression"
+
+[[nodes]]
+ts_name = "pointer_expression"
+
+[[nodes]]
+ts_name = "conditional_expression"
+
+[[nodes]]
+ts_name = "cast_expression"
+
+[[nodes]]
+ts_name = "sizeof_expression"
+
+[[nodes]]
+ts_name = "alignof_expression"
+
+[[nodes]]
+ts_name = "parenthesized_expression"
+
+[[nodes]]
+ts_name = "comma_expression"
+
+[[nodes]]
+ts_name = "update_expression"
+
+[[nodes]]
+ts_name = "lambda_expression"
+hir_kind = "Scope"
+
+# Identifiers
+[[nodes]]
+ts_name = "identifier"
+hir_kind = "Identifier"
+
+[[nodes]]
+ts_name = "type_identifier"
+hir_kind = "Identifier"
+
+[[nodes]]
+ts_name = "field_identifier"
+hir_kind = "Identifier"
+
+[[nodes]]
+ts_name = "namespace_identifier"
+hir_kind = "Identifier"
+
+[[nodes]]
+ts_name = "statement_identifier"
+hir_kind = "Identifier"
+
+[[nodes]]
+ts_name = "qualified_identifier"
+
+[[nodes]]
+ts_name = "dependent_name"
+
+[[nodes]]
+ts_name = "destructor_name"
+hir_kind = "Identifier"
+
+[[nodes]]
+ts_name = "operator_name"
+hir_kind = "Identifier"
+
+# Types
+[[nodes]]
+ts_name = "primitive_type"
+hir_kind = "Identifier"
+
+[[nodes]]
+ts_name = "sized_type_specifier"
+
+[[nodes]]
+ts_name = "type_descriptor"
+
+[[nodes]]
+ts_name = "type_qualifier"
+
+[[nodes]]
+ts_name = "storage_class_specifier"
+
+[[nodes]]
+ts_name = "type_specifier"
+
+[[nodes]]
+ts_name = "pointer_declarator"
+
+[[nodes]]
+ts_name = "pointer_type_declarator"
+
+[[nodes]]
+ts_name = "abstract_pointer_declarator"
+
+[[nodes]]
+ts_name = "init_declarator"
+
+[[nodes]]
+ts_name = "reference_declarator"
+
+[[nodes]]
+ts_name = "abstract_reference_declarator"
+
+[[nodes]]
+ts_name = "array_declarator"
+
+[[nodes]]
+ts_name = "abstract_array_declarator"
+
+[[nodes]]
+ts_name = "parenthesized_declarator"
+
+[[nodes]]
+ts_name = "abstract_parenthesized_declarator"
+
+[[nodes]]
+ts_name = "attributed_declarator"
+
+[[nodes]]
+ts_name = "decltype"
+
+[[nodes]]
+ts_name = "placeholder_type_specifier"
+
+[[nodes]]
+ts_name = "auto"
+hir_kind = "Identifier"
+
+# Literals
+[[nodes]]
+ts_name = "number_literal"
+
+[[nodes]]
+ts_name = "string_literal"
+
+[[nodes]]
+ts_name = "char_literal"
+
+[[nodes]]
+ts_name = "concatenated_string"
+
+[[nodes]]
+ts_name = "raw_string_literal"
+
+[[nodes]]
+ts_name = "true"
+name = "r#true"
+hir_kind = "Identifier"
+
+[[nodes]]
+ts_name = "false"
+name = "r#false"
+hir_kind = "Identifier"
+
+[[nodes]]
+ts_name = "null"
+hir_kind = "Identifier"
+
+[[nodes]]
+ts_name = "nullptr"
+hir_kind = "Identifier"
+
+[[nodes]]
+ts_name = "this"
+hir_kind = "Identifier"
+
+# Access specifiers
+[[nodes]]
+ts_name = "access_specifier"
+hir_kind = "Text"
+
+[[nodes]]
+ts_name = "base_class_clause"
+
+[[nodes]]
+ts_name = "virtual_specifier"
+hir_kind = "Text"
+
+# Preprocessor directives
+[[nodes]]
+ts_name = "preproc_include"
+
+[[nodes]]
+ts_name = "preproc_def"
+
+[[nodes]]
+ts_name = "preproc_function_def"
+
+[[nodes]]
+ts_name = "preproc_if"
+
+[[nodes]]
+ts_name = "preproc_ifdef"
+
+[[nodes]]
+ts_name = "preproc_else"
+
+[[nodes]]
+ts_name = "preproc_elif"
+
+[[nodes]]
+ts_name = "preproc_call"
+
+# Using declarations
+[[nodes]]
+ts_name = "using_declaration"
+hir_kind = "Scope"
+block_kind = "Alias"
+
+# Friend declarations
+[[nodes]]
+ts_name = "friend_declaration"
+
+# Static assert
+[[nodes]]
+ts_name = "static_assert_declaration"
+
+# Initializer lists
+[[nodes]]
+ts_name = "initializer_list"
+
+[[nodes]]
+ts_name = "field_initializer"
+name = "field_init"
+
+[[nodes]]
+ts_name = "field_initializer_list"
+
+# Arguments
+[[nodes]]
+ts_name = "argument_list"
+
+# Comments
+[[nodes]]
+ts_name = "comment"
+hir_kind = "Comment"
+
+# Attributes
+[[nodes]]
+ts_name = "attribute"
+
+[[nodes]]
+ts_name = "attribute_declaration"
+
+[[nodes]]
+ts_name = "attribute_specifier"
+
+# Requires (C++20)
+[[nodes]]
+ts_name = "requires_clause"
+
+[[nodes]]
+ts_name = "requires_expression"
+hir_kind = "Scope"
+
+# Trailing return type
+[[nodes]]
+ts_name = "trailing_return_type"
+
+# Module declarations (C++20)
+[[nodes]]
+ts_name = "module_declaration"
+hir_kind = "Scope"
+block_kind = "Module"
+
+[[nodes]]
+ts_name = "import_declaration"
+
+[[nodes]]
+ts_name = "export_declaration"
+
+# Structured binding (C++17)
+[[nodes]]
+ts_name = "structured_binding_declarator"
+
+# Fold expressions (C++17)
+[[nodes]]
+ts_name = "fold_expression"
+
+# Co-routines (C++20)
+[[nodes]]
+ts_name = "co_await_expression"
+
+[[nodes]]
+ts_name = "co_yield_statement"
+
+[[nodes]]
+ts_name = "co_return_statement"
+
+#
+# Field mappings - link field names to their IDs
+#
+[[fields]]
+name = "field_name"
+field_name = "name"
+
+[[fields]]
+name = "field_type"
+field_name = "type"
+
+[[fields]]
+name = "field_body"
+field_name = "body"
+
+[[fields]]
+name = "field_declarator"
+field_name = "declarator"
+
+[[fields]]
+name = "field_parameters"
+field_name = "parameters"
+
+[[fields]]
+name = "field_arguments"
+field_name = "arguments"
+
+[[fields]]
+name = "field_value"
+field_name = "value"
+
+[[fields]]
+name = "field_condition"
+field_name = "condition"
+
+[[fields]]
+name = "field_consequence"
+field_name = "consequence"
+
+[[fields]]
+name = "field_alternative"
+field_name = "alternative"
+
+[[fields]]
+name = "field_initializer"
+field_name = "initializer"
+
+[[fields]]
+name = "field_update"
+field_name = "update"
+
+[[fields]]
+name = "field_left"
+field_name = "left"
+
+[[fields]]
+name = "field_right"
+field_name = "right"
+
+[[fields]]
+name = "field_operator"
+field_name = "operator"
+
+[[fields]]
+name = "field_field"
+field_name = "field"
+
+[[fields]]
+name = "field_argument"
+field_name = "argument"
+
+[[fields]]
+name = "field_function"
+field_name = "function"
+
+[[fields]]
+name = "field_size"
+field_name = "size"
+
+[[fields]]
+name = "field_scope"
+field_name = "scope"
+
+[[fields]]
+name = "field_path"
+field_name = "path"
+
+[[fields]]
+name = "field_default_value"
+field_name = "default_value"
+
+[[fields]]
+name = "field_length"
+field_name = "length"
+
+# C++ uses 'constraint' for what Rust uses 'trait' in concepts
+# We map field_trait to 'constraint' as a workaround for the macro requirement
+[[fields]]
+name = "field_trait"
+field_name = "constraint"
+hir_kind = "Internal"

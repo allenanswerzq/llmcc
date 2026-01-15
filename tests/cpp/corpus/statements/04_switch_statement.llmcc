@@ -1,0 +1,39 @@
+===============================================================================
+switch-statement
+===============================================================================
+Switch statement variations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+int color_value(int color) {
+    switch (color) {
+        case 0: return 0xFF0000;
+        case 1: return 0x00FF00;
+        case 2: return 0x0000FF;
+        default: return 0;
+    }
+}
+
+const char* type_name(int type) {
+    switch (type) {
+        case 1:
+        case 2:
+        case 3:
+            return "numeric";
+        case 4:
+        case 5:
+            return "text";
+        default:
+            return "unknown";
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 color_value
+    (parameter:3 color @type int)
+  )
+  (func:4 type_name
+    (parameter:5 type @type int)
+  )
+)

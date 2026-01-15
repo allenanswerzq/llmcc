@@ -1,0 +1,26 @@
+===============================================================================
+edge-caller-callee
+===============================================================================
+Test that caller-callee edges are correctly generated.
+lang: cpp
+
+--- file: sample/CMakeLists.txt ---
+cmake_minimum_required(VERSION 3.10)
+project(sample)
+
+--- file: sample/src/main.cpp ---
+void helper() {}
+
+void process() {
+    helper();
+}
+
+int main() {
+    process();
+    helper();
+    return 0;
+}
+
+--- expect:arch-graph ---
+digraph G {
+}

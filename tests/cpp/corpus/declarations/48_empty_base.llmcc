@@ -1,0 +1,40 @@
+===============================================================================
+empty-base-optimization
+===============================================================================
+Empty base optimization patterns.
+lang: cpp
+
+--- file: src/lib.cpp ---
+struct Empty {};
+
+struct EmptyBase {};
+
+struct Derived : EmptyBase {
+    int value;
+};
+
+template<typename T>
+struct Wrapper : T {
+    int data;
+};
+
+struct HasEmpty {
+    [[no_unique_address]] Empty e;
+    int value;
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Empty)
+  (class:3 EmptyBase)
+  (class:4 Derived @extends:3 EmptyBase
+    (field:5 int @type int)
+  )
+  (class:6 Wrapper
+    (field:7 int @type int)
+  )
+  (class:8 HasEmpty
+    (field:9 no_unique_address @type:2 Empty)
+    (field:10 int @type int)
+  )
+)

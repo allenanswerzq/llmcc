@@ -1,0 +1,43 @@
+===============================================================================
+method-resolution
+===============================================================================
+Method resolution with inheritance.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Base {
+public:
+    virtual void method() {}
+    void non_virtual() {}
+};
+
+class Derived : public Base {
+public:
+    void method() override {}
+    void derived_only() {}
+};
+
+void test_resolution() {
+    Derived d;
+    d.method();
+    d.non_virtual();
+    d.derived_only();
+
+    Base* b = &d;
+    b->method();
+    b->non_virtual();
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Base
+    (method:3 method)
+    (method:4 non_virtual)
+  )
+  (class:5 Derived @extends:2 Base
+    (method:6 method)
+    (method:7 derived_only)
+  )
+  (func:8 test_resolution
+  )
+)

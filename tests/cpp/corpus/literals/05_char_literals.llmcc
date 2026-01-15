@@ -1,0 +1,27 @@
+===============================================================================
+char-literals
+===============================================================================
+Character literal expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void test_chars() {
+    char a = 'A';
+    char b = '\n';
+    char c = '\t';
+    char d = '\\';
+    char e = '\'';
+    char f = '\0';
+
+    char g = '\x41';
+    char h = '\101';
+
+    wchar_t i = L'X';
+    char16_t j = u'Y';
+    char32_t k = U'Z';
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test_chars)
+)

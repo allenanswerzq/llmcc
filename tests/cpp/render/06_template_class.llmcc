@@ -1,0 +1,47 @@
+===============================================================================
+template-class
+===============================================================================
+Test that template classes appear in the architecture graph.
+lang: cpp
+
+--- file: sample/CMakeLists.txt ---
+cmake_minimum_required(VERSION 3.10)
+project(sample)
+
+--- file: sample/src/lib.cpp ---
+
+template<typename T>
+class Container {
+public:
+    T value;
+
+    T get() const {
+        return value;
+    }
+
+    void set(T v) {
+        value = v;
+    }
+};
+
+template<typename K, typename V>
+class Pair {
+public:
+    K key;
+    V val;
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.cpp)
+  (class:2 Container
+    (field:3 T @type value)
+    (method:4 get)
+    (method:5 set
+      (parameter:6 v @type v)
+    )
+  )
+  (class:7 Pair
+    (field:8 K @type key)
+    (field:9 V @type val)
+  )
+)

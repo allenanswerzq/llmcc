@@ -1,0 +1,43 @@
+===============================================================================
+template-specialization
+===============================================================================
+Template specialization.
+lang: cpp
+
+--- file: src/lib.cpp ---
+template<typename T>
+class Wrapper {
+    T data;
+public:
+    T get() { return data; }
+};
+
+template<>
+class Wrapper<int> {
+    int data;
+public:
+    int get() { return data * 2; }
+};
+
+template<typename T>
+class Wrapper<T*> {
+    T* ptr;
+public:
+    T get() { return *ptr; }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Wrapper
+    (field:3 T @type data)
+    (method:4 get)
+  )
+  (class:5 Wrapper
+    (field:6 int @type int)
+    (method:7 get)
+  )
+  (class:8 Wrapper
+    (field:9 T)
+    (method:10 get)
+  )
+)

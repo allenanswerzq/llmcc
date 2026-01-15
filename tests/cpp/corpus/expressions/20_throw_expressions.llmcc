@@ -1,0 +1,43 @@
+===============================================================================
+throw-expressions
+===============================================================================
+Throw expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void test_throw() {
+    throw 42;
+}
+
+void test_throw_string() {
+    throw "error message";
+}
+
+class Exception {
+public:
+    const char* what() const { return "exception"; }
+};
+
+void test_throw_object() {
+    throw Exception();
+}
+
+void test_rethrow() {
+    try {
+        throw 1;
+    } catch (...) {
+        throw;
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test_throw)
+  (func:3 test_throw_string)
+  (class:4 Exception
+    (method:5 what)
+  )
+  (func:6 test_throw_object
+  )
+  (func:8 test_rethrow)
+)

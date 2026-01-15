@@ -52,16 +52,6 @@ pub fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
                 })
                 .unwrap_or_else(|| format!("{}:{}", kind, block_id.as_u32()));
 
-            // Skip anonymous functions - they are implementation details
-            // Anonymous functions have names that look like code (contain parentheses, arrows, etc.)
-            if display_name.contains("=>")
-                || display_name.contains("function(")
-                || display_name.starts_with('(')
-                || display_name.starts_with("async (")
-            {
-                return None;
-            }
-
             // Skip methods - they are implementation details, not architectural
             if let Some(func_block) = block.as_func()
                 && func_block.is_method()

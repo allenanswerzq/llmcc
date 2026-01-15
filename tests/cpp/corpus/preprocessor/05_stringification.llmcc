@@ -1,0 +1,23 @@
+===============================================================================
+stringification
+===============================================================================
+Stringification preprocessor.
+lang: cpp
+
+--- file: src/lib.cpp ---
+#define STRINGIFY(x) #x
+#define CONCAT(a, b) a##b
+
+#define PRINT_VAR(x) do { const char* name = #x; } while(0)
+
+void test() {
+    const char* s = STRINGIFY(hello);
+    int CONCAT(var, 1) = 10;
+    PRINT_VAR(my_variable);
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test
+  )
+)

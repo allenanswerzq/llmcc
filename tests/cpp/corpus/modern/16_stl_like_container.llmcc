@@ -1,0 +1,61 @@
+===============================================================================
+stl-like-container
+===============================================================================
+STL-like container patterns.
+lang: cpp
+
+--- file: src/lib.cpp ---
+template<typename T>
+class Vector {
+    T* data;
+    int sz;
+    int cap;
+
+public:
+    using value_type = T;
+    using iterator = T*;
+    using const_iterator = const T*;
+
+    Vector() : data(nullptr), sz(0), cap(0) {}
+    ~Vector() { delete[] data; }
+
+    void push_back(const T& value) {}
+    void pop_back() { sz--; }
+
+    T& operator[](int index) { return data[index]; }
+    const T& operator[](int index) const { return data[index]; }
+
+    int size() const { return sz; }
+    bool empty() const { return sz == 0; }
+
+    iterator begin() { return data; }
+    iterator end() { return data + sz; }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Vector
+    (field:3 T)
+    (field:4 int @type int)
+    (field:5 int @type int)
+    (alias:6 value_type)
+    (alias:7 iterator)
+    (alias:8 const_iterator)
+    (method:9 Vector)
+    (method:10 ~Vector)
+    (method:11 push_back
+      (parameter:12 value @type value)
+    )
+    (method:13 pop_back)
+    (method:14 operator[]
+      (parameter:15 index @type int)
+    )
+    (method:16 operator[]
+      (parameter:17 index @type int)
+    )
+    (method:18 size)
+    (method:19 empty)
+    (method:20 begin)
+    (method:21 end)
+  )
+)

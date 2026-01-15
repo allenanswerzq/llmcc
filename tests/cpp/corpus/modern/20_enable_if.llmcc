@@ -1,0 +1,41 @@
+===============================================================================
+enable-if
+===============================================================================
+Enable_if patterns.
+lang: cpp
+
+--- file: src/lib.cpp ---
+template<bool B, typename T = void>
+struct enable_if {};
+
+template<typename T>
+struct enable_if<true, T> {
+    using type = T;
+};
+
+template<bool B, typename T = void>
+using enable_if_t = typename enable_if<B, T>::type;
+
+template<typename T, typename enable_if<sizeof(T) <= 4, int>::type = 0>
+void small_type(T) {}
+
+template<typename T>
+enable_if_t<sizeof(T) <= 8, T> identity(T x) { return x; }
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (parameter:2 B @type bool)
+  (class:3 enable_if)
+  (class:4 enable_if
+    (alias:5 type)
+  )
+  (parameter:6 B @type bool)
+  (alias:7 enable_if_t)
+  (parameter:8 enable_if @type:4 enable_if)
+  (func:9 small_type
+    (parameter:10 T)
+  )
+  (func:11 identity
+    (parameter:12 x @type x)
+  )
+)

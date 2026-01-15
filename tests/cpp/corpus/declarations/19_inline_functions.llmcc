@@ -1,0 +1,38 @@
+===============================================================================
+inline-functions
+===============================================================================
+Inline function declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+inline int square(int x) { return x * x; }
+
+inline double cube(double x) {
+    return x * x * x;
+}
+
+class Math {
+public:
+    inline int add(int a, int b) { return a + b; }
+    int multiply(int a, int b) { return a * b; }  // implicitly inline in class body
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 square
+    (parameter:3 x @type int)
+  )
+  (func:4 cube
+    (parameter:5 x @type double)
+  )
+  (class:6 Math
+    (method:7 add
+      (parameter:8 a @type int)
+      (parameter:9 b @type int)
+    )
+    (method:10 multiply
+      (parameter:11 a @type int)
+      (parameter:12 b @type int)
+    )
+  )
+)

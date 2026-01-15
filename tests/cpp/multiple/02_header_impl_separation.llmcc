@@ -1,0 +1,79 @@
+===============================================================================
+header-impl-separation
+===============================================================================
+Test header and implementation file separation.
+lang: cpp
+
+--- file: sample/CMakeLists.txt ---
+cmake_minimum_required(VERSION 3.10)
+project(sample)
+
+--- file: sample/include/calculator.h ---
+class Calculator {
+public:
+    int add(int a, int b);
+    int subtract(int a, int b);
+    int multiply(int a, int b);
+    int divide(int a, int b);
+};
+
+--- file: sample/src/calculator.cpp ---
+#include "../include/calculator.h"
+
+int Calculator::add(int a, int b) {
+    return a + b;
+}
+
+int Calculator::subtract(int a, int b) {
+    return a - b;
+}
+
+int Calculator::multiply(int a, int b) {
+    return a * b;
+}
+
+int Calculator::divide(int a, int b) {
+    return a / b;
+}
+
+--- file: sample/src/main.cpp ---
+#include "../include/calculator.h"
+
+int main() {
+    Calculator calc;
+    int result = calc.add(1, 2);
+    return 0;
+}
+
+--- expect:block-graph ---
+(root:1 calculator ($TMP/sample/include/calculator.h)
+  (class:2 Calculator
+    (field:3 int @type int)
+    (field:4 int @type int)
+    (field:5 int @type int)
+    (field:6 int @type int)
+  )
+)
+
+(root:7 calculator ($TMP/sample/src/calculator.cpp)
+  (method:8 add
+    (parameter:9 a @type int)
+    (parameter:10 b @type int)
+  )
+  (method:11 subtract
+    (parameter:12 a @type int)
+    (parameter:13 b @type int)
+  )
+  (method:14 multiply
+    (parameter:15 a @type int)
+    (parameter:16 b @type int)
+  )
+  (method:17 divide
+    (parameter:18 a @type int)
+    (parameter:19 b @type int)
+  )
+)
+
+(root:20 main ($TMP/sample/src/main.cpp)
+  (func:21 main)
+)

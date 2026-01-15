@@ -1,0 +1,33 @@
+===============================================================================
+forward-declarations
+===============================================================================
+Forward declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class ForwardClass;
+struct ForwardStruct;
+enum ForwardEnum;
+enum class ForwardEnumClass;
+
+class ForwardClass {
+    int x;
+};
+
+struct ForwardStruct {
+    int y;
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 ForwardClass)
+  (class:3 ForwardStruct)
+  (enum:4 ForwardEnum)
+  (enum:5 ForwardEnumClass)
+  (class:6 ForwardClass
+    (field:7 int @type int)
+  )
+  (class:8 ForwardStruct
+    (field:9 int @type int)
+  )
+)

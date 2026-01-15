@@ -1,0 +1,29 @@
+===============================================================================
+conversion-operators
+===============================================================================
+Conversion operator declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Boolean {
+    bool value;
+public:
+    explicit operator bool() const { return value; }
+    operator int() const { return value ? 1 : 0; }
+};
+
+class StringLike {
+    char data[256];
+public:
+    operator const char*() const { return data; }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Boolean
+    (field:3 bool @type bool)
+  )
+  (class:4 StringLike
+    (field:5 char @type char)
+  )
+)

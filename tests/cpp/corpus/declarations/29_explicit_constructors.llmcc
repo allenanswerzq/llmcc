@@ -1,0 +1,38 @@
+===============================================================================
+explicit-constructors
+===============================================================================
+Explicit constructor declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class String {
+public:
+    explicit String(int size) {}
+    String(const char* s) {}
+};
+
+class Integer {
+public:
+    explicit Integer(int val) : value(val) {}
+    explicit operator bool() const { return value != 0; }
+private:
+    int value;
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 String
+    (method:3 String
+      (parameter:4 size @type int)
+    )
+    (method:5 String
+      (parameter:6 s @type char)
+    )
+  )
+  (class:7 Integer
+    (method:8 Integer
+      (parameter:9 val @type int)
+    )
+    (field:10 int @type int)
+  )
+)

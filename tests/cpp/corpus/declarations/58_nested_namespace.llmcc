@@ -1,0 +1,44 @@
+===============================================================================
+nested-namespace
+===============================================================================
+Nested namespace declarations (C++17).
+lang: cpp
+
+--- file: src/lib.cpp ---
+namespace outer::middle::inner {
+    class Widget {
+        int value;
+    public:
+        void method() {}
+    };
+
+    void helper() {}
+}
+
+namespace a::b::c::d {
+    struct DeepNested {
+        int x;
+    };
+}
+
+void use() {
+    outer::middle::inner::Widget w;
+    a::b::c::d::DeepNested d;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (module:2 outer (inline)
+    (class:3 Widget
+      (field:4 int @type int)
+      (method:5 method)
+    )
+    (func:6 helper)
+  )
+  (module:7 a (inline)
+    (class:8 DeepNested
+      (field:9 int @type int)
+    )
+  )
+  (func:10 use)
+)

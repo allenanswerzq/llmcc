@@ -1,0 +1,34 @@
+===============================================================================
+fold-expressions
+===============================================================================
+Fold expressions (C++17).
+lang: cpp
+
+--- file: src/lib.cpp ---
+template<typename... Args>
+auto sum(Args... args) {
+    return (args + ...);
+}
+
+template<typename... Args>
+auto product(Args... args) {
+    return (args * ... * 1);
+}
+
+template<typename... Args>
+bool all_true(Args... args) {
+    return (args && ...);
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 sum
+    (parameter:3 Args)
+  )
+  (func:4 product
+    (parameter:5 Args)
+  )
+  (func:6 all_true
+    (parameter:7 Args)
+  )
+)

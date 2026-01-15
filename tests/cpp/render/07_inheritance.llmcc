@@ -1,0 +1,86 @@
+===============================================================================
+inheritance
+===============================================================================
+Test that class inheritance appears correctly.
+lang: cpp
+
+--- file: sample/CMakeLists.txt ---
+cmake_minimum_required(VERSION 3.10)
+project(sample)
+
+--- file: sample/src/lib.cpp ---
+
+class Shape {
+public:
+    virtual double area() const = 0;
+    virtual ~Shape() = default;
+};
+
+class Circle : public Shape {
+    double radius;
+public:
+    Circle(double r) : radius(r) {}
+    double area() const override {
+        return 3.14159 * radius * radius;
+    }
+};
+
+class Rectangle : public Shape {
+    double width;
+    double height;
+public:
+    Rectangle(double w, double h) : width(w), height(h) {}
+    double area() const override {
+        return width * height;
+    }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.cpp)
+  (class:2 Shape
+    (field:3 double @type double)
+    (method:4 ~Shape)
+  )
+  (class:5 Circle @extends:2 Shape
+    (field:6 double @type double)
+    (method:7 Circle
+      (parameter:8 r @type double)
+    )
+    (method:9 area)
+  )
+  (class:10 Rectangle @extends:2 Shape
+    (field:11 double @type double)
+    (field:12 double @type double)
+    (method:13 Rectangle
+      (parameter:14 w @type double)
+      (parameter:15 h @type double)
+    )
+    (method:16 area)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_cpp {
+    label="lib.cpp";
+    style=rounded;
+        bgcolor="#fafafa";
+
+    n10[label="Rectangle", path="$TMP/sample/src/lib.cpp:17", sym_ty="Struct", shape=box];
+    n2[label="Shape", path="$TMP/sample/src/lib.cpp:2", sym_ty="Struct", shape=box];
+    n5[label="Circle", path="$TMP/sample/src/lib.cpp:8", sym_ty="Struct", shape=box];
+  }
+
+
+  n2 -> n5 [from="base", to="extends"];
+  n2 -> n10 [from="base", to="extends"];
+}

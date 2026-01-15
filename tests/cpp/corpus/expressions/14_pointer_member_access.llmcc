@@ -1,0 +1,37 @@
+===============================================================================
+pointer-member-access
+===============================================================================
+Pointer and member access expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+struct Point {
+    int x, y;
+    void reset() { x = y = 0; }
+};
+
+void test_access() {
+    Point p;
+    p.x = 10;
+    p.y = 20;
+    p.reset();
+
+    Point* ptr = &p;
+    ptr->x = 30;
+    ptr->y = 40;
+    ptr->reset();
+
+    int Point::* member = &Point::x;
+    p.*member = 50;
+    ptr->*member = 60;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Point
+    (field:3 int @type int)
+    (method:4 reset)
+  )
+  (func:5 test_access
+  )
+)

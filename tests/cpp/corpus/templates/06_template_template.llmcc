@@ -1,0 +1,30 @@
+===============================================================================
+template-template-parameters
+===============================================================================
+Template template parameters.
+lang: cpp
+
+--- file: src/lib.cpp ---
+template<typename T>
+struct Container {
+    T value;
+};
+
+template<template<typename> class C, typename T>
+struct Wrapper {
+    C<T> container;
+};
+
+template<template<typename> class C>
+void process() {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Container
+    (field:3 T @type value)
+  )
+  (class:4 Wrapper
+    (field:5 C @type container)
+  )
+  (func:6 process)
+)

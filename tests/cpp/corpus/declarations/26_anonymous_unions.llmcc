@@ -1,0 +1,38 @@
+===============================================================================
+anonymous-unions
+===============================================================================
+Anonymous union declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+struct Variant {
+    int type;
+    union {
+        int i;
+        float f;
+        double d;
+    };
+};
+
+class Container {
+    union {
+        long long_val;
+        char bytes[8];
+    };
+public:
+    void set_long(long v) { long_val = v; }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Variant
+    (field:3 int @type int)
+    (field:4 )
+  )
+  (class:5 Container
+    (field:6 )
+    (method:7 set_long
+      (parameter:8 v @type int)
+    )
+  )
+)

@@ -1,0 +1,26 @@
+===============================================================================
+decltype-expressions
+===============================================================================
+Decltype expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+int foo() { return 42; }
+
+void test_decltype() {
+    int x = 0;
+    decltype(x) y = 10;
+
+    decltype(foo()) z = foo();
+
+    decltype(x + y) sum = x + y;
+
+    decltype(auto) result = foo();
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 foo)
+  (func:3 test_decltype
+  )
+)

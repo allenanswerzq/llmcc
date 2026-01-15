@@ -1,0 +1,25 @@
+===============================================================================
+range-based-for
+===============================================================================
+Range-based for loop variations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void test_range_for() {
+    int arr[] = {1, 2, 3, 4, 5};
+
+    for (int x : arr) {}
+
+    for (auto& x : arr) {
+        x *= 2;
+    }
+
+    for (const auto& x : arr) {}
+
+    for (auto&& x : arr) {}
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test_range_for)
+)

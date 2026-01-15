@@ -1,0 +1,23 @@
+===============================================================================
+constinit
+===============================================================================
+Constinit specifier (C++20).
+lang: cpp
+
+--- file: src/lib.cpp ---
+constinit int global_init = 42;
+
+constinit static int static_init = 100;
+
+struct Config {
+    static constinit int value;
+};
+
+constinit int Config::value = 200;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Config
+    (field:3 int @type int)
+  )
+)

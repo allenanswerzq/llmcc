@@ -1,0 +1,19 @@
+===============================================================================
+static-assert
+===============================================================================
+Static assert statements.
+lang: cpp
+
+--- file: src/lib.cpp ---
+static_assert(sizeof(int) == 4, "int must be 4 bytes");
+static_assert(sizeof(void*) >= 4);
+
+template<typename T>
+struct CheckSize {
+    static_assert(sizeof(T) >= 1, "T must have size");
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 CheckSize)
+)

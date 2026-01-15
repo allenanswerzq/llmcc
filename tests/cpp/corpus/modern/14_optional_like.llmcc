@@ -1,0 +1,43 @@
+===============================================================================
+optional-like
+===============================================================================
+Optional-like implementation.
+lang: cpp
+
+--- file: src/lib.cpp ---
+template<typename T>
+class Optional {
+    alignas(T) char storage[sizeof(T)];
+    bool has_value;
+
+public:
+    Optional() : has_value(false) {}
+
+    Optional(const T& value) : has_value(true) {
+        new (storage) T(value);
+    }
+
+    ~Optional() {
+        if (has_value) {
+            reinterpret_cast<T*>(storage)->~T();
+        }
+    }
+
+    bool empty() const { return !has_value; }
+    T& value() { return *reinterpret_cast<T*>(storage); }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Optional
+    (field:3 T @type char)
+    (field:4 bool @type bool)
+    (method:5 Optional)
+    (method:6 Optional
+      (parameter:7 value @type value)
+    )
+    (method:9 ~Optional
+    )
+    (method:11 empty)
+  )
+)

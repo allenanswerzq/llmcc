@@ -1,0 +1,50 @@
+===============================================================================
+smart-pointers
+===============================================================================
+Smart pointer patterns.
+lang: cpp
+
+--- file: src/lib.cpp ---
+template<typename T>
+class UniquePtr {
+    T* ptr;
+public:
+    explicit UniquePtr(T* p = nullptr) : ptr(p) {}
+    ~UniquePtr() { delete ptr; }
+
+    UniquePtr(const UniquePtr&) = delete;
+    UniquePtr& operator=(const UniquePtr&) = delete;
+
+    UniquePtr(UniquePtr&& other) noexcept : ptr(other.ptr) {
+        other.ptr = nullptr;
+    }
+
+    T* get() const { return ptr; }
+    T& operator*() const { return *ptr; }
+    T* operator->() const { return ptr; }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 UniquePtr
+    (field:3 T)
+    (method:4 UniquePtr
+      (parameter:5 T)
+    )
+    (method:6 ~UniquePtr)
+    (method:7 UniquePtr
+      (parameter:8 UniquePtr @type:2 UniquePtr)
+      (@tdep:2 UniquePtr)
+    )
+    (method:9 operator=
+      (parameter:10 UniquePtr @type:2 UniquePtr)
+      (@tdep:2 UniquePtr)
+    )
+    (method:11 UniquePtr
+      (parameter:12 other @type:2 UniquePtr)
+    )
+    (method:13 get)
+    (method:14 operator*)
+    (method:15 operator->)
+  )
+)

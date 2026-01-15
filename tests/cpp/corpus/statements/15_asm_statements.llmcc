@@ -1,0 +1,21 @@
+===============================================================================
+asm-statements
+===============================================================================
+Inline assembly statements.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void test_asm() {
+    int x = 10;
+
+    asm("nop");
+
+    asm volatile("" ::: "memory");
+
+    __asm__ __volatile__ ("" ::: "memory");
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test_asm)
+)

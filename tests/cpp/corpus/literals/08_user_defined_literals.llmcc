@@ -1,0 +1,39 @@
+===============================================================================
+user-defined-literals
+===============================================================================
+User-defined literal expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+long double operator""_deg(long double deg) {
+    return deg * 3.14159 / 180.0;
+}
+
+unsigned long long operator""_km(unsigned long long km) {
+    return km * 1000;
+}
+
+const char* operator""_s(const char* str, unsigned long) {
+    return str;
+}
+
+void test_udl() {
+    auto angle = 90.0_deg;
+    auto distance = 5_km;
+    auto text = "hello"_s;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 operator""_deg
+    (parameter:3 deg @type double)
+  )
+  (func:4 operator""_km
+    (parameter:5 km @type int)
+  )
+  (func:6 operator""_s
+    (parameter:7 str @type char)
+    (parameter:8 )
+  )
+  (func:9 test_udl)
+)

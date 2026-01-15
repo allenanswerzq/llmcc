@@ -1,0 +1,21 @@
+===============================================================================
+line-directive
+===============================================================================
+Line directive.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void before_line() {}
+
+#line 100 "custom_file.cpp"
+void at_line_100() {}
+
+#line 200
+void at_line_200() {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 before_line)
+  (func:3 at_line_100)
+  (func:4 at_line_200)
+)

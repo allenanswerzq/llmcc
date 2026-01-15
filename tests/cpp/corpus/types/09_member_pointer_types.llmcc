@@ -1,0 +1,39 @@
+===============================================================================
+member-pointer-types
+===============================================================================
+Member pointer types.
+lang: cpp
+
+--- file: src/lib.cpp ---
+struct Widget {
+    int value;
+    void method() {}
+    int calculate(int x) { return x + value; }
+};
+
+void test_member_ptr() {
+    int Widget::* data_ptr = &Widget::value;
+    void (Widget::* method_ptr)() = &Widget::method;
+    int (Widget::* calc_ptr)(int) = &Widget::calculate;
+
+    Widget w;
+    w.*data_ptr = 42;
+    (w.*method_ptr)();
+
+    Widget* pw = &w;
+    pw->*data_ptr = 100;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Widget
+    (field:3 int @type int)
+    (method:4 method)
+    (method:5 calculate
+      (parameter:6 x @type int)
+    )
+  )
+  (func:7 test_member_ptr
+    (parameter:9 int @type int)
+  )
+)

@@ -1,0 +1,32 @@
+===============================================================================
+attributes
+===============================================================================
+C++ attributes.
+lang: cpp
+
+--- file: src/lib.cpp ---
+[[nodiscard]] int calculate() { return 42; }
+
+[[deprecated("Use new_function instead")]]
+void old_function() {}
+
+[[noreturn]] void terminate() {
+    throw "error";
+}
+
+class [[maybe_unused]] Helper {
+    [[maybe_unused]] int unused_field;
+
+    [[nodiscard]] bool is_valid() { return true; }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 calculate)
+  (func:3 old_function)
+  (func:4 terminate)
+  (class:5 Helper
+    (field:6 maybe_unused @type int)
+    (method:7 is_valid)
+  )
+)

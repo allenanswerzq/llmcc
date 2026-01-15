@@ -1,0 +1,35 @@
+===============================================================================
+this-expression
+===============================================================================
+This pointer expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Builder {
+    int value;
+public:
+    Builder& setValue(int v) {
+        this->value = v;
+        return *this;
+    }
+
+    Builder* getThis() {
+        return this;
+    }
+
+    bool isSame(Builder* other) {
+        return this == other;
+    }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Builder
+    (field:3 int @type int)
+    (parameter:4 v @type int)
+    (method:5 getThis)
+    (method:6 isSame
+      (parameter:7 other @type:2 Builder)
+    )
+  )
+)

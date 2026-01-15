@@ -1,0 +1,44 @@
+===============================================================================
+virtual-inheritance
+===============================================================================
+Virtual inheritance for diamond problem.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Base {
+public:
+    int value;
+    virtual void print() {}
+};
+
+class Left : virtual public Base {
+public:
+    void left_method() {}
+};
+
+class Right : virtual public Base {
+public:
+    void right_method() {}
+};
+
+class Diamond : public Left, public Right {
+public:
+    void print() override {}
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Base
+    (field:3 int @type int)
+    (method:4 print)
+  )
+  (class:5 Left @extends:2 Base
+    (method:6 left_method)
+  )
+  (class:7 Right @extends:2 Base
+    (method:8 right_method)
+  )
+  (class:9 Diamond @extends:5 Left
+    (method:10 print)
+  )
+)

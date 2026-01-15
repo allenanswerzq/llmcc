@@ -1,0 +1,45 @@
+===============================================================================
+abbreviated-function-templates
+===============================================================================
+Abbreviated function templates (C++20).
+lang: cpp
+
+--- file: src/lib.cpp ---
+auto add(auto a, auto b) {
+    return a + b;
+}
+
+auto multiply(auto x, auto y) -> decltype(x * y) {
+    return x * y;
+}
+
+void process(auto&& value) {}
+
+class Container {
+public:
+    void push(auto value) {}
+    auto get(auto index) { return index; }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 add
+    (parameter:3 a @type a)
+    (parameter:4 b @type b)
+  )
+  (func:5 multiply
+    (parameter:6 x @type x)
+    (parameter:7 y @type y)
+  )
+  (func:8 process
+    (parameter:9 value @type value)
+  )
+  (class:10 Container
+    (method:11 push
+      (parameter:12 value @type value)
+    )
+    (method:13 get
+      (parameter:14 index @type index)
+    )
+  )
+)

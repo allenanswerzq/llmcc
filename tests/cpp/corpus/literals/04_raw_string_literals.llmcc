@@ -1,0 +1,24 @@
+===============================================================================
+raw-string-literals
+===============================================================================
+Raw string literal expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void test_raw_strings() {
+    const char* a = R"(raw string)";
+    const char* b = R"(line1
+line2
+line3)";
+    const char* c = R"(quotes" and backslash\)";
+
+    const char* d = R"delimiter(contains )parentheses()delimiter";
+
+    const wchar_t* e = LR"(wide raw string)";
+    const char* f = u8R"(utf8 raw string)";
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test_raw_strings)
+)

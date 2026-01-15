@@ -1,0 +1,49 @@
+===============================================================================
+type-traits
+===============================================================================
+Type traits patterns.
+lang: cpp
+
+--- file: src/lib.cpp ---
+template<typename T>
+struct is_pointer {
+    static constexpr bool value = false;
+};
+
+template<typename T>
+struct is_pointer<T*> {
+    static constexpr bool value = true;
+};
+
+template<typename T>
+constexpr bool is_pointer_v = is_pointer<T>::value;
+
+template<typename T>
+struct remove_const {
+    using type = T;
+};
+
+template<typename T>
+struct remove_const<const T> {
+    using type = T;
+};
+
+template<typename T>
+using remove_const_t = typename remove_const<T>::type;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 is_pointer
+    (field:3 bool @type bool)
+  )
+  (class:4 is_pointer
+    (field:5 bool @type bool)
+  )
+  (class:6 remove_const
+    (alias:7 type)
+  )
+  (class:8 remove_const
+    (alias:9 type)
+  )
+  (alias:10 remove_const_t)
+)

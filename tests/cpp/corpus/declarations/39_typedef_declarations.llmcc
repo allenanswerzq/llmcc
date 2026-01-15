@@ -1,0 +1,30 @@
+===============================================================================
+typedef-declarations
+===============================================================================
+Typedef declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+typedef int Integer;
+typedef unsigned long Size;
+typedef void (*FunctionPtr)(int);
+typedef int Array10[10];
+
+struct Node {
+    typedef Node* NodePtr;
+    NodePtr next;
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (alias:2 int)
+  (alias:3 Size)
+  (alias:4 void
+    (parameter:5 int @type int)
+  )
+  (alias:6 int)
+  (class:7 Node
+    (alias:8 Node)
+    (field:9 NodePtr @type next)
+  )
+)

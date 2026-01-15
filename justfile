@@ -69,6 +69,9 @@ cargo-test:
 cargo-clippy:
     cargo clippy --all-targets --workspace -- -D warnings
 
+rele:
+    cargo build --release
+
 cargo-release:
     cargo build --release
 

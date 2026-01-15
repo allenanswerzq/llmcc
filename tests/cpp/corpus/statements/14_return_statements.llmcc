@@ -1,0 +1,40 @@
+===============================================================================
+return-statements
+===============================================================================
+Return statements.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void return_void() {
+    return;
+}
+
+int return_value() {
+    return 42;
+}
+
+int* return_pointer() {
+    static int x = 0;
+    return &x;
+}
+
+struct Widget { int x; };
+Widget return_struct() {
+    return {42};
+}
+
+Widget&& return_rvalue() {
+    static Widget w{10};
+    return static_cast<Widget&&>(w);
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 return_void)
+  (func:3 return_value)
+  (func:4 return_pointer)
+  (class:5 Widget
+    (field:6 int @type int)
+  )
+  (func:7 return_struct)
+)

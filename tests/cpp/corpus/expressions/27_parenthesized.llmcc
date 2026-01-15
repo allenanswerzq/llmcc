@@ -1,0 +1,21 @@
+===============================================================================
+parenthesized-expressions
+===============================================================================
+Parenthesized expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void test_parens() {
+    int a = (1 + 2) * 3;
+    int b = ((1 + 2) * (3 + 4));
+
+    bool c = (true && false) || (true && true);
+
+    int x = 5;
+    int y = (x++, x++, x);
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test_parens)
+)

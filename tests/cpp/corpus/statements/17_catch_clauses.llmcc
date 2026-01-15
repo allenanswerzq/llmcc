@@ -1,0 +1,32 @@
+===============================================================================
+catch-clauses
+===============================================================================
+Multiple catch clauses.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class BaseException {};
+class DerivedException : public BaseException {};
+class OtherException {};
+
+void handle_exceptions() {
+    try {
+        throw DerivedException();
+    } catch (const DerivedException& e) {
+    } catch (const BaseException& e) {
+    } catch (const OtherException& e) {
+    } catch (...) {
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 BaseException)
+  (class:3 DerivedException @extends:2 BaseException)
+  (class:4 OtherException)
+  (func:5 handle_exceptions
+    (parameter:7 e @type:3 DerivedException)
+    (parameter:8 e @type:2 BaseException)
+    (parameter:9 e @type:4 OtherException)
+  )
+)

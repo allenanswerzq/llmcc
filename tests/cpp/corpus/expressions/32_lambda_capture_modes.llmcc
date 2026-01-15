@@ -1,0 +1,25 @@
+===============================================================================
+lambda-capture-modes
+===============================================================================
+Lambda capture modes.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void test_capture_modes() {
+    int a = 1, b = 2, c = 3;
+
+    auto by_value = [=]() { return a + b + c; };
+
+    auto by_ref = [&]() { return a + b + c; };
+
+    auto mixed = [=, &a]() { a = b + c; };
+
+    auto mixed2 = [&, a]() { return a; };
+
+    auto specific = [a, &b, c]() { b = a + c; };
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test_capture_modes)
+)

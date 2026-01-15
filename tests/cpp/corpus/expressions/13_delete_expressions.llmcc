@@ -1,0 +1,31 @@
+===============================================================================
+delete-expressions
+===============================================================================
+Delete expressions.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void test_delete() {
+    int* single = new int(42);
+    delete single;
+
+    int* array = new int[10];
+    delete[] array;
+
+    class Custom {
+    public:
+        ~Custom() {}
+    };
+    Custom* c = new Custom();
+    delete c;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 test_delete
+    (class:5 Custom
+      (method:6 ~Custom)
+    )
+    (@tdep:5 Custom)
+  )
+)

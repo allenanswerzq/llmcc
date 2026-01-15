@@ -1,0 +1,29 @@
+===============================================================================
+pointer-types
+===============================================================================
+Pointer type declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+struct PointerTypes {
+    int* ptr;
+    const char* str;
+    double** double_ptr;
+    void* void_ptr;
+};
+
+void use_pointers(int* p, const char* s) {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 PointerTypes
+    (field:3 int @type int)
+    (field:4 char @type char)
+    (field:5 double @type double)
+    (field:6 void @type void)
+  )
+  (func:7 use_pointers
+    (parameter:8 p @type int)
+    (parameter:9 s @type char)
+  )
+)

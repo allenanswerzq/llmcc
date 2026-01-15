@@ -1,0 +1,36 @@
+===============================================================================
+sfinae
+===============================================================================
+SFINAE patterns.
+lang: cpp
+
+--- file: src/lib.cpp ---
+template<typename T>
+struct has_size {
+    template<typename U>
+    static auto test(int) -> decltype(static_cast<void>(sizeof(U)), char());
+
+    template<typename>
+    static int test(...);
+
+    static constexpr bool value = sizeof(test<T>(0)) == 1;
+};
+
+template<typename T, typename = void>
+struct is_container {
+    static constexpr bool value = false;
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 has_size
+    (method:3 test
+      (parameter:4 int @type int)
+    )
+    (method:7 test)
+    (field:8 bool @type bool)
+  )
+  (class:9 is_container
+    (field:10 bool @type bool)
+  )
+)

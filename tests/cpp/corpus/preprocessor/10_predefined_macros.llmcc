@@ -1,0 +1,19 @@
+===============================================================================
+predefined-macros
+===============================================================================
+Predefined macros usage.
+lang: cpp
+
+--- file: src/lib.cpp ---
+void debug_info() {
+    const char* file = __FILE__;
+    int line = __LINE__;
+    const char* func = __func__;
+    const char* date = __DATE__;
+    const char* time = __TIME__;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 debug_info)
+)

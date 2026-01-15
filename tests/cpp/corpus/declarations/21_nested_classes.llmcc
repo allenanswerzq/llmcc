@@ -1,0 +1,33 @@
+===============================================================================
+nested-classes
+===============================================================================
+Nested class declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Outer {
+public:
+    class Inner {
+    public:
+        int value;
+        void method() {}
+    };
+
+    struct NestedStruct {
+        int x, y;
+    };
+
+private:
+    class PrivateInner {
+        int secret;
+    };
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Outer
+    (field:3 )
+    (field:4 )
+    (field:5 )
+  )
+)

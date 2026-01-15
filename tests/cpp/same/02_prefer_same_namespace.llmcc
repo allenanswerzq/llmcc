@@ -1,0 +1,42 @@
+===============================================================================
+prefer-same-namespace
+===============================================================================
+Test that symbols in the same namespace are preferred.
+lang: cpp
+
+--- file: sample/CMakeLists.txt ---
+cmake_minimum_required(VERSION 3.10)
+project(sample)
+
+--- file: sample/src/lib.cpp ---
+namespace outer {
+    struct Widget {};
+}
+
+namespace inner {
+    struct Widget {};
+
+    void use_widget(Widget w) {}
+}
+
+namespace outer {
+    void use_widget(Widget w) {}
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.cpp)
+  (module:2 outer (inline)
+    (class:3 Widget)
+  )
+  (module:4 inner (inline)
+    (class:5 Widget)
+    (func:6 use_widget
+      (parameter:7 w @type:5 Widget)
+    )
+  )
+  (module:8 outer (inline)
+    (func:9 use_widget
+      (parameter:10 w @type:3 Widget)
+    )
+  )
+)

@@ -1,0 +1,21 @@
+===============================================================================
+undef-macro
+===============================================================================
+Undef preprocessor directive.
+lang: cpp
+
+--- file: src/lib.cpp ---
+#define TEMP_VALUE 100
+
+int get_temp() { return TEMP_VALUE; }
+
+#undef TEMP_VALUE
+#define TEMP_VALUE 200
+
+int get_new_temp() { return TEMP_VALUE; }
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 get_temp)
+  (func:3 get_new_temp)
+)

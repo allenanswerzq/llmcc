@@ -1,0 +1,36 @@
+===============================================================================
+const-methods
+===============================================================================
+Const method declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+class Value {
+    int data;
+public:
+    int get() const { return data; }
+    void set(int v) { data = v; }
+
+    int& at() { return data; }
+    const int& at() const { return data; }
+
+    Value& operator+=(int v) { data += v; return *this; }
+    Value operator+(int v) const { return Value{data + v}; }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Value
+    (field:3 int @type int)
+    (method:4 get)
+    (method:5 set
+      (parameter:6 v @type int)
+    )
+    (method:7 operator+=
+      (parameter:8 v @type int)
+    )
+    (method:9 operator+
+      (parameter:10 v @type int)
+    )
+  )
+)

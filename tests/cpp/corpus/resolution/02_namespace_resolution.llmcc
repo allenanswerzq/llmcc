@@ -1,0 +1,46 @@
+===============================================================================
+namespace-resolution
+===============================================================================
+Namespace resolution.
+lang: cpp
+
+--- file: src/lib.cpp ---
+namespace outer {
+    namespace inner {
+        class Widget {
+        public:
+            void method() {}
+        };
+
+        void helper() {}
+    }
+
+    void use_inner() {
+        inner::Widget w;
+        w.method();
+        inner::helper();
+    }
+}
+
+void use_outer() {
+    outer::inner::Widget w;
+    outer::use_inner();
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (module:2 outer (inline)
+    (module:3 inner (inline)
+      (class:4 Widget
+        (method:5 method)
+      )
+      (func:6 helper)
+    )
+    (func:7 use_inner
+      (@fdep:6 helper)
+    )
+  )
+  (func:10 use_outer
+    (@fdep:7 use_inner)
+  )
+)

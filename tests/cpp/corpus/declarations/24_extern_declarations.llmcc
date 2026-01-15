@@ -1,0 +1,24 @@
+===============================================================================
+extern-declarations
+===============================================================================
+Extern declarations.
+lang: cpp
+
+--- file: src/lib.cpp ---
+extern int global_int;
+extern const double PI;
+extern void external_function();
+
+extern "C" {
+    void c_function();
+    int c_variable;
+}
+
+extern "C" void single_c_func();
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (func:2 external_function)
+  (func:3 c_function)
+  (func:4 single_c_func)
+)
