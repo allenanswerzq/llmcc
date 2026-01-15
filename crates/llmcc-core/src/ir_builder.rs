@@ -223,6 +223,7 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
         let kind_id = node.kind_id();
         let start_byte = node.start_byte();
         let end_byte = node.end_byte();
+        let start_line = node.start_line();
 
         HirBase {
             id,
@@ -230,6 +231,7 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
             kind_id,
             start_byte,
             end_byte,
+            start_line,
             kind,
             field_id,
             children,

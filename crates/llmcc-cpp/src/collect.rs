@@ -507,6 +507,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
                     kind_id: LangCpp::identifier,
                     start_byte: child.start_byte(),
                     end_byte: child.end_byte(),
+                    start_line: child.start_line(),
                     kind: HirKind::Identifier,
                     field_id: u16::MAX,
                     children: SmallVec::new(),

@@ -10,15 +10,6 @@ use llmcc_core::graph::ProjectGraph;
 
 use crate::types::{ARCHITECTURE_KINDS, RenderEdge, RenderNode};
 
-/// Convert byte offset to line number (1-indexed).
-fn byte_to_line(content: &[u8], byte_offset: usize) -> usize {
-    content[..byte_offset.min(content.len())]
-        .iter()
-        .filter(|&&b| b == b'\n')
-        .count()
-        + 1
-}
-
 /// Collect nodes for architecture graph.
 ///
 /// Includes:
@@ -73,11 +64,10 @@ pub fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
                 .or_else(|| unit.file().path())
                 .unwrap_or("<unknown>");
 
-            let file_bytes = unit.file().content();
             let location = block
                 .opt_node()
                 .map(|node| {
-                    let line = byte_to_line(file_bytes, node.start_byte());
+                    let line = node.start_line();
                     format!("{raw_path}:{line}")
                 })
                 .or(Some(raw_path.to_string()));

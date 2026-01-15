@@ -120,6 +120,11 @@ impl<'hir> HirNode<'hir> {
         self.base().unwrap().end_byte
     }
 
+    /// Get 1-indexed line number where this node starts. Panics on Undefined.
+    pub fn start_line(&self) -> usize {
+        self.base().unwrap().start_line
+    }
+
     /// Get count of direct children
     pub fn child_count(&self) -> usize {
         self.child_ids().len()
@@ -500,6 +505,7 @@ pub struct HirBase {
     pub kind_id: u16,
     pub start_byte: usize,
     pub end_byte: usize,
+    pub start_line: usize,
     pub kind: HirKind,
     pub field_id: u16,
     pub children: SmallVec<[HirId; 4]>,
