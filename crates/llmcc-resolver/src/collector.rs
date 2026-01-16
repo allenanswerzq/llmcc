@@ -69,14 +69,12 @@ impl<'a> CollectorScopes<'a> {
     /// Push scope onto stack
     #[inline]
     pub fn push_scope(&mut self, scope: &'a Scope<'a>) {
-        tracing::trace!("pushing scope {:?}", scope.id());
         self.scopes.push(scope);
     }
 
     /// Push scope recursively with all parent scopes
     #[inline]
     pub fn push_scope_recursive(&mut self, scope: &'a Scope<'a>) {
-        tracing::trace!("pushing scope recursively {:?}", scope.id());
         self.scopes.push_recursive(scope);
     }
 
@@ -84,20 +82,12 @@ impl<'a> CollectorScopes<'a> {
     /// If the symbol already has a scope, use that scope instead of creating a new one.
     #[inline]
     pub fn push_scope_with(&mut self, node: &HirNode<'a>, symbol: Option<&'a Symbol>) {
-        // Check if symbol already has a scope (from previous unit processing)
         if let Some(symbol) = symbol
             && let Some(existing_scope_id) = symbol.opt_scope()
+            && let Some(existing_scope) = self.cc.opt_get_scope(existing_scope_id)
         {
-            // Reuse the existing scope
-            if let Some(existing_scope) = self.cc.opt_get_scope(existing_scope_id) {
-                tracing::trace!(
-                    "reusing existing scope {:?} for symbol {}",
-                    existing_scope_id,
-                    symbol.format(Some(self.interner())),
-                );
-                self.push_scope(existing_scope);
-                return;
-            }
+            self.push_scope(existing_scope);
+            return;
         }
 
         // Create new scope with its own ID, then alloc with that ID
@@ -105,11 +95,6 @@ impl<'a> CollectorScopes<'a> {
         let scope_id = scope_val.id().0;
         let scope = self.arena().alloc_with_id(scope_id, scope_val);
         if let Some(symbol) = symbol {
-            tracing::trace!(
-                "set symbol scope {} to {:?}",
-                symbol.format(Some(self.interner())),
-                scope.id(),
-            );
             symbol.set_scope(scope.id());
             if let Some(parent_scope) = self.scopes.top() {
                 symbol.set_parent_scope(parent_scope.id());
@@ -121,18 +106,12 @@ impl<'a> CollectorScopes<'a> {
     /// Pop current scope from stack
     #[inline]
     pub fn pop_scope(&mut self) {
-        tracing::trace!("popping scope, stack depth: {}", self.scopes.depth());
         self.scopes.pop();
     }
 
     /// Pop scopes until reaching target depth
     #[inline]
     pub fn pop_until(&mut self, depth: usize) {
-        tracing::trace!(
-            "popping scopes until depth {}, current: {}",
-            depth,
-            self.scopes.depth()
-        );
         self.scopes.pop_until(depth);
     }
 
@@ -161,7 +140,7 @@ impl<'a> CollectorScopes<'a> {
     }
 
     /// Initialize a symbol with common properties
-    fn init_symbol(&self, symbol: &'a Symbol, name: &str, node: &HirNode<'a>, kind: SymKind) {
+    fn init_symbol(&self, symbol: &'a Symbol, _name: &str, node: &HirNode<'a>, kind: SymKind) {
         if symbol.kind() == SymKind::Unknown {
             symbol.set_owner(node.id());
             symbol.set_kind(kind);
@@ -171,7 +150,6 @@ impl<'a> CollectorScopes<'a> {
             if let Some(parent) = self.top() {
                 symbol.set_parent_scope(parent.id());
             }
-            tracing::trace!("init_symbol: {} id={:?}", name, symbol.id());
         }
     }
 
@@ -226,11 +204,6 @@ impl<'a> CollectorScopes<'a> {
         self.globals.insert(allocated);
         self.init_symbol(allocated, name, node, kind);
         allocated.set_is_global(true);
-        tracing::trace!(
-            "insert_in_global: created new symbol '{}' id={:?}",
-            name,
-            allocated.id()
-        );
         Some(allocated)
     }
 
@@ -251,19 +224,12 @@ impl<'a> CollectorScopes<'a> {
         let allocated = self.arena().alloc_with_id(sym_id, new_symbol);
         scope.insert(allocated);
         self.init_symbol(allocated, name, node, kind);
-        tracing::trace!(
-            "insert_in_scope: created symbol '{}' id={:?} in scope {:?}",
-            name,
-            allocated.id(),
-            scope.id()
-        );
         Some(allocated)
     }
 
     /// Lookup symbols by name with options
     #[inline]
     pub fn lookup_symbols(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
-        tracing::trace!("lookup symbols '{}' with filters {:?}", name, kind_filters);
         let options = LookupOptions::current().with_kind_set(kind_filters);
         self.scopes.lookup_symbols(name, options)
     }
@@ -294,18 +260,10 @@ impl<'a> CollectorScopes<'a> {
                         .is_some_and(|r| r == current_root)
                 })
             {
-                tracing::trace!(
-                    "preferring same-crate symbol for '{}' from crate root '{:?}'",
-                    name,
-                    current_root
-                );
                 return Some(*same_crate_sym);
             }
 
-            tracing::warn!(
-                "multiple symbols found for '{}', returning the last one",
-                name
-            );
+            tracing::warn!(name, count = symbols.len(), "multiple symbols found");
         }
         symbols.last().copied()
     }
@@ -321,11 +279,8 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
     config: &ResolverOption,
 ) -> &'a Scope<'a> {
     let total_start = Instant::now();
-
-    tracing::info!(
-        "starting symbol collection for totaol {} units",
-        cc.files.len()
-    );
+    let unit_count = cc.files.len();
+    tracing::info!(unit_count, "starting symbol collection");
 
     let init_start = Instant::now();
     let scope_stack = L::collect_init(cc);
@@ -342,11 +297,6 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
         clone_time_ns.fetch_add(clone_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
 
         let unit = cc.compile_unit(i);
-        tracing::debug!(
-            "collecting symbols for unit {} ({})",
-            i,
-            unit.file_path().unwrap_or("unknown")
-        );
 
         let visit_start = Instant::now();
         let node = unit.hir_node(unit.file_root_id().unwrap());
@@ -355,7 +305,6 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
 
         if config.print_ir {
             use llmcc_core::printer::print_llmcc_ir;
-            tracing::debug!("=== IR for unit {} ===", i);
             let _ = print_llmcc_ir(unit);
         }
 
@@ -364,10 +313,8 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
 
     let parallel_start = Instant::now();
     let unit_globals_vec = if config.sequential {
-        tracing::debug!("running symbol collection sequentially");
         (0..cc.files.len()).map(collect_unit).collect::<Vec<_>>()
     } else {
-        tracing::debug!("running symbol collection in parallel");
         (0..cc.files.len())
             .into_par_iter()
             .map(collect_unit)
@@ -377,15 +324,8 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
 
     let globals = scope_stack.globals();
 
-    // No sorting needed: DashMap provides O(1) lookup by ID
-
     let merge_start = Instant::now();
-    tracing::debug!(
-        "merging {} unit scopes into global scope",
-        unit_globals_vec.len()
-    );
-    for (i, unit_globals) in unit_globals_vec.iter().enumerate() {
-        tracing::trace!("merging unit {} global scope", i);
+    for unit_globals in unit_globals_vec.iter() {
         cc.merge_two_scopes(globals, unit_globals);
     }
     let merge_time = merge_start.elapsed();
@@ -394,17 +334,20 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
     let clone_ms = clone_time_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
     let visit_ms = visit_time_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
 
+    let total_ms = total_time.as_secs_f64() * 1000.0;
+    let init_ms = init_time.as_secs_f64() * 1000.0;
+    let parallel_ms = parallel_time.as_secs_f64() * 1000.0;
+    let merge_ms = merge_time.as_secs_f64() * 1000.0;
+
     tracing::info!(
-        "collection breakdown: init={:.2}ms, parallel={:.2}ms (clone={:.2}ms, visit={:.2}ms), merge={:.2}ms, total={:.2}ms",
-        init_time.as_secs_f64() * 1000.0,
-        parallel_time.as_secs_f64() * 1000.0,
+        init_ms,
+        parallel_ms,
         clone_ms,
         visit_ms,
-        merge_time.as_secs_f64() * 1000.0,
-        total_time.as_secs_f64() * 1000.0,
+        merge_ms,
+        total_ms,
+        "symbol collection complete"
     );
-
-    tracing::info!("symbol collection complete");
     globals
 }
 
@@ -423,11 +366,8 @@ pub fn build_and_collect_symbols<'a, L: LanguageTrait>(
 
     let total_start = Instant::now();
     reset_ir_build_counters();
-
-    tracing::info!(
-        "starting fused IR build + symbol collection for {} units",
-        cc.files.len()
-    );
+    let unit_count = cc.files.len();
+    tracing::info!(unit_count, "starting fused IR build + symbol collection");
 
     // Initialize scope stack for collection
     let init_start = Instant::now();
@@ -447,13 +387,6 @@ pub fn build_and_collect_symbols<'a, L: LanguageTrait>(
         let file_path = cc.file_path(i).map(|p| p.to_string());
         let file_bytes = cc.files[i].content();
 
-        tracing::debug!(
-            "start fusing build+collect for unit {} ({}:{} bytes)",
-            i,
-            file_path.as_deref().unwrap_or("unknown"),
-            file_bytes.len()
-        );
-
         let parse_tree = cc
             .get_parse_tree(i)
             .ok_or_else(|| format!("No parse tree for unit {i}"))?;
@@ -472,12 +405,6 @@ pub fn build_and_collect_symbols<'a, L: LanguageTrait>(
         let unit_scope_stack = scope_stack_clone.clone();
         let unit = cc.compile_unit(i);
 
-        tracing::debug!(
-            "fused build+collect for unit {} ({})",
-            i,
-            unit.file_path().unwrap_or("unknown")
-        );
-
         let node = unit.hir_node(file_root_id);
         let unit_globals = L::collect_symbols(unit, node, unit_scope_stack, resolver_config);
 
@@ -485,7 +412,6 @@ pub fn build_and_collect_symbols<'a, L: LanguageTrait>(
 
         if resolver_config.print_ir {
             use llmcc_core::printer::print_llmcc_ir;
-            tracing::debug!("=== IR for unit {} ===", i);
             let _ = print_llmcc_ir(unit);
         }
 
@@ -496,10 +422,8 @@ pub fn build_and_collect_symbols<'a, L: LanguageTrait>(
     let parallel_start = Instant::now();
     let unit_globals_vec: Vec<Result<&'a Scope<'a>, llmcc_core::Error>> =
         if resolver_config.sequential {
-            tracing::debug!("running fused build+collect sequentially");
             (0..cc.files.len()).map(build_and_collect_unit).collect()
         } else {
-            tracing::debug!("running fused build+collect in parallel");
             (0..cc.files.len())
                 .into_par_iter()
                 .map(build_and_collect_unit)
@@ -516,12 +440,7 @@ pub fn build_and_collect_symbols<'a, L: LanguageTrait>(
 
     // Merge scopes (sequential, ~10-15ms)
     let merge_start = Instant::now();
-    tracing::debug!(
-        "merging {} unit scopes into global scope",
-        unit_globals_vec.len()
-    );
-    for (i, unit_globals) in unit_globals_vec.iter().enumerate() {
-        tracing::trace!("merging unit {} global scope", i);
+    for unit_globals in unit_globals_vec.iter() {
         cc.merge_two_scopes(globals, unit_globals);
     }
     let merge_time = merge_start.elapsed();
@@ -530,16 +449,19 @@ pub fn build_and_collect_symbols<'a, L: LanguageTrait>(
     let ir_ms = ir_build_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
     let collect_ms = collect_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
 
+    let total_ms = total_time.as_secs_f64() * 1000.0;
+    let init_ms = init_time.as_secs_f64() * 1000.0;
+    let parallel_ms = parallel_time.as_secs_f64() * 1000.0;
+    let merge_ms = merge_time.as_secs_f64() * 1000.0;
+
     tracing::info!(
-        "fused build+collect breakdown: init={:.2}ms, parallel={:.2}ms (ir_cpu={:.2}ms, collect_cpu={:.2}ms), merge={:.2}ms, total={:.2}ms",
-        init_time.as_secs_f64() * 1000.0,
-        parallel_time.as_secs_f64() * 1000.0,
+        init_ms,
+        parallel_ms,
         ir_ms,
         collect_ms,
-        merge_time.as_secs_f64() * 1000.0,
-        total_time.as_secs_f64() * 1000.0,
+        merge_ms,
+        total_ms,
+        "fused build+collect complete"
     );
-
-    tracing::info!("fused build+collect complete");
     Ok(globals)
 }

@@ -199,9 +199,7 @@ pub fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTr
     result
 }
 
-// ============================================================================
 // Edge Collection Helpers
-// ============================================================================
 
 fn collect_field_types(project: &ProjectGraph, field_id: BlockId, types: &mut Vec<BlockId>) {
     let field_types = project

@@ -1,3 +1,5 @@
+//! Tree-sitter node type handling and token generation.
+
 pub mod config;
 mod node_types;
 
@@ -10,6 +12,7 @@ use tree_sitter::Language;
 use config::TokenConfig;
 use node_types::NodeTypes;
 
+/// A token entry mapping tree-sitter node to HIR kind.
 #[derive(Debug, Clone)]
 pub struct TokenEntry {
     pub name: String,
@@ -19,6 +22,7 @@ pub struct TokenEntry {
     pub block_kind: Option<String>,
 }
 
+/// Collection of token entries by category.
 #[derive(Debug, Clone, Default)]
 pub struct TokenSet {
     pub text_tokens: Vec<TokenEntry>,
@@ -31,6 +35,7 @@ impl TokenSet {
         self.text_tokens.is_empty() && self.node_tokens.is_empty() && self.field_tokens.is_empty()
     }
 
+    /// Render the token set as a `define_lang!` macro invocation.
     pub fn render(&self, language_ident: &str) -> String {
         let mut out = String::new();
         out.push_str("define_lang! {\n");
@@ -81,6 +86,7 @@ fn render_entry(out: &mut String, entry: &TokenEntry) {
     }
 }
 
+/// Generate tokens from file paths.
 pub fn generate_tokens(
     language_ident: &str,
     language: Language,
@@ -93,10 +99,7 @@ pub fn generate_tokens(
     Ok(set.render(language_ident))
 }
 
-/// Generate token definitions from node-types JSON string.
-///
-/// Use this when node-types.json is available as an embedded string constant
-/// (e.g., `tree_sitter_rust::NODE_TYPES` or `tree_sitter_typescript::TYPESCRIPT_NODE_TYPES`).
+/// Generate tokens from embedded node-types JSON string.
 pub fn generate_tokens_from_str(
     language_ident: &str,
     language: Language,
@@ -109,6 +112,7 @@ pub fn generate_tokens_from_str(
     Ok(set.render(language_ident))
 }
 
+/// Core generation logic.
 pub fn generate(
     language: Language,
     node_types: &NodeTypes,
@@ -119,17 +123,14 @@ pub fn generate(
         set.text_tokens
             .push(entry.to_token(language.clone(), config)?);
     }
-
     for entry in &config.nodes {
         set.node_tokens
             .push(entry.to_token(language.clone(), node_types, config)?);
     }
-
     for entry in &config.fields {
         set.field_tokens
             .push(entry.to_token(language.clone(), config)?);
     }
-
     Ok(set)
 }
 
@@ -152,14 +153,14 @@ pub(crate) fn format_block(kind: &str) -> String {
 pub(crate) fn resolve_kind_id(language: Language, name: &str, named: bool) -> Result<u16> {
     let id = language.id_for_node_kind(name, named);
     if id == u16::MAX {
-        anyhow::bail!("node kind '{name}' (named={named}) not found in tree-sitter language");
+        anyhow::bail!("node kind '{name}' (named={named}) not found");
     }
     Ok(id)
 }
 
 pub(crate) fn resolve_field_id(language: Language, field_name: &str) -> Result<u16> {
     let Some(field_id) = language.field_id_for_name(field_name.as_bytes()) else {
-        anyhow::bail!("field '{field_name}' not found in language metadata");
+        anyhow::bail!("field '{field_name}' not found");
     };
     Ok(field_id.get())
 }

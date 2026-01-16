@@ -1,3 +1,4 @@
+//! Python bindings for llmcc.
 #![allow(clippy::useless_conversion)]
 #![allow(unsafe_op_in_unsafe_fn)]
 use llmcc::{LlmccOptions, run_main};

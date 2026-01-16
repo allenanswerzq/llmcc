@@ -90,7 +90,6 @@ impl<'tcx> CollectorVisitor<'tcx> {
             .ident_by_field(unit, field_id)
             .or_else(|| node.as_scope().and_then(|sn| sn.opt_ident()))?;
 
-        tracing::trace!("declaring symbol '{}' of kind {:?}", ident.name, kind);
         let sym = scopes.lookup_or_insert(ident.name, node, kind)?;
         ident.set_symbol(sym);
 
@@ -122,12 +121,6 @@ impl<'tcx> CollectorVisitor<'tcx> {
         node: &HirNode<'tcx>,
         kind: SymKind,
     ) -> Option<&'tcx Symbol> {
-        tracing::trace!(
-            "looking up or converting symbol '{}' of kind {:?}",
-            name,
-            kind
-        );
-
         if let Some(symbol) = scopes.lookup_symbol(name, SymKindSet::from_kind(kind)) {
             return Some(symbol);
         }
@@ -151,7 +144,6 @@ impl<'tcx> CollectorVisitor<'tcx> {
     }
 
     #[allow(clippy::too_many_arguments)]
-    #[tracing::instrument(skip_all)]
     fn visit_with_scope(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -535,7 +527,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
         _parent: Option<&Symbol>,
     ) {
         let file_path = unit.file_path().unwrap();
-        tracing::trace!("collecting translation_unit: {}", file_path);
+        let _ = file_path; // Used for debugging
 
         let depth = scopes.scope_depth();
         let sn = node.as_scope();
@@ -548,7 +540,6 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
         if let Some(ref package_name) = meta.package_name
             && let Some(symbol) = scopes.lookup_or_insert_global(package_name, node, SymKind::Crate)
         {
-            tracing::trace!("insert package symbol in globals '{}'", package_name);
             scopes.push_scope_with(node, Some(symbol));
             package_scope = scopes.top();
         }
@@ -559,7 +550,6 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
             && let Some(module_sym) =
                 scopes.lookup_or_insert_global(module_name, node, SymKind::Module)
         {
-            tracing::trace!("insert module symbol in globals '{}'", module_name);
             let mod_scope = self.alloc_scope(unit, module_sym);
             if let Some(pkg_s) = package_scope {
                 mod_scope.add_parent(pkg_s);

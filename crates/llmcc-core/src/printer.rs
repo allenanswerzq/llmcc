@@ -121,7 +121,6 @@ impl PrintConfig {
     }
 
     // Builder methods
-    // ====================================================================
 
     /// Set output format
     pub fn with_format(mut self, format: PrintFormat) -> Self {
@@ -184,7 +183,6 @@ impl PrintConfig {
     }
 
     // Preset configurations
-    // ====================================================================
 
     /// Minimal configuration (fastest rendering)
     ///
@@ -293,9 +291,7 @@ impl RenderError {
 
 pub type RenderResult<T> = Result<T, RenderError>;
 
-// ============================================================================
 // Internal Render Node Structure
-// ============================================================================
 
 /// Internal representation of a node for rendering
 #[derive(Debug, Clone)]
@@ -333,9 +329,7 @@ impl RenderNode {
     }
 }
 
-// ============================================================================
 // Public API Functions
-// ============================================================================
 
 /// Render HIR with default configuration
 pub fn render_llmcc_ir(root: HirId, unit: CompileUnit<'_>) -> RenderResult<(String, String)> {
@@ -428,9 +422,7 @@ pub fn print_llmcc_graph_with_config(
     Ok(())
 }
 
-// ============================================================================
 // Internal Rendering Functions
-// ============================================================================
 
 /// Build render tree for AST node (from parse tree)
 fn build_ast_render(
@@ -715,9 +707,7 @@ fn render_node_flat(
     Ok(())
 }
 
-// ============================================================================
 // Utility Functions
-// ============================================================================
 
 /// Extract and format source code snippet
 fn snippet_from_ctx(

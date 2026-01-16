@@ -1,3 +1,4 @@
+//! Rust language support for llmcc.
 #[macro_use]
 extern crate llmcc_core;
 

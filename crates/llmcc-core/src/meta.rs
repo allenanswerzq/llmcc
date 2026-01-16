@@ -32,9 +32,7 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-// ============================================================================
 // Public Types
-// ============================================================================
 
 /// The four fixed architecture levels.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -110,9 +108,7 @@ impl UnitMeta {
     }
 }
 
-// ============================================================================
 // Trie Node
-// ============================================================================
 
 /// A node in the Patricia trie.
 ///
@@ -140,9 +136,7 @@ impl TrieNode {
     }
 }
 
-// ============================================================================
 // Package Info
-// ============================================================================
 
 #[derive(Debug, Clone)]
 struct PackageInfo {
@@ -155,9 +149,7 @@ struct PackageInfo {
     has_manifest: bool,
 }
 
-// ============================================================================
 // Module Detector
-// ============================================================================
 
 /// Detects and caches module structure for a project.
 pub struct UnitMetaBuilder {
@@ -260,9 +252,7 @@ impl UnitMetaBuilder {
         self.compute_module_info(file)
     }
 
-    // ========================================================================
     // Step 1: Detect Packages
-    // ========================================================================
 
     fn detect_packages(&mut self, files: &[PathBuf]) {
         let mut seen = std::collections::HashSet::new();
@@ -337,9 +327,7 @@ impl UnitMetaBuilder {
         }
     }
 
-    // ========================================================================
     // Step 2: Build Tries
-    // ========================================================================
 
     fn build_tries(&mut self, files: &[PathBuf]) {
         let all_roots: Vec<PathBuf> = self.packages.iter().map(|p| p.root.clone()).collect();
@@ -362,8 +350,6 @@ impl UnitMetaBuilder {
                 Self::insert_file(&mut pkg.trie, file, &pkg.root, self.container_dirs);
                 pkg.total_files += 1;
             }
-
-            tracing::debug!("Package '{}': {} files in trie", pkg.name, pkg.total_files);
         }
     }
 
@@ -390,9 +376,7 @@ impl UnitMetaBuilder {
         current.file_count += 1;
     }
 
-    // ========================================================================
     // Per-File Module Detection
-    // ========================================================================
 
     /// Find the module for a file by walking up from the file to the package root.
     ///
@@ -461,9 +445,7 @@ impl UnitMetaBuilder {
         path_nodes.first().map(|(name, _, _)| (0, *name))
     }
 
-    // ========================================================================
     // Module Info Lookup
-    // ========================================================================
 
     fn compute_module_info(&self, file: &Path) -> UnitMeta {
         let mut info = UnitMeta {

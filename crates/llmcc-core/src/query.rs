@@ -1,3 +1,5 @@
+//! Graph query utilities.
+
 // TODO: Re-enable after ProjectGraph query methods are implemented
 #![allow(dead_code, unused_imports)]
 

@@ -1,3 +1,5 @@
+//! HIR (High-level IR) node definitions.
+
 use parking_lot::RwLock;
 use smallvec::SmallVec;
 use std::sync::atomic::AtomicUsize;
