@@ -473,7 +473,6 @@ impl Symbol {
     /// Sets the type of this symbol.
     #[inline]
     pub fn set_type_of(&self, ty: SymId) {
-        tracing::trace!("setting type of symbol {} to symbol {}", self.id, ty,);
         self.type_of.store(ty.0 + 1, Ordering::Relaxed);
     }
 

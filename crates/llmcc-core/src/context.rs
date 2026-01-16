@@ -1,3 +1,5 @@
+//! Compilation context and unit management.
+
 use parking_lot::RwLock;
 use rayon::prelude::*;
 use smallvec::SmallVec;
@@ -725,8 +727,6 @@ impl<'tcx> CompileCtxt<'tcx> {
             .collect()
     }
 
-    // ========== HIR Map APIs ==========
-
     /// Get a HIR node by ID from the Arena's DashMap (O(1) concurrent lookup)
     pub fn get_hir_node(&'tcx self, id: HirId) -> Option<HirNode<'tcx>> {
         self.arena.get_hir_node(id.0).copied()
@@ -746,8 +746,6 @@ impl<'tcx> CompileCtxt<'tcx> {
     pub fn all_hir_node_ids(&'tcx self) -> Vec<HirId> {
         self.arena.iter_hir_node().map(|node| node.id()).collect()
     }
-
-    // ========== Block Indexes APIs ==========
 
     /// Get all blocks by name
     pub fn find_blocks_by_name(
@@ -794,8 +792,6 @@ impl<'tcx> CompileCtxt<'tcx> {
     pub fn get_all_blocks(&self) -> Vec<(BlockId, usize, Option<String>, crate::block::BlockKind)> {
         self.block_indexes.iter_all_blocks()
     }
-
-    // ========== Symbol Map APIs ==========
 
     /// Get all symbols from the symbol map
     pub fn get_all_symbols(&'tcx self) -> Vec<&'tcx Symbol> {

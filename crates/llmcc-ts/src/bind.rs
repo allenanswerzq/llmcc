@@ -30,7 +30,6 @@ impl<'tcx> BinderVisitor<'tcx> {
         }
     }
 
-    #[tracing::instrument(skip_all)]
     #[allow(clippy::too_many_arguments)]
     fn visit_scoped_named(
         &mut self,
@@ -180,10 +179,9 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
         _parent: Option<&Symbol>,
     ) {
         let file_path = unit.file_path().unwrap();
+        let _ = file_path; // Used for debugging
         let depth = scopes.scope_depth();
         let meta = unit.unit_meta();
-
-        tracing::trace!("binding program: {}", file_path);
 
         // Push package scope if present
         if let Some(ref package_name) = meta.package_name
@@ -191,7 +189,6 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
                 scopes.lookup_symbol(package_name, SymKindSet::from_kind(SymKind::Crate))
             && let Some(scope_id) = symbol.opt_scope()
         {
-            tracing::trace!("pushing package scope {:?}", scope_id);
             scopes.push_scope(scope_id);
         }
 
@@ -201,7 +198,6 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
                 scopes.lookup_symbol(module_name, SymKindSet::from_kind(SymKind::Module))
             && let Some(scope_id) = symbol.opt_scope()
         {
-            tracing::trace!("pushing module scope {:?}", scope_id);
             scopes.push_scope(scope_id);
         }
 
@@ -211,7 +207,6 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
                 scopes.lookup_symbol(file_name, SymKindSet::from_kind(SymKind::File))
             && let Some(scope_id) = file_sym.opt_scope()
         {
-            tracing::trace!("pushing file scope {} {:?}", file_path, scope_id);
             scopes.push_scope(scope_id);
 
             let file_scope = unit.get_scope(scope_id);
@@ -310,11 +305,6 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
                                 scopes.lookup_symbol(decorator_ident.name, SYM_KIND_CALLABLE)
                         {
                             class_sym.add_decorator(decorator_sym.id());
-                            tracing::trace!(
-                                "class {} has decorator @{}",
-                                class_sym.format(Some(unit.interner())),
-                                decorator_sym.format(Some(unit.interner()))
-                            );
                         }
                     } else if child.kind_id() == LangTypeScript::class_heritage {
                         // Look for extends_clause and implements_clause inside class_heritage
@@ -333,11 +323,6 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
                                     {
                                         // Store extends as type_of (single inheritance)
                                         class_sym.set_type_of(type_sym.id());
-                                        tracing::trace!(
-                                            "class {} extends {}",
-                                            class_sym.format(Some(unit.interner())),
-                                            type_sym.format(Some(unit.interner()))
-                                        );
                                     }
                                 }
                             } else if heritage_child.kind_id() == LangTypeScript::implements_clause
@@ -352,11 +337,6 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
                                             scopes.lookup_symbol(type_ident.name, SYM_KIND_TYPES)
                                     {
                                         class_sym.add_nested_type(type_sym.id());
-                                        tracing::trace!(
-                                            "class {} implements {}",
-                                            class_sym.format(Some(unit.interner())),
-                                            type_sym.format(Some(unit.interner()))
-                                        );
                                     }
                                 }
                             }
@@ -405,11 +385,6 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
                                     scopes.lookup_symbol(type_ident.name, SYM_KIND_TYPES)
                             {
                                 iface_sym.add_nested_type(type_sym.id());
-                                tracing::trace!(
-                                    "interface {} extends {}",
-                                    iface_sym.format(Some(unit.interner())),
-                                    type_sym.format(Some(unit.interner()))
-                                );
                             }
                         }
                     }

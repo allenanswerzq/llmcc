@@ -6,9 +6,7 @@ use llmcc_core::BlockId;
 use llmcc_core::block::BlockKind;
 use llmcc_core::symbol::SymKind;
 
-// ============================================================================
 // Configuration
-// ============================================================================
 
 /// Block kinds to include in architecture graph:
 /// - Types (Class, Trait, Interface, Enum) - the building blocks
@@ -24,9 +22,7 @@ pub const ARCHITECTURE_KINDS: [BlockKind; 5] = [
     BlockKind::Func,
 ];
 
-// ============================================================================
 // Component Depth
-// ============================================================================
 
 /// Component grouping depth for architecture graph visualization.
 ///
@@ -78,9 +74,7 @@ impl ComponentDepth {
     }
 }
 
-// ============================================================================
 // Render Options
-// ============================================================================
 
 /// Options for graph rendering.
 #[derive(Debug, Clone, Default)]
@@ -96,9 +90,7 @@ pub struct RenderOptions {
     pub short_labels: bool,
 }
 
-// ============================================================================
 // Render Node & Edge
-// ============================================================================
 
 /// Node representation for rendering.
 #[derive(Clone)]
@@ -133,9 +125,7 @@ pub struct RenderEdge {
     pub to_label: &'static str,
 }
 
-// ============================================================================
 // Component Tree (for file-level detail rendering)
-// ============================================================================
 
 /// Hierarchical tree for organizing nodes by component path.
 #[derive(Default)]
@@ -163,9 +153,7 @@ impl ComponentTree {
     }
 }
 
-// ============================================================================
 // Aggregated Node (for crate/module/project level)
-// ============================================================================
 
 /// An aggregated component node (represents a crate, module, or project).
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]

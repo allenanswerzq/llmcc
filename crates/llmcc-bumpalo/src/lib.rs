@@ -1,6 +1,8 @@
 //! Thread-safe bumpalo wrapper with pre-allocation support.
 //!
-//! Fork of bumpalo-herd with configurable initial chunk size to reduce malloc calls.
+//! Fork of bumpalo-herd with configurable initial chunk size.
+
+#![allow(clippy::vec_box)] // Box<Bump> needed for stable addresses when moving between pool and Member
 
 use std::alloc::Layout;
 use std::mem::ManuallyDrop;
@@ -10,15 +12,12 @@ use std::sync::Mutex;
 
 use bumpalo::Bump;
 
-/// Default chunk size: 16MB per thread for reduced malloc pressure
 const DEFAULT_CHUNK_SIZE: usize = 1 << 24; // 16MB
-
-type HerdInner = Vec<Box<Bump>>;
 
 /// A group of [`Bump`] allocators with configurable pre-allocation.
 #[derive(Debug)]
 pub struct Herd {
-    inner: Mutex<HerdInner>,
+    inner: Mutex<Vec<Box<Bump>>>,
     chunk_size: AtomicUsize,
 }
 
@@ -29,7 +28,7 @@ impl Default for Herd {
 }
 
 impl Herd {
-    /// Creates a new [`Herd`] with default 1MB chunk size.
+    /// Creates a new [`Herd`] with default 16MB chunk size.
     pub fn new() -> Self {
         Self {
             inner: Mutex::new(Vec::new()),
@@ -38,7 +37,6 @@ impl Herd {
     }
 
     /// Creates a new [`Herd`] with specified initial chunk size per thread.
-    /// Larger chunks = fewer malloc calls but more memory usage.
     pub fn with_chunk_size(chunk_size: usize) -> Self {
         Self {
             inner: Mutex::new(Vec::new()),
@@ -57,7 +55,6 @@ impl Herd {
     pub fn get(&self) -> Member<'_> {
         let mut lock = self.inner.lock().unwrap();
         let bump = lock.pop().unwrap_or_else(|| {
-            // Pre-allocate with configured chunk size
             let size = self.chunk_size.load(Ordering::Relaxed);
             Box::new(Bump::with_capacity(size))
         });

@@ -1,3 +1,4 @@
+//! llmcc command-line interface.
 pub mod options;
 
 use std::collections::{HashMap, HashSet};
@@ -96,9 +97,7 @@ pub struct LlmccOptions {
     pub short_labels: bool,
 }
 
-// ============================================================================
 // Language Processor Registry
-// ============================================================================
 //
 // This registry-based approach allows any number of languages to be registered
 // dynamically, solving the scalability problem of generic parameters like
@@ -111,7 +110,6 @@ pub struct LlmccOptions {
 //   registry.register::<LangGo>("go");  // Add as many as needed
 //   run_main_auto(&opts, &registry)
 //
-// ============================================================================
 
 /// Type alias for a language processing function.
 /// Takes options and files, returns DOT output or error.

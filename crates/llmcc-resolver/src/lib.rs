@@ -1,3 +1,4 @@
+//! Symbol resolution and binding for cross-reference analysis.
 pub mod binder;
 pub mod collector;
 

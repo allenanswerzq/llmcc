@@ -1,3 +1,5 @@
+//! HIR graph builder from IR nodes.
+
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::marker::PhantomData;
 

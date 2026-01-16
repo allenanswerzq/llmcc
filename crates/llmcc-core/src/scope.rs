@@ -82,13 +82,6 @@ impl<'tcx> Scope<'tcx> {
     /// Merge existing scope into this scope.
     #[inline]
     pub fn merge_with(&self, other: &'tcx Scope<'tcx>, _arena: &'tcx Arena<'tcx>) {
-        tracing::trace!(
-            "merge: from scope {:?} to {:?}, {} symbol entries",
-            other.id(),
-            self.id(),
-            other.symbols.len()
-        );
-
         for entry in other.symbols.iter() {
             let name_key = *entry.key();
             let symbol_vec = entry.value().clone();
@@ -358,31 +351,11 @@ impl<'tcx> ScopeStack<'tcx> {
         }
         let name_key = self.interner.intern(name);
         let stack = self.stack.read();
-        tracing::trace!("stack: {:#?}", stack);
 
-        let symbols = stack.iter().rev().find_map(|scope| {
-            let result = scope.lookup_symbols(name_key, options);
-            if let Some(ref syms) = result {
-                tracing::trace!(
-                    "found '{}' in scope {:?}, symbols: {:?}",
-                    name,
-                    scope.id(),
-                    syms.iter()
-                        .map(|s| (s.id(), s.unit_index()))
-                        .collect::<Vec<_>>()
-                );
-            }
-            result
-        });
-        tracing::trace!(
-            "lookup_symbols: '{}' found {:?} in scope stack",
-            name,
-            symbols.as_ref().map(|syms| syms
-                .iter()
-                .map(|s| s.format(Some(self.interner)))
-                .collect::<Vec<_>>())
-        );
-        symbols
+        stack
+            .iter()
+            .rev()
+            .find_map(|scope| scope.lookup_symbols(name_key, options))
     }
 
     /// Normalize name helper.
@@ -413,17 +386,13 @@ impl<'tcx> ScopeStack<'tcx> {
         }
 
         let scope = if options.global {
-            tracing::trace!("lookup_or_insert: '{}' in global scope", name);
             stack.first().copied()?
         } else if options.parent && stack.len() >= 2 {
-            tracing::trace!("lookup_or_insert: '{}' in parent scope", name);
             stack.get(stack.len() - 2).copied()?
         } else {
-            tracing::trace!("lookup_or_insert: '{}' in current scope", name);
             stack.last().copied()?
         };
 
-        // Pass through kind_filters to lookup to support kind-specific lookup/insert
         let lookup_options = if !options.kind_filters.is_empty() {
             LookupOptions::default().with_kind_set(options.kind_filters)
         } else {
@@ -434,8 +403,6 @@ impl<'tcx> ScopeStack<'tcx> {
             debug_assert!(!symbols.is_empty());
 
             if options.chained {
-                tracing::debug!("chained symbol '{}' in scope {:?}", name, scope.id());
-                // create new symbol chained to existing one
                 let symbol = symbols.last().copied().unwrap();
                 let new_symbol = Symbol::new(node, name_key);
                 new_symbol.set_previous(symbol.id);
@@ -445,12 +412,9 @@ impl<'tcx> ScopeStack<'tcx> {
                 symbols.push(allocated);
                 Some(symbols)
             } else {
-                tracing::trace!("found existing symbol '{}' in scope {:?}", name, scope.id());
                 Some(symbols)
             }
         } else {
-            tracing::trace!("create new symbol '{}' in scope {:?}", name, scope.id());
-            // not found, create new symbol
             let new_symbol = Symbol::new(node, name_key);
             let sym_id = new_symbol.id().0;
             let allocated = self.arena.alloc_with_id(sym_id, new_symbol);
@@ -485,25 +449,10 @@ impl<'tcx> ScopeStack<'tcx> {
                     break;
                 }
             }
-            tracing::trace!(
-                "lookup_qualified: shifted start to scope {:?} for '{}'",
-                current_scope.id(),
-                qualified_name[0]
-            );
         }
 
-        if current_scope.lookup_symbols(name_key, options).is_none() {
-            tracing::trace!(
-                "lookup_qualified: starting scope {:?} does not contain '{}' options: {:?}, stack {:#?}",
-                current_scope.id(),
-                qualified_name[0],
-                options,
-                stack
-            );
-            return None;
-        }
+        current_scope.lookup_symbols(name_key, options)?;
 
-        // Recursively try all symbol choices
         self.lookup_qualified_recursive(current_scope, qualified_name, 0, &options)
     }
 
@@ -519,50 +468,24 @@ impl<'tcx> ScopeStack<'tcx> {
             return None;
         }
 
-        tracing::trace!(
-            "lookup_qualified_recursive: scope {:?}, part '{}'",
-            scope.id(),
-            qualified_name[index]
-        );
         let part = qualified_name[index];
         let name_key = self.interner.intern(part);
         let symbols = scope.lookup_symbols(name_key, *options)?;
-        tracing::trace!(
-            "lookup_qualified_recursive: found {:?} symbols for '{}' in scope {:?}",
-            symbols
-                .iter()
-                .map(|s| s.format(Some(self.interner)))
-                .collect::<Vec<_>>(),
-            part,
-            scope.id()
-        );
 
-        // If this is the last part, return the symbols
         if index == qualified_name.len() - 1 {
             return Some(symbols);
         }
 
-        // Try each symbol as a potential next scope in the hierarchy
         let mut results = Vec::new();
         for symbol in symbols {
-            if let Some(symbol_scope_id) = symbol.opt_scope() {
-                // Get scope from DashMap by ID (O(1) lookup)
-                if let Some(next_scope) = self.arena.get_scope(symbol_scope_id.0) {
-                    debug_assert!(next_scope.id() == symbol_scope_id);
-                    tracing::trace!(
-                        "lookup_qualified_recursive: descending into scope {:?} for symbol '{}'",
-                        next_scope.id(),
-                        symbol.format(Some(self.interner))
-                    );
-                    // Recursively try to find the rest of the path
-                    if let Some(result) = self.lookup_qualified_recursive(
-                        next_scope,
-                        qualified_name,
-                        index + 1,
-                        options,
-                    ) {
-                        results.extend(result);
-                    }
+            if let Some(symbol_scope_id) = symbol.opt_scope()
+                && let Some(next_scope) = self.arena.get_scope(symbol_scope_id.0)
+            {
+                debug_assert!(next_scope.id() == symbol_scope_id);
+                if let Some(result) =
+                    self.lookup_qualified_recursive(next_scope, qualified_name, index + 1, options)
+                {
+                    results.extend(result);
                 }
             }
         }

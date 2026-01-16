@@ -10,7 +10,6 @@ const MAX_INFER_DEPTH: u32 = 16;
 
 /// Infer the type of any C/C++ AST node.
 /// Public entry point that starts recursion at depth 0.
-#[tracing::instrument(skip_all)]
 pub fn infer_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,

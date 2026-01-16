@@ -1,3 +1,5 @@
+//! Block relations for dependency tracking.
+
 use dashmap::DashMap;
 use std::collections::{HashMap, HashSet};
 

@@ -1,3 +1,5 @@
+//! Core IR and graph building infrastructure for llmcc.
+
 pub mod block;
 pub mod block_rel;
 pub mod bump;

@@ -19,7 +19,6 @@ use crate::token::LangTypeScript;
 ///
 /// Given a pattern (array_pattern, object_pattern, or identifier) and a type,
 /// recursively assigns types to bound variables.
-#[tracing::instrument(skip_all)]
 pub fn bind_pattern_types<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BinderScopes<'tcx>,
@@ -67,7 +66,7 @@ pub fn bind_pattern_types<'tcx>(
 
 /// Assign type to a single identifier binding.
 fn assign_type_to_ident<'tcx>(
-    unit: &CompileUnit<'tcx>,
+    _unit: &CompileUnit<'tcx>,
     scopes: &mut BinderScopes<'tcx>,
     ident: &'tcx llmcc_core::ir::HirIdent<'tcx>,
     ident_type: &'tcx Symbol,
@@ -82,10 +81,6 @@ fn assign_type_to_ident<'tcx>(
                 ident.set_symbol(sym);
                 sym
             } else {
-                tracing::trace!(
-                    "identifier '{}' missing symbol in pattern binding",
-                    ident.name
-                );
                 return;
             }
         }
@@ -93,19 +88,10 @@ fn assign_type_to_ident<'tcx>(
 
     // Don't override existing type
     if symbol.type_of().is_some() {
-        tracing::trace!(
-            "identifier '{}' already has type, not overriding",
-            ident.name
-        );
         return;
     }
 
     symbol.set_type_of(ident_type.id());
-    tracing::trace!(
-        "assigned type to '{}': {}",
-        ident.name,
-        ident_type.format(Some(unit.interner()))
-    );
 }
 
 /// AST: [a, b, c] or [first, ...rest]
@@ -139,8 +125,6 @@ fn assign_type_to_array_pattern<'tcx>(
         bind_pattern_types(unit, scopes, &child, element_type);
         element_index += 1;
     }
-
-    tracing::trace!("assigned types to {} array pattern elements", element_index);
 }
 
 /// AST: { x, y } or { x: a, y: b } or { x: { nested } }
@@ -221,6 +205,4 @@ fn assign_type_to_object_pattern<'tcx>(
             }
         }
     }
-
-    tracing::trace!("assigned types to object pattern fields");
 }

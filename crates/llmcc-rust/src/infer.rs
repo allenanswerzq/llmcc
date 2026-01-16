@@ -9,7 +9,6 @@ use crate::token::LangRust;
 const MAX_INFER_DEPTH: u32 = 16;
 
 /// Infer the type of any AST node
-#[tracing::instrument(skip_all)]
 pub fn infer_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
@@ -174,7 +173,6 @@ fn infer_type_impl<'tcx>(
 }
 
 /// Get primitive type by name
-#[tracing::instrument(skip_all)]
 fn get_primitive_type<'tcx>(scopes: &BinderScopes<'tcx>, name: &str) -> Option<&'tcx Symbol> {
     scopes
         .lookup_globals(name, SymKindSet::from_kind(SymKind::Primitive))?
@@ -271,7 +269,6 @@ fn infer_struct_expression<'tcx>(
         && let Some(sym) = infer_type_impl(unit, scopes, &name_node, depth + 1)
         && SYM_KIND_TYPES.contains(sym.kind())
     {
-        tracing::trace!("inferring struct type from name node");
         return Some(sym);
     }
 
@@ -279,7 +276,6 @@ fn infer_struct_expression<'tcx>(
 }
 
 /// Infer field expression type: obj.field -> FieldType
-#[tracing::instrument(skip_all)]
 fn infer_field_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
@@ -319,7 +315,6 @@ fn infer_field_expression<'tcx>(
 }
 
 /// Infer scoped identifier type: module::Type or foo::bar::baz
-#[tracing::instrument(skip_all)]
 fn infer_scoped_identifier<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
@@ -333,8 +328,6 @@ fn infer_scoped_identifier<'tcx>(
     }
 
     let qualified_names: Vec<&str> = idents.iter().map(|i| i.name).collect();
-
-    tracing::trace!("resolving scoped ident {:?}", qualified_names);
 
     // Handle Rust's "crate" keyword by replacing with actual crate name
     let resolved_path: Vec<&str>;
@@ -377,7 +370,6 @@ fn infer_index_expression<'tcx>(
 }
 
 /// Infer binary expression type: a + b or a == b
-#[tracing::instrument(skip_all)]
 fn infer_binary_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,

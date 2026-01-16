@@ -139,7 +139,7 @@ pub fn run(args: Cli) -> Result<()> {
         Ok(Some(output)) => {
             if let Some(ref path) = args.output {
                 std::fs::write(path, &output)?;
-                tracing::info!("output written to: {}", path);
+                tracing::info!(path, "output written");
             } else {
                 println!("{output}");
             }
@@ -149,13 +149,12 @@ pub fn run(args: Cli) -> Result<()> {
         }
         Err(e) => {
             eprintln!("Error: {e}");
-            tracing::error!("Error: {}", e);
+            tracing::error!(error = %e, "execution failed");
         }
     }
 
-    // Print total time - use eprintln to ensure it flushes before exit
     let total_secs = total_start.elapsed().as_secs_f64();
-    tracing::info!("Total time: {:.2}s", total_secs);
+    tracing::info!(total_secs, "complete");
     eprintln!("Total time: {total_secs:.2}s");
     Ok(())
 }
