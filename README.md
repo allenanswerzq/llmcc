@@ -1,8 +1,8 @@
 # llmcc
 
-**llmcc brings multi-depth architecture graphs for code understanding and generation.**
+**llmcc brings multi-depth architecture view for code understanding and generation in seconds time.**
 
-Our goal is to build a multi-depth, tree-like context / architecture view of a codebase, so a coding agent can *walk up* (zoom out) for structure and intent, then *walk down* (zoom in) to the exact crates/modules/files/symbols it needs—getting a highly comprehensive understanding of any codebase (any programming language).
+Our goal is to build a multi-depth, tree-like context / architecture view of a codebase in extremely fast speed, so a coding agent can *walk up* (zoom out) for structure and intent, then *walk down* (zoom in) to the exact crates/modules/files/symbols it needs—getting a highly comprehensive understanding of any codebase (any programming language).
 
 ## Supported Languages
 
