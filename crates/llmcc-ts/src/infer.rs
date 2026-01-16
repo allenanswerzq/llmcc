@@ -11,7 +11,6 @@ const MAX_INFER_DEPTH: u32 = 16;
 
 /// Infer the type of any TypeScript AST node.
 /// Public entry point that starts recursion at depth 0.
-#[tracing::instrument(skip_all)]
 pub fn infer_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
@@ -234,7 +233,6 @@ fn infer_type_impl<'tcx>(
 }
 
 /// Get primitive type by name
-#[tracing::instrument(skip_all)]
 fn get_primitive_type<'tcx>(scopes: &BinderScopes<'tcx>, name: &str) -> Option<&'tcx Symbol> {
     scopes
         .lookup_globals(name, SymKindSet::from_kind(SymKind::Primitive))?
@@ -245,7 +243,6 @@ fn get_primitive_type<'tcx>(scopes: &BinderScopes<'tcx>, name: &str) -> Option<&
 /// Infer nested type identifier: Models.User, A.B.C.MyClass, etc.
 /// Resolves qualified type paths using lookup_qualified.
 /// Handles arbitrary nesting depth (e.g., A.B.C.D.MyClass).
-#[tracing::instrument(skip_all)]
 fn infer_nested_type_identifier<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,

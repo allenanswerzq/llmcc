@@ -17,7 +17,6 @@ use crate::token::LangCpp;
 ///
 /// Given a pattern (structured_binding_declarator) and a type,
 /// assigns types to bound variables.
-#[tracing::instrument(skip_all)]
 pub fn bind_pattern_types<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BinderScopes<'tcx>,

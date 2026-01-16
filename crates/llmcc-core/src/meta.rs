@@ -1,5 +1,33 @@
-//! Module detection mapping file paths to 4 architecture levels:
-//! Project → Package → Module → File.
+//! Module detection using a Patricia trie to compress file paths into 4 architecture levels.
+//!
+//! # The 4-Level Architecture
+//!
+//! Every source file is mapped to exactly 4 semantic levels:
+//! - **Level 0 (Project)**: The entire repository/workspace
+//! - **Level 1 (Package)**: A distributable unit (npm package, Rust crate) - DEVELOPER DEFINED
+//! - **Level 2 (Module)**: A major subsystem within a package - INFERRED
+//! - **Level 3 (File)**: The individual source file
+//!
+//! # Philosophy
+//!
+//! Packages (Cargo.toml, package.json) are the **real semantic boundaries** - developers
+//! explicitly created them. We respect these as-is.
+//!
+//! For modules, we use a per-file bottom-up approach: walk up from each file toward the
+//! package root, finding the first directory that represents a meaningful grouping.
+//!
+//! # Algorithm: Per-File Bottom-Up Module Detection
+//!
+//! For each file:
+//! 1. Get path components from package root (excluding containers like `src/`)
+//! 2. Walk UP from deepest to shallowest
+//! 3. Find the first ancestor where going "deeper" provides meaningful subdivision
+//!
+//! A directory is a good module boundary if:
+//! - It has siblings (alternatives at the same level)
+//! - Its siblings collectively represent >20% of the package's files
+//!
+//! This naturally handles variable depths - different subtrees can have different module levels.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

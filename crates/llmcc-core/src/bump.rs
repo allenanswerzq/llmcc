@@ -1,5 +1,5 @@
 //! Thread-safe bump allocator utilities.
-//! Thread-safe bump allocator utilities.
+
 // Thread 1's Bump     Thread 2's Bump     Thread 3's Bump
 // ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
 // │ Memory Pool │    │ Memory Pool │    │ Memory Pool │

@@ -1,5 +1,5 @@
 //! Compilation context and unit management.
-//! Compilation context and unit management.
+
 use parking_lot::RwLock;
 use rayon::prelude::*;
 use smallvec::SmallVec;

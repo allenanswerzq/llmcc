@@ -155,7 +155,6 @@ impl<'tcx> CollectorVisitor<'tcx> {
     /// AST: Any scoped node (module, function, trait, impl, etc.)
     /// Purpose: Set up scope hierarchy, link identifiers to symbols, and push/pop scopes
     #[allow(clippy::too_many_arguments)]
-    #[tracing::instrument(skip_all)]
     fn visit_with_scope(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -189,7 +188,6 @@ impl<'tcx> CollectorVisitor<'tcx> {
     /// AST: Generic scoped-named item handler (module, function, struct, enum, trait, macro, etc.)
     /// Purpose: Declare a named symbol with scope, lookup or insert it, and establish scope hierarchy
     #[allow(clippy::too_many_arguments)]
-    #[tracing::instrument(skip_all)]
     fn visit_scoped_named(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -215,7 +213,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: block { ... }
     /// Purpose: Create a new lexical scope for block-scoped variables and statements
-    #[tracing::instrument(skip_all)]
     fn visit_block(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -248,7 +245,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
     /// AST: source_file - root node of the compilation unit
     /// Purpose: Parse crate/module names, create file scope, set up global symbol namespace
     #[rustfmt::skip]
-    #[tracing::instrument(skip_all)]
     fn visit_source_file(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -339,7 +335,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: mod name { ... } or mod name;
     /// Purpose: Create namespace scope for module, declare module symbol
-    #[tracing::instrument(skip_all)]
     fn visit_mod_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -376,7 +371,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: fn name(...) -> Type { ... }
     /// Purpose: Declare function symbol, create function scope for parameters and body
-    #[tracing::instrument(skip_all)]
     fn visit_function_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -416,7 +410,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: extern "C" fn signature or trait method signature
     /// Purpose: Declare function symbol for extern/trait function signatures
-    #[tracing::instrument(skip_all)]
     fn visit_function_signature_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -445,7 +438,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: struct Name { fields... } or struct Name(types...);
     /// Purpose: Declare struct symbol, create struct scope for fields and methods
-    #[tracing::instrument(skip_all)]
     fn visit_struct_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -479,7 +471,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: enum Name { variants... }
     /// Purpose: Declare enum symbol, create enum scope for variants
-    #[tracing::instrument(skip_all)]
     fn visit_enum_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -510,7 +501,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: trait Name { associated items... }
     /// Purpose: Declare trait symbol, create trait scope for methods and associated types
-    #[tracing::instrument(skip_all)]
     fn visit_trait_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -544,7 +534,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: impl [Trait for] Type { methods... }
     /// Purpose: Create impl scope for methods
-    #[tracing::instrument(skip_all)]
     fn visit_impl_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -580,7 +569,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: macro_rules! name { ... }
     /// Purpose: Declare macro symbol for later macro invocation resolution
-    #[tracing::instrument(skip_all)]
     fn visit_macro_definition(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -603,7 +591,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: const NAME: Type = value;
     /// Purpose: Declare const symbol and visit initializer expression for dependencies
-    #[tracing::instrument(skip_all)]
     fn visit_const_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -621,7 +608,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: static NAME: Type = value;
     /// Purpose: Declare static symbol and visit initializer expression for dependencies
-    #[tracing::instrument(skip_all)]
     fn visit_static_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -639,7 +625,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: type Name = AnotherType;
     /// Purpose: Declare type alias symbol and visit the aliased type for dependencies
-    #[tracing::instrument(skip_all)]
     fn visit_type_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -657,7 +642,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: Generic type parameter T or K in fn<T, K>(...) or struct<T> { ... }
     /// Purpose: Declare type parameter symbol within generic scope
-    #[tracing::instrument(skip_all)]
     fn visit_type_parameter(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -678,7 +662,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: Generic const parameter N in fn<const N: usize>(...) or struct<const N: usize> { ... }
     /// Purpose: Declare const parameter symbol and add dependency to owner
-    #[tracing::instrument(skip_all)]
     fn visit_const_parameter(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -693,7 +676,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: type Assoc = Type; in trait definition
     /// Purpose: Declare associated type symbol within trait scope
-    #[tracing::instrument(skip_all)]
     fn visit_associated_type(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -708,7 +690,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: where T: Trait, U: Send, ... in generic bounds
     /// Purpose: Visit where clause bounds for type dependency tracking
-    #[tracing::instrument(skip_all)]
     fn visit_where_predicate(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -723,7 +704,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: [Type; N] or [Type]
     /// Purpose: visit array type element and length for dependency tracking
-    #[tracing::instrument(skip_all)]
     fn visit_array_type(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -744,7 +724,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: (Type1, Type2, ...) tuple type
     /// Purpose: Visit tuple element types for dependency tracking
-    #[tracing::instrument(skip_all)]
     fn visit_tuple_type(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -758,7 +737,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: i32, u64, f32, bool, str, etc. - primitive type keyword
     /// Purpose: Visit primitive type children (minimal, mostly a no-op)
-    #[tracing::instrument(skip_all)]
     fn visit_primitive_type(
         &mut self,
         unit: &CompileUnit<'tcx>,

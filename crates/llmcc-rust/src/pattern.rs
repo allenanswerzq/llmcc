@@ -7,7 +7,6 @@ use llmcc_resolver::BinderScopes;
 
 use crate::token::LangRust;
 
-#[tracing::instrument(skip_all)]
 pub fn bind_pattern_types<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BinderScopes<'tcx>,
@@ -68,7 +67,6 @@ pub fn bind_pattern_types<'tcx>(
 }
 
 /// Assign type to a single identifier binding
-#[tracing::instrument(skip_all)]
 fn assign_type_to_ident<'tcx>(
     _unit: &CompileUnit<'tcx>,
     scopes: &mut BinderScopes<'tcx>,
@@ -106,7 +104,6 @@ fn assign_type_to_ident<'tcx>(
 
 /// AST: (pattern1, pattern2, pattern3)
 /// Assign tuple element types to each pattern
-#[tracing::instrument(skip_all)]
 fn assign_type_to_tuple_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BinderScopes<'tcx>,
@@ -135,7 +132,6 @@ fn assign_type_to_tuple_pattern<'tcx>(
 
 /// AST: Struct { field1, field2, ... }
 /// Bind each field pattern to the struct field's type
-#[tracing::instrument(skip_all)]
 fn assign_type_to_struct_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BinderScopes<'tcx>,
@@ -213,7 +209,6 @@ fn assign_type_to_struct_pattern<'tcx>(
 
 /// AST: TupleVariant(a, b, c) or TupleStruct(x, y)
 /// Assign nested types to each pattern element
-#[tracing::instrument(skip_all)]
 fn assign_type_to_tuple_struct_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BinderScopes<'tcx>,
@@ -259,7 +254,6 @@ fn assign_type_to_tuple_struct_pattern<'tcx>(
 
 /// AST: pattern1 | pattern2 | pattern3
 /// Each alternative gets the same type
-#[tracing::instrument(skip_all)]
 fn assign_type_to_or_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BinderScopes<'tcx>,
@@ -275,7 +269,6 @@ fn assign_type_to_or_pattern<'tcx>(
 
 /// AST: [elem1, elem2, ...] or [elem; size]
 /// All elements get the same element type from the array/slice
-#[tracing::instrument(skip_all)]
 fn assign_type_to_slice_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BinderScopes<'tcx>,
@@ -306,7 +299,6 @@ fn assign_type_to_slice_pattern<'tcx>(
 
 /// AST: &pattern or &mut pattern
 /// Get the dereferenced type
-#[tracing::instrument(skip_all)]
 fn assign_type_to_reference_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BinderScopes<'tcx>,

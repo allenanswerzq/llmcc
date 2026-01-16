@@ -19,7 +19,6 @@ use crate::token::LangTypeScript;
 ///
 /// Given a pattern (array_pattern, object_pattern, or identifier) and a type,
 /// recursively assigns types to bound variables.
-#[tracing::instrument(skip_all)]
 pub fn bind_pattern_types<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BinderScopes<'tcx>,

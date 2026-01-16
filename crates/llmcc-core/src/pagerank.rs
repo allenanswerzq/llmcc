@@ -1,5 +1,5 @@
 //! PageRank-based node importance ranking.
-//! PageRank-based node importance ranking.
+
 use std::collections::HashMap;
 
 use crate::block::{BlockId, BlockKind, BlockRelation};

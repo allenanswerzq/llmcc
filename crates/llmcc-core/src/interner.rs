@@ -1,5 +1,5 @@
 //! String interning for symbol names.
-//! String interning for symbol names.
+
 use parking_lot::RwLock;
 use std::sync::Arc;
 

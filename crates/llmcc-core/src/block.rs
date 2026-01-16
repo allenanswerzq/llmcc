@@ -1,5 +1,5 @@
 //! Basic block representation for code graph.
-//! Basic block representation for code graph.
+
 use parking_lot::RwLock;
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};

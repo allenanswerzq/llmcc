@@ -116,7 +116,6 @@ impl<'tcx> CollectorVisitor<'tcx> {
     }
 
     #[allow(clippy::too_many_arguments)]
-    #[tracing::instrument(skip_all)]
     fn visit_with_scope(
         &mut self,
         unit: &CompileUnit<'tcx>,

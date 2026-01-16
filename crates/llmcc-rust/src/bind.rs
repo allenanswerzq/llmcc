@@ -33,7 +33,6 @@ impl<'tcx> BinderVisitor<'tcx> {
         }
     }
 
-    #[tracing::instrument(skip_all)]
     #[allow(clippy::too_many_arguments)]
     // AST: Helper for named scope nodes (struct, enum, mod, impl, etc.)
     fn visit_scoped_named(
@@ -115,7 +114,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     }
 
     // AST: identifier (variable, function name, type name, etc.)
-    #[tracing::instrument(skip_all)]
     fn visit_identifier(
         &mut self,
         _unit: &CompileUnit<'tcx>,
@@ -137,7 +135,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     }
 
     // AST: type_identifier (refers to struct, enum, trait, etc.)
-    #[tracing::instrument(skip_all)]
     fn visit_type_identifier(
         &mut self,
         _unit: &CompileUnit<'tcx>,
@@ -159,7 +156,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     }
 
     // AST: primitive_type (i32, u64, bool, f32, str, etc.)
-    #[tracing::instrument(skip_all)]
     fn visit_primitive_type(
         &mut self,
         _unit: &CompileUnit<'tcx>,
@@ -178,7 +174,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
     // AST: type parameter T or T: Trait or T=Default in generics
     // Sets type_of on the type parameter to point to its first trait bound or default type
-    #[tracing::instrument(skip_all)]
     fn visit_type_parameter(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -223,7 +218,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     }
 
     // AST: mod name { ... items ... }
-    #[tracing::instrument(skip_all)]
     fn visit_mod_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -241,7 +235,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     }
 
     // AST: fn foo(args) -> ret_type;
-    #[tracing::instrument(skip_all)]
     fn visit_function_signature_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -254,7 +247,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     }
 
     // AST: fn name(args) -> ret_type { body }
-    #[tracing::instrument(skip_all)]
     fn visit_function_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -286,7 +278,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     }
 
     // AST: field_identifier (struct field name)
-    #[tracing::instrument(skip_all)]
     fn visit_field_identifier(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -299,7 +290,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     }
 
     // AST: struct Name { field1: Type1, field2: Type2 }
-    #[tracing::instrument(skip_all)]
     fn visit_struct_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -334,7 +324,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
     // AST: trait Name { methods... }
     // Purpose: Bind Self/self to the trait for methods inside the trait
-    #[tracing::instrument(skip_all)]
     fn visit_trait_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -368,7 +357,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     }
 
     // AST: field: Type
-    #[tracing::instrument(skip_all)]
     fn visit_field_declaration(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -400,7 +388,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     }
 
     // AST: impl [<Trait> for] Type { methods }
-    #[tracing::instrument(skip_all)]
     fn visit_impl_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -489,7 +476,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     // AST: func(args) or obj.method(args) or path::func(args)
     // The function part (identifier, scoped_identifier, field_expression) is resolved
     // by visit_children through the appropriate visitor (visit_identifier, visit_scoped_identifier, etc.)
-    #[tracing::instrument(skip_all)]
     fn visit_call_expression(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -513,7 +499,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     }
 
     // AST: enum Name { Variant1, Variant2, ... }
-    #[tracing::instrument(skip_all)]
     fn visit_enum_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -594,7 +579,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     }
 
     // AST: type Alias = ConcreteType;
-    #[tracing::instrument(skip_all)]
     fn visit_type_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -676,7 +660,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     }
 
     // AST: enum Variant or enum Variant { fields } or enum Variant(types)
-    #[tracing::instrument(skip_all)]
     fn visit_enum_variant(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -689,7 +672,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     }
 
     // AST: object.field or tuple.0 (field access expression)
-    #[tracing::instrument(skip_all)]
     fn visit_field_expression(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -790,7 +772,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     }
 
     // AST: fn foo(param: Type, ...)
-    #[tracing::instrument(skip_all)]
     fn visit_parameter(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -852,7 +833,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     }
 
     // AST: let name: Type = value; or let name = value;
-    #[tracing::instrument(skip_all)]
     fn visit_let_declaration(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -933,7 +913,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     }
 
     // AST: match scrutinee { pattern1 => expr1, pattern2 => expr2 }
-    #[tracing::instrument(skip_all)]
     fn visit_match_expression(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -946,7 +925,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     }
 
     // AST: match arm body or block in match expression
-    #[tracing::instrument(skip_all)]
     fn visit_match_block(
         &mut self,
         unit: &CompileUnit<'tcx>,

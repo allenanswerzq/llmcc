@@ -33,7 +33,6 @@ impl<'tcx> BinderVisitor<'tcx> {
         }
     }
 
-    #[tracing::instrument(skip_all)]
     #[allow(clippy::too_many_arguments)]
     fn visit_scoped_named(
         &mut self,
