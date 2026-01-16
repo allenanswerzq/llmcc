@@ -664,9 +664,6 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
         let children_vec: Vec<_> = children.iter().map(|id| unit.hir_node(*id)).collect();
         let mut tuple_field_index = 0usize;
 
-        // Note: Test items (#[test] functions, #[cfg(test)] modules) are already filtered out
-        // at the HIR building stage in ir_builder.rs, so they won't appear in children_vec.
-
         for child in children_vec.iter() {
             // Check for context-dependent blocks (like tuple struct fields)
             // Only intercept if the parent context changes the block kind

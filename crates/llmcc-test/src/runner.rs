@@ -638,9 +638,7 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
                 .ok_or_else(|| anyhow!("case {case_id} requested symbols but summary missing"))?;
             Ok(render_symbol_snapshot(symbols))
         }
-        "symbol-types" => {
-            Ok("symbol-types snapshot not yet implemented\n".to_string())
-        }
+        "symbol-types" => Ok("symbol-types snapshot not yet implemented\n".to_string()),
         "block-relations" => {
             let relations = summary.block_relations.as_ref().ok_or_else(|| {
                 anyhow!("case {case_id} requested block-relations but summary missing")
@@ -665,9 +663,7 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
         "arch-graph-depth-3" => summary.arch_graph_depth_3.clone().ok_or_else(|| {
             anyhow!("case {case_id} requested arch-graph-depth-3 output but summary missing")
         }),
-        "blocks" => {
-            Ok("blocks snapshot not yet implemented\n".to_string())
-        }
+        "blocks" => Ok("blocks snapshot not yet implemented\n".to_string()),
         "block-deps" => summary
             .block_deps
             .as_ref()

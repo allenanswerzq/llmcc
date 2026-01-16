@@ -208,9 +208,6 @@ impl<'tcx> CollectorVisitor<'tcx> {
 }
 
 impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx> {
-    // Note: Test items (#[test] functions, #[cfg(test)] modules) are already filtered out
-    // at the HIR building stage in ir_builder.rs, so they won't appear in the HIR tree.
-
     /// AST: block { ... }
     /// Purpose: Create a new lexical scope for block-scoped variables and statements
     fn visit_block(
