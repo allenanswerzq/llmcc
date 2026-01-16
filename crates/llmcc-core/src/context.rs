@@ -670,6 +670,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             kind_id: 0,
             start_byte: 0,
             end_byte: 0,
+            start_line: 0,
             kind: HirKind::Identifier,
             field_id: u16::MAX,
             children: SmallVec::new(),

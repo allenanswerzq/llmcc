@@ -69,6 +69,9 @@ pub trait ParseNode: Send + Sync {
     /// Get the end byte offset of this node in the source
     fn end_byte(&self) -> usize;
 
+    /// Get the 1-indexed line number where this node starts
+    fn start_line(&self) -> usize;
+
     /// Get the number of children this node has
     fn child_count(&self) -> usize;
 
@@ -204,6 +207,11 @@ impl<'tree> ParseNode for TreeSitterParseNode<'tree> {
 
     fn end_byte(&self) -> usize {
         self.node.end_byte()
+    }
+
+    fn start_line(&self) -> usize {
+        // tree-sitter's start_position().row is 0-indexed, add 1 for 1-indexed line
+        self.node.start_position().row + 1
     }
 
     fn child_count(&self) -> usize {

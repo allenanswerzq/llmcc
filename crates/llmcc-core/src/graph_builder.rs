@@ -1,7 +1,7 @@
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::marker::PhantomData;
 
-use crate::DynError;
+use crate::Result;
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
 use crate::block::{
     BlockAlias, BlockCall, BlockClass, BlockConst, BlockEnum, BlockField, BlockFunc, BlockImpl,
@@ -746,7 +746,7 @@ pub fn build_unit_graph<'tcx, L: LanguageTrait>(
     unit: CompileUnit<'tcx>,
     unit_index: usize,
     config: GraphBuildConfig,
-) -> Result<Option<UnitGraph>, DynError> {
+) -> Result<Option<UnitGraph>> {
     let root_hir = unit.file_root_id().ok_or("missing file start HIR id")?;
     let mut builder = GraphBuilder::<L>::new(unit, config);
     let root_node = unit.hir_node(root_hir);
@@ -763,17 +763,15 @@ pub fn build_unit_graph<'tcx, L: LanguageTrait>(
 pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
     cc: &'tcx CompileCtxt<'tcx>,
     config: GraphBuildOption,
-) -> Result<Vec<UnitGraph>, DynError> {
+) -> Result<Vec<UnitGraph>> {
     let unit_graphs: Vec<UnitGraph> = if config.sequential {
         (0..cc.get_files().len())
             .map(|index| {
                 let unit = cc.compile_unit(index);
                 build_unit_graph::<L>(unit, index, GraphBuildConfig)
             })
-            .collect::<Result<Vec<_>, DynError>>()?
-            .into_iter()
-            .flatten()
-            .collect()
+            .filter_map(|r| r.transpose())
+            .collect::<Result<Vec<_>>>()?
     } else {
         (0..cc.get_files().len())
             .into_par_iter()
@@ -781,10 +779,8 @@ pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
                 let unit = cc.compile_unit(index);
                 build_unit_graph::<L>(unit, index, GraphBuildConfig)
             })
-            .collect::<Result<Vec<_>, DynError>>()?
-            .into_iter()
-            .flatten()
-            .collect()
+            .filter_map(|r| r.transpose())
+            .collect::<Result<Vec<_>>>()?
     };
 
     // No sorting needed: DashMap provides O(1) lookup by ID

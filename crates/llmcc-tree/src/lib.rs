@@ -93,6 +93,22 @@ pub fn generate_tokens(
     Ok(set.render(language_ident))
 }
 
+/// Generate token definitions from node-types JSON string.
+///
+/// Use this when node-types.json is available as an embedded string constant
+/// (e.g., `tree_sitter_rust::NODE_TYPES` or `tree_sitter_typescript::TYPESCRIPT_NODE_TYPES`).
+pub fn generate_tokens_from_str(
+    language_ident: &str,
+    language: Language,
+    node_types_json: &str,
+    config_path: &Path,
+) -> Result<String> {
+    let config = TokenConfig::from_path(config_path)?;
+    let node_types = NodeTypes::from_str(node_types_json)?;
+    let set = generate(language, &node_types, &config)?;
+    Ok(set.render(language_ident))
+}
+
 pub fn generate(
     language: Language,
     node_types: &NodeTypes,

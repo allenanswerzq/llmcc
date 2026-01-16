@@ -15,8 +15,12 @@ impl NodeTypes {
         let path = path.as_ref();
         let contents = fs::read_to_string(path)
             .with_context(|| format!("failed to read node-types file {}", path.display()))?;
-        let entries: Vec<NodeTypeEntry> = serde_json::from_str(&contents)
-            .with_context(|| format!("invalid node-types JSON {}", path.display()))?;
+        Self::from_str(&contents)
+    }
+
+    pub fn from_str(contents: &str) -> Result<Self> {
+        let entries: Vec<NodeTypeEntry> =
+            serde_json::from_str(contents).context("invalid node-types JSON")?;
 
         let mut named = HashMap::new();
         for entry in entries {
