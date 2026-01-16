@@ -116,7 +116,7 @@ pub struct LlmccOptions {
 /// Type alias for a language processing function.
 /// Takes options and files, returns DOT output or error.
 pub type LangProcessor =
-    Arc<dyn Fn(&LlmccOptions, &[String]) -> Result<Option<String>, DynError> + Send + Sync>;
+    Arc<dyn Fn(&LlmccOptions, &[String]) -> Result<Option<String>> + Send + Sync>;
 
 /// A registered language with its processor.
 pub struct RegisteredLang {
@@ -215,7 +215,7 @@ impl LangProcessorRegistry {
 pub fn run_main_auto(
     opts: &LlmccOptions,
     registry: &LangProcessorRegistry,
-) -> Result<Option<String>, DynError> {
+) -> Result<Option<String>> {
     validate_options(opts)?;
 
     // Gather all extensions from the registry
@@ -280,7 +280,7 @@ pub fn run_main_auto(
 fn discover_files_with_extensions(
     opts: &LlmccOptions,
     extensions: &std::collections::HashSet<&str>,
-) -> Result<Vec<String>, DynError> {
+) -> Result<Vec<String>> {
     let discovery_start = Instant::now();
 
     let mut seen = std::collections::HashSet::new();
@@ -387,7 +387,7 @@ fn discover_files_with_extensions(
 /// Run llmcc with automatic multi-language detection.
 /// Partitions files by extension and processes each language separately.
 /// DEPRECATED: Use run_main_auto with LangProcessorRegistry for N languages.
-pub fn run_main_multi<L1, L2>(opts: &LlmccOptions) -> Result<Option<String>, DynError>
+pub fn run_main_multi<L1, L2>(opts: &LlmccOptions) -> Result<Option<String>>
 where
     L1: LanguageTraitImpl + 'static,
     L2: LanguageTraitImpl + 'static,
@@ -460,7 +460,7 @@ fn merge_dot_outputs(outputs: &[String]) -> String {
 }
 
 /// Internal helper to run with pre-discovered files
-fn run_main_with_files<L>(opts: &LlmccOptions, files: &[String]) -> Result<Option<String>, DynError>
+fn run_main_with_files<L>(opts: &LlmccOptions, files: &[String]) -> Result<Option<String>>
 where
     L: LanguageTraitImpl,
 {
@@ -524,7 +524,7 @@ where
     Ok(output)
 }
 
-pub fn run_main<L>(opts: &LlmccOptions) -> Result<Option<String>, DynError>
+pub fn run_main<L>(opts: &LlmccOptions) -> Result<Option<String>>
 where
     L: LanguageTraitImpl,
 {
@@ -590,12 +590,12 @@ where
     Ok(output)
 }
 
-fn validate_options(_opts: &LlmccOptions) -> Result<(), DynError> {
+fn validate_options(_opts: &LlmccOptions) -> Result<()> {
     // Validation simplified - files/dirs conflict handled by clap
     Ok(())
 }
 
-fn discover_requested_files<L>(opts: &LlmccOptions) -> Result<Vec<String>, DynError>
+fn discover_requested_files<L>(opts: &LlmccOptions) -> Result<Vec<String>>
 where
     L: LanguageTrait,
 {
