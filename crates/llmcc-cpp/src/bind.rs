@@ -140,10 +140,9 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         _parent: Option<&Symbol>,
     ) {
         let file_path = unit.file_path().unwrap();
+        let _ = file_path; // Used for debugging
         let depth = scopes.scope_depth();
         let meta = unit.unit_meta();
-
-        tracing::trace!("binding translation_unit: {}", file_path);
 
         // Push package scope if present
         if let Some(ref package_name) = meta.package_name
@@ -151,7 +150,6 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 scopes.lookup_symbol(package_name, SymKindSet::from_kind(SymKind::Crate))
             && let Some(scope_id) = symbol.opt_scope()
         {
-            tracing::trace!("pushing package scope {:?}", scope_id);
             scopes.push_scope(scope_id);
         }
 
@@ -161,7 +159,6 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 scopes.lookup_symbol(module_name, SymKindSet::from_kind(SymKind::Module))
             && let Some(scope_id) = symbol.opt_scope()
         {
-            tracing::trace!("pushing module scope {:?}", scope_id);
             scopes.push_scope(scope_id);
         }
 
@@ -171,7 +168,6 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 scopes.lookup_symbol(file_name, SymKindSet::from_kind(SymKind::File))
             && let Some(scope_id) = file_sym.opt_scope()
         {
-            tracing::trace!("pushing file scope {} {:?}", file_path, scope_id);
             scopes.push_scope(scope_id);
 
             let file_scope = unit.get_scope(scope_id);
@@ -326,11 +322,6 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                             scopes.lookup_symbol(type_ident.name, SYM_KIND_TYPES)
                     {
                         class_sym.set_type_of(base_sym.id());
-                        tracing::trace!(
-                            "class {} extends {}",
-                            class_sym.format(Some(unit.interner())),
-                            base_sym.format(Some(unit.interner()))
-                        );
                     }
                 }
             }
@@ -399,11 +390,6 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 && let Some(return_type) = infer_type(unit, scopes, &type_node)
             {
                 fn_sym.set_type_of(return_type.id());
-                tracing::trace!(
-                    "binding function return type '{}' to '{}'",
-                    return_type.format(Some(unit.interner())),
-                    fn_sym.format(Some(unit.interner()))
-                );
             }
         }
     }

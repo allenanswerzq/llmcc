@@ -1,3 +1,5 @@
+//! Token configuration from TOML files.
+
 use std::fs;
 use std::path::Path;
 
@@ -8,6 +10,7 @@ use tree_sitter::Language;
 use crate::node_types::NodeTypes;
 use crate::{TokenEntry, format_block, format_hir, resolve_field_id, resolve_kind_id};
 
+/// Token configuration loaded from TOML.
 #[derive(Debug, Deserialize)]
 pub struct TokenConfig {
     #[serde(default = "TokenConfig::default_hir_kind")]
@@ -28,10 +31,8 @@ impl TokenConfig {
     pub fn from_path(path: impl AsRef<Path>) -> Result<Self> {
         let path = path.as_ref();
         let text = fs::read_to_string(path)
-            .with_context(|| format!("failed to read token config {}", path.display()))?;
-        let config: TokenConfig =
-            toml::from_str(&text).with_context(|| format!("invalid TOML in {}", path.display()))?;
-        Ok(config)
+            .with_context(|| format!("failed to read {}", path.display()))?;
+        toml::from_str(&text).with_context(|| format!("invalid TOML in {}", path.display()))
     }
 }
 

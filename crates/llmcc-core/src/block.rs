@@ -1,3 +1,5 @@
+//! Basic block representation for code graph.
+//! Basic block representation for code graph.
 use parking_lot::RwLock;
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
@@ -309,13 +311,11 @@ pub enum BlockRelation {
     #[default]
     Unknown,
 
-    // ========== Structural Relations ==========
     /// Parent contains child (Root→Func, Class→Method, etc.)
     Contains,
     /// Child is contained by parent
     ContainedBy,
 
-    // ========== Function/Method Relations ==========
     /// Func/Method → Parameters block
     HasParameters,
     /// Func/Method → Return block
@@ -325,7 +325,6 @@ pub enum BlockRelation {
     /// Func/Method is called by another Func/Method
     CalledBy,
 
-    // ========== Type Relations ==========
     /// Class/Enum → Field blocks
     HasField,
     /// Field → Class/Enum that owns it
@@ -347,13 +346,11 @@ pub enum BlockRelation {
     /// Trait → Types that implement it
     ImplementedBy,
 
-    // ========== Generic Reference ==========
     /// Uses a type/const/function
     Uses,
     /// Is used by
     UsedBy,
 
-    // ========== Inheritance ==========
     /// Trait/Interface extends another (TypeScript extends, Rust supertraits)
     Extends,
     /// Trait/Interface is extended by another

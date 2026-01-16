@@ -47,7 +47,7 @@ pub fn bind_pattern_types<'tcx>(
 
 /// Assign type to a single identifier binding.
 fn assign_type_to_ident<'tcx>(
-    unit: &CompileUnit<'tcx>,
+    _unit: &CompileUnit<'tcx>,
     scopes: &mut BinderScopes<'tcx>,
     ident: &'tcx llmcc_core::ir::HirIdent<'tcx>,
     ident_type: &'tcx Symbol,
@@ -62,10 +62,6 @@ fn assign_type_to_ident<'tcx>(
                 ident.set_symbol(sym);
                 sym
             } else {
-                tracing::trace!(
-                    "identifier '{}' missing symbol in pattern binding",
-                    ident.name
-                );
                 return;
             }
         }
@@ -73,19 +69,10 @@ fn assign_type_to_ident<'tcx>(
 
     // Don't override existing type
     if symbol.type_of().is_some() {
-        tracing::trace!(
-            "identifier '{}' already has type, not overriding",
-            ident.name
-        );
         return;
     }
 
     symbol.set_type_of(ident_type.id());
-    tracing::trace!(
-        "assigned type '{}' to identifier '{}'",
-        ident_type.format(Some(unit.interner())),
-        ident.name
-    );
 }
 
 /// Assign types to structured binding: auto [a, b, c] = tuple;

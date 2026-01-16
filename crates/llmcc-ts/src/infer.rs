@@ -258,7 +258,6 @@ fn infer_nested_type_identifier<'tcx>(
     }
 
     let qualified_names: Vec<&str> = idents.iter().map(|i| i.name).collect();
-    tracing::trace!("resolving nested type identifier {:?}", qualified_names);
 
     // Use lookup_qualified to resolve the full path
     scopes

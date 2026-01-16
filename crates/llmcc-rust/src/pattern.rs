@@ -70,7 +70,7 @@ pub fn bind_pattern_types<'tcx>(
 /// Assign type to a single identifier binding
 #[tracing::instrument(skip_all)]
 fn assign_type_to_ident<'tcx>(
-    unit: &CompileUnit<'tcx>,
+    _unit: &CompileUnit<'tcx>,
     scopes: &mut BinderScopes<'tcx>,
     ident: &'tcx llmcc_core::ir::HirIdent<'tcx>,
     ident_type: &'tcx Symbol,
@@ -86,35 +86,21 @@ fn assign_type_to_ident<'tcx>(
                 ident.set_symbol(sym);
                 sym
             } else {
-                tracing::trace!(
-                    "identifier '{}' missing symbol in pattern binding",
-                    ident.name
-                );
                 return;
             }
         }
     };
 
     if symbol.kind().is_const() {
-        tracing::trace!("const '{}' cannot be redeclared", ident.name);
         return;
     }
 
     if symbol.type_of().is_some() && symbol.kind().is_resolved() {
-        tracing::trace!(
-            "identifier '{}' already has type, not overriding",
-            ident.name
-        );
         return;
     }
 
     if symbol.type_of().is_none() {
         symbol.set_type_of(default_type.id());
-        tracing::trace!(
-            "assigned type to existing '{}': {}",
-            ident.name,
-            default_type.format(Some(unit.interner()))
-        );
     }
 }
 
@@ -145,8 +131,6 @@ fn assign_type_to_tuple_pattern<'tcx>(
         }
         element_index += 1;
     }
-
-    tracing::trace!("assigned types to {} tuple elements", element_index);
 }
 
 /// AST: Struct { field1, field2, ... }
@@ -161,32 +145,18 @@ fn assign_type_to_struct_pattern<'tcx>(
     // Find the struct type identifier
     let struct_type_node = match pattern.child_by_field(unit, LangRust::field_type) {
         Some(node) => node,
-        None => {
-            tracing::trace!("struct pattern missing type field");
-            return;
-        }
+        None => return,
     };
 
     let struct_type_ident = match struct_type_node.find_ident(unit) {
         Some(ident) => ident,
-        None => {
-            tracing::trace!("struct type node missing identifier");
-            return;
-        }
+        None => return,
     };
 
     let struct_symbol = match struct_type_ident.opt_symbol() {
         Some(sym) => sym,
-        None => {
-            tracing::trace!("struct type identifier has no symbol");
-            return;
-        }
+        None => return,
     };
-
-    tracing::trace!(
-        "struct pattern for type '{}'",
-        struct_symbol.format(Some(unit.interner()))
-    );
 
     for child in pattern.children(unit) {
         if child.kind_id() == LangRust::field_pattern {
@@ -234,11 +204,6 @@ fn assign_type_to_struct_pattern<'tcx>(
                                 assign_type_to_ident(unit, scopes, field_name_ident, field_type);
                             }
                         }
-
-                        tracing::trace!(
-                            "bound struct field '{}' to pattern",
-                            field_name_ident.name
-                        );
                     }
                 }
             }
@@ -290,8 +255,6 @@ fn assign_type_to_tuple_struct_pattern<'tcx>(
 
         element_index += 1;
     }
-
-    tracing::trace!("assigned types to {} tuple struct elements", element_index);
 }
 
 /// AST: pattern1 | pattern2 | pattern3
@@ -308,8 +271,6 @@ fn assign_type_to_or_pattern<'tcx>(
             bind_pattern_types(unit, scopes, &child, pattern_type);
         }
     }
-
-    tracing::trace!("assigned type to or-pattern alternatives");
 }
 
 /// AST: [elem1, elem2, ...] or [elem; size]
@@ -323,22 +284,14 @@ fn assign_type_to_slice_pattern<'tcx>(
 ) {
     // Extract the element type from the slice/array type
     let element_type = match pattern_type.nested_types() {
-        Some(types) => {
-            match types
-                .first()
-                .and_then(|type_id| unit.opt_get_symbol(*type_id))
-            {
-                Some(ty) => ty,
-                None => {
-                    tracing::trace!("slice pattern has no element type");
-                    return;
-                }
-            }
-        }
-        None => {
-            tracing::trace!("slice pattern has no nested types");
-            return;
-        }
+        Some(types) => match types
+            .first()
+            .and_then(|type_id| unit.opt_get_symbol(*type_id))
+        {
+            Some(ty) => ty,
+            None => return,
+        },
+        None => return,
     };
 
     for child in pattern.children(unit) {
@@ -349,8 +302,6 @@ fn assign_type_to_slice_pattern<'tcx>(
 
         bind_pattern_types(unit, scopes, &child, element_type);
     }
-
-    tracing::trace!("assigned element type to slice pattern elements");
 }
 
 /// AST: &pattern or &mut pattern
@@ -387,6 +338,4 @@ fn assign_type_to_reference_pattern<'tcx>(
             }
         }
     }
-
-    tracing::trace!("assigned type to reference pattern");
 }

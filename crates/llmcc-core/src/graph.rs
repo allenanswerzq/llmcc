@@ -1,3 +1,5 @@
+//! Project and unit graph structures.
+//! Project and unit graph structures.
 use rayon::prelude::*;
 
 use crate::block::{BasicBlock, BlockId, BlockRelation};

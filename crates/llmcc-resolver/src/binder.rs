@@ -63,14 +63,12 @@ impl<'a> BinderScopes<'a> {
 
     /// Pushes a scope onto the stack by looking it up from the compilation unit.
     pub fn push_scope(&mut self, id: ScopeId) {
-        tracing::trace!("push_scope: {:?}", id);
         let scope = self.unit.get_scope(id);
         self.scopes.push(scope);
     }
 
     /// Pushes a scope recursively with all its parent scopes.
     pub fn push_scope_recursive(&mut self, id: ScopeId) {
-        tracing::trace!("push_scope_recursive: {:?}", id);
         let scope = self.unit.get_scope(id);
         self.scopes.push_recursive(scope);
     }
@@ -79,8 +77,6 @@ impl<'a> BinderScopes<'a> {
     /// Returns true if scope was pushed, false if the scope wasn't set (e.g., unparsed macro).
     pub fn push_scope_node(&mut self, sn: &'a HirScope<'a>) -> bool {
         let Some(scope) = sn.opt_scope() else {
-            // Scope wasn't set during collection - this can happen with unparsed macros
-            tracing::trace!("skipping scope node without scope set");
             return false;
         };
         if sn.opt_ident().is_some() {
@@ -94,14 +90,12 @@ impl<'a> BinderScopes<'a> {
     /// Pops the current scope from the stack.
     #[inline]
     pub fn pop_scope(&mut self) {
-        tracing::trace!("pop_scope: depth {}", self.scopes.depth());
         self.scopes.pop();
     }
 
     /// Pops scopes until reaching the specified depth.
     #[inline]
     pub fn pop_until(&mut self, depth: usize) {
-        tracing::trace!("pop_until: {} -> {}", self.scopes.depth(), depth);
         self.scopes.pop_until(depth);
     }
 
@@ -113,7 +107,6 @@ impl<'a> BinderScopes<'a> {
 
     #[inline]
     pub fn lookup_globals(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
-        tracing::trace!("lookup globals '{}' with filters {:?}", name, kind_filters);
         let options = LookupOptions::current().with_kind_set(kind_filters);
         let name_key = self.unit.cc.interner.intern(name);
         self.scopes.globals().lookup_symbols(name_key, options)
@@ -124,8 +117,9 @@ impl<'a> BinderScopes<'a> {
         let symbols = self.lookup_globals(name, kind_filters)?;
         if symbols.len() > 1 {
             tracing::warn!(
-                "multiple global symbols found for '{}', returning the last one",
-                name
+                name,
+                count = symbols.len(),
+                "multiple global symbols found, returning the last one"
             );
         }
         symbols.last().copied()
@@ -134,7 +128,6 @@ impl<'a> BinderScopes<'a> {
     /// Lookup symbols by name with options
     #[inline]
     pub fn lookup_symbols(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
-        tracing::trace!("lookup symbols '{}' with filters {:?}", name, kind_filters);
         let options = LookupOptions::current().with_kind_set(kind_filters);
         self.scopes.lookup_symbols(name, options)
     }
@@ -151,11 +144,6 @@ impl<'a> BinderScopes<'a> {
                 .iter()
                 .find(|s| s.unit_index() == Some(current_unit))
             {
-                tracing::trace!(
-                    "lookup_symbol: multiple found for '{}', preferring local symbol {:?}",
-                    name,
-                    local_sym.id()
-                );
                 return Some(*local_sym);
             }
 
@@ -169,17 +157,13 @@ impl<'a> BinderScopes<'a> {
 
             if !same_crate_symbols.is_empty() && same_crate_symbols.len() < symbols.len() {
                 // There are both same-crate and cross-crate symbols, prefer same-crate
-                tracing::trace!(
-                    "lookup_symbol: multiple found for '{}', preferring same-crate symbol {:?}",
-                    name,
-                    same_crate_symbols.last().map(|s| s.id())
-                );
                 return same_crate_symbols.last().copied();
             }
 
             tracing::warn!(
-                "multiple symbols found for '{}', returning the last one",
-                name
+                name,
+                count = symbols.len(),
+                "multiple symbols found, returning the last one"
             );
         }
         symbols.last().copied()
@@ -193,11 +177,6 @@ impl<'a> BinderScopes<'a> {
         kind_filters: SymKindSet,
     ) -> Option<&'a Symbol> {
         if !kind_filters.is_empty() {
-            tracing::trace!(
-                "looking up member '{}' in type scope with filters {:?}",
-                member_name,
-                kind_filters
-            );
             // Try each kind individually for priority ordering
             for kind in [
                 SymKind::Method,
@@ -208,15 +187,12 @@ impl<'a> BinderScopes<'a> {
                 SymKind::Static,
             ] {
                 if kind_filters.contains(kind) {
-                    tracing::trace!("  filter: {:?}", kind);
                     let sym = self.lookup_member_symbol(obj_type_symbol, member_name, Some(kind));
                     if sym.is_some() {
                         return sym;
                     }
                 }
             }
-        } else {
-            tracing::trace!("looking up member '{}' in type scope", member_name);
         }
         None
     }
@@ -228,27 +204,13 @@ impl<'a> BinderScopes<'a> {
         member_name: &str,
         kind_filter: Option<SymKind>,
     ) -> Option<&'a Symbol> {
-        tracing::trace!(
-            "lookup_member_symbol: '{}' in {:?} (kind={:?})",
-            member_name,
-            obj_type_symbol.name,
-            obj_type_symbol.kind()
-        );
-
         // For TypeAlias (like Self), follow type_of to get the actual type
         let effective_symbol = if obj_type_symbol.kind() == SymKind::TypeAlias {
             if let Some(type_of_id) = obj_type_symbol.type_of() {
-                let resolved = self
-                    .unit
+                self.unit
                     .cc
                     .opt_get_symbol(type_of_id)
-                    .unwrap_or(obj_type_symbol);
-                tracing::trace!(
-                    "  -> followed type_of to {:?} (kind={:?})",
-                    resolved.name,
-                    resolved.kind()
-                );
-                resolved
+                    .unwrap_or(obj_type_symbol)
             } else {
                 obj_type_symbol
             }
@@ -281,11 +243,6 @@ impl<'a> BinderScopes<'a> {
         qualified_name: &[&str],
         kind_filters: SymKindSet,
     ) -> Option<Vec<&'a Symbol>> {
-        tracing::trace!(
-            "lookup qualified {:?} with kind_filters {:?}",
-            qualified_name,
-            kind_filters
-        );
         let mut options = LookupOptions::default().with_shift_start(true);
         if !kind_filters.is_empty() {
             options = options.with_kind_set(kind_filters)
@@ -303,24 +260,12 @@ impl<'a> BinderScopes<'a> {
         let symbols = self.lookup_qualified(qualified_name, kind_filters)?;
         let current_unit = self.unit.index;
 
-        tracing::trace!(
-            "lookup_qualified_symbol: '{:?}' found {} symbols, current_unit={}: {:?}",
-            qualified_name,
-            symbols.len(),
-            current_unit,
-            symbols
-                .iter()
-                .map(|s| (s.id(), s.unit_index()))
-                .collect::<Vec<_>>()
-        );
-
         if symbols.len() > 1 {
             // 1. Prefer symbols from the current unit (same file)
             if let Some(local_sym) = symbols
                 .iter()
                 .find(|s| s.unit_index() == Some(current_unit))
             {
-                tracing::trace!("  -> preferring local symbol {:?}", local_sym.id());
                 return Some(*local_sym);
             }
 
@@ -330,17 +275,13 @@ impl<'a> BinderScopes<'a> {
                 .iter()
                 .find(|s| s.crate_index() == Some(current_crate_index))
             {
-                tracing::trace!(
-                    "preferring same-crate symbol for qualified '{:?}' crate_index={}",
-                    qualified_name,
-                    current_crate_index
-                );
                 return Some(*same_crate_sym);
             }
 
             tracing::warn!(
-                "multiple symbols found for qualified '{:?}', returning the last one",
-                qualified_name
+                path = ?qualified_name,
+                count = symbols.len(),
+                "multiple symbols found for qualified path, returning the last one"
             );
         }
         symbols.last().copied()
@@ -357,43 +298,38 @@ pub fn bind_symbols_with<'a, L: LanguageTraitImpl>(
     config: &ResolverOption,
 ) {
     let total_start = Instant::now();
+    let unit_count = cc.files.len();
+    tracing::info!(unit_count, "starting symbol binding");
 
-    tracing::info!("starting symbol binding for total {} units", cc.files.len());
-
-    // Atomic counter for parallel CPU time
     let bind_cpu_time_ns = AtomicU64::new(0);
 
     let bind_unit = |unit_index: usize| {
         let bind_start = Instant::now();
-
-        tracing::debug!("binding symbols for unit {}", unit_index);
         let unit = cc.compile_unit(unit_index);
         let id = unit.file_root_id().unwrap();
         let node = unit.hir_node(id);
         L::bind_symbols(unit, node, globals, config);
-
         bind_cpu_time_ns.fetch_add(bind_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
     };
 
     let parallel_start = Instant::now();
     if config.sequential {
-        tracing::debug!("running symbol binding sequentially");
-        (0..cc.files.len()).for_each(bind_unit);
+        (0..unit_count).for_each(bind_unit);
     } else {
-        tracing::debug!("running symbol binding in parallel");
-        (0..cc.files.len()).into_par_iter().for_each(bind_unit);
+        (0..unit_count).into_par_iter().for_each(bind_unit);
     }
-    let parallel_time = parallel_start.elapsed();
-
-    let total_time = total_start.elapsed();
+    let parallel_ms = parallel_time_ms(parallel_start);
     let bind_cpu_ms = bind_cpu_time_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
+    let total_ms = parallel_time_ms(total_start);
 
     tracing::info!(
-        "binding breakdown: parallel={:.2}ms (bind_cpu={:.2}ms), total={:.2}ms",
-        parallel_time.as_secs_f64() * 1000.0,
+        parallel_ms,
         bind_cpu_ms,
-        total_time.as_secs_f64() * 1000.0,
+        total_ms,
+        "symbol binding complete"
     );
+}
 
-    tracing::info!("symbol binding complete");
+fn parallel_time_ms(start: Instant) -> f64 {
+    start.elapsed().as_secs_f64() * 1000.0
 }

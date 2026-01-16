@@ -1,3 +1,4 @@
+//! Test infrastructure and corpus management.
 pub mod corpus;
 pub mod runner;
 pub mod snapshot;

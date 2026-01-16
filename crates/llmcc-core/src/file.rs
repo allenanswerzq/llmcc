@@ -1,3 +1,5 @@
+//! Source file handling.
+//! Source file handling.
 use std::fs::File as StdFile;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::io::Read;

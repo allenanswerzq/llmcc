@@ -42,16 +42,10 @@ impl<'tcx> BinderVisitor<'tcx> {
         node: &HirNode<'tcx>,
         sn: &'tcx HirScope<'tcx>,
         scopes: &mut BinderScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
+        _namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
         on_scope_enter: Option<ScopeEnterFn<'tcx>>,
     ) {
-        tracing::trace!(
-            "visiting scoped named node kind: {:?}, namespace id: {:?}, parent: {:?}",
-            node.kind_id(),
-            namespace.id(),
-            parent.map(|p| p.format(Some(unit.interner()))),
-        );
         let depth = scopes.scope_depth();
 
         // Any visibility modifier (pub, pub(crate), pub(super), etc.) makes the symbol global
@@ -87,17 +81,15 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
-        let file_path = unit.file_path().unwrap();
+        let _file_path = unit.file_path().unwrap();
         let depth = scopes.scope_depth();
         let meta = unit.unit_meta();
 
-        tracing::trace!("binding source_file: {}", file_path);
         if let Some(ref crate_name) = meta.package_name
             && let Some(symbol) =
                 scopes.lookup_symbol(crate_name, SymKindSet::from_kind(SymKind::Crate))
             && let Some(scope_id) = symbol.opt_scope()
         {
-            tracing::trace!("pushing crate scope {:?}", scope_id);
             scopes.push_scope(scope_id);
         }
 
@@ -106,7 +98,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 scopes.lookup_symbol(module_name, SymKindSet::from_kind(SymKind::Module))
             && let Some(scope_id) = symbol.opt_scope()
         {
-            tracing::trace!("pushing module scope {:?}", scope_id);
             scopes.push_scope(scope_id);
         }
 
@@ -115,7 +106,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 scopes.lookup_symbol(file_name, SymKindSet::from_kind(SymKind::File))
             && let Some(scope_id) = file_sym.opt_scope()
         {
-            tracing::trace!("pushing file scope {} {:?}", file_path, scope_id);
             scopes.push_scope(scope_id);
 
             let file_scope = unit.get_scope(scope_id);
@@ -203,14 +193,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(type_param_sym) = node.ident_symbol_by_field(unit, LangRust::field_name) {
             // Priority 1: Look for trait bounds (T: Trait)
             if let Some(bounds_node) = node.child_by_field(unit, LangRust::field_bounds) {
-                // trait_bounds contains the trait types - get the first one
                 if let Some(first_bound) = infer_type(unit, scopes, &bounds_node) {
                     type_param_sym.set_type_of(first_bound.id());
-                    tracing::trace!(
-                        "type parameter '{}' has bound '{}'",
-                        type_param_sym.format(Some(unit.interner())),
-                        first_bound.format(Some(unit.interner())),
-                    );
                     return;
                 }
             }
@@ -218,11 +202,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             if let Some(default_node) = node.child_by_field(unit, LangRust::field_default_type) {
                 if let Some(default_type) = infer_type(unit, scopes, &default_node) {
                     type_param_sym.set_type_of(default_type.id());
-                    tracing::trace!(
-                        "type parameter '{}' has default '{}'",
-                        type_param_sym.format(Some(unit.interner())),
-                        default_type.format(Some(unit.interner())),
-                    );
                 }
             }
         }
@@ -292,11 +271,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         };
 
         if let Some(return_type) = node.ident_symbol_by_field(unit, LangRust::field_return_type) {
-            tracing::trace!(
-                "binding function return type '{}' to '{}'",
-                return_type.format(Some(unit.interner())),
-                fn_sym.format(Some(unit.interner()))
-            );
             fn_sym.set_type_of(return_type.id());
         }
 
@@ -342,19 +316,13 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             scopes,
             namespace,
             parent,
-            Some(Box::new(|unit, sn, scopes| {
+            Some(Box::new(|_unit, sn, scopes| {
                 for key in ["Self", "self"] {
                     if let Some(self_sym) =
                         scopes.lookup_symbol(key, SymKindSet::from_kind(SymKind::TypeAlias))
                         && let Some(struct_sym) = sn.opt_symbol()
                     {
-                        tracing::trace!(
-                            "binding '{}' to struct type '{}'",
-                            key,
-                            struct_sym.format(Some(unit.interner())),
-                        );
                         self_sym.set_type_of(struct_sym.id());
-                        // assign scope
                         if let Some(struct_scope) = struct_sym.opt_scope() {
                             self_sym.set_scope(struct_scope);
                         }
@@ -383,19 +351,13 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             scopes,
             namespace,
             parent,
-            Some(Box::new(|unit, sn, scopes| {
+            Some(Box::new(|_unit, sn, scopes| {
                 for key in ["Self", "self"] {
                     if let Some(self_sym) =
                         scopes.lookup_symbol(key, SymKindSet::from_kind(SymKind::TypeAlias))
                         && let Some(trait_sym) = sn.opt_symbol()
                     {
-                        tracing::trace!(
-                            "binding '{}' to trait type '{}'",
-                            key,
-                            trait_sym.format(Some(unit.interner())),
-                        );
                         self_sym.set_type_of(trait_sym.id());
-                        // assign scope
                         if let Some(trait_scope) = trait_sym.opt_scope() {
                             self_sym.set_scope(trait_scope);
                         }
@@ -455,17 +417,10 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             let target_resolved = scopes.lookup_symbol(target_ident.name, SYM_KIND_IMPL_TARGETS);
 
             if target_sym.kind() == SymKind::UnresolvedType {
-                // Resolve the type for the impl type now
                 if let Some(resolved) = target_resolved
                     && resolved.id() != target_sym.id()
                     && !matches!(resolved.kind(), SymKind::UnresolvedType)
                 {
-                    tracing::trace!(
-                        "resolving impl target type '{}' to '{}'",
-                        target_sym.format(Some(unit.interner())),
-                        resolved.format(Some(unit.interner())),
-                    );
-                    // Update the unresolved symbol to point to the actual type
                     target_sym.set_type_of(resolved.id());
                     target_sym.set_kind(resolved.kind());
                     target_sym.set_is_global(resolved.is_global());
@@ -473,12 +428,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                     if let Some(resolved_scope) = resolved.opt_scope()
                         && let Some(target_scoped) = target_sym.opt_scope()
                     {
-                        // Build parent scope relationship
-                        tracing::trace!(
-                            "connecting impl target '{}' and resolved type '{}'",
-                            resolved_scope,
-                            target_scoped
-                        );
                         let target_scope = unit.get_scope(target_scoped);
                         let resolved_scope = unit.get_scope(resolved_scope);
                         target_scope.add_parent(resolved_scope);
@@ -507,11 +456,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                     {
                         let target_scope = unit.get_scope(target_scope);
                         let trait_scope = unit.get_scope(trait_scope);
-                        tracing::trace!(
-                            "adding impl realtion: target '{}' implements trait '{}'",
-                            target_resolved.format(Some(unit.interner())),
-                            trait_sym.format(Some(unit.interner())),
-                        );
                         target_scope.add_parent(trait_scope);
                     }
                 }
@@ -530,11 +474,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                         if let Some(type_arg_sym) = infer_type(unit, scopes, &child) {
                             if type_arg_sym.kind().is_defined_type() {
                                 target_sym.add_nested_type(type_arg_sym.id());
-                                tracing::trace!(
-                                    "impl type arg: {} -> {}",
-                                    type_arg_sym.format(Some(unit.interner())),
-                                    target_sym.format(Some(unit.interner())),
-                                );
                             }
                         }
                     }
@@ -778,11 +717,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                                 && index < nested.len()
                             {
                                 field_sym.set_type_of(nested[index]);
-                                tracing::trace!(
-                                    "tuple indexing: {} has type from nested_types[{}]",
-                                    field_sym.format(Some(unit.interner())),
-                                    index
-                                );
                             }
                         }
                     }

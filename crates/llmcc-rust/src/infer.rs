@@ -271,7 +271,6 @@ fn infer_struct_expression<'tcx>(
         && let Some(sym) = infer_type_impl(unit, scopes, &name_node, depth + 1)
         && SYM_KIND_TYPES.contains(sym.kind())
     {
-        tracing::trace!("inferring struct type from name node");
         return Some(sym);
     }
 
@@ -333,8 +332,6 @@ fn infer_scoped_identifier<'tcx>(
     }
 
     let qualified_names: Vec<&str> = idents.iter().map(|i| i.name).collect();
-
-    tracing::trace!("resolving scoped ident {:?}", qualified_names);
 
     // Handle Rust's "crate" keyword by replacing with actual crate name
     let resolved_path: Vec<&str>;

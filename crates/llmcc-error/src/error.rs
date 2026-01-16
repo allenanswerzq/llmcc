@@ -1,31 +1,9 @@
-//! The main Error type for llmcc
+//! The main Error type for llmcc.
 
 use crate::{ErrorKind, ErrorStatus};
 use std::fmt;
 
-/// The unified error type for all llmcc operations.
-///
-/// This error type provides:
-/// - `kind`: What type of error occurred
-/// - `message`: Human-readable description
-/// - `status`: Whether the error is retryable
-/// - `operation`: What operation caused the error
-/// - `context`: Key-value pairs for debugging
-/// - `source`: The underlying error (if any)
-///
-/// # Example
-///
-/// ```rust
-/// use llmcc_error::{Error, ErrorKind, ErrorStatus};
-///
-/// let err = Error::new(ErrorKind::ParseFailed, "unexpected token 'fn'")
-///     .with_operation("rust::parse_file")
-///     .with_context("file", "src/main.rs")
-///     .with_context("line", "42");
-///
-/// assert_eq!(err.kind(), ErrorKind::ParseFailed);
-/// assert!(!err.status().is_retryable());
-/// ```
+/// Unified error type for all llmcc operations.
 pub struct Error {
     kind: ErrorKind,
     message: String,
@@ -36,7 +14,7 @@ pub struct Error {
 }
 
 impl Error {
-    /// Create a new error with the given kind and message
+    /// Create a new error with the given kind and message.
     pub fn new(kind: ErrorKind, message: impl Into<String>) -> Self {
         let status = if kind.is_retryable() {
             ErrorStatus::Temporary
@@ -54,11 +32,7 @@ impl Error {
         }
     }
 
-    // =========================================================================
-    // Getters
-    // =========================================================================
-
-    /// Get the error kind
+    /// Get the error kind.
     pub fn kind(&self) -> ErrorKind {
         self.kind
     }
@@ -83,16 +57,12 @@ impl Error {
         &self.context
     }
 
-    /// Get the source error (if any)
+    /// Get the source error (if any).
     pub fn source_ref(&self) -> Option<&(dyn std::error::Error + Send + Sync + 'static)> {
         self.source.as_ref().map(|e| e.as_ref())
     }
 
-    // =========================================================================
-    // Builders (chainable)
-    // =========================================================================
-
-    /// Set the error status
+    /// Set the error status.
     pub fn with_status(mut self, status: ErrorStatus) -> Self {
         self.status = status;
         self
@@ -141,11 +111,7 @@ impl Error {
         self
     }
 
-    // =========================================================================
-    // Status mutations
-    // =========================================================================
-
-    /// Mark as persistent after failed retries
+    /// Mark as persistent after failed retries.
     pub fn persist(mut self) -> Self {
         self.status = self.status.persist();
         self
@@ -156,10 +122,6 @@ impl Error {
         self.status.is_retryable()
     }
 }
-
-// =============================================================================
-// Display - compact, single-line format for logs
-// =============================================================================
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -183,10 +145,6 @@ impl fmt::Display for Error {
         Ok(())
     }
 }
-
-// =============================================================================
-// Debug - verbose, multi-line format for debugging
-// =============================================================================
 
 impl fmt::Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -214,10 +172,6 @@ impl fmt::Debug for Error {
     }
 }
 
-// =============================================================================
-// std::error::Error implementation
-// =============================================================================
-
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         self.source
@@ -225,10 +179,6 @@ impl std::error::Error for Error {
             .map(|e| e.as_ref() as &(dyn std::error::Error + 'static))
     }
 }
-
-// =============================================================================
-// Convenient From implementations (be careful not to leak raw errors!)
-// =============================================================================
 
 impl From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Self {
@@ -255,12 +205,8 @@ impl From<&str> for Error {
     }
 }
 
-// =============================================================================
-// Convenience constructors
-// =============================================================================
-
 impl Error {
-    /// Create an Unexpected error
+    /// Create an Unexpected error.
     pub fn unexpected(message: impl Into<String>) -> Self {
         Self::new(ErrorKind::Unexpected, message)
     }

@@ -154,9 +154,7 @@ pub fn render_aggregated_graph(
     )
 }
 
-// ============================================================================
 // Component Mapping
-// ============================================================================
 
 fn build_component_mapping(
     nodes: &[RenderNode],
@@ -196,9 +194,7 @@ fn build_component_mapping(
     (block_to_component, component_nodes)
 }
 
-// ============================================================================
 // PageRank Filtering
-// ============================================================================
 
 fn compute_pagerank_components(
     project: &ProjectGraph,
@@ -231,9 +227,7 @@ fn compute_pagerank_components(
     Some(top_components)
 }
 
-// ============================================================================
 // Edge Aggregation
-// ============================================================================
 
 /// Aggregate edges between components with correct dependency direction.
 fn aggregate_edges(
@@ -294,9 +288,7 @@ fn filter_weak_edges(
         .collect()
 }
 
-// ============================================================================
 // Filtering
-// ============================================================================
 
 fn determine_visible_components(
     component_edges: &BTreeMap<(String, String), usize>,
@@ -343,9 +335,7 @@ fn filter_nodes_by_edges<'a>(
         .collect()
 }
 
-// ============================================================================
 // DOT Rendering
-// ============================================================================
 
 fn render_to_dot(
     depth: ComponentDepth,

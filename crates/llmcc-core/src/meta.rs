@@ -1,40 +1,10 @@
-//! Module detection using a Patricia trie to compress file paths into 4 architecture levels.
-//!
-//! # The 4-Level Architecture
-//!
-//! Every source file is mapped to exactly 4 semantic levels:
-//! - **Level 0 (Project)**: The entire repository/workspace
-//! - **Level 1 (Package)**: A distributable unit (npm package, Rust crate) - DEVELOPER DEFINED
-//! - **Level 2 (Module)**: A major subsystem within a package - INFERRED
-//! - **Level 3 (File)**: The individual source file
-//!
-//! # Philosophy
-//!
-//! Packages (Cargo.toml, package.json) are the **real semantic boundaries** - developers
-//! explicitly created them. We respect these as-is.
-//!
-//! For modules, we use a per-file bottom-up approach: walk up from each file toward the
-//! package root, finding the first directory that represents a meaningful grouping.
-//!
-//! # Algorithm: Per-File Bottom-Up Module Detection
-//!
-//! For each file:
-//! 1. Get path components from package root (excluding containers like `src/`)
-//! 2. Walk UP from deepest to shallowest
-//! 3. Find the first ancestor where going "deeper" provides meaningful subdivision
-//!
-//! A directory is a good module boundary if:
-//! - It has siblings (alternatives at the same level)
-//! - Its siblings collectively represent >20% of the package's files
-//!
-//! This naturally handles variable depths - different subtrees can have different module levels.
+//! Module detection mapping file paths to 4 architecture levels:
+//! Project → Package → Module → File.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-// ============================================================================
 // Public Types
-// ============================================================================
 
 /// The four fixed architecture levels.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -110,9 +80,7 @@ impl UnitMeta {
     }
 }
 
-// ============================================================================
 // Trie Node
-// ============================================================================
 
 /// A node in the Patricia trie.
 ///
@@ -140,9 +108,7 @@ impl TrieNode {
     }
 }
 
-// ============================================================================
 // Package Info
-// ============================================================================
 
 #[derive(Debug, Clone)]
 struct PackageInfo {
@@ -155,9 +121,7 @@ struct PackageInfo {
     has_manifest: bool,
 }
 
-// ============================================================================
 // Module Detector
-// ============================================================================
 
 /// Detects and caches module structure for a project.
 pub struct UnitMetaBuilder {
@@ -260,9 +224,7 @@ impl UnitMetaBuilder {
         self.compute_module_info(file)
     }
 
-    // ========================================================================
     // Step 1: Detect Packages
-    // ========================================================================
 
     fn detect_packages(&mut self, files: &[PathBuf]) {
         let mut seen = std::collections::HashSet::new();
@@ -337,9 +299,7 @@ impl UnitMetaBuilder {
         }
     }
 
-    // ========================================================================
     // Step 2: Build Tries
-    // ========================================================================
 
     fn build_tries(&mut self, files: &[PathBuf]) {
         let all_roots: Vec<PathBuf> = self.packages.iter().map(|p| p.root.clone()).collect();
@@ -362,8 +322,6 @@ impl UnitMetaBuilder {
                 Self::insert_file(&mut pkg.trie, file, &pkg.root, self.container_dirs);
                 pkg.total_files += 1;
             }
-
-            tracing::debug!("Package '{}': {} files in trie", pkg.name, pkg.total_files);
         }
     }
 
@@ -390,9 +348,7 @@ impl UnitMetaBuilder {
         current.file_count += 1;
     }
 
-    // ========================================================================
     // Per-File Module Detection
-    // ========================================================================
 
     /// Find the module for a file by walking up from the file to the package root.
     ///
@@ -461,9 +417,7 @@ impl UnitMetaBuilder {
         path_nodes.first().map(|(name, _, _)| (0, *name))
     }
 
-    // ========================================================================
     // Module Info Lookup
-    // ========================================================================
 
     fn compute_module_info(&self, file: &Path) -> UnitMeta {
         let mut info = UnitMeta {

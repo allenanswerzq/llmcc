@@ -50,7 +50,6 @@ impl<'tcx> CollectorVisitor<'tcx> {
             .ident_by_field(unit, field_id)
             .or_else(|| node.as_scope().and_then(|sn| sn.opt_ident()))?;
 
-        tracing::trace!("declaring symbol '{}' of kind {:?}", ident.name, kind);
         let sym = scopes.lookup_or_insert(ident.name, node, kind)?;
         ident.set_symbol(sym);
 
@@ -131,42 +130,18 @@ impl<'tcx> CollectorVisitor<'tcx> {
         node: &HirNode<'tcx>,
         kind: SymKind,
     ) -> Option<&'tcx Symbol> {
-        tracing::trace!(
-            "looking up or converting symbol '{}' of kind {:?}",
-            name,
-            kind
-        );
-
-        // Try looking up by primary kind
         if let Some(symbol) = scopes.lookup_symbol(name, SymKindSet::from_kind(kind)) {
-            tracing::trace!(
-                "found existing symbol '{}' of kind {:?} {:?}",
-                name,
-                kind,
-                symbol,
-            );
             return Some(symbol);
         }
 
-        // Try unresolved type if not found - convert to target kind
         if let Some(symbol) =
             scopes.lookup_symbol(name, SymKindSet::from_kind(SymKind::UnresolvedType))
         {
-            tracing::trace!(
-                "found existing unresolved symbol '{}', converting to {:?}, {:?}",
-                name,
-                kind,
-                symbol,
-            );
-            // Actually convert the UnresolvedType to the target kind
             symbol.set_kind(kind);
             return Some(symbol);
         }
 
-        // Insert new symbol with primary kind
         if let Some(symbol) = scopes.lookup_or_insert(name, node, kind) {
-            tracing::trace!("inserting new symbol '{}' of kind {:?}", name, kind,);
-            // create a scope for this symbol if needed
             if symbol.opt_scope().is_none() {
                 let scope = self.alloc_scope(unit, symbol);
                 symbol.set_scope(scope.id());
@@ -191,34 +166,14 @@ impl<'tcx> CollectorVisitor<'tcx> {
         ident: &'tcx HirIdent<'tcx>,
         on_scope_enter: Option<ScopeEntryCallback<'tcx>>,
     ) {
-        tracing::trace!(
-            "visiting with scope for symbol {}",
-            sym.format(Some(scopes.interner()))
-        );
         ident.set_symbol(sym);
         sn.set_ident(ident);
 
         let scope = if sym.opt_scope().is_none() {
-            tracing::trace!(
-                "allocating new scope for symbol {}",
-                sym.format(Some(scopes.interner()))
-            );
             self.alloc_scope(unit, sym)
         } else {
-            tracing::trace!(
-                "use existing scope for symbol {}",
-                sym.format(Some(scopes.interner()))
-            );
-            match self.get_scope(sym.scope()) {
-                Some(s) => s,
-                None => {
-                    tracing::warn!(
-                        "scope not found for symbol {}, allocating new",
-                        sym.format(Some(scopes.interner()))
-                    );
-                    self.alloc_scope(unit, sym)
-                }
-            }
+            self.get_scope(sym.scope())
+                .unwrap_or_else(|| self.alloc_scope(unit, sym))
         };
         sym.set_scope(scope.id());
         sn.set_scope(scope);
@@ -246,17 +201,10 @@ impl<'tcx> CollectorVisitor<'tcx> {
         field_id: u16,
         on_scope_enter: Option<ScopeEntryCallback<'tcx>>,
     ) {
-        if let Some((sn, ident)) = node.scope_and_ident_by_field(unit, field_id) {
-            tracing::trace!(
-                "visiting scoped named node with kind '{:?}' '{}'",
-                kind,
-                ident.name
-            );
-            if let Some(sym) = self.lookup_or_convert(unit, scopes, ident.name, node, kind) {
-                self.visit_with_scope(unit, node, scopes, sym, sn, ident, on_scope_enter);
-            }
-        } else {
-            tracing::warn!("scoped named node is missing scope or ident, skipping");
+        if let Some((sn, ident)) = node.scope_and_ident_by_field(unit, field_id)
+            && let Some(sym) = self.lookup_or_convert(unit, scopes, ident.name, node, kind)
+        {
+            self.visit_with_scope(unit, node, scopes, sym, sn, ident, on_scope_enter);
         }
     }
 }
@@ -319,7 +267,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         if let Some(ref crate_name) = meta.package_name
             && let Some(symbol) = scopes.lookup_or_insert_global(crate_name, node, SymKind::Crate)
         {
-            tracing::trace!("insert crate symbol in globals '{}'", crate_name);
             scopes.push_scope_with(node, Some(symbol));
             crate_scope = scopes.top();
         }
@@ -330,9 +277,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         if let Some(ref module_name) = meta.module_name
             && let Some(module_sym) = scopes.lookup_or_insert_global(module_name, node, SymKind::Module)
         {
-            tracing::trace!("insert module symbol in globals '{}'", module_name);
-            // Create a wrapper scope with the module symbol for hierarchy traversal.
-            // This scope is separate from the module symbol's resolution scope.
             let mod_scope = self.alloc_scope(unit, module_sym);
             if let Some(crate_s) = crate_scope {
                 mod_scope.add_parent(crate_s);
@@ -346,7 +290,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         if let Some(ref file_name) = meta.file_name
             && let Some(file_sym) = scopes.lookup_or_insert(file_name, node, SymKind::File)
         {
-            tracing::trace!("insert file symbol '{}' in current scope", file_name);
             let arena_name = unit.cc.arena().alloc_str(file_name);
             let ident = unit.cc.alloc_file_ident(next_hir_id(), arena_name, file_sym);
             ident.set_symbol(file_sym);
@@ -367,8 +310,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             scopes.push_scope(scope);
 
             if let Some(crate_sym) = scopes.lookup_or_insert_global("crate", node, SymKind::Module) {
-                tracing::trace!("insert 'crate' symbol in globals");
-                // Use the shared globals scope (first on stack), not the unit's local globals
                 crate_sym.set_scope(scopes.scopes().globals().id());
             }
 
@@ -378,21 +319,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             // Also insert into the crate scope for cross-crate qualified path resolution
             // (e.g., `crate_b::utils::helper` needs `utils` in `crate_b`'s scope).
             if file_name != "lib" && file_name != "main" && module_wrapper_scope.is_none() {
-                // Insert into global for backward compatibility
                 if let Some(mod_sym) = scopes.insert_in_global(file_name, node, SymKind::Module) {
-                    tracing::trace!("link file '{}' as module in global scope", file_name);
                     mod_sym.set_scope(scope.id());
                 }
-                // Also insert into crate scope for qualified path resolution like `crate_b::utils`
                 if let Some(crate_s) = crate_scope
                     && let Some(mod_sym) =
                         scopes.insert_in_scope(crate_s, file_name, node, SymKind::Module)
                 {
-                    tracing::trace!(
-                        "link file '{}' as module in crate scope {:?}",
-                        file_name,
-                        crate_s.id()
-                    );
                     mod_sym.set_scope(scope.id());
                 }
             }
@@ -424,13 +357,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
         // Callback to insert `super` symbol pointing to parent module scope
         let on_scope_enter: ScopeEntryCallback<'tcx> = Box::new(move |node, scopes| {
-            // Insert `super` symbol in current (module) scope, pointing to parent scope
             if let Some(super_sym) = scopes.lookup_or_insert("super", node, SymKind::Module) {
                 super_sym.set_scope(parent_scope_id);
-                tracing::trace!(
-                    "inserted 'super' symbol pointing to scope {:?}",
-                    parent_scope_id
-                );
             }
         });
 
@@ -645,11 +573,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             && let Some(symbol) =
                 self.lookup_or_convert(unit, scopes, ti.name, node, SymKind::UnresolvedType)
         {
-            tracing::trace!(
-                "visiting impl for type '{}', {:?}",
-                ti.name,
-                symbol.format(Some(scopes.interner())),
-            );
             ti.set_symbol(symbol);
             self.visit_with_scope(unit, node, scopes, symbol, sn, ti, None);
         }

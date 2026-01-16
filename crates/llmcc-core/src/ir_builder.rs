@@ -149,7 +149,7 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
                             *ident_node
                         } else {
                             let text = self.get_text(&base);
-                            tracing::trace!("scope crate non-identifier ident '{}'", text);
+
                             let hir_ident = HirIdent::new(base.clone(), text);
                             self.arena.alloc(hir_ident)
                         }
@@ -335,15 +335,17 @@ pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
     // No sort needed: DashMap already provides O(1) lookup by ID
     let collect_time = collect_start.elapsed();
 
-    let total_time = total_start.elapsed();
+    let total_ms = total_start.elapsed().as_secs_f64() * 1000.0;
+    let parallel_ms = parallel_time.as_secs_f64() * 1000.0;
     let build_cpu_ms = get_ir_build_cpu_time_ms();
+    let collect_ms = collect_time.as_secs_f64() * 1000.0;
 
     tracing::info!(
-        "ir_build breakdown: parallel={:.2}ms (build_cpu={:.2}ms), collect={:.2}ms, total={:.2}ms",
-        parallel_time.as_secs_f64() * 1000.0,
+        parallel_ms,
         build_cpu_ms,
-        collect_time.as_secs_f64() * 1000.0,
-        total_time.as_secs_f64() * 1000.0,
+        collect_ms,
+        total_ms,
+        "IR build complete"
     );
 
     Ok(())

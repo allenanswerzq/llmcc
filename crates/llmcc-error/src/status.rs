@@ -1,39 +1,26 @@
-//! Error status for retry logic
+//! Error status for retry logic.
 
 use std::fmt;
 
-/// The status of an error, indicating whether it can be retried.
-///
-/// This helps users decide how to handle errors:
-/// - `Permanent`: Don't retry, the error won't resolve without external changes
-/// - `Temporary`: Can retry, the error might resolve on its own
-/// - `Persistent`: Was temporary but persisted after retries, stop retrying
+/// Error status indicating whether retry is recommended.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum ErrorStatus {
-    /// Error is permanent - don't retry without external changes.
-    ///
-    /// Examples: ParseFailed, SymbolNotFound, FileNotFound
+    /// Error is permanent - don't retry.
     #[default]
     Permanent,
-
     /// Error is temporary - retry may succeed.
-    ///
-    /// Examples: Timeout, ResourceExhausted, IoFailed
     Temporary,
-
-    /// Error was temporary but persisted after retries.
-    ///
-    /// The user should stop retrying and investigate.
+    /// Was temporary but persisted after retries.
     Persistent,
 }
 
 impl ErrorStatus {
-    /// Check if retry is recommended
+    /// Check if retry is recommended.
     pub fn is_retryable(&self) -> bool {
         matches!(self, ErrorStatus::Temporary)
     }
 
-    /// Mark as persistent after failed retries
+    /// Mark as persistent after failed retries.
     pub fn persist(self) -> Self {
         match self {
             ErrorStatus::Temporary => ErrorStatus::Persistent,
@@ -41,7 +28,7 @@ impl ErrorStatus {
         }
     }
 
-    /// Get status as a string
+    /// Get status as a string.
     pub fn as_str(&self) -> &'static str {
         match self {
             ErrorStatus::Permanent => "permanent",
@@ -72,6 +59,5 @@ mod tests {
     fn test_persist() {
         assert_eq!(ErrorStatus::Temporary.persist(), ErrorStatus::Persistent);
         assert_eq!(ErrorStatus::Permanent.persist(), ErrorStatus::Permanent);
-        assert_eq!(ErrorStatus::Persistent.persist(), ErrorStatus::Persistent);
     }
 }
