@@ -163,10 +163,6 @@ fn infer_type_impl<'tcx>(
             if let Some(ident) = node.find_ident(unit) {
                 return ident.opt_symbol();
             }
-            // search from scopes
-            // if let Some(ty) = scopes.lookup_symbol(&unit.hir_text(node), SymKind::type_kinds()) {
-            //     return Some(ty);
-            // }
             None
         }
     }

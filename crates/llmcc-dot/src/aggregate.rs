@@ -358,14 +358,6 @@ fn render_to_dot(
     output.push_str("  node [shape=box, style=\"rounded,filled\", fillcolor=\"#f0f0f0\", fontname=\"Helvetica\"];\n");
     output.push_str("  edge [color=\"#888888\", arrowsize=0.7];\n\n");
 
-    // Add title
-    // let title = match depth {
-    //     ComponentDepth::Project => "project graph",
-    //     ComponentDepth::Crate => "crate graph",
-    //     ComponentDepth::Module => "module graph",
-    //     ComponentDepth::File => "architecture graph",
-    // };
-    // output.push_str(&format!("  label=\"{}\";\n", title));
     output.push_str("  labelloc=t;\n");
     output.push_str("  fontsize=16;\n\n");
 
