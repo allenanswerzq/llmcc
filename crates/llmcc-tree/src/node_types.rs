@@ -19,8 +19,8 @@ impl NodeTypes {
     }
 
     pub fn from_str(contents: &str) -> Result<Self> {
-        let entries: Vec<NodeTypeEntry> = serde_json::from_str(contents)
-            .context("invalid node-types JSON")?;
+        let entries: Vec<NodeTypeEntry> =
+            serde_json::from_str(contents).context("invalid node-types JSON")?;
 
         let mut named = HashMap::new();
         for entry in entries {

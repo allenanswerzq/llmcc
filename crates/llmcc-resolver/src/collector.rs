@@ -417,7 +417,7 @@ pub fn build_and_collect_symbols<'a, L: LanguageTrait>(
     cc: &'a CompileCtxt<'a>,
     ir_config: llmcc_core::ir_builder::IrBuildOption,
     resolver_config: &ResolverOption,
-) -> Result<&'a Scope<'a>, llmcc_core::DynError> {
+) -> Result<&'a Scope<'a>, llmcc_core::Error> {
     use llmcc_core::ir_builder::{build_llmcc_ir_inner, reset_ir_build_counters};
     use std::sync::atomic::Ordering;
 
@@ -440,7 +440,7 @@ pub fn build_and_collect_symbols<'a, L: LanguageTrait>(
     let collect_ns = AtomicU64::new(0);
 
     // Fused per-file operation: IR build then collect
-    let build_and_collect_unit = |i: usize| -> Result<&'a Scope<'a>, llmcc_core::DynError> {
+    let build_and_collect_unit = |i: usize| -> Result<&'a Scope<'a>, llmcc_core::Error> {
         // Phase 1: IR Build
         let ir_start = Instant::now();
 
@@ -494,7 +494,7 @@ pub fn build_and_collect_symbols<'a, L: LanguageTrait>(
 
     // Run fused operation in parallel
     let parallel_start = Instant::now();
-    let unit_globals_vec: Vec<Result<&'a Scope<'a>, llmcc_core::DynError>> =
+    let unit_globals_vec: Vec<Result<&'a Scope<'a>, llmcc_core::Error>> =
         if resolver_config.sequential {
             tracing::debug!("running fused build+collect sequentially");
             (0..cc.files.len()).map(build_and_collect_unit).collect()

@@ -19,7 +19,7 @@ pub mod scope;
 pub mod symbol;
 pub mod visit;
 
-pub type DynError = Box<dyn std::error::Error + Send + Sync>;
+pub use llmcc_error::{Error, ErrorKind, ErrorStatus, Result};
 
 pub use context::{CompileCtxt, CompileUnit, FileOrder};
 pub use graph::{ProjectGraph, UnitGraph, UnitNode};

@@ -9,7 +9,7 @@ use std::time::Instant;
 
 use rayon::prelude::*;
 
-use crate::DynError;
+use crate::Result;
 use crate::context::CompileCtxt;
 use crate::ir::{
     Arena, HirBase, HirFile, HirId, HirIdent, HirInternal, HirKind, HirNode, HirScope, HirText,
@@ -265,7 +265,7 @@ pub fn build_llmcc_ir_inner<'unit, L: LanguageTrait>(
     parse_tree: &'unit dyn ParseTree,
     unit_arena: &'unit Arena<'unit>,
     config: IrBuildOption,
-) -> Result<HirId, DynError> {
+) -> Result<HirId> {
     let root = parse_tree
         .root_node()
         .ok_or_else(|| "ParseTree does not provide a root node".to_string())?;
@@ -286,11 +286,11 @@ struct BuildResult {
 pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
     cc: &'tcx CompileCtxt<'tcx>,
     config: IrBuildOption,
-) -> Result<(), DynError> {
+) -> Result<()> {
     let total_start = Instant::now();
     reset_ir_build_counters();
 
-    let build_one = |index: usize| -> Result<BuildResult, DynError> {
+    let build_one = |index: usize| -> Result<BuildResult> {
         let build_start = Instant::now();
 
         let file_path = cc.file_path(index).map(|p| p.to_string());
@@ -312,7 +312,7 @@ pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
     };
 
     let parallel_start = Instant::now();
-    let results: Vec<Result<BuildResult, DynError>> = if config.sequential {
+    let results: Vec<Result<BuildResult>> = if config.sequential {
         (0..cc.files.len()).map(build_one).collect()
     } else {
         (0..cc.files.len()).into_par_iter().map(build_one).collect()
@@ -321,7 +321,7 @@ pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
 
     let collect_start = Instant::now();
     // Collect results (no sorting needed - DashMap provides O(1) lookup by ID)
-    let results: Vec<BuildResult> = results.into_iter().collect::<Result<Vec<_>, _>>()?;
+    let results: Vec<BuildResult> = results.into_iter().collect::<Result<Vec<_>>>()?;
 
     // Register all file start IDs
     for BuildResult {
