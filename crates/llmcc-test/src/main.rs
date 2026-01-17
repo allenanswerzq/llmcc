@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-use anyhow::{Context, Result, anyhow};
 use clap::{Parser, Subcommand};
+use llmcc_error::{Error, ErrorKind, Result};
 
 use llmcc_test::{
     CaseOutcome, CaseStatus, Corpus, GraphOptions, ProcessingOptions, RunnerConfig, run_cases,
@@ -165,23 +165,34 @@ fn run_single_command(
     processing: ProcessingOptions,
 ) -> Result<()> {
     let mut corpus = Corpus::load(&root)?;
-    let root_canon = root
-        .canonicalize()
-        .with_context(|| format!("failed to resolve root {}", root.display()))?;
+    let root_canon = root.canonicalize().map_err(|e| {
+        Error::new(
+            ErrorKind::FileNotFound,
+            format!("failed to resolve root {}: {}", root.display(), e),
+        )
+    })?;
 
     let canonical = if file.is_absolute() {
-        file.canonicalize()
-            .with_context(|| format!("corpus file '{}' not found", file.display()))?
+        file.canonicalize().map_err(|e| {
+            Error::new(
+                ErrorKind::FileNotFound,
+                format!("corpus file '{}' not found: {}", file.display(), e),
+            )
+        })?
     } else {
         match file.canonicalize() {
             Ok(path) => path,
             Err(_) => {
                 let joined = root_canon.join(&file);
-                joined.canonicalize().with_context(|| {
-                    format!(
-                        "corpus file '{}' (joined with {}) not found",
-                        file.display(),
-                        root_canon.display()
+                joined.canonicalize().map_err(|e| {
+                    Error::new(
+                        ErrorKind::FileNotFound,
+                        format!(
+                            "corpus file '{}' (joined with {}) not found: {}",
+                            file.display(),
+                            root_canon.display(),
+                            e
+                        ),
                     )
                 })?
             }
@@ -193,10 +204,13 @@ fn run_single_command(
         .iter_mut()
         .find(|candidate| candidate.path == canonical)
     else {
-        return Err(anyhow!(
-            "file '{}' is not registered under {}",
-            file.display(),
-            root.display()
+        return Err(Error::new(
+            ErrorKind::FileNotFound,
+            format!(
+                "file '{}' is not registered under {}",
+                file.display(),
+                root.display()
+            ),
         ));
     };
 
@@ -238,13 +252,16 @@ fn list_command(root: PathBuf, filter: Option<String>) -> Result<()> {
         }
     }
     if count == 0 {
-        anyhow::bail!(
-            "no llmcc-test cases found{}",
-            filter
-                .as_ref()
-                .map(|term| format!(" matching '{term}'"))
-                .unwrap_or_default()
-        );
+        return Err(Error::new(
+            ErrorKind::InvalidArgument,
+            format!(
+                "no llmcc-test cases found{}",
+                filter
+                    .as_ref()
+                    .map(|term| format!(" matching '{term}'"))
+                    .unwrap_or_default()
+            ),
+        ));
     }
     Ok(())
 }
