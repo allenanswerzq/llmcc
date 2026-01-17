@@ -33,10 +33,10 @@ digraph architecture {
 
   crate_cairo_lang_casm -> crate_cairo_lang_utils;
   crate_cairo_lang_compiler -> crate_cairo_lang_filesystem;
+  crate_cairo_lang_compiler -> crate_cairo_lang_sierra;
   crate_cairo_lang_compiler -> crate_cairo_lang_utils;
   crate_cairo_lang_defs -> crate_cairo_lang_diagnostics;
   crate_cairo_lang_defs -> crate_cairo_lang_filesystem;
-  crate_cairo_lang_defs -> crate_cairo_lang_starknet;
   crate_cairo_lang_defs -> crate_cairo_lang_syntax;
   crate_cairo_lang_defs -> crate_cairo_lang_utils;
   crate_cairo_lang_doc -> crate_cairo_lang_semantic;
@@ -57,11 +57,11 @@ digraph architecture {
   crate_cairo_lang_plugins -> crate_cairo_lang_syntax;
   crate_cairo_lang_runner -> crate_cairo_lang_casm;
   crate_cairo_lang_runner -> crate_cairo_lang_sierra;
+  crate_cairo_lang_runner -> crate_cairo_lang_syntax;
   crate_cairo_lang_runner -> crate_cairo_lang_utils;
   crate_cairo_lang_semantic -> crate_cairo_lang_defs;
   crate_cairo_lang_semantic -> crate_cairo_lang_diagnostics;
   crate_cairo_lang_semantic -> crate_cairo_lang_filesystem;
-  crate_cairo_lang_semantic -> crate_cairo_lang_lowering;
   crate_cairo_lang_semantic -> crate_cairo_lang_sierra;
   crate_cairo_lang_semantic -> crate_cairo_lang_starknet;
   crate_cairo_lang_semantic -> crate_cairo_lang_starknet_classes;
@@ -71,6 +71,7 @@ digraph architecture {
   crate_cairo_lang_sierra -> crate_cairo_lang_starknet_classes;
   crate_cairo_lang_sierra -> crate_cairo_lang_utils;
   crate_cairo_lang_sierra_gas -> crate_cairo_lang_sierra;
+  crate_cairo_lang_sierra_gas -> crate_cairo_lang_syntax;
   crate_cairo_lang_sierra_gas -> crate_cairo_lang_utils;
   crate_cairo_lang_sierra_generator -> crate_cairo_lang_defs;
   crate_cairo_lang_sierra_generator -> crate_cairo_lang_lowering;
@@ -82,18 +83,19 @@ digraph architecture {
   crate_cairo_lang_sierra_to_casm -> crate_cairo_lang_semantic;
   crate_cairo_lang_sierra_to_casm -> crate_cairo_lang_sierra;
   crate_cairo_lang_sierra_to_casm -> crate_cairo_lang_sierra_gas;
-  crate_cairo_lang_sierra_to_casm -> crate_cairo_lang_syntax;
+  crate_cairo_lang_sierra_to_casm -> crate_cairo_lang_starknet;
   crate_cairo_lang_sierra_to_casm -> crate_cairo_lang_utils;
   crate_cairo_lang_starknet -> crate_cairo_lang_defs;
   crate_cairo_lang_starknet -> crate_cairo_lang_semantic;
-  crate_cairo_lang_starknet -> crate_cairo_lang_sierra_generator;
+  crate_cairo_lang_starknet -> crate_cairo_lang_sierra;
   crate_cairo_lang_starknet -> crate_cairo_lang_starknet_classes;
   crate_cairo_lang_starknet -> crate_cairo_lang_syntax;
   crate_cairo_lang_starknet -> crate_cairo_lang_utils;
-  crate_cairo_lang_starknet_classes -> crate_cairo_lang_syntax;
+  crate_cairo_lang_starknet_classes -> crate_cairo_lang_sierra;
   crate_cairo_lang_starknet_classes -> crate_cairo_lang_utils;
   crate_cairo_lang_syntax -> crate_cairo_lang_filesystem;
   crate_cairo_lang_utils -> crate_cairo_lang_defs;
   crate_cairo_lang_utils -> crate_cairo_lang_lowering;
   crate_cairo_lang_utils -> crate_cairo_lang_semantic;
+  crate_cairo_lang_utils -> crate_cairo_lang_sierra_generator;
 }

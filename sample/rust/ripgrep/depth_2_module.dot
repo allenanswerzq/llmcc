@@ -44,8 +44,9 @@ digraph architecture {
   mod_ignore_walk[label="ignore::walk", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/ignore/src"];
   mod_ripgrep_crates[label="ripgrep::crates", path="/home/yibai/llmcc/sample/repos/ripgrep/crates"];
 
-  mod_globset_lib -> mod_grep_regex_matcher;
+  mod_globset_lib -> mod_grep_searcher_testutil;
   mod_grep_cli_decompress -> mod_grep_cli_process;
+  mod_grep_cli_hostname -> mod_grep_cli_process;
   mod_grep_cli_hostname -> mod_grep_pcre2_error;
   mod_grep_cli_lib -> mod_grep_cli_process;
   mod_grep_cli_wtr -> mod_ripgrep_crates;
@@ -61,11 +62,12 @@ digraph architecture {
   mod_grep_regex_matcher -> mod_grep_regex_config;
   mod_grep_regex_non_matching -> mod_grep_matcher_lib;
   mod_grep_regex_strip -> mod_grep_regex_error;
-  mod_grep_searcher_lines -> mod_grep_matcher_lib;
+  mod_grep_searcher_lines -> mod_grep_printer_jsont;
   mod_grep_searcher_searcher -> mod_grep_matcher_lib;
   mod_grep_searcher_searcher -> mod_grep_searcher_line_buffer;
   mod_grep_searcher_searcher -> mod_grep_searcher_sink;
   mod_grep_searcher_testutil -> mod_grep_matcher_lib;
+  mod_grep_searcher_testutil -> mod_grep_searcher_searcher;
   mod_ignore_dir -> mod_ignore_gitignore;
   mod_ignore_dir -> mod_ignore_lib;
   mod_ignore_dir -> mod_ignore_overrides;
@@ -78,6 +80,7 @@ digraph architecture {
   mod_ignore_walk -> mod_ignore_lib;
   mod_ignore_walk -> mod_ripgrep_crates;
   mod_ripgrep_crates -> mod_grep_cli_process;
+  mod_ripgrep_crates -> mod_grep_cli_wtr;
   mod_ripgrep_crates -> mod_grep_matcher_lib;
   mod_ripgrep_crates -> mod_grep_printer_color;
   mod_ripgrep_crates -> mod_grep_printer_hyperlink;

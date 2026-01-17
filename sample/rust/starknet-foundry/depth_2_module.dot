@@ -164,6 +164,7 @@ digraph architecture {
   mod_cheatnet_call_to_blockifier_runtime_extension -> mod_cheatnet_state;
   mod_cheatnet_call_to_blockifier_runtime_extension -> mod_debugging_trace;
   mod_cheatnet_call_to_blockifier_runtime_extension -> mod_sncast_starknet_commands;
+  mod_cheatnet_call_to_blockifier_runtime_extension -> mod_snforge_scarb_plugin_deprecated_types;
   mod_cheatnet_call_to_blockifier_runtime_extension -> mod_snforge_scarb_plugin_types;
   mod_cheatnet_deprecated_cheatable_starknet_extension -> mod_cheatnet_state;
   mod_cheatnet_forge_config_extension -> mod_conversions_byte_array;
@@ -174,11 +175,11 @@ digraph architecture {
   mod_cheatnet_forge_runtime_extension -> mod_runtime_lib;
   mod_cheatnet_forge_runtime_extension -> mod_sncast_starknet_commands;
   mod_cheatnet_forge_runtime_extension -> mod_snforge_scarb_plugin_deprecated_types;
+  mod_cheatnet_forge_runtime_extension -> mod_snforge_scarb_plugin_types;
   mod_cheatnet_native -> mod_cheatnet_state;
   mod_cheatnet_predeployment -> mod_debugging_trace;
   mod_cheatnet_state -> mod_cheatnet_forge_runtime_extension;
   mod_cheatnet_state -> mod_debugging_trace;
-  mod_cheatnet_state -> mod_snforge_scarb_plugin_deprecated_types;
   mod_conversions_byte_array -> mod_snforge_scarb_plugin_deprecated_types;
   mod_data_transformer_reverse_transformer -> mod_conversions_serde;
   mod_data_transformer_reverse_transformer -> mod_data_transformer_cairo_types;
@@ -187,7 +188,7 @@ digraph architecture {
   mod_data_transformer_transformer -> mod_data_transformer_cairo_types;
   mod_data_transformer_transformer -> mod_snforge_scarb_plugin_deprecated_types;
   mod_debugging_trace -> mod_debugging_tree;
-  mod_forge_clean -> mod_foundry_ui_lib;
+  mod_forge_clean -> mod_sncast_response;
   mod_forge_new -> mod_forge_lib;
   mod_forge_profile_validation -> mod_forge_lib;
   mod_forge_run_tests -> mod_cheatnet_forge_config_extension;
@@ -196,8 +197,8 @@ digraph architecture {
   mod_forge_run_tests -> mod_forge_runner_package_tests;
   mod_forge_run_tests -> mod_forge_runner_test_target_summary;
   mod_forge_run_tests -> mod_forge_test_filter;
-  mod_forge_run_tests -> mod_foundry_ui_lib;
   mod_forge_run_tests -> mod_foundry_ui_message;
+  mod_forge_run_tests -> mod_sncast_response;
   mod_forge_runner_build_trace_data -> mod_cheatnet_forge_runtime_extension;
   mod_forge_runner_build_trace_data -> mod_cheatnet_forking;
   mod_forge_runner_gas -> mod_forge_runner_test_case_summary;
@@ -216,7 +217,8 @@ digraph architecture {
   mod_sncast_helpers -> mod_scarb_api_metadata;
   mod_sncast_helpers -> mod_sncast_lib;
   mod_sncast_helpers -> mod_sncast_response;
-  mod_sncast_lib -> mod_sncast_helpers;
+  mod_sncast_helpers -> mod_snforge_scarb_plugin_deprecated_parse;
+  mod_sncast_helpers -> mod_snforge_scarb_plugin_deprecated_types;
   mod_sncast_lib -> mod_sncast_response;
   mod_sncast_lib -> mod_snforge_scarb_plugin_deprecated_types;
   mod_sncast_lib -> mod_snforge_scarb_plugin_types;
@@ -227,7 +229,7 @@ digraph architecture {
   mod_sncast_response -> mod_foundry_ui_message;
   mod_sncast_response -> mod_sncast_helpers;
   mod_sncast_response -> mod_sncast_lib;
-  mod_sncast_response -> mod_snforge_scarb_plugin_deprecated_types;
+  mod_sncast_response -> mod_snforge_scarb_plugin_types;
   mod_sncast_starknet_commands -> mod_foundry_ui_message;
   mod_sncast_starknet_commands -> mod_runtime_lib;
   mod_sncast_starknet_commands -> mod_sncast_helpers;

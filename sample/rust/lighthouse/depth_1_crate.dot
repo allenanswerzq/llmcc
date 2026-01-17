@@ -57,12 +57,12 @@ digraph architecture {
   crate_validator_http_api[label="validator_http_api", path="/home/yibai/llmcc/sample/repos/lighthouse/validator_client/http_api"];
   crate_validator_manager[label="validator_manager", path="/home/yibai/llmcc/sample/repos/lighthouse/validator_manager"];
   crate_validator_services[label="validator_services", path="/home/yibai/llmcc/sample/repos/lighthouse/validator_client/validator_services"];
-  crate_validator_store[label="validator_store", path="/home/yibai/llmcc/sample/repos/lighthouse/validator_client/validator_store"];
   crate_warp_utils[label="warp_utils", path="/home/yibai/llmcc/sample/repos/lighthouse/common/warp_utils"];
 
   crate_account_manager -> crate_bls;
   crate_account_manager -> crate_eth2;
   crate_account_manager -> crate_operation_pool;
+  crate_account_manager -> crate_slasher;
   crate_account_manager -> crate_types;
   crate_beacon_chain -> crate_eth2_wallet_manager;
   crate_beacon_chain -> crate_execution_layer;
@@ -73,7 +73,6 @@ digraph architecture {
   crate_beacon_chain -> crate_oneshot_broadcast;
   crate_beacon_chain -> crate_operation_pool;
   crate_beacon_chain -> crate_proto_array;
-  crate_beacon_chain -> crate_signing_method;
   crate_beacon_chain -> crate_slot_clock;
   crate_beacon_chain -> crate_state_processing;
   crate_beacon_chain -> crate_store;
@@ -87,7 +86,6 @@ digraph architecture {
   crate_client -> crate_types;
   crate_database_manager -> crate_environment;
   crate_database_manager -> crate_store;
-  crate_database_manager -> crate_types;
   crate_environment -> crate_logging;
   crate_environment -> crate_types;
   crate_eth2 -> crate_context_deserialize;
@@ -98,14 +96,12 @@ digraph architecture {
   crate_eth2_wallet -> crate_eth2_keystore;
   crate_eth2_wallet_manager -> crate_eth2_wallet;
   crate_execution_layer -> crate_eth2;
-  crate_execution_layer -> crate_signing_method;
   crate_execution_layer -> crate_types;
   crate_fork_choice -> crate_types;
   crate_genesis -> crate_types;
   crate_http_api -> crate_beacon_chain;
   crate_http_api -> crate_beacon_processor;
   crate_http_api -> crate_eth2;
-  crate_http_api -> crate_eth2_wallet_manager;
   crate_http_api -> crate_lighthouse_network;
   crate_http_api -> crate_network;
   crate_http_api -> crate_oneshot_broadcast;
@@ -113,18 +109,19 @@ digraph architecture {
   crate_http_api -> crate_state_processing;
   crate_http_api -> crate_store;
   crate_http_api -> crate_types;
+  crate_http_api -> crate_validator_services;
   crate_http_api -> crate_warp_utils;
   crate_initialized_validators -> crate_eth2_keystore;
   crate_lcli -> crate_environment;
   crate_lcli -> crate_eth2_network_config;
   crate_lcli -> crate_slasher;
   crate_lcli -> crate_types;
+  crate_lighthouse_network -> crate_eth2;
   crate_lighthouse_network -> crate_signing_method;
   crate_lighthouse_network -> crate_types;
   crate_network -> crate_beacon_chain;
   crate_network -> crate_beacon_processor;
   crate_network -> crate_lighthouse_network;
-  crate_network -> crate_operation_pool;
   crate_network -> crate_store;
   crate_network -> crate_types;
   crate_operation_pool -> crate_beacon_chain;
@@ -155,7 +152,6 @@ digraph architecture {
   crate_validator_http_api -> crate_eth2;
   crate_validator_http_api -> crate_initialized_validators;
   crate_validator_http_api -> crate_lighthouse_validator_store;
-  crate_validator_http_api -> crate_slot_clock;
   crate_validator_http_api -> crate_task_executor;
   crate_validator_http_api -> crate_types;
   crate_validator_http_api -> crate_warp_utils;
@@ -167,7 +163,7 @@ digraph architecture {
   crate_validator_services -> crate_eth2_wallet_manager;
   crate_validator_services -> crate_slashing_protection;
   crate_validator_services -> crate_slot_clock;
+  crate_validator_services -> crate_state_processing;
   crate_validator_services -> crate_task_executor;
   crate_validator_services -> crate_types;
-  crate_validator_services -> crate_validator_store;
 }

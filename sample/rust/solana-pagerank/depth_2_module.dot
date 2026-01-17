@@ -43,6 +43,15 @@ digraph architecture {
     mod_agave_votor_consensus_pool[label="consensus_pool", path="/home/yibai/llmcc/sample/repos/solana/votor/src"];
   }
 
+  subgraph cluster_agave_xdp {
+    label="agave-xdp";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_agave_xdp_netlink[label="netlink", path="/home/yibai/llmcc/sample/repos/solana/xdp/src"];
+    mod_agave_xdp_route[label="route", path="/home/yibai/llmcc/sample/repos/solana/xdp/src"];
+  }
+
   subgraph cluster_agave_xdp_ebpf {
     label="agave-xdp-ebpf";
     style=rounded;
@@ -169,7 +178,6 @@ digraph architecture {
 
     mod_solana_rpc_rpc[label="rpc", path="/home/yibai/llmcc/sample/repos/solana/rpc/src"];
     mod_solana_rpc_rpc_subscription_tracker[label="rpc_subscription_tracker", path="/home/yibai/llmcc/sample/repos/solana/rpc/src"];
-    mod_solana_rpc_rpc_subscriptions[label="rpc_subscriptions", path="/home/yibai/llmcc/sample/repos/solana/rpc/src"];
   }
 
   subgraph cluster_solana_rpc_client {
@@ -179,7 +187,6 @@ digraph architecture {
 
     mod_solana_rpc_client_nonblocking[label="nonblocking", path="/home/yibai/llmcc/sample/repos/solana/rpc-client/src/nonblocking"];
     mod_solana_rpc_client_rpc_client[label="rpc_client", path="/home/yibai/llmcc/sample/repos/solana/rpc-client/src"];
-    mod_solana_rpc_client_rpc_sender[label="rpc_sender", path="/home/yibai/llmcc/sample/repos/solana/rpc-client/src"];
   }
 
   subgraph cluster_solana_rpc_client_types {
@@ -200,14 +207,6 @@ digraph architecture {
     mod_solana_runtime_bank_forks[label="bank_forks", path="/home/yibai/llmcc/sample/repos/solana/runtime/src"];
     mod_solana_runtime_serde_snapshot[label="serde_snapshot", path="/home/yibai/llmcc/sample/repos/solana/runtime/src"];
     mod_solana_runtime_snapshot_utils[label="snapshot_utils", path="/home/yibai/llmcc/sample/repos/solana/runtime/src"];
-  }
-
-  subgraph cluster_solana_storage_bigtable {
-    label="solana-storage-bigtable";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_solana_storage_bigtable_proto[label="proto", path="/home/yibai/llmcc/sample/repos/solana/storage-bigtable/proto"];
   }
 
   subgraph cluster_solana_streamer {
@@ -275,33 +274,32 @@ digraph architecture {
   }
 
 
-  mod_agave_install_command -> mod_solana_rpc_client_rpc_client;
-  mod_agave_syscalls_lib -> mod_solana_ledger_shred;
+  mod_agave_install_command -> mod_solana_rpc_client_nonblocking;
   mod_agave_syscalls_lib -> mod_solana_program_runtime_invoke_context;
   mod_agave_validator_bootstrap -> mod_agave_install_command;
   mod_agave_validator_bootstrap -> mod_solana_core_validator;
   mod_agave_validator_bootstrap -> mod_solana_gossip_cluster_info;
   mod_agave_validator_bootstrap -> mod_solana_rpc_client_rpc_client;
   mod_agave_votor_consensus_pool -> mod_solana_gossip_cluster_info;
+  mod_agave_xdp_route -> mod_agave_xdp_netlink;
   mod_solana_accounts_db_accounts_db -> mod_agave_xdp_ebpf_bin;
   mod_solana_accounts_db_accounts_db -> mod_solana_accounts_db_accounts_index;
   mod_solana_clap_v3_utils_input_parsers -> mod_solana_remote_wallet_remote_wallet;
   mod_solana_cli_cli -> mod_solana_cli_output_cli_output;
   mod_solana_cli_cli -> mod_solana_rpc_client_rpc_client;
   mod_solana_cli_cli -> mod_solana_rpc_client_types_config;
-  mod_solana_cli_cli -> mod_solana_turbine_broadcast_stage;
   mod_solana_cli_cluster_query -> mod_solana_cli_cli;
+  mod_solana_cli_cluster_query -> mod_solana_cli_output_display;
+  mod_solana_cli_cluster_query -> mod_solana_ledger_shred;
   mod_solana_cli_cluster_query -> mod_solana_remote_wallet_remote_wallet;
   mod_solana_cli_cluster_query -> mod_solana_rpc_client_nonblocking;
   mod_solana_cli_cluster_query -> mod_solana_rpc_client_types_config;
   mod_solana_cli_output_cli_output -> mod_solana_rpc_client_types_response;
   mod_solana_cli_output_cli_output -> mod_solana_transaction_status_client_types_lib;
-  mod_solana_cli_output_cli_output -> mod_solana_turbine_broadcast_stage;
   mod_solana_cli_output_display -> mod_solana_entry_wincode;
   mod_solana_cli_output_display -> mod_solana_transaction_status_client_types_lib;
   mod_solana_cli_program -> mod_solana_cli_cli;
   mod_solana_cli_program -> mod_solana_cli_output_cli_output;
-  mod_solana_cli_program -> mod_solana_ledger_shred;
   mod_solana_cli_program -> mod_solana_rpc_client_nonblocking;
   mod_solana_cli_program -> mod_solana_rpc_client_rpc_client;
   mod_solana_cli_stake -> mod_solana_cli_cli;
@@ -309,6 +307,7 @@ digraph architecture {
   mod_solana_cli_stake -> mod_solana_remote_wallet_remote_wallet;
   mod_solana_cli_stake -> mod_solana_rpc_client_rpc_client;
   mod_solana_cli_stake -> mod_solana_rpc_client_types_response;
+  mod_solana_cli_stake -> mod_solana_tokens_commands;
   mod_solana_core_banking_stage -> mod_solana_core_validator;
   mod_solana_core_banking_stage -> mod_solana_runtime_bank;
   mod_solana_core_banking_stage -> mod_solana_runtime_bank_forks;
@@ -335,7 +334,6 @@ digraph architecture {
   mod_solana_ledger_blockstore -> mod_solana_ledger_blockstore_db;
   mod_solana_ledger_blockstore -> mod_solana_ledger_shred;
   mod_solana_ledger_blockstore -> mod_solana_transaction_status_client_types_lib;
-  mod_solana_ledger_blockstore_db -> mod_solana_ledger_blockstore;
   mod_solana_ledger_blockstore_meta -> mod_solana_ledger_shred;
   mod_solana_ledger_blockstore_processor -> mod_agave_install_command;
   mod_solana_ledger_blockstore_processor -> mod_solana_entry_entry;
@@ -348,20 +346,15 @@ digraph architecture {
   mod_solana_ledger_shred -> mod_solana_runtime_bank;
   mod_solana_program_runtime_cpi -> mod_solana_program_runtime_invoke_context;
   mod_solana_program_runtime_invoke_context -> mod_solana_program_runtime_loaded_programs;
-  mod_solana_rpc_client_nonblocking -> mod_solana_rpc_client_rpc_sender;
   mod_solana_rpc_client_nonblocking -> mod_solana_rpc_client_types_response;
   mod_solana_rpc_client_types_config -> mod_solana_runtime_bank;
   mod_solana_rpc_client_types_config -> mod_solana_transaction_status_client_types_lib;
   mod_solana_rpc_client_types_response -> mod_solana_transaction_status_client_types_lib;
+  mod_solana_rpc_rpc -> mod_solana_entry_entry;
   mod_solana_rpc_rpc -> mod_solana_ledger_blockstore;
-  mod_solana_rpc_rpc -> mod_solana_ledger_shred;
+  mod_solana_rpc_rpc -> mod_solana_rpc_rpc_subscription_tracker;
   mod_solana_rpc_rpc -> mod_solana_runtime_bank;
-  mod_solana_rpc_rpc -> mod_solana_storage_bigtable_proto;
-  mod_solana_rpc_rpc_subscription_tracker -> mod_solana_rpc_rpc_subscriptions;
-  mod_solana_rpc_rpc_subscriptions -> mod_solana_rpc_client_types_response;
-  mod_solana_rpc_rpc_subscriptions -> mod_solana_rpc_rpc_subscription_tracker;
-  mod_solana_rpc_rpc_subscriptions -> mod_solana_runtime_bank;
-  mod_solana_rpc_rpc_subscriptions -> mod_solana_runtime_bank_forks;
+  mod_solana_runtime_bank -> mod_solana_ledger_shred;
   mod_solana_runtime_bank -> mod_solana_runtime_bank_forks;
   mod_solana_runtime_bank -> mod_solana_transaction_status_client_types_lib;
   mod_solana_runtime_bank_forks -> mod_solana_runtime_bank;

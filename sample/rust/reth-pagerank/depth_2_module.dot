@@ -28,14 +28,6 @@ digraph architecture {
     mod_reth_cli_commands_stage[label="stage", path="/home/yibai/llmcc/sample/repos/reth/crates/cli/commands/src/stage"];
   }
 
-  subgraph cluster_reth_codecs {
-    label="reth-codecs";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_reth_codecs_alloy[label="alloy", path="/home/yibai/llmcc/sample/repos/reth/crates/storage/codecs/src/alloy"];
-  }
-
   subgraph cluster_reth_config {
     label="reth-config";
     style=rounded;
@@ -61,6 +53,14 @@ digraph architecture {
     mod_reth_db_api_table[label="table", path="/home/yibai/llmcc/sample/repos/reth/crates/storage/db-api/src"];
   }
 
+  subgraph cluster_reth_discv5 {
+    label="reth-discv5";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_reth_discv5_error[label="error", path="/home/yibai/llmcc/sample/repos/reth/crates/net/discv5/src"];
+  }
+
   subgraph cluster_reth_e2e_test_utils {
     label="reth-e2e-test-utils";
     style=rounded;
@@ -83,7 +83,6 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_reth_eth_wire_types_broadcast[label="broadcast", path="/home/yibai/llmcc/sample/repos/reth/crates/net/eth-wire-types/src"];
-    mod_reth_eth_wire_types_message[label="message", path="/home/yibai/llmcc/sample/repos/reth/crates/net/eth-wire-types/src"];
   }
 
   subgraph cluster_reth_network {
@@ -91,7 +90,6 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_reth_network_session[label="session", path="/home/yibai/llmcc/sample/repos/reth/crates/net/network/src/session"];
     mod_reth_network_transactions[label="transactions", path="/home/yibai/llmcc/sample/repos/reth/crates/net/network/src/transactions"];
   }
 
@@ -120,6 +118,7 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_reth_node_core_args[label="args", path="/home/yibai/llmcc/sample/repos/reth/crates/node/core/src/args"];
+    mod_reth_node_core_dirs[label="dirs", path="/home/yibai/llmcc/sample/repos/reth/crates/node/core/src"];
   }
 
   subgraph cluster_reth_primitives_traits {
@@ -205,6 +204,7 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_reth_storage_errors_db[label="db", path="/home/yibai/llmcc/sample/repos/reth/crates/storage/errors/src"];
+    mod_reth_storage_errors_provider[label="provider", path="/home/yibai/llmcc/sample/repos/reth/crates/storage/errors/src"];
   }
 
   subgraph cluster_reth_tasks {
@@ -226,14 +226,6 @@ digraph architecture {
     mod_reth_transaction_pool_validate[label="validate", path="/home/yibai/llmcc/sample/repos/reth/crates/transaction-pool/src/validate"];
   }
 
-  subgraph cluster_reth_trie {
-    label="reth-trie";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_reth_trie_trie_cursor[label="trie_cursor", path="/home/yibai/llmcc/sample/repos/reth/crates/trie/trie/src/trie_cursor"];
-  }
-
   subgraph cluster_reth_trie_common {
     label="reth-trie-common";
     style=rounded;
@@ -245,40 +237,35 @@ digraph architecture {
 
 
   mod_reth_chainspec_spec -> mod_reth_e2e_test_utils_testsuite;
-  mod_reth_cli_commands_db -> mod_reth_db_api_table;
-  mod_reth_cli_commands_db -> mod_reth_provider_providers;
+  mod_reth_cli_commands_db -> mod_reth_discv5_error;
   mod_reth_cli_commands_db -> mod_reth_static_file_types_segment;
   mod_reth_cli_commands_stage -> mod_reth_consensus_lib;
   mod_reth_cli_commands_stage -> mod_reth_node_core_args;
+  mod_reth_cli_commands_stage -> mod_reth_node_core_dirs;
   mod_reth_cli_commands_stage -> mod_reth_provider_providers;
   mod_reth_cli_commands_stage -> mod_reth_storage_errors_db;
   mod_reth_consensus_lib -> mod_reth_primitives_traits_transaction;
   mod_reth_db_api_models -> mod_reth_db_api_table;
   mod_reth_engine_tree_tree -> mod_reth_consensus_lib;
-  mod_reth_engine_tree_tree -> mod_reth_eth_wire_types_message;
   mod_reth_engine_tree_tree -> mod_reth_primitives_traits_block;
   mod_reth_engine_tree_tree -> mod_reth_provider_test_utils;
   mod_reth_engine_tree_tree -> mod_reth_stages_stages;
   mod_reth_engine_tree_tree -> mod_reth_storage_errors_db;
+  mod_reth_engine_tree_tree -> mod_reth_storage_errors_provider;
   mod_reth_engine_tree_tree -> mod_reth_trie_common_hashed_state;
   mod_reth_engine_tree_tree -> mod_reth_trie_common_updates;
-  mod_reth_engine_tree_tree -> mod_reth_trie_trie_cursor;
-  mod_reth_eth_wire_types_message -> mod_reth_eth_wire_types_broadcast;
-  mod_reth_network_session -> mod_reth_eth_wire_types_message;
-  mod_reth_network_session -> mod_reth_tasks_lib;
   mod_reth_network_transactions -> mod_reth_eth_wire_types_broadcast;
   mod_reth_node_builder_builder -> mod_reth_node_api_node;
   mod_reth_node_builder_builder -> mod_reth_node_builder_components;
   mod_reth_node_builder_builder -> mod_reth_tasks_lib;
-  mod_reth_node_builder_components -> mod_reth_node_api_node;
   mod_reth_node_builder_components -> mod_reth_node_builder_builder;
   mod_reth_node_builder_components -> mod_reth_transaction_pool_blobstore;
-  mod_reth_node_builder_components -> mod_reth_transaction_pool_traits;
-  mod_reth_node_builder_launch -> mod_reth_node_api_node;
   mod_reth_node_builder_launch -> mod_reth_node_builder_builder;
+  mod_reth_node_builder_launch -> mod_reth_node_core_dirs;
   mod_reth_node_builder_rpc -> mod_reth_node_api_node;
   mod_reth_node_builder_rpc -> mod_reth_rpc_builder_lib;
   mod_reth_node_core_args -> mod_reth_network_transactions;
+  mod_reth_node_core_args -> mod_reth_node_core_dirs;
   mod_reth_primitives_traits_block -> mod_reth_primitives_traits_header;
   mod_reth_primitives_traits_block -> mod_reth_primitives_traits_serde_bincode_compat;
   mod_reth_primitives_traits_block -> mod_reth_rpc_eth_types_cache;
@@ -286,19 +273,17 @@ digraph architecture {
   mod_reth_primitives_traits_transaction -> mod_reth_stages_stages;
   mod_reth_provider_providers -> mod_reth_chainspec_spec;
   mod_reth_provider_providers -> mod_reth_db_api_models;
-  mod_reth_provider_providers -> mod_reth_primitives_traits_transaction;
   mod_reth_provider_providers -> mod_reth_static_file_types_segment;
-  mod_reth_provider_providers -> mod_reth_storage_errors_db;
   mod_reth_provider_providers -> mod_reth_trie_common_hashed_state;
   mod_reth_provider_providers -> mod_reth_trie_common_updates;
   mod_reth_provider_test_utils -> mod_reth_chainspec_spec;
-  mod_reth_provider_test_utils -> mod_reth_codecs_alloy;
   mod_reth_provider_test_utils -> mod_reth_primitives_traits_block;
   mod_reth_provider_test_utils -> mod_reth_primitives_traits_serde_bincode_compat;
   mod_reth_provider_test_utils -> mod_reth_provider_providers;
   mod_reth_provider_test_utils -> mod_reth_rpc_eth_types_cache;
   mod_reth_provider_test_utils -> mod_reth_stages_stages;
   mod_reth_prune_segments -> mod_reth_storage_errors_db;
+  mod_reth_prune_segments -> mod_reth_transaction_pool_validate;
   mod_reth_rpc_builder_lib -> mod_reth_tasks_lib;
   mod_reth_rpc_eth -> mod_reth_primitives_traits_header;
   mod_reth_rpc_eth -> mod_reth_rpc_eth_api_helpers;
@@ -307,13 +292,12 @@ digraph architecture {
   mod_reth_rpc_eth_types_cache -> mod_reth_primitives_traits_block;
   mod_reth_rpc_eth_types_error -> mod_reth_primitives_traits_transaction;
   mod_reth_stages_stages -> mod_reth_config_config;
-  mod_reth_stages_stages -> mod_reth_consensus_lib;
-  mod_reth_stages_stages -> mod_reth_primitives_traits_transaction;
+  mod_reth_stages_stages -> mod_reth_node_core_dirs;
   mod_reth_stages_stages -> mod_reth_provider_providers;
+  mod_reth_stages_stages -> mod_reth_storage_errors_provider;
   mod_reth_transaction_pool_pool -> mod_reth_transaction_pool_traits;
   mod_reth_transaction_pool_pool -> mod_reth_transaction_pool_validate;
   mod_reth_transaction_pool_traits -> mod_reth_primitives_traits_block;
-  mod_reth_transaction_pool_validate -> mod_reth_transaction_pool_blobstore;
   mod_reth_transaction_pool_validate -> mod_reth_transaction_pool_traits;
   mod_reth_trie_common_updates -> mod_reth_stages_stages;
 }

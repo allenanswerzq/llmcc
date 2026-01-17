@@ -25,22 +25,24 @@ digraph architecture {
   crate_snforge_scarb_plugin_deprecated[label="snforge_scarb_plugin_deprecated", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated"];
   crate_universal_sierra_compiler_api[label="universal-sierra-compiler-api", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/universal-sierra-compiler-api"];
 
-  crate_cheatnet -> crate_conversions;
   crate_cheatnet -> crate_debugging;
   crate_cheatnet -> crate_runtime;
   crate_cheatnet -> crate_sncast;
   crate_cheatnet -> crate_snforge_scarb_plugin;
   crate_cheatnet -> crate_snforge_scarb_plugin_deprecated;
-  crate_conversions -> crate_snforge_scarb_plugin_deprecated;
+  crate_conversions -> crate_snforge_scarb_plugin;
   crate_data_transformer -> crate_conversions;
+  crate_data_transformer -> crate_snforge_scarb_plugin;
   crate_forge -> crate_forge_runner;
   crate_forge -> crate_foundry_ui;
   crate_forge -> crate_sncast;
   crate_forge_runner -> crate_cheatnet;
+  crate_forge_runner -> crate_sncast;
   crate_forge_runner -> crate_universal_sierra_compiler_api;
   crate_sncast -> crate_conversions;
   crate_sncast -> crate_foundry_ui;
   crate_sncast -> crate_scarb_api;
   crate_sncast -> crate_snforge_scarb_plugin;
   crate_sncast -> crate_snforge_scarb_plugin_deprecated;
+  crate_snforge_scarb_plugin -> crate_conversions;
 }

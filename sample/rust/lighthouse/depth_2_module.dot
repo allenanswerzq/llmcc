@@ -58,6 +58,7 @@ digraph architecture {
     mod_beacon_chain_fork_revert[label="fork_revert", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/beacon_chain/src"];
     mod_beacon_chain_graffiti_calculator[label="graffiti_calculator", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/beacon_chain/src"];
     mod_beacon_chain_kzg_utils[label="kzg_utils", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/beacon_chain/src"];
+    mod_beacon_chain_light_client_finality_update_verification[label="light_client_finality_update_verification", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/beacon_chain/src"];
     mod_beacon_chain_light_client_optimistic_update_verification[label="light_client_optimistic_update_verification", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/beacon_chain/src"];
     mod_beacon_chain_light_client_server_cache[label="light_client_server_cache", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/beacon_chain/src"];
     mod_beacon_chain_metrics[label="metrics", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/beacon_chain/src"];
@@ -80,6 +81,14 @@ digraph architecture {
     mod_beacon_chain_test_utils[label="test_utils", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/beacon_chain/src"];
     mod_beacon_chain_validator_monitor[label="validator_monitor", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/beacon_chain/src"];
     mod_beacon_chain_validator_pubkey_cache[label="validator_pubkey_cache", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/beacon_chain/src"];
+  }
+
+  subgraph cluster_beacon_node {
+    label="beacon_node";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_beacon_node_config[label="config", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/src"];
   }
 
   subgraph cluster_beacon_node_fallback {
@@ -111,6 +120,7 @@ digraph architecture {
     mod_bls_generic_public_key_bytes[label="generic_public_key_bytes", path="/home/yibai/llmcc/sample/repos/lighthouse/crypto/bls/src"];
     mod_bls_generic_signature_set[label="generic_signature_set", path="/home/yibai/llmcc/sample/repos/lighthouse/crypto/bls/src"];
     mod_bls_impls[label="impls", path="/home/yibai/llmcc/sample/repos/lighthouse/crypto/bls/src/impls"];
+    mod_bls_lib[label="lib", path="/home/yibai/llmcc/sample/repos/lighthouse/crypto/bls/src"];
     mod_bls_zeroize_hash[label="zeroize_hash", path="/home/yibai/llmcc/sample/repos/lighthouse/crypto/bls/src"];
   }
 
@@ -136,8 +146,6 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_client_builder[label="builder", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/client/src"];
-    mod_client_compute_light_client_updates[label="compute_light_client_updates", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/client/src"];
-    mod_client_lib[label="lib", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/client/src"];
     mod_client_notifier[label="notifier", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/client/src"];
   }
 
@@ -252,7 +260,6 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_eth2_wallet_manager_filesystem[label="filesystem", path="/home/yibai/llmcc/sample/repos/lighthouse/common/eth2_wallet_manager/src"];
-    mod_eth2_wallet_manager_wallet_manager[label="wallet_manager", path="/home/yibai/llmcc/sample/repos/lighthouse/common/eth2_wallet_manager/src"];
   }
 
   subgraph cluster_execution_layer {
@@ -265,7 +272,6 @@ digraph architecture {
     mod_execution_layer_lib[label="lib", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/execution_layer/src"];
     mod_execution_layer_payload_status[label="payload_status", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/execution_layer/src"];
     mod_execution_layer_test_utils[label="test_utils", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/execution_layer/src/test_utils"];
-    mod_execution_layer_versioned_hashes[label="versioned_hashes", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/execution_layer/src"];
   }
 
   subgraph cluster_fork_choice {
@@ -297,7 +303,6 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_http_api_aggregate_attestation[label="aggregate_attestation", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/http_api/src"];
     mod_http_api_attestation_performance[label="attestation_performance", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/http_api/src"];
     mod_http_api_attester_duties[label="attester_duties", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/http_api/src"];
     mod_http_api_block_packing_efficiency[label="block_packing_efficiency", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/http_api/src"];
@@ -311,25 +316,15 @@ digraph architecture {
     mod_http_api_proposer_duties[label="proposer_duties", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/http_api/src"];
     mod_http_api_publish_attestations[label="publish_attestations", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/http_api/src"];
     mod_http_api_publish_blocks[label="publish_blocks", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/http_api/src"];
-    mod_http_api_standard_block_rewards[label="standard_block_rewards", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/http_api/src"];
     mod_http_api_state_id[label="state_id", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/http_api/src"];
     mod_http_api_sync_committee_rewards[label="sync_committee_rewards", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/http_api/src"];
     mod_http_api_sync_committees[label="sync_committees", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/http_api/src"];
     mod_http_api_task_spawner[label="task_spawner", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/http_api/src"];
     mod_http_api_test_utils[label="test_utils", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/http_api/src"];
     mod_http_api_ui[label="ui", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/http_api/src"];
-    mod_http_api_validator[label="validator", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/http_api/src"];
     mod_http_api_validator_inclusion[label="validator_inclusion", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/http_api/src"];
     mod_http_api_validators[label="validators", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/http_api/src"];
     mod_http_api_version[label="version", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/http_api/src"];
-  }
-
-  subgraph cluster_http_metrics {
-    label="http_metrics";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_http_metrics_lib[label="lib", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/http_metrics/src"];
   }
 
   subgraph cluster_initialized_validators {
@@ -355,9 +350,7 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_lcli_block_root[label="block_root", path="/home/yibai/llmcc/sample/repos/lighthouse/lcli/src"];
     mod_lcli_http_sync[label="http_sync", path="/home/yibai/llmcc/sample/repos/lighthouse/lcli/src"];
-    mod_lcli_main[label="main", path="/home/yibai/llmcc/sample/repos/lighthouse/lcli/src"];
     mod_lcli_transition_blocks[label="transition_blocks", path="/home/yibai/llmcc/sample/repos/lighthouse/lcli/src"];
   }
 
@@ -587,20 +580,11 @@ digraph architecture {
     mod_task_executor_test_utils[label="test_utils", path="/home/yibai/llmcc/sample/repos/lighthouse/common/task_executor/src"];
   }
 
-  subgraph cluster_timer {
-    label="timer";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_timer_lib[label="lib", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/timer/src"];
-  }
-
   subgraph cluster_types {
     label="types";
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_types_activation_queue[label="activation_queue", path="/home/yibai/llmcc/sample/repos/lighthouse/consensus/types/src"];
     mod_types_attestation[label="attestation", path="/home/yibai/llmcc/sample/repos/lighthouse/consensus/types/src"];
     mod_types_attestation_data[label="attestation_data", path="/home/yibai/llmcc/sample/repos/lighthouse/consensus/types/src"];
     mod_types_attester_slashing[label="attester_slashing", path="/home/yibai/llmcc/sample/repos/lighthouse/consensus/types/src"];
@@ -638,6 +622,7 @@ digraph architecture {
     mod_types_pending_attestation[label="pending_attestation", path="/home/yibai/llmcc/sample/repos/lighthouse/consensus/types/src"];
     mod_types_preset[label="preset", path="/home/yibai/llmcc/sample/repos/lighthouse/consensus/types/src"];
     mod_types_proposer_slashing[label="proposer_slashing", path="/home/yibai/llmcc/sample/repos/lighthouse/consensus/types/src"];
+    mod_types_relative_epoch[label="relative_epoch", path="/home/yibai/llmcc/sample/repos/lighthouse/consensus/types/src"];
     mod_types_runtime_var_list[label="runtime_var_list", path="/home/yibai/llmcc/sample/repos/lighthouse/consensus/types/src"];
     mod_types_selection_proof[label="selection_proof", path="/home/yibai/llmcc/sample/repos/lighthouse/consensus/types/src"];
     mod_types_shuffling_id[label="shuffling_id", path="/home/yibai/llmcc/sample/repos/lighthouse/consensus/types/src"];
@@ -690,16 +675,7 @@ digraph architecture {
     mod_validator_http_api_create_validator[label="create_validator", path="/home/yibai/llmcc/sample/repos/lighthouse/validator_client/http_api/src"];
     mod_validator_http_api_graffiti[label="graffiti", path="/home/yibai/llmcc/sample/repos/lighthouse/validator_client/http_api/src"];
     mod_validator_http_api_keystores[label="keystores", path="/home/yibai/llmcc/sample/repos/lighthouse/validator_client/http_api/src"];
-    mod_validator_http_api_lib[label="lib", path="/home/yibai/llmcc/sample/repos/lighthouse/validator_client/http_api/src"];
     mod_validator_http_api_remotekeys[label="remotekeys", path="/home/yibai/llmcc/sample/repos/lighthouse/validator_client/http_api/src"];
-  }
-
-  subgraph cluster_validator_http_metrics {
-    label="validator_http_metrics";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_validator_http_metrics_lib[label="lib", path="/home/yibai/llmcc/sample/repos/lighthouse/validator_client/http_metrics/src"];
   }
 
   subgraph cluster_validator_manager {
@@ -710,7 +686,6 @@ digraph architecture {
     mod_validator_manager_common[label="common", path="/home/yibai/llmcc/sample/repos/lighthouse/validator_manager/src"];
     mod_validator_manager_create_validators[label="create_validators", path="/home/yibai/llmcc/sample/repos/lighthouse/validator_manager/src"];
     mod_validator_manager_exit_validators[label="exit_validators", path="/home/yibai/llmcc/sample/repos/lighthouse/validator_manager/src"];
-    mod_validator_manager_list_validators[label="list_validators", path="/home/yibai/llmcc/sample/repos/lighthouse/validator_manager/src"];
   }
 
   subgraph cluster_validator_services {
@@ -748,34 +723,29 @@ digraph architecture {
 
 
   mod_account_manager_validator -> mod_account_utils_lib;
+  mod_account_manager_validator -> mod_bls_generic_public_key;
   mod_account_manager_validator -> mod_bls_generic_public_key_bytes;
   mod_account_manager_validator -> mod_bls_impls;
-  mod_account_manager_validator -> mod_environment_lib;
   mod_account_manager_validator -> mod_eth2_lib;
-  mod_account_manager_validator -> mod_operation_pool_attestation_storage;
   mod_account_manager_validator -> mod_slasher_database;
   mod_account_manager_validator -> mod_slashing_protection_test_utils;
   mod_account_manager_validator -> mod_types_chain_spec;
-  mod_account_manager_validator -> mod_types_eth_spec;
   mod_account_manager_validator -> mod_types_slot_epoch;
   mod_account_utils_lib -> mod_account_utils_validator_definitions;
   mod_account_utils_lib -> mod_eth2_key_derivation_plain_text;
   mod_beacon_chain_attestation_simulator -> mod_beacon_chain_beacon_chain;
-  mod_beacon_chain_attestation_simulator -> mod_network_sync;
   mod_beacon_chain_attestation_simulator -> mod_task_executor_lib;
   mod_beacon_chain_attestation_verification -> mod_beacon_chain_beacon_chain;
   mod_beacon_chain_attestation_verification -> mod_beacon_chain_data_availability_checker;
   mod_beacon_chain_attestation_verification -> mod_eth2_wallet_manager_filesystem;
-  mod_beacon_chain_attestation_verification -> mod_slot_clock_lib;
   mod_beacon_chain_attestation_verification -> mod_types_attestation;
   mod_beacon_chain_attestation_verification -> mod_types_attestation_data;
-  mod_beacon_chain_attestation_verification -> mod_types_eth_spec;
   mod_beacon_chain_attestation_verification -> mod_types_indexed_attestation;
   mod_beacon_chain_attestation_verification -> mod_types_signed_aggregate_and_proof;
   mod_beacon_chain_attestation_verification -> mod_types_slot_epoch;
   mod_beacon_chain_attestation_verification -> mod_types_subnet_id;
   mod_beacon_chain_attester_cache -> mod_types_slot_epoch;
-  mod_beacon_chain_beacon_block_streamer -> mod_types_eth_spec;
+  mod_beacon_chain_beacon_block_streamer -> mod_types_attestation;
   mod_beacon_chain_beacon_block_streamer -> mod_types_execution_payload_header;
   mod_beacon_chain_beacon_chain -> mod_beacon_chain_fork_choice_signal;
   mod_beacon_chain_beacon_chain -> mod_beacon_chain_naive_aggregation_pool;
@@ -790,7 +760,6 @@ digraph architecture {
   mod_beacon_chain_beacon_fork_choice_store -> mod_types_checkpoint;
   mod_beacon_chain_beacon_fork_choice_store -> mod_types_slot_epoch;
   mod_beacon_chain_beacon_fork_choice_store -> mod_warp_utils_reject;
-  mod_beacon_chain_beacon_proposer_cache -> mod_beacon_chain_beacon_chain;
   mod_beacon_chain_beacon_proposer_cache -> mod_beacon_chain_errors;
   mod_beacon_chain_beacon_proposer_cache -> mod_types_fork;
   mod_beacon_chain_beacon_proposer_cache -> mod_types_slot_epoch;
@@ -799,11 +768,9 @@ digraph architecture {
   mod_beacon_chain_blob_verification -> mod_beacon_chain_beacon_chain;
   mod_beacon_chain_blob_verification -> mod_kzg_lib;
   mod_beacon_chain_blob_verification -> mod_types_blob_sidecar;
-  mod_beacon_chain_blob_verification -> mod_types_eth_spec;
   mod_beacon_chain_blob_verification -> mod_types_slot_epoch;
   mod_beacon_chain_block_verification -> mod_beacon_chain_beacon_chain;
   mod_beacon_chain_block_verification -> mod_beacon_chain_beacon_snapshot;
-  mod_beacon_chain_block_verification -> mod_beacon_chain_block_verification_types;
   mod_beacon_chain_block_verification -> mod_beacon_chain_data_availability_checker;
   mod_beacon_chain_block_verification -> mod_beacon_chain_errors;
   mod_beacon_chain_block_verification -> mod_beacon_chain_validator_pubkey_cache;
@@ -811,7 +778,6 @@ digraph architecture {
   mod_beacon_chain_block_verification -> mod_state_processing_per_block_processing;
   mod_beacon_chain_block_verification -> mod_types_beacon_state;
   mod_beacon_chain_block_verification -> mod_types_chain_spec;
-  mod_beacon_chain_block_verification -> mod_types_eth_spec;
   mod_beacon_chain_block_verification -> mod_types_signed_beacon_block;
   mod_beacon_chain_block_verification -> mod_types_signed_beacon_block_header;
   mod_beacon_chain_block_verification -> mod_types_slot_epoch;
@@ -821,16 +787,12 @@ digraph architecture {
   mod_beacon_chain_block_verification_types -> mod_types_signed_beacon_block;
   mod_beacon_chain_builder -> mod_kzg_lib;
   mod_beacon_chain_builder -> mod_types_chain_spec;
-  mod_beacon_chain_builder -> mod_types_eth_spec;
   mod_beacon_chain_builder -> mod_types_signed_beacon_block;
   mod_beacon_chain_canonical_head -> mod_beacon_chain_beacon_chain;
-  mod_beacon_chain_canonical_head -> mod_beacon_chain_data_availability_checker;
+  mod_beacon_chain_canonical_head -> mod_beacon_chain_otb_verification_service;
   mod_beacon_chain_canonical_head -> mod_fork_choice_fork_choice;
-  mod_beacon_chain_canonical_head -> mod_slot_clock_lib;
   mod_beacon_chain_canonical_head -> mod_types_beacon_state;
   mod_beacon_chain_canonical_head -> mod_types_chain_spec;
-  mod_beacon_chain_canonical_head -> mod_types_eth_spec;
-  mod_beacon_chain_canonical_head -> mod_types_execution_block_hash;
   mod_beacon_chain_canonical_head -> mod_types_slot_epoch;
   mod_beacon_chain_chain_config -> mod_proto_array_proto_array_fork_choice;
   mod_beacon_chain_custody_context -> mod_types_slot_epoch;
@@ -845,7 +807,6 @@ digraph architecture {
   mod_beacon_chain_data_column_verification -> mod_types_chain_spec;
   mod_beacon_chain_data_column_verification -> mod_types_data_column_sidecar;
   mod_beacon_chain_data_column_verification -> mod_types_data_column_subnet_id;
-  mod_beacon_chain_data_column_verification -> mod_types_eth_spec;
   mod_beacon_chain_data_column_verification -> mod_types_slot_epoch;
   mod_beacon_chain_errors -> mod_operation_pool_lib;
   mod_beacon_chain_errors -> mod_state_processing_per_block_processing;
@@ -864,12 +825,11 @@ digraph architecture {
   mod_beacon_chain_fetch_blobs -> mod_beacon_chain_blob_verification;
   mod_beacon_chain_fetch_blobs -> mod_execution_layer_engine_api;
   mod_beacon_chain_fetch_blobs -> mod_http_api_database;
+  mod_beacon_chain_fetch_blobs -> mod_types_fork_name;
   mod_beacon_chain_fetch_blobs -> mod_types_signed_beacon_block;
   mod_beacon_chain_fetch_blobs -> mod_types_slot_epoch;
   mod_beacon_chain_fork_revert -> mod_store_hot_cold_store;
-  mod_beacon_chain_fork_revert -> mod_store_lib;
   mod_beacon_chain_fork_revert -> mod_types_chain_spec;
-  mod_beacon_chain_fork_revert -> mod_types_eth_spec;
   mod_beacon_chain_fork_revert -> mod_types_slot_epoch;
   mod_beacon_chain_graffiti_calculator -> mod_beacon_chain_beacon_chain;
   mod_beacon_chain_graffiti_calculator -> mod_execution_layer_lib;
@@ -878,7 +838,6 @@ digraph architecture {
   mod_beacon_chain_kzg_utils -> mod_kzg_lib;
   mod_beacon_chain_kzg_utils -> mod_types_chain_spec;
   mod_beacon_chain_kzg_utils -> mod_types_data_column_sidecar;
-  mod_beacon_chain_kzg_utils -> mod_types_eth_spec;
   mod_beacon_chain_light_client_server_cache -> mod_types_sync_committee;
   mod_beacon_chain_metrics -> mod_beacon_chain_beacon_chain;
   mod_beacon_chain_metrics -> mod_types_slot_epoch;
@@ -895,24 +854,21 @@ digraph architecture {
   mod_beacon_chain_otb_verification_service -> mod_beacon_chain_beacon_chain;
   mod_beacon_chain_persisted_custody -> mod_beacon_chain_custody_context;
   mod_beacon_chain_persisted_custody -> mod_store_hot_cold_store;
-  mod_beacon_chain_persisted_custody -> mod_store_lib;
-  mod_beacon_chain_persisted_custody -> mod_types_eth_spec;
   mod_beacon_chain_proposer_prep_service -> mod_beacon_chain_beacon_chain;
   mod_beacon_chain_proposer_prep_service -> mod_network_sync;
   mod_beacon_chain_proposer_prep_service -> mod_task_executor_lib;
-  mod_beacon_chain_schema_change -> mod_beacon_chain_attester_cache;
-  mod_beacon_chain_schema_change -> mod_beacon_chain_beacon_block_streamer;
-  mod_beacon_chain_schema_change -> mod_beacon_chain_beacon_chain;
+  mod_beacon_chain_schema_change -> mod_beacon_chain_beacon_fork_choice_store;
+  mod_beacon_chain_schema_change -> mod_beacon_chain_light_client_finality_update_verification;
   mod_beacon_chain_schema_change -> mod_beacon_chain_light_client_optimistic_update_verification;
-  mod_beacon_chain_schema_change -> mod_beacon_chain_otb_verification_service;
-  mod_beacon_chain_schema_change -> mod_beacon_chain_summaries_dag;
+  mod_beacon_chain_schema_change -> mod_beacon_chain_observed_aggregates;
+  mod_beacon_chain_schema_change -> mod_http_api_custody;
   mod_beacon_chain_schema_change -> mod_http_api_database;
   mod_beacon_chain_schema_change -> mod_store_hot_cold_store;
   mod_beacon_chain_schema_change -> mod_store_lib;
   mod_beacon_chain_schema_change -> mod_store_metadata;
   mod_beacon_chain_schema_change -> mod_types_beacon_state;
   mod_beacon_chain_schema_change -> mod_types_chain_spec;
-  mod_beacon_chain_schema_change -> mod_types_eth_spec;
+  mod_beacon_chain_schema_change -> mod_types_signed_beacon_block;
   mod_beacon_chain_schema_change -> mod_types_slot_epoch;
   mod_beacon_chain_shuffling_cache -> mod_types_shuffling_id;
   mod_beacon_chain_single_attestation -> mod_types_attestation;
@@ -922,9 +878,7 @@ digraph architecture {
   mod_beacon_chain_summaries_dag -> mod_types_slot_epoch;
   mod_beacon_chain_sync_committee_verification -> mod_beacon_chain_beacon_chain;
   mod_beacon_chain_sync_committee_verification -> mod_eth2_wallet_manager_filesystem;
-  mod_beacon_chain_sync_committee_verification -> mod_slot_clock_lib;
   mod_beacon_chain_sync_committee_verification -> mod_types_signed_contribution_and_proof;
-  mod_beacon_chain_sync_committee_verification -> mod_types_slot_data;
   mod_beacon_chain_sync_committee_verification -> mod_types_slot_epoch;
   mod_beacon_chain_sync_committee_verification -> mod_types_sync_committee_message;
   mod_beacon_chain_sync_committee_verification -> mod_types_sync_subnet_id;
@@ -934,10 +888,10 @@ digraph architecture {
   mod_beacon_chain_test_utils -> mod_task_executor_lib;
   mod_beacon_chain_test_utils -> mod_task_executor_test_utils;
   mod_beacon_chain_test_utils -> mod_types_chain_spec;
-  mod_beacon_chain_test_utils -> mod_types_eth_spec;
   mod_beacon_chain_test_utils -> mod_types_signed_beacon_block;
   mod_beacon_chain_validator_monitor -> mod_slot_clock_lib;
   mod_beacon_chain_validator_monitor -> mod_types_slot_epoch;
+  mod_beacon_node_config -> mod_http_api_database;
   mod_beacon_node_fallback_lib -> mod_beacon_node_fallback_beacon_node_health;
   mod_beacon_processor_lib -> mod_beacon_processor_scheduler;
   mod_beacon_processor_lib -> mod_task_executor_lib;
@@ -949,22 +903,19 @@ digraph architecture {
   mod_bls_impls -> mod_bls_generic_aggregate_public_key;
   mod_bls_impls -> mod_bls_generic_aggregate_signature;
   mod_bls_impls -> mod_bls_generic_public_key;
+  mod_bls_impls -> mod_types_test_utils;
   mod_boot_node_lib -> mod_eth2_network_config_lib;
-  mod_boot_node_lib -> mod_types_eth_spec;
   mod_clap_utils_lib -> mod_eth2_network_config_lib;
   mod_client_builder -> mod_beacon_processor_lib;
   mod_client_builder -> mod_environment_lib;
-  mod_client_compute_light_client_updates -> mod_beacon_chain_beacon_chain;
   mod_client_notifier -> mod_beacon_chain_beacon_chain;
   mod_client_notifier -> mod_http_api_database;
-  mod_client_notifier -> mod_signing_method_web3signer;
+  mod_client_notifier -> mod_types_fork_name;
   mod_client_notifier -> mod_types_slot_epoch;
   mod_database_manager_lib -> mod_database_manager_cli;
   mod_database_manager_lib -> mod_environment_lib;
-  mod_database_manager_lib -> mod_eth2_wallet_manager_wallet_manager;
-  mod_database_manager_lib -> mod_slasher_database;
+  mod_database_manager_lib -> mod_lighthouse_network_rpc;
   mod_database_manager_lib -> mod_store_lib;
-  mod_database_manager_lib -> mod_types_eth_spec;
   mod_deposit_contract_lib -> mod_execution_layer_engine_api;
   mod_doppelganger_service_lib -> mod_types_slot_epoch;
   mod_eip_3076_lib -> mod_types_slot_epoch;
@@ -987,8 +938,8 @@ digraph architecture {
   mod_eth2_lighthouse_vc -> mod_types_graffiti;
   mod_eth2_types -> mod_bls_impls;
   mod_eth2_types -> mod_context_deserialize_lib;
+  mod_eth2_types -> mod_execution_layer_engine_api;
   mod_eth2_types -> mod_kzg_kzg_commitment;
-  mod_eth2_types -> mod_lighthouse_network_peer_manager;
   mod_eth2_types -> mod_signing_method_web3signer;
   mod_eth2_types -> mod_types_beacon_block;
   mod_eth2_types -> mod_types_beacon_response;
@@ -1011,7 +962,6 @@ digraph architecture {
   mod_execution_layer_lib -> mod_execution_layer_engines;
   mod_execution_layer_lib -> mod_signing_method_web3signer;
   mod_execution_layer_lib -> mod_types_chain_spec;
-  mod_execution_layer_lib -> mod_types_eth_spec;
   mod_execution_layer_lib -> mod_types_execution_block_hash;
   mod_execution_layer_lib -> mod_types_slot_epoch;
   mod_execution_layer_payload_status -> mod_types_execution_block_hash;
@@ -1021,27 +971,22 @@ digraph architecture {
   mod_execution_layer_test_utils -> mod_lighthouse_network_service;
   mod_execution_layer_test_utils -> mod_signing_method_web3signer;
   mod_execution_layer_test_utils -> mod_types_chain_spec;
-  mod_execution_layer_test_utils -> mod_types_eth_spec;
   mod_execution_layer_test_utils -> mod_types_execution_block_hash;
   mod_execution_layer_test_utils -> mod_types_execution_payload;
-  mod_execution_layer_versioned_hashes -> mod_types_eth_spec;
+  mod_execution_layer_test_utils -> mod_types_fork_name;
   mod_fork_choice_fork_choice -> mod_types_checkpoint;
-  mod_fork_choice_fork_choice -> mod_types_eth_spec;
   mod_fork_choice_fork_choice -> mod_types_slot_epoch;
   mod_genesis_interop -> mod_bls_impls;
   mod_genesis_interop -> mod_types_beacon_state;
   mod_genesis_interop -> mod_types_chain_spec;
-  mod_genesis_interop -> mod_types_eth_spec;
   mod_genesis_interop -> mod_types_execution_payload_header;
+  mod_genesis_interop -> mod_types_signed_beacon_block;
   mod_graffiti_file_lib -> mod_types_graffiti;
-  mod_http_api_aggregate_attestation -> mod_beacon_chain_beacon_chain;
-  mod_http_api_attestation_performance -> mod_beacon_chain_beacon_chain;
   mod_http_api_attestation_performance -> mod_eth2_lighthouse;
   mod_http_api_attestation_performance -> mod_warp_utils_reject;
   mod_http_api_attester_duties -> mod_beacon_chain_beacon_chain;
   mod_http_api_attester_duties -> mod_types_slot_epoch;
   mod_http_api_attester_duties -> mod_warp_utils_reject;
-  mod_http_api_block_packing_efficiency -> mod_beacon_chain_beacon_chain;
   mod_http_api_block_packing_efficiency -> mod_eth2_lighthouse;
   mod_http_api_block_packing_efficiency -> mod_types_slot_epoch;
   mod_http_api_block_packing_efficiency -> mod_warp_utils_reject;
@@ -1052,27 +997,25 @@ digraph architecture {
   mod_http_api_builder_states -> mod_types_beacon_state;
   mod_http_api_builder_states -> mod_types_slot_epoch;
   mod_http_api_builder_states -> mod_warp_utils_reject;
-  mod_http_api_custody -> mod_beacon_chain_beacon_chain;
-  mod_http_api_database -> mod_beacon_chain_beacon_chain;
   mod_http_api_database -> mod_store_metadata;
-  mod_http_api_lib -> mod_beacon_chain_beacon_chain;
   mod_http_api_lib -> mod_eth2_types;
   mod_http_api_lib -> mod_execution_layer_engine_api;
   mod_http_api_lib -> mod_lighthouse_network_rpc;
   mod_http_api_lib -> mod_lighthouse_network_types;
   mod_http_api_lib -> mod_network_service;
-  mod_http_api_lib -> mod_types_eth_spec;
   mod_http_api_lib -> mod_warp_utils_json;
   mod_http_api_light_client -> mod_beacon_chain_beacon_chain;
   mod_http_api_light_client -> mod_eth2_types;
   mod_http_api_light_client -> mod_lighthouse_network_service;
   mod_http_api_light_client -> mod_types_beacon_response;
   mod_http_api_light_client -> mod_types_light_client_update;
+  mod_http_api_light_client -> mod_types_signed_beacon_block;
   mod_http_api_light_client -> mod_warp_utils_reject;
   mod_http_api_produce_block -> mod_beacon_chain_beacon_chain;
   mod_http_api_produce_block -> mod_eth2_types;
   mod_http_api_produce_block -> mod_http_api_version;
   mod_http_api_produce_block -> mod_lighthouse_network_service;
+  mod_http_api_produce_block -> mod_types_signed_beacon_block;
   mod_http_api_produce_block -> mod_types_slot_epoch;
   mod_http_api_produce_block -> mod_warp_utils_reject;
   mod_http_api_proposer_duties -> mod_beacon_chain_beacon_chain;
@@ -1083,7 +1026,6 @@ digraph architecture {
   mod_http_api_publish_attestations -> mod_types_attestation;
   mod_http_api_publish_blocks -> mod_beacon_chain_beacon_chain;
   mod_http_api_publish_blocks -> mod_beacon_chain_blob_verification;
-  mod_http_api_publish_blocks -> mod_beacon_chain_block_verification;
   mod_http_api_publish_blocks -> mod_eth2_types;
   mod_http_api_publish_blocks -> mod_lighthouse_network_service;
   mod_http_api_publish_blocks -> mod_network_service;
@@ -1091,12 +1033,10 @@ digraph architecture {
   mod_http_api_publish_blocks -> mod_types_slot_epoch;
   mod_http_api_publish_blocks -> mod_validator_services_block_service;
   mod_http_api_publish_blocks -> mod_warp_utils_reject;
-  mod_http_api_standard_block_rewards -> mod_beacon_chain_beacon_chain;
-  mod_http_api_state_id -> mod_beacon_chain_beacon_chain;
   mod_http_api_sync_committee_rewards -> mod_beacon_chain_beacon_chain;
   mod_http_api_sync_committee_rewards -> mod_eth2_types;
   mod_http_api_sync_committees -> mod_beacon_chain_beacon_chain;
-  mod_http_api_sync_committees -> mod_beacon_chain_validator_monitor;
+  mod_http_api_sync_committees -> mod_lighthouse_network_rpc;
   mod_http_api_sync_committees -> mod_network_service;
   mod_http_api_sync_committees -> mod_types_slot_epoch;
   mod_http_api_sync_committees -> mod_types_sync_committee_message;
@@ -1109,8 +1049,8 @@ digraph architecture {
   mod_http_api_test_utils -> mod_oneshot_broadcast_lib;
   mod_http_api_test_utils -> mod_task_executor_test_utils;
   mod_http_api_ui -> mod_beacon_chain_beacon_chain;
+  mod_http_api_ui -> mod_eth2_wallet_manager_filesystem;
   mod_http_api_ui -> mod_warp_utils_reject;
-  mod_http_api_validator -> mod_beacon_chain_beacon_chain;
   mod_http_api_validator_inclusion -> mod_beacon_chain_beacon_chain;
   mod_http_api_validator_inclusion -> mod_eth2_lighthouse;
   mod_http_api_validator_inclusion -> mod_types_beacon_state;
@@ -1121,25 +1061,23 @@ digraph architecture {
   mod_http_api_validators -> mod_http_api_state_id;
   mod_http_api_version -> mod_lighthouse_network_service;
   mod_http_api_version -> mod_signing_method_web3signer;
-  mod_http_metrics_lib -> mod_beacon_chain_beacon_chain;
   mod_initialized_validators_lib -> mod_account_utils_validator_definitions;
   mod_initialized_validators_lib -> mod_bls_impls;
-  mod_initialized_validators_lib -> mod_client_lib;
   mod_initialized_validators_lib -> mod_eth2_keystore_keystore;
-  mod_lcli_block_root -> mod_environment_lib;
+  mod_initialized_validators_lib -> mod_lighthouse_network_peer_manager;
   mod_lcli_http_sync -> mod_eth2_network_config_lib;
-  mod_lcli_http_sync -> mod_types_eth_spec;
-  mod_lcli_main -> mod_environment_lib;
+  mod_lcli_http_sync -> mod_eth2_types;
+  mod_lcli_transition_blocks -> mod_environment_lib;
   mod_lcli_transition_blocks -> mod_types_chain_spec;
-  mod_lcli_transition_blocks -> mod_types_eth_spec;
+  mod_lcli_transition_blocks -> mod_types_signed_beacon_block;
   mod_lighthouse_main -> mod_environment_lib;
   mod_lighthouse_main -> mod_lighthouse_metrics;
   mod_lighthouse_network_config -> mod_lighthouse_network_rpc;
   mod_lighthouse_network_config -> mod_types_fork_context;
+  mod_lighthouse_network_config -> mod_types_fork_name;
   mod_lighthouse_network_discovery -> mod_lighthouse_network_types;
   mod_lighthouse_network_discovery -> mod_types_chain_spec;
   mod_lighthouse_network_discovery -> mod_types_enr_fork_id;
-  mod_lighthouse_network_discovery -> mod_types_eth_spec;
   mod_lighthouse_network_peer_manager -> mod_lighthouse_network_rpc;
   mod_lighthouse_network_peer_manager -> mod_lighthouse_network_types;
   mod_lighthouse_network_peer_manager -> mod_types_data_column_subnet_id;
@@ -1149,31 +1087,31 @@ digraph architecture {
   mod_lighthouse_network_rpc -> mod_types_chain_spec;
   mod_lighthouse_network_rpc -> mod_types_eth_spec;
   mod_lighthouse_network_rpc -> mod_types_fork_context;
+  mod_lighthouse_network_rpc -> mod_types_fork_name;
   mod_lighthouse_network_rpc -> mod_types_runtime_var_list;
   mod_lighthouse_network_rpc -> mod_types_signed_beacon_block;
   mod_lighthouse_network_rpc -> mod_types_slot_epoch;
+  mod_lighthouse_network_service -> mod_execution_layer_engine_api;
   mod_lighthouse_network_service -> mod_lighthouse_network_peer_manager;
   mod_lighthouse_network_service -> mod_lighthouse_network_rpc;
   mod_lighthouse_network_service -> mod_lighthouse_network_types;
   mod_lighthouse_network_service -> mod_types_chain_spec;
   mod_lighthouse_network_service -> mod_types_enr_fork_id;
-  mod_lighthouse_network_service -> mod_types_eth_spec;
   mod_lighthouse_network_service -> mod_types_fork_context;
   mod_lighthouse_network_service -> mod_types_slot_epoch;
   mod_lighthouse_network_types -> mod_eth2_lighthouse;
-  mod_lighthouse_network_types -> mod_signing_method_web3signer;
   mod_lighthouse_network_types -> mod_types_chain_spec;
   mod_lighthouse_network_types -> mod_types_data_column_subnet_id;
-  mod_lighthouse_network_types -> mod_types_eth_spec;
+  mod_lighthouse_network_types -> mod_types_fork_name;
   mod_lighthouse_network_types -> mod_types_subnet_id;
   mod_lighthouse_network_types -> mod_types_sync_subnet_id;
   mod_malloc_utils_jemalloc -> mod_eth2_wallet_manager_filesystem;
   mod_malloc_utils_jemalloc -> mod_types_light_client_update;
   mod_monitoring_api_gather -> mod_monitoring_api_types;
   mod_monitoring_api_lib -> mod_sensitive_url_lib;
+  mod_monitoring_api_types -> mod_eth2_lighthouse;
   mod_network_metrics -> mod_lighthouse_network_types;
   mod_network_metrics -> mod_operation_pool_attestation_storage;
-  mod_network_metrics -> mod_types_eth_spec;
   mod_network_network_beacon_processor -> mod_beacon_chain_attestation_verification;
   mod_network_network_beacon_processor -> mod_beacon_chain_beacon_chain;
   mod_network_network_beacon_processor -> mod_beacon_processor_lib;
@@ -1184,8 +1122,6 @@ digraph architecture {
   mod_network_network_beacon_processor -> mod_types_signed_aggregate_and_proof;
   mod_network_persisted_dht -> mod_network_sync;
   mod_network_persisted_dht -> mod_store_hot_cold_store;
-  mod_network_persisted_dht -> mod_store_lib;
-  mod_network_persisted_dht -> mod_types_eth_spec;
   mod_network_router -> mod_lighthouse_network_rpc;
   mod_network_router -> mod_lighthouse_network_service;
   mod_network_router -> mod_lighthouse_network_types;
@@ -1217,7 +1153,6 @@ digraph architecture {
   mod_operation_pool_lib -> mod_state_processing_verify_operation;
   mod_operation_pool_lib -> mod_types_beacon_state;
   mod_operation_pool_lib -> mod_types_chain_spec;
-  mod_operation_pool_lib -> mod_types_eth_spec;
   mod_operation_pool_lib -> mod_types_slot_epoch;
   mod_proto_array_bin -> mod_proto_array_fork_choice_test_definition;
   mod_proto_array_error -> mod_types_slot_epoch;
@@ -1226,7 +1161,6 @@ digraph architecture {
   mod_proto_array_fork_choice_test_definition -> mod_types_slot_epoch;
   mod_proto_array_proto_array -> mod_types_checkpoint;
   mod_proto_array_proto_array_fork_choice -> mod_proto_array_error;
-  mod_proto_array_proto_array_fork_choice -> mod_proto_array_proto_array;
   mod_proto_array_proto_array_fork_choice -> mod_types_slot_epoch;
   mod_proto_array_ssz_container -> mod_proto_array_proto_array_fork_choice;
   mod_signing_method_lib -> mod_types_chain_spec;
@@ -1237,11 +1171,11 @@ digraph architecture {
   mod_slasher_array -> mod_slasher_database;
   mod_slasher_array -> mod_slasher_error;
   mod_slasher_array -> mod_types_attester_slashing;
-  mod_slasher_array -> mod_types_eth_spec;
   mod_slasher_array -> mod_types_slot_epoch;
   mod_slasher_attester_record -> mod_types_indexed_attestation;
   mod_slasher_database -> mod_slasher_error;
   mod_slasher_error -> mod_slasher_config;
+  mod_slasher_test_utils -> mod_bls_impls;
   mod_slasher_test_utils -> mod_types_attester_slashing;
   mod_slasher_test_utils -> mod_types_indexed_attestation;
   mod_slashing_protection_attestation_tests -> mod_types_attestation_data;
@@ -1256,21 +1190,18 @@ digraph architecture {
   mod_slashing_protection_test_utils -> mod_slashing_protection_slashing_database;
   mod_state_processing_block_replayer -> mod_state_processing_per_block_processing;
   mod_state_processing_common -> mod_state_processing_per_block_processing;
-  mod_state_processing_common -> mod_state_processing_state_advance;
+  mod_state_processing_common -> mod_state_processing_per_slot_processing;
   mod_state_processing_common -> mod_types_beacon_state;
   mod_state_processing_common -> mod_types_chain_spec;
-  mod_state_processing_common -> mod_types_eth_spec;
+  mod_state_processing_common -> mod_types_fork_name;
   mod_state_processing_common -> mod_types_indexed_attestation;
   mod_state_processing_common -> mod_types_slot_epoch;
   mod_state_processing_common -> mod_warp_utils_reject;
   mod_state_processing_consensus_context -> mod_types_slot_epoch;
   mod_state_processing_epoch_cache -> mod_types_beacon_state;
   mod_state_processing_epoch_cache -> mod_types_epoch_cache;
-  mod_state_processing_epoch_cache -> mod_types_eth_spec;
-  mod_state_processing_genesis -> mod_state_processing_per_block_processing;
   mod_state_processing_genesis -> mod_types_beacon_state;
   mod_state_processing_genesis -> mod_types_chain_spec;
-  mod_state_processing_genesis -> mod_types_eth_spec;
   mod_state_processing_per_block_processing -> mod_bls_impls;
   mod_state_processing_per_block_processing -> mod_deposit_contract_lib;
   mod_state_processing_per_block_processing -> mod_proto_array_proto_array;
@@ -1281,11 +1212,8 @@ digraph architecture {
   mod_state_processing_per_block_processing -> mod_types_consolidation_request;
   mod_state_processing_per_block_processing -> mod_types_deposit_data;
   mod_state_processing_per_block_processing -> mod_types_eth1_data;
-  mod_state_processing_per_block_processing -> mod_types_eth_spec;
-  mod_state_processing_per_block_processing -> mod_types_execution_block_hash;
   mod_state_processing_per_block_processing -> mod_types_fork;
   mod_state_processing_per_block_processing -> mod_types_fork_name;
-  mod_state_processing_per_block_processing -> mod_types_payload;
   mod_state_processing_per_block_processing -> mod_types_proposer_slashing;
   mod_state_processing_per_block_processing -> mod_types_signed_aggregate_and_proof;
   mod_state_processing_per_block_processing -> mod_types_signed_beacon_block;
@@ -1299,11 +1227,9 @@ digraph architecture {
   mod_state_processing_per_epoch_processing -> mod_state_processing_per_block_processing;
   mod_state_processing_per_epoch_processing -> mod_state_processing_per_slot_processing;
   mod_state_processing_per_epoch_processing -> mod_state_processing_state_advance;
-  mod_state_processing_per_epoch_processing -> mod_types_activation_queue;
   mod_state_processing_per_epoch_processing -> mod_types_beacon_state;
   mod_state_processing_per_epoch_processing -> mod_types_chain_spec;
   mod_state_processing_per_epoch_processing -> mod_types_checkpoint;
-  mod_state_processing_per_epoch_processing -> mod_types_eth_spec;
   mod_state_processing_per_epoch_processing -> mod_types_fork_name;
   mod_state_processing_per_epoch_processing -> mod_types_participation_flags;
   mod_state_processing_per_epoch_processing -> mod_types_pending_attestation;
@@ -1312,24 +1238,19 @@ digraph architecture {
   mod_state_processing_per_epoch_processing -> mod_warp_utils_reject;
   mod_state_processing_per_slot_processing -> mod_state_processing_per_epoch_processing;
   mod_state_processing_per_slot_processing -> mod_types_beacon_state;
-  mod_state_processing_per_slot_processing -> mod_types_eth_spec;
   mod_state_processing_per_slot_processing -> mod_warp_utils_reject;
   mod_state_processing_state_advance -> mod_types_beacon_state;
   mod_state_processing_state_advance -> mod_types_chain_spec;
-  mod_state_processing_state_advance -> mod_types_eth_spec;
   mod_state_processing_state_advance -> mod_types_slot_epoch;
-  mod_state_processing_upgrade -> mod_state_processing_per_block_processing;
   mod_state_processing_upgrade -> mod_state_processing_per_slot_processing;
   mod_state_processing_upgrade -> mod_state_processing_state_advance;
   mod_state_processing_upgrade -> mod_types_beacon_state;
   mod_state_processing_upgrade -> mod_types_chain_spec;
-  mod_state_processing_upgrade -> mod_types_eth_spec;
-  mod_state_processing_verify_operation -> mod_types_eth_spec;
+  mod_state_processing_upgrade -> mod_types_slot_epoch;
   mod_store_chunked_vector -> mod_store_hdiff;
   mod_store_chunked_vector -> mod_store_lib;
   mod_store_chunked_vector -> mod_types_beacon_state;
   mod_store_chunked_vector -> mod_types_chain_spec;
-  mod_store_chunked_vector -> mod_types_eth_spec;
   mod_store_chunked_vector -> mod_types_slot_epoch;
   mod_store_config -> mod_store_hdiff;
   mod_store_database -> mod_store_lib;
@@ -1340,18 +1261,16 @@ digraph architecture {
   mod_store_hdiff -> mod_types_historical_summary;
   mod_store_hdiff -> mod_types_slot_epoch;
   mod_store_hdiff -> mod_types_validator;
-  mod_store_hot_cold_store -> mod_store_errors;
+  mod_store_hot_cold_store -> mod_store_hdiff;
   mod_store_hot_cold_store -> mod_store_lib;
   mod_store_hot_cold_store -> mod_store_metadata;
   mod_store_hot_cold_store -> mod_types_beacon_state;
-  mod_store_hot_cold_store -> mod_types_eth_spec;
   mod_store_hot_cold_store -> mod_types_slot_epoch;
   mod_store_iter -> mod_store_hot_cold_store;
   mod_store_iter -> mod_store_lib;
   mod_store_iter -> mod_types_beacon_state;
   mod_store_iter -> mod_types_eth_spec;
   mod_store_iter -> mod_types_slot_epoch;
-  mod_store_lib -> mod_types_eth_spec;
   mod_store_memory_store -> mod_store_lib;
   mod_store_metadata -> mod_store_lib;
   mod_store_metadata -> mod_types_slot_epoch;
@@ -1359,7 +1278,6 @@ digraph architecture {
   mod_store_state_cache -> mod_types_slot_epoch;
   mod_system_health_lib -> mod_eth2_wallet_manager_filesystem;
   mod_task_executor_lib -> mod_oneshot_broadcast_lib;
-  mod_timer_lib -> mod_beacon_chain_beacon_chain;
   mod_types_attestation -> mod_bls_impls;
   mod_types_attestation -> mod_types_attestation_data;
   mod_types_attester_slashing -> mod_state_processing_verify_operation;
@@ -1368,7 +1286,6 @@ digraph architecture {
   mod_types_beacon_response -> mod_types_fork_name;
   mod_types_beacon_state -> mod_beacon_chain_test_utils;
   mod_types_beacon_state -> mod_types_chain_spec;
-  mod_types_beacon_state -> mod_types_eth_spec;
   mod_types_beacon_state -> mod_types_fork_name;
   mod_types_beacon_state -> mod_types_slot_epoch;
   mod_types_blob_sidecar -> mod_warp_utils_reject;
@@ -1377,80 +1294,56 @@ digraph architecture {
   mod_types_builder_bid -> mod_types_beacon_response;
   mod_types_builder_bid -> mod_types_fork_name;
   mod_types_chain_spec -> mod_types_execution_block_hash;
+  mod_types_chain_spec -> mod_types_light_client_update;
   mod_types_chain_spec -> mod_types_slot_epoch;
-  mod_types_chain_spec -> mod_types_sync_committee;
   mod_types_config_and_preset -> mod_types_chain_spec;
   mod_types_config_and_preset -> mod_types_preset;
-  mod_types_data_column_custody_group -> mod_beacon_chain_observed_attesters;
   mod_types_data_column_custody_group -> mod_types_chain_spec;
-  mod_types_data_column_custody_group -> mod_types_eth_spec;
   mod_types_data_column_sidecar -> mod_warp_utils_reject;
   mod_types_epoch_cache -> mod_types_slot_epoch;
   mod_types_epoch_cache -> mod_warp_utils_reject;
   mod_types_eth_spec -> mod_beacon_chain_observed_aggregates;
   mod_types_fork_context -> mod_types_slot_epoch;
-  mod_types_graffiti -> mod_types_attestation;
-  mod_types_light_client_update -> mod_types_beacon_state;
-  mod_types_light_client_update -> mod_types_eth_spec;
+  mod_types_graffiti -> mod_types_sync_committee;
   mod_types_light_client_update -> mod_types_slot_epoch;
   mod_types_light_client_update -> mod_warp_utils_reject;
-  mod_types_payload -> mod_types_eth_spec;
   mod_types_payload -> mod_types_execution_payload;
   mod_types_payload -> mod_types_execution_payload_header;
   mod_types_preset -> mod_types_slot_epoch;
   mod_types_proposer_slashing -> mod_state_processing_verify_operation;
   mod_types_signed_beacon_block -> mod_deposit_contract_lib;
-  mod_types_signed_beacon_block -> mod_store_iter;
-  mod_types_signed_beacon_block -> mod_types_eth_spec;
   mod_types_signed_beacon_block -> mod_types_fork_name;
   mod_types_signed_beacon_block -> mod_types_payload;
   mod_types_signed_bls_to_execution_change -> mod_state_processing_verify_operation;
   mod_types_signed_voluntary_exit -> mod_state_processing_verify_operation;
-  mod_types_sync_committee_contribution -> mod_beacon_chain_observed_aggregates;
   mod_types_sync_committee_contribution -> mod_types_slot_data;
   mod_types_sync_committee_contribution -> mod_types_slot_epoch;
-  mod_types_test_utils -> mod_types_eth_spec;
   mod_validator_client_lib -> mod_slot_clock_system_time_slot_clock;
   mod_validator_dir_builder -> mod_eth2_keystore_keystore;
   mod_validator_dir_insecure_keys -> mod_eth2_keystore_json_keystore;
   mod_validator_dir_validator_dir -> mod_lockfile_lib;
   mod_validator_http_api_create_signed_voluntary_exit -> mod_slot_clock_lib;
-  mod_validator_http_api_create_signed_voluntary_exit -> mod_types_eth_spec;
   mod_validator_http_api_create_signed_voluntary_exit -> mod_types_slot_epoch;
   mod_validator_http_api_create_validator -> mod_account_utils_lib;
   mod_validator_http_api_create_validator -> mod_account_utils_validator_definitions;
   mod_validator_http_api_create_validator -> mod_lighthouse_validator_store_lib;
-  mod_validator_http_api_create_validator -> mod_slot_clock_lib;
-  mod_validator_http_api_create_validator -> mod_types_eth_spec;
   mod_validator_http_api_graffiti -> mod_bls_generic_public_key_bytes;
   mod_validator_http_api_graffiti -> mod_bls_impls;
   mod_validator_http_api_graffiti -> mod_lighthouse_validator_store_lib;
-  mod_validator_http_api_graffiti -> mod_slot_clock_lib;
-  mod_validator_http_api_graffiti -> mod_types_eth_spec;
   mod_validator_http_api_graffiti -> mod_types_graffiti;
   mod_validator_http_api_graffiti -> mod_warp_utils_reject;
   mod_validator_http_api_keystores -> mod_eth2_lighthouse_vc;
   mod_validator_http_api_keystores -> mod_lighthouse_validator_store_lib;
-  mod_validator_http_api_keystores -> mod_slot_clock_lib;
   mod_validator_http_api_keystores -> mod_task_executor_lib;
-  mod_validator_http_api_keystores -> mod_types_eth_spec;
-  mod_validator_http_api_lib -> mod_slot_clock_lib;
   mod_validator_http_api_remotekeys -> mod_eth2_lighthouse_vc;
   mod_validator_http_api_remotekeys -> mod_lighthouse_validator_store_lib;
-  mod_validator_http_api_remotekeys -> mod_slot_clock_lib;
   mod_validator_http_api_remotekeys -> mod_task_executor_lib;
-  mod_validator_http_api_remotekeys -> mod_types_eth_spec;
-  mod_validator_http_metrics_lib -> mod_types_eth_spec;
   mod_validator_manager_common -> mod_eth2_lighthouse_vc;
-  mod_validator_manager_common -> mod_operation_pool_attestation_storage;
+  mod_validator_manager_common -> mod_http_api_lib;
   mod_validator_manager_common -> mod_sensitive_url_lib;
-  mod_validator_manager_common -> mod_types_beacon_state;
   mod_validator_manager_create_validators -> mod_types_chain_spec;
-  mod_validator_manager_create_validators -> mod_types_eth_spec;
   mod_validator_manager_create_validators -> mod_validator_manager_common;
-  mod_validator_manager_exit_validators -> mod_types_eth_spec;
   mod_validator_manager_exit_validators -> mod_types_slot_epoch;
-  mod_validator_manager_list_validators -> mod_types_eth_spec;
   mod_validator_services_attestation_service -> mod_beacon_node_fallback_lib;
   mod_validator_services_attestation_service -> mod_task_executor_lib;
   mod_validator_services_attestation_service -> mod_types_chain_spec;
@@ -1467,35 +1360,28 @@ digraph architecture {
   mod_validator_services_duties_service -> mod_network_sync;
   mod_validator_services_duties_service -> mod_oneshot_broadcast_lib;
   mod_validator_services_duties_service -> mod_slashing_protection_test_utils;
-  mod_validator_services_duties_service -> mod_slot_clock_lib;
+  mod_validator_services_duties_service -> mod_state_processing_per_block_processing;
   mod_validator_services_duties_service -> mod_task_executor_lib;
   mod_validator_services_duties_service -> mod_types_chain_spec;
   mod_validator_services_duties_service -> mod_types_selection_proof;
   mod_validator_services_duties_service -> mod_types_slot_epoch;
   mod_validator_services_duties_service -> mod_validator_services_block_service;
-  mod_validator_services_duties_service -> mod_validator_store_lib;
-  mod_validator_services_notifier_service -> mod_slot_clock_lib;
   mod_validator_services_notifier_service -> mod_state_processing_per_block_processing;
   mod_validator_services_notifier_service -> mod_validator_services_duties_service;
-  mod_validator_services_notifier_service -> mod_validator_store_lib;
   mod_validator_services_preparation_service -> mod_beacon_node_fallback_lib;
   mod_validator_services_preparation_service -> mod_task_executor_lib;
   mod_validator_services_preparation_service -> mod_types_validator_registration_data;
-  mod_validator_services_sync -> mod_slot_clock_lib;
   mod_validator_services_sync -> mod_types_chain_spec;
-  mod_validator_services_sync -> mod_types_eth_spec;
   mod_validator_services_sync -> mod_types_slot_epoch;
   mod_validator_services_sync -> mod_types_sync_duty;
   mod_validator_services_sync -> mod_types_sync_selection_proof;
   mod_validator_services_sync -> mod_types_sync_subnet_id;
   mod_validator_services_sync -> mod_validator_services_duties_service;
-  mod_validator_services_sync -> mod_validator_store_lib;
   mod_validator_services_sync_committee_service -> mod_types_chain_spec;
-  mod_validator_services_sync_committee_service -> mod_types_eth_spec;
   mod_validator_store_lib -> mod_eth2_types;
   mod_validator_store_lib -> mod_types_slot_epoch;
-  mod_warp_utils_json -> mod_proto_array_error;
-  mod_warp_utils_query -> mod_validator_http_api_lib;
+  mod_warp_utils_json -> mod_bls_lib;
+  mod_warp_utils_query -> mod_types_relative_epoch;
   mod_warp_utils_reject -> mod_eth2_types;
   mod_warp_utils_task -> mod_lighthouse_network_service;
 }

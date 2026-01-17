@@ -17,10 +17,11 @@ digraph architecture {
   crate_beacon_processor[label="beacon_processor", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/beacon_processor"];
   crate_bls[label="bls", path="/home/yibai/llmcc/sample/repos/lighthouse/crypto/bls"];
   crate_eth2[label="eth2", path="/home/yibai/llmcc/sample/repos/lighthouse/common/eth2"];
+  crate_eth2_keystore[label="eth2_keystore", path="/home/yibai/llmcc/sample/repos/lighthouse/crypto/eth2_keystore"];
   crate_eth2_wallet_manager[label="eth2_wallet_manager", path="/home/yibai/llmcc/sample/repos/lighthouse/common/eth2_wallet_manager"];
   crate_execution_layer[label="execution_layer", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/execution_layer"];
-  crate_fork_choice[label="fork_choice", path="/home/yibai/llmcc/sample/repos/lighthouse/consensus/fork_choice"];
   crate_http_api[label="http_api", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/http_api"];
+  crate_initialized_validators[label="initialized_validators", path="/home/yibai/llmcc/sample/repos/lighthouse/validator_client/initialized_validators"];
   crate_lighthouse_network[label="lighthouse_network", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/lighthouse_network"];
   crate_network[label="network", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/network"];
   crate_operation_pool[label="operation_pool", path="/home/yibai/llmcc/sample/repos/lighthouse/beacon_node/operation_pool"];
@@ -38,11 +39,9 @@ digraph architecture {
   crate_account_manager -> crate_bls;
   crate_account_manager -> crate_eth2;
   crate_account_manager -> crate_operation_pool;
-  crate_account_manager -> crate_slasher;
   crate_account_manager -> crate_types;
   crate_beacon_chain -> crate_eth2_wallet_manager;
   crate_beacon_chain -> crate_execution_layer;
-  crate_beacon_chain -> crate_fork_choice;
   crate_beacon_chain -> crate_http_api;
   crate_beacon_chain -> crate_network;
   crate_beacon_chain -> crate_operation_pool;
@@ -52,21 +51,22 @@ digraph architecture {
   crate_beacon_chain -> crate_types;
   crate_beacon_chain -> crate_warp_utils;
   crate_beacon_processor -> crate_types;
+  crate_bls -> crate_types;
+  crate_eth2 -> crate_lighthouse_network;
   crate_eth2 -> crate_types;
   crate_execution_layer -> crate_eth2;
   crate_execution_layer -> crate_types;
-  crate_fork_choice -> crate_types;
   crate_http_api -> crate_beacon_chain;
   crate_http_api -> crate_beacon_processor;
   crate_http_api -> crate_eth2;
-  crate_http_api -> crate_eth2_wallet_manager;
   crate_http_api -> crate_lighthouse_network;
   crate_http_api -> crate_network;
   crate_http_api -> crate_state_processing;
   crate_http_api -> crate_store;
   crate_http_api -> crate_types;
-  crate_http_api -> crate_validator_services;
   crate_http_api -> crate_warp_utils;
+  crate_initialized_validators -> crate_eth2_keystore;
+  crate_lighthouse_network -> crate_eth2;
   crate_lighthouse_network -> crate_types;
   crate_network -> crate_beacon_chain;
   crate_network -> crate_beacon_processor;
@@ -81,6 +81,7 @@ digraph architecture {
   crate_slasher -> crate_bls;
   crate_slasher -> crate_types;
   crate_slashing_protection -> crate_types;
+  crate_state_processing -> crate_beacon_chain;
   crate_state_processing -> crate_bls;
   crate_state_processing -> crate_types;
   crate_state_processing -> crate_warp_utils;
@@ -92,6 +93,7 @@ digraph architecture {
   crate_validator_http_api -> crate_account_utils;
   crate_validator_http_api -> crate_bls;
   crate_validator_http_api -> crate_eth2;
+  crate_validator_http_api -> crate_initialized_validators;
   crate_validator_http_api -> crate_types;
   crate_validator_http_api -> crate_warp_utils;
   crate_validator_manager -> crate_eth2;
@@ -99,5 +101,7 @@ digraph architecture {
   crate_validator_services -> crate_eth2;
   crate_validator_services -> crate_eth2_wallet_manager;
   crate_validator_services -> crate_slashing_protection;
+  crate_validator_services -> crate_state_processing;
   crate_validator_services -> crate_types;
+  crate_warp_utils -> crate_execution_layer;
 }

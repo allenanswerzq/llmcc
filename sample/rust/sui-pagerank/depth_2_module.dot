@@ -82,6 +82,7 @@ digraph architecture {
 
     mod_move_model_model[label="model", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-model/src"];
     mod_move_model_symbol[label="symbol", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-model/src"];
+    mod_move_model_ty[label="ty", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-model/src"];
   }
 
   subgraph cluster_move_model_2 {
@@ -97,7 +98,6 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_move_package_alt_package[label="package", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-package-alt/src/package"];
     mod_move_package_alt_schema[label="schema", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-package-alt/src/schema"];
   }
 
@@ -116,14 +116,6 @@ digraph architecture {
 
     mod_move_stackless_bytecode_access_path[label="access_path", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-stackless-bytecode/src"];
     mod_move_stackless_bytecode_stackless_bytecode[label="stackless_bytecode", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-stackless-bytecode/src"];
-  }
-
-  subgraph cluster_move_symbol_pool {
-    label="move-symbol-pool";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_move_symbol_pool_symbol[label="symbol", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/crates/move-symbol-pool/src"];
   }
 
   subgraph cluster_move_vm_types {
@@ -156,6 +148,14 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_move_vm_types_v2_values[label="values", path="/home/yibai/llmcc/sample/repos/sui/external-crates/move/move-execution/v2/crates/move-vm-types/src/values"];
+  }
+
+  subgraph cluster_mysten_metrics {
+    label="mysten-metrics";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_mysten_metrics_monitored_mpsc[label="monitored_mpsc", path="/home/yibai/llmcc/sample/repos/sui/crates/mysten-metrics/src"];
   }
 
   subgraph cluster_sui {
@@ -227,14 +227,6 @@ digraph architecture {
     mod_sui_core_unit_tests[label="unit_tests", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-core/src/unit_tests"];
   }
 
-  subgraph cluster_sui_data_store {
-    label="sui-data-store";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_sui_data_store_gql_queries[label="gql_queries", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-data-store/src"];
-  }
-
   subgraph cluster_sui_display {
     label="sui-display";
     style=rounded;
@@ -262,20 +254,11 @@ digraph architecture {
     mod_sui_indexer_alt_graphql_transaction_kind[label="transaction_kind", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-indexer-alt-graphql/src/api/types/transaction_kind"];
   }
 
-  subgraph cluster_sui_indexer_alt_jsonrpc {
-    label="sui-indexer-alt-jsonrpc";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_sui_indexer_alt_jsonrpc_api[label="api", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-indexer-alt-jsonrpc/src/api"];
-  }
-
   subgraph cluster_sui_json_rpc_types {
     label="sui-json-rpc-types";
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_sui_json_rpc_types_lib[label="lib", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-json-rpc-types/src"];
     mod_sui_json_rpc_types_sui_transaction[label="sui_transaction", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-json-rpc-types/src"];
   }
 
@@ -293,14 +276,7 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_sui_move_natives_latest_crypto[label="crypto", path="/home/yibai/llmcc/sample/repos/sui/sui-execution/latest/sui-move-natives/src/crypto"];
-  }
-
-  subgraph cluster_sui_move_natives_v2 {
-    label="sui-move-natives-v2";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_sui_move_natives_v2_crypto[label="crypto", path="/home/yibai/llmcc/sample/repos/sui/sui-execution/v2/sui-move-natives/src/crypto"];
+    mod_sui_move_natives_latest_lib[label="lib", path="/home/yibai/llmcc/sample/repos/sui/sui-execution/latest/sui-move-natives/src"];
   }
 
   subgraph cluster_sui_name_service {
@@ -319,6 +295,14 @@ digraph architecture {
     mod_sui_node_admin[label="admin", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-node/src"];
   }
 
+  subgraph cluster_sui_open_rpc {
+    label="sui-open-rpc";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_open_rpc_lib[label="lib", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-open-rpc/src"];
+  }
+
   subgraph cluster_sui_package_dump {
     label="sui-package-dump";
     style=rounded;
@@ -333,6 +317,14 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_sui_protocol_config_lib[label="lib", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-protocol-config/src"];
+  }
+
+  subgraph cluster_sui_proxy {
+    label="sui-proxy";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sui_proxy_remote_write[label="remote_write", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-proxy/src"];
   }
 
   subgraph cluster_sui_rosetta {
@@ -359,7 +351,6 @@ digraph architecture {
     mod_sui_types_base_types[label="base_types", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-types/src"];
     mod_sui_types_crypto[label="crypto", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-types/src"];
     mod_sui_types_digests[label="digests", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-types/src"];
-    mod_sui_types_effects[label="effects", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-types/src/effects"];
     mod_sui_types_error[label="error", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-types/src"];
     mod_sui_types_messages_grpc[label="messages_grpc", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-types/src"];
     mod_sui_types_object[label="object", path="/home/yibai/llmcc/sample/repos/sui/crates/sui-types/src/object"];
@@ -388,6 +379,7 @@ digraph architecture {
 
   mod_move_analyzer_symbols -> mod_move_compiler_diagnostics;
   mod_move_analyzer_symbols -> mod_move_compiler_expansion;
+  mod_move_analyzer_symbols -> mod_move_compiler_hlir;
   mod_move_analyzer_symbols -> mod_move_compiler_parser;
   mod_move_analyzer_symbols -> mod_move_compiler_shared;
   mod_move_analyzer_symbols -> mod_move_compiler_typing;
@@ -396,13 +388,13 @@ digraph architecture {
   mod_move_analyzer_symbols -> mod_move_model_2_summary;
   mod_move_analyzer_symbols -> mod_move_model_symbol;
   mod_move_analyzer_symbols -> mod_move_regex_borrow_graph_collections;
-  mod_move_analyzer_symbols -> mod_move_symbol_pool_symbol;
-  mod_move_analyzer_symbols -> mod_sui_adapter_latest_static_programmable_transactions;
+  mod_move_analyzer_symbols -> mod_move_stackless_bytecode_access_path;
+  mod_move_analyzer_symbols -> mod_sui_indexer_alt_graphql_api;
   mod_move_analyzer_symbols -> mod_sui_indexer_alt_graphql_scalars;
-  mod_move_analyzer_symbols -> mod_sui_json_rpc_types_lib;
   mod_move_analyzer_symbols -> mod_sui_kvstore_bigtable;
   mod_move_binary_format_deserializer -> mod_move_binary_format_file_format;
   mod_move_binary_format_deserializer -> mod_move_binary_format_file_format_common;
+  mod_move_binary_format_deserializer -> mod_sui_indexer_alt_graphql_scalars;
   mod_move_binary_format_normalized -> mod_move_binary_format_file_format;
   mod_move_binary_format_normalized -> mod_move_core_types_identifier;
   mod_move_binary_format_normalized -> mod_sui_indexer_alt_graphql_api;
@@ -420,11 +412,15 @@ digraph architecture {
   mod_move_compiler_cfgir -> mod_move_compiler_typing;
   mod_move_compiler_cfgir -> mod_move_ir_types_ast;
   mod_move_compiler_cfgir -> mod_move_ir_types_location;
-  mod_move_compiler_cfgir -> mod_move_symbol_pool_symbol;
+  mod_move_compiler_cfgir -> mod_move_model_2_summary;
+  mod_move_compiler_cfgir -> mod_move_model_symbol;
+  mod_move_compiler_cfgir -> mod_move_stackless_bytecode_access_path;
   mod_move_compiler_cfgir -> mod_sui_adapter_latest_static_programmable_transactions;
   mod_move_compiler_cfgir -> mod_sui_indexer_alt_graphql_api;
+  mod_move_compiler_cfgir -> mod_sui_indexer_alt_graphql_scalars;
   mod_move_compiler_cfgir -> mod_sui_kvstore_bigtable;
   mod_move_compiler_diagnostics -> mod_move_compiler_shared;
+  mod_move_compiler_diagnostics -> mod_sui_indexer_alt_graphql_scalars;
   mod_move_compiler_diagnostics -> mod_sui_kvstore_bigtable;
   mod_move_compiler_expansion -> mod_move_compiler_cfgir;
   mod_move_compiler_expansion -> mod_move_compiler_diagnostics;
@@ -436,13 +432,15 @@ digraph architecture {
   mod_move_compiler_expansion -> mod_move_compiler_typing;
   mod_move_compiler_expansion -> mod_move_ir_types_ast;
   mod_move_compiler_expansion -> mod_move_ir_types_location;
-  mod_move_compiler_expansion -> mod_move_model_2_summary;
   mod_move_compiler_expansion -> mod_move_model_symbol;
-  mod_move_compiler_expansion -> mod_move_symbol_pool_symbol;
+  mod_move_compiler_expansion -> mod_move_model_ty;
+  mod_move_compiler_expansion -> mod_move_stackless_bytecode_access_path;
   mod_move_compiler_expansion -> mod_sui_adapter_latest_static_programmable_transactions;
   mod_move_compiler_expansion -> mod_sui_client_ptb;
   mod_move_compiler_expansion -> mod_sui_display_v2;
+  mod_move_compiler_expansion -> mod_sui_indexer_alt_graphql_scalars;
   mod_move_compiler_expansion -> mod_sui_kvstore_bigtable;
+  mod_move_compiler_expansion -> mod_sui_proxy_remote_write;
   mod_move_compiler_hlir -> mod_move_compiler_cfgir;
   mod_move_compiler_hlir -> mod_move_compiler_diagnostics;
   mod_move_compiler_hlir -> mod_move_compiler_expansion;
@@ -455,29 +453,29 @@ digraph architecture {
   mod_move_compiler_hlir -> mod_move_ir_types_location;
   mod_move_compiler_hlir -> mod_move_model_symbol;
   mod_move_compiler_hlir -> mod_move_stackless_bytecode_access_path;
-  mod_move_compiler_hlir -> mod_move_symbol_pool_symbol;
-  mod_move_compiler_hlir -> mod_sui_adapter_latest_static_programmable_transactions;
   mod_move_compiler_hlir -> mod_sui_display_v2;
-  mod_move_compiler_hlir -> mod_sui_indexer_alt_graphql_api;
+  mod_move_compiler_hlir -> mod_sui_indexer_alt_graphql_scalars;
   mod_move_compiler_hlir -> mod_sui_kvstore_bigtable;
-  mod_move_compiler_naming -> mod_move_compiler_cfgir;
+  mod_move_compiler_hlir -> mod_sui_proxy_remote_write;
+  mod_move_compiler_naming -> mod_move_binary_format_normalized;
   mod_move_compiler_naming -> mod_move_compiler_diagnostics;
   mod_move_compiler_naming -> mod_move_compiler_expansion;
   mod_move_compiler_naming -> mod_move_compiler_hlir;
   mod_move_compiler_naming -> mod_move_compiler_parser;
   mod_move_compiler_naming -> mod_move_compiler_shared;
-  mod_move_compiler_naming -> mod_move_compiler_sui_mode;
   mod_move_compiler_naming -> mod_move_compiler_to_bytecode;
   mod_move_compiler_naming -> mod_move_compiler_typing;
   mod_move_compiler_naming -> mod_move_ir_types_ast;
   mod_move_compiler_naming -> mod_move_ir_types_location;
   mod_move_compiler_naming -> mod_move_model_2_summary;
-  mod_move_compiler_naming -> mod_move_symbol_pool_symbol;
+  mod_move_compiler_naming -> mod_move_model_symbol;
+  mod_move_compiler_naming -> mod_move_model_ty;
+  mod_move_compiler_naming -> mod_move_stackless_bytecode_access_path;
   mod_move_compiler_naming -> mod_sui_adapter_latest_static_programmable_transactions;
-  mod_move_compiler_naming -> mod_sui_client_ptb;
   mod_move_compiler_naming -> mod_sui_indexer_alt_graphql_api;
+  mod_move_compiler_naming -> mod_sui_indexer_alt_graphql_scalars;
   mod_move_compiler_naming -> mod_sui_kvstore_bigtable;
-  mod_move_compiler_parser -> mod_move_compiler_cfgir;
+  mod_move_compiler_naming -> mod_sui_proxy_remote_write;
   mod_move_compiler_parser -> mod_move_compiler_diagnostics;
   mod_move_compiler_parser -> mod_move_compiler_expansion;
   mod_move_compiler_parser -> mod_move_compiler_hlir;
@@ -489,9 +487,11 @@ digraph architecture {
   mod_move_compiler_parser -> mod_move_ir_types_location;
   mod_move_compiler_parser -> mod_move_model_2_summary;
   mod_move_compiler_parser -> mod_move_model_symbol;
-  mod_move_compiler_parser -> mod_move_symbol_pool_symbol;
+  mod_move_compiler_parser -> mod_move_model_ty;
+  mod_move_compiler_parser -> mod_move_stackless_bytecode_access_path;
+  mod_move_compiler_parser -> mod_sui_adapter_latest_static_programmable_transactions;
   mod_move_compiler_parser -> mod_sui_client_ptb;
-  mod_move_compiler_parser -> mod_sui_json_rpc_types_lib;
+  mod_move_compiler_parser -> mod_sui_indexer_alt_graphql_scalars;
   mod_move_compiler_parser -> mod_sui_kvstore_bigtable;
   mod_move_compiler_shared -> mod_move_compiler_cfgir;
   mod_move_compiler_shared -> mod_move_compiler_diagnostics;
@@ -499,37 +499,42 @@ digraph architecture {
   mod_move_compiler_shared -> mod_move_compiler_hlir;
   mod_move_compiler_shared -> mod_move_compiler_naming;
   mod_move_compiler_shared -> mod_move_compiler_parser;
-  mod_move_compiler_shared -> mod_move_compiler_sui_mode;
   mod_move_compiler_shared -> mod_move_compiler_typing;
   mod_move_compiler_shared -> mod_move_ir_types_ast;
   mod_move_compiler_shared -> mod_move_ir_types_location;
   mod_move_compiler_shared -> mod_move_model_symbol;
-  mod_move_compiler_shared -> mod_move_symbol_pool_symbol;
+  mod_move_compiler_shared -> mod_move_stackless_bytecode_access_path;
+  mod_move_compiler_shared -> mod_sui_adapter_latest_static_programmable_transactions;
   mod_move_compiler_shared -> mod_sui_client_ptb;
   mod_move_compiler_shared -> mod_sui_indexer_alt_graphql_api;
-  mod_move_compiler_shared -> mod_sui_json_rpc_types_lib;
+  mod_move_compiler_shared -> mod_sui_indexer_alt_graphql_scalars;
   mod_move_compiler_shared -> mod_sui_kvstore_bigtable;
   mod_move_compiler_sui_mode -> mod_move_compiler_cfgir;
   mod_move_compiler_sui_mode -> mod_move_compiler_diagnostics;
   mod_move_compiler_sui_mode -> mod_move_compiler_expansion;
   mod_move_compiler_sui_mode -> mod_move_compiler_hlir;
+  mod_move_compiler_sui_mode -> mod_move_compiler_naming;
+  mod_move_compiler_sui_mode -> mod_move_compiler_parser;
   mod_move_compiler_sui_mode -> mod_move_compiler_shared;
   mod_move_compiler_sui_mode -> mod_move_compiler_typing;
   mod_move_compiler_sui_mode -> mod_move_ir_types_ast;
   mod_move_compiler_sui_mode -> mod_move_ir_types_location;
-  mod_move_compiler_sui_mode -> mod_move_model_2_summary;
+  mod_move_compiler_sui_mode -> mod_move_model_symbol;
+  mod_move_compiler_sui_mode -> mod_move_model_ty;
   mod_move_compiler_sui_mode -> mod_sui_adapter_latest_static_programmable_transactions;
-  mod_move_compiler_sui_mode -> mod_sui_kvstore_bigtable;
+  mod_move_compiler_sui_mode -> mod_sui_client_ptb;
   mod_move_compiler_to_bytecode -> mod_move_binary_format_file_format;
   mod_move_compiler_to_bytecode -> mod_move_compiler_cfgir;
   mod_move_compiler_to_bytecode -> mod_move_compiler_expansion;
   mod_move_compiler_to_bytecode -> mod_move_compiler_hlir;
-  mod_move_compiler_to_bytecode -> mod_move_compiler_parser;
+  mod_move_compiler_to_bytecode -> mod_move_compiler_naming;
   mod_move_compiler_to_bytecode -> mod_move_compiler_shared;
   mod_move_compiler_to_bytecode -> mod_move_ir_types_ast;
   mod_move_compiler_to_bytecode -> mod_move_ir_types_location;
-  mod_move_compiler_to_bytecode -> mod_move_model_2_summary;
-  mod_move_compiler_to_bytecode -> mod_move_symbol_pool_symbol;
+  mod_move_compiler_to_bytecode -> mod_move_model_symbol;
+  mod_move_compiler_to_bytecode -> mod_move_model_ty;
+  mod_move_compiler_to_bytecode -> mod_move_stackless_bytecode_access_path;
+  mod_move_compiler_to_bytecode -> mod_sui_client_ptb;
   mod_move_compiler_typing -> mod_move_binary_format_normalized;
   mod_move_compiler_typing -> mod_move_compiler_cfgir;
   mod_move_compiler_typing -> mod_move_compiler_diagnostics;
@@ -544,148 +549,150 @@ digraph architecture {
   mod_move_compiler_typing -> mod_move_ir_types_location;
   mod_move_compiler_typing -> mod_move_model_2_summary;
   mod_move_compiler_typing -> mod_move_model_symbol;
+  mod_move_compiler_typing -> mod_move_model_ty;
   mod_move_compiler_typing -> mod_move_stackless_bytecode_access_path;
-  mod_move_compiler_typing -> mod_move_symbol_pool_symbol;
   mod_move_compiler_typing -> mod_sui_adapter_latest_static_programmable_transactions;
+  mod_move_compiler_typing -> mod_sui_client_ptb;
   mod_move_compiler_typing -> mod_sui_display_v2;
-  mod_move_compiler_typing -> mod_sui_indexer_alt_graphql_extensions;
-  mod_move_compiler_typing -> mod_sui_json_rpc_types_lib;
+  mod_move_compiler_typing -> mod_sui_indexer_alt_graphql_scalars;
   mod_move_compiler_typing -> mod_sui_kvstore_bigtable;
-  mod_move_compiler_typing -> mod_sui_protocol_config_lib;
+  mod_move_compiler_typing -> mod_sui_proxy_remote_write;
   mod_move_core_types_language_storage -> mod_move_core_types_account_address;
   mod_move_core_types_language_storage -> mod_move_core_types_identifier;
   mod_move_core_types_language_storage -> mod_sui_indexer_alt_graphql_api;
-  mod_move_core_types_language_storage -> mod_sui_types_base_types;
-  mod_move_ir_to_bytecode_syntax_syntax -> mod_move_binary_format_normalized;
   mod_move_ir_to_bytecode_syntax_syntax -> mod_move_compiler_expansion;
   mod_move_ir_to_bytecode_syntax_syntax -> mod_move_compiler_naming;
-  mod_move_ir_to_bytecode_syntax_syntax -> mod_move_compiler_parser;
+  mod_move_ir_to_bytecode_syntax_syntax -> mod_move_compiler_typing;
   mod_move_ir_to_bytecode_syntax_syntax -> mod_move_core_types_account_address;
   mod_move_ir_to_bytecode_syntax_syntax -> mod_move_ir_types_ast;
   mod_move_ir_to_bytecode_syntax_syntax -> mod_move_ir_types_location;
-  mod_move_ir_to_bytecode_syntax_syntax -> mod_move_symbol_pool_symbol;
-  mod_move_ir_to_bytecode_syntax_syntax -> mod_sui_indexer_alt_graphql_api;
+  mod_move_ir_to_bytecode_syntax_syntax -> mod_move_model_2_summary;
+  mod_move_ir_to_bytecode_syntax_syntax -> mod_move_model_symbol;
   mod_move_ir_to_bytecode_syntax_syntax -> mod_sui_kvstore_bigtable;
   mod_move_ir_types_ast -> mod_move_compiler_shared;
   mod_move_ir_types_ast -> mod_move_ir_types_location;
   mod_move_ir_types_ast -> mod_move_model_symbol;
   mod_move_ir_types_ast -> mod_sui_indexer_alt_graphql_api;
-  mod_move_ir_types_ast -> mod_sui_json_rpc_types_lib;
+  mod_move_ir_types_ast -> mod_sui_indexer_alt_graphql_scalars;
   mod_move_ir_types_ast -> mod_sui_kvstore_bigtable;
+  mod_move_ir_types_location -> mod_move_compiler_typing;
   mod_move_ir_types_location -> mod_move_ir_types_ast;
   mod_move_model_2_summary -> mod_move_core_types_account_address;
-  mod_move_model_2_summary -> mod_move_symbol_pool_symbol;
-  mod_move_model_2_summary -> mod_sui_json_rpc_types_lib;
+  mod_move_model_2_summary -> mod_move_model_symbol;
+  mod_move_model_2_summary -> mod_sui_client_ptb;
+  mod_move_model_2_summary -> mod_sui_indexer_alt_graphql_scalars;
   mod_move_model_2_summary -> mod_sui_kvstore_bigtable;
   mod_move_model_model -> mod_move_binary_format_file_format;
   mod_move_model_model -> mod_move_model_symbol;
-  mod_move_package_alt_package -> mod_move_package_alt_schema;
-  mod_move_package_alt_package -> mod_move_regex_borrow_graph_collections;
-  mod_move_package_alt_package -> mod_sui_json_rpc_types_lib;
-  mod_move_package_alt_package -> mod_sui_kvstore_bigtable;
+  mod_move_model_model -> mod_move_model_ty;
+  mod_move_model_model -> mod_sui_indexer_alt_graphql_scalars;
+  mod_move_model_ty -> mod_move_model_model;
   mod_move_package_alt_schema -> mod_move_core_types_account_address;
   mod_move_package_alt_schema -> mod_sui_indexer_alt_graphql_api;
   mod_move_package_alt_schema -> mod_sui_kvstore_bigtable;
   mod_move_stackless_bytecode_access_path -> mod_move_model_model;
   mod_move_stackless_bytecode_stackless_bytecode -> mod_move_model_model;
+  mod_move_stackless_bytecode_stackless_bytecode -> mod_sui_indexer_alt_graphql_scalars;
   mod_move_vm_types_v0_values -> mod_sui_indexer_alt_graphql_api;
-  mod_move_vm_types_v0_values -> mod_sui_indexer_alt_jsonrpc_api;
   mod_move_vm_types_v1_values -> mod_sui_indexer_alt_graphql_api;
-  mod_move_vm_types_v1_values -> mod_sui_indexer_alt_jsonrpc_api;
   mod_move_vm_types_v2_values -> mod_sui_indexer_alt_graphql_api;
-  mod_move_vm_types_v2_values -> mod_sui_indexer_alt_jsonrpc_api;
   mod_move_vm_types_values -> mod_sui_indexer_alt_graphql_api;
+  mod_move_vm_types_values -> mod_sui_indexer_alt_graphql_extensions;
   mod_sui_adapter_latest_programmable_transactions -> mod_move_binary_format_file_format;
+  mod_sui_adapter_latest_programmable_transactions -> mod_move_core_types_account_address;
   mod_sui_adapter_latest_programmable_transactions -> mod_move_core_types_identifier;
   mod_sui_adapter_latest_programmable_transactions -> mod_move_core_types_language_storage;
+  mod_sui_adapter_latest_programmable_transactions -> mod_move_model_symbol;
   mod_sui_adapter_latest_programmable_transactions -> mod_move_stackless_bytecode_access_path;
   mod_sui_adapter_latest_programmable_transactions -> mod_sui_adapter_latest_static_programmable_transactions;
   mod_sui_adapter_latest_programmable_transactions -> mod_sui_indexer_alt_graphql_api;
-  mod_sui_adapter_latest_programmable_transactions -> mod_sui_indexer_alt_graphql_scalars;
   mod_sui_adapter_latest_programmable_transactions -> mod_sui_kvstore_bigtable;
   mod_sui_adapter_latest_programmable_transactions -> mod_sui_package_dump_query;
+  mod_sui_adapter_latest_programmable_transactions -> mod_sui_protocol_config_lib;
   mod_sui_adapter_latest_programmable_transactions -> mod_sui_types_base_types;
   mod_sui_adapter_latest_programmable_transactions -> mod_sui_types_error;
   mod_sui_adapter_latest_programmable_transactions -> mod_sui_types_storage;
   mod_sui_adapter_latest_programmable_transactions -> mod_sui_types_transaction;
-  mod_sui_adapter_latest_static_programmable_transactions -> mod_move_compiler_naming;
   mod_sui_adapter_latest_static_programmable_transactions -> mod_move_compiler_shared;
   mod_sui_adapter_latest_static_programmable_transactions -> mod_move_core_types_account_address;
-  mod_sui_adapter_latest_static_programmable_transactions -> mod_move_core_types_identifier;
   mod_sui_adapter_latest_static_programmable_transactions -> mod_move_core_types_language_storage;
   mod_sui_adapter_latest_static_programmable_transactions -> mod_move_model_2_summary;
+  mod_sui_adapter_latest_static_programmable_transactions -> mod_move_stackless_bytecode_access_path;
   mod_sui_adapter_latest_static_programmable_transactions -> mod_sui_adapter_latest_programmable_transactions;
   mod_sui_adapter_latest_static_programmable_transactions -> mod_sui_client_ptb;
   mod_sui_adapter_latest_static_programmable_transactions -> mod_sui_indexer_alt_graphql_api;
-  mod_sui_adapter_latest_static_programmable_transactions -> mod_sui_indexer_alt_graphql_transaction_kind;
-  mod_sui_adapter_latest_static_programmable_transactions -> mod_sui_json_rpc_types_lib;
+  mod_sui_adapter_latest_static_programmable_transactions -> mod_sui_indexer_alt_graphql_scalars;
+  mod_sui_adapter_latest_static_programmable_transactions -> mod_sui_kvstore_bigtable;
+  mod_sui_adapter_latest_static_programmable_transactions -> mod_sui_protocol_config_lib;
   mod_sui_adapter_latest_static_programmable_transactions -> mod_sui_types_base_types;
+  mod_sui_adapter_latest_static_programmable_transactions -> mod_sui_types_error;
   mod_sui_adapter_latest_static_programmable_transactions -> mod_sui_types_object;
   mod_sui_adapter_latest_static_programmable_transactions -> mod_sui_types_sui_serde;
   mod_sui_adapter_latest_static_programmable_transactions -> mod_sui_types_transaction;
   mod_sui_adapter_v0_programmable_transactions -> mod_move_binary_format_normalized;
-  mod_sui_adapter_v0_programmable_transactions -> mod_move_compiler_shared;
   mod_sui_adapter_v0_programmable_transactions -> mod_move_core_types_account_address;
   mod_sui_adapter_v0_programmable_transactions -> mod_move_core_types_identifier;
-  mod_sui_adapter_v0_programmable_transactions -> mod_move_core_types_language_storage;
+  mod_sui_adapter_v0_programmable_transactions -> mod_move_model_ty;
+  mod_sui_adapter_v0_programmable_transactions -> mod_move_stackless_bytecode_access_path;
+  mod_sui_adapter_v0_programmable_transactions -> mod_sui_adapter_latest_static_programmable_transactions;
   mod_sui_adapter_v0_programmable_transactions -> mod_sui_client_ptb;
   mod_sui_adapter_v0_programmable_transactions -> mod_sui_indexer_alt_graphql_api;
   mod_sui_adapter_v0_programmable_transactions -> mod_sui_indexer_alt_graphql_extensions;
-  mod_sui_adapter_v0_programmable_transactions -> mod_sui_json_rpc_types_lib;
   mod_sui_adapter_v0_programmable_transactions -> mod_sui_package_dump_query;
+  mod_sui_adapter_v0_programmable_transactions -> mod_sui_protocol_config_lib;
   mod_sui_adapter_v0_programmable_transactions -> mod_sui_types_base_types;
   mod_sui_adapter_v0_programmable_transactions -> mod_sui_types_object;
   mod_sui_adapter_v0_programmable_transactions -> mod_sui_types_storage;
-  mod_sui_adapter_v1_programmable_transactions -> mod_move_compiler_shared;
   mod_sui_adapter_v1_programmable_transactions -> mod_move_core_types_account_address;
   mod_sui_adapter_v1_programmable_transactions -> mod_move_core_types_identifier;
   mod_sui_adapter_v1_programmable_transactions -> mod_move_core_types_language_storage;
+  mod_sui_adapter_v1_programmable_transactions -> mod_move_model_2_summary;
+  mod_sui_adapter_v1_programmable_transactions -> mod_move_model_ty;
+  mod_sui_adapter_v1_programmable_transactions -> mod_move_stackless_bytecode_access_path;
+  mod_sui_adapter_v1_programmable_transactions -> mod_sui_adapter_latest_static_programmable_transactions;
+  mod_sui_adapter_v1_programmable_transactions -> mod_sui_adapter_v0_programmable_transactions;
+  mod_sui_adapter_v1_programmable_transactions -> mod_sui_client_ptb;
   mod_sui_adapter_v1_programmable_transactions -> mod_sui_indexer_alt_graphql_api;
-  mod_sui_adapter_v1_programmable_transactions -> mod_sui_json_rpc_types_lib;
-  mod_sui_adapter_v1_programmable_transactions -> mod_sui_package_dump_query;
   mod_sui_adapter_v1_programmable_transactions -> mod_sui_types_base_types;
+  mod_sui_adapter_v1_programmable_transactions -> mod_sui_types_object;
   mod_sui_adapter_v1_programmable_transactions -> mod_sui_types_storage;
-  mod_sui_adapter_v1_programmable_transactions -> mod_sui_types_transaction;
   mod_sui_adapter_v2_programmable_transactions -> mod_move_binary_format_normalized;
-  mod_sui_adapter_v2_programmable_transactions -> mod_move_compiler_shared;
   mod_sui_adapter_v2_programmable_transactions -> mod_move_core_types_account_address;
   mod_sui_adapter_v2_programmable_transactions -> mod_move_core_types_identifier;
   mod_sui_adapter_v2_programmable_transactions -> mod_move_core_types_language_storage;
+  mod_sui_adapter_v2_programmable_transactions -> mod_move_model_ty;
+  mod_sui_adapter_v2_programmable_transactions -> mod_move_stackless_bytecode_access_path;
   mod_sui_adapter_v2_programmable_transactions -> mod_sui_adapter_latest_static_programmable_transactions;
+  mod_sui_adapter_v2_programmable_transactions -> mod_sui_adapter_v0_programmable_transactions;
+  mod_sui_adapter_v2_programmable_transactions -> mod_sui_client_ptb;
   mod_sui_adapter_v2_programmable_transactions -> mod_sui_indexer_alt_graphql_api;
-  mod_sui_adapter_v2_programmable_transactions -> mod_sui_json_rpc_types_lib;
+  mod_sui_adapter_v2_programmable_transactions -> mod_sui_protocol_config_lib;
   mod_sui_adapter_v2_programmable_transactions -> mod_sui_types_base_types;
-  mod_sui_adapter_v2_programmable_transactions -> mod_sui_types_object;
   mod_sui_adapter_v2_programmable_transactions -> mod_sui_types_storage;
-  mod_sui_adapter_v2_programmable_transactions -> mod_sui_types_transaction;
   mod_sui_benchmark_workloads -> mod_sui_indexer_alt_graphql_api;
-  mod_sui_benchmark_workloads -> mod_sui_json_rpc_types_lib;
-  mod_sui_benchmark_workloads -> mod_sui_package_dump_query;
+  mod_sui_benchmark_workloads -> mod_sui_indexer_alt_graphql_scalars;
   mod_sui_benchmark_workloads -> mod_sui_types_base_types;
   mod_sui_benchmark_workloads -> mod_sui_types_sui_serde;
-  mod_sui_client_commands -> mod_move_package_alt_package;
   mod_sui_client_commands -> mod_move_regex_borrow_graph_collections;
   mod_sui_client_commands -> mod_move_stackless_bytecode_access_path;
   mod_sui_client_commands -> mod_sui_client_ptb;
   mod_sui_client_commands -> mod_sui_indexer_alt_graphql_api;
-  mod_sui_client_commands -> mod_sui_indexer_alt_graphql_transaction_kind;
-  mod_sui_client_commands -> mod_sui_json_rpc_types_lib;
+  mod_sui_client_commands -> mod_sui_indexer_alt_graphql_scalars;
   mod_sui_client_commands -> mod_sui_json_rpc_types_sui_transaction;
   mod_sui_client_commands -> mod_sui_kvstore_bigtable;
-  mod_sui_client_commands -> mod_sui_package_dump_query;
   mod_sui_client_commands -> mod_sui_types_base_types;
-  mod_sui_client_commands -> mod_sui_types_digests;
+  mod_sui_client_commands -> mod_sui_types_sui_serde;
+  mod_sui_client_commands -> mod_sui_types_transaction;
   mod_sui_client_ptb -> mod_move_core_types_language_storage;
-  mod_sui_client_ptb -> mod_sui_indexer_alt_graphql_api;
-  mod_sui_client_ptb -> mod_sui_json_rpc_types_lib;
+  mod_sui_client_ptb -> mod_sui_indexer_alt_graphql_scalars;
   mod_sui_client_ptb -> mod_sui_kvstore_bigtable;
-  mod_sui_config_node -> mod_sui_json_rpc_types_lib;
+  mod_sui_config_node -> mod_sui_indexer_alt_graphql_scalars;
   mod_sui_config_node -> mod_sui_kvstore_bigtable;
   mod_sui_config_node -> mod_sui_types_crypto;
+  mod_sui_core_authority -> mod_sui_adapter_latest_static_programmable_transactions;
   mod_sui_core_authority -> mod_sui_config_node;
-  mod_sui_core_authority -> mod_sui_data_store_gql_queries;
   mod_sui_core_authority -> mod_sui_indexer_alt_graphql_api;
-  mod_sui_core_authority -> mod_sui_json_rpc_types_lib;
+  mod_sui_core_authority -> mod_sui_indexer_alt_graphql_scalars;
   mod_sui_core_authority -> mod_sui_node_admin;
   mod_sui_core_authority -> mod_sui_protocol_config_lib;
   mod_sui_core_authority -> mod_sui_types_base_types;
@@ -696,157 +703,147 @@ digraph architecture {
   mod_sui_core_authority -> mod_sui_types_sui_system_state;
   mod_sui_core_authority -> mod_sui_types_transaction;
   mod_sui_core_authority -> mod_typed_store_rocks;
-  mod_sui_core_checkpoints -> mod_move_compiler_shared;
   mod_sui_core_checkpoints -> mod_sui_core_authority;
   mod_sui_core_checkpoints -> mod_sui_core_execution_cache;
-  mod_sui_core_checkpoints -> mod_sui_data_store_gql_queries;
   mod_sui_core_checkpoints -> mod_sui_types_digests;
   mod_sui_core_checkpoints -> mod_typed_store_rocks;
   mod_sui_core_execution_cache -> mod_sui_core_authority;
-  mod_sui_core_execution_cache -> mod_sui_json_rpc_types_lib;
   mod_sui_core_execution_cache -> mod_sui_types_base_types;
   mod_sui_core_execution_cache -> mod_sui_types_digests;
-  mod_sui_core_execution_cache -> mod_sui_types_effects;
   mod_sui_core_execution_cache -> mod_sui_types_storage;
   mod_sui_core_unit_tests -> mod_move_binary_format_file_format;
-  mod_sui_core_unit_tests -> mod_move_compiler_expansion;
+  mod_sui_core_unit_tests -> mod_move_compiler_cfgir;
   mod_sui_core_unit_tests -> mod_move_compiler_shared;
   mod_sui_core_unit_tests -> mod_move_core_types_language_storage;
   mod_sui_core_unit_tests -> mod_move_regex_borrow_graph_collections;
-  mod_sui_core_unit_tests -> mod_sui_adapter_latest_programmable_transactions;
+  mod_sui_core_unit_tests -> mod_move_stackless_bytecode_access_path;
   mod_sui_core_unit_tests -> mod_sui_adapter_latest_static_programmable_transactions;
   mod_sui_core_unit_tests -> mod_sui_client_ptb;
   mod_sui_core_unit_tests -> mod_sui_core_authority;
-  mod_sui_core_unit_tests -> mod_sui_data_store_gql_queries;
   mod_sui_core_unit_tests -> mod_sui_indexer_alt_graphql_api;
   mod_sui_core_unit_tests -> mod_sui_indexer_alt_graphql_scalars;
   mod_sui_core_unit_tests -> mod_sui_indexer_alt_graphql_transaction_kind;
-  mod_sui_core_unit_tests -> mod_sui_json_rpc_types_lib;
+  mod_sui_core_unit_tests -> mod_sui_kvstore_bigtable;
   mod_sui_core_unit_tests -> mod_sui_package_dump_query;
+  mod_sui_core_unit_tests -> mod_sui_protocol_config_lib;
+  mod_sui_core_unit_tests -> mod_sui_rosetta_types;
   mod_sui_core_unit_tests -> mod_sui_types_base_types;
   mod_sui_core_unit_tests -> mod_sui_types_crypto;
   mod_sui_core_unit_tests -> mod_sui_types_digests;
-  mod_sui_core_unit_tests -> mod_sui_types_effects;
   mod_sui_core_unit_tests -> mod_sui_types_error;
   mod_sui_core_unit_tests -> mod_sui_types_object;
   mod_sui_core_unit_tests -> mod_sui_types_sui_serde;
-  mod_sui_data_store_gql_queries -> mod_sui_json_rpc_types_lib;
-  mod_sui_data_store_gql_queries -> mod_sui_kvstore_bigtable;
+  mod_sui_core_unit_tests -> mod_sui_types_transaction;
   mod_sui_display_v2 -> mod_move_core_types_account_address;
   mod_sui_display_v2 -> mod_move_core_types_language_storage;
-  mod_sui_display_v2 -> mod_sui_json_rpc_types_lib;
-  mod_sui_indexer_alt_consistent_store_rpc -> mod_sui_json_rpc_types_lib;
-  mod_sui_indexer_alt_graphql_api -> mod_move_compiler_naming;
+  mod_sui_display_v2 -> mod_sui_indexer_alt_graphql_scalars;
+  mod_sui_indexer_alt_consistent_store_rpc -> mod_move_stackless_bytecode_access_path;
+  mod_sui_indexer_alt_consistent_store_rpc -> mod_sui_indexer_alt_graphql_scalars;
+  mod_sui_indexer_alt_graphql_api -> mod_move_binary_format_file_format;
+  mod_sui_indexer_alt_graphql_api -> mod_move_stackless_bytecode_access_path;
   mod_sui_indexer_alt_graphql_api -> mod_sui_indexer_alt_graphql_scalars;
-  mod_sui_indexer_alt_graphql_api -> mod_sui_json_rpc_types_lib;
   mod_sui_indexer_alt_graphql_api -> mod_sui_kvstore_bigtable;
   mod_sui_indexer_alt_graphql_api -> mod_sui_types_base_types;
   mod_sui_indexer_alt_graphql_api -> mod_sui_types_sui_system_state;
   mod_sui_indexer_alt_graphql_extensions -> mod_sui_name_service_lib;
-  mod_sui_indexer_alt_graphql_scalars -> mod_move_vm_types_values;
-  mod_sui_indexer_alt_graphql_scalars -> mod_sui_json_rpc_types_lib;
-  mod_sui_indexer_alt_graphql_scalars -> mod_sui_types_base_types;
   mod_sui_indexer_alt_graphql_transaction_kind -> mod_sui_indexer_alt_graphql_api;
   mod_sui_indexer_alt_graphql_transaction_kind -> mod_sui_indexer_alt_graphql_scalars;
-  mod_sui_indexer_alt_jsonrpc_api -> mod_sui_types_base_types;
-  mod_sui_json_rpc_types_lib -> mod_sui_kvstore_bigtable;
-  mod_sui_json_rpc_types_lib -> mod_sui_types_base_types;
   mod_sui_json_rpc_types_sui_transaction -> mod_move_core_types_language_storage;
   mod_sui_json_rpc_types_sui_transaction -> mod_sui_indexer_alt_graphql_api;
-  mod_sui_json_rpc_types_sui_transaction -> mod_sui_json_rpc_types_lib;
+  mod_sui_json_rpc_types_sui_transaction -> mod_sui_indexer_alt_graphql_scalars;
   mod_sui_json_rpc_types_sui_transaction -> mod_sui_kvstore_bigtable;
-  mod_sui_json_rpc_types_sui_transaction -> mod_sui_package_dump_query;
   mod_sui_json_rpc_types_sui_transaction -> mod_sui_types_base_types;
   mod_sui_json_rpc_types_sui_transaction -> mod_sui_types_digests;
-  mod_sui_json_rpc_types_sui_transaction -> mod_sui_types_effects;
+  mod_sui_json_rpc_types_sui_transaction -> mod_sui_types_sui_serde;
   mod_sui_json_rpc_types_sui_transaction -> mod_sui_types_transaction;
   mod_sui_kvstore_bigtable -> mod_sui_client_ptb;
-  mod_sui_kvstore_bigtable -> mod_sui_json_rpc_types_lib;
-  mod_sui_move_natives_latest_crypto -> mod_move_binary_format_normalized;
+  mod_sui_kvstore_bigtable -> mod_sui_indexer_alt_graphql_scalars;
+  mod_sui_kvstore_bigtable -> mod_sui_open_rpc_lib;
+  mod_sui_move_natives_latest_crypto -> mod_move_compiler_cfgir;
   mod_sui_move_natives_latest_crypto -> mod_move_compiler_sui_mode;
   mod_sui_move_natives_latest_crypto -> mod_move_core_types_account_address;
   mod_sui_move_natives_latest_crypto -> mod_move_model_2_summary;
+  mod_sui_move_natives_latest_crypto -> mod_move_model_ty;
   mod_sui_move_natives_latest_crypto -> mod_move_stackless_bytecode_access_path;
   mod_sui_move_natives_latest_crypto -> mod_move_vm_types_v0_values;
   mod_sui_move_natives_latest_crypto -> mod_move_vm_types_v1_values;
+  mod_sui_move_natives_latest_crypto -> mod_move_vm_types_values;
+  mod_sui_move_natives_latest_crypto -> mod_sui_display_v2;
   mod_sui_move_natives_latest_crypto -> mod_sui_kvstore_bigtable;
-  mod_sui_move_natives_v2_crypto -> mod_move_core_types_account_address;
-  mod_sui_move_natives_v2_crypto -> mod_move_model_2_summary;
-  mod_sui_move_natives_v2_crypto -> mod_move_vm_types_v0_values;
-  mod_sui_move_natives_v2_crypto -> mod_move_vm_types_v1_values;
-  mod_sui_move_natives_v2_crypto -> mod_move_vm_types_values;
-  mod_sui_move_natives_v2_crypto -> mod_sui_kvstore_bigtable;
-  mod_sui_name_service_lib -> mod_sui_data_store_gql_queries;
-  mod_sui_name_service_lib -> mod_sui_json_rpc_types_lib;
+  mod_sui_move_natives_latest_crypto -> mod_sui_move_natives_latest_lib;
+  mod_sui_move_natives_latest_crypto -> mod_sui_proxy_remote_write;
+  mod_sui_move_natives_latest_lib -> mod_move_compiler_cfgir;
+  mod_sui_move_natives_latest_lib -> mod_sui_move_natives_latest_crypto;
+  mod_sui_move_natives_latest_lib -> mod_sui_protocol_config_lib;
+  mod_sui_name_service_lib -> mod_sui_indexer_alt_graphql_scalars;
+  mod_sui_node_admin -> mod_move_stackless_bytecode_access_path;
+  mod_sui_node_admin -> mod_mysten_metrics_monitored_mpsc;
   mod_sui_node_admin -> mod_sui_indexer_alt_consistent_store_rpc;
+  mod_sui_node_admin -> mod_sui_indexer_alt_graphql_api;
   mod_sui_node_admin -> mod_sui_kvstore_bigtable;
+  mod_sui_node_admin -> mod_sui_proxy_remote_write;
+  mod_sui_open_rpc_lib -> mod_sui_indexer_alt_graphql_scalars;
+  mod_sui_open_rpc_lib -> mod_sui_kvstore_bigtable;
   mod_sui_package_dump_query -> mod_sui_kvstore_bigtable;
+  mod_sui_rosetta_types -> mod_sui_indexer_alt_graphql_scalars;
   mod_sui_rosetta_types -> mod_sui_indexer_alt_graphql_transaction_kind;
-  mod_sui_rosetta_types -> mod_sui_json_rpc_types_lib;
   mod_sui_rosetta_types -> mod_sui_kvstore_bigtable;
   mod_sui_rosetta_types -> mod_sui_package_dump_query;
-  mod_sui_rpc_loadgen_payload -> mod_sui_json_rpc_types_lib;
+  mod_sui_rosetta_types -> mod_sui_types_base_types;
+  mod_sui_rpc_loadgen_payload -> mod_sui_client_ptb;
+  mod_sui_rpc_loadgen_payload -> mod_sui_indexer_alt_graphql_scalars;
   mod_sui_rpc_loadgen_payload -> mod_sui_json_rpc_types_sui_transaction;
   mod_sui_rpc_loadgen_payload -> mod_sui_kvstore_bigtable;
-  mod_sui_rpc_loadgen_payload -> mod_sui_package_dump_query;
   mod_sui_rpc_loadgen_payload -> mod_sui_types_base_types;
   mod_sui_rpc_loadgen_payload -> mod_sui_types_crypto;
   mod_sui_rpc_loadgen_payload -> mod_sui_types_digests;
   mod_sui_types_base_types -> mod_move_core_types_account_address;
   mod_sui_types_base_types -> mod_move_core_types_language_storage;
+  mod_sui_types_base_types -> mod_sui_adapter_latest_static_programmable_transactions;
   mod_sui_types_base_types -> mod_sui_indexer_alt_graphql_api;
-  mod_sui_types_base_types -> mod_sui_json_rpc_types_lib;
+  mod_sui_types_base_types -> mod_sui_indexer_alt_graphql_scalars;
   mod_sui_types_base_types -> mod_sui_types_digests;
   mod_sui_types_base_types -> mod_sui_types_object;
   mod_sui_types_base_types -> mod_sui_types_storage;
+  mod_sui_types_crypto -> mod_move_stackless_bytecode_access_path;
   mod_sui_types_crypto -> mod_sui_indexer_alt_graphql_api;
   mod_sui_types_crypto -> mod_sui_types_base_types;
-  mod_sui_types_effects -> mod_sui_types_base_types;
-  mod_sui_types_effects -> mod_sui_types_digests;
-  mod_sui_types_error -> mod_sui_json_rpc_types_lib;
+  mod_sui_types_error -> mod_sui_indexer_alt_graphql_scalars;
   mod_sui_types_error -> mod_sui_kvstore_bigtable;
   mod_sui_types_error -> mod_sui_types_base_types;
   mod_sui_types_error -> mod_sui_types_digests;
   mod_sui_types_messages_grpc -> mod_sui_kvstore_bigtable;
   mod_sui_types_messages_grpc -> mod_sui_types_digests;
-  mod_sui_types_messages_grpc -> mod_sui_types_effects;
   mod_sui_types_messages_grpc -> mod_sui_types_error;
   mod_sui_types_messages_grpc -> mod_sui_types_object;
   mod_sui_types_object -> mod_move_core_types_language_storage;
   mod_sui_types_object -> mod_sui_indexer_alt_graphql_api;
-  mod_sui_types_object -> mod_sui_json_rpc_types_lib;
   mod_sui_types_object -> mod_sui_types_base_types;
-  mod_sui_types_object -> mod_sui_types_sui_serde;
-  mod_sui_types_storage -> mod_move_core_types_language_storage;
-  mod_sui_types_storage -> mod_sui_json_rpc_types_lib;
+  mod_sui_types_storage -> mod_sui_client_ptb;
   mod_sui_types_storage -> mod_sui_types_base_types;
   mod_sui_types_storage -> mod_sui_types_digests;
-  mod_sui_types_storage -> mod_sui_types_effects;
   mod_sui_types_storage -> mod_sui_types_object;
   mod_sui_types_storage -> mod_sui_types_transaction;
   mod_sui_types_sui_serde -> mod_move_core_types_language_storage;
-  mod_sui_types_sui_serde -> mod_sui_types_storage;
-  mod_sui_types_sui_system_state -> mod_sui_json_rpc_types_lib;
+  mod_sui_types_sui_system_state -> mod_sui_indexer_alt_graphql_scalars;
   mod_sui_types_sui_system_state -> mod_sui_kvstore_bigtable;
   mod_sui_types_sui_system_state -> mod_sui_types_base_types;
   mod_sui_types_sui_system_state -> mod_sui_types_error;
   mod_sui_types_sui_system_state -> mod_sui_types_storage;
   mod_sui_types_transaction -> mod_sui_indexer_alt_graphql_api;
-  mod_sui_types_transaction -> mod_sui_json_rpc_types_lib;
+  mod_sui_types_transaction -> mod_sui_protocol_config_lib;
   mod_sui_types_transaction -> mod_sui_types_base_types;
   mod_sui_types_transaction -> mod_sui_types_crypto;
   mod_sui_types_transaction -> mod_sui_types_digests;
   mod_sui_types_transaction -> mod_sui_types_object;
+  mod_sui_types_transaction -> mod_sui_types_sui_serde;
   mod_test_generation_transitions -> mod_move_binary_format_file_format;
-  mod_test_generation_transitions -> mod_move_compiler_expansion;
-  mod_test_generation_transitions -> mod_move_compiler_shared;
-  mod_typed_store_rocks -> mod_move_compiler_shared;
+  mod_test_generation_transitions -> mod_move_model_2_summary;
   mod_typed_store_rocks -> mod_move_regex_borrow_graph_collections;
   mod_typed_store_rocks -> mod_sui_core_authority;
   mod_typed_store_rocks -> mod_sui_indexer_alt_consistent_store_rpc;
-  mod_typed_store_rocks -> mod_sui_indexer_alt_graphql_api;
-  mod_typed_store_rocks -> mod_sui_json_rpc_types_lib;
+  mod_typed_store_rocks -> mod_sui_indexer_alt_graphql_scalars;
   mod_typed_store_rocks -> mod_sui_kvstore_bigtable;
-  mod_typed_store_rocks -> mod_sui_types_base_types;
+  mod_typed_store_rocks -> mod_sui_open_rpc_lib;
   mod_typed_store_rocks -> mod_sui_types_digests;
 }
