@@ -625,7 +625,10 @@ macro_rules! define_lang {
                     // Iterate directly over child IDs to avoid Vec/SmallVec allocation
                     for &child_id in node.child_ids() {
                         let child = unit.hir_node(child_id);
-                        self.visit_node(unit, &child, scopes, namespace, parent);
+                        // Use stacker to grow stack for deeply nested structures
+                        stacker::maybe_grow(32 * 1024, 1024 * 1024, || {
+                            self.visit_node(unit, &child, scopes, namespace, parent);
+                        });
                     }
                 }
 

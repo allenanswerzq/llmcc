@@ -203,7 +203,11 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
                 continue;
             }
 
-            let child_node = self.build_node(child.as_ref(), Some(parent_id), field_id);
+            // Use stacker to grow stack for deeply nested structures (e.g., large initializer lists)
+            // This prevents stack overflow on files with 10,000+ nested elements
+            let child_node = stacker::maybe_grow(32 * 1024, 1024 * 1024, || {
+                self.build_node(child.as_ref(), Some(parent_id), field_id)
+            });
             child_nodes.push(child_node);
         }
         child_nodes
