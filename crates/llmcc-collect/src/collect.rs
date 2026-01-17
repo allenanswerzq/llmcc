@@ -1,6 +1,6 @@
 //! Node and edge collection from ProjectGraph.
 
-use std::collections::{BTreeSet, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use rayon::prelude::*;
 
@@ -9,6 +9,34 @@ use llmcc_core::block::{BlockKind, BlockRelation};
 use llmcc_core::graph::ProjectGraph;
 
 use crate::types::{ARCHITECTURE_KINDS, RenderEdge, RenderNode};
+
+/// Priority for edge types. Higher value = stronger relationship.
+/// When multiple edges exist between the same nodes, keep the highest priority.
+fn edge_priority(from_label: &str, to_label: &str) -> u8 {
+    match (from_label, to_label) {
+        // Structural relationships (highest priority)
+        ("field_type", "struct") | ("field_type", "enum") => 100,
+        ("impl", "trait") | ("trait", "impl") | ("interface", "impl") => 95,
+        ("base", "extends") => 90,
+
+        // Function signature relationships
+        ("input", "func") => 80,
+        ("func", "output") => 75,
+
+        // Call relationships
+        ("caller", "callee") => 70,
+
+        // Generic/type relationships (lower priority - often redundant with field_type)
+        ("type_arg", "generic") => 50,
+        ("type_dep", "struct") | ("type_dep", "enum") | ("func", "type_dep") => 30,
+
+        // Decorator (lowest)
+        ("decorator", _) => 20,
+
+        // Default
+        _ => 10,
+    }
+}
 
 /// Collect nodes for architecture graph.
 ///
@@ -113,7 +141,6 @@ pub fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
 /// - input → func: Parameter types
 /// - func → output: Return types
 /// - trait → impl: Trait implementations
-/// - bound → generic: Trait bounds on generics
 /// - type_arg → generic: Generic type arguments
 /// - type_dep → type: Type dependencies from impl blocks
 pub fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSet<RenderEdge> {
@@ -156,13 +183,7 @@ pub fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTr
             // 5. Trait implementations
             collect_impl_edges(project, block_id, node_set, &mut local_edges, get_kind);
 
-            // 6. Trait bounds (type parameters with bounds)
-            // In Rust: Trait, in TypeScript: Interface can be used as type bounds
-            if block_kind == Some(BlockKind::Trait) || block_kind == Some(BlockKind::Interface) {
-                collect_bound_edges(project, block_id, node_set, &mut local_edges, get_kind);
-            }
-
-            // 6b. Inheritance (extends for classes/interfaces/traits)
+            // 6. Inheritance (extends for classes/interfaces/traits)
             if block_kind == Some(BlockKind::Trait)
                 || block_kind == Some(BlockKind::Interface)
                 || block_kind == Some(BlockKind::Class)
@@ -191,12 +212,28 @@ pub fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTr
         })
         .collect();
 
-    // Merge all edge sets
-    let mut result = BTreeSet::new();
+    // Merge all edge sets, deduplicating by (from_id, to_id) and keeping highest priority
+    let mut edge_map: BTreeMap<(BlockId, BlockId), RenderEdge> = BTreeMap::new();
     for edge_set in edges {
-        result.extend(edge_set);
+        for edge in edge_set {
+            let key = (edge.from_id, edge.to_id);
+            let new_priority = edge_priority(edge.from_label, edge.to_label);
+
+            match edge_map.get(&key) {
+                Some(existing) => {
+                    let existing_priority = edge_priority(existing.from_label, existing.to_label);
+                    if new_priority > existing_priority {
+                        edge_map.insert(key, edge);
+                    }
+                }
+                None => {
+                    edge_map.insert(key, edge);
+                }
+            }
+        }
     }
-    result
+
+    edge_map.into_values().collect()
 }
 
 // Edge Collection Helpers
@@ -486,40 +523,6 @@ fn collect_impl_edges<F>(
                 from_label: "interface",
                 to_label: "implements",
             });
-        }
-    }
-}
-
-fn collect_bound_edges<F>(
-    project: &ProjectGraph,
-    block_id: BlockId,
-    node_set: &HashSet<BlockId>,
-    edges: &mut BTreeSet<RenderEdge>,
-    get_kind: F,
-) where
-    F: Fn(BlockId) -> Option<BlockKind>,
-{
-    let used_by = project
-        .cc
-        .related_map
-        .get_related(block_id, BlockRelation::UsedBy);
-    for user_id in used_by {
-        if node_set.contains(&user_id) && block_id != user_id {
-            let user_kind = get_kind(user_id);
-            // Funcs, Classes, Traits, and Interfaces can use traits/interfaces as type parameter bounds
-            // (trait inheritance via extends is handled by collect_extends_edges using Extends relation)
-            if user_kind == Some(BlockKind::Func)
-                || user_kind == Some(BlockKind::Class)
-                || user_kind == Some(BlockKind::Trait)
-                || user_kind == Some(BlockKind::Interface)
-            {
-                edges.insert(RenderEdge {
-                    from_id: block_id,
-                    to_id: user_id,
-                    from_label: "bound",
-                    to_label: "generic",
-                });
-            }
         }
     }
 }
