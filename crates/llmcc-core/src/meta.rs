@@ -261,10 +261,7 @@ impl UnitMetaBuilder {
             while let Some(current) = dir {
                 if !seen.contains(current) {
                     // Check if any of the manifest files exist in this directory
-                    let has_manifest = self
-                        .manifest_names
-                        .iter()
-                        .any(|m| current.join(m).exists());
+                    let has_manifest = self.manifest_names.iter().any(|m| current.join(m).exists());
 
                     if has_manifest {
                         seen.insert(current.to_path_buf());
