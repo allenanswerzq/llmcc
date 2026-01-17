@@ -64,6 +64,7 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_prisma_client_generator_ts_TSClient[label="TSClient", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-ts/src/TSClient"];
+    mod_prisma_client_generator_ts_generateClient[label="generateClient", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-ts/src"];
     mod_prisma_client_generator_ts_utils[label="utils", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-ts/src/utils"];
   }
 
@@ -81,6 +82,14 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_prisma_driver_adapter_utils_types[label="types", path="/home/yibai/llmcc/sample/repos/prisma/packages/driver-adapter-utils/src"];
+  }
+
+  subgraph cluster_prisma_fetch_engine {
+    label="prisma_fetch-engine";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_prisma_fetch_engine_download[label="download", path="/home/yibai/llmcc/sample/repos/prisma/packages/fetch-engine/src"];
   }
 
   subgraph cluster_prisma_get_platform {
@@ -108,7 +117,6 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_prisma_migrate_commands[label="commands", path="/home/yibai/llmcc/sample/repos/prisma/packages/migrate/src/commands"];
-    mod_prisma_migrate_types[label="types", path="/home/yibai/llmcc/sample/repos/prisma/packages/migrate/src"];
     mod_prisma_migrate_utils[label="utils", path="/home/yibai/llmcc/sample/repos/prisma/packages/migrate/src/utils"];
   }
 
@@ -126,38 +134,47 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_prisma_ts_builders_TypeBuilder[label="TypeBuilder", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src"];
+    mod_prisma_ts_builders_Writer[label="Writer", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders/src"];
   }
 
 
   mod_prisma_client___tests__ -> mod_prisma_client_scripts;
+  mod_prisma_client_engine_runtime_interpreter -> mod_prisma_client_runtime;
   mod_prisma_client_engine_runtime_interpreter -> mod_prisma_driver_adapter_utils_types;
-  mod_prisma_client_generator_js_TSClient -> mod_prisma_client_generator_ts_utils;
+  mod_prisma_client_generator_js_TSClient -> mod_prisma_client_generator_js_utils;
+  mod_prisma_client_generator_js_TSClient -> mod_prisma_client_generator_ts_TSClient;
+  mod_prisma_client_generator_js_TSClient -> mod_prisma_migrate_utils;
   mod_prisma_client_generator_js_TSClient -> mod_prisma_ts_builders_TypeBuilder;
   mod_prisma_client_generator_js_generateClient -> mod_prisma_client_generator_js_TSClient;
   mod_prisma_client_generator_js_typedSql -> mod_prisma_ts_builders_TypeBuilder;
+  mod_prisma_client_generator_js_typedSql -> mod_prisma_ts_builders_Writer;
   mod_prisma_client_generator_js_utils -> mod_prisma_client_generator_js_TSClient;
+  mod_prisma_client_generator_js_utils -> mod_prisma_client_generator_ts_TSClient;
   mod_prisma_client_generator_ts_TSClient -> mod_prisma_client_generator_js_TSClient;
   mod_prisma_client_generator_ts_TSClient -> mod_prisma_client_generator_js_utils;
-  mod_prisma_client_generator_ts_TSClient -> mod_prisma_client_generator_ts_utils;
+  mod_prisma_client_generator_ts_TSClient -> mod_prisma_migrate_utils;
   mod_prisma_client_generator_ts_TSClient -> mod_prisma_ts_builders_TypeBuilder;
+  mod_prisma_client_generator_ts_generateClient -> mod_prisma_client_generator_js_generateClient;
   mod_prisma_client_generator_ts_utils -> mod_prisma_client_generator_js_TSClient;
-  mod_prisma_client_generator_ts_utils -> mod_prisma_migrate_types;
+  mod_prisma_client_generator_ts_utils -> mod_prisma_client_generator_js_generateClient;
   mod_prisma_client_generator_ts_utils -> mod_prisma_query_plan_executor_log;
   mod_prisma_client_runtime -> mod_prisma_client_runtime_utils_errors;
   mod_prisma_client_runtime -> mod_prisma_client_scripts;
   mod_prisma_client_runtime -> mod_prisma_driver_adapter_utils_types;
   mod_prisma_client_runtime -> mod_prisma_internals_utils;
+  mod_prisma_client_runtime -> mod_prisma_ts_builders_Writer;
   mod_prisma_client_utils -> mod_dev_env_compile;
   mod_prisma_client_utils -> mod_prisma_internals_cli;
   mod_prisma_client_utils -> mod_prisma_internals_engine_commands;
   mod_prisma_client_utils -> mod_prisma_internals_utils;
+  mod_prisma_fetch_engine_download -> mod_prisma_query_plan_executor_log;
   mod_prisma_get_platform_getPlatform -> mod_prisma_query_plan_executor_log;
   mod_prisma_internals_engine_commands -> mod_prisma_query_plan_executor_log;
   mod_prisma_internals_get_generators -> mod_prisma_internals_utils;
   mod_prisma_migrate_commands -> mod_prisma_internals_cli;
   mod_prisma_migrate_utils -> mod_dev_env_compile;
+  mod_prisma_migrate_utils -> mod_prisma_client_generator_js_generateClient;
   mod_prisma_migrate_utils -> mod_prisma_internals_utils;
-  mod_prisma_migrate_utils -> mod_prisma_migrate_types;
   mod_prisma_migrate_utils -> mod_prisma_query_plan_executor_log;
   mod_prisma_platform -> mod_prisma_internals_cli;
   mod_prisma_utils -> mod_prisma_internals_cli;

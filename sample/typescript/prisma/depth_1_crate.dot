@@ -29,11 +29,11 @@ digraph architecture {
   crate_prisma_client_generator_ts[label="prisma_client-generator-ts", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-ts"];
   crate_prisma_client_runtime_utils[label="prisma_client-runtime-utils", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-runtime-utils"];
   crate_prisma_config[label="prisma_config", path="/home/yibai/llmcc/sample/repos/prisma/packages/config"];
+  crate_prisma_dmmf[label="prisma_dmmf", path="/home/yibai/llmcc/sample/repos/prisma/packages/dmmf"];
   crate_prisma_driver_adapter_utils[label="prisma_driver-adapter-utils", path="/home/yibai/llmcc/sample/repos/prisma/packages/driver-adapter-utils"];
   crate_prisma_fetch_engine[label="prisma_fetch-engine", path="/home/yibai/llmcc/sample/repos/prisma/packages/fetch-engine"];
   crate_prisma_generator[label="prisma_generator", path="/home/yibai/llmcc/sample/repos/prisma/packages/generator"];
   crate_prisma_get_platform[label="prisma_get-platform", path="/home/yibai/llmcc/sample/repos/prisma/packages/get-platform"];
-  crate_prisma_instrumentation_contract[label="prisma_instrumentation-contract", path="/home/yibai/llmcc/sample/repos/prisma/packages/instrumentation-contract"];
   crate_prisma_internals[label="prisma_internals", path="/home/yibai/llmcc/sample/repos/prisma/packages/internals"];
   crate_prisma_migrate[label="prisma_migrate", path="/home/yibai/llmcc/sample/repos/prisma/packages/migrate"];
   crate_prisma_query_plan_executor[label="prisma_query-plan-executor", path="/home/yibai/llmcc/sample/repos/prisma/packages/query-plan-executor"];
@@ -54,7 +54,6 @@ digraph architecture {
   crate_prisma_client -> crate_prisma_client_common;
   crate_prisma_client -> crate_prisma_client_engine_runtime;
   crate_prisma_client -> crate_prisma_client_runtime_utils;
-  crate_prisma_client -> crate_prisma_instrumentation_contract;
   crate_prisma_client -> crate_prisma_internals;
   crate_prisma_client -> crate_prisma_sqlcommenter;
   crate_prisma_client -> crate_prisma_ts_builders;
@@ -62,11 +61,11 @@ digraph architecture {
   crate_prisma_client_engine_runtime -> crate_prisma_driver_adapter_utils;
   crate_prisma_client_engine_runtime -> crate_prisma_sqlcommenter;
   crate_prisma_client_generator_js -> crate_prisma_client_generator_ts;
+  crate_prisma_client_generator_js -> crate_prisma_dmmf;
   crate_prisma_client_generator_js -> crate_prisma_internals;
-  crate_prisma_client_generator_js -> crate_prisma_migrate;
   crate_prisma_client_generator_js -> crate_prisma_ts_builders;
   crate_prisma_client_generator_ts -> crate_prisma_client_generator_js;
-  crate_prisma_client_generator_ts -> crate_prisma_migrate;
+  crate_prisma_client_generator_ts -> crate_prisma_dmmf;
   crate_prisma_client_generator_ts -> crate_prisma_ts_builders;
   crate_prisma_config -> crate_prisma_query_plan_executor;
   crate_prisma_fetch_engine -> crate_prisma_query_plan_executor;
@@ -77,5 +76,4 @@ digraph architecture {
   crate_prisma_migrate -> crate_dev_env;
   crate_prisma_migrate -> crate_prisma_internals;
   crate_prisma_migrate -> crate_prisma_query_plan_executor;
-  crate_prisma_query_plan_executor -> crate_prisma_instrumentation_contract;
 }

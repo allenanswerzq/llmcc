@@ -30,6 +30,7 @@ digraph architecture {
     mod_angular_animations_animation_metadata[label="animation_metadata", path="/home/yibai/llmcc/sample/repos/angular/packages/animations/src"];
     mod_angular_animations_browser[label="browser", path="/home/yibai/llmcc/sample/repos/angular/packages/animations/browser"];
     mod_angular_animations_dsl[label="dsl", path="/home/yibai/llmcc/sample/repos/angular/packages/animations/browser/src/dsl"];
+    mod_angular_animations_errors[label="errors", path="/home/yibai/llmcc/sample/repos/angular/packages/animations/src"];
     mod_angular_animations_players[label="players", path="/home/yibai/llmcc/sample/repos/angular/packages/animations/src/players"];
     mod_angular_animations_render[label="render", path="/home/yibai/llmcc/sample/repos/angular/packages/animations/browser/src/render"];
   }
@@ -71,7 +72,6 @@ digraph architecture {
     mod_angular_compiler_render3[label="render3", path="/home/yibai/llmcc/sample/repos/angular/packages/compiler/src/render3"];
     mod_angular_compiler_template[label="template", path="/home/yibai/llmcc/sample/repos/angular/packages/compiler/src/template"];
     mod_angular_compiler_template_parser[label="template_parser", path="/home/yibai/llmcc/sample/repos/angular/packages/compiler/src/template_parser"];
-    mod_angular_compiler_util[label="util", path="/home/yibai/llmcc/sample/repos/angular/packages/compiler/src"];
   }
 
   subgraph cluster_angular_compiler_cli {
@@ -120,6 +120,7 @@ digraph architecture {
     mod_angular_core_debug[label="debug", path="/home/yibai/llmcc/sample/repos/angular/packages/core/src/debug"];
     mod_angular_core_defer[label="defer", path="/home/yibai/llmcc/sample/repos/angular/packages/core/src/defer"];
     mod_angular_core_di[label="di", path="/home/yibai/llmcc/sample/repos/angular/packages/core/src/di"];
+    mod_angular_core_event_delegation_utils[label="event_delegation_utils", path="/home/yibai/llmcc/sample/repos/angular/packages/core/src"];
     mod_angular_core_hydration[label="hydration", path="/home/yibai/llmcc/sample/repos/angular/packages/core/src/hydration"];
     mod_angular_core_internal[label="internal", path="/home/yibai/llmcc/sample/repos/angular/packages/core/src/internal"];
     mod_angular_core_linker[label="linker", path="/home/yibai/llmcc/sample/repos/angular/packages/core/src/linker"];
@@ -221,7 +222,6 @@ digraph architecture {
     mod_angular_router_create_router_state[label="create_router_state", path="/home/yibai/llmcc/sample/repos/angular/packages/router/src"];
     mod_angular_router_create_url_tree[label="create_url_tree", path="/home/yibai/llmcc/sample/repos/angular/packages/router/src"];
     mod_angular_router_directives[label="directives", path="/home/yibai/llmcc/sample/repos/angular/packages/router/src/directives"];
-    mod_angular_router_errors[label="errors", path="/home/yibai/llmcc/sample/repos/angular/packages/router/src"];
     mod_angular_router_models[label="models", path="/home/yibai/llmcc/sample/repos/angular/packages/router/src"];
     mod_angular_router_navigation_transition[label="navigation_transition", path="/home/yibai/llmcc/sample/repos/angular/packages/router/src"];
     mod_angular_router_operators[label="operators", path="/home/yibai/llmcc/sample/repos/angular/packages/router/src/operators"];
@@ -289,14 +289,14 @@ digraph architecture {
   mod_angular_animations_animation_builder -> mod_angular_core_render;
   mod_angular_animations_browser -> mod_angular_animations_animation_metadata;
   mod_angular_animations_browser -> mod_angular_animations_dsl;
-  mod_angular_animations_browser -> mod_angular_router_errors;
+  mod_angular_animations_browser -> mod_angular_animations_errors;
   mod_angular_animations_dsl -> mod_angular_animations_animation_metadata;
   mod_angular_animations_render -> mod_angular_animations_dsl;
   mod_angular_animations_render -> mod_angular_animations_players;
+  mod_angular_common_directives -> mod_angular_animations_errors;
   mod_angular_common_directives -> mod_angular_core_change_detection;
   mod_angular_common_directives -> mod_angular_core_linker;
   mod_angular_common_directives -> mod_angular_core_primitives;
-  mod_angular_common_directives -> mod_angular_router_errors;
   mod_angular_common_pipes -> mod_angular_core_change_detection;
   mod_angular_common_upgrade -> mod_angular_common_location;
   mod_angular_compiler_cli_annotations -> mod_angular_compiler_cli_diagnostics;
@@ -346,9 +346,9 @@ digraph architecture {
   mod_angular_compiler_cli_typecheck -> mod_angular_compiler_cli_reflection;
   mod_angular_compiler_cli_typecheck -> mod_angular_compiler_cli_sourcemaps;
   mod_angular_compiler_cli_typecheck -> mod_angular_compiler_cli_util;
+  mod_angular_compiler_cli_typecheck -> mod_angular_compiler_compiler_facade_interface;
   mod_angular_compiler_cli_typecheck -> mod_angular_compiler_expression_parser;
   mod_angular_compiler_cli_typecheck -> mod_angular_compiler_output;
-  mod_angular_compiler_cli_typecheck -> mod_angular_compiler_parse_util;
   mod_angular_compiler_cli_typecheck -> mod_angular_compiler_template;
   mod_angular_compiler_cli_util -> mod_angular_compiler_cli_sourcemaps;
   mod_angular_compiler_compiler_facade_interface -> mod_angular_compiler_output;
@@ -382,7 +382,6 @@ digraph architecture {
   mod_angular_compiler_template -> mod_angular_compiler_parse_util;
   mod_angular_compiler_template -> mod_angular_compiler_render3;
   mod_angular_compiler_template -> mod_angular_core_sanitization;
-  mod_angular_compiler_template -> mod_angular_core_schematics;
   mod_angular_core_animation -> mod_angular_core_primitives;
   mod_angular_core_animation -> mod_angular_core_render3;
   mod_angular_core_application -> mod_angular_core_render3;
@@ -394,11 +393,12 @@ digraph architecture {
   mod_angular_core_defer -> mod_angular_core_hydration;
   mod_angular_core_defer -> mod_angular_core_primitives;
   mod_angular_core_defer -> mod_angular_core_render3;
+  mod_angular_core_di -> mod_angular_animations_errors;
   mod_angular_core_di -> mod_angular_compiler_compiler_facade_interface;
-  mod_angular_core_di -> mod_angular_compiler_util;
   mod_angular_core_di -> mod_angular_core_primitives;
   mod_angular_core_di -> mod_angular_core_render3;
-  mod_angular_core_di -> mod_angular_router_errors;
+  mod_angular_core_event_delegation_utils -> mod_angular_core_render3;
+  mod_angular_core_hydration -> mod_angular_animations_errors;
   mod_angular_core_hydration -> mod_angular_compiler_ml_parser;
   mod_angular_core_hydration -> mod_angular_core_application;
   mod_angular_core_hydration -> mod_angular_core_defer;
@@ -406,10 +406,10 @@ digraph architecture {
   mod_angular_core_hydration -> mod_angular_core_render3;
   mod_angular_core_hydration -> mod_angular_core_transfer_state;
   mod_angular_core_hydration -> mod_angular_core_util;
-  mod_angular_core_hydration -> mod_angular_router_errors;
   mod_angular_core_internal -> mod_angular_core_render3;
   mod_angular_core_linker -> mod_angular_core_hydration;
   mod_angular_core_linker -> mod_angular_core_render3;
+  mod_angular_core_metadata -> mod_angular_compiler_core;
   mod_angular_core_platform -> mod_angular_core_application;
   mod_angular_core_platform -> mod_angular_core_primitives;
   mod_angular_core_platform -> mod_angular_core_render3;
@@ -418,10 +418,12 @@ digraph architecture {
   mod_angular_core_primitives -> mod_angular_core_render3;
   mod_angular_core_render -> mod_angular_core_render3;
   mod_angular_core_render3 -> mod_angular_animations_animation_metadata;
+  mod_angular_core_render3 -> mod_angular_animations_errors;
   mod_angular_core_render3 -> mod_angular_compiler_compiler_facade_interface;
   mod_angular_core_render3 -> mod_angular_compiler_core;
   mod_angular_core_render3 -> mod_angular_compiler_i18n;
   mod_angular_core_render3 -> mod_angular_compiler_ml_parser;
+  mod_angular_core_render3 -> mod_angular_compiler_render3;
   mod_angular_core_render3 -> mod_angular_core_animation;
   mod_angular_core_render3 -> mod_angular_core_authoring;
   mod_angular_core_render3 -> mod_angular_core_change_detection;
@@ -435,14 +437,13 @@ digraph architecture {
   mod_angular_core_render3 -> mod_angular_core_sanitization;
   mod_angular_core_render3 -> mod_angular_core_util;
   mod_angular_core_render3 -> mod_angular_core_zone;
-  mod_angular_core_render3 -> mod_angular_router_errors;
   mod_angular_core_render3 -> mod_angular_srcs_devtools;
   mod_angular_core_resource -> mod_angular_core_render3;
   mod_angular_core_rxjs_interop -> mod_angular_core_authoring;
   mod_angular_core_rxjs_interop -> mod_angular_core_resource;
+  mod_angular_core_sanitization -> mod_angular_animations_errors;
   mod_angular_core_sanitization -> mod_angular_core_render3;
   mod_angular_core_sanitization -> mod_angular_platform_browser_security;
-  mod_angular_core_sanitization -> mod_angular_router_errors;
   mod_angular_core_schematics -> mod_angular_benchpress_common_options;
   mod_angular_core_schematics -> mod_angular_compiler_cli_annotations;
   mod_angular_core_schematics -> mod_angular_compiler_cli_core;
@@ -462,15 +463,15 @@ digraph architecture {
   mod_angular_core_schematics -> mod_angular_compiler_output;
   mod_angular_core_schematics -> mod_angular_compiler_render3;
   mod_angular_core_schematics -> mod_angular_compiler_template;
-  mod_angular_core_schematics -> mod_angular_core_di;
+  mod_angular_core_schematics -> mod_angular_core_metadata;
   mod_angular_core_schematics -> mod_angular_router_utils;
   mod_angular_core_schematics -> mod_angular_srcs_tools;
   mod_angular_core_testability -> mod_zone_js_common;
   mod_angular_docs_pipeline -> mod_angular_compiler_cli_file_system;
   mod_angular_docs_pipeline -> mod_angular_core_render3;
+  mod_angular_forms_directives -> mod_angular_animations_errors;
   mod_angular_forms_directives -> mod_angular_core_change_detection;
   mod_angular_forms_directives -> mod_angular_forms_model;
-  mod_angular_forms_directives -> mod_angular_router_errors;
   mod_angular_forms_model -> mod_angular_forms_directives;
   mod_angular_forms_signals -> mod_angular_core_authoring;
   mod_angular_forms_signals -> mod_angular_core_render3;
@@ -500,6 +501,7 @@ digraph architecture {
   mod_angular_localize_translate -> mod_angular_compiler_cli_file_system;
   mod_angular_localize_translate -> mod_angular_compiler_ml_parser;
   mod_angular_localize_translate -> mod_angular_compiler_parse_util;
+  mod_angular_localize_translate -> mod_angular_compiler_render3;
   mod_angular_localize_translate -> mod_angular_localize_tools;
   mod_angular_platform_browser_browser -> mod_angular_core_application;
   mod_angular_platform_browser_security -> mod_angular_core_sanitization;
@@ -524,10 +526,10 @@ digraph architecture {
   mod_angular_router_router_state -> mod_angular_router_utils;
   mod_angular_router_utils -> mod_angular_compiler_output;
   mod_angular_router_utils -> mod_angular_core_di;
-  mod_angular_router_utils -> mod_angular_router_models;
   mod_angular_router_utils -> mod_angular_router_router_outlet_context;
   mod_angular_router_utils -> mod_angular_router_router_state;
   mod_angular_router_utils -> mod_angular_router_url_tree;
+  mod_angular_router_utils -> mod_angular_srcs_devtools;
   mod_angular_service_worker_worker -> mod_angular_service_worker_cli;
   mod_angular_srcs_adev -> mod_angular_compiler_ml_parser;
   mod_angular_srcs_adev -> mod_angular_compiler_output;
@@ -538,7 +540,6 @@ digraph architecture {
   mod_angular_srcs_devtools -> mod_angular_core_change_detection;
   mod_angular_srcs_devtools -> mod_angular_core_primitives;
   mod_angular_srcs_devtools -> mod_angular_core_render3;
-  mod_angular_srcs_devtools -> mod_angular_router_models;
   mod_angular_upgrade_static -> mod_angular_core_change_detection;
   mod_angular_upgrade_static -> mod_angular_upgrade_common;
   mod_platform_server_ngmodule -> mod_angular_core_change_detection;

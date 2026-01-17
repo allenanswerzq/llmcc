@@ -13,6 +13,10 @@ digraph architecture {
 
   crate_dev_env[label="dev-env", path="/home/yibai/llmcc/sample/repos/prisma"];
   crate_prisma[label="prisma", path="/home/yibai/llmcc/sample/repos/prisma/packages/cli"];
+  crate_prisma_adapter_d1[label="prisma_adapter-d1", path="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-d1"];
+  crate_prisma_adapter_neon[label="prisma_adapter-neon", path="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-neon"];
+  crate_prisma_adapter_pg[label="prisma_adapter-pg", path="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-pg"];
+  crate_prisma_adapter_ppg[label="prisma_adapter-ppg", path="/home/yibai/llmcc/sample/repos/prisma/packages/adapter-ppg"];
   crate_prisma_client[label="prisma_client", path="/home/yibai/llmcc/sample/repos/prisma/packages/client"];
   crate_prisma_client_engine_runtime[label="prisma_client-engine-runtime", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-engine-runtime"];
   crate_prisma_client_generator_js[label="prisma_client-generator-js", path="/home/yibai/llmcc/sample/repos/prisma/packages/client-generator-js"];
@@ -28,21 +32,21 @@ digraph architecture {
   crate_prisma_ts_builders[label="prisma_ts-builders", path="/home/yibai/llmcc/sample/repos/prisma/packages/ts-builders"];
 
   crate_prisma -> crate_prisma_internals;
-  crate_prisma -> crate_prisma_query_plan_executor;
+  crate_prisma_adapter_d1 -> crate_prisma_driver_adapter_utils;
+  crate_prisma_adapter_neon -> crate_prisma_driver_adapter_utils;
+  crate_prisma_adapter_pg -> crate_prisma_driver_adapter_utils;
+  crate_prisma_adapter_ppg -> crate_prisma_driver_adapter_utils;
   crate_prisma_client -> crate_dev_env;
   crate_prisma_client -> crate_prisma_client_engine_runtime;
   crate_prisma_client -> crate_prisma_client_runtime_utils;
   crate_prisma_client -> crate_prisma_internals;
-  crate_prisma_client -> crate_prisma_query_plan_executor;
   crate_prisma_client -> crate_prisma_ts_builders;
   crate_prisma_client_engine_runtime -> crate_prisma_client;
   crate_prisma_client_engine_runtime -> crate_prisma_driver_adapter_utils;
   crate_prisma_client_generator_js -> crate_prisma_client_generator_ts;
   crate_prisma_client_generator_js -> crate_prisma_internals;
-  crate_prisma_client_generator_js -> crate_prisma_migrate;
   crate_prisma_client_generator_js -> crate_prisma_ts_builders;
   crate_prisma_client_generator_ts -> crate_prisma_client_generator_js;
-  crate_prisma_client_generator_ts -> crate_prisma_migrate;
   crate_prisma_client_generator_ts -> crate_prisma_ts_builders;
   crate_prisma_config -> crate_prisma_query_plan_executor;
   crate_prisma_fetch_engine -> crate_prisma_query_plan_executor;

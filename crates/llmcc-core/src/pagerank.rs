@@ -431,10 +431,10 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
             let mut weighted: Vec<(usize, f64)> = weighted_targets.into_iter().collect();
             weighted.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
-            if let Some(max_out) = self.config.max_out_degree {
-                if weighted.len() > max_out {
-                    weighted.truncate(max_out);
-                }
+            if let Some(max_out) = self.config.max_out_degree
+                && weighted.len() > max_out
+            {
+                weighted.truncate(max_out);
             }
 
             adjacency[idx] = weighted;
