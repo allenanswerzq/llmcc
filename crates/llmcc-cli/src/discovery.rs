@@ -5,7 +5,7 @@ use std::io;
 use std::time::Instant;
 
 use ignore::WalkBuilder;
-use tracing::{info, warn};
+use tracing::info;
 
 use llmcc_core::Result;
 
@@ -38,9 +38,60 @@ fn should_skip_dir(name: &str) -> bool {
     )
 }
 
-/// Check if a file should be skipped (e.g., due to size).
+/// Check if a file is auto-generated code that should be skipped.
+/// These files are typically generated from .proto files or other schema definitions.
+fn is_generated_file(path: &std::path::Path) -> bool {
+    let file_name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("");
+
+    // Protobuf generated files
+    if file_name.ends_with(".pb.h")
+        || file_name.ends_with(".pb.cc")
+        || file_name.ends_with(".pb.c")
+        || file_name.ends_with(".pb.go")
+    {
+        return true;
+    }
+
+    // gRPC UPB (micro protobuf) generated files
+    if file_name.ends_with(".upb.h")
+        || file_name.ends_with(".upb.c")
+        || file_name.ends_with(".upbdefs.h")
+        || file_name.ends_with(".upbdefs.c")
+        || file_name.ends_with(".upb_minitable.h")
+        || file_name.ends_with(".upb_minitable.c")
+    {
+        return true;
+    }
+
+    // FlatBuffers generated files
+    if file_name.ends_with("_generated.h") {
+        return true;
+    }
+
+    // Thrift generated files
+    if file_name.ends_with("_types.h")
+        && path.to_string_lossy().contains("gen-cpp")
+    {
+        return true;
+    }
+
+    // gRPC generated files
+    if file_name.ends_with(".grpc.pb.h") || file_name.ends_with(".grpc.pb.cc") {
+        return true;
+    }
+
+    false
+}
+
+/// Check if a file should be skipped (e.g., generated code).
 /// Returns Some(reason) if skipped, None otherwise.
-fn should_skip_file(_path: &std::path::Path) -> Option<String> {
+fn should_skip_file(path: &std::path::Path) -> Option<String> {
+    if is_generated_file(path) {
+        return Some("auto-generated file".to_string());
+    }
     None
 }
 
@@ -60,8 +111,7 @@ pub fn discover_files(opts: &LlmccOptions, extensions: &HashSet<&str>) -> Result
         if seen.contains(path) {
             return;
         }
-        if let Some(reason) = should_skip_file(std::path::Path::new(path)) {
-            warn!("Skipping {}: {}", path, reason);
+        if should_skip_file(std::path::Path::new(path)).is_some() {
             skipped_count += 1;
             return;
         }
@@ -128,7 +178,7 @@ pub fn discover_files(opts: &LlmccOptions, extensions: &HashSet<&str>) -> Result
     }
 
     if skipped_count > 0 {
-        info!("Skipped {} files due to size limits", skipped_count);
+        info!("Skipped {} auto-generated files (protobuf, flatbuffers, etc.)", skipped_count);
     }
 
     info!(

@@ -1,0 +1,56 @@
+===============================================================================
+anonymous-struct-methods
+===============================================================================
+Methods inside anonymous structs should still be classified as methods, not functions.
+The anonymous struct provides the context that makes nested functions into methods.
+lang: cpp
+
+--- file: src/lib.cpp ---
+// Anonymous struct with a method
+struct {
+    int value;
+    int getValue() { return value; }
+} instance;
+
+// Named struct for comparison
+struct Named {
+    int value;
+    int getValue() { return value; }
+};
+
+// Union with method
+union {
+    int i;
+    float f;
+    int getInt() { return i; }
+} u;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 struct { int value; int getValue
+    ()
+    {
+    return
+    value;
+    }
+    }
+    (field:3 int @type int)
+    (method:4 getValue)
+  )
+  (class:5 Named
+    (field:6 int @type int)
+    (method:7 getValue)
+  )
+  (class:8 union { int i; float f; int getInt
+    ()
+    {
+    return
+    i;
+    }
+    }
+    (field:9 int @type int)
+    (field:10 float @type float)
+    (method:11 getInt)
+  )
+)
+

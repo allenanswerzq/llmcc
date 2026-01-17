@@ -1,0 +1,1792 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_db_stress_tool {
+    label="db_stress_tool";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_db_stress_common_h {
+      label="db_stress_common.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n162708[label="ROCKSDB_NAMESPACE", path="/home/yibai/llmcc/sample/repos/rocksdb/db_stress_tool/db_stress_common.h:544", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_db_stress_shared_state_h {
+      label="db_stress_shared_state.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n190987[label="ThreadState", path="/home/yibai/llmcc/sample/repos/rocksdb/db_stress_tool/db_stress_shared_state.h:530", sym_ty="Struct", shape=box];
+      n187651[label="SharedState", path="/home/yibai/llmcc/sample/repos/rocksdb/db_stress_tool/db_stress_shared_state.h:73", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_gtest {
+    label="gtest";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_gtest_all_cc {
+      label="gtest-all.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n272912[label="Failed", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest/gtest-all.cc:1013", sym_ty="Function", shape=ellipse];
+      n284138[label="GetFileSize", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest/gtest-all.cc:10560", sym_ty="Function", shape=ellipse];
+      n262827[label="ScopedFakeTestPartResultReporter", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest/gtest-all.cc:126", sym_ty="Function", shape=ellipse];
+      n263341[label="GTEST_DISABLE_MSC_WARNINGS_POP_", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest/gtest-all.cc:139", sym_ty="Function", shape=ellipse];
+      n283147[label="InitGoogleTestImpl", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest/gtest-all.cc:7406", sym_ty="Function", shape=ellipse];
+      n283161[label="InitGoogleTest", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest/gtest-all.cc:7446", sym_ty="Function", shape=ellipse];
+      n283178[label="UnitTest", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest/gtest-all.cc:7491", sym_ty="Function", shape=ellipse];
+      n269649[label="Delete", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest/gtest-all.cc:772", sym_ty="Function", shape=ellipse];
+      n271939[label="UnitTestImpl", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest/gtest-all.cc:941", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_rocksdb {
+    label="rocksdb";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_cache {
+      label="cache";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_cache_test_cc {
+        label="cache_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n83416[label="CacheTest", path="/home/yibai/llmcc/sample/repos/rocksdb/cache/cache_test.cc:82", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_clock_cache_h {
+        label="clock_cache.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n186070[label="Lookup", path="/home/yibai/llmcc/sample/repos/rocksdb/cache/clock_cache.h:1167", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_lru_cache_h {
+        label="lru_cache.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n132006[label="Ref", path="/home/yibai/llmcc/sample/repos/rocksdb/cache/lru_cache.h:316", sym_ty="Function", shape=ellipse];
+        n134133[label="Name", path="/home/yibai/llmcc/sample/repos/rocksdb/cache/lru_cache.h:450", sym_ty="Function", shape=ellipse];
+        n128709[label="LRUHandle", path="/home/yibai/llmcc/sample/repos/rocksdb/cache/lru_cache.h:50", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_db {
+      label="db";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_blob_fetcher_h {
+        label="blob_fetcher.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n20843[label="Slice", path="/home/yibai/llmcc/sample/repos/rocksdb/db/blob/blob_fetcher.h:14", sym_ty="Struct", shape=box];
+        n20847[label="PinnableSlice", path="/home/yibai/llmcc/sample/repos/rocksdb/db/blob/blob_fetcher.h:16", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_blob_file_builder_h {
+        label="blob_file_builder.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n21106[label="FileSystem", path="/home/yibai/llmcc/sample/repos/rocksdb/db/blob/blob_file_builder.h:23", sym_ty="Struct", shape=box];
+        n21111[label="MutableCFOptions", path="/home/yibai/llmcc/sample/repos/rocksdb/db/blob/blob_file_builder.h:26", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_blob_file_cache_h {
+        label="blob_file_cache.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n50183[label="Cache", path="/home/yibai/llmcc/sample/repos/rocksdb/db/blob/blob_file_cache.h:17", sym_ty="Struct", shape=box];
+        n50184[label="ImmutableOptions", path="/home/yibai/llmcc/sample/repos/rocksdb/db/blob/blob_file_cache.h:18", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_blob_file_garbage_h {
+        label="blob_file_garbage.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n20752[label="Status", path="/home/yibai/llmcc/sample/repos/rocksdb/db/blob/blob_file_garbage.h:19", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_blob_log_sequential_reader_h {
+        label="blob_log_sequential_reader.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n34441[label="Env", path="/home/yibai/llmcc/sample/repos/rocksdb/db/blob/blob_log_sequential_reader.h:18", sym_ty="Struct", shape=box];
+        n34442[label="Statistics", path="/home/yibai/llmcc/sample/repos/rocksdb/db/blob/blob_log_sequential_reader.h:19", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_c_cc {
+        label="c.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n293788[label="rocksdb_t", path="/home/yibai/llmcc/sample/repos/rocksdb/db/c.cc:165", sym_ty="Struct", shape=box];
+        n293798[label="rocksdb_iterator_t", path="/home/yibai/llmcc/sample/repos/rocksdb/db/c.cc:180", sym_ty="Struct", shape=box];
+        n293800[label="rocksdb_writebatch_t", path="/home/yibai/llmcc/sample/repos/rocksdb/db/c.cc:183", sym_ty="Struct", shape=box];
+        n293802[label="rocksdb_writebatch_wi_t", path="/home/yibai/llmcc/sample/repos/rocksdb/db/c.cc:186", sym_ty="Struct", shape=box];
+        n293806[label="rocksdb_flushoptions_t", path="/home/yibai/llmcc/sample/repos/rocksdb/db/c.cc:192", sym_ty="Struct", shape=box];
+        n293810[label="rocksdb_readoptions_t", path="/home/yibai/llmcc/sample/repos/rocksdb/db/c.cc:198", sym_ty="Struct", shape=box];
+        n293816[label="rocksdb_writeoptions_t", path="/home/yibai/llmcc/sample/repos/rocksdb/db/c.cc:206", sym_ty="Struct", shape=box];
+        n293818[label="rocksdb_options_t", path="/home/yibai/llmcc/sample/repos/rocksdb/db/c.cc:209", sym_ty="Struct", shape=box];
+        n293820[label="rocksdb_compactoptions_t", path="/home/yibai/llmcc/sample/repos/rocksdb/db/c.cc:212", sym_ty="Struct", shape=box];
+        n293823[label="rocksdb_block_based_table_options_t", path="/home/yibai/llmcc/sample/repos/rocksdb/db/c.cc:216", sym_ty="Struct", shape=box];
+        n293863[label="rocksdb_column_family_handle_t", path="/home/yibai/llmcc/sample/repos/rocksdb/db/c.cc:276", sym_ty="Struct", shape=box];
+        n293878[label="rocksdb_ingestexternalfileoptions_t", path="/home/yibai/llmcc/sample/repos/rocksdb/db/c.cc:298", sym_ty="Struct", shape=box];
+        n293886[label="rocksdb_pinnableslice_t", path="/home/yibai/llmcc/sample/repos/rocksdb/db/c.cc:310", sym_ty="Struct", shape=box];
+        n293890[label="rocksdb_transactiondb_t", path="/home/yibai/llmcc/sample/repos/rocksdb/db/c.cc:316", sym_ty="Struct", shape=box];
+        n293892[label="rocksdb_transaction_options_t", path="/home/yibai/llmcc/sample/repos/rocksdb/db/c.cc:319", sym_ty="Struct", shape=box];
+        n293894[label="rocksdb_transaction_t", path="/home/yibai/llmcc/sample/repos/rocksdb/db/c.cc:322", sym_ty="Struct", shape=box];
+        n293908[label="rocksdb_flushjobinfo_t", path="/home/yibai/llmcc/sample/repos/rocksdb/db/c.cc:345", sym_ty="Struct", shape=box];
+        n293916[label="rocksdb_compactionjobinfo_t", path="/home/yibai/llmcc/sample/repos/rocksdb/db/c.cc:357", sym_ty="Struct", shape=box];
+        n293918[label="rocksdb_subcompactionjobinfo_t", path="/home/yibai/llmcc/sample/repos/rocksdb/db/c.cc:360", sym_ty="Struct", shape=box];
+        n294049[label="rocksdb_env_t", path="/home/yibai/llmcc/sample/repos/rocksdb/db/c.cc:586", sym_ty="Struct", shape=box];
+        n294073[label="rocksdb_universal_compaction_options_t", path="/home/yibai/llmcc/sample/repos/rocksdb/db/c.cc:619", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_column_family_h {
+        label="column_family.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n226869[label="InternalKey", path="/home/yibai/llmcc/sample/repos/rocksdb/db/column_family.h:43", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_column_family_test_cc {
+        label="column_family_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n73848[label="ColumnFamilyTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/column_family_test.cc:510", sym_ty="Struct", shape=box];
+        n71989[label="ColumnFamilyTestBase", path="/home/yibai/llmcc/sample/repos/rocksdb/db/column_family_test.cc:64", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_compaction_iterator_test_cc {
+        label="compaction_iterator_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n200151[label="CompactionIteratorTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/compaction/compaction_iterator_test.cc:236", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_compaction_job_stats_test_cc {
+        label="compaction_job_stats_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n78666[label="RandomString", path="/home/yibai/llmcc/sample/repos/rocksdb/db/compaction/compaction_job_stats_test.cc:63", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_compaction_job_test_cc {
+        label="compaction_job_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n135121[label="CompactionJobTestBase", path="/home/yibai/llmcc/sample/repos/rocksdb/db/compaction/compaction_job_test.cc:201", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_compaction_picker_h {
+        label="compaction_picker.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n150050[label="Compaction", path="/home/yibai/llmcc/sample/repos/rocksdb/db/compaction/compaction_picker.h:33", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_compaction_picker_test_cc {
+        label="compaction_picker_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n200769[label="CompactionPickerTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/compaction/compaction_picker_test.cc:228", sym_ty="Struct", shape=box];
+        n200074[label="CompactionPickerTestBase", path="/home/yibai/llmcc/sample/repos/rocksdb/db/compaction/compaction_picker_test.cc:31", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_compaction_service_test_cc {
+        label="compaction_service_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n85741[label="CompactionServiceTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/compaction/compaction_service_test.cc:203", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_corruption_test_cc {
+        label="corruption_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n178571[label="CorruptionTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/corruption_test.cc:67", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_basic_test_cc {
+        label="db_basic_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n941[label="DBBasicTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_basic_test.cc:86", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_blob_basic_test_cc {
+        label="db_blob_basic_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n113939[label="DBBlobBasicTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/blob/db_blob_basic_test.cc:21", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_bloom_filter_test_cc {
+        label="db_bloom_filter_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n38[label="Create", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_bloom_filter_test.cc:36", sym_ty="Function", shape=ellipse];
+        n624[label="DBBloomFilterTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_bloom_filter_test.cc:67", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_compaction_test_cc {
+        label="db_compaction_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n179808[label="DBCompactionTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_compaction_test.cc:115", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_flush_test_cc {
+        label="db_flush_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n141329[label="DBFlushTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_flush_test.cc:33", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_iter_test_cc {
+        label="db_iter_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n732[label="DBIteratorTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_iter_test.cc:239", sym_ty="Struct", shape=box];
+        n375[label="TestIterator", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_iter_test.cc:33", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_iterator_test_cc {
+        label="db_iterator_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n47321[label="DBIteratorBaseTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_iterator_test.cc:35", sym_ty="Struct", shape=box];
+        n47677[label="DBIteratorTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_iterator_test.cc:88", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_kv_checksum_test_cc {
+        label="db_kv_checksum_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n47560[label="GetWriteBatch", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_kv_checksum_test.cc:47", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_db_options_test_cc {
+        label="db_options_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n141751[label="DBOptionsTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_options_test.cc:31", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_properties_test_cc {
+        label="db_properties_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n64921[label="DBPropertiesTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_properties_test.cc:33", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_range_del_test_cc {
+        label="db_range_del_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n34[label="DBRangeDelTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_range_del_test.cc:17", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_readonly_with_timestamp_test_cc {
+        label="db_readonly_with_timestamp_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n92584[label="DBReadOnlyTestWithTimestamp", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_readonly_with_timestamp_test.cc:14", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_secondary_test_cc {
+        label="db_secondary_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n203781[label="DBSecondaryTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_secondary_test.cc:119", sym_ty="Struct", shape=box];
+        n203655[label="DBSecondaryTestBase", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_secondary_test.cc:20", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_test_cc {
+        label="db_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n42220[label="DBTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_test.cc:80", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_test2_cc {
+        label="db_test2.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n45[label="DBTest2", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_test2.cc:36", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_test_util_h {
+        label="db_test_util.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n254379[label="DBTestBase", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_test_util.h:1018", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_universal_compaction_test_cc {
+        label="db_universal_compaction_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n96242[label="DBTestUniversalCompactionBase", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_universal_compaction_test.cc:28", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_wal_test_cc {
+        label="db_wal_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n81230[label="DBWALTestBase", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_wal_test.cc:23", sym_ty="Struct", shape=box];
+        n81636[label="DBWALTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_wal_test.cc:63", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_with_timestamp_basic_test_cc {
+        label="db_with_timestamp_basic_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n36923[label="DBBasicTestWithTimestamp", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_with_timestamp_basic_test.cc:29", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_with_timestamp_test_util_h {
+        label="db_with_timestamp_test_util.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n362[label="DBBasicTestWithTimestampBase", path="/home/yibai/llmcc/sample/repos/rocksdb/db/db_with_timestamp_test_util.h:17", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_dbformat_h {
+        label="dbformat.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n152279[label="ParsedInternalKey", path="/home/yibai/llmcc/sample/repos/rocksdb/db/dbformat.h:141", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_external_sst_file_test_cc {
+        label="external_sst_file_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n70106[label="ExternalSSTFileTestBase", path="/home/yibai/llmcc/sample/repos/rocksdb/db/external_sst_file_test.cc:49", sym_ty="Struct", shape=box];
+        n70308[label="ExternalSSTFileTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/external_sst_file_test.cc:94", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_file_indexer_h {
+        label="file_indexer.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n49073[label="FileIndexer", path="/home/yibai/llmcc/sample/repos/rocksdb/db/file_indexer.h:43", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_forward_iterator_h {
+        label="forward_iterator.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n73044[label="VersionStorageInfo", path="/home/yibai/llmcc/sample/repos/rocksdb/db/forward_iterator.h:25", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_job_context_h {
+        label="job_context.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n256532[label="JobContext", path="/home/yibai/llmcc/sample/repos/rocksdb/db/job_context.h:111", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_log_test_cc {
+        label="log_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n183704[label="LogTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/log_test.cc:51", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_log_writer_h {
+        label="log_writer.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n13138[label="Writer", path="/home/yibai/llmcc/sample/repos/rocksdb/db/log_writer.h:75", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_memtable_h {
+        label="memtable.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n200408[label="ReadOnlyMemTable", path="/home/yibai/llmcc/sample/repos/rocksdb/db/memtable.h:107", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_pinned_iterators_manager_h {
+        label="pinned_iterators_manager.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n7709[label="PinnedIteratorsManager", path="/home/yibai/llmcc/sample/repos/rocksdb/db/pinned_iterators_manager.h:19", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_plain_table_db_test_cc {
+        label="plain_table_db_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n241878[label="PlainTableDBTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/plain_table_db_test.cc:95", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_prefix_test_cc {
+        label="prefix_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n150920[label="Get", path="/home/yibai/llmcc/sample/repos/rocksdb/db/prefix_test.cc:184", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_range_tombstone_fragmenter_h {
+        label="range_tombstone_fragmenter.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n185523[label="FragmentedRangeTombstoneIterator", path="/home/yibai/llmcc/sample/repos/rocksdb/db/range_tombstone_fragmenter.h:134", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_snapshot_checker_h {
+        label="snapshot_checker.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n49252[label="SnapshotChecker", path="/home/yibai/llmcc/sample/repos/rocksdb/db/snapshot_checker.h:20", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_subcompaction_state_h {
+        label="subcompaction_state.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n235636[label="SubcompactionState", path="/home/yibai/llmcc/sample/repos/rocksdb/db/compaction/subcompaction_state.h:50", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_tiered_compaction_test_cc {
+        label="tiered_compaction_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n75271[label="PrecludeLastLevelTestBase", path="/home/yibai/llmcc/sample/repos/rocksdb/db/compaction/tiered_compaction_test.cc:1491", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_trim_history_scheduler_h {
+        label="trim_history_scheduler.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n10159[label="ColumnFamilyData", path="/home/yibai/llmcc/sample/repos/rocksdb/db/trim_history_scheduler.h:17", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_version_builder_h {
+        label="version_builder.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n64102[label="VersionEdit", path="/home/yibai/llmcc/sample/repos/rocksdb/db/version_builder.h:24", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_version_builder_test_cc {
+        label="version_builder_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n149413[label="VersionBuilderTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/version_builder_test.cc:22", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_version_edit_cc {
+        label="version_edit.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n186637[label="GetInternalKey", path="/home/yibai/llmcc/sample/repos/rocksdb/db/version_edit.cc:312", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_version_set_test_cc {
+        label="version_set_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n29640[label="VersionStorageInfoTestBase", path="/home/yibai/llmcc/sample/repos/rocksdb/db/version_set_test.cc:113", sym_ty="Struct", shape=box];
+        n32901[label="VersionSetTestBase", path="/home/yibai/llmcc/sample/repos/rocksdb/db/version_set_test.cc:1150", sym_ty="Struct", shape=box];
+        n29869[label="VersionStorageInfoTest", path="/home/yibai/llmcc/sample/repos/rocksdb/db/version_set_test.cc:215", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_wide_columns_helper_h {
+        label="wide_columns_helper.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n133[label="WideColumnsHelper", path="/home/yibai/llmcc/sample/repos/rocksdb/db/wide/wide_columns_helper.h:17", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_write_batch_internal_h {
+        label="write_batch_internal.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n145105[label="WriteBatchInternal", path="/home/yibai/llmcc/sample/repos/rocksdb/db/write_batch_internal.h:78", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_write_callback_h {
+        label="write_callback.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n40056[label="DB", path="/home/yibai/llmcc/sample/repos/rocksdb/db/write_callback.h:12", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_write_controller_h {
+        label="write_controller.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n159982[label="WriteController", path="/home/yibai/llmcc/sample/repos/rocksdb/db/write_controller.h:24", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_env {
+      label="env";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_composite_env_cc {
+        label="composite_env.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n181644[label="NewCompositeEnv", path="/home/yibai/llmcc/sample/repos/rocksdb/env/composite_env.cc:456", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_env_test_cc {
+        label="env_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n1011[label="EnvPosixTest", path="/home/yibai/llmcc/sample/repos/rocksdb/env/env_test.cc:110", sym_ty="Struct", shape=box];
+        n11879[label="TEST_P", path="/home/yibai/llmcc/sample/repos/rocksdb/env/env_test.cc:1704", sym_ty="Function", shape=ellipse];
+        n15492[label="EnvTest", path="/home/yibai/llmcc/sample/repos/rocksdb/env/env_test.cc:2379", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_file {
+      label="file";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_delete_scheduler_test_cc {
+        label="delete_scheduler_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n194894[label="DeleteSchedulerTest", path="/home/yibai/llmcc/sample/repos/rocksdb/file/delete_scheduler_test.cc:23", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_logging {
+      label="logging";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_auto_roll_logger_test_cc {
+        label="auto_roll_logger_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n212260[label="AutoRollLoggerTest", path="/home/yibai/llmcc/sample/repos/rocksdb/logging/auto_roll_logger_test.cc:49", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_event_logger_h {
+        label="event_logger.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n156277[label="EventLogger", path="/home/yibai/llmcc/sample/repos/rocksdb/logging/event_logger.h:179", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_log_buffer_h {
+        label="log_buffer.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n16226[label="LogBuffer", path="/home/yibai/llmcc/sample/repos/rocksdb/logging/log_buffer.h:20", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_memory {
+      label="memory";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_allocator_h {
+        label="allocator.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n21065[label="Allocator", path="/home/yibai/llmcc/sample/repos/rocksdb/memory/allocator.h:23", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_memtable {
+      label="memtable";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_inlineskiplist_h {
+        label="inlineskiplist.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n205135[label="Node", path="/home/yibai/llmcc/sample/repos/rocksdb/memtable/inlineskiplist.h:313", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_monitoring {
+      label="monitoring";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_instrumented_mutex_h {
+        label="instrumented_mutex.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n78035[label="InstrumentedMutex", path="/home/yibai/llmcc/sample/repos/rocksdb/monitoring/instrumented_mutex.h:20", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_thread_status_util_h {
+        label="thread_status_util.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n119173[label="ThreadStatusUtil", path="/home/yibai/llmcc/sample/repos/rocksdb/monitoring/thread_status_util.h:30", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_options {
+      label="options";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_configurable_test_cc {
+        label="configurable_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n168871[label="ConfigurableTest", path="/home/yibai/llmcc/sample/repos/rocksdb/options/configurable_test.cc:92", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_customizable_test_cc {
+        label="customizable_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n91873[label="RegisterLocalObjects", path="/home/yibai/llmcc/sample/repos/rocksdb/options/customizable_test.cc:1405", sym_ty="Function", shape=ellipse];
+        n92127[label="LoadCustomizableTest", path="/home/yibai/llmcc/sample/repos/rocksdb/options/customizable_test.cc:1541", sym_ty="Struct", shape=box];
+        n85579[label="SimpleConfigurable", path="/home/yibai/llmcc/sample/repos/rocksdb/options/customizable_test.cc:213", sym_ty="Struct", shape=box];
+        n85633[label="CustomizableTest", path="/home/yibai/llmcc/sample/repos/rocksdb/options/customizable_test.cc:261", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_offpeak_time_info_h {
+        label="offpeak_time_info.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n27649[label="SystemClock", path="/home/yibai/llmcc/sample/repos/rocksdb/options/offpeak_time_info.h:14", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_options_helper_h {
+        label="options_helper.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n153017[label="ImmutableDBOptions", path="/home/yibai/llmcc/sample/repos/rocksdb/options/options_helper.h:23", sym_ty="Struct", shape=box];
+        n153018[label="MutableDBOptions", path="/home/yibai/llmcc/sample/repos/rocksdb/options/options_helper.h:24", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_options_test_cc {
+        label="options_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n175751[label="OptionsTest", path="/home/yibai/llmcc/sample/repos/rocksdb/options/options_test.cc:48", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_port {
+      label="port";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_io_win_h {
+        label="io_win.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n71212[label="IOError", path="/home/yibai/llmcc/sample/repos/rocksdb/port/win/io_win.h:39", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_rocksdb {
+      label="rocksdb";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_advanced_compression_h {
+        label="advanced_compression.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n172536[label="Decompressor", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/advanced_compression.h:257", sym_ty="Struct", shape=box];
+        n169879[label="Compressor", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/advanced_compression.h:58", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_advanced_iterator_h {
+        label="advanced_iterator.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n14204[label="IterBoundCheck", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/advanced_iterator.h:12", sym_ty="Enum", shape=box];
+        n14296[label="IterateResult", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/advanced_iterator.h:19", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_advanced_options_h {
+        label="advanced_options.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n146434[label="CompactionStyle", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/advanced_options.h:26", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_block_cache_trace_writer_h {
+        label="block_cache_trace_writer.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n136976[label="BlockCacheTraceRecord", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/block_cache_trace_writer.h:17", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_checkpoint_h {
+        label="checkpoint.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n110423[label="ColumnFamilyHandle", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/utilities/checkpoint.h:18", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_cleanable_h {
+        label="cleanable.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n7428[label="Cleanable", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/cleanable.h:15", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_compaction_filter_h {
+        label="compaction_filter.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n64462[label="CompactionFilter", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/compaction_filter.h:54", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_compaction_job_stats_h {
+        label="compaction_job_stats.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n148245[label="CompactionJobStats", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/compaction_job_stats.h:15", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_compression_type_h {
+        label="compression_type.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n264762[label="CompressionType", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/compression_type.h:18", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_configurable_h {
+        label="configurable.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n176400[label="Configurable", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/configurable.h:44", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_customizable_h {
+        label="customizable.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n254752[label="Customizable", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/customizable.h:56", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_h {
+        label="db.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n103359[label="CompactRangeOptions", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/db.h:42", sym_ty="Struct", shape=box];
+        n103366[label="FlushOptions", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/db.h:45", sym_ty="Struct", shape=box];
+        n103408[label="ColumnFamilyHandle", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/db.h:74", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_env_h {
+        label="env.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n110361[label="InfoLogLevel", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/env.h:1343", sym_ty="Enum", shape=box];
+        n93800[label="DataVerificationInfo", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/env.h:57", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_file_system_h {
+        label="file_system.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n291[label="IOOptions", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/file_system.h:100", sym_ty="Struct", shape=box];
+        n17126[label="FSWritableFile", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/file_system.h:1083", sym_ty="Struct", shape=box];
+        n22989[label="FileSystemWrapper", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/file_system.h:1486", sym_ty="Struct", shape=box];
+        n659[label="FileOptions", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/file_system.h:182", sym_ty="Struct", shape=box];
+        n12261[label="FSReadRequest", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/file_system.h:859", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_filter_policy_h {
+        label="filter_policy.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n269633[label="FilterBuildingContext", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/filter_policy.h:48", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_flush_block_policy_h {
+        label="flush_block_policy.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n10894[label="ConfigOptions", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/flush_block_policy.h:17", sym_ty="Struct", shape=box];
+        n10895[label="Options", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/flush_block_policy.h:18", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_listener_h {
+        label="listener.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n139763[label="CompactionReason", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/listener.h:113", sym_ty="Enum", shape=box];
+        n142017[label="FileOperationType", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/listener.h:244", sym_ty="Enum", shape=box];
+        n142040[label="FileOperationInfo", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/listener.h:259", sym_ty="Struct", shape=box];
+        n143698[label="SubcompactionJobInfo", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/listener.h:393", sym_ty="Struct", shape=box];
+        n143892[label="CompactionJobInfo", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/listener.h:429", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_memory_allocator_h {
+        label="memory_allocator.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n65271[label="MemoryAllocator", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/memory_allocator.h:19", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_memtablerep_h {
+        label="memtablerep.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n182299[label="MemTableRep", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/memtablerep.h:62", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_optimistic_transaction_db_h {
+        label="optimistic_transaction_db.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n142166[label="Transaction", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/utilities/optimistic_transaction_db.h:18", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_options_h {
+        label="options.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n257781[label="IngestExternalFileOptions", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/options.h:2581", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_slice_h {
+        label="slice.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n256687[label="OptSlice", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/slice.h:136", sym_ty="Struct", shape=box];
+        n255558[label="Slice", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/slice.h:33", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_stats_history_h {
+        label="stats_history.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n16289[label="DBImpl", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/stats_history.h:19", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_table_h {
+        label="table.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n111805[label="ChecksumType", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/table.h:55", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_table_reader_caller_h {
+        label="table_reader_caller.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n35718[label="TableReaderCaller", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/table_reader_caller.h:16", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_thread_status_h {
+        label="thread_status.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n19197[label="ThreadStatus", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/thread_status.h:30", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_tool_hooks_h {
+        label="tool_hooks.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n63097[label="TransactionDBOptions", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/tool_hooks.h:12", sym_ty="Struct", shape=box];
+        n63099[label="TransactionDB", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/tool_hooks.h:13", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_trace_record_h {
+        label="trace_record.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n272634[label="TraceType", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/trace_record.h:23", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_transaction_h {
+        label="transaction.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n176785[label="Endpoint", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/utilities/transaction.h:85", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_transaction_db_h {
+        label="transaction_db.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n197908[label="TransactionOptions", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/utilities/transaction_db.h:296", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_types_h {
+        label="types.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n93736[label="Temperature", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/types.h:118", sym_ty="Enum", shape=box];
+        n91941[label="TableFileCreationReason", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/types.h:30", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_wal_filter_h {
+        label="wal_filter.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n163124[label="WriteBatch", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/wal_filter.h:16", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_write_batch_base_h {
+        label="write_batch_base.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n273305[label="Status", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/write_batch_base.h:19", sym_ty="Struct", shape=box];
+        n273489[label="WriteBatchBase", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/write_batch_base.h:27", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_write_buffer_manager_h {
+        label="write_buffer_manager.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n51537[label="WriteBufferManager", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb/write_buffer_manager.h:37", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_table {
+      label="table";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_adaptive_table_factory_h {
+        label="adaptive_table_factory.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n10939[label="EnvOptions", path="/home/yibai/llmcc/sample/repos/rocksdb/table/adaptive/adaptive_table_factory.h:15", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_block_based_table_builder_h {
+        label="block_based_table_builder.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n254687[label="BlockBasedTableOptions", path="/home/yibai/llmcc/sample/repos/rocksdb/table/block_based/block_based_table_builder.h:35", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_block_based_table_factory_h {
+        label="block_based_table_factory.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n59206[label="ColumnFamilyOptions", path="/home/yibai/llmcc/sample/repos/rocksdb/table/block_based/block_based_table_factory.h:22", sym_ty="Struct", shape=box];
+        n59209[label="DBOptions", path="/home/yibai/llmcc/sample/repos/rocksdb/table/block_based/block_based_table_factory.h:24", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_block_based_table_reader_test_cc {
+        label="block_based_table_reader_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n84507[label="Bool", path="/home/yibai/llmcc/sample/repos/rocksdb/table/block_based/block_based_table_reader_test.cc:1779", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_block_prefix_index_h {
+        label="block_prefix_index.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n39223[label="Comparator", path="/home/yibai/llmcc/sample/repos/rocksdb/table/block_based/block_prefix_index.h:14", sym_ty="Struct", shape=box];
+        n39224[label="Iterator", path="/home/yibai/llmcc/sample/repos/rocksdb/table/block_based/block_prefix_index.h:15", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_cuckoo_table_reader_h {
+        label="cuckoo_table_reader.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n50811[label="Arena", path="/home/yibai/llmcc/sample/repos/rocksdb/table/cuckoo/cuckoo_table_reader.h:23", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_iterator_cc {
+        label="iterator.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n167462[label="NewErrorIterator", path="/home/yibai/llmcc/sample/repos/rocksdb/table/iterator.cc:90", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_two_level_iterator_h {
+        label="two_level_iterator.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n21550[label="ReadOptions", path="/home/yibai/llmcc/sample/repos/rocksdb/table/two_level_iterator.h:17", sym_ty="Struct", shape=box];
+        n21552[label="InternalKeyComparator", path="/home/yibai/llmcc/sample/repos/rocksdb/table/two_level_iterator.h:18", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_test_util {
+      label="test_util";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_sync_point_h {
+        label="sync_point.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n262620[label="SyncPoint", path="/home/yibai/llmcc/sample/repos/rocksdb/test_util/sync_point.h:73", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_sync_point_impl_h {
+        label="sync_point_impl.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n89179[label="Data", path="/home/yibai/llmcc/sample/repos/rocksdb/test_util/sync_point_impl.h:48", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_testharness_cc {
+        label="testharness.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n80386[label="PerThreadDBPath", path="/home/yibai/llmcc/sample/repos/rocksdb/test_util/testharness.cc:50", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_testutil_cc {
+        label="testutil.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n57512[label="DeleteDir", path="/home/yibai/llmcc/sample/repos/rocksdb/test_util/testutil.cc:564", sym_ty="Function", shape=ellipse];
+        n57996[label="SpecialSkipListFactory", path="/home/yibai/llmcc/sample/repos/rocksdb/test_util/testutil.cc:666", sym_ty="Struct", shape=box];
+        n58802[label="NewSpecialSkipListFactory", path="/home/yibai/llmcc/sample/repos/rocksdb/test_util/testutil.cc:720", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_trace_replay {
+      label="trace_replay";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_block_cache_tracer_h {
+        label="block_cache_tracer.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n254972[label="BlockCacheTracer", path="/home/yibai/llmcc/sample/repos/rocksdb/trace_replay/block_cache_tracer.h:203", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_trace_replay_h {
+        label="trace_replay.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n45711[label="WriteOptions", path="/home/yibai/llmcc/sample/repos/rocksdb/trace_replay/trace_replay.h:38", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_util {
+      label="util";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_atomic_h {
+        label="atomic.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n151157[label="RelaxedAtomic", path="/home/yibai/llmcc/sample/repos/rocksdb/util/atomic.h:39", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_autovector_h {
+        label="autovector.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n277208[label="autovector", path="/home/yibai/llmcc/sample/repos/rocksdb/util/autovector.h:40", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_comparator_cc {
+        label="comparator.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n173984[label="BytewiseComparatorImpl", path="/home/yibai/llmcc/sample/repos/rocksdb/util/comparator.cc:30", sym_ty="Struct", shape=box];
+        n176017[label="BytewiseComparator", path="/home/yibai/llmcc/sample/repos/rocksdb/util/comparator.cc:322", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_random_h {
+        label="random.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n28221[label="Random", path="/home/yibai/llmcc/sample/repos/rocksdb/util/random.h:23", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_utilities {
+      label="utilities";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_backup_engine_test_cc {
+        label="backup_engine_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n233553[label="BackupEngineTest", path="/home/yibai/llmcc/sample/repos/rocksdb/utilities/backup/backup_engine_test.cc:676", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_blob_db_impl_h {
+        label="blob_db_impl.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n148364[label="FlushJobInfo", path="/home/yibai/llmcc/sample/repos/rocksdb/utilities/blob_db/blob_db_impl.h:42", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_cassandra_options_h {
+        label="cassandra_options.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n2551[label="ObjectLibrary", path="/home/yibai/llmcc/sample/repos/rocksdb/utilities/cassandra/cassandra_options.h:15", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_checkpoint_test_cc {
+        label="checkpoint_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n10296[label="CheckpointTest", path="/home/yibai/llmcc/sample/repos/rocksdb/utilities/checkpoint/checkpoint_test.cc:37", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_comparator_h {
+        label="comparator.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n160032[label="comparator", path="/home/yibai/llmcc/sample/repos/rocksdb/utilities/transactions/lock/range/range_tree/lib/ft/comparator.h:75", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_keyrange_h {
+        label="keyrange.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n115131[label="keyrange", path="/home/yibai/llmcc/sample/repos/rocksdb/utilities/transactions/lock/range/range_tree/lib/locktree/keyrange.h:66", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_locktree_h {
+        label="locktree.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n140600[label="locktree", path="/home/yibai/llmcc/sample/repos/rocksdb/utilities/transactions/lock/range/range_tree/lib/locktree/locktree.h:287", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_optimistic_transaction_test_cc {
+        label="optimistic_transaction_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n27395[label="OptimisticTransactionTest", path="/home/yibai/llmcc/sample/repos/rocksdb/utilities/transactions/optimistic_transaction_test.cc:27", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_pessimistic_transaction_h {
+        label="pessimistic_transaction.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n192726[label="PessimisticTransaction", path="/home/yibai/llmcc/sample/repos/rocksdb/utilities/transactions/pessimistic_transaction.h:36", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_point_lock_manager_test_h {
+        label="point_lock_manager_test.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n75720[label="PointLockManagerTest", path="/home/yibai/llmcc/sample/repos/rocksdb/utilities/transactions/lock/point/point_lock_manager_test.h:18", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_transaction_test_h {
+        label="transaction_test.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n114784[label="TransactionTestBase", path="/home/yibai/llmcc/sample/repos/rocksdb/utilities/transactions/transaction_test.h:41", sym_ty="Struct", shape=box];
+        n117286[label="TransactionTest", path="/home/yibai/llmcc/sample/repos/rocksdb/utilities/transactions/transaction_test.h:487", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_transaction_util_h {
+        label="transaction_util.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n69367[label="WriteBatchWithIndex", path="/home/yibai/llmcc/sample/repos/rocksdb/utilities/transactions/transaction_util.h:23", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_treenode_h {
+        label="treenode.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n272152[label="treenode", path="/home/yibai/llmcc/sample/repos/rocksdb/utilities/transactions/lock/range/range_tree/lib/locktree/treenode.h:81", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_ttl_test_cc {
+        label="ttl_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n96825[label="TtlTest", path="/home/yibai/llmcc/sample/repos/rocksdb/utilities/ttl/ttl_test.cc:47", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_uint64add_h {
+        label="uint64add.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n20054[label="Logger", path="/home/yibai/llmcc/sample/repos/rocksdb/utilities/merge_operators/uint64add.h:15", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_write_batch_with_index_test_cc {
+        label="write_batch_with_index_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n197058[label="WBWIBaseTest", path="/home/yibai/llmcc/sample/repos/rocksdb/utilities/write_batch_with_index/write_batch_with_index_test.cc:351", sym_ty="Struct", shape=box];
+        n197186[label="WriteBatchWithIndexTest", path="/home/yibai/llmcc/sample/repos/rocksdb/utilities/write_batch_with_index/write_batch_with_index_test.cc:455", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_write_prepared_transaction_test_cc {
+        label="write_prepared_transaction_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n80142[label="WritePreparedTransactionTestBase", path="/home/yibai/llmcc/sample/repos/rocksdb/utilities/transactions/write_prepared_transaction_test.cc:353", sym_ty="Struct", shape=box];
+        n81537[label="WritePreparedTransactionTest", path="/home/yibai/llmcc/sample/repos/rocksdb/utilities/transactions/write_prepared_transaction_test.cc:532", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_tools {
+    label="tools";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_block_cache_analyzer {
+      label="block_cache_analyzer";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_block_cache_trace_analyzer_cc {
+        label="block_cache_trace_analyzer.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n64456[label="block_cache_trace_analyzer_tool", path="/home/yibai/llmcc/sample/repos/rocksdb/tools/block_cache_analyzer/block_cache_trace_analyzer.cc:2132", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_db_bench_tool_cc {
+      label="db_bench_tool.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n289057[label="shared_ptr", path="/home/yibai/llmcc/sample/repos/rocksdb/tools/db_bench_tool.cc:1815", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_db_sanity_test_cc {
+      label="db_sanity_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n265676[label="RunSanityTests", path="/home/yibai/llmcc/sample/repos/rocksdb/tools/db_sanity_test.cc:228", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_sst_dump_test_cc {
+      label="sst_dump_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n155443[label="SSTDumpToolTest", path="/home/yibai/llmcc/sample/repos/rocksdb/tools/sst_dump_test.cc:72", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  n141764[label="TestPartResult", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest/gtest.h:19041", sym_ty="Function", shape=ellipse];
+  n14033[label="get", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest/gtest.h:1907", sym_ty="Function", shape=ellipse];
+  n150654[label="message", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest/gtest.h:19738", sym_ty="Function", shape=ellipse];
+  n159600[label="file", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest/gtest.h:20480", sym_ty="Function", shape=ellipse];
+  n159616[label="line", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest/gtest.h:20483", sym_ty="Function", shape=ellipse];
+  n160051[label="result", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest/gtest.h:20514", sym_ty="Function", shape=ellipse];
+  n161714[label="name", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest/gtest.h:20610", sym_ty="Function", shape=ellipse];
+  n25310[label="pattern", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest/gtest.h:2518", sym_ty="Function", shape=ellipse];
+  n39653[label="Close", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest/gtest.h:3789", sym_ty="Function", shape=ellipse];
+  n39661[label="GetEnv", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest/gtest.h:3792", sym_ty="Function", shape=ellipse];
+  n51288[label="c_str", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest/gtest.h:4482", sym_ty="Function", shape=ellipse];
+  n51539[label="IsEmpty", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest/gtest.h:4515", sym_ty="Function", shape=ellipse];
+
+  n38 -> n291 [from="field_type", to="struct"];
+  n38 -> n659 [from="field_type", to="struct"];
+  n38 -> n732 [from="field_type", to="struct"];
+  n38 -> n1011 [from="field_type", to="struct"];
+  n38 -> n10296 [from="field_type", to="struct"];
+  n38 -> n17126 [from="field_type", to="struct"];
+  n38 -> n32901 [from="field_type", to="struct"];
+  n38 -> n34441 [from="base", to="extends"];
+  n38 -> n75720 [from="field_type", to="struct"];
+  n38 -> n119173 [from="field_type", to="struct"];
+  n38 -> n135121 [from="field_type", to="struct"];
+  n38 -> n155443 [from="field_type", to="struct"];
+  n38 -> n161714 [from="caller", to="callee"];
+  n38 -> n178571 [from="field_type", to="struct"];
+  n38 -> n194894 [from="field_type", to="struct"];
+  n38 -> n212260 [from="field_type", to="struct"];
+  n38 -> n241878 [from="field_type", to="struct"];
+  n38 -> n254379 [from="field_type", to="struct"];
+  n38 -> n294049 [from="field_type", to="struct"];
+  n291 -> n659 [from="field_type", to="struct"];
+  n362 -> n36923 [from="base", to="extends"];
+  n362 -> n92584 [from="base", to="extends"];
+  n362 -> n203655 [from="base", to="extends"];
+  n1011 -> n11879 [from="input", to="func"];
+  n2551 -> n91873 [from="input", to="func"];
+  n7428 -> n7709 [from="base", to="extends"];
+  n10159 -> n135121 [from="field_type", to="struct"];
+  n10894 -> n85633 [from="field_type", to="struct"];
+  n10894 -> n92127 [from="field_type", to="struct"];
+  n10894 -> n168871 [from="field_type", to="struct"];
+  n10895 -> n10296 [from="field_type", to="struct"];
+  n10895 -> n27395 [from="field_type", to="struct"];
+  n10895 -> n29640 [from="field_type", to="struct"];
+  n10895 -> n32901 [from="field_type", to="struct"];
+  n10895 -> n96825 [from="field_type", to="struct"];
+  n10895 -> n114784 [from="field_type", to="struct"];
+  n10895 -> n149413 [from="field_type", to="struct"];
+  n10895 -> n178571 [from="field_type", to="struct"];
+  n10895 -> n197058 [from="field_type", to="struct"];
+  n10895 -> n200074 [from="field_type", to="struct"];
+  n10895 -> n233553 [from="field_type", to="struct"];
+  n10895 -> n241878 [from="field_type", to="struct"];
+  n10895 -> n254379 [from="field_type", to="struct"];
+  n10895 -> n293818 [from="field_type", to="struct"];
+  n10939 -> n659 [from="base", to="extends"];
+  n10939 -> n32901 [from="field_type", to="struct"];
+  n10939 -> n135121 [from="field_type", to="struct"];
+  n11879 -> n12261 [from="func", to="type_dep"];
+  n11879 -> n14033 [from="caller", to="callee"];
+  n11879 -> n15492 [from="func", to="type_dep"];
+  n11879 -> n20054 [from="func", to="type_dep"];
+  n11879 -> n20752 [from="func", to="type_dep"];
+  n11879 -> n20843 [from="func", to="type_dep"];
+  n11879 -> n21106 [from="func", to="type_dep"];
+  n11879 -> n22989 [from="func", to="type_dep"];
+  n11879 -> n27649 [from="func", to="type_dep"];
+  n11879 -> n28221 [from="func", to="type_dep"];
+  n11879 -> n34441 [from="func", to="type_dep"];
+  n11879 -> n39653 [from="caller", to="callee"];
+  n11879 -> n51288 [from="caller", to="callee"];
+  n11879 -> n71212 [from="caller", to="callee"];
+  n11879 -> n78666 [from="caller", to="callee"];
+  n11879 -> n80386 [from="caller", to="callee"];
+  n11879 -> n84507 [from="caller", to="callee"];
+  n11879 -> n93800 [from="func", to="type_dep"];
+  n11879 -> n110361 [from="func", to="type_dep"];
+  n11879 -> n111805 [from="func", to="type_dep"];
+  n11879 -> n134133 [from="caller", to="callee"];
+  n11879 -> n160051 [from="caller", to="callee"];
+  n11879 -> n175751 [from="func", to="type_dep"];
+  n11879 -> n181644 [from="caller", to="callee"];
+  n11879 -> n262620 [from="func", to="type_dep"];
+  n11879 -> n284138 [from="caller", to="callee"];
+  n14204 -> n14296 [from="field_type", to="struct"];
+  n16226 -> n200074 [from="field_type", to="struct"];
+  n16289 -> n192726 [from="field_type", to="struct"];
+  n19197 -> n119173 [from="field_type", to="struct"];
+  n20054 -> n156277 [from="field_type", to="struct"];
+  n20054 -> n200074 [from="field_type", to="struct"];
+  n20054 -> n269633 [from="field_type", to="struct"];
+  n20752 -> n167462 [from="input", to="func"];
+  n20843 -> n14296 [from="field_type", to="struct"];
+  n20843 -> n152279 [from="field_type", to="struct"];
+  n20843 -> n172536 [from="field_type", to="struct"];
+  n20843 -> n176785 [from="field_type", to="struct"];
+  n20843 -> n182299 [from="field_type", to="struct"];
+  n20843 -> n183704 [from="field_type", to="struct"];
+  n20843 -> n185523 [from="field_type", to="struct"];
+  n20843 -> n186070 [from="input", to="func"];
+  n20843 -> n186637 [from="input", to="func"];
+  n20843 -> n200408 [from="field_type", to="struct"];
+  n20843 -> n235636 [from="field_type", to="struct"];
+  n20843 -> n293810 [from="field_type", to="struct"];
+  n20843 -> n293820 [from="field_type", to="struct"];
+  n20847 -> n293886 [from="field_type", to="struct"];
+  n21065 -> n89179 [from="field_type", to="struct"];
+  n21111 -> n29640 [from="field_type", to="struct"];
+  n21111 -> n32901 [from="field_type", to="struct"];
+  n21111 -> n135121 [from="field_type", to="struct"];
+  n21111 -> n149413 [from="field_type", to="struct"];
+  n21111 -> n200074 [from="field_type", to="struct"];
+  n21550 -> n32901 [from="field_type", to="struct"];
+  n21550 -> n135121 [from="field_type", to="struct"];
+  n21550 -> n150920 [from="input", to="func"];
+  n21550 -> n197058 [from="field_type", to="struct"];
+  n21550 -> n293810 [from="field_type", to="struct"];
+  n21552 -> n375 [from="field_type", to="struct"];
+  n21552 -> n29640 [from="field_type", to="struct"];
+  n21552 -> n149413 [from="field_type", to="struct"];
+  n21552 -> n185523 [from="field_type", to="struct"];
+  n21552 -> n200074 [from="field_type", to="struct"];
+  n21552 -> n200151 [from="field_type", to="struct"];
+  n21552 -> n200408 [from="field_type", to="struct"];
+  n27649 -> n78035 [from="field_type", to="struct"];
+  n28221 -> n71989 [from="field_type", to="struct"];
+  n28221 -> n78666 [from="input", to="func"];
+  n28221 -> n190987 [from="field_type", to="struct"];
+  n29640 -> n29869 [from="base", to="extends"];
+  n34441 -> n57512 [from="input", to="func"];
+  n34441 -> n80386 [from="input", to="func"];
+  n34442 -> n78035 [from="field_type", to="struct"];
+  n34442 -> n186070 [from="input", to="func"];
+  n35718 -> n136976 [from="field_type", to="struct"];
+  n39223 -> n29640 [from="field_type", to="struct"];
+  n39223 -> n103408 [from="field_type", to="struct"];
+  n39223 -> n135121 [from="field_type", to="struct"];
+  n39223 -> n149413 [from="field_type", to="struct"];
+  n39223 -> n173984 [from="base", to="extends"];
+  n39223 -> n185523 [from="field_type", to="struct"];
+  n39223 -> n200074 [from="field_type", to="struct"];
+  n39223 -> n200151 [from="field_type", to="struct"];
+  n39224 -> n293798 [from="field_type", to="struct"];
+  n40056 -> n10296 [from="field_type", to="struct"];
+  n40056 -> n71989 [from="field_type", to="struct"];
+  n40056 -> n150920 [from="input", to="func"];
+  n40056 -> n178571 [from="field_type", to="struct"];
+  n40056 -> n197058 [from="field_type", to="struct"];
+  n40056 -> n203655 [from="field_type", to="struct"];
+  n40056 -> n241878 [from="field_type", to="struct"];
+  n40056 -> n254379 [from="field_type", to="struct"];
+  n40056 -> n293788 [from="field_type", to="struct"];
+  n45711 -> n32901 [from="field_type", to="struct"];
+  n45711 -> n135121 [from="field_type", to="struct"];
+  n45711 -> n197058 [from="field_type", to="struct"];
+  n45711 -> n293816 [from="field_type", to="struct"];
+  n47321 -> n47677 [from="base", to="extends"];
+  n47560 -> n269649 [from="caller", to="callee"];
+  n49252 -> n256532 [from="field_type", to="struct"];
+  n50183 -> n83416 [from="field_type", to="struct"];
+  n50183 -> n128709 [from="base", to="extends"];
+  n50183 -> n128709 [from="field_type", to="struct"];
+  n50183 -> n186070 [from="input", to="func"];
+  n50184 -> n29640 [from="field_type", to="struct"];
+  n50184 -> n32901 [from="field_type", to="struct"];
+  n50184 -> n149413 [from="field_type", to="struct"];
+  n50184 -> n200074 [from="field_type", to="struct"];
+  n50811 -> n16226 [from="field_type", to="struct"];
+  n51537 -> n32901 [from="field_type", to="struct"];
+  n51537 -> n135121 [from="field_type", to="struct"];
+  n58802 -> n57996 [from="func", to="type_dep"];
+  n59206 -> n32901 [from="field_type", to="struct"];
+  n59206 -> n71989 [from="field_type", to="struct"];
+  n59206 -> n92127 [from="field_type", to="struct"];
+  n59206 -> n135121 [from="field_type", to="struct"];
+  n59209 -> n71989 [from="field_type", to="struct"];
+  n59209 -> n92127 [from="field_type", to="struct"];
+  n63097 -> n75720 [from="field_type", to="struct"];
+  n63097 -> n114784 [from="field_type", to="struct"];
+  n63099 -> n75720 [from="field_type", to="struct"];
+  n63099 -> n114784 [from="field_type", to="struct"];
+  n63099 -> n293890 [from="field_type", to="struct"];
+  n64102 -> n200408 [from="field_type", to="struct"];
+  n64456 -> n20752 [from="func", to="type_dep"];
+  n64456 -> n51288 [from="caller", to="callee"];
+  n64456 -> n272634 [from="func", to="type_dep"];
+  n69367 -> n293802 [from="field_type", to="struct"];
+  n70106 -> n70308 [from="base", to="extends"];
+  n71212 -> n51288 [from="caller", to="callee"];
+  n71989 -> n73848 [from="base", to="extends"];
+  n73044 -> n29640 [from="field_type", to="struct"];
+  n73044 -> n149413 [from="field_type", to="struct"];
+  n78035 -> n32901 [from="field_type", to="struct"];
+  n78035 -> n47677 [from="field_type", to="struct"];
+  n78035 -> n135121 [from="field_type", to="struct"];
+  n78035 -> n254972 [from="field_type", to="struct"];
+  n80142 -> n81537 [from="base", to="extends"];
+  n80386 -> n161714 [from="caller", to="callee"];
+  n81230 -> n81636 [from="base", to="extends"];
+  n91941 -> n269633 [from="field_type", to="struct"];
+  n93736 -> n659 [from="field_type", to="struct"];
+  n93736 -> n142040 [from="field_type", to="struct"];
+  n103359 -> n293820 [from="field_type", to="struct"];
+  n103366 -> n293806 [from="field_type", to="struct"];
+  n110361 -> n16226 [from="field_type", to="struct"];
+  n110423 -> n10296 [from="field_type", to="struct"];
+  n110423 -> n47560 [from="input", to="func"];
+  n110423 -> n293863 [from="field_type", to="struct"];
+  n111805 -> n659 [from="field_type", to="struct"];
+  n114784 -> n80142 [from="base", to="extends"];
+  n114784 -> n117286 [from="base", to="extends"];
+  n115131 -> n272152 [from="field_type", to="struct"];
+  n128709 -> n132006 [from="input", to="func"];
+  n139763 -> n143698 [from="field_type", to="struct"];
+  n139763 -> n143892 [from="field_type", to="struct"];
+  n141764 -> n263341 [from="input", to="func"];
+  n142017 -> n142040 [from="field_type", to="struct"];
+  n142166 -> n293894 [from="field_type", to="struct"];
+  n143698 -> n293918 [from="field_type", to="struct"];
+  n143892 -> n293916 [from="field_type", to="struct"];
+  n146434 -> n269633 [from="field_type", to="struct"];
+  n148245 -> n135121 [from="field_type", to="struct"];
+  n148245 -> n235636 [from="field_type", to="struct"];
+  n148364 -> n293908 [from="field_type", to="struct"];
+  n150050 -> n235636 [from="field_type", to="struct"];
+  n151157 -> n200408 [from="field_type", to="struct"];
+  n151157 -> n205135 [from="field_type", to="struct"];
+  n153017 -> n32901 [from="field_type", to="struct"];
+  n153017 -> n135121 [from="field_type", to="struct"];
+  n153018 -> n32901 [from="field_type", to="struct"];
+  n153018 -> n135121 [from="field_type", to="struct"];
+  n153018 -> n200074 [from="field_type", to="struct"];
+  n159982 -> n32901 [from="field_type", to="struct"];
+  n159982 -> n135121 [from="field_type", to="struct"];
+  n160032 -> n140600 [from="field_type", to="struct"];
+  n160032 -> n272152 [from="field_type", to="struct"];
+  n162708 -> n294073 [from="field_type", to="struct"];
+  n163124 -> n293800 [from="field_type", to="struct"];
+  n167462 -> n133 [from="field_type", to="struct"];
+  n167462 -> n20752 [from="base", to="extends"];
+  n167462 -> n22989 [from="field_type", to="struct"];
+  n167462 -> n64462 [from="field_type", to="struct"];
+  n167462 -> n65271 [from="field_type", to="struct"];
+  n167462 -> n103408 [from="field_type", to="struct"];
+  n167462 -> n145105 [from="field_type", to="struct"];
+  n167462 -> n169879 [from="field_type", to="struct"];
+  n167462 -> n172536 [from="field_type", to="struct"];
+  n167462 -> n176400 [from="field_type", to="struct"];
+  n167462 -> n192726 [from="field_type", to="struct"];
+  n167462 -> n203655 [from="field_type", to="struct"];
+  n167462 -> n235636 [from="field_type", to="struct"];
+  n167462 -> n254379 [from="field_type", to="struct"];
+  n167462 -> n254752 [from="field_type", to="struct"];
+  n167462 -> n254972 [from="field_type", to="struct"];
+  n176017 -> n173984 [from="func", to="type_dep"];
+  n176400 -> n85579 [from="base", to="extends"];
+  n176400 -> n254752 [from="base", to="extends"];
+  n181644 -> n21106 [from="base", to="extends"];
+  n181644 -> n34441 [from="func", to="type_dep"];
+  n185523 -> n200408 [from="field_type", to="struct"];
+  n187651 -> n190987 [from="field_type", to="struct"];
+  n197058 -> n197186 [from="base", to="extends"];
+  n197908 -> n293892 [from="field_type", to="struct"];
+  n200074 -> n200769 [from="base", to="extends"];
+  n203655 -> n203781 [from="base", to="extends"];
+  n226869 -> n185523 [from="field_type", to="struct"];
+  n226869 -> n186637 [from="input", to="func"];
+  n254379 -> n34 [from="base", to="extends"];
+  n254379 -> n45 [from="base", to="extends"];
+  n254379 -> n362 [from="base", to="extends"];
+  n254379 -> n624 [from="base", to="extends"];
+  n254379 -> n941 [from="base", to="extends"];
+  n254379 -> n42220 [from="base", to="extends"];
+  n254379 -> n47321 [from="base", to="extends"];
+  n254379 -> n64921 [from="base", to="extends"];
+  n254379 -> n70106 [from="base", to="extends"];
+  n254379 -> n75271 [from="base", to="extends"];
+  n254379 -> n81230 [from="base", to="extends"];
+  n254379 -> n85741 [from="base", to="extends"];
+  n254379 -> n96242 [from="base", to="extends"];
+  n254379 -> n113939 [from="base", to="extends"];
+  n254379 -> n141329 [from="base", to="extends"];
+  n254379 -> n141751 [from="base", to="extends"];
+  n254379 -> n179808 [from="base", to="extends"];
+  n254687 -> n293823 [from="field_type", to="struct"];
+  n254752 -> n64462 [from="base", to="extends"];
+  n254752 -> n65271 [from="base", to="extends"];
+  n255558 -> n256687 [from="field_type", to="struct"];
+  n257781 -> n293878 [from="field_type", to="struct"];
+  n262827 -> n14033 [from="caller", to="callee"];
+  n262827 -> n25310 [from="caller", to="callee"];
+  n262827 -> n39661 [from="caller", to="callee"];
+  n262827 -> n51288 [from="caller", to="callee"];
+  n262827 -> n51539 [from="caller", to="callee"];
+  n262827 -> n150654 [from="caller", to="callee"];
+  n262827 -> n159616 [from="caller", to="callee"];
+  n262827 -> n160051 [from="caller", to="callee"];
+  n262827 -> n161714 [from="caller", to="callee"];
+  n262827 -> n271939 [from="caller", to="callee"];
+  n262827 -> n272912 [from="caller", to="callee"];
+  n262827 -> n283178 [from="caller", to="callee"];
+  n263341 -> n262827 [from="caller", to="callee"];
+  n264762 -> n13138 [from="field_type", to="struct"];
+  n264762 -> n143698 [from="field_type", to="struct"];
+  n264762 -> n143892 [from="field_type", to="struct"];
+  n264762 -> n183704 [from="field_type", to="struct"];
+  n265676 -> n38 [from="caller", to="callee"];
+  n265676 -> n51288 [from="caller", to="callee"];
+  n271939 -> n14033 [from="caller", to="callee"];
+  n271939 -> n51539 [from="caller", to="callee"];
+  n271939 -> n272912 [from="caller", to="callee"];
+  n271939 -> n283178 [from="caller", to="callee"];
+  n272634 -> n136976 [from="field_type", to="struct"];
+  n273305 -> n273489 [from="field_type", to="struct"];
+  n277208 -> n16226 [from="field_type", to="struct"];
+  n277208 -> n49073 [from="field_type", to="struct"];
+  n277208 -> n192726 [from="field_type", to="struct"];
+  n277208 -> n256532 [from="field_type", to="struct"];
+  n283147 -> n51288 [from="caller", to="callee"];
+  n283161 -> n283147 [from="caller", to="callee"];
+  n284138 -> n159600 [from="caller", to="callee"];
+  n289057 -> n181644 [from="input", to="func"];
+}

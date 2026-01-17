@@ -73,9 +73,9 @@ impl LanguageTraitImpl for LangCpp {
         ]
     }
 
-    fn manifest_name_impl() -> &'static str {
-        // CMake is the most common C++ build system
-        "CMakeLists.txt"
+    fn manifest_names_impl() -> &'static [&'static str] {
+        // Support both CMake and Bazel build systems
+        &["CMakeLists.txt", "BUILD", "BUILD.bazel"]
     }
 
     fn container_dirs_impl() -> &'static [&'static str] {

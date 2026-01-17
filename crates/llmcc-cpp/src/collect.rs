@@ -650,10 +650,12 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
 
         let Some(name_ident) = name_ident else {
             // Anonymous class/struct - still need to set up scope for nested members
+            // Create a synthetic symbol to serve as parent context for method classification
+            let anon_sym = scopes.insert_anonymous(node, SymKind::Struct);
             let scope = unit.cc.alloc_scope(node.id());
             sn.set_scope(scope);
             scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, None);
+            self.visit_children(unit, node, scopes, scope, anon_sym);
             scopes.pop_scope();
             return;
         };
@@ -662,10 +664,12 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
             Some(s) => s,
             None => {
                 // Still need to set up scope even if symbol creation failed
+                // Create a synthetic symbol to serve as parent context for method classification
+                let anon_sym = scopes.insert_anonymous(node, SymKind::Struct);
                 let scope = unit.cc.alloc_scope(node.id());
                 sn.set_scope(scope);
                 scopes.push_scope(scope);
-                self.visit_children(unit, node, scopes, scope, None);
+                self.visit_children(unit, node, scopes, scope, anon_sym);
                 scopes.pop_scope();
                 return;
             }
@@ -717,10 +721,12 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
 
         let Some(name_ident) = node.ident_by_field(unit, LangCpp::field_name) else {
             // Anonymous enum - still need to set up scope for nested enumerators
+            // Create an anonymous symbol to serve as parent for field_of relationship
+            let anon_sym = scopes.insert_anonymous(node, SymKind::Enum);
             let scope = unit.cc.alloc_scope(node.id());
             sn.set_scope(scope);
             scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, None);
+            self.visit_children(unit, node, scopes, scope, anon_sym);
             scopes.pop_scope();
             return;
         };
@@ -729,10 +735,12 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
             Some(s) => s,
             None => {
                 // Still need to set up scope even if symbol creation failed
+                // Create an anonymous symbol to serve as parent for field_of relationship
+                let anon_sym = scopes.insert_anonymous(node, SymKind::Enum);
                 let scope = unit.cc.alloc_scope(node.id());
                 sn.set_scope(scope);
                 scopes.push_scope(scope);
-                self.visit_children(unit, node, scopes, scope, None);
+                self.visit_children(unit, node, scopes, scope, anon_sym);
                 scopes.pop_scope();
                 return;
             }
@@ -1306,6 +1314,8 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
     }
 
     // Field declaration list (class body)
+    // This is just the body `{ ... }` of a struct/class - it should NOT create a new namespace.
+    // The struct's scope IS the namespace for all members inside.
     fn visit_field_declaration_list(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -1314,16 +1324,9 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(sn) = node.as_scope() {
-            let scope = unit.cc.alloc_scope(node.id());
-            sn.set_scope(scope);
-
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
-        }
+        // Just pass through the struct's namespace - don't create a new scope here.
+        // The parent (struct symbol) is what determines if children are methods vs functions.
+        self.visit_children(unit, node, scopes, namespace, parent);
     }
 
     // Catch clause

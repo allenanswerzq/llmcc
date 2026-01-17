@@ -17,6 +17,8 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_Analyzer_Passes[label="Passes", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Analyzer/Passes"];
+    mod_Analyzer_Resolve[label="Resolve", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Analyzer/Resolve"];
+    mod_Analyzer_Utils[label="Utils", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Analyzer"];
   }
 
   subgraph cluster_Client {
@@ -27,6 +29,16 @@ digraph architecture {
     mod_Client_BuzzHouse[label="BuzzHouse", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Client/BuzzHouse"];
   }
 
+  subgraph cluster_Columns {
+    label="Columns";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_Columns_ColumnVector[label="ColumnVector", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Columns"];
+    mod_Columns_IColumn[label="IColumn", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Columns"];
+    mod_Columns_IColumn_fwd[label="IColumn_fwd", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Columns"];
+  }
+
   subgraph cluster_Common {
     label="Common";
     style=rounded;
@@ -35,7 +47,13 @@ digraph architecture {
     mod_Common_DimensionalMetrics[label="DimensionalMetrics", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common"];
     mod_Common_ErrorCodes[label="ErrorCodes", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common"];
     mod_Common_HashTable[label="HashTable", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/HashTable"];
+    mod_Common_NetlinkMetricsProvider[label="NetlinkMetricsProvider", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common"];
     mod_Common_ProfileEvents[label="ProfileEvents", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common"];
+    mod_Common_Scheduler[label="Scheduler", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/Scheduler"];
+    mod_Common_SettingsChanges[label="SettingsChanges", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common"];
+    mod_Common_XMLUtils[label="XMLUtils", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common"];
+    mod_Common_filesystemHelpers[label="filesystemHelpers", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common"];
+    mod_Common_malloc[label="malloc", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common"];
   }
 
   subgraph cluster_Compression {
@@ -44,6 +62,22 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_Compression_CompressionCodecT64[label="CompressionCodecT64", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Compression"];
+  }
+
+  subgraph cluster_Config {
+    label="Config";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_Config_ConfigHelper[label="ConfigHelper", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/Config"];
+  }
+
+  subgraph cluster_Coordination {
+    label="Coordination";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_Coordination_KeeperStorage[label="KeeperStorage", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Coordination"];
   }
 
   subgraph cluster_Core {
@@ -62,6 +96,14 @@ digraph architecture {
 
     mod_Disks_DiskObjectStorage[label="DiskObjectStorage", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Disks/DiskObjectStorage"];
     mod_Disks_IO[label="IO", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Disks/IO"];
+  }
+
+  subgraph cluster_Formats {
+    label="Formats";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_Formats_JSONUtils[label="JSONUtils", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Formats"];
   }
 
   subgraph cluster_Foundation {
@@ -85,8 +127,10 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_IO_Archives[label="Archives", path="/home/yibai/llmcc/sample/repos/clickhouse/src/IO/Archives"];
     mod_IO_ReadHelpers[label="ReadHelpers", path="/home/yibai/llmcc/sample/repos/clickhouse/src/IO"];
     mod_IO_S3[label="S3", path="/home/yibai/llmcc/sample/repos/clickhouse/src/IO/S3"];
+    mod_IO_WithFileName[label="WithFileName", path="/home/yibai/llmcc/sample/repos/clickhouse/src/IO"];
     mod_IO_WriteHelpers[label="WriteHelpers", path="/home/yibai/llmcc/sample/repos/clickhouse/src/IO"];
   }
 
@@ -103,9 +147,12 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_Interpreters_Access[label="Access", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters/Access"];
     mod_Interpreters_Cache[label="Cache", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters/Cache"];
     mod_Interpreters_ConcurrentHashJoin[label="ConcurrentHashJoin", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters"];
     mod_Interpreters_Context[label="Context", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters"];
+    mod_Interpreters_HashJoin[label="HashJoin", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters/HashJoin"];
+    mod_Interpreters_formatWithPossiblyHidingSecrets[label="formatWithPossiblyHidingSecrets", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Interpreters"];
   }
 
   subgraph cluster_JSON {
@@ -124,11 +171,20 @@ digraph architecture {
     mod_Net_Poco[label="Poco", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/Net/include/Poco"];
   }
 
+  subgraph cluster_NetSSL_OpenSSL {
+    label="NetSSL_OpenSSL";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_NetSSL_OpenSSL_Poco[label="Poco", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/NetSSL_OpenSSL/include/Poco"];
+  }
+
   subgraph cluster_Parsers {
     label="Parsers";
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_Parsers_ASTViewTargets[label="ASTViewTargets", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Parsers"];
     mod_Parsers_Access[label="Access", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Parsers/Access"];
     mod_Parsers_Kusto[label="Kusto", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Parsers/Kusto"];
     mod_Parsers_LexerStandalone[label="LexerStandalone", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Parsers"];
@@ -139,6 +195,8 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_Processors_Executors[label="Executors", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Processors/Executors"];
+    mod_Processors_Merges[label="Merges", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Processors/Merges"];
     mod_Processors_QueryPlan[label="QueryPlan", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Processors/QueryPlan"];
     mod_Processors_Transforms[label="Transforms", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Processors/Transforms"];
   }
@@ -148,6 +206,7 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_Serializations_SerializationBool[label="SerializationBool", path="/home/yibai/llmcc/sample/repos/clickhouse/src/DataTypes/Serializations"];
     mod_Serializations_SerializationCustomSimpleText[label="SerializationCustomSimpleText", path="/home/yibai/llmcc/sample/repos/clickhouse/src/DataTypes/Serializations"];
   }
 
@@ -159,6 +218,7 @@ digraph architecture {
     mod_Storages_Kafka[label="Kafka", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Storages/Kafka"];
     mod_Storages_MergeTree[label="MergeTree", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Storages/MergeTree"];
     mod_Storages_ObjectStorage[label="ObjectStorage", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Storages/ObjectStorage"];
+    mod_Storages_ObjectStorageQueue[label="ObjectStorageQueue", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Storages/ObjectStorageQueue"];
   }
 
   subgraph cluster_Util {
@@ -178,6 +238,7 @@ digraph architecture {
     mod_XML_SAX[label="SAX", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/XML/include/Poco/SAX"];
     mod_XML_XML[label="XML", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/XML/include/Poco/XML"];
     mod_XML_xmlparse[label="xmlparse", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/XML/src"];
+    mod_XML_xmltok[label="xmltok", path="/home/yibai/llmcc/sample/repos/clickhouse/base/poco/XML/src"];
   }
 
   subgraph cluster_ZooKeeper {
@@ -186,6 +247,7 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_ZooKeeper_IKeeper[label="IKeeper", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/ZooKeeper"];
+    mod_ZooKeeper_ZooKeeperCommon[label="ZooKeeperCommon", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/ZooKeeper"];
     mod_ZooKeeper_ZooKeeperIO[label="ZooKeeperIO", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Common/ZooKeeper"];
   }
 
@@ -234,6 +296,7 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_src_DataLake[label="DataLake", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Databases/DataLake"];
     mod_src_Databases[label="Databases", path="/home/yibai/llmcc/sample/repos/clickhouse/src/Databases"];
   }
 
@@ -254,19 +317,40 @@ digraph architecture {
   }
 
 
+  mod_Analyzer_Passes -> mod_Analyzer_Resolve;
   mod_Analyzer_Passes -> mod_Common_DimensionalMetrics;
   mod_Analyzer_Passes -> mod_Common_ErrorCodes;
+  mod_Analyzer_Passes -> mod_Common_SettingsChanges;
   mod_Analyzer_Passes -> mod_Compression_CompressionCodecT64;
+  mod_Analyzer_Passes -> mod_Config_ConfigHelper;
   mod_Analyzer_Passes -> mod_Core_NamesAndAliases;
   mod_Analyzer_Passes -> mod_XML_XML;
   mod_Analyzer_Passes -> mod_ZooKeeper_ZooKeeperIO;
   mod_Analyzer_Passes -> mod_glibc_compatibility_musl;
+  mod_Analyzer_Passes -> mod_src_DataLake;
   mod_Analyzer_Passes -> mod_workspace_skim;
+  mod_Analyzer_Resolve -> mod_Core_NamesAndAliases;
+  mod_Analyzer_Resolve -> mod_JSON_pdjson;
+  mod_Analyzer_Resolve -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Analyzer_Resolve -> mod_workspace_skim;
+  mod_Analyzer_Utils -> mod_Analyzer_Resolve;
+  mod_Analyzer_Utils -> mod_Common_ErrorCodes;
+  mod_Analyzer_Utils -> mod_Core_NamesAndAliases;
+  mod_Analyzer_Utils -> mod_Parsers_LexerStandalone;
+  mod_Analyzer_Utils -> mod_Processors_QueryPlan;
+  mod_Analyzer_Utils -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Analyzer_Utils -> mod_unknown_unknown;
+  mod_Analyzer_Utils -> mod_workspace_skim;
   mod_Client_BuzzHouse -> mod_Common_DimensionalMetrics;
   mod_Client_BuzzHouse -> mod_Common_ErrorCodes;
+  mod_Client_BuzzHouse -> mod_Common_NetlinkMetricsProvider;
+  mod_Client_BuzzHouse -> mod_Common_XMLUtils;
+  mod_Client_BuzzHouse -> mod_Common_filesystemHelpers;
   mod_Client_BuzzHouse -> mod_Compression_CompressionCodecT64;
+  mod_Client_BuzzHouse -> mod_Config_ConfigHelper;
   mod_Client_BuzzHouse -> mod_Disks_DiskObjectStorage;
   mod_Client_BuzzHouse -> mod_Foundation_Poco;
+  mod_Client_BuzzHouse -> mod_Interpreters_formatWithPossiblyHidingSecrets;
   mod_Client_BuzzHouse -> mod_JSON_pdjson;
   mod_Client_BuzzHouse -> mod_Storages_ObjectStorage;
   mod_Client_BuzzHouse -> mod_XML_DOM;
@@ -276,14 +360,41 @@ digraph architecture {
   mod_Client_BuzzHouse -> mod_install_Install;
   mod_Client_BuzzHouse -> mod_pcg_random_pcg_random;
   mod_Client_BuzzHouse -> mod_workspace_skim;
+  mod_Columns_ColumnVector -> mod_unknown_unknown;
+  mod_Columns_IColumn -> mod_Columns_IColumn_fwd;
+  mod_Columns_IColumn -> mod_unknown_unknown;
   mod_Common_ErrorCodes -> mod_Parsers_LexerStandalone;
   mod_Common_HashTable -> mod_Parsers_LexerStandalone;
   mod_Common_ProfileEvents -> mod_Parsers_LexerStandalone;
+  mod_Common_Scheduler -> mod_Common_ErrorCodes;
+  mod_Common_Scheduler -> mod_workspace_skim;
+  mod_Common_SettingsChanges -> mod_Common_ErrorCodes;
+  mod_Common_SettingsChanges -> mod_Parsers_LexerStandalone;
+  mod_Common_SettingsChanges -> mod_workspace_skim;
+  mod_Common_XMLUtils -> mod_XML_DOM;
+  mod_Common_filesystemHelpers -> mod_Foundation_Poco;
+  mod_Common_filesystemHelpers -> mod_install_Install;
+  mod_Common_filesystemHelpers -> mod_workspace_skim;
+  mod_Coordination_KeeperStorage -> mod_Common_SettingsChanges;
+  mod_Coordination_KeeperStorage -> mod_Interpreters_ConcurrentHashJoin;
+  mod_Coordination_KeeperStorage -> mod_Parsers_LexerStandalone;
+  mod_Coordination_KeeperStorage -> mod_Storages_Kafka;
+  mod_Coordination_KeeperStorage -> mod_XML_DOM;
+  mod_Coordination_KeeperStorage -> mod_ZooKeeper_IKeeper;
+  mod_Coordination_KeeperStorage -> mod_ZooKeeper_ZooKeeperCommon;
+  mod_Coordination_KeeperStorage -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Coordination_KeeperStorage -> mod_install_Install;
+  mod_Coordination_KeeperStorage -> mod_pcg_random_pcg_random;
+  mod_Coordination_KeeperStorage -> mod_workspace_skim;
   mod_Core_Field -> mod_Parsers_LexerStandalone;
   mod_Core_Field -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Core_Field -> mod_src_DataLake;
   mod_Core_Field -> mod_unknown_unknown;
   mod_Core_Field -> mod_workspace_skim;
   mod_Disks_DiskObjectStorage -> mod_Common_ErrorCodes;
+  mod_Disks_DiskObjectStorage -> mod_Common_SettingsChanges;
+  mod_Disks_DiskObjectStorage -> mod_Common_XMLUtils;
+  mod_Disks_DiskObjectStorage -> mod_Config_ConfigHelper;
   mod_Disks_DiskObjectStorage -> mod_Core_NamesAndAliases;
   mod_Disks_DiskObjectStorage -> mod_Disks_IO;
   mod_Disks_DiskObjectStorage -> mod_Foundation_Poco;
@@ -295,17 +406,27 @@ digraph architecture {
   mod_Disks_IO -> mod_Disks_DiskObjectStorage;
   mod_Disks_IO -> mod_Interpreters_Cache;
   mod_Disks_IO -> mod_workspace_skim;
+  mod_Formats_JSONUtils -> mod_Common_ErrorCodes;
+  mod_Formats_JSONUtils -> mod_Processors_Transforms;
+  mod_Formats_JSONUtils -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Formats_JSONUtils -> mod_workspace_skim;
   mod_Foundation_Poco -> mod_Common_ErrorCodes;
   mod_Foundation_Poco -> mod_XML_DOM;
   mod_Foundation_Poco -> mod_XML_XML;
+  mod_Foundation_Poco -> mod_XML_xmltok;
   mod_Foundation_Poco -> mod_ZooKeeper_ZooKeeperIO;
   mod_Foundation_Poco -> mod_install_Install;
   mod_Functions_FunctionsConversion -> mod_Core_NamesAndAliases;
   mod_Functions_FunctionsConversion -> mod_ZooKeeper_ZooKeeperIO;
   mod_Functions_FunctionsConversion -> mod_unknown_unknown;
+  mod_IO_Archives -> mod_Parsers_LexerStandalone;
+  mod_IO_Archives -> mod_install_Install;
+  mod_IO_Archives -> mod_workspace_skim;
   mod_IO_ReadHelpers -> mod_Common_ErrorCodes;
+  mod_IO_ReadHelpers -> mod_Common_malloc;
   mod_IO_ReadHelpers -> mod_Compression_CompressionCodecT64;
   mod_IO_ReadHelpers -> mod_Foundation_Poco;
+  mod_IO_ReadHelpers -> mod_IO_WithFileName;
   mod_IO_ReadHelpers -> mod_IO_WriteHelpers;
   mod_IO_ReadHelpers -> mod_Parsers_LexerStandalone;
   mod_IO_ReadHelpers -> mod_ZooKeeper_ZooKeeperIO;
@@ -314,6 +435,7 @@ digraph architecture {
   mod_IO_S3 -> mod_Foundation_Poco;
   mod_IO_S3 -> mod_Parsers_Kusto;
   mod_IO_S3 -> mod_Parsers_LexerStandalone;
+  mod_IO_S3 -> mod_Storages_ObjectStorageQueue;
   mod_IO_S3 -> mod_XML_DOM;
   mod_IO_S3 -> mod_XML_SAX;
   mod_IO_S3 -> mod_ZooKeeper_ZooKeeperIO;
@@ -321,6 +443,7 @@ digraph architecture {
   mod_IO_S3 -> mod_workspace_skim;
   mod_IO_WriteHelpers -> mod_Common_ErrorCodes;
   mod_IO_WriteHelpers -> mod_Foundation_Poco;
+  mod_IO_WriteHelpers -> mod_IO_Archives;
   mod_IO_WriteHelpers -> mod_Parsers_LexerStandalone;
   mod_IO_WriteHelpers -> mod_Util_Poco;
   mod_IO_WriteHelpers -> mod_XML_XML;
@@ -330,19 +453,41 @@ digraph architecture {
   mod_Impl_Parquet -> mod_Compression_CompressionCodecT64;
   mod_Impl_Parquet -> mod_Core_NamesAndAliases;
   mod_Impl_Parquet -> mod_Foundation_Poco;
+  mod_Impl_Parquet -> mod_XML_xmltok;
   mod_Impl_Parquet -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Impl_Parquet -> mod_src_DataLake;
   mod_Impl_Parquet -> mod_unknown_unknown;
   mod_Impl_Parquet -> mod_workspace_skim;
+  mod_Interpreters_Access -> mod_Common_ErrorCodes;
+  mod_Interpreters_Access -> mod_Common_NetlinkMetricsProvider;
+  mod_Interpreters_Access -> mod_Compression_CompressionCodecT64;
+  mod_Interpreters_Access -> mod_Interpreters_Context;
+  mod_Interpreters_Access -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Interpreters_Access -> mod_workspace_skim;
   mod_Interpreters_Cache -> mod_workspace_skim;
   mod_Interpreters_ConcurrentHashJoin -> mod_Common_ErrorCodes;
+  mod_Interpreters_ConcurrentHashJoin -> mod_Interpreters_HashJoin;
   mod_Interpreters_ConcurrentHashJoin -> mod_ZooKeeper_ZooKeeperIO;
   mod_Interpreters_Context -> mod_Foundation_Poco;
   mod_Interpreters_Context -> mod_install_Install;
   mod_Interpreters_Context -> mod_workspace_skim;
+  mod_Interpreters_HashJoin -> mod_Compression_CompressionCodecT64;
+  mod_Interpreters_HashJoin -> mod_Core_NamesAndAliases;
+  mod_Interpreters_HashJoin -> mod_Interpreters_ConcurrentHashJoin;
+  mod_Interpreters_HashJoin -> mod_XML_XML;
+  mod_Interpreters_HashJoin -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Interpreters_HashJoin -> mod_unknown_unknown;
+  mod_Interpreters_HashJoin -> mod_workspace_skim;
   mod_JSON_pdjson -> mod_Core_NamesAndAliases;
+  mod_NetSSL_OpenSSL_Poco -> mod_Foundation_Poco;
+  mod_NetSSL_OpenSSL_Poco -> mod_Net_Poco;
   mod_Net_Poco -> mod_Foundation_Poco;
   mod_Net_Poco -> mod_install_Install;
+  mod_Parsers_ASTViewTargets -> mod_Foundation_Poco;
+  mod_Parsers_ASTViewTargets -> mod_Parsers_LexerStandalone;
+  mod_Parsers_Access -> mod_Common_malloc;
   mod_Parsers_Access -> mod_Core_NamesAndAliases;
+  mod_Parsers_Access -> mod_Interpreters_formatWithPossiblyHidingSecrets;
   mod_Parsers_Access -> mod_Parsers_LexerStandalone;
   mod_Parsers_Access -> mod_ZooKeeper_ZooKeeperIO;
   mod_Parsers_Access -> mod_workspace_skim;
@@ -350,11 +495,32 @@ digraph architecture {
   mod_Parsers_Kusto -> mod_XML_XML;
   mod_Parsers_Kusto -> mod_ZooKeeper_ZooKeeperIO;
   mod_Parsers_Kusto -> mod_workspace_skim;
+  mod_Processors_Executors -> mod_Common_DimensionalMetrics;
+  mod_Processors_Executors -> mod_Disks_IO;
+  mod_Processors_Executors -> mod_Processors_Merges;
+  mod_Processors_Executors -> mod_Processors_QueryPlan;
+  mod_Processors_Executors -> mod_Processors_Transforms;
+  mod_Processors_Executors -> mod_workspace_skim;
+  mod_Processors_Merges -> mod_Columns_IColumn_fwd;
+  mod_Processors_Merges -> mod_Common_ErrorCodes;
+  mod_Processors_Merges -> mod_Core_NamesAndAliases;
+  mod_Processors_Merges -> mod_Parsers_LexerStandalone;
+  mod_Processors_Merges -> mod_Processors_Executors;
+  mod_Processors_Merges -> mod_Processors_QueryPlan;
+  mod_Processors_Merges -> mod_Processors_Transforms;
+  mod_Processors_Merges -> mod_XML_XML;
+  mod_Processors_Merges -> mod_ZooKeeper_ZooKeeperIO;
+  mod_Processors_Merges -> mod_workspace_skim;
   mod_Processors_QueryPlan -> mod_Analyzer_Passes;
+  mod_Processors_QueryPlan -> mod_Columns_ColumnVector;
   mod_Processors_QueryPlan -> mod_Common_DimensionalMetrics;
   mod_Processors_QueryPlan -> mod_Common_ErrorCodes;
+  mod_Processors_QueryPlan -> mod_Common_NetlinkMetricsProvider;
   mod_Processors_QueryPlan -> mod_Common_ProfileEvents;
+  mod_Processors_QueryPlan -> mod_Common_SettingsChanges;
+  mod_Processors_QueryPlan -> mod_Common_XMLUtils;
   mod_Processors_QueryPlan -> mod_Compression_CompressionCodecT64;
+  mod_Processors_QueryPlan -> mod_Config_ConfigHelper;
   mod_Processors_QueryPlan -> mod_Core_NamesAndAliases;
   mod_Processors_QueryPlan -> mod_Disks_IO;
   mod_Processors_QueryPlan -> mod_Foundation_Poco;
@@ -363,6 +529,8 @@ digraph architecture {
   mod_Processors_QueryPlan -> mod_JSON_pdjson;
   mod_Processors_QueryPlan -> mod_Net_Poco;
   mod_Processors_QueryPlan -> mod_Parsers_LexerStandalone;
+  mod_Processors_QueryPlan -> mod_Processors_Executors;
+  mod_Processors_QueryPlan -> mod_Processors_Merges;
   mod_Processors_QueryPlan -> mod_Processors_Transforms;
   mod_Processors_QueryPlan -> mod_Storages_MergeTree;
   mod_Processors_QueryPlan -> mod_XML_XML;
@@ -370,17 +538,27 @@ digraph architecture {
   mod_Processors_QueryPlan -> mod_ZooKeeper_ZooKeeperIO;
   mod_Processors_QueryPlan -> mod_glibc_compatibility_musl;
   mod_Processors_QueryPlan -> mod_libfarmhash_farmhash;
+  mod_Processors_QueryPlan -> mod_src_DataLake;
   mod_Processors_QueryPlan -> mod_unknown_unknown;
   mod_Processors_QueryPlan -> mod_workspace_skim;
+  mod_Processors_Transforms -> mod_Columns_ColumnVector;
+  mod_Processors_Transforms -> mod_Columns_IColumn_fwd;
   mod_Processors_Transforms -> mod_Common_ErrorCodes;
   mod_Processors_Transforms -> mod_Compression_CompressionCodecT64;
   mod_Processors_Transforms -> mod_Core_NamesAndAliases;
   mod_Processors_Transforms -> mod_Foundation_Poco;
+  mod_Processors_Transforms -> mod_Interpreters_formatWithPossiblyHidingSecrets;
+  mod_Processors_Transforms -> mod_Processors_Executors;
+  mod_Processors_Transforms -> mod_Processors_Merges;
   mod_Processors_Transforms -> mod_Processors_QueryPlan;
   mod_Processors_Transforms -> mod_Storages_MergeTree;
   mod_Processors_Transforms -> mod_ZooKeeper_ZooKeeperIO;
   mod_Processors_Transforms -> mod_unknown_unknown;
   mod_Processors_Transforms -> mod_workspace_skim;
+  mod_Serializations_SerializationBool -> mod_Common_ErrorCodes;
+  mod_Serializations_SerializationBool -> mod_Interpreters_ConcurrentHashJoin;
+  mod_Serializations_SerializationBool -> mod_Serializations_SerializationCustomSimpleText;
+  mod_Serializations_SerializationCustomSimpleText -> mod_Serializations_SerializationBool;
   mod_Serializations_SerializationCustomSimpleText -> mod_Util_Poco;
   mod_Serializations_SerializationCustomSimpleText -> mod_workspace_skim;
   mod_Storages_Kafka -> mod_Common_ErrorCodes;
@@ -389,20 +567,28 @@ digraph architecture {
   mod_Storages_Kafka -> mod_XML_SAX;
   mod_Storages_Kafka -> mod_ZooKeeper_ZooKeeperIO;
   mod_Storages_Kafka -> mod_workspace_skim;
+  mod_Storages_MergeTree -> mod_Columns_ColumnVector;
+  mod_Storages_MergeTree -> mod_Columns_IColumn_fwd;
   mod_Storages_MergeTree -> mod_Common_DimensionalMetrics;
   mod_Storages_MergeTree -> mod_Common_ErrorCodes;
+  mod_Storages_MergeTree -> mod_Common_NetlinkMetricsProvider;
   mod_Storages_MergeTree -> mod_Common_ProfileEvents;
+  mod_Storages_MergeTree -> mod_Common_SettingsChanges;
   mod_Storages_MergeTree -> mod_Compression_CompressionCodecT64;
+  mod_Storages_MergeTree -> mod_Config_ConfigHelper;
   mod_Storages_MergeTree -> mod_Core_NamesAndAliases;
   mod_Storages_MergeTree -> mod_Disks_IO;
   mod_Storages_MergeTree -> mod_Foundation_Poco;
+  mod_Storages_MergeTree -> mod_IO_WithFileName;
   mod_Storages_MergeTree -> mod_Interpreters_ConcurrentHashJoin;
+  mod_Storages_MergeTree -> mod_Interpreters_formatWithPossiblyHidingSecrets;
   mod_Storages_MergeTree -> mod_JSON_pdjson;
   mod_Storages_MergeTree -> mod_Parsers_LexerStandalone;
   mod_Storages_MergeTree -> mod_Processors_QueryPlan;
   mod_Storages_MergeTree -> mod_Processors_Transforms;
   mod_Storages_MergeTree -> mod_Storages_Kafka;
   mod_Storages_MergeTree -> mod_Storages_ObjectStorage;
+  mod_Storages_MergeTree -> mod_Storages_ObjectStorageQueue;
   mod_Storages_MergeTree -> mod_XML_SAX;
   mod_Storages_MergeTree -> mod_XML_XML;
   mod_Storages_MergeTree -> mod_XML_xmlparse;
@@ -411,26 +597,38 @@ digraph architecture {
   mod_Storages_MergeTree -> mod_glibc_compatibility_musl;
   mod_Storages_MergeTree -> mod_install_Install;
   mod_Storages_MergeTree -> mod_pcg_random_pcg_random;
+  mod_Storages_MergeTree -> mod_src_DataLake;
   mod_Storages_MergeTree -> mod_src_Databases;
   mod_Storages_MergeTree -> mod_unknown_unknown;
   mod_Storages_MergeTree -> mod_workspace_skim;
   mod_Storages_ObjectStorage -> mod_Common_DimensionalMetrics;
   mod_Storages_ObjectStorage -> mod_Common_ErrorCodes;
   mod_Storages_ObjectStorage -> mod_Common_ProfileEvents;
+  mod_Storages_ObjectStorage -> mod_Common_SettingsChanges;
+  mod_Storages_ObjectStorage -> mod_Common_filesystemHelpers;
+  mod_Storages_ObjectStorage -> mod_Config_ConfigHelper;
   mod_Storages_ObjectStorage -> mod_Core_NamesAndAliases;
   mod_Storages_ObjectStorage -> mod_Foundation_Poco;
+  mod_Storages_ObjectStorage -> mod_IO_Archives;
+  mod_Storages_ObjectStorage -> mod_Interpreters_formatWithPossiblyHidingSecrets;
   mod_Storages_ObjectStorage -> mod_Parsers_LexerStandalone;
   mod_Storages_ObjectStorage -> mod_Processors_QueryPlan;
   mod_Storages_ObjectStorage -> mod_Storages_Kafka;
   mod_Storages_ObjectStorage -> mod_Storages_MergeTree;
+  mod_Storages_ObjectStorage -> mod_Storages_ObjectStorageQueue;
   mod_Storages_ObjectStorage -> mod_Util_Poco;
   mod_Storages_ObjectStorage -> mod_XML_SAX;
   mod_Storages_ObjectStorage -> mod_XML_XML;
   mod_Storages_ObjectStorage -> mod_ZooKeeper_ZooKeeperIO;
   mod_Storages_ObjectStorage -> mod_glibc_compatibility_musl;
   mod_Storages_ObjectStorage -> mod_install_Install;
+  mod_Storages_ObjectStorage -> mod_src_DataLake;
   mod_Storages_ObjectStorage -> mod_unknown_unknown;
   mod_Storages_ObjectStorage -> mod_workspace_skim;
+  mod_Storages_ObjectStorageQueue -> mod_Disks_DiskObjectStorage;
+  mod_Storages_ObjectStorageQueue -> mod_Storages_ObjectStorage;
+  mod_Storages_ObjectStorageQueue -> mod_install_Install;
+  mod_Storages_ObjectStorageQueue -> mod_workspace_skim;
   mod_Util_Poco -> mod_Core_NamesAndAliases;
   mod_Util_Poco -> mod_Foundation_Poco;
   mod_Util_Poco -> mod_XML_DOM;
@@ -440,26 +638,45 @@ digraph architecture {
   mod_XML_SAX -> mod_Foundation_Poco;
   mod_XML_SAX -> mod_XML_DOM;
   mod_XML_SAX -> mod_XML_XML;
+  mod_XML_SAX -> mod_XML_xmltok;
   mod_XML_XML -> mod_XML_SAX;
   mod_XML_XML -> mod_ZooKeeper_ZooKeeperIO;
   mod_XML_xmlparse -> mod_XML_XML;
   mod_XML_xmlparse -> mod_ZooKeeper_ZooKeeperIO;
   mod_XML_xmlparse -> mod_install_Install;
+  mod_XML_xmltok -> mod_XML_XML;
+  mod_ZooKeeper_IKeeper -> mod_ZooKeeper_ZooKeeperCommon;
   mod_ZooKeeper_IKeeper -> mod_workspace_skim;
+  mod_ZooKeeper_ZooKeeperCommon -> mod_Parsers_LexerStandalone;
+  mod_ZooKeeper_ZooKeeperCommon -> mod_ZooKeeper_IKeeper;
+  mod_ZooKeeper_ZooKeeperCommon -> mod_install_Install;
+  mod_ZooKeeper_ZooKeeperCommon -> mod_workspace_skim;
   mod_ZooKeeper_ZooKeeperIO -> mod_ZooKeeper_IKeeper;
+  mod_ZooKeeper_ZooKeeperIO -> mod_ZooKeeper_ZooKeeperCommon;
   mod_glibc_compatibility_musl -> mod_Client_BuzzHouse;
   mod_glibc_compatibility_musl -> mod_Foundation_Poco;
   mod_glibc_compatibility_musl -> mod_pcg_random_pcg_random;
+  mod_install_Install -> mod_Common_XMLUtils;
   mod_install_Install -> mod_Foundation_Poco;
+  mod_install_Install -> mod_Interpreters_formatWithPossiblyHidingSecrets;
   mod_install_Install -> mod_ZooKeeper_ZooKeeperIO;
   mod_install_Install -> mod_workspace_skim;
   mod_libfarmhash_farmhash -> mod_pcg_random_pcg_random;
   mod_openssl_cmake_openssl -> mod_pcg_random_pcg_random;
   mod_pcg_random_pcg_random -> mod_Common_ErrorCodes;
+  mod_src_DataLake -> mod_Common_SettingsChanges;
+  mod_src_DataLake -> mod_Disks_DiskObjectStorage;
+  mod_src_DataLake -> mod_Net_Poco;
+  mod_src_DataLake -> mod_ZooKeeper_ZooKeeperIO;
+  mod_src_DataLake -> mod_workspace_skim;
+  mod_src_Databases -> mod_Common_NetlinkMetricsProvider;
+  mod_src_Databases -> mod_Common_filesystemHelpers;
+  mod_src_Databases -> mod_Config_ConfigHelper;
   mod_src_Databases -> mod_Core_NamesAndAliases;
   mod_src_Databases -> mod_Foundation_Poco;
   mod_src_Databases -> mod_Parsers_LexerStandalone;
   mod_src_Databases -> mod_ZooKeeper_ZooKeeperIO;
+  mod_src_Databases -> mod_src_DataLake;
   mod_src_Databases -> mod_workspace_skim;
   mod_unknown_unknown -> mod_Impl_Parquet;
 }

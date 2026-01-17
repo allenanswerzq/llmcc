@@ -70,8 +70,8 @@ impl LanguageTraitImpl for LangTypeScript {
         &["ts", "mts", "cts"]
     }
 
-    fn manifest_name_impl() -> &'static str {
-        "package.json"
+    fn manifest_names_impl() -> &'static [&'static str] {
+        &["package.json"]
     }
 
     fn container_dirs_impl() -> &'static [&'static str] {

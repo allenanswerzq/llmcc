@@ -81,8 +81,8 @@ impl LanguageTraitImpl for LangRust {
         &["rs"]
     }
 
-    fn manifest_name_impl() -> &'static str {
-        "Cargo.toml"
+    fn manifest_names_impl() -> &'static [&'static str] {
+        &["Cargo.toml"]
     }
 
     fn container_dirs_impl() -> &'static [&'static str] {

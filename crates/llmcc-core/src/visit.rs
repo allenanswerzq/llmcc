@@ -8,7 +8,10 @@ pub trait HirVisitor<'v> {
         let children = node.child_ids();
         for child_id in children {
             let child = unit.hir_node(*child_id);
-            self.visit_node(unit, child, parent);
+            // Use stacker to grow stack for deeply nested structures
+            stacker::maybe_grow(32 * 1024, 1024 * 1024, || {
+                self.visit_node(unit, child, parent);
+            });
         }
     }
 

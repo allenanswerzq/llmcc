@@ -1,0 +1,2417 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_async {
+    label="async";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_async_kernel_internal_h {
+      label="async_kernel_internal.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n359430[label="TfLiteAsyncKernel", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/core/async/async_kernel_internal.h:30", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_backend_async_kernel_interface_cc {
+      label="backend_async_kernel_interface.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n59506[label="Wait", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/async/backend_async_kernel_interface.cc:141", sym_ty="Function", shape=ellipse];
+      n59518[label="Finish", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/async/backend_async_kernel_interface.cc:149", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_task_internal_h {
+      label="task_internal.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n822693[label="TfLiteExecutionTask", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/core/async/task_internal.h:40", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_bytecode {
+    label="bytecode";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_span_h {
+      label="span.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n650084[label="Span", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/tfrt/mlrt/bytecode/span.h:29", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_c {
+    label="c";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_c_api_cc {
+      label="c_api.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n961965[label="TF_DEVICELIST_METHOD", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/c/c_api.cc:644", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_c_api_h {
+      label="c_api.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n544052[label="TF_DeviceListMemoryBytes", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/c/c_api.h:1424", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_c_api_function_test_cc {
+      label="c_api_function_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n27806[label="GetName", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/c/c_api_function_test.cc:1707", sym_ty="Function", shape=ellipse];
+      n4746[label="CApiFunctionTest", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/c/c_api_function_test.cc:67", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_c_api_internal_h {
+      label="c_api_internal.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n513243[label="TF_OperationDescription", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/c/c_api_internal.h:105", sym_ty="Struct", shape=box];
+      n513272[label="TF_Operation", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/c/c_api_internal.h:115", sym_ty="Struct", shape=box];
+      n513511[label="tensorflow", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/c/c_api_internal.h:189", sym_ty="Function", shape=ellipse];
+      n513015[label="TF_Graph", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/c/c_api_internal.h:71", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_python_api_h {
+      label="python_api.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n384246[label="ClearAttr", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/c/python_api.h:38", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_cc {
+    label="cc";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_framework {
+      label="framework";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_cc_op_gen_cc {
+        label="cc_op_gen.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n847044[label="GetOutput", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/cc/framework/cc_op_gen.cc:155", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_cc_op_gen_util_h {
+        label="cc_op_gen_util.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n661285[label="OpInfo", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/cc/framework/cc_op_gen_util.h:122", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_ops_h {
+        label="ops.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n552492[label="Operation", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/cc/framework/ops.h:42", sym_ty="Struct", shape=box];
+        n552547[label="Output", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/cc/framework/ops.h:70", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_scope_h {
+        label="scope.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n513187[label="Scope", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/cc/framework/scope.h:98", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_gradients {
+      label="gradients";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_array_grad_test_cc {
+        label="array_grad_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n810059[label="ArrayGradTest", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/cc/gradients/array_grad_test.cc:36", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_math_grad_test_cc {
+        label="math_grad_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n713877[label="CWiseUnaryGradTest", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/cc/gradients/math_grad_test.cc:75", sym_ty="Struct", shape=box];
+        n715483[label="NaryGradTest", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/cc/gradients/math_grad_test.cc:788", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_tensor_layout_h {
+      label="tensor_layout.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n756344[label="Layout", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/dtensor/cc/tensor_layout.h:284", sym_ty="Struct", shape=box];
+      n755374[label="Mesh", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/dtensor/cc/tensor_layout.h:97", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_ci_build {
+    label="ci_build";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_builds {
+      label="builds";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_zero_out_op_kernel_1_cc {
+        label="zero_out_op_kernel_1.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n880531[label="output", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/tools/ci_build/builds/user_ops/zero_out_op_kernel_1.cc:54", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_cl {
+    label="cl";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_cl_context_h {
+      label="cl_context.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n881311[label="CLContext", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/cl/cl_context.h:29", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_cl_test_h {
+      label="cl_test.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n766748[label="OpenCLTest", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/cl/cl_test.h:34", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_environment_h {
+      label="environment.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n416648[label="Environment", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/cl/environment.h:34", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_common {
+    label="common";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_data_type_h {
+      label="data_type.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n515650[label="DataType", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common/data_type.h:25", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_gpu_info_h {
+      label="gpu_info.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n3265[label="GpuInfo", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common/gpu_info.h:519", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_gpu_model_generated_h {
+      label="gpu_model_generated.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n162678[label="name", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common/gpu_model_generated.h:167", sym_ty="Function", shape=ellipse];
+      n162901[label="nodes", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common/gpu_model_generated.h:254", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_model_h {
+      label="model.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n609794[label="GraphFloat32", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common/model.h:81", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_object_reader_h {
+      label="object_reader.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n135578[label="ObjectReader", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common/object_reader.h:38", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_outline_operations_h {
+      label="outline_operations.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n814697[label="Subgraph", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/lite/experimental/common/outline_operations.h:77", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_precision_cc {
+      label="precision.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n781691[label="ToString", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common/precision.cc:23", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_common_runtime {
+    label="common_runtime";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_device_set_h {
+      label="device_set.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n515353[label="DeviceSet", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime/device_set.h:35", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_function_def_utils_h {
+      label="function_def_utils.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n630375[label="FunctionDef", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime/function_def_utils.h:30", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_function_test_cc {
+      label="function_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n166353[label="FunctionLibraryRuntimeTest", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime/function_test.cc:165", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_graph_constructor_test_cc {
+      label="graph_constructor_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n960532[label="GraphConstructorTest", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime/graph_constructor_test.cc:52", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_local_device_h {
+      label="local_device.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n457907[label="SessionOptions", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime/local_device.h:28", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_local_executor_params_h {
+      label="local_executor_params.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n890284[label="FunctionLibraryRuntime", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime/local_executor_params.h:28", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_lower_if_op_h {
+      label="lower_if_op.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n699514[label="Graph", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime/lower_if_op.h:23", sym_ty="Struct", shape=box];
+      n699515[label="Node", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime/lower_if_op.h:24", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_lower_while_op_h {
+      label="lower_while_op.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n567795[label="FunctionLibraryDefinition", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime/lower_while_op.h:25", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_optimization_registry_h {
+      label="optimization_registry.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n530855[label="GraphOptimizationPassOptions", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime/optimization_registry.h:38", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_placer_inspection_required_ops_utils_cc {
+      label="placer_inspection_required_ops_utils.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n209720[label="Set", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime/placer_inspection_required_ops_utils.cc:43", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_placer_test_cc {
+      label="placer_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n929224[label="PlacerTest", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime/placer_test.cc:231", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_process_function_library_runtime_test_cc {
+      label="process_function_library_runtime_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n167536[label="ProcessFunctionLibraryRuntimeTest", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime/process_function_library_runtime_test.cc:106", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_session_cc {
+      label="session.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n252308[label="Reset", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime/session.cc:100", sym_ty="Function", shape=ellipse];
+      n252206[label="NewSession", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime/session.cc:80", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_session_factory_h {
+      label="session_factory.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n598507[label="Session", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime/session_factory.h:28", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_simplify_ici_dummy_variables_pass_test_cc {
+      label="simplify_ici_dummy_variables_pass_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n628969[label="GetNode", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime/simplify_ici_dummy_variables_pass_test.cc:40", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_single_threaded_cpu_device_h {
+      label="single_threaded_cpu_device.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n568795[label="Env", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime/single_threaded_cpu_device.h:20", sym_ty="Struct", shape=box];
+      n568824[label="Device", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime/single_threaded_cpu_device.h:25", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_compatibility {
+    label="compatibility";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_devicedb_cc {
+      label="devicedb.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n745795[label="Find", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/experimental/acceleration/compatibility/devicedb.cc:27", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_configuration {
+    label="configuration";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_configuration_generated_h {
+      label="configuration_generated.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n549714[label="ok", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/experimental/acceleration/configuration/configuration_generated.h:2967", sym_ty="Function", shape=ellipse];
+      n550783[label="length", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/experimental/acceleration/configuration/configuration_generated.h:3702", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_costs {
+    label="costs";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_op_context_h {
+      label="op_context.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n568873[label="OpContext", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/grappler/costs/op_context.h:28", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_data {
+    label="data";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_dataset_test_base_h {
+      label="dataset_test_base.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n180287[label="DatasetOpsTestBase", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/data/dataset_test_base.h:581", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_parallel_interleave_dataset_op_cc {
+      label="parallel_interleave_dataset_op.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n764021[label="mu_", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/kernels/data/parallel_interleave_dataset_op.cc:1329", sym_ty="Function", shape=ellipse];
+      n764228[label="TF_EXCLUSIVE_LOCKS_REQUIRED", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/kernels/data/parallel_interleave_dataset_op.cc:1588", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_device {
+    label="device";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_device_event_mgr_test_cc {
+      label="device_event_mgr_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n89446[label="BM_chain_ops", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime/device/device_event_mgr_test.cc:495", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_distributed_runtime {
+    label="distributed_runtime";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_device_resolver_distributed_test_cc {
+      label="device_resolver_distributed_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n564951[label="NewDevice", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/distributed_runtime/device_resolver_distributed_test.cc:37", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_local_master_cc {
+      label="local_master.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n744539[label="WaitForNotification", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/distributed_runtime/local_master.cc:28", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_eager {
+    label="eager";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_abstract_context_h {
+      label="abstract_context.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n752141[label="AbstractContext", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/c/eager/abstract_context.h:33", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_abstract_operation_h {
+      label="abstract_operation.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n544765[label="AbstractOperation", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/c/eager/abstract_operation.h:32", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_abstract_tensor_handle_h {
+      label="abstract_tensor_handle.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n736877[label="AbstractTensorHandle", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/c/eager/abstract_tensor_handle.h:30", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_fallback {
+    label="fallback";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_fallback_state_h {
+      label="fallback_state.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n873438[label="FallbackState", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/tfrt/fallback/fallback_state.h:40", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_filesystem {
+    label="filesystem";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_modular_filesystem_test_cc {
+      label="modular_filesystem_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n785468[label="ModularFileSystemTest", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/c/experimental/filesystem/modular_filesystem_test.cc:72", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_framework {
+    label="framework";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_common_shape_fns_h {
+      label="common_shape_fns.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n420143[label="UnknownShape", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework/common_shape_fns.h:210", sym_ty="Function", shape=ellipse];
+      n416706[label="UnchangedShape", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework/common_shape_fns.h:47", sym_ty="Function", shape=ellipse];
+      n416963[label="ScalarShape", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework/common_shape_fns.h:82", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_dataset_h {
+      label="dataset.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n822698[label="Finalize", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework/dataset.h:1448", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_function_h {
+      label="function.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n227435[label="DebugString", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework/function.h:283", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_function_testlib_h {
+      label="function_testlib.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n287346[label="GDef", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework/function_testlib.h:65", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_memory_types_h {
+      label="memory_types.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n698103[label="NodeDef", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework/memory_types.h:24", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_node_def_builder_h {
+      label="node_def_builder.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n251727[label="NodeDefBuilder", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework/node_def_builder.h:52", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_node_def_builder_test_cc {
+      label="node_def_builder_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n235840[label="NodeDefBuilderTest", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework/node_def_builder_test.cc:33", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_node_def_util_h {
+      label="node_def_util.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n768723[label="AttrSlice", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework/node_def_util.h:149", sym_ty="Struct", shape=box];
+      n767956[label="TensorShapeProto", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework/node_def_util.h:49", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_op_def_builder_h {
+      label="op_def_builder.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n637869[label="InferenceContext", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework/op_def_builder.h:62", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_op_def_library_pybind_cc {
+      label="op_def_library_pybind.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n264305[label="GetInputTensor", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/python/framework/op_def_library_pybind.cc:418", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_op_gen_lib_h {
+      label="op_gen_lib.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n801713[label="OpDef", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework/op_gen_lib.h:30", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_op_kernel_h {
+      label="op_kernel.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n802441[label="OpKernelConstruction", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework/op_kernel.h:257", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_ref_var_h {
+      label="ref_var.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n664221[label="OpKernelContext", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework/ref_var.h:22", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_resource_handle_h {
+      label="resource_handle.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n337455[label="ResourceHandle", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework/resource_handle.h:44", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_shape_inference_h {
+      label="shape_inference.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n573099[label="ShapeHandle", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework/shape_inference.h:171", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_shape_inference_testutil_h {
+      label="shape_inference_testutil.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n880359[label="Tensor", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework/shape_inference_testutil.h:32", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_tensor_shape_h {
+      label="tensor_shape.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n354653[label="PartialTensorShape", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework/tensor_shape.h:546", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_type_index_h {
+      label="type_index.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n460323[label="TypeIndex", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework/type_index.h:39", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_types_h {
+      label="types.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n562981[label="DataTypeToEnum", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework/types.h:401", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_variant_tensor_data_h {
+      label="variant_tensor_data.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n573795[label="VariantTensorData", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework/variant_tensor_data.h:39", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_gl {
+    label="gl";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_node_shader_h {
+      label="node_shader.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n796169[label="NodeShader", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/gl/node_shader.h:93", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_gpu {
+    label="gpu";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_api_cc {
+      label="api.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n255804[label="GetType", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/api.cc:72", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_metal_delegate_internal_h {
+      label="metal_delegate_internal.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n638870[label="TfLiteDelegate", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/metal_delegate_internal.h:23", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_gradient {
+    label="gradient";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_bcast_grad_args_cc {
+      label="bcast_grad_args.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n440824[label="Invoke", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/gradient/bcast_grad_args.cc:68", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_graph {
+    label="graph";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_graph_h {
+      label="graph.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n128494[label="Graph", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/graph/graph.h:531", sym_ty="Struct", shape=box];
+      n123526[label="GraphDebugInfo", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/graph/graph.h:67", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_graph_def_builder_cc {
+      label="graph_def_builder.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n744177[label="SourceOp", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/graph/graph_def_builder.cc:102", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_graph_node_util_h {
+      label="graph_node_util.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n872351[label="OpDef", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/graph/graph_node_util.h:28", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_subgraph_test_cc {
+      label="subgraph_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n287717[label="HasSubstr", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/graph/subgraph_test.cc:316", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_tensor_id_cc {
+      label="tensor_id.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n883946[label="ParseTensorName", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/graph/tensor_id.cc:34", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_graph_rewrite {
+    label="graph_rewrite";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_tpu_embedding_software_deduplication_rewrite_pass_cc {
+      label="tpu_embedding_software_deduplication_rewrite_pass.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n212368[label="RewriterConfig", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/tpu/graph_rewrite/tpu_embedding_software_deduplication_rewrite_pass.cc:681", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_grappler {
+    label="grappler";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_grappler_item_builder_h {
+      label="grappler_item_builder.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n542649[label="MetaGraphDef", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/grappler/grappler_item_builder.h:28", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_mutable_graph_view_h {
+      label="mutable_graph_view.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n293404[label="MutableGraphView", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/grappler/mutable_graph_view.h:43", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_utils_h {
+      label="utils.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n176300[label="SetVector", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/grappler/utils.h:275", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_image {
+    label="image";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_mirror_pad_op_h {
+      label="mirror_pad_op.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n120545[label="data", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/kernels/image/mirror_pad_op.h:252", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_inputs {
+    label="inputs";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_utils_test_cc {
+      label="utils_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n830753[label="UtilsTest", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/grappler/inputs/utils_test.cc:36", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_internal {
+    label="internal";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_mlir_bridge_pass_util_cc {
+      label="mlir_bridge_pass_util.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n78606[label="HasAttr", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/tf2xla/internal/mlir_bridge_pass_util.cc:51", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_runtime_shape_h {
+      label="runtime_shape.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n519756[label="DimsDataUpTo5D", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/internal/runtime_shape.h:130", sym_ty="Function", shape=ellipse];
+      n519935[label="ExtendedShape", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/internal/runtime_shape.h:181", sym_ty="Function", shape=ellipse];
+      n520041[label="size_", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/internal/runtime_shape.h:213", sym_ty="Function", shape=ellipse];
+      n519378[label="Dims", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/internal/runtime_shape.h:33", sym_ty="Struct", shape=box];
+      n519463[label="RuntimeShape", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/internal/runtime_shape.h:59", sym_ty="Function", shape=ellipse];
+      n519569[label="RuntimeShape", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/internal/runtime_shape.h:81", sym_ty="Function", shape=ellipse];
+      n519634[label="DimensionsCount", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/internal/runtime_shape.h:97", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_types_h {
+      label="types.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n564106[label="FlatSize", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/internal/types.h:280", sym_ty="Function", shape=ellipse];
+      n559690[label="FusedActivationFunctionType", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/internal/types.h:29", sym_ty="Enum", shape=box];
+    }
+
+  }
+
+  subgraph cluster_ir {
+    label="ir";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_tf_op_registry_h {
+      label="tf_op_registry.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n450514[label="OpRegistry", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/ir/tf_op_registry.h:25", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_jit {
+    label="jit";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_flags_cc {
+      label="flags.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n320758[label="AllocateAndParseFlags", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/jit/flags.cc:216", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_node_matchers_h {
+      label="node_matchers.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n444913[label="Attr", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/jit/node_matchers.h:198", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_xla_kernel_creator_h {
+      label="xla_kernel_creator.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n481135[label="FunctionLibraryRuntime", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/jit/xla_kernel_creator.h:27", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_kernels {
+    label="kernels";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_add_cc {
+      label="add.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n110651[label="Add", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/gl/kernels/add.cc:36", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_add_test_cc {
+      label="add_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n218557[label="BaseAddOpModel", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/add_test.cc:35", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_cl_test_h {
+      label="cl_test.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n890602[label="OpenCLOperationTest", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/cl/kernels/cl_test.h:59", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_conv_ops_h {
+      label="conv_ops.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n514093[label="DebugString", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/kernels/conv_ops.h:88", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_cwise_ops_h {
+      label="cwise_ops.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n255289[label="base", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/kernels/cwise_ops.h:766", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_fake_quant_ops_test_cc {
+      label="fake_quant_ops_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n933063[label="QuantOpsTest", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/kernels/fake_quant_ops_test.cc:34", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_functional_ops_cc {
+      label="functional_ops.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n608275[label="SetOutputs", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/kernels/functional_ops.cc:98", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_kernel_util_cc {
+      label="kernel_util.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n730273[label="GetOutput", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/kernel_util.cc:130", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_lookup_util_h {
+      label="lookup_util.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n434827[label="DatasetBase", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/kernels/lookup_util.h:25", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_meta_support_cc {
+      label="meta_support.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n466127[label="mu", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/kernels/meta_support.cc:85", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_mutex_ops_cc {
+      label="mutex_ops.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n351831[label="Mutex", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/kernels/mutex_ops.cc:37", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_ops_testutil_h {
+      label="ops_testutil.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n486916[label="OpsTestBase", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/kernels/ops_testutil.h:71", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_range_cc {
+      label="range.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n536964[label="GetSize", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/range.cc:46", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_sub_test_cc {
+      label="sub_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n186553[label="BaseSubOpModel", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/sub_test.cc:38", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_subgraph_test_util_h {
+      label="subgraph_test_util.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n487687[label="ControlFlowOpTest", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/subgraph_test_util.h:308", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_summary_interface_h {
+      label="summary_interface.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n792284[label="GraphDef", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/kernels/summary_interface.h:27", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_tensor_array_ops_cc {
+      label="tensor_array_ops.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n45143[label="GetHandle", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/kernels/tensor_array_ops.cc:60", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_test_util_h {
+      label="test_util.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n76438[label="SingleOpModel", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/test_util.h:265", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_training_ops_test_cc {
+      label="training_ops_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n380260[label="Scalar", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/kernels/training_ops_test.cc:83", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_unsorted_segment_join_op_cc {
+      label="unsorted_segment_join_op.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n566981[label="GetOutputShape", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/kernels/unsorted_segment_join_op.cc:60", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_var_handle_cc {
+      label="var_handle.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n708587[label="Init", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/var_handle.cc:38", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_variant_ops_util_h {
+      label="variant_ops_util.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n620217[label="OpKernelContext", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/kernels/variant_ops_util.h:25", sym_ty="Struct", shape=box];
+      n620222[label="Tensor", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/kernels/variant_ops_util.h:26", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_legalize_hlo_conversions {
+    label="legalize_hlo_conversions";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_op_util_common_h {
+      label="op_util_common.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n250763[label="Layout", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/lite/stablehlo/transforms/legalize_hlo_conversions/op_util_common.h:37", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_lite {
+    label="lite";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_interpreter_test_util_h {
+      label="interpreter_test_util.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n466329[label="InterpreterTest", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/interpreter_test_util.h:35", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_tensorflow_profiler_logger_h {
+      label="tensorflow_profiler_logger.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n557352[label="TfLiteTensor", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/tensorflow_profiler_logger.h:25", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_utils {
+      label="utils";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_tftext_utils_test_cc {
+        label="tftext_utils_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n502274[label="Register", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/lite/utils/tftext_utils_test.cc:36", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_mini_benchmark {
+    label="mini_benchmark";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_decode_jpeg_status_h {
+      label="decode_jpeg_status.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n615563[label="Status", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/experimental/acceleration/mini_benchmark/decode_jpeg_status.h:26", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_mlir {
+    label="mlir";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_collectives_h {
+      label="collectives.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n194991[label="EmitRelayout", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/dtensor/mlir/collectives.h:57", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_layout_parsing_h {
+      label="layout_parsing.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n859643[label="ExtractDeviceMeshEnclosingCluster", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/dtensor/mlir/layout_parsing.h:86", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_native {
+    label="native";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_tensor_jni_cc {
+      label="tensor_jni.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n156950[label="WriteScalar", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/java/src/main/native/tensor_jni.cc:412", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_next_pluggable_device {
+    label="next_pluggable_device";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_plugin_op_kernel_h {
+      label="plugin_op_kernel.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n557559[label="TensorShape", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime/next_pluggable_device/plugin_op_kernel.h:39", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_nnapi {
+    label="nnapi";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_nnapi_implementation_h {
+      label="nnapi_implementation.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n359003[label="NnApi", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/nnapi/nnapi_implementation.h:26", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_odml_converter {
+    label="odml_converter";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_folders_cc {
+      label="folders.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n851130[label="FoldAdaptor", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/lite/stablehlo/odml_converter/folders.cc:35", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_ops {
+    label="ops";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_array_ops_cc {
+      label="array_ops.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n928119[label="AsInt64", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/ops/array_ops.cc:59", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_array_ops_h {
+      label="array_ops.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n700167[label="Shape", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/c/experimental/ops/array_ops.h:50", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_math_ops_h {
+      label="math_ops.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n681340[label="Div", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/c/experimental/ops/math_ops.h:72", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_test_util_h {
+      label="test_util.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n230160[label="Map", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/experimental/shlo/ops/test_util.h:222", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_optimizers {
+    label="optimizers";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_auto_mixed_precision_cc {
+      label="auto_mixed_precision.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n216198[label="TypeAttrId", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/grappler/optimizers/auto_mixed_precision.cc:129", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_generic_layout_optimizer_transposer_h {
+      label="generic_layout_optimizer_transposer.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n253212[label="TransposeContext", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/grappler/optimizers/generic_layout_optimizer_transposer.h:49", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_graph_optimizer_stage_h {
+      label="graph_optimizer_stage.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n434353[label="GraphOptimizerContext", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/grappler/optimizers/graph_optimizer_stage.h:48", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_remapper_cc {
+      label="remapper.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n732819[label="RemapperContext", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/grappler/optimizers/remapper.cc:110", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_scoped_allocator_optimizer_cc {
+      label="scoped_allocator_optimizer.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n203332[label="RemoveNode", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/grappler/optimizers/scoped_allocator_optimizer.cc:153", sym_ty="Function", shape=ellipse];
+      n203374[label="RemoveEdge", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/grappler/optimizers/scoped_allocator_optimizer.cc:170", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_scoped_allocator_optimizer_h {
+      label="scoped_allocator_optimizer.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n748060[label="GraphProperties", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/grappler/optimizers/scoped_allocator_optimizer.h:32", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_platform {
+    label="platform";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_status_h {
+      label="status.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n581321[label="OkStatus", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/platform/status.h:34", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_proto {
+    label="proto";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_descriptor_pool_registry_test_cc {
+      label="descriptor_pool_registry_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n668915[label="Value", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/util/proto/descriptor_pool_registry_test.cc:23", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_proto_text {
+    label="proto_text";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_gen_proto_text_functions_lib_cc {
+      label="gen_proto_text_functions_lib.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n364789[label="StrCat", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/tools/proto_text/gen_proto_text_functions_lib.cc:40", sym_ty="Function", shape=ellipse];
+      n364804[label="StrAppend", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/tools/proto_text/gen_proto_text_functions_lib.cc:47", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_python {
+    label="python";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_tfe_wrapper_cc {
+      label="tfe_wrapper.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n383808[label="PYBIND11_MODULE", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/python/tfe_wrapper.cc:666", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_quantization_lib {
+    label="quantization_lib";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_quantization_config_h {
+      label="quantization_config.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n424483[label="QuantizationSpecs", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/quantization/common/quantization_lib/quantization_config.h:47", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_resource {
+    label="resource";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_resource_base_h {
+      label="resource_base.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n613785[label="ResourceBase", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/experimental/resource/resource_base.h:30", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_runtime {
+    label="runtime";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_work_queue_interface_h {
+      label="work_queue_interface.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n766010[label="id", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/tfrt/runtime/work_queue_interface.h:50", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_schema {
+    label="schema";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_conversion_metadata_generated_h {
+      label="conversion_metadata_generated.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n304249[label="options", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/lite/schema/conversion_metadata_generated.h:425", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_schema_generated_h {
+      label="schema_generated.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n21217[label="output_type", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/lite/schema/schema_generated.h:11222", sym_ty="Function", shape=ellipse];
+      n22610[label="out_type", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/lite/schema/schema_generated.h:11812", sym_ty="Function", shape=ellipse];
+      n22851[label="max", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/lite/schema/schema_generated.h:11951", sym_ty="Function", shape=ellipse];
+      n31726[label="buffer", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/lite/schema/schema_generated.h:16747", sym_ty="Function", shape=ellipse];
+      n12079[label="format", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/lite/schema/schema_generated.h:5634", sym_ty="Function", shape=ellipse];
+      n12422[label="traversal_order", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/lite/schema/schema_generated.h:5785", sym_ty="Function", shape=ellipse];
+      n18705[label="CallOptions", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/lite/schema/schema_generated.h:9786", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_shim {
+    label="shim";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_tflite_op_shim_cc {
+      label="tflite_op_shim.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n448243[label="GetAttr", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/shim/tflite_op_shim.cc:36", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_shlo {
+    label="shlo";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_bf16_h {
+      label="bf16.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n510860[label="abs", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/experimental/shlo/bf16.h:136", sym_ty="Function", shape=ellipse];
+      n510921[label="log", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/experimental/shlo/bf16.h:140", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_sparse {
+    label="sparse";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_sparse_tensor_h {
+      label="sparse_tensor.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n458171[label="dtype", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/util/sparse/sparse_tensor.h:114", sym_ty="Function", shape=ellipse];
+      n458183[label="shape", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/util/sparse/sparse_tensor.h:118", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_summary {
+    label="summary";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_summary_db_writer_cc {
+      label="summary_db_writer.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n345667[label="RunMetadata", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/summary/summary_db_writer.cc:407", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_task {
+    label="task";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_gpu_operation_h {
+      label="gpu_operation.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n306361[label="OperationDef", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common/task/gpu_operation.h:65", sym_ty="Struct", shape=box];
+      n306398[label="GPUOperation", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common/task/gpu_operation.h:84", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_tensor_desc_h {
+      label="tensor_desc.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n890081[label="TensorStorageType", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common/task/tensor_desc.h:35", sym_ty="Enum", shape=box];
+      n890089[label="TensorDescriptor", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common/task/tensor_desc.h:45", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_testing_util_h {
+      label="testing_util.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n383387[label="TestExecutionEnvironment", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common/task/testing_util.h:35", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_tflite_serialization_base_generated_h {
+      label="tflite_serialization_base_generated.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n21060[label="BHWDC", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common/task/tflite_serialization_base_generated.h:1085", sym_ty="Struct", shape=box];
+      n21069[label="b", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common/task/tflite_serialization_base_generated.h:1094", sym_ty="Function", shape=ellipse];
+      n19243[label="DataType", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common/task/tflite_serialization_base_generated.h:118", sym_ty="Enum", shape=box];
+      n21658[label="value", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common/task/tflite_serialization_base_generated.h:1376", sym_ty="Function", shape=ellipse];
+      n19931[label="x", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common/task/tflite_serialization_base_generated.h:559", sym_ty="Function", shape=ellipse];
+      n20818[label="size", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common/task/tflite_serialization_base_generated.h:984", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_tasks {
+    label="tasks";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_transpose_test_util_h {
+      label="transpose_test_util.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n670774[label="TransposeTest", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common/tasks/transpose_test_util.h:25", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_tensorflow {
+    label="tensorflow";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_ir {
+      label="ir";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_tf_op_interfaces_h {
+        label="tf_op_interfaces.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n592456[label="ResourceHandle", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/tensorflow/ir/tf_op_interfaces.h:72", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_tf_ops_device_helper_h {
+        label="tf_ops_device_helper.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n716793[label="Operation", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/tensorflow/ir/tf_ops_device_helper.h:21", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_utils {
+      label="utils";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_eval_util_cc {
+        label="eval_util.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n121069[label="IsOk", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/tensorflow/utils/eval_util.cc:54", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_tensorflow_graph_matching {
+    label="tensorflow_graph_matching";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_cluster_utils_cc {
+      label="cluster_utils.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n681622[label="StrContains", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/toco/tensorflow_graph_matching/cluster_utils.cc:18", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_tf2tensorrt {
+    label="tf2tensorrt";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_convert {
+      label="convert";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_convert_nodes_cc {
+        label="convert_nodes.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n557948[label="GetOutputProperties", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/tf2tensorrt/convert/convert_nodes.cc:206", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_convert_nodes_test_cc {
+        label="convert_nodes_test.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n135041[label="OpConverterTest", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/tf2tensorrt/convert/convert_nodes_test.cc:1110", sym_ty="Struct", shape=box];
+        n229229[label="TEST_P", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/tf2tensorrt/convert/convert_nodes_test.cc:7712", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_op_converter_h {
+        label="op_converter.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n282151[label="OpConverterParams", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/tf2tensorrt/convert/op_converter.h:41", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_trt_parameters_h {
+        label="trt_parameters.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n755772[label="DebugString", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/tf2tensorrt/convert/trt_parameters.h:46", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_weights_h {
+        label="weights.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n608748[label="TRT_TensorOrWeights", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/tf2tensorrt/convert/weights.h:182", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_utils {
+      label="utils";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_trt_testutils_h {
+        label="trt_testutils.h";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n612887[label="dims", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/tf2tensorrt/utils/trt_testutils.h:132", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_tf2xla {
+    label="tf2xla";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_functionalize_cond_cc {
+      label="functionalize_cond.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n89550[label="DebugString", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/tf2xla/functionalize_cond.cc:234", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_xla_op_kernel_h {
+      label="xla_op_kernel.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n852401[label="num_outputs", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/tf2xla/xla_op_kernel.h:239", sym_ty="Function", shape=ellipse];
+      n852784[label="status", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/tf2xla/xla_op_kernel.h:267", sym_ty="Function", shape=ellipse];
+      n849582[label="XlaOpKernel", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/tf2xla/xla_op_kernel.h:49", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_tflite {
+    label="tflite";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_builtin_operator_h {
+      label="builtin_operator.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n649262[label="BuiltinOperator", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/toco/tflite/builtin_operator.h:36", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_operator_h {
+      label="operator.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n425772[label="BaseOperator", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/toco/tflite/operator.h:78", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_tfrt {
+    label="tfrt";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_transforms {
+      label="transforms";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_passes_cc {
+        label="passes.cc";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n203298[label="CreateTFExecutorToTFPreInvariantOptimizationPipelineHelper", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/tfrt/transforms/passes.cc:63", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_toco {
+    label="toco";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_allocate_transient_arrays_cc {
+      label="allocate_transient_arrays.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n287070[label="Allocator", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/toco/allocate_transient_arrays.cc:103", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_args_h {
+      label="args.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n549936[label="Arg", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/toco/args.h:105", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_model_h {
+      label="model.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n711927[label="Array", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/toco/model.h:2227", sym_ty="Struct", shape=box];
+      n684249[label="ArrayDataType", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/toco/model.h:225", sym_ty="Enum", shape=box];
+      n713762[label="Model", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/toco/model.h:2396", sym_ty="Struct", shape=box];
+      n684571[label="Shape", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/toco/model.h:337", sym_ty="Struct", shape=box];
+      n684943[label="Operator", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/toco/model.h:378", sym_ty="Struct", shape=box];
+      n682340[label="OperatorType", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/toco/model.h:40", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_tooling_util_cc {
+      label="tooling_util.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n338311[label="OperatorTypeName", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/toco/tooling_util.cc:332", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_tooling_util_h {
+      label="tooling_util.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n391863[label="FindOp", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/toco/tooling_util.h:101", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_toco_legacy {
+    label="toco_legacy";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_quantization_utils_h {
+      label="quantization_utils.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n421927[label="NumElements", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/lite/quantization/lite/toco_legacy/quantization_utils.h:40", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_tools {
+    label="tools";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_list_flex_ops_h {
+      label="list_flex_ops.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n533711[label="OpKernel", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/tools/list_flex_ops.h:27", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_tpu {
+    label="tpu";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_tpu_init_mode_cc {
+      label="tpu_init_mode.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n891731[label="init_mode_mutex", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/tpu/tpu_init_mode.cc:28", sym_ty="Function", shape=ellipse];
+      n891733[label="TF_GUARDED_BY", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/tpu/tpu_init_mode.cc:29", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_util {
+    label="util";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_equal_graph_def_test_cc {
+      label="equal_graph_def_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n542886[label="Input", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/util/equal_graph_def_test.cc:35", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_events_writer_test_cc {
+      label="events_writer_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n410369[label="env", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/util/events_writer_test.cc:39", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_utils {
+    label="utils";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_graph_view_h {
+      label="graph_view.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n729117[label="MutableNodeView", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/grappler/utils/graph_view.h:207", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_graph_view_internal_h {
+      label="graph_view_internal.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n233087[label="NewNode", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/grappler/utils/graph_view_internal.h:782", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_grappler_test_h {
+      label="grappler_test.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n721935[label="GrapplerTest", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/grappler/utils/grappler_test.h:35", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_sparsity_format_converter_test_cc {
+      label="sparsity_format_converter_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n266932[label="converter", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/internal/utils/sparsity_format_converter_test.cc:389", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_symbolic_shapes_h {
+      label="symbolic_shapes.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n349978[label="Rank", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/grappler/utils/symbolic_shapes.h:36", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_xnnpack {
+    label="xnnpack";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_mmap_handle_cc {
+      label="mmap_handle.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n768025[label="swap", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/xnnpack/mmap_handle.cc:54", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_transpose_test_cc {
+      label="transpose_test.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n515986[label="xnnpack_delegate", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/xnnpack/transpose_test.cc:92", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_xnnpack_delegate_cc {
+      label="xnnpack_delegate.cc";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n354794[label="Delegate", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/xnnpack/xnnpack_delegate.cc:589", sym_ty="Struct", shape=box];
+      n376232[label="TfLiteXNNPackDelegateCreate", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/xnnpack/xnnpack_delegate.cc:7327", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_xnnpack_delegate_h {
+      label="xnnpack_delegate.h";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n697408[label="TfLiteXNNPackDelegateDelete", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/xnnpack/xnnpack_delegate.h:173", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+
+  n3265 -> n383387 [from="field_type", to="struct"];
+  n12422 -> n266932 [from="input", to="func"];
+  n18705 -> n744539 [from="input", to="func"];
+  n19243 -> n306361 [from="field_type", to="struct"];
+  n19243 -> n890089 [from="field_type", to="struct"];
+  n21060 -> n890089 [from="field_type", to="struct"];
+  n27806 -> n162678 [from="caller", to="callee"];
+  n45143 -> n421927 [from="caller", to="callee"];
+  n45143 -> n514093 [from="caller", to="callee"];
+  n45143 -> n581321 [from="caller", to="callee"];
+  n76438 -> n186553 [from="base", to="extends"];
+  n76438 -> n218557 [from="base", to="extends"];
+  n78606 -> n549714 [from="caller", to="callee"];
+  n78606 -> n745795 [from="caller", to="callee"];
+  n89446 -> n549936 [from="func", to="type_dep"];
+  n89446 -> n568795 [from="func", to="type_dep"];
+  n89550 -> n162901 [from="caller", to="callee"];
+  n121069 -> n549714 [from="caller", to="callee"];
+  n123526 -> n128494 [from="field_type", to="struct"];
+  n156950 -> n410369 [from="caller", to="callee"];
+  n176300 -> n814697 [from="field_type", to="struct"];
+  n194991 -> n716793 [from="func", to="type_dep"];
+  n203298 -> n304249 [from="caller", to="callee"];
+  n203332 -> n20818 [from="caller", to="callee"];
+  n203332 -> n162678 [from="caller", to="callee"];
+  n203374 -> n20818 [from="caller", to="callee"];
+  n203374 -> n162678 [from="caller", to="callee"];
+  n203374 -> n581321 [from="caller", to="callee"];
+  n209720 -> n581321 [from="caller", to="callee"];
+  n209720 -> n766010 [from="caller", to="callee"];
+  n212368 -> n434353 [from="field_type", to="struct"];
+  n212368 -> n732819 [from="field_type", to="struct"];
+  n216198 -> n562981 [from="field_type", to="struct"];
+  n216198 -> n700167 [from="input", to="func"];
+  n229229 -> n510860 [from="caller", to="callee"];
+  n229229 -> n510921 [from="caller", to="callee"];
+  n229229 -> n515650 [from="func", to="type_dep"];
+  n230160 -> n448243 [from="input", to="func"];
+  n250763 -> n194991 [from="input", to="func"];
+  n252206 -> n304249 [from="caller", to="callee"];
+  n252206 -> n424483 [from="field_type", to="struct"];
+  n252206 -> n457907 [from="base", to="extends"];
+  n252206 -> n513015 [from="field_type", to="struct"];
+  n252206 -> n513243 [from="field_type", to="struct"];
+  n252206 -> n513272 [from="field_type", to="struct"];
+  n252206 -> n549714 [from="caller", to="callee"];
+  n252206 -> n721935 [from="field_type", to="struct"];
+  n252206 -> n736877 [from="field_type", to="struct"];
+  n252206 -> n873438 [from="field_type", to="struct"];
+  n252308 -> n304249 [from="caller", to="callee"];
+  n264305 -> n364789 [from="caller", to="callee"];
+  n264305 -> n364804 [from="caller", to="callee"];
+  n264305 -> n755772 [from="caller", to="callee"];
+  n266932 -> n12079 [from="caller", to="callee"];
+  n266932 -> n12422 [from="caller", to="callee"];
+  n287070 -> n180287 [from="field_type", to="struct"];
+  n287070 -> n486916 [from="field_type", to="struct"];
+  n287070 -> n802441 [from="field_type", to="struct"];
+  n287346 -> n630375 [from="func", to="type_dep"];
+  n287717 -> n255289 [from="func", to="type_dep"];
+  n306361 -> n306398 [from="field_type", to="struct"];
+  n320758 -> n22851 [from="caller", to="callee"];
+  n338311 -> n110651 [from="func", to="type_dep"];
+  n338311 -> n349978 [from="caller", to="callee"];
+  n338311 -> n681340 [from="caller", to="callee"];
+  n338311 -> n684571 [from="func", to="type_dep"];
+  n354653 -> n557948 [from="input", to="func"];
+  n354653 -> n756344 [from="field_type", to="struct"];
+  n359430 -> n59506 [from="input", to="func"];
+  n359430 -> n59518 [from="input", to="func"];
+  n376232 -> n304249 [from="caller", to="callee"];
+  n376232 -> n515986 [from="input", to="func"];
+  n383387 -> n670774 [from="input", to="func"];
+  n383387 -> n890602 [from="field_type", to="struct"];
+  n383808 -> n21658 [from="caller", to="callee"];
+  n383808 -> n513511 [from="caller", to="callee"];
+  n410369 -> n568795 [from="func", to="type_dep"];
+  n416648 -> n766748 [from="field_type", to="struct"];
+  n416963 -> n380260 [from="caller", to="callee"];
+  n416963 -> n581321 [from="caller", to="callee"];
+  n425772 -> n649262 [from="base", to="extends"];
+  n434827 -> n180287 [from="field_type", to="struct"];
+  n440824 -> n20818 [from="caller", to="callee"];
+  n440824 -> n519378 [from="func", to="type_dep"];
+  n444913 -> n162678 [from="caller", to="callee"];
+  n448243 -> n120545 [from="caller", to="callee"];
+  n448243 -> n255804 [from="caller", to="callee"];
+  n448243 -> n364789 [from="caller", to="callee"];
+  n448243 -> n550783 [from="caller", to="callee"];
+  n448243 -> n781691 [from="caller", to="callee"];
+  n448243 -> n928119 [from="caller", to="callee"];
+  n450514 -> n502274 [from="input", to="func"];
+  n457907 -> n252206 [from="input", to="func"];
+  n457907 -> n252308 [from="input", to="func"];
+  n466329 -> n487687 [from="base", to="extends"];
+  n481135 -> n180287 [from="field_type", to="struct"];
+  n486916 -> n933063 [from="base", to="extends"];
+  n510860 -> n19931 [from="caller", to="callee"];
+  n510921 -> n19931 [from="caller", to="callee"];
+  n513015 -> n4746 [from="field_type", to="struct"];
+  n513015 -> n384246 [from="input", to="func"];
+  n513015 -> n513243 [from="field_type", to="struct"];
+  n513015 -> n513511 [from="input", to="func"];
+  n513187 -> n135041 [from="field_type", to="struct"];
+  n513187 -> n713877 [from="field_type", to="struct"];
+  n513187 -> n715483 [from="field_type", to="struct"];
+  n513187 -> n810059 [from="field_type", to="struct"];
+  n513272 -> n384246 [from="input", to="func"];
+  n513272 -> n513511 [from="input", to="func"];
+  n513511 -> n466127 [from="caller", to="callee"];
+  n513511 -> n852784 [from="caller", to="callee"];
+  n513511 -> n880531 [from="caller", to="callee"];
+  n515353 -> n530855 [from="field_type", to="struct"];
+  n515353 -> n929224 [from="field_type", to="struct"];
+  n515650 -> n557948 [from="input", to="func"];
+  n515986 -> n697408 [from="caller", to="callee"];
+  n519378 -> n564106 [from="input", to="func"];
+  n519463 -> n21658 [from="caller", to="callee"];
+  n519463 -> n458183 [from="caller", to="callee"];
+  n519463 -> n519378 [from="func", to="type_dep"];
+  n519463 -> n519569 [from="caller", to="callee"];
+  n519463 -> n519634 [from="caller", to="callee"];
+  n519463 -> n519756 [from="caller", to="callee"];
+  n519463 -> n520041 [from="caller", to="callee"];
+  n519463 -> n612887 [from="caller", to="callee"];
+  n519569 -> n519634 [from="caller", to="callee"];
+  n519569 -> n519935 [from="input", to="func"];
+  n519569 -> n520041 [from="caller", to="callee"];
+  n519935 -> n458183 [from="caller", to="callee"];
+  n520041 -> n519634 [from="caller", to="callee"];
+  n533711 -> n486916 [from="field_type", to="struct"];
+  n533711 -> n608275 [from="input", to="func"];
+  n533711 -> n849582 [from="base", to="extends"];
+  n536964 -> n510860 [from="caller", to="callee"];
+  n542649 -> n830753 [from="field_type", to="struct"];
+  n542886 -> n744177 [from="caller", to="callee"];
+  n544052 -> n961965 [from="input", to="func"];
+  n544765 -> n752141 [from="field_type", to="struct"];
+  n552492 -> n552547 [from="field_type", to="struct"];
+  n557352 -> n135578 [from="field_type", to="struct"];
+  n557559 -> n566981 [from="input", to="func"];
+  n557948 -> n21217 [from="caller", to="callee"];
+  n557948 -> n162678 [from="caller", to="callee"];
+  n557948 -> n458183 [from="caller", to="callee"];
+  n559690 -> n684943 [from="field_type", to="struct"];
+  n564951 -> n162678 [from="caller", to="callee"];
+  n564951 -> n287070 [from="func", to="type_dep"];
+  n564951 -> n581321 [from="caller", to="callee"];
+  n564951 -> n615563 [from="func", to="type_dep"];
+  n566981 -> n612887 [from="caller", to="callee"];
+  n567795 -> n78606 [from="input", to="func"];
+  n567795 -> n128494 [from="field_type", to="struct"];
+  n567795 -> n530855 [from="field_type", to="struct"];
+  n567795 -> n873438 [from="field_type", to="struct"];
+  n568795 -> n785468 [from="field_type", to="struct"];
+  n568795 -> n830753 [from="field_type", to="struct"];
+  n568824 -> n167536 [from="field_type", to="struct"];
+  n568824 -> n515353 [from="field_type", to="struct"];
+  n568824 -> n530855 [from="field_type", to="struct"];
+  n592456 -> n608748 [from="field_type", to="struct"];
+  n598507 -> n252206 [from="input", to="func"];
+  n608275 -> n20818 [from="caller", to="callee"];
+  n608275 -> n458171 [from="caller", to="callee"];
+  n608275 -> n581321 [from="caller", to="callee"];
+  n608275 -> n852401 [from="caller", to="callee"];
+  n609794 -> n135578 [from="field_type", to="struct"];
+  n613785 -> n351831 [from="base", to="extends"];
+  n615563 -> n121069 [from="input", to="func"];
+  n615563 -> n608748 [from="field_type", to="struct"];
+  n620217 -> n45143 [from="input", to="func"];
+  n620217 -> n608275 [from="input", to="func"];
+  n620222 -> n486916 [from="field_type", to="struct"];
+  n620222 -> n928119 [from="input", to="func"];
+  n628969 -> n162678 [from="caller", to="callee"];
+  n628969 -> n162901 [from="caller", to="callee"];
+  n630375 -> n530855 [from="field_type", to="struct"];
+  n637869 -> n416706 [from="input", to="func"];
+  n637869 -> n416963 [from="input", to="func"];
+  n637869 -> n420143 [from="input", to="func"];
+  n638870 -> n76438 [from="field_type", to="struct"];
+  n638870 -> n354794 [from="field_type", to="struct"];
+  n638870 -> n697408 [from="input", to="func"];
+  n650084 -> n227435 [from="input", to="func"];
+  n650084 -> n287346 [from="input", to="func"];
+  n650084 -> n608275 [from="input", to="func"];
+  n661285 -> n568873 [from="field_type", to="struct"];
+  n661285 -> n847044 [from="input", to="func"];
+  n664221 -> n822698 [from="input", to="func"];
+  n668915 -> n194991 [from="input", to="func"];
+  n681340 -> n162678 [from="caller", to="callee"];
+  n681622 -> n19931 [from="caller", to="callee"];
+  n682340 -> n338311 [from="input", to="func"];
+  n682340 -> n425772 [from="field_type", to="struct"];
+  n682340 -> n684943 [from="field_type", to="struct"];
+  n684249 -> n711927 [from="field_type", to="struct"];
+  n684943 -> n391863 [from="input", to="func"];
+  n697408 -> n515986 [from="input", to="func"];
+  n698103 -> n203332 [from="input", to="func"];
+  n698103 -> n203374 [from="input", to="func"];
+  n698103 -> n233087 [from="field_type", to="struct"];
+  n698103 -> n251727 [from="field_type", to="struct"];
+  n698103 -> n282151 [from="field_type", to="struct"];
+  n698103 -> n293404 [from="field_type", to="struct"];
+  n698103 -> n721935 [from="field_type", to="struct"];
+  n698103 -> n729117 [from="field_type", to="struct"];
+  n698103 -> n768723 [from="field_type", to="struct"];
+  n699514 -> n78606 [from="input", to="func"];
+  n699514 -> n380260 [from="input", to="func"];
+  n699514 -> n628969 [from="input", to="func"];
+  n699514 -> n960532 [from="field_type", to="struct"];
+  n699515 -> n209720 [from="input", to="func"];
+  n699515 -> n552492 [from="field_type", to="struct"];
+  n699515 -> n557948 [from="input", to="func"];
+  n699515 -> n961965 [from="input", to="func"];
+  n700167 -> n22610 [from="caller", to="callee"];
+  n700167 -> n162678 [from="caller", to="callee"];
+  n700167 -> n573099 [from="field_type", to="struct"];
+  n708587 -> n20818 [from="caller", to="callee"];
+  n708587 -> n31726 [from="caller", to="callee"];
+  n713762 -> n391863 [from="input", to="func"];
+  n716793 -> n592456 [from="field_type", to="struct"];
+  n716793 -> n851130 [from="field_type", to="struct"];
+  n716793 -> n859643 [from="input", to="func"];
+  n730273 -> n120545 [from="caller", to="callee"];
+  n736877 -> n681340 [from="input", to="func"];
+  n736877 -> n700167 [from="input", to="func"];
+  n744539 -> n581321 [from="caller", to="callee"];
+  n745795 -> n21658 [from="caller", to="callee"];
+  n748060 -> n434353 [from="field_type", to="struct"];
+  n748060 -> n732819 [from="field_type", to="struct"];
+  n752141 -> n681340 [from="input", to="func"];
+  n752141 -> n700167 [from="input", to="func"];
+  n755374 -> n756344 [from="field_type", to="struct"];
+  n764021 -> n20818 [from="caller", to="callee"];
+  n764021 -> n156950 [from="caller", to="callee"];
+  n764021 -> n364789 [from="caller", to="callee"];
+  n764021 -> n581321 [from="caller", to="callee"];
+  n764021 -> n766010 [from="caller", to="callee"];
+  n764021 -> n852784 [from="caller", to="callee"];
+  n764228 -> n20818 [from="caller", to="callee"];
+  n764228 -> n364789 [from="caller", to="callee"];
+  n764228 -> n764021 [from="caller", to="callee"];
+  n767956 -> n349978 [from="input", to="func"];
+  n768025 -> n21069 [from="caller", to="callee"];
+  n768025 -> n520041 [from="caller", to="callee"];
+  n792284 -> n203332 [from="input", to="func"];
+  n792284 -> n253212 [from="field_type", to="struct"];
+  n792284 -> n434353 [from="field_type", to="struct"];
+  n792284 -> n830753 [from="field_type", to="struct"];
+  n796169 -> n110651 [from="base", to="extends"];
+  n801713 -> n235840 [from="field_type", to="struct"];
+  n801713 -> n251727 [from="field_type", to="struct"];
+  n822693 -> n59506 [from="input", to="func"];
+  n822693 -> n59518 [from="input", to="func"];
+  n847044 -> n162678 [from="caller", to="callee"];
+  n872351 -> n264305 [from="input", to="func"];
+  n872351 -> n661285 [from="field_type", to="struct"];
+  n880359 -> n573795 [from="field_type", to="struct"];
+  n881311 -> n416648 [from="field_type", to="struct"];
+  n883946 -> n128494 [from="func", to="type_dep"];
+  n883946 -> n162678 [from="caller", to="callee"];
+  n883946 -> n513511 [from="input", to="func"];
+  n890081 -> n306361 [from="field_type", to="struct"];
+  n890081 -> n890089 [from="field_type", to="struct"];
+  n890284 -> n166353 [from="field_type", to="struct"];
+  n891731 -> n891733 [from="input", to="func"];
+  n891733 -> n345667 [from="field_type", to="struct"];
+  n891733 -> n891731 [from="caller", to="callee"];
+  n961965 -> n3265 [from="field_type", to="struct"];
+  n961965 -> n306398 [from="field_type", to="struct"];
+  n961965 -> n337455 [from="field_type", to="struct"];
+  n961965 -> n359003 [from="field_type", to="struct"];
+  n961965 -> n460323 [from="field_type", to="struct"];
+  n961965 -> n544052 [from="caller", to="callee"];
+  n961965 -> n880531 [from="caller", to="callee"];
+  n961965 -> n890089 [from="field_type", to="struct"];
+}

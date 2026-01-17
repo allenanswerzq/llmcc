@@ -1,0 +1,25 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  crate_gtest[label="gtest", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest"];
+  crate_java[label="java", path="/home/yibai/llmcc/sample/repos/rocksdb/java"];
+  crate_rocksdb[label="rocksdb", path="/home/yibai/llmcc/sample/repos/rocksdb"];
+  crate_tools[label="tools", path="/home/yibai/llmcc/sample/repos/rocksdb/tools"];
+  crate_unknown[label="unknown"];
+
+  crate_gtest -> crate_unknown;
+  crate_java -> crate_rocksdb;
+  crate_rocksdb -> crate_gtest;
+  crate_rocksdb -> crate_tools;
+  crate_rocksdb -> crate_unknown;
+}

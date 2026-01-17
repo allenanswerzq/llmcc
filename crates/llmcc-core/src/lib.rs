@@ -36,6 +36,8 @@ pub use lang_registry::{LanguageHandler, LanguageHandlerImpl, LanguageRegistry};
 pub use meta::{ArchDepth, UnitMeta, UnitMetaBuilder};
 pub use paste;
 pub use printer::{PrintConfig, PrintFormat, print_llmcc_graph, print_llmcc_ir, render_llmcc_ir};
+// Re-export stacker for use in lang_def macro
+pub use stacker;
 // TODO: Re-enable after ProjectGraph query methods are implemented
 // pub use query::{GraphBlockInfo, ProjectQuery, QueryResult};
 pub use symbol::{ScopeId, SymId};
