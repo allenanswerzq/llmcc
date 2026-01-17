@@ -6,11 +6,14 @@ mod node_types;
 use std::fmt::Write;
 use std::path::Path;
 
-use anyhow::Result;
+use llmcc_error::{Error, ErrorKind};
 use tree_sitter::Language;
 
 use config::TokenConfig;
 use node_types::NodeTypes;
+
+/// Result type for this crate.
+pub type Result<T> = llmcc_error::Result<T>;
 
 /// A token entry mapping tree-sitter node to HIR kind.
 #[derive(Debug, Clone)]
@@ -153,14 +156,20 @@ pub(crate) fn format_block(kind: &str) -> String {
 pub(crate) fn resolve_kind_id(language: Language, name: &str, named: bool) -> Result<u16> {
     let id = language.id_for_node_kind(name, named);
     if id == u16::MAX {
-        anyhow::bail!("node kind '{name}' (named={named}) not found");
+        return Err(Error::new(
+            ErrorKind::InvalidArgument,
+            format!("node kind '{name}' (named={named}) not found"),
+        ));
     }
     Ok(id)
 }
 
 pub(crate) fn resolve_field_id(language: Language, field_name: &str) -> Result<u16> {
     let Some(field_id) = language.field_id_for_name(field_name.as_bytes()) else {
-        anyhow::bail!("field '{field_name}' not found");
+        return Err(Error::new(
+            ErrorKind::InvalidArgument,
+            format!("field '{field_name}' not found"),
+        ));
     };
     Ok(field_id.get())
 }

@@ -2,7 +2,6 @@ use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result, anyhow};
 use llmcc::{GraphOptions, ProcessingOptions};
 use llmcc_core::ProjectGraph;
 use llmcc_core::block::reset_block_id_counter;
@@ -12,6 +11,7 @@ use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
 use llmcc_core::lang_def::LanguageTraitImpl;
 use llmcc_core::symbol::reset_symbol_id_counter;
 use llmcc_dot::{ComponentDepth, render_graph};
+use llmcc_error::{Error, ErrorKind, Result};
 
 use llmcc_cpp::LangCpp;
 use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
@@ -112,9 +112,9 @@ pub fn run_cases(corpus: &mut Corpus, config: RunnerConfig) -> Result<Vec<CaseOu
     }
 
     if matched == 0 {
-        return Err(anyhow!(
-            "no llmcc-test cases matched filter {:?}",
-            config.filter
+        return Err(Error::new(
+            ErrorKind::InvalidArgument,
+            format!("no llmcc-test cases matched filter {:?}", config.filter),
         ));
     }
 
@@ -440,10 +440,9 @@ fn build_pipeline_summary(
         "cpp" | "c++" | "c" => collect_pipeline::<LangCpp>(project.root(), &options)?,
         "auto" => collect_pipeline_auto(project.root(), &options)?,
         other => {
-            return Err(anyhow!(
-                "unsupported lang '{}' requested by {}",
-                other,
-                case.id()
+            return Err(Error::new(
+                ErrorKind::InvalidArgument,
+                format!("unsupported lang '{}' requested by {}", other, case.id()),
             ));
         }
     };
@@ -632,36 +631,59 @@ impl PipelineOptions {
 fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> Result<String> {
     match kind {
         "symbols" => {
-            let symbols = summary
-                .symbols
-                .as_ref()
-                .ok_or_else(|| anyhow!("case {case_id} requested symbols but summary missing"))?;
+            let symbols = summary.symbols.as_ref().ok_or_else(|| {
+                Error::new(
+                    ErrorKind::InvalidArgument,
+                    format!("case {case_id} requested symbols but summary missing"),
+                )
+            })?;
             Ok(render_symbol_snapshot(symbols))
         }
         "symbol-types" => Ok("symbol-types snapshot not yet implemented\n".to_string()),
         "block-relations" => {
             let relations = summary.block_relations.as_ref().ok_or_else(|| {
-                anyhow!("case {case_id} requested block-relations but summary missing")
+                Error::new(
+                    ErrorKind::InvalidArgument,
+                    format!("case {case_id} requested block-relations but summary missing"),
+                )
             })?;
             Ok(render_block_relations_snapshot(relations))
         }
         "dep-graph" => summary.dep_graph_dot.clone().ok_or_else(|| {
-            anyhow!("case {case_id} requested dep-graph output but summary missing")
+            Error::new(
+                ErrorKind::InvalidArgument,
+                format!("case {case_id} requested dep-graph output but summary missing"),
+            )
         }),
         "arch-graph" => summary.arch_graph_dot.clone().ok_or_else(|| {
-            anyhow!("case {case_id} requested arch-graph output but summary missing")
+            Error::new(
+                ErrorKind::InvalidArgument,
+                format!("case {case_id} requested arch-graph output but summary missing"),
+            )
         }),
         "arch-graph-depth-0" => summary.arch_graph_depth_0.clone().ok_or_else(|| {
-            anyhow!("case {case_id} requested arch-graph-depth-0 output but summary missing")
+            Error::new(
+                ErrorKind::InvalidArgument,
+                format!("case {case_id} requested arch-graph-depth-0 output but summary missing"),
+            )
         }),
         "arch-graph-depth-1" => summary.arch_graph_depth_1.clone().ok_or_else(|| {
-            anyhow!("case {case_id} requested arch-graph-depth-1 output but summary missing")
+            Error::new(
+                ErrorKind::InvalidArgument,
+                format!("case {case_id} requested arch-graph-depth-1 output but summary missing"),
+            )
         }),
         "arch-graph-depth-2" => summary.arch_graph_depth_2.clone().ok_or_else(|| {
-            anyhow!("case {case_id} requested arch-graph-depth-2 output but summary missing")
+            Error::new(
+                ErrorKind::InvalidArgument,
+                format!("case {case_id} requested arch-graph-depth-2 output but summary missing"),
+            )
         }),
         "arch-graph-depth-3" => summary.arch_graph_depth_3.clone().ok_or_else(|| {
-            anyhow!("case {case_id} requested arch-graph-depth-3 output but summary missing")
+            Error::new(
+                ErrorKind::InvalidArgument,
+                format!("case {case_id} requested arch-graph-depth-3 output but summary missing"),
+            )
         }),
         "blocks" => Ok("blocks snapshot not yet implemented\n".to_string()),
         "block-deps" => summary
@@ -669,19 +691,29 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
             .as_ref()
             .map(|deps| render_symbol_dependencies(deps))
             .ok_or_else(|| {
-                anyhow!("case {case_id} requested block-deps output but summary missing")
+                Error::new(
+                    ErrorKind::InvalidArgument,
+                    format!("case {case_id} requested block-deps output but summary missing"),
+                )
             }),
         "block-graph" => summary.block_graph.clone().ok_or_else(|| {
-            anyhow!("case {case_id} requested block-graph output but summary missing")
+            Error::new(
+                ErrorKind::InvalidArgument,
+                format!("case {case_id} requested block-graph output but summary missing"),
+            )
         }),
         "symbol-deps" => {
             let deps = summary.symbol_deps.as_ref().ok_or_else(|| {
-                anyhow!("case {case_id} requested symbol-deps but summary missing")
+                Error::new(
+                    ErrorKind::InvalidArgument,
+                    format!("case {case_id} requested symbol-deps but summary missing"),
+                )
             })?;
             Ok(render_symbol_dependencies(deps))
         }
-        other => Err(anyhow!(
-            "case {case_id} uses unsupported expectation '{other}'"
+        other => Err(Error::new(
+            ErrorKind::InvalidArgument,
+            format!("case {case_id} uses unsupported expectation '{other}'"),
         )),
     }
 }
@@ -1159,7 +1191,7 @@ enum SExpr {
     List(Vec<SExpr>),
 }
 
-fn parse_sexpr(input: &str) -> Result<Vec<SExpr>, ()> {
+fn parse_sexpr(input: &str) -> std::result::Result<Vec<SExpr>, ()> {
     let tokens = tokenize(input);
     let mut idx = 0;
     let mut exprs = Vec::new();
@@ -1212,7 +1244,7 @@ fn tokenize(input: &str) -> Vec<String> {
     tokens
 }
 
-fn parse_expr(tokens: &[String], idx: &mut usize) -> Result<SExpr, ()> {
+fn parse_expr(tokens: &[String], idx: &mut usize) -> std::result::Result<SExpr, ()> {
     if *idx >= tokens.len() {
         return Err(());
     }
@@ -1294,7 +1326,12 @@ impl MaterializedProject {
 }
 
 fn materialize_case(case: &CorpusCase, keep_temps: bool) -> Result<MaterializedProject> {
-    let temp_dir = tempfile::tempdir().context("failed to create temp dir for llmcc-test")?;
+    let temp_dir = tempfile::tempdir().map_err(|e| {
+        Error::new(
+            ErrorKind::IoFailed,
+            format!("failed to create temp dir for llmcc-test: {}", e),
+        )
+    })?;
     let root_path = temp_dir.path().to_path_buf();
 
     for (idx, file) in case.files.iter().enumerate() {
@@ -1318,14 +1355,22 @@ fn materialize_case(case: &CorpusCase, keep_temps: bool) -> Result<MaterializedP
 
         let abs_path = root_path.join(&final_path);
         if let Some(parent) = abs_path.parent() {
-            fs::create_dir_all(parent)
-                .with_context(|| format!("failed to create {}", parent.display()))?;
+            fs::create_dir_all(parent).map_err(|e| {
+                Error::new(
+                    ErrorKind::IoFailed,
+                    format!("failed to create {}: {}", parent.display(), e),
+                )
+            })?;
         }
-        fs::write(&abs_path, file.contents.as_bytes()).with_context(|| {
-            format!(
-                "failed to write virtual file {} for {}",
-                abs_path.display(),
-                case.id()
+        fs::write(&abs_path, file.contents.as_bytes()).map_err(|e| {
+            Error::new(
+                ErrorKind::IoFailed,
+                format!(
+                    "failed to write virtual file {} for {}: {}",
+                    abs_path.display(),
+                    case.id(),
+                    e
+                ),
             )
         })?;
     }
@@ -1517,7 +1562,12 @@ fn discover_language_files<L: LanguageTraitImpl>(
     let mut files = Vec::new();
 
     for entry in WalkDir::new(root) {
-        let entry = entry.with_context(|| format!("failed to walk {}", root.display()))?;
+        let entry = entry.map_err(|e| {
+            Error::new(
+                ErrorKind::IoFailed,
+                format!("failed to walk {}: {}", root.display(), e),
+            )
+        })?;
         if !entry.file_type().is_file() {
             continue;
         }
