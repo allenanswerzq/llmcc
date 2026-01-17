@@ -1,4 +1,4 @@
-//! TOOD: use impl fmt::Debug
+//! HIR and block graph printing utilities.
 use crate::context::CompileUnit;
 use crate::graph_builder::{BasicBlock, BlockId};
 use crate::ir::{HirId, HirNode};
@@ -389,7 +389,6 @@ pub fn print_llmcc_ir_with_config(unit: CompileUnit<'_>, config: &PrintConfig) -
 
     let (ast, _hir) = render_llmcc_ir_with_config(root, unit, config)?;
     println!("{ast}\n");
-    // println!("{}\n", hir);
     Ok(())
 }
 
