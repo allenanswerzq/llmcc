@@ -1,6 +1,6 @@
 //! Node and edge collection from ProjectGraph.
 
-use std::collections::{BTreeMap, BTreeSet, HashSet};
+use std::collections::{BTreeSet, HashSet};
 
 use rayon::prelude::*;
 
@@ -9,34 +9,6 @@ use llmcc_core::block::{BlockKind, BlockRelation};
 use llmcc_core::graph::ProjectGraph;
 
 use crate::types::{ARCHITECTURE_KINDS, RenderEdge, RenderNode};
-
-/// Priority for edge types. Higher value = stronger relationship.
-/// When multiple edges exist between the same nodes, keep the highest priority.
-fn edge_priority(from_label: &str, to_label: &str) -> u8 {
-    match (from_label, to_label) {
-        // Structural relationships (highest priority)
-        ("field_type", "struct") | ("field_type", "enum") => 100,
-        ("impl", "trait") | ("trait", "impl") | ("interface", "impl") => 95,
-        ("base", "extends") => 90,
-
-        // Function signature relationships
-        ("input", "func") => 80,
-        ("func", "output") => 75,
-
-        // Call relationships
-        ("caller", "callee") => 70,
-
-        // Generic/type relationships (lower priority - often redundant with field_type)
-        ("type_arg", "generic") => 50,
-        ("type_dep", "struct") | ("type_dep", "enum") | ("func", "type_dep") => 30,
-
-        // Decorator (lowest)
-        ("decorator", _) => 20,
-
-        // Default
-        _ => 10,
-    }
-}
 
 /// Collect nodes for architecture graph.
 ///
@@ -212,28 +184,8 @@ pub fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTr
         })
         .collect();
 
-    // Merge all edge sets, deduplicating by (from_id, to_id) and keeping highest priority
-    let mut edge_map: BTreeMap<(BlockId, BlockId), RenderEdge> = BTreeMap::new();
-    for edge_set in edges {
-        for edge in edge_set {
-            let key = (edge.from_id, edge.to_id);
-            let new_priority = edge_priority(edge.from_label, edge.to_label);
-
-            match edge_map.get(&key) {
-                Some(existing) => {
-                    let existing_priority = edge_priority(existing.from_label, existing.to_label);
-                    if new_priority > existing_priority {
-                        edge_map.insert(key, edge);
-                    }
-                }
-                None => {
-                    edge_map.insert(key, edge);
-                }
-            }
-        }
-    }
-
-    edge_map.into_values().collect()
+    // Merge all edge sets
+    edges.into_iter().flatten().collect()
 }
 
 // Edge Collection Helpers

@@ -3,10 +3,11 @@
 use std::fs;
 use std::path::Path;
 
-use anyhow::{Context, Result};
+use llmcc_error::{Error, ErrorKind};
 use serde::Deserialize;
 use tree_sitter::Language;
 
+use crate::Result;
 use crate::node_types::NodeTypes;
 use crate::{TokenEntry, format_block, format_hir, resolve_field_id, resolve_kind_id};
 
@@ -30,9 +31,18 @@ impl TokenConfig {
 
     pub fn from_path(path: impl AsRef<Path>) -> Result<Self> {
         let path = path.as_ref();
-        let text = fs::read_to_string(path)
-            .with_context(|| format!("failed to read {}", path.display()))?;
-        toml::from_str(&text).with_context(|| format!("invalid TOML in {}", path.display()))
+        let text = fs::read_to_string(path).map_err(|e| {
+            Error::new(
+                ErrorKind::FileNotFound,
+                format!("failed to read {}: {}", path.display(), e),
+            )
+        })?;
+        toml::from_str(&text).map_err(|e| {
+            Error::new(
+                ErrorKind::ConfigInvalid,
+                format!("invalid TOML in {}: {}", path.display(), e),
+            )
+        })
     }
 }
 
