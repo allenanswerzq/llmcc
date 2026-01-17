@@ -1,11 +1,11 @@
 //! Symbol and scope management for the code graph.
 //!
-//! This module defines the core data structures for tracking named entities (symbols) in source code:
-//! - `Symbol`: Represents a named entity (function, struct, variable, etc.) with metadata
+//! Core types:
+//! - `Symbol`: Named entity (function, struct, variable, etc.) with metadata
 //! - `SymId`: Unique identifier for symbols
 //! - `ScopeId`: Unique identifier for scopes
 //!
-//! Symbols are allocated in an arena for efficient memory management and are thread-safe via RwLock.
+//! Symbols are arena-allocated and thread-safe via atomics and RwLock.
 //! Names are interned for fast equality comparisons.
 
 use parking_lot::RwLock;

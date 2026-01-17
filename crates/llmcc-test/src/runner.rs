@@ -639,14 +639,7 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
             })?;
             Ok(render_symbol_snapshot(symbols))
         }
-        "symbol-types" => {
-            // let symbols = summary
-            //     .symbol_types
-            //     .as_ref()
-            //     .ok_or_else(|| Error::new(ErrorKind::InvalidArgument, format!("case {} requested symbol-types but summary missing", case_id)))?;
-            // Ok(render_symbol_types_snapshot(symbols))
-            Ok("symbol-types snapshot not yet implemented\n".to_string())
-        }
+        "symbol-types" => Ok("symbol-types snapshot not yet implemented\n".to_string()),
         "block-relations" => {
             let relations = summary.block_relations.as_ref().ok_or_else(|| {
                 Error::new(
@@ -692,19 +685,7 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
                 format!("case {case_id} requested arch-graph-depth-3 output but summary missing"),
             )
         }),
-        "blocks" => {
-            // summary
-            // .block_list
-            // .as_ref()
-            // .map(|list| render_block_snapshot(list))
-            // .ok_or_else(|| {
-            //     Error::new(ErrorKind::InvalidArgument, format!(
-            //         "case {} requested blocks output but summary missing",
-            //         case_id
-            //     ))
-            // }),
-            Ok("symbol-types snapshot not yet implemented\n".to_string())
-        }
+        "blocks" => Ok("blocks snapshot not yet implemented\n".to_string()),
         "block-deps" => summary
             .block_deps
             .as_ref()

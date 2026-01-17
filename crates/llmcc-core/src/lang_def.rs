@@ -385,7 +385,7 @@ pub trait LanguageTrait {
 
     fn collect_init<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> ScopeStack<'tcx>;
 
-    /// TOOD: can we remove the generics here, we could make a new crate or
+    /// TODO: can we remove the generics here, we could make a new crate or
     /// bring llmcc-resolver into core to solve the cross dependency
     fn collect_symbols<'tcx, C>(
         unit: CompileUnit<'tcx>,
