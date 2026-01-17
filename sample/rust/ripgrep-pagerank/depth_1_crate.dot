@@ -14,22 +14,19 @@ digraph architecture {
   crate_globset[label="globset", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/globset"];
   crate_grep_cli[label="grep-cli", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/cli"];
   crate_grep_matcher[label="grep-matcher", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/matcher"];
-  crate_grep_pcre2[label="grep-pcre2", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/pcre2"];
   crate_grep_printer[label="grep-printer", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/printer"];
   crate_grep_regex[label="grep-regex", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/regex"];
   crate_grep_searcher[label="grep-searcher", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/searcher"];
   crate_ignore[label="ignore", path="/home/yibai/llmcc/sample/repos/ripgrep/crates/ignore"];
   crate_ripgrep[label="ripgrep", path="/home/yibai/llmcc/sample/repos/ripgrep"];
 
-  crate_grep_cli -> crate_grep_pcre2;
   crate_grep_cli -> crate_ripgrep;
-  crate_grep_printer -> crate_grep_pcre2;
   crate_grep_printer -> crate_grep_searcher;
+  crate_grep_printer -> crate_ignore;
   crate_grep_regex -> crate_grep_matcher;
   crate_grep_searcher -> crate_grep_matcher;
   crate_ignore -> crate_globset;
   crate_ripgrep -> crate_grep_cli;
-  crate_ripgrep -> crate_grep_matcher;
   crate_ripgrep -> crate_grep_printer;
   crate_ripgrep -> crate_ignore;
 }

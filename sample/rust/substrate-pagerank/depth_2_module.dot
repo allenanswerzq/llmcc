@@ -79,14 +79,6 @@ digraph architecture {
     mod_frame_system_lib[label="lib", path="/home/yibai/llmcc/sample/repos/substrate/substrate/frame/system/src"];
   }
 
-  subgraph cluster_pallet_collective {
-    label="pallet-collective";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_pallet_collective_lib[label="lib", path="/home/yibai/llmcc/sample/repos/substrate/substrate/frame/collective/src"];
-  }
-
   subgraph cluster_pallet_contracts {
     label="pallet-contracts";
     style=rounded;
@@ -102,14 +94,6 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_pallet_contracts_fixtures_contracts[label="contracts", path="/home/yibai/llmcc/sample/repos/substrate/substrate/frame/contracts/fixtures/contracts"];
-  }
-
-  subgraph cluster_pallet_election_provider_e2e_test {
-    label="pallet-election-provider-e2e-test";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_pallet_election_provider_e2e_test_mock[label="mock", path="/home/yibai/llmcc/sample/repos/substrate/substrate/frame/election-provider-multi-phase/test-staking-e2e/src"];
   }
 
   subgraph cluster_pallet_election_provider_multi_block {
@@ -136,6 +120,14 @@ digraph architecture {
     mod_pallet_nomination_pools_lib[label="lib", path="/home/yibai/llmcc/sample/repos/substrate/substrate/frame/nomination-pools/src"];
   }
 
+  subgraph cluster_pallet_ranked_collective {
+    label="pallet-ranked-collective";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_pallet_ranked_collective_lib[label="lib", path="/home/yibai/llmcc/sample/repos/substrate/substrate/frame/ranked-collective/src"];
+  }
+
   subgraph cluster_pallet_revive {
     label="pallet-revive";
     style=rounded;
@@ -158,14 +150,6 @@ digraph architecture {
     mod_pallet_revive_fixtures_contracts[label="contracts", path="/home/yibai/llmcc/sample/repos/substrate/substrate/frame/revive/fixtures/contracts"];
   }
 
-  subgraph cluster_pallet_revive_uapi {
-    label="pallet-revive-uapi";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_pallet_revive_uapi_host[label="host", path="/home/yibai/llmcc/sample/repos/substrate/substrate/frame/revive/uapi/src"];
-  }
-
   subgraph cluster_pallet_transaction_payment_rpc {
     label="pallet-transaction-payment-rpc";
     style=rounded;
@@ -174,12 +158,19 @@ digraph architecture {
     mod_pallet_transaction_payment_rpc_lib[label="lib", path="/home/yibai/llmcc/sample/repos/substrate/substrate/frame/transaction-payment/rpc/src"];
   }
 
+  subgraph cluster_pallet_uniques {
+    label="pallet-uniques";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_pallet_uniques_asset_ops[label="asset_ops", path="/home/yibai/llmcc/sample/repos/substrate/substrate/frame/uniques/src/asset_ops"];
+  }
+
   subgraph cluster_polkadot_collator_protocol {
     label="polkadot-collator-protocol";
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_polkadot_collator_protocol_collator_side[label="collator_side", path="/home/yibai/llmcc/sample/repos/substrate/polkadot/node/network/collator-protocol/src/collator_side"];
     mod_polkadot_collator_protocol_validator_side[label="validator_side", path="/home/yibai/llmcc/sample/repos/substrate/polkadot/node/network/collator-protocol/src/validator_side"];
   }
 
@@ -216,12 +207,12 @@ digraph architecture {
     mod_polkadot_node_core_pvf_prepare[label="prepare", path="/home/yibai/llmcc/sample/repos/substrate/polkadot/node/core/pvf/src/prepare"];
   }
 
-  subgraph cluster_polkadot_node_core_pvf_common {
-    label="polkadot-node-core-pvf-common";
+  subgraph cluster_polkadot_node_network_protocol {
+    label="polkadot-node-network-protocol";
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_polkadot_node_core_pvf_common_worker[label="worker", path="/home/yibai/llmcc/sample/repos/substrate/polkadot/node/core/pvf/common/src/worker"];
+    mod_polkadot_node_network_protocol_grid_topology[label="grid_topology", path="/home/yibai/llmcc/sample/repos/substrate/polkadot/node/network/protocol/src"];
   }
 
   subgraph cluster_polkadot_node_primitives {
@@ -381,6 +372,7 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_sp_core_crypto[label="crypto", path="/home/yibai/llmcc/sample/repos/substrate/substrate/primitives/core/src"];
+    mod_sp_core_lib[label="lib", path="/home/yibai/llmcc/sample/repos/substrate/substrate/primitives/core/src"];
     mod_sp_core_offchain[label="offchain", path="/home/yibai/llmcc/sample/repos/substrate/substrate/primitives/core/src/offchain"];
   }
 
@@ -400,14 +392,6 @@ digraph architecture {
     mod_sp_runtime_generic[label="generic", path="/home/yibai/llmcc/sample/repos/substrate/substrate/primitives/runtime/src/generic"];
     mod_sp_runtime_lib[label="lib", path="/home/yibai/llmcc/sample/repos/substrate/substrate/primitives/runtime/src"];
     mod_sp_runtime_traits[label="traits", path="/home/yibai/llmcc/sample/repos/substrate/substrate/primitives/runtime/src/traits"];
-  }
-
-  subgraph cluster_sp_state_machine {
-    label="sp-state-machine";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_sp_state_machine_trie_backend_essence[label="trie_backend_essence", path="/home/yibai/llmcc/sample/repos/substrate/substrate/primitives/state-machine/src"];
   }
 
   subgraph cluster_sp_storage {
@@ -447,12 +431,16 @@ digraph architecture {
 
 
   mod_cumulus_pallet_parachain_system_validate_block -> mod_pallet_revive_evm;
+  mod_cumulus_pallet_parachain_system_validate_block -> mod_pallet_revive_precompiles;
   mod_cumulus_pallet_parachain_system_validate_block -> mod_polkadot_primitives_v9;
+  mod_cumulus_pallet_parachain_system_validate_block -> mod_sc_consensus_epochs_lib;
   mod_cumulus_pallet_parachain_system_validate_block -> mod_sc_rpc_spec_v2_archive;
   mod_cumulus_pallet_parachain_system_validate_block -> mod_sc_state_db_lib;
   mod_cumulus_pallet_parachain_system_validate_block -> mod_sp_io_lib;
   mod_cumulus_pallet_parachain_system_validate_block -> mod_sp_runtime_generic;
   mod_cumulus_pallet_parachain_system_validate_block -> mod_sp_storage_lib;
+  mod_cumulus_pallet_parachain_system_validate_block -> mod_staging_xcm_double_encoded;
+  mod_cumulus_pallet_parachain_system_validate_block -> mod_staging_xcm_v5;
   mod_cumulus_primitives_parachain_inherent_lib -> mod_bp_polkadot_core_parachains;
   mod_cumulus_primitives_parachain_inherent_lib -> mod_polkadot_core_primitives_lib;
   mod_cumulus_primitives_parachain_inherent_lib -> mod_polkadot_primitives_v9;
@@ -461,91 +449,78 @@ digraph architecture {
   mod_frame_support_dispatch -> mod_sp_runtime_traits;
   mod_frame_support_dispatch -> mod_sp_weights_weight_v2;
   mod_frame_support_procedural_construct_runtime -> mod_fork_tree_lib;
+  mod_frame_support_procedural_construct_runtime -> mod_pallet_revive_evm;
+  mod_frame_support_procedural_construct_runtime -> mod_sc_consensus_epochs_lib;
   mod_frame_support_procedural_lib -> mod_staging_xcm_v5;
   mod_frame_support_procedural_pallet -> mod_fork_tree_lib;
   mod_frame_support_procedural_pallet -> mod_frame_support_procedural_lib;
   mod_frame_support_procedural_pallet -> mod_frame_support_storage;
   mod_frame_support_procedural_pallet -> mod_frame_support_traits;
-  mod_frame_support_procedural_pallet -> mod_pallet_revive_evm;
-  mod_frame_support_procedural_pallet -> mod_pallet_revive_metering;
-  mod_frame_support_procedural_pallet -> mod_pallet_revive_vm;
   mod_frame_support_procedural_pallet -> mod_pallet_transaction_payment_rpc_lib;
-  mod_frame_support_procedural_pallet -> mod_polkadot_primitives_v9;
   mod_frame_support_procedural_pallet -> mod_sc_consensus_epochs_lib;
   mod_frame_support_procedural_pallet -> mod_sc_rpc_spec_v2_archive;
   mod_frame_support_procedural_pallet -> mod_sp_io_lib;
-  mod_frame_support_procedural_pallet -> mod_staging_xcm_v5;
   mod_frame_support_storage -> mod_frame_support_traits;
   mod_frame_support_storage -> mod_pallet_transaction_payment_rpc_lib;
   mod_frame_support_storage -> mod_polkadot_parachain_primitives_primitives;
   mod_frame_support_storage -> mod_polkadot_primitives_v9;
-  mod_frame_support_storage -> mod_sc_cli_commands;
   mod_frame_support_storage -> mod_sp_io_lib;
   mod_frame_support_storage -> mod_sp_storage_lib;
-  mod_frame_support_traits -> mod_pallet_contracts_benchmarking;
-  mod_frame_support_traits -> mod_sp_io_lib;
   mod_frame_support_traits -> mod_sp_runtime_traits;
   mod_frame_support_traits -> mod_staging_xcm_double_encoded;
-  mod_frame_support_traits -> mod_staging_xcm_v5;
   mod_frame_system_lib -> mod_frame_support_dispatch;
   mod_frame_system_lib -> mod_frame_support_traits;
   mod_frame_system_lib -> mod_sp_runtime_traits;
   mod_frame_system_lib -> mod_sp_storage_lib;
-  mod_frame_system_lib -> mod_staging_xcm_double_encoded;
-  mod_pallet_collective_lib -> mod_frame_support_traits;
-  mod_pallet_collective_lib -> mod_sp_runtime_traits;
+  mod_frame_system_lib -> mod_staging_xcm_v5;
   mod_pallet_contracts_benchmarking -> mod_fork_tree_lib;
   mod_pallet_contracts_benchmarking -> mod_frame_benchmarking_utils;
-  mod_pallet_contracts_benchmarking -> mod_pallet_collective_lib;
   mod_pallet_contracts_benchmarking -> mod_pallet_contracts_wasm;
+  mod_pallet_contracts_benchmarking -> mod_pallet_ranked_collective_lib;
   mod_pallet_contracts_benchmarking -> mod_pallet_transaction_payment_rpc_lib;
   mod_pallet_contracts_benchmarking -> mod_sp_core_crypto;
   mod_pallet_contracts_benchmarking -> mod_staging_xcm_double_encoded;
   mod_pallet_contracts_benchmarking -> mod_staging_xcm_v3;
   mod_pallet_contracts_fixtures_contracts -> mod_pallet_contracts_wasm;
   mod_pallet_contracts_fixtures_contracts -> mod_pallet_revive_fixtures_contracts;
-  mod_pallet_contracts_fixtures_contracts -> mod_pallet_revive_vm;
-  mod_pallet_contracts_fixtures_contracts -> mod_sp_io_lib;
   mod_pallet_contracts_wasm -> mod_fork_tree_lib;
   mod_pallet_contracts_wasm -> mod_pallet_transaction_payment_rpc_lib;
   mod_pallet_contracts_wasm -> mod_sc_rpc_spec_v2_archive;
   mod_pallet_contracts_wasm -> mod_sp_runtime_lib;
-  mod_pallet_contracts_wasm -> mod_sp_weights_weight_v2;
-  mod_pallet_contracts_wasm -> mod_staging_xcm_double_encoded;
-  mod_pallet_election_provider_e2e_test_mock -> mod_pallet_nomination_pools_lib;
-  mod_pallet_election_provider_e2e_test_mock -> mod_pallet_revive_vm;
-  mod_pallet_election_provider_e2e_test_mock -> mod_pallet_transaction_payment_rpc_lib;
-  mod_pallet_election_provider_e2e_test_mock -> mod_sp_runtime_traits;
-  mod_pallet_election_provider_multi_block_mock -> mod_frame_support_traits;
+  mod_pallet_contracts_wasm -> mod_staging_xcm_v5;
   mod_pallet_election_provider_multi_block_mock -> mod_pallet_nomination_pools_lib;
   mod_pallet_election_provider_multi_block_mock -> mod_pallet_revive_vm;
   mod_pallet_election_provider_multi_block_mock -> mod_polkadot_omni_node_lib_common;
-  mod_pallet_election_provider_multi_block_mock -> mod_sc_consensus_epochs_lib;
+  mod_pallet_mmr_mmr -> mod_fork_tree_lib;
   mod_pallet_mmr_mmr -> mod_pallet_transaction_payment_rpc_lib;
   mod_pallet_nomination_pools_lib -> mod_frame_support_traits;
+  mod_pallet_ranked_collective_lib -> mod_frame_support_traits;
+  mod_pallet_ranked_collective_lib -> mod_sp_runtime_traits;
+  mod_pallet_revive_benchmarking -> mod_fork_tree_lib;
   mod_pallet_revive_benchmarking -> mod_frame_benchmarking_utils;
-  mod_pallet_revive_benchmarking -> mod_pallet_collective_lib;
+  mod_pallet_revive_benchmarking -> mod_pallet_ranked_collective_lib;
   mod_pallet_revive_benchmarking -> mod_pallet_revive_evm;
   mod_pallet_revive_benchmarking -> mod_pallet_revive_lib;
   mod_pallet_revive_benchmarking -> mod_pallet_revive_metering;
   mod_pallet_revive_benchmarking -> mod_pallet_revive_vm;
   mod_pallet_revive_benchmarking -> mod_pallet_transaction_payment_rpc_lib;
-  mod_pallet_revive_benchmarking -> mod_sc_cli_commands;
   mod_pallet_revive_benchmarking -> mod_sp_core_crypto;
   mod_pallet_revive_benchmarking -> mod_staging_xcm_double_encoded;
   mod_pallet_revive_benchmarking -> mod_staging_xcm_v5;
   mod_pallet_revive_evm -> mod_frame_support_traits;
-  mod_pallet_revive_evm -> mod_pallet_revive_lib;
   mod_pallet_revive_evm -> mod_pallet_revive_precompiles;
   mod_pallet_revive_evm -> mod_pallet_transaction_payment_rpc_lib;
-  mod_pallet_revive_evm -> mod_sc_consensus_grandpa_communication;
+  mod_pallet_revive_evm -> mod_sp_core_lib;
   mod_pallet_revive_evm -> mod_sp_runtime_traits;
   mod_pallet_revive_evm -> mod_staging_xcm_double_encoded;
   mod_pallet_revive_exec -> mod_pallet_revive_lib;
+  mod_pallet_revive_exec -> mod_sp_runtime_lib;
   mod_pallet_revive_fixtures_contracts -> mod_pallet_contracts_wasm;
   mod_pallet_revive_fixtures_contracts -> mod_pallet_revive_vm;
   mod_pallet_revive_lib -> mod_frame_support_traits;
+  mod_pallet_revive_lib -> mod_sp_runtime_lib;
   mod_pallet_revive_lib -> mod_sp_weights_weight_v2;
+  mod_pallet_revive_metering -> mod_frame_support_dispatch;
   mod_pallet_revive_metering -> mod_pallet_revive_exec;
   mod_pallet_revive_metering -> mod_pallet_revive_lib;
   mod_pallet_revive_metering -> mod_sp_runtime_lib;
@@ -554,82 +529,66 @@ digraph architecture {
   mod_pallet_revive_precompiles -> mod_frame_support_storage;
   mod_pallet_revive_precompiles -> mod_pallet_revive_exec;
   mod_pallet_revive_precompiles -> mod_pallet_transaction_payment_rpc_lib;
+  mod_pallet_revive_precompiles -> mod_sc_rpc_spec_v2_archive;
   mod_pallet_revive_precompiles -> mod_sp_runtime_lib;
   mod_pallet_revive_vm -> mod_pallet_revive_exec;
-  mod_pallet_revive_vm -> mod_pallet_revive_lib;
   mod_pallet_revive_vm -> mod_pallet_revive_metering;
   mod_pallet_revive_vm -> mod_pallet_revive_precompiles;
   mod_pallet_revive_vm -> mod_sc_rpc_spec_v2_archive;
   mod_pallet_revive_vm -> mod_staging_xcm_double_encoded;
-  mod_pallet_revive_vm -> mod_staging_xcm_v5;
-  mod_polkadot_collator_protocol_collator_side -> mod_bp_polkadot_core_parachains;
-  mod_polkadot_collator_protocol_collator_side -> mod_fork_tree_lib;
-  mod_polkadot_collator_protocol_collator_side -> mod_frame_support_storage;
-  mod_polkadot_collator_protocol_collator_side -> mod_pallet_revive_evm;
-  mod_polkadot_collator_protocol_collator_side -> mod_pallet_revive_uapi_host;
-  mod_polkadot_collator_protocol_collator_side -> mod_polkadot_collator_protocol_validator_side;
-  mod_polkadot_collator_protocol_collator_side -> mod_polkadot_core_primitives_lib;
-  mod_polkadot_collator_protocol_collator_side -> mod_polkadot_node_primitives_approval;
-  mod_polkadot_collator_protocol_collator_side -> mod_polkadot_node_subsystem_types_messages;
-  mod_polkadot_collator_protocol_collator_side -> mod_polkadot_omni_node_lib_common;
-  mod_polkadot_collator_protocol_collator_side -> mod_polkadot_primitives_test_helpers_lib;
-  mod_polkadot_collator_protocol_collator_side -> mod_polkadot_primitives_v9;
-  mod_polkadot_collator_protocol_collator_side -> mod_sc_network_types_peer_id;
-  mod_polkadot_collator_protocol_collator_side -> mod_sc_state_db_lib;
-  mod_polkadot_collator_protocol_collator_side -> mod_sp_runtime_traits;
-  mod_polkadot_collator_protocol_collator_side -> mod_staging_xcm_v5;
+  mod_pallet_uniques_asset_ops -> mod_frame_support_traits;
+  mod_pallet_uniques_asset_ops -> mod_sp_core_lib;
   mod_polkadot_collator_protocol_validator_side -> mod_bp_polkadot_core_parachains;
   mod_polkadot_collator_protocol_validator_side -> mod_fork_tree_lib;
-  mod_polkadot_collator_protocol_validator_side -> mod_frame_support_storage;
+  mod_polkadot_collator_protocol_validator_side -> mod_frame_support_traits;
   mod_polkadot_collator_protocol_validator_side -> mod_polkadot_core_primitives_lib;
   mod_polkadot_collator_protocol_validator_side -> mod_polkadot_primitives_test_helpers_lib;
   mod_polkadot_collator_protocol_validator_side -> mod_polkadot_primitives_v9;
   mod_polkadot_collator_protocol_validator_side -> mod_sc_network_types_peer_id;
   mod_polkadot_collator_protocol_validator_side -> mod_sc_rpc_spec_v2_archive;
   mod_polkadot_collator_protocol_validator_side -> mod_sc_state_db_lib;
+  mod_polkadot_collator_protocol_validator_side -> mod_sc_transaction_pool_fork_aware_txpool;
   mod_polkadot_collator_protocol_validator_side -> mod_sp_core_offchain;
   mod_polkadot_collator_protocol_validator_side -> mod_sp_runtime_traits;
   mod_polkadot_node_core_approval_voting_lib -> mod_frame_support_storage;
+  mod_polkadot_node_core_approval_voting_lib -> mod_frame_support_traits;
   mod_polkadot_node_core_approval_voting_lib -> mod_polkadot_core_primitives_lib;
   mod_polkadot_node_core_approval_voting_lib -> mod_polkadot_node_primitives_approval;
   mod_polkadot_node_core_approval_voting_lib -> mod_polkadot_node_subsystem_types_messages;
   mod_polkadot_node_core_approval_voting_lib -> mod_polkadot_omni_node_lib_common;
   mod_polkadot_node_core_approval_voting_lib -> mod_polkadot_primitives_test_helpers_lib;
   mod_polkadot_node_core_approval_voting_lib -> mod_polkadot_primitives_v9;
-  mod_polkadot_node_core_approval_voting_lib -> mod_sc_network_service;
+  mod_polkadot_node_core_approval_voting_lib -> mod_sc_consensus_epochs_lib;
   mod_polkadot_node_core_approval_voting_lib -> mod_sc_rpc_spec_v2_archive;
   mod_polkadot_node_core_approval_voting_lib -> mod_sc_state_db_lib;
   mod_polkadot_node_core_approval_voting_lib -> mod_sp_core_offchain;
   mod_polkadot_node_core_approval_voting_lib -> mod_staging_xcm_double_encoded;
   mod_polkadot_node_core_approval_voting_tests -> mod_frame_support_storage;
+  mod_polkadot_node_core_approval_voting_tests -> mod_frame_support_traits;
   mod_polkadot_node_core_approval_voting_tests -> mod_polkadot_core_primitives_lib;
   mod_polkadot_node_core_approval_voting_tests -> mod_polkadot_node_primitives_approval;
   mod_polkadot_node_core_approval_voting_tests -> mod_polkadot_node_subsystem_types_messages;
   mod_polkadot_node_core_approval_voting_tests -> mod_polkadot_omni_node_lib_common;
   mod_polkadot_node_core_approval_voting_tests -> mod_polkadot_primitives_test_helpers_lib;
   mod_polkadot_node_core_approval_voting_tests -> mod_polkadot_primitives_v9;
-  mod_polkadot_node_core_approval_voting_tests -> mod_sc_consensus_epochs_lib;
   mod_polkadot_node_core_approval_voting_tests -> mod_sc_network_service;
   mod_polkadot_node_core_approval_voting_tests -> mod_sc_state_db_lib;
   mod_polkadot_node_core_av_store_lib -> mod_frame_support_storage;
+  mod_polkadot_node_core_av_store_lib -> mod_pallet_uniques_asset_ops;
   mod_polkadot_node_core_av_store_lib -> mod_polkadot_core_primitives_lib;
   mod_polkadot_node_core_av_store_lib -> mod_polkadot_omni_node_lib_common;
   mod_polkadot_node_core_av_store_lib -> mod_polkadot_primitives_test_helpers_lib;
   mod_polkadot_node_core_av_store_lib -> mod_polkadot_primitives_v9;
-  mod_polkadot_node_core_av_store_lib -> mod_sc_consensus_epochs_lib;
   mod_polkadot_node_core_av_store_lib -> mod_sc_network_service;
   mod_polkadot_node_core_av_store_lib -> mod_sc_state_db_lib;
   mod_polkadot_node_core_av_store_lib -> mod_sp_core_offchain;
-  mod_polkadot_node_core_pvf_common_worker -> mod_pallet_transaction_payment_rpc_lib;
-  mod_polkadot_node_core_pvf_common_worker -> mod_sc_rpc_spec_v2_archive;
-  mod_polkadot_node_core_pvf_common_worker -> mod_sp_core_offchain;
   mod_polkadot_node_core_pvf_prepare -> mod_frame_support_procedural_lib;
   mod_polkadot_node_core_pvf_prepare -> mod_pallet_transaction_payment_rpc_lib;
-  mod_polkadot_node_core_pvf_prepare -> mod_polkadot_subsystem_bench_lib;
-  mod_polkadot_node_core_pvf_prepare -> mod_sc_network_service;
   mod_polkadot_node_core_pvf_prepare -> mod_sc_rpc_spec_v2_archive;
   mod_polkadot_node_core_pvf_prepare -> mod_sp_core_offchain;
-  mod_polkadot_node_primitives_approval -> mod_frame_support_storage;
+  mod_polkadot_node_core_pvf_prepare -> mod_sp_runtime_traits;
+  mod_polkadot_node_network_protocol_grid_topology -> mod_polkadot_primitives_v9;
+  mod_polkadot_node_network_protocol_grid_topology -> mod_sc_network_types_peer_id;
   mod_polkadot_node_primitives_approval -> mod_polkadot_primitives_v9;
   mod_polkadot_node_primitives_approval -> mod_sp_runtime_traits;
   mod_polkadot_node_subsystem_types_messages -> mod_bp_polkadot_core_parachains;
@@ -643,107 +602,109 @@ digraph architecture {
   mod_polkadot_node_subsystem_types_messages -> mod_sp_runtime_traits;
   mod_polkadot_omni_node_lib_common -> mod_sc_network_service;
   mod_polkadot_parachain_primitives_primitives -> mod_frame_support_storage;
-  mod_polkadot_parachain_primitives_primitives -> mod_sc_state_db_lib;
+  mod_polkadot_parachain_primitives_primitives -> mod_sp_core_lib;
   mod_polkadot_primitives_test_helpers_lib -> mod_bp_polkadot_core_parachains;
   mod_polkadot_primitives_test_helpers_lib -> mod_frame_support_storage;
+  mod_polkadot_primitives_test_helpers_lib -> mod_frame_support_traits;
   mod_polkadot_primitives_test_helpers_lib -> mod_polkadot_core_primitives_lib;
   mod_polkadot_primitives_test_helpers_lib -> mod_polkadot_parachain_primitives_primitives;
   mod_polkadot_primitives_test_helpers_lib -> mod_polkadot_primitives_v9;
   mod_polkadot_primitives_test_helpers_lib -> mod_sc_state_db_lib;
   mod_polkadot_primitives_v9 -> mod_bp_polkadot_core_parachains;
   mod_polkadot_primitives_v9 -> mod_frame_support_storage;
-  mod_polkadot_primitives_v9 -> mod_frame_support_traits;
   mod_polkadot_primitives_v9 -> mod_polkadot_core_primitives_lib;
   mod_polkadot_primitives_v9 -> mod_polkadot_node_primitives_approval;
   mod_polkadot_primitives_v9 -> mod_polkadot_omni_node_lib_common;
   mod_polkadot_primitives_v9 -> mod_polkadot_parachain_primitives_primitives;
   mod_polkadot_primitives_v9 -> mod_polkadot_statement_distribution_v2;
-  mod_polkadot_primitives_v9 -> mod_sc_state_db_lib;
-  mod_polkadot_primitives_v9 -> mod_staging_xcm_double_encoded;
+  mod_polkadot_primitives_v9 -> mod_sp_runtime_traits;
+  mod_polkadot_primitives_v9 -> mod_staging_xcm_v5;
+  mod_polkadot_runtime_parachains_disputes -> mod_pallet_uniques_asset_ops;
   mod_polkadot_runtime_parachains_disputes -> mod_polkadot_core_primitives_lib;
   mod_polkadot_runtime_parachains_disputes -> mod_polkadot_primitives_v9;
   mod_polkadot_runtime_parachains_disputes -> mod_sp_runtime_traits;
   mod_polkadot_runtime_parachains_paras -> mod_bp_polkadot_core_parachains;
-  mod_polkadot_runtime_parachains_paras -> mod_fork_tree_lib;
   mod_polkadot_runtime_parachains_paras -> mod_frame_benchmarking_utils;
   mod_polkadot_runtime_parachains_paras -> mod_frame_support_storage;
-  mod_polkadot_runtime_parachains_paras -> mod_pallet_collective_lib;
+  mod_polkadot_runtime_parachains_paras -> mod_pallet_ranked_collective_lib;
+  mod_polkadot_runtime_parachains_paras -> mod_polkadot_node_network_protocol_grid_topology;
   mod_polkadot_runtime_parachains_paras -> mod_polkadot_omni_node_lib_common;
   mod_polkadot_runtime_parachains_paras -> mod_polkadot_parachain_primitives_primitives;
   mod_polkadot_runtime_parachains_paras -> mod_polkadot_primitives_v9;
-  mod_polkadot_runtime_parachains_paras -> mod_sc_state_db_lib;
+  mod_polkadot_runtime_parachains_paras -> mod_sc_consensus_epochs_lib;
   mod_polkadot_runtime_parachains_paras -> mod_staging_xcm_double_encoded;
   mod_polkadot_runtime_parachains_paras_inherent -> mod_bp_polkadot_core_parachains;
-  mod_polkadot_runtime_parachains_paras_inherent -> mod_fork_tree_lib;
   mod_polkadot_runtime_parachains_paras_inherent -> mod_frame_benchmarking_utils;
   mod_polkadot_runtime_parachains_paras_inherent -> mod_frame_support_dispatch;
-  mod_polkadot_runtime_parachains_paras_inherent -> mod_pallet_collective_lib;
-  mod_polkadot_runtime_parachains_paras_inherent -> mod_pallet_election_provider_e2e_test_mock;
+  mod_polkadot_runtime_parachains_paras_inherent -> mod_pallet_ranked_collective_lib;
+  mod_polkadot_runtime_parachains_paras_inherent -> mod_polkadot_core_primitives_lib;
   mod_polkadot_runtime_parachains_paras_inherent -> mod_polkadot_node_primitives_approval;
+  mod_polkadot_runtime_parachains_paras_inherent -> mod_polkadot_primitives_test_helpers_lib;
   mod_polkadot_runtime_parachains_paras_inherent -> mod_polkadot_primitives_v9;
-  mod_polkadot_runtime_parachains_paras_inherent -> mod_sc_state_db_lib;
-  mod_polkadot_runtime_parachains_paras_inherent -> mod_sp_io_lib;
+  mod_polkadot_runtime_parachains_paras_inherent -> mod_sc_consensus_epochs_lib;
   mod_polkadot_runtime_parachains_paras_inherent -> mod_sp_weights_weight_v2;
   mod_polkadot_statement_distribution_v2 -> mod_bp_polkadot_core_parachains;
+  mod_polkadot_statement_distribution_v2 -> mod_fork_tree_lib;
   mod_polkadot_statement_distribution_v2 -> mod_frame_support_storage;
+  mod_polkadot_statement_distribution_v2 -> mod_frame_support_traits;
   mod_polkadot_statement_distribution_v2 -> mod_pallet_transaction_payment_rpc_lib;
+  mod_polkadot_statement_distribution_v2 -> mod_pallet_uniques_asset_ops;
   mod_polkadot_statement_distribution_v2 -> mod_polkadot_core_primitives_lib;
   mod_polkadot_statement_distribution_v2 -> mod_polkadot_node_subsystem_types_messages;
   mod_polkadot_statement_distribution_v2 -> mod_polkadot_primitives_test_helpers_lib;
   mod_polkadot_statement_distribution_v2 -> mod_polkadot_primitives_v9;
   mod_polkadot_statement_distribution_v2 -> mod_sc_network_types_peer_id;
   mod_polkadot_statement_distribution_v2 -> mod_sc_state_db_lib;
+  mod_polkadot_statement_distribution_v2 -> mod_sc_transaction_pool_fork_aware_txpool;
   mod_polkadot_statement_distribution_v2 -> mod_sp_runtime_traits;
-  mod_polkadot_statement_distribution_v2 -> mod_staging_xcm_v5;
+  mod_polkadot_statement_distribution_v2 -> mod_staging_xcm_double_encoded;
   mod_polkadot_subsystem_bench_lib -> mod_fork_tree_lib;
+  mod_polkadot_subsystem_bench_lib -> mod_sc_consensus_epochs_lib;
   mod_polkadot_subsystem_bench_lib -> mod_sc_network_types_peer_id;
   mod_polkadot_subsystem_bench_lib -> mod_staging_xcm_double_encoded;
-  mod_sc_cli_commands -> mod_pallet_revive_evm;
   mod_sc_cli_commands -> mod_pallet_transaction_payment_rpc_lib;
   mod_sc_cli_commands -> mod_sc_cli_params;
-  mod_sc_cli_commands -> mod_staging_xcm_v5;
+  mod_sc_cli_commands -> mod_staging_xcm_double_encoded;
   mod_sc_cli_params -> mod_pallet_transaction_payment_rpc_lib;
   mod_sc_consensus_grandpa_communication -> mod_frame_support_storage;
-  mod_sc_consensus_grandpa_communication -> mod_pallet_revive_evm;
-  mod_sc_consensus_grandpa_communication -> mod_sc_consensus_epochs_lib;
+  mod_sc_consensus_grandpa_communication -> mod_pallet_uniques_asset_ops;
   mod_sc_consensus_grandpa_communication -> mod_sc_network_service;
   mod_sc_consensus_grandpa_communication -> mod_sc_network_types_peer_id;
   mod_sc_consensus_grandpa_communication -> mod_sp_core_offchain;
   mod_sc_consensus_grandpa_communication -> mod_sp_runtime_generic;
-  mod_sc_consensus_grandpa_communication -> mod_sp_runtime_traits;
   mod_sc_consensus_grandpa_communication -> mod_staging_xcm_v5;
   mod_sc_network_litep2p -> mod_sc_network_service;
   mod_sc_network_litep2p -> mod_sc_network_types_peer_id;
   mod_sc_network_litep2p -> mod_sp_core_offchain;
-  mod_sc_network_protocol -> mod_sc_network_litep2p;
   mod_sc_network_protocol -> mod_sc_network_service;
   mod_sc_network_protocol -> mod_sc_network_types_peer_id;
   mod_sc_network_service -> mod_sc_network_protocol;
   mod_sc_network_service -> mod_sc_network_types_peer_id;
   mod_sc_network_sync_strategy -> mod_fork_tree_lib;
-  mod_sc_network_sync_strategy -> mod_pallet_revive_evm;
   mod_sc_network_sync_strategy -> mod_sc_network_types_peer_id;
   mod_sc_network_sync_strategy -> mod_sp_runtime_lib;
+  mod_sc_network_sync_strategy -> mod_sp_runtime_traits;
+  mod_sc_rpc_spec_v2_archive -> mod_pallet_revive_evm;
   mod_sc_rpc_spec_v2_archive -> mod_pallet_transaction_payment_rpc_lib;
   mod_sc_rpc_spec_v2_archive -> mod_sp_storage_lib;
   mod_sc_rpc_spec_v2_chain_head -> mod_sp_core_offchain;
+  mod_sc_rpc_spec_v2_chain_head -> mod_sp_runtime_generic;
   mod_sc_transaction_pool_fork_aware_txpool -> mod_sc_transaction_pool_graph;
   mod_sc_transaction_pool_graph -> mod_sp_core_offchain;
-  mod_sp_runtime_generic -> mod_frame_support_storage;
   mod_sp_runtime_generic -> mod_sp_runtime_lib;
   mod_sp_runtime_generic -> mod_sp_runtime_traits;
   mod_sp_runtime_lib -> mod_sp_runtime_traits;
-  mod_sp_runtime_traits -> mod_frame_support_storage;
-  mod_sp_state_machine_trie_backend_essence -> mod_sp_storage_lib;
   mod_sp_weights_weight_v2 -> mod_frame_support_dispatch;
   mod_staging_xcm_executor_traits -> mod_staging_xcm_v3;
   mod_staging_xcm_executor_traits -> mod_staging_xcm_v5;
+  mod_staging_xcm_v3 -> mod_frame_support_dispatch;
   mod_staging_xcm_v3 -> mod_sp_weights_weight_v2;
   mod_staging_xcm_v3 -> mod_staging_xcm_v4;
   mod_staging_xcm_v3 -> mod_staging_xcm_v5;
   mod_staging_xcm_v4 -> mod_sp_weights_weight_v2;
   mod_staging_xcm_v4 -> mod_staging_xcm_v3;
   mod_staging_xcm_v4 -> mod_staging_xcm_v5;
+  mod_staging_xcm_v5 -> mod_frame_support_dispatch;
   mod_staging_xcm_v5 -> mod_sp_weights_weight_v2;
   mod_staging_xcm_v5 -> mod_staging_xcm_v3;
   mod_staging_xcm_v5 -> mod_staging_xcm_v4;

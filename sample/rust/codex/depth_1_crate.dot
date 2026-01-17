@@ -27,7 +27,6 @@ digraph architecture {
   crate_codex_execpolicy[label="codex-execpolicy", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/execpolicy"];
   crate_codex_execpolicy_legacy[label="codex-execpolicy-legacy", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/execpolicy-legacy"];
   crate_codex_git[label="codex-git", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/utils/git"];
-  crate_codex_keyring_store[label="codex-keyring-store", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/keyring-store"];
   crate_codex_login[label="codex-login", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/login"];
   crate_codex_mcp_server[label="codex-mcp-server", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/mcp-server"];
   crate_codex_otel[label="codex-otel", path="/home/yibai/llmcc/sample/repos/codex/codex-rs/otel"];
@@ -45,6 +44,7 @@ digraph architecture {
   crate_codex_app_server -> crate_codex_core;
   crate_codex_app_server -> crate_codex_exec;
   crate_codex_app_server -> crate_codex_protocol;
+  crate_codex_app_server -> crate_mcp_types;
   crate_codex_app_server_protocol -> crate_codex_protocol;
   crate_codex_chatgpt -> crate_codex_core;
   crate_codex_cli -> crate_codex_common;
@@ -68,27 +68,22 @@ digraph architecture {
   crate_codex_core -> crate_codex_utils_absolute_path;
   crate_codex_core -> crate_mcp_types;
   crate_codex_exec -> crate_codex_protocol;
-  crate_codex_exec_server -> crate_codex_execpolicy_legacy;
-  crate_codex_login -> crate_codex_client;
+  crate_codex_exec_server -> crate_codex_execpolicy;
   crate_codex_login -> crate_codex_execpolicy;
   crate_codex_mcp_server -> crate_codex_app_server_protocol;
   crate_codex_mcp_server -> crate_codex_core;
   crate_codex_mcp_server -> crate_codex_protocol;
   crate_codex_mcp_server -> crate_mcp_types;
-  crate_codex_otel -> crate_codex_execpolicy_legacy;
-  crate_codex_protocol -> crate_codex_core;
-  crate_codex_rmcp_client -> crate_codex_keyring_store;
+  crate_codex_otel -> crate_codex_execpolicy;
   crate_codex_rmcp_client -> crate_mcp_types;
   crate_codex_tui -> crate_codex_app_server_protocol;
   crate_codex_tui -> crate_codex_core;
   crate_codex_tui -> crate_codex_exec;
-  crate_codex_tui -> crate_codex_execpolicy_legacy;
+  crate_codex_tui -> crate_codex_execpolicy;
   crate_codex_tui -> crate_codex_protocol;
-  crate_codex_tui -> crate_mcp_types;
   crate_codex_tui2 -> crate_codex_app_server_protocol;
   crate_codex_tui2 -> crate_codex_core;
   crate_codex_tui2 -> crate_codex_exec;
   crate_codex_tui2 -> crate_codex_protocol;
-  crate_codex_tui2 -> crate_mcp_types;
   crate_codex_windows_sandbox -> crate_codex_protocol;
 }

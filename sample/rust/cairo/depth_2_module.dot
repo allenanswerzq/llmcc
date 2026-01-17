@@ -24,7 +24,6 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_cairo_lang_casm_ap_change[label="ap_change", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-casm/src"];
     mod_cairo_lang_casm_assembler[label="assembler", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-casm/src"];
     mod_cairo_lang_casm_builder[label="builder", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-casm/src"];
     mod_cairo_lang_casm_hints[label="hints", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-casm/src/hints"];
@@ -357,6 +356,7 @@ digraph architecture {
 
     mod_cairo_lang_syntax_codegen_cairo_spec[label="cairo_spec", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax-codegen/src"];
     mod_cairo_lang_syntax_codegen_generator[label="generator", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax-codegen/src"];
+    mod_cairo_lang_syntax_codegen_spec[label="spec", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-syntax-codegen/src"];
   }
 
   subgraph cluster_cairo_lang_test_plugin {
@@ -393,7 +393,14 @@ digraph architecture {
     mod_cairo_lang_utils_ordered_hash_map[label="ordered_hash_map", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-utils/src"];
     mod_cairo_lang_utils_ordered_hash_set[label="ordered_hash_set", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-utils/src"];
     mod_cairo_lang_utils_unordered_hash_map[label="unordered_hash_map", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-utils/src"];
-    mod_cairo_lang_utils_unordered_hash_set[label="unordered_hash_set", path="/home/yibai/llmcc/sample/repos/cairo/crates/cairo-lang-utils/src"];
+  }
+
+  subgraph cluster_ensure_no_std {
+    label="ensure-no_std";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_ensure_no_std_main[label="main", path="/home/yibai/llmcc/sample/repos/cairo/ensure-no_std/src"];
   }
 
   subgraph cluster_starknet_sierra_upgrade_validate {
@@ -430,6 +437,7 @@ digraph architecture {
   mod_cairo_lang_doc_db -> mod_cairo_lang_doc_documentable_item;
   mod_cairo_lang_doc_documentable_formatter -> mod_cairo_lang_semantic_items;
   mod_cairo_lang_doc_helpers -> mod_cairo_lang_doc_documentable_item;
+  mod_cairo_lang_doc_helpers -> mod_cairo_lang_lowering_objects;
   mod_cairo_lang_doc_helpers -> mod_cairo_lang_semantic_items;
   mod_cairo_lang_doc_helpers -> mod_cairo_lang_syntax_node;
   mod_cairo_lang_doc_signature_data -> mod_cairo_lang_doc_signature_errors;
@@ -438,8 +446,8 @@ digraph architecture {
   mod_cairo_lang_filesystem_db -> mod_cairo_lang_filesystem_cfg;
   mod_cairo_lang_filesystem_db -> mod_cairo_lang_filesystem_ids;
   mod_cairo_lang_filesystem_db -> mod_cairo_lang_filesystem_span;
-  mod_cairo_lang_filesystem_db -> mod_cairo_lang_syntax_node;
   mod_cairo_lang_filesystem_db -> mod_cairo_lang_utils_ordered_hash_map;
+  mod_cairo_lang_filesystem_db -> mod_cairo_lang_utils_unordered_hash_map;
   mod_cairo_lang_filesystem_ids -> mod_cairo_lang_filesystem_span;
   mod_cairo_lang_filesystem_location_marks -> mod_cairo_lang_filesystem_ids;
   mod_cairo_lang_formatter_formatter_impl -> mod_cairo_lang_syntax_node;
@@ -452,15 +460,14 @@ digraph architecture {
   mod_cairo_lang_lowering_db -> mod_cairo_lang_diagnostics_diagnostics;
   mod_cairo_lang_lowering_db -> mod_cairo_lang_lowering_diagnostic;
   mod_cairo_lang_lowering_db -> mod_cairo_lang_lowering_objects;
-  mod_cairo_lang_lowering_db -> mod_cairo_lang_semantic_items;
-  mod_cairo_lang_lowering_db -> mod_cairo_lang_sierra_program;
+  mod_cairo_lang_lowering_db -> mod_cairo_lang_utils_unordered_hash_map;
   mod_cairo_lang_lowering_destructs -> mod_cairo_lang_lowering_borrow_check;
   mod_cairo_lang_lowering_destructs -> mod_cairo_lang_lowering_objects;
   mod_cairo_lang_lowering_graph_algorithms -> mod_cairo_lang_lowering_objects;
   mod_cairo_lang_lowering_graph_algorithms -> mod_cairo_lang_utils_ordered_hash_set;
   mod_cairo_lang_lowering_ids -> mod_cairo_lang_debug_debug;
   mod_cairo_lang_lowering_implicits -> mod_cairo_lang_lowering_objects;
-  mod_cairo_lang_lowering_implicits -> mod_cairo_lang_utils_unordered_hash_map;
+  mod_cairo_lang_lowering_implicits -> mod_cairo_lang_syntax_node;
   mod_cairo_lang_lowering_inline -> mod_cairo_lang_lowering_objects;
   mod_cairo_lang_lowering_lower -> mod_cairo_lang_diagnostics_diagnostics;
   mod_cairo_lang_lowering_lower -> mod_cairo_lang_lowering_ids;
@@ -470,12 +477,13 @@ digraph architecture {
   mod_cairo_lang_lowering_lower -> mod_cairo_lang_semantic_items;
   mod_cairo_lang_lowering_lower -> mod_cairo_lang_semantic_types;
   mod_cairo_lang_lowering_lower -> mod_cairo_lang_semantic_usage;
-  mod_cairo_lang_lowering_lower -> mod_cairo_lang_sierra_program;
+  mod_cairo_lang_lowering_lower -> mod_cairo_lang_starknet_aliased;
   mod_cairo_lang_lowering_lower -> mod_cairo_lang_syntax_node;
   mod_cairo_lang_lowering_lower -> mod_cairo_lang_test_utils_parse_test_file;
   mod_cairo_lang_lowering_lower -> mod_cairo_lang_utils_bigint;
   mod_cairo_lang_lowering_lower -> mod_cairo_lang_utils_ordered_hash_map;
   mod_cairo_lang_lowering_lower -> mod_cairo_lang_utils_unordered_hash_map;
+  mod_cairo_lang_lowering_objects -> mod_cairo_lang_debug_debug;
   mod_cairo_lang_lowering_objects -> mod_cairo_lang_utils_ordered_hash_map;
   mod_cairo_lang_lowering_optimizations -> mod_cairo_lang_filesystem_flag;
   mod_cairo_lang_lowering_optimizations -> mod_cairo_lang_lowering_borrow_check;
@@ -484,6 +492,7 @@ digraph architecture {
   mod_cairo_lang_lowering_optimizations -> mod_cairo_lang_semantic_items;
   mod_cairo_lang_lowering_optimizations -> mod_cairo_lang_semantic_types;
   mod_cairo_lang_lowering_optimizations -> mod_cairo_lang_sierra_program;
+  mod_cairo_lang_lowering_optimizations -> mod_cairo_lang_syntax_node;
   mod_cairo_lang_lowering_optimizations -> mod_cairo_lang_test_utils_parse_test_file;
   mod_cairo_lang_lowering_optimizations -> mod_cairo_lang_utils_ordered_hash_map;
   mod_cairo_lang_lowering_optimizations -> mod_cairo_lang_utils_ordered_hash_set;
@@ -505,8 +514,9 @@ digraph architecture {
   mod_cairo_lang_parser_validation -> mod_cairo_lang_parser_diagnostic;
   mod_cairo_lang_plugins_plugins -> mod_cairo_lang_defs_plugin;
   mod_cairo_lang_plugins_plugins -> mod_cairo_lang_filesystem_cfg;
+  mod_cairo_lang_plugins_plugins -> mod_cairo_lang_lowering_lower;
   mod_cairo_lang_plugins_plugins -> mod_cairo_lang_sierra_program;
-  mod_cairo_lang_plugins_plugins -> mod_cairo_lang_starknet_aliased;
+  mod_cairo_lang_plugins_plugins -> mod_cairo_lang_sierra_to_casm_invocations;
   mod_cairo_lang_plugins_plugins -> mod_cairo_lang_syntax_attribute;
   mod_cairo_lang_plugins_plugins -> mod_cairo_lang_syntax_node;
   mod_cairo_lang_plugins_test -> mod_cairo_lang_test_utils_parse_test_file;
@@ -514,13 +524,12 @@ digraph architecture {
   mod_cairo_lang_runnable_utils_builder -> mod_cairo_lang_sierra_to_casm_metadata;
   mod_cairo_lang_runner_casm_run -> mod_cairo_lang_casm_hints;
   mod_cairo_lang_runner_casm_run -> mod_cairo_lang_casm_operand;
-  mod_cairo_lang_runner_casm_run -> mod_cairo_lang_filesystem_span;
   mod_cairo_lang_runner_casm_run -> mod_cairo_lang_runner_lib;
   mod_cairo_lang_runner_casm_run -> mod_cairo_lang_syntax_node;
   mod_cairo_lang_runner_casm_run -> mod_cairo_lang_utils_bigint;
-  mod_cairo_lang_runner_casm_run -> mod_cairo_lang_utils_unordered_hash_map;
   mod_cairo_lang_runner_profiling -> mod_cairo_lang_sierra_program;
   mod_cairo_lang_runner_profiling -> mod_cairo_lang_utils_ordered_hash_map;
+  mod_cairo_lang_runner_profiling -> mod_cairo_lang_utils_unordered_hash_map;
   mod_cairo_lang_semantic_cache -> mod_cairo_lang_defs_cache;
   mod_cairo_lang_semantic_cache -> mod_cairo_lang_utils_ordered_hash_map;
   mod_cairo_lang_semantic_corelib -> mod_cairo_lang_defs_ids;
@@ -549,7 +558,6 @@ digraph architecture {
   mod_cairo_lang_semantic_expr -> mod_cairo_lang_semantic_types;
   mod_cairo_lang_semantic_expr -> mod_cairo_lang_sierra_labeled_statement;
   mod_cairo_lang_semantic_expr -> mod_cairo_lang_sierra_program;
-  mod_cairo_lang_semantic_expr -> mod_cairo_lang_starknet_aliased;
   mod_cairo_lang_semantic_expr -> mod_cairo_lang_starknet_classes_abi;
   mod_cairo_lang_semantic_expr -> mod_cairo_lang_syntax_node;
   mod_cairo_lang_semantic_expr -> mod_cairo_lang_utils_ordered_hash_map;
@@ -558,6 +566,7 @@ digraph architecture {
   mod_cairo_lang_semantic_items -> mod_cairo_lang_debug_debug;
   mod_cairo_lang_semantic_items -> mod_cairo_lang_defs_ids;
   mod_cairo_lang_semantic_items -> mod_cairo_lang_diagnostics_diagnostics;
+  mod_cairo_lang_semantic_items -> mod_cairo_lang_filesystem_span;
   mod_cairo_lang_semantic_items -> mod_cairo_lang_semantic_corelib;
   mod_cairo_lang_semantic_items -> mod_cairo_lang_semantic_diagnostic;
   mod_cairo_lang_semantic_items -> mod_cairo_lang_semantic_expr;
@@ -565,7 +574,6 @@ digraph architecture {
   mod_cairo_lang_semantic_items -> mod_cairo_lang_semantic_semantic;
   mod_cairo_lang_semantic_items -> mod_cairo_lang_semantic_types;
   mod_cairo_lang_semantic_items -> mod_cairo_lang_sierra_program;
-  mod_cairo_lang_semantic_items -> mod_cairo_lang_starknet_aliased;
   mod_cairo_lang_semantic_items -> mod_cairo_lang_starknet_classes_abi;
   mod_cairo_lang_semantic_items -> mod_cairo_lang_syntax_attribute;
   mod_cairo_lang_semantic_items -> mod_cairo_lang_syntax_node;
@@ -574,9 +582,7 @@ digraph architecture {
   mod_cairo_lang_semantic_items -> mod_cairo_lang_utils_ordered_hash_set;
   mod_cairo_lang_semantic_items -> mod_cairo_lang_utils_unordered_hash_map;
   mod_cairo_lang_semantic_lsp_helpers -> mod_cairo_lang_defs_ids;
-  mod_cairo_lang_semantic_lsp_helpers -> mod_cairo_lang_lowering_objects;
   mod_cairo_lang_semantic_lsp_helpers -> mod_cairo_lang_semantic_items;
-  mod_cairo_lang_semantic_lsp_helpers -> mod_cairo_lang_syntax_node;
   mod_cairo_lang_semantic_lsp_helpers -> mod_cairo_lang_utils_ordered_hash_map;
   mod_cairo_lang_semantic_path -> mod_cairo_lang_defs_ids;
   mod_cairo_lang_semantic_resolve -> mod_cairo_lang_defs_ids;
@@ -614,14 +620,13 @@ digraph architecture {
   mod_cairo_lang_sierra_gas_generate_equations -> mod_cairo_lang_sierra_program;
   mod_cairo_lang_sierra_gas_lib -> mod_cairo_lang_sierra_gas_gas_info;
   mod_cairo_lang_sierra_gas_lib -> mod_cairo_lang_sierra_program;
-  mod_cairo_lang_sierra_gas_lib -> mod_cairo_lang_sierra_program_registry;
   mod_cairo_lang_sierra_gas_lib -> mod_cairo_lang_sierra_type_size_lib;
   mod_cairo_lang_sierra_gas_lib -> mod_cairo_lang_utils_ordered_hash_map;
-  mod_cairo_lang_sierra_gas_objects -> mod_cairo_lang_sierra_gas_compute_costs;
   mod_cairo_lang_sierra_generator_ap_tracking -> mod_cairo_lang_utils_ordered_hash_set;
   mod_cairo_lang_sierra_generator_block_generator -> mod_cairo_lang_lowering_objects;
   mod_cairo_lang_sierra_generator_block_generator -> mod_cairo_lang_sierra_generator_expr_generator_context;
   mod_cairo_lang_sierra_generator_block_generator -> mod_cairo_lang_sierra_generator_lifetime;
+  mod_cairo_lang_sierra_generator_block_generator -> mod_cairo_lang_syntax_node;
   mod_cairo_lang_sierra_generator_db -> mod_cairo_lang_semantic_types;
   mod_cairo_lang_sierra_generator_db -> mod_cairo_lang_sierra_program;
   mod_cairo_lang_sierra_generator_debug_info -> mod_cairo_lang_defs_diagnostic_utils;
@@ -635,21 +640,18 @@ digraph architecture {
   mod_cairo_lang_sierra_generator_program_generator -> mod_cairo_lang_semantic_types;
   mod_cairo_lang_sierra_generator_program_generator -> mod_cairo_lang_sierra_generator_pre_sierra;
   mod_cairo_lang_sierra_generator_program_generator -> mod_cairo_lang_sierra_program;
-  mod_cairo_lang_sierra_generator_program_generator -> mod_cairo_lang_utils_unordered_hash_set;
   mod_cairo_lang_sierra_generator_store_variables -> mod_cairo_lang_sierra_extensions;
   mod_cairo_lang_sierra_generator_store_variables -> mod_cairo_lang_sierra_generator_pre_sierra;
   mod_cairo_lang_sierra_generator_store_variables -> mod_cairo_lang_utils_ordered_hash_map;
-  mod_cairo_lang_sierra_generator_test_utils -> mod_cairo_lang_syntax_node;
+  mod_cairo_lang_sierra_generator_test_utils -> mod_cairo_lang_sierra_program;
   mod_cairo_lang_sierra_generator_utils -> mod_cairo_lang_semantic_types;
   mod_cairo_lang_sierra_int -> mod_cairo_lang_sierra_extensions;
   mod_cairo_lang_sierra_labeled_statement -> mod_cairo_lang_sierra_program;
   mod_cairo_lang_sierra_program -> mod_cairo_lang_semantic_types;
-  mod_cairo_lang_sierra_program -> mod_cairo_lang_starknet_classes_felt252_serde;
   mod_cairo_lang_sierra_program_registry -> mod_cairo_lang_sierra_extensions;
   mod_cairo_lang_sierra_program_registry -> mod_cairo_lang_sierra_program;
   mod_cairo_lang_sierra_simulation -> mod_cairo_lang_sierra_extensions;
   mod_cairo_lang_sierra_simulation -> mod_cairo_lang_sierra_program;
-  mod_cairo_lang_sierra_starknet -> mod_cairo_lang_semantic_expr;
   mod_cairo_lang_sierra_starknet -> mod_cairo_lang_semantic_types;
   mod_cairo_lang_sierra_starknet -> mod_cairo_lang_sierra_extensions;
   mod_cairo_lang_sierra_test_utils -> mod_cairo_lang_sierra_program;
@@ -657,26 +659,26 @@ digraph architecture {
   mod_cairo_lang_sierra_to_casm_annotations -> mod_cairo_lang_sierra_to_casm_references;
   mod_cairo_lang_sierra_to_casm_compiler -> mod_cairo_lang_sierra_program;
   mod_cairo_lang_sierra_to_casm_compiler -> mod_cairo_lang_sierra_to_casm_references;
-  mod_cairo_lang_sierra_to_casm_int -> mod_cairo_lang_sierra_int;
   mod_cairo_lang_sierra_to_casm_int -> mod_cairo_lang_sierra_to_casm_invocations;
   mod_cairo_lang_sierra_to_casm_int -> mod_cairo_lang_utils_bigint;
-  mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_casm_ap_change;
   mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_casm_builder;
   mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_casm_instructions;
   mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_casm_operand;
-  mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_filesystem_span;
   mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_semantic_types;
+  mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_sierra_ap_change_generate_equations;
   mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_sierra_extensions;
   mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_sierra_gas_cost_expr;
   mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_sierra_program;
   mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_sierra_to_casm_environment;
   mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_sierra_to_casm_references;
   mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_sierra_to_casm_relocations;
+  mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_starknet_aliased;
   mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_starknet_classes_abi;
   mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_syntax_node;
   mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_utils_bigint;
-  mod_cairo_lang_sierra_to_casm_invocations -> mod_cairo_lang_utils_unordered_hash_map;
+  mod_cairo_lang_sierra_to_casm_invocations -> mod_ensure_no_std_main;
   mod_cairo_lang_sierra_to_casm_references -> mod_cairo_lang_semantic_types;
+  mod_cairo_lang_sierra_to_casm_references -> mod_cairo_lang_sierra_program;
   mod_cairo_lang_sierra_to_casm_starknet -> mod_cairo_lang_sierra_to_casm_invocations;
   mod_cairo_lang_sierra_type_size_lib -> mod_cairo_lang_sierra_program_registry;
   mod_cairo_lang_starknet_analyzer -> mod_cairo_lang_defs_plugin;
@@ -699,23 +701,21 @@ digraph architecture {
   mod_cairo_lang_starknet_derive -> mod_cairo_lang_defs_patcher;
   mod_cairo_lang_starknet_derive -> mod_cairo_lang_defs_plugin;
   mod_cairo_lang_starknet_derive -> mod_cairo_lang_starknet_classes_abi;
-  mod_cairo_lang_starknet_derive -> mod_cairo_lang_syntax_node;
   mod_cairo_lang_starknet_inline_macros -> mod_cairo_lang_defs_plugin;
   mod_cairo_lang_starknet_plugin -> mod_cairo_lang_defs_patcher;
   mod_cairo_lang_starknet_plugin -> mod_cairo_lang_defs_plugin;
   mod_cairo_lang_starknet_plugin -> mod_cairo_lang_sierra_program;
   mod_cairo_lang_starknet_plugin -> mod_cairo_lang_starknet_starknet_module;
   mod_cairo_lang_starknet_plugin -> mod_cairo_lang_syntax_attribute;
-  mod_cairo_lang_starknet_plugin -> mod_cairo_lang_syntax_node;
   mod_cairo_lang_starknet_starknet_module -> mod_cairo_lang_defs_patcher;
   mod_cairo_lang_starknet_starknet_module -> mod_cairo_lang_defs_plugin;
   mod_cairo_lang_starknet_starknet_module -> mod_cairo_lang_starknet_plugin;
   mod_cairo_lang_starknet_starknet_module -> mod_cairo_lang_syntax_node;
   mod_cairo_lang_syntax_attribute -> mod_cairo_lang_syntax_node;
   mod_cairo_lang_syntax_codegen_generator -> mod_cairo_lang_syntax_codegen_cairo_spec;
+  mod_cairo_lang_syntax_codegen_generator -> mod_cairo_lang_syntax_codegen_spec;
   mod_cairo_lang_syntax_node -> mod_cairo_lang_filesystem_span;
   mod_cairo_lang_syntax_node -> mod_cairo_lang_primitive_token_lib;
-  mod_cairo_lang_syntax_node -> mod_cairo_lang_semantic_expr;
   mod_cairo_lang_test_runner_lib -> mod_cairo_lang_runner_lib;
   mod_cairo_lang_test_runner_lib -> mod_cairo_lang_test_plugin_lib;
   mod_cairo_lang_test_utils_parse_test_file -> mod_cairo_lang_utils_ordered_hash_map;
@@ -725,7 +725,6 @@ digraph architecture {
   mod_cairo_lang_utils_ordered_hash_map -> mod_cairo_lang_semantic_cache;
   mod_cairo_lang_utils_ordered_hash_map -> mod_cairo_lang_semantic_expr;
   mod_cairo_lang_utils_ordered_hash_map -> mod_cairo_lang_semantic_items;
-  mod_cairo_lang_utils_ordered_hash_map -> mod_cairo_lang_sierra_to_casm_references;
   mod_cairo_lang_utils_unordered_hash_map -> mod_cairo_lang_lowering_lower;
   mod_cairo_lang_utils_unordered_hash_map -> mod_cairo_lang_lowering_optimizations;
   mod_starknet_sierra_upgrade_validate_main -> mod_cairo_lang_utils_bigint;

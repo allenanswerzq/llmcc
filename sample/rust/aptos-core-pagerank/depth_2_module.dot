@@ -105,15 +105,9 @@ digraph architecture {
 
     mod_aptos_crypto_blstrs[label="blstrs", path="/home/yibai/llmcc/sample/repos/aptos-core/crates/aptos-crypto/src/blstrs"];
     mod_aptos_crypto_ed25519[label="ed25519", path="/home/yibai/llmcc/sample/repos/aptos-core/crates/aptos-crypto/src/ed25519"];
+    mod_aptos_crypto_hash[label="hash", path="/home/yibai/llmcc/sample/repos/aptos-core/crates/aptos-crypto/src"];
+    mod_aptos_crypto_traits[label="traits", path="/home/yibai/llmcc/sample/repos/aptos-core/crates/aptos-crypto/src/traits"];
     mod_aptos_crypto_unit_tests[label="unit_tests", path="/home/yibai/llmcc/sample/repos/aptos-core/crates/aptos-crypto/src/unit_tests"];
-  }
-
-  subgraph cluster_aptos_data_client {
-    label="aptos-data-client";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_aptos_data_client_interface[label="interface", path="/home/yibai/llmcc/sample/repos/aptos-core/state-sync/aptos-data-client/src"];
   }
 
   subgraph cluster_aptos_db {
@@ -186,14 +180,6 @@ digraph architecture {
     mod_aptos_indexer_grpc_fullnode_convert[label="convert", path="/home/yibai/llmcc/sample/repos/aptos-core/ecosystem/indexer-grpc/indexer-grpc-fullnode/src"];
   }
 
-  subgraph cluster_aptos_logger {
-    label="aptos-logger";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_aptos_logger_kv[label="kv", path="/home/yibai/llmcc/sample/repos/aptos-core/crates/aptos-logger/src"];
-  }
-
   subgraph cluster_aptos_mempool {
     label="aptos-mempool";
     style=rounded;
@@ -227,15 +213,6 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_aptos_release_builder_components[label="components", path="/home/yibai/llmcc/sample/repos/aptos-core/aptos-move/aptos-release-builder/src/components"];
-  }
-
-  subgraph cluster_aptos_rest_client {
-    label="aptos-rest-client";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_aptos_rest_client_response[label="response", path="/home/yibai/llmcc/sample/repos/aptos-core/crates/aptos-rest-client/src"];
-    mod_aptos_rest_client_state[label="state", path="/home/yibai/llmcc/sample/repos/aptos-core/crates/aptos-rest-client/src"];
   }
 
   subgraph cluster_aptos_rosetta {
@@ -299,6 +276,7 @@ digraph architecture {
     mod_aptos_types_account_config[label="account_config", path="/home/yibai/llmcc/sample/repos/aptos-core/types/src/account_config"];
     mod_aptos_types_block_executor[label="block_executor", path="/home/yibai/llmcc/sample/repos/aptos-core/types/src/block_executor"];
     mod_aptos_types_chain_id[label="chain_id", path="/home/yibai/llmcc/sample/repos/aptos-core/types/src"];
+    mod_aptos_types_contract_event[label="contract_event", path="/home/yibai/llmcc/sample/repos/aptos-core/types/src"];
     mod_aptos_types_keyless[label="keyless", path="/home/yibai/llmcc/sample/repos/aptos-core/types/src/keyless"];
     mod_aptos_types_ledger_info[label="ledger_info", path="/home/yibai/llmcc/sample/repos/aptos-core/types/src"];
     mod_aptos_types_network_address[label="network_address", path="/home/yibai/llmcc/sample/repos/aptos-core/types/src/network_address"];
@@ -342,25 +320,24 @@ digraph architecture {
   }
 
 
+  mod_aptos_api_types_move_types -> mod_aptos_storage_service_types_responses;
   mod_aptos_api_types_transaction -> mod_aptos_api_types_hash;
   mod_aptos_api_types_transaction -> mod_aptos_api_types_move_types;
   mod_aptos_api_types_transaction -> mod_aptos_protos_pb;
   mod_aptos_api_types_transaction -> mod_aptos_types_transaction;
-  mod_aptos_backup_cli_backup_types -> mod_aptos_api_types_hash;
   mod_aptos_backup_cli_backup_types -> mod_aptos_api_types_transaction;
   mod_aptos_backup_cli_backup_types -> mod_aptos_backup_cli_storage;
   mod_aptos_backup_cli_backup_types -> mod_aptos_backup_cli_utils;
+  mod_aptos_backup_cli_backup_types -> mod_aptos_crypto_hash;
   mod_aptos_backup_cli_backup_types -> mod_aptos_forge_interface;
   mod_aptos_backup_cli_backup_types -> mod_aptos_rosetta_types;
-  mod_aptos_backup_cli_backup_types -> mod_aptos_types_access_path;
   mod_aptos_backup_cli_backup_types -> mod_aptos_types_ledger_info;
-  mod_aptos_backup_cli_storage -> mod_aptos_backup_cli_utils;
+  mod_aptos_backup_cli_backup_types -> mod_aptos_types_transaction;
   mod_aptos_backup_cli_storage -> mod_aptos_types_transaction;
   mod_aptos_backup_cli_utils -> mod_aptos_db_db;
+  mod_aptos_backup_cli_utils -> mod_aptos_rosetta_types;
   mod_aptos_backup_cli_utils -> mod_aptos_types_state_store;
   mod_aptos_block_executor_combinatorial_tests -> mod_aptos_comparison_testing_lib;
-  mod_aptos_block_executor_combinatorial_tests -> mod_aptos_data_client_interface;
-  mod_aptos_block_executor_combinatorial_tests -> mod_aptos_rest_client_response;
   mod_aptos_block_executor_combinatorial_tests -> mod_aptos_transaction_emitter_lib_cluster;
   mod_aptos_block_executor_combinatorial_tests -> mod_aptos_types_state_store;
   mod_aptos_block_executor_combinatorial_tests -> mod_aptos_types_transaction;
@@ -368,10 +345,11 @@ digraph architecture {
   mod_aptos_cached_packages_aptos_framework_sdk_builder -> mod_aptos_api_types_transaction;
   mod_aptos_cached_packages_aptos_framework_sdk_builder -> mod_aptos_transaction_emitter_lib_cluster;
   mod_aptos_cached_packages_aptos_framework_sdk_builder -> mod_aptos_types_account_address;
+  mod_aptos_cached_packages_aptos_framework_sdk_builder -> mod_aptos_types_transaction;
   mod_aptos_common -> mod_aptos_api_types_hash;
   mod_aptos_common -> mod_aptos_api_types_transaction;
   mod_aptos_common -> mod_aptos_crypto_ed25519;
-  mod_aptos_common -> mod_aptos_data_client_interface;
+  mod_aptos_common -> mod_aptos_crypto_hash;
   mod_aptos_common -> mod_aptos_genesis;
   mod_aptos_common -> mod_aptos_move_tool;
   mod_aptos_common -> mod_aptos_protos_pb;
@@ -380,7 +358,6 @@ digraph architecture {
   mod_aptos_common -> mod_aptos_types_transaction;
   mod_aptos_comparison_testing_lib -> mod_aptos_transaction_emitter_lib_cluster;
   mod_aptos_comparison_testing_lib -> mod_aptos_types_access_path;
-  mod_aptos_config_config -> mod_aptos_logger_kv;
   mod_aptos_config_config -> mod_aptos_types_access_path;
   mod_aptos_config_config -> mod_aptos_types_account_address;
   mod_aptos_config_config -> mod_aptos_types_chain_id;
@@ -393,19 +370,16 @@ digraph architecture {
   mod_aptos_consensus_consensus_observer -> mod_aptos_consensus_util;
   mod_aptos_consensus_consensus_observer -> mod_aptos_network_application;
   mod_aptos_consensus_consensus_observer -> mod_aptos_network_protocols;
-  mod_aptos_consensus_consensus_observer -> mod_aptos_rest_client_response;
   mod_aptos_consensus_consensus_observer -> mod_aptos_storage_interface_lib;
   mod_aptos_consensus_consensus_observer -> mod_aptos_transaction_emitter_lib_cluster;
   mod_aptos_consensus_consensus_observer -> mod_aptos_types_ledger_info;
   mod_aptos_consensus_consensus_observer -> mod_aptos_types_on_chain_config;
   mod_aptos_consensus_consensus_observer -> mod_aptos_types_transaction;
-  mod_aptos_consensus_dag -> mod_aptos_api_types_hash;
   mod_aptos_consensus_dag -> mod_aptos_config_config;
   mod_aptos_consensus_dag -> mod_aptos_consensus_liveness;
   mod_aptos_consensus_dag -> mod_aptos_consensus_pipeline;
   mod_aptos_consensus_dag -> mod_aptos_consensus_util;
   mod_aptos_consensus_dag -> mod_aptos_forge_github;
-  mod_aptos_consensus_dag -> mod_aptos_storage_interface_lib;
   mod_aptos_consensus_dag -> mod_aptos_types_ledger_info;
   mod_aptos_consensus_dag -> mod_aptos_types_on_chain_config;
   mod_aptos_consensus_liveness -> mod_aptos_config_config;
@@ -414,43 +388,38 @@ digraph architecture {
   mod_aptos_consensus_liveness -> mod_aptos_forge_github;
   mod_aptos_consensus_liveness -> mod_aptos_storage_interface_lib;
   mod_aptos_consensus_liveness -> mod_aptos_transaction_emitter_lib_cluster;
-  mod_aptos_consensus_liveness -> mod_aptos_types_transaction;
   mod_aptos_consensus_pipeline -> mod_aptos_api_types_hash;
   mod_aptos_consensus_pipeline -> mod_aptos_config_config;
   mod_aptos_consensus_pipeline -> mod_aptos_consensus_consensus_observer;
-  mod_aptos_consensus_pipeline -> mod_aptos_consensus_rand;
+  mod_aptos_consensus_pipeline -> mod_aptos_crypto_hash;
   mod_aptos_consensus_pipeline -> mod_aptos_forge_github;
   mod_aptos_consensus_pipeline -> mod_aptos_network_protocols;
   mod_aptos_consensus_pipeline -> mod_aptos_transaction_emitter_lib_cluster;
   mod_aptos_consensus_pipeline -> mod_aptos_types_account_address;
   mod_aptos_consensus_pipeline -> mod_aptos_types_ledger_info;
-  mod_aptos_consensus_quorum_store -> mod_aptos_api_types_hash;
+  mod_aptos_consensus_pipeline -> mod_aptos_types_transaction;
   mod_aptos_consensus_quorum_store -> mod_aptos_config_config;
   mod_aptos_consensus_quorum_store -> mod_aptos_consensus_dag;
   mod_aptos_consensus_quorum_store -> mod_aptos_consensus_types_proof_of_store;
+  mod_aptos_consensus_quorum_store -> mod_aptos_crypto_hash;
   mod_aptos_consensus_quorum_store -> mod_aptos_forge_github;
-  mod_aptos_consensus_quorum_store -> mod_aptos_logger_kv;
-  mod_aptos_consensus_quorum_store -> mod_aptos_storage_interface_lib;
   mod_aptos_consensus_quorum_store -> mod_aptos_types_ledger_info;
   mod_aptos_consensus_rand -> mod_aptos_consensus_pipeline;
   mod_aptos_consensus_rand -> mod_aptos_forge_github;
-  mod_aptos_consensus_rand -> mod_aptos_logger_kv;
   mod_aptos_consensus_rand -> mod_aptos_network_protocols;
   mod_aptos_consensus_types_proof_of_store -> mod_aptos_consensus_quorum_store;
   mod_aptos_consensus_util -> mod_aptos_api_types_hash;
   mod_aptos_consensus_util -> mod_aptos_consensus_types_proof_of_store;
   mod_aptos_consensus_util -> mod_aptos_types_on_chain_config;
   mod_aptos_consensus_util -> mod_aptos_types_transaction;
-  mod_aptos_crypto_blstrs -> mod_aptos_rest_client_response;
+  mod_aptos_crypto_blstrs -> mod_aptos_crypto_traits;
   mod_aptos_crypto_blstrs -> mod_aptos_types_transaction;
+  mod_aptos_crypto_ed25519 -> mod_aptos_crypto_traits;
   mod_aptos_crypto_unit_tests -> mod_aptos_crypto_ed25519;
-  mod_aptos_crypto_unit_tests -> mod_aptos_rest_client_response;
   mod_aptos_crypto_unit_tests -> mod_aptos_types_transaction;
-  mod_aptos_data_client_interface -> mod_aptos_types_transaction;
-  mod_aptos_db_db -> mod_aptos_api_types_hash;
-  mod_aptos_db_db -> mod_aptos_data_client_interface;
-  mod_aptos_db_db -> mod_aptos_indexer_models;
-  mod_aptos_db_db -> mod_aptos_logger_kv;
+  mod_aptos_db_db -> mod_aptos_crypto_hash;
+  mod_aptos_db_db -> mod_aptos_forge_interface;
+  mod_aptos_db_db -> mod_aptos_protos_pb;
   mod_aptos_db_db -> mod_aptos_rosetta_types;
   mod_aptos_db_db -> mod_aptos_scratchpad_sparse_merkle;
   mod_aptos_db_db -> mod_aptos_storage_interface_lib;
@@ -459,49 +428,47 @@ digraph architecture {
   mod_aptos_db_db -> mod_aptos_types_account_address;
   mod_aptos_db_db -> mod_aptos_types_ledger_info;
   mod_aptos_db_db -> mod_aptos_types_state_store;
+  mod_aptos_db_db -> mod_aptos_types_transaction;
   mod_aptos_db_ledger_db -> mod_aptos_db_db;
-  mod_aptos_db_ledger_db -> mod_aptos_rest_client_response;
   mod_aptos_db_ledger_db -> mod_aptos_types_ledger_info;
+  mod_aptos_db_ledger_db -> mod_aptos_types_transaction;
   mod_aptos_db_pruner -> mod_aptos_db_ledger_db;
   mod_aptos_db_pruner -> mod_aptos_forge_interface;
   mod_aptos_db_pruner -> mod_aptos_indexer_models;
   mod_aptos_db_pruner -> mod_aptos_rosetta_types;
+  mod_aptos_db_pruner -> mod_aptos_types_contract_event;
   mod_aptos_db_pruner -> mod_aptos_types_state_store;
-  mod_aptos_dkg_pvss -> mod_aptos_consensus_rand;
+  mod_aptos_db_pruner -> mod_aptos_types_transaction;
   mod_aptos_dkg_pvss -> mod_aptos_crypto_blstrs;
-  mod_aptos_dkg_pvss -> mod_aptos_data_client_interface;
-  mod_aptos_dkg_pvss -> mod_aptos_rest_client_response;
+  mod_aptos_dkg_pvss -> mod_aptos_crypto_hash;
+  mod_aptos_dkg_pvss -> mod_aptos_crypto_traits;
+  mod_aptos_dkg_pvss -> mod_aptos_types_transaction;
   mod_aptos_forge_backend -> mod_aptos_config_config;
+  mod_aptos_forge_backend -> mod_aptos_consensus_types_proof_of_store;
   mod_aptos_forge_backend -> mod_aptos_crypto_ed25519;
-  mod_aptos_forge_backend -> mod_aptos_data_client_interface;
   mod_aptos_forge_backend -> mod_aptos_experimental_layered_map_map;
   mod_aptos_forge_backend -> mod_aptos_forge_interface;
   mod_aptos_forge_backend -> mod_aptos_sdk_types;
   mod_aptos_forge_backend -> mod_aptos_transaction_emitter_lib_cluster;
   mod_aptos_forge_backend -> mod_aptos_types_access_path;
   mod_aptos_forge_backend -> mod_aptos_types_chain_id;
+  mod_aptos_forge_backend -> mod_aptos_types_transaction;
   mod_aptos_forge_cli_suites -> mod_aptos_config_config;
   mod_aptos_forge_cli_suites -> mod_aptos_forge_interface;
-  mod_aptos_forge_cli_suites -> mod_aptos_rest_client_response;
   mod_aptos_forge_cli_suites -> mod_aptos_transaction_emitter_lib_cluster;
   mod_aptos_forge_cli_suites -> mod_aptos_transaction_emitter_lib_emitter;
-  mod_aptos_forge_interface -> mod_aptos_data_client_interface;
-  mod_aptos_forge_interface -> mod_aptos_rest_client_state;
   mod_aptos_forge_interface -> mod_aptos_sdk_types;
+  mod_aptos_forge_interface -> mod_aptos_storage_interface_state_store;
   mod_aptos_forge_interface -> mod_aptos_types_chain_id;
-  mod_aptos_framework_natives -> mod_aptos_data_client_interface;
+  mod_aptos_forge_interface -> mod_aptos_types_transaction;
   mod_aptos_framework_natives -> mod_aptos_experimental_layered_map_map;
-  mod_aptos_framework_natives -> mod_aptos_logger_kv;
-  mod_aptos_framework_natives -> mod_aptos_rest_client_response;
+  mod_aptos_framework_natives -> mod_aptos_forge_interface;
   mod_aptos_framework_natives -> mod_aptos_transaction_emitter_lib_cluster;
   mod_aptos_framework_natives -> mod_aptos_types_account_address;
   mod_aptos_framework_natives -> mod_aptos_types_on_chain_config;
   mod_aptos_framework_natives -> mod_aptos_types_transaction;
   mod_aptos_genesis -> mod_aptos_common;
   mod_aptos_genesis -> mod_aptos_crypto_ed25519;
-  mod_aptos_genesis -> mod_aptos_data_client_interface;
-  mod_aptos_genesis -> mod_aptos_forge_interface;
-  mod_aptos_genesis -> mod_aptos_rest_client_response;
   mod_aptos_genesis -> mod_aptos_transaction_emitter_lib_cluster;
   mod_aptos_genesis -> mod_aptos_types_access_path;
   mod_aptos_genesis -> mod_aptos_types_account_address;
@@ -510,6 +477,7 @@ digraph architecture {
   mod_aptos_governance -> mod_aptos_common;
   mod_aptos_governance -> mod_aptos_genesis;
   mod_aptos_governance -> mod_aptos_move_tool;
+  mod_aptos_governance -> mod_aptos_release_builder_components;
   mod_aptos_governance -> mod_aptos_types_access_path;
   mod_aptos_governance -> mod_aptos_types_account_address;
   mod_aptos_governance -> mod_aptos_types_state_store;
@@ -518,21 +486,15 @@ digraph architecture {
   mod_aptos_indexer_grpc_fullnode_convert -> mod_aptos_api_types_transaction;
   mod_aptos_indexer_grpc_fullnode_convert -> mod_aptos_indexer_models;
   mod_aptos_indexer_grpc_fullnode_convert -> mod_aptos_protos_pb;
-  mod_aptos_indexer_grpc_fullnode_convert -> mod_aptos_rest_client_response;
   mod_aptos_indexer_grpc_fullnode_convert -> mod_aptos_transaction_emitter_lib_cluster;
   mod_aptos_indexer_grpc_fullnode_convert -> mod_aptos_types_transaction;
-  mod_aptos_indexer_processors -> mod_aptos_consensus_pipeline;
   mod_aptos_indexer_processors -> mod_aptos_indexer_models;
   mod_aptos_indexer_processors -> mod_aptos_indexer_token_models;
-  mod_aptos_indexer_processors -> mod_aptos_rosetta_types;
-  mod_aptos_indexer_processors -> mod_aptos_types_state_store;
   mod_aptos_mempool_core_mempool -> mod_aptos_api_types_hash;
   mod_aptos_mempool_core_mempool -> mod_aptos_api_types_transaction;
   mod_aptos_mempool_core_mempool -> mod_aptos_types_account_address;
-  mod_aptos_mempool_shared_mempool -> mod_aptos_api_types_hash;
   mod_aptos_mempool_shared_mempool -> mod_aptos_config_config;
   mod_aptos_mempool_shared_mempool -> mod_aptos_config_network_id;
-  mod_aptos_mempool_shared_mempool -> mod_aptos_consensus_util;
   mod_aptos_mempool_shared_mempool -> mod_aptos_mempool_core_mempool;
   mod_aptos_mempool_shared_mempool -> mod_aptos_network_application;
   mod_aptos_mempool_shared_mempool -> mod_aptos_storage_interface_lib;
@@ -546,11 +508,9 @@ digraph architecture {
   mod_aptos_move_tool -> mod_aptos_types_transaction;
   mod_aptos_network_application -> mod_aptos_config_network_id;
   mod_aptos_network_application -> mod_aptos_network_protocols;
-  mod_aptos_network_application -> mod_aptos_transaction_emitter_lib_cluster;
-  mod_aptos_network_connectivity_manager -> mod_aptos_consensus_util;
+  mod_aptos_network_application -> mod_aptos_types_transaction;
   mod_aptos_network_connectivity_manager -> mod_aptos_forge_interface;
   mod_aptos_network_connectivity_manager -> mod_aptos_network_application;
-  mod_aptos_network_connectivity_manager -> mod_aptos_rest_client_response;
   mod_aptos_network_connectivity_manager -> mod_aptos_transaction_emitter_lib_cluster;
   mod_aptos_network_connectivity_manager -> mod_aptos_types_account_address;
   mod_aptos_network_connectivity_manager -> mod_aptos_types_network_address;
@@ -568,67 +528,73 @@ digraph architecture {
   mod_aptos_node -> mod_aptos_types_account_address;
   mod_aptos_node -> mod_aptos_types_network_address;
   mod_aptos_node -> mod_aptos_types_on_chain_config;
+  mod_aptos_node -> mod_aptos_types_transaction;
   mod_aptos_protos_pb -> mod_aptos_api_types_transaction;
-  mod_aptos_protos_pb -> mod_aptos_logger_kv;
   mod_aptos_release_builder_components -> mod_aptos_api_types_hash;
-  mod_aptos_release_builder_components -> mod_aptos_types_access_path;
+  mod_aptos_release_builder_components -> mod_aptos_crypto_hash;
   mod_aptos_release_builder_components -> mod_aptos_types_on_chain_config;
   mod_aptos_release_builder_components -> mod_aptos_types_transaction;
   mod_aptos_release_builder_components -> mod_aptos_vault_client_lib;
-  mod_aptos_rosetta_construction -> mod_aptos_rest_client_response;
+  mod_aptos_rosetta_construction -> mod_aptos_block_executor_combinatorial_tests;
+  mod_aptos_rosetta_construction -> mod_aptos_genesis;
   mod_aptos_rosetta_construction -> mod_aptos_rosetta_types;
   mod_aptos_rosetta_construction -> mod_aptos_transaction_emitter_lib_cluster;
   mod_aptos_rosetta_construction -> mod_aptos_types_account_address;
-  mod_aptos_rosetta_construction -> mod_aptos_vault_client_lib;
-  mod_aptos_rosetta_types -> mod_aptos_data_client_interface;
-  mod_aptos_rosetta_types -> mod_aptos_logger_kv;
+  mod_aptos_rosetta_construction -> mod_aptos_types_write_set;
   mod_aptos_rosetta_types -> mod_aptos_protos_pb;
   mod_aptos_rosetta_types -> mod_aptos_types_account_address;
+  mod_aptos_rosetta_types -> mod_aptos_types_ledger_info;
   mod_aptos_rosetta_types -> mod_aptos_types_state_store;
   mod_aptos_rosetta_types -> mod_aptos_types_transaction;
   mod_aptos_scratchpad_sparse_merkle -> mod_aptos_api_types_hash;
+  mod_aptos_scratchpad_sparse_merkle -> mod_aptos_crypto_hash;
   mod_aptos_scratchpad_sparse_merkle -> mod_aptos_types_proof;
   mod_aptos_sdk_types -> mod_aptos_crypto_ed25519;
   mod_aptos_sdk_types -> mod_aptos_transaction_emitter_lib_cluster;
   mod_aptos_sdk_types -> mod_aptos_types_account_address;
   mod_aptos_sdk_types -> mod_aptos_types_keyless;
   mod_aptos_sdk_types -> mod_aptos_types_transaction;
-  mod_aptos_storage_interface_lib -> mod_aptos_rosetta_types;
+  mod_aptos_storage_interface_lib -> mod_aptos_forge_interface;
   mod_aptos_storage_interface_state_store -> mod_aptos_forge_interface;
+  mod_aptos_storage_interface_state_store -> mod_aptos_rosetta_types;
   mod_aptos_storage_interface_state_store -> mod_aptos_scratchpad_sparse_merkle;
   mod_aptos_storage_interface_state_store -> mod_aptos_storage_interface_lib;
   mod_aptos_storage_interface_state_store -> mod_aptos_types_state_store;
   mod_aptos_storage_service_types_responses -> mod_aptos_config_config;
-  mod_aptos_storage_service_types_responses -> mod_aptos_consensus_util;
   mod_aptos_storage_service_types_responses -> mod_aptos_types_ledger_info;
   mod_aptos_storage_service_types_responses -> mod_aptos_types_transaction;
   mod_aptos_transaction_emitter_lib_cluster -> mod_aptos_crypto_ed25519;
   mod_aptos_transaction_emitter_lib_cluster -> mod_aptos_types_chain_id;
-  mod_aptos_transaction_emitter_lib_emitter -> mod_aptos_api_types_hash;
   mod_aptos_transaction_emitter_lib_emitter -> mod_aptos_crypto_ed25519;
-  mod_aptos_transaction_emitter_lib_emitter -> mod_aptos_rest_client_response;
   mod_aptos_transaction_emitter_lib_emitter -> mod_aptos_sdk_types;
   mod_aptos_transaction_emitter_lib_emitter -> mod_aptos_transaction_emitter_lib_cluster;
   mod_aptos_transaction_emitter_lib_emitter -> mod_aptos_types_account_address;
+  mod_aptos_transaction_emitter_lib_emitter -> mod_aptos_types_state_store;
   mod_aptos_transaction_emitter_lib_emitter -> mod_aptos_types_transaction;
   mod_aptos_types_account_config -> mod_aptos_indexer_models;
   mod_aptos_types_account_config -> mod_aptos_types_account_address;
   mod_aptos_types_block_executor -> mod_aptos_api_types_hash;
   mod_aptos_types_block_executor -> mod_aptos_types_transaction;
   mod_aptos_types_keyless -> mod_aptos_crypto_ed25519;
+  mod_aptos_types_keyless -> mod_aptos_crypto_traits;
   mod_aptos_types_keyless -> mod_aptos_transaction_emitter_lib_cluster;
   mod_aptos_types_keyless -> mod_aptos_types_account_address;
   mod_aptos_types_keyless -> mod_aptos_types_transaction;
+  mod_aptos_types_ledger_info -> mod_aptos_crypto_hash;
   mod_aptos_types_proof -> mod_aptos_api_types_hash;
+  mod_aptos_types_proof -> mod_aptos_crypto_hash;
   mod_aptos_types_proof -> mod_aptos_types_ledger_info;
   mod_aptos_types_proof -> mod_aptos_types_transaction;
   mod_aptos_types_state_store -> mod_aptos_api_types_hash;
+  mod_aptos_types_state_store -> mod_aptos_crypto_hash;
   mod_aptos_types_state_store -> mod_aptos_rosetta_types;
   mod_aptos_types_state_store -> mod_aptos_types_account_address;
   mod_aptos_types_transaction -> mod_aptos_api_types_hash;
   mod_aptos_types_transaction -> mod_aptos_api_types_transaction;
   mod_aptos_types_transaction -> mod_aptos_crypto_ed25519;
+  mod_aptos_types_transaction -> mod_aptos_crypto_traits;
   mod_aptos_types_transaction -> mod_aptos_types_account_address;
+  mod_aptos_types_transaction -> mod_aptos_types_contract_event;
   mod_aptos_types_transaction -> mod_aptos_types_keyless;
   mod_aptos_types_transaction -> mod_aptos_types_proof;
   mod_aptos_types_transaction -> mod_aptos_types_state_store;
@@ -638,23 +604,22 @@ digraph architecture {
   mod_aptos_vm_genesis_lib -> mod_aptos_api_types_move_types;
   mod_aptos_vm_genesis_lib -> mod_aptos_crypto_ed25519;
   mod_aptos_vm_genesis_lib -> mod_aptos_protos_pb;
-  mod_aptos_vm_genesis_lib -> mod_aptos_rest_client_response;
+  mod_aptos_vm_genesis_lib -> mod_aptos_release_builder_components;
   mod_aptos_vm_genesis_lib -> mod_aptos_transaction_emitter_lib_cluster;
   mod_aptos_vm_genesis_lib -> mod_aptos_types_account_address;
   mod_aptos_vm_genesis_lib -> mod_aptos_types_account_config;
   mod_aptos_vm_genesis_lib -> mod_aptos_types_chain_id;
   mod_aptos_vm_genesis_lib -> mod_aptos_types_keyless;
   mod_aptos_vm_genesis_lib -> mod_aptos_types_on_chain_config;
+  mod_aptos_vm_genesis_lib -> mod_aptos_types_state_store;
   mod_aptos_vm_genesis_lib -> mod_aptos_types_transaction;
   mod_aptos_vm_genesis_lib -> mod_aptos_vm_move_vm_ext;
   mod_aptos_vm_move_vm_ext -> mod_aptos_types_account_address;
   mod_aptos_vm_move_vm_ext -> mod_aptos_types_chain_id;
   mod_aptos_vm_move_vm_ext -> mod_aptos_types_on_chain_config;
   mod_aptos_vm_move_vm_ext -> mod_aptos_types_state_store;
-  mod_fuzzer_fuzz_fuzz_targets -> mod_aptos_data_client_interface;
   mod_fuzzer_fuzz_fuzz_targets -> mod_aptos_transaction_emitter_lib_cluster;
-  mod_fuzzer_fuzz_fuzz_targets -> mod_aptos_types_account_address;
+  mod_fuzzer_fuzz_fuzz_targets -> mod_aptos_transaction_emitter_lib_emitter;
   mod_fuzzer_fuzz_fuzz_targets -> mod_aptos_types_keyless;
-  mod_fuzzer_fuzz_fuzz_targets -> mod_aptos_types_state_store;
   mod_fuzzer_fuzz_fuzz_targets -> mod_aptos_types_transaction;
 }

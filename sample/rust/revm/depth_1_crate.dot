@@ -20,27 +20,20 @@ digraph architecture {
   crate_revm_handler[label="revm-handler", path="/home/yibai/llmcc/sample/repos/revm/crates/handler"];
   crate_revm_inspector[label="revm-inspector", path="/home/yibai/llmcc/sample/repos/revm/crates/inspector"];
   crate_revm_interpreter[label="revm-interpreter", path="/home/yibai/llmcc/sample/repos/revm/crates/interpreter"];
-  crate_revm_primitives[label="revm-primitives", path="/home/yibai/llmcc/sample/repos/revm/crates/primitives"];
-  crate_revm_state[label="revm-state", path="/home/yibai/llmcc/sample/repos/revm/crates/state"];
   crate_revm_statetest_types[label="revm-statetest-types", path="/home/yibai/llmcc/sample/repos/revm/crates/statetest-types"];
   crate_revme[label="revme", path="/home/yibai/llmcc/sample/repos/revm/bins/revme"];
 
-  crate_op_revm -> crate_revm_handler;
   crate_revm_context -> crate_revm_context_interface;
-  crate_revm_context -> crate_revm_handler;
   crate_revm_database -> crate_revm_database_interface;
-  crate_revm_database -> crate_revm_state;
   crate_revm_ee_tests -> crate_op_revm;
   crate_revm_ee_tests -> crate_revm_context;
   crate_revm_handler -> crate_revm_context_interface;
   crate_revm_handler -> crate_revm_interpreter;
+  crate_revm_handler -> crate_revm_statetest_types;
   crate_revm_inspector -> crate_revm_interpreter;
   crate_revm_interpreter -> crate_revm_context_interface;
   crate_revme -> crate_revm_context;
   crate_revme -> crate_revm_context_interface;
-  crate_revme -> crate_revm_database;
-  crate_revme -> crate_revm_handler;
   crate_revme -> crate_revm_interpreter;
-  crate_revme -> crate_revm_primitives;
   crate_revme -> crate_revm_statetest_types;
 }

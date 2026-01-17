@@ -21,7 +21,6 @@ digraph architecture {
   mod_revm_context_tx[label="revm-context::tx", path="/home/yibai/llmcc/sample/repos/revm/crates/context/src"];
   mod_revm_database_interface_lib[label="revm-database-interface::lib", path="/home/yibai/llmcc/sample/repos/revm/crates/database/interface/src"];
   mod_revm_database_states[label="revm-database::states", path="/home/yibai/llmcc/sample/repos/revm/crates/database/src/states"];
-  mod_revm_interpreter_instruction_context[label="revm-interpreter::instruction_context", path="/home/yibai/llmcc/sample/repos/revm/crates/interpreter/src"];
   mod_revm_interpreter_instruction_result[label="revm-interpreter::instruction_result", path="/home/yibai/llmcc/sample/repos/revm/crates/interpreter/src"];
   mod_revm_interpreter_instructions[label="revm-interpreter::instructions", path="/home/yibai/llmcc/sample/repos/revm/crates/interpreter/src"];
   mod_revm_interpreter_interpreter[label="revm-interpreter::interpreter", path="/home/yibai/llmcc/sample/repos/revm/crates/interpreter/src"];
@@ -33,6 +32,7 @@ digraph architecture {
   mod_revm_precompile_kzg_point_evaluation[label="revm-precompile::kzg_point_evaluation", path="/home/yibai/llmcc/sample/repos/revm/crates/precompile/src/kzg_point_evaluation"];
   mod_revm_precompile_lib[label="revm-precompile::lib", path="/home/yibai/llmcc/sample/repos/revm/crates/precompile/src"];
   mod_revm_primitives_hardfork[label="revm-primitives::hardfork", path="/home/yibai/llmcc/sample/repos/revm/crates/primitives/src"];
+  mod_revm_state_lib[label="revm-state::lib", path="/home/yibai/llmcc/sample/repos/revm/crates/state/src"];
   mod_revm_statetest_types_blockchain[label="revm-statetest-types::blockchain", path="/home/yibai/llmcc/sample/repos/revm/crates/statetest-types/src"];
   mod_revme_cmd[label="revme::cmd", path="/home/yibai/llmcc/sample/repos/revm/bins/revme/src/cmd"];
   mod_revme_statetest[label="revme::statetest", path="/home/yibai/llmcc/sample/repos/revm/bins/revme/src/cmd/statetest"];
@@ -45,10 +45,8 @@ digraph architecture {
   mod_revm_interpreter_instruction_result -> mod_revm_context_interface_result;
   mod_revm_interpreter_instructions -> mod_revm_context_interface_cfg;
   mod_revm_interpreter_instructions -> mod_revm_context_interface_host;
-  mod_revm_interpreter_instructions -> mod_revm_interpreter_instruction_context;
   mod_revm_interpreter_instructions -> mod_revm_interpreter_instruction_result;
   mod_revm_interpreter_instructions -> mod_revm_interpreter_interpreter;
-  mod_revm_interpreter_instructions -> mod_revm_interpreter_interpreter_types;
   mod_revm_interpreter_instructions -> mod_revm_primitives_hardfork;
   mod_revm_interpreter_interpreter -> mod_revm_context_interface_cfg;
   mod_revm_interpreter_interpreter -> mod_revm_interpreter_instruction_result;
@@ -59,13 +57,13 @@ digraph architecture {
   mod_revm_precompile_bls12_381 -> mod_revm_precompile_interface;
   mod_revm_precompile_bn254 -> mod_revm_precompile_interface;
   mod_revm_precompile_kzg_point_evaluation -> mod_revm_precompile_interface;
-  mod_revme_cmd -> mod_revm_context_interface_journaled_state;
-  mod_revme_cmd -> mod_revm_database_states;
+  mod_revm_state_lib -> mod_revm_database_states;
   mod_revme_cmd -> mod_revm_interpreter_instructions;
+  mod_revme_cmd -> mod_revm_state_lib;
   mod_revme_cmd -> mod_revm_statetest_types_blockchain;
   mod_revme_statetest -> mod_revm_context_interface_result;
   mod_revme_statetest -> mod_revm_context_tx;
   mod_revme_statetest -> mod_revm_database_states;
-  mod_revme_statetest -> mod_revm_interpreter_instructions;
   mod_revme_statetest -> mod_revm_primitives_hardfork;
+  mod_revme_statetest -> mod_revm_statetest_types_blockchain;
 }

@@ -60,6 +60,9 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_snarkvm_circuit_algorithms_bhp[label="bhp", path="/home/yibai/llmcc/sample/repos/snarkvm/circuit/algorithms/src/bhp"];
+    mod_snarkvm_circuit_algorithms_pedersen[label="pedersen", path="/home/yibai/llmcc/sample/repos/snarkvm/circuit/algorithms/src/pedersen"];
+    mod_snarkvm_circuit_algorithms_poseidon[label="poseidon", path="/home/yibai/llmcc/sample/repos/snarkvm/circuit/algorithms/src/poseidon"];
+    mod_snarkvm_circuit_algorithms_traits[label="traits", path="/home/yibai/llmcc/sample/repos/snarkvm/circuit/algorithms/src"];
   }
 
   subgraph cluster_snarkvm_circuit_collections {
@@ -101,7 +104,6 @@ digraph architecture {
     mod_snarkvm_circuit_program_identifier[label="identifier", path="/home/yibai/llmcc/sample/repos/snarkvm/circuit/program/src/data/identifier"];
     mod_snarkvm_circuit_program_lib[label="lib", path="/home/yibai/llmcc/sample/repos/snarkvm/circuit/program/src"];
     mod_snarkvm_circuit_program_literal[label="literal", path="/home/yibai/llmcc/sample/repos/snarkvm/circuit/program/src/data/literal"];
-    mod_snarkvm_circuit_program_plaintext[label="plaintext", path="/home/yibai/llmcc/sample/repos/snarkvm/circuit/program/src/data/plaintext"];
     mod_snarkvm_circuit_program_record[label="record", path="/home/yibai/llmcc/sample/repos/snarkvm/circuit/program/src/data/record"];
     mod_snarkvm_circuit_program_request[label="request", path="/home/yibai/llmcc/sample/repos/snarkvm/circuit/program/src/request"];
     mod_snarkvm_circuit_program_response[label="response", path="/home/yibai/llmcc/sample/repos/snarkvm/circuit/program/src/response"];
@@ -171,7 +173,9 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_snarkvm_console_account_compute_key[label="compute_key", path="/home/yibai/llmcc/sample/repos/snarkvm/console/account/src/compute_key"];
+    mod_snarkvm_console_account_graph_key[label="graph_key", path="/home/yibai/llmcc/sample/repos/snarkvm/console/account/src/graph_key"];
     mod_snarkvm_console_account_private_key[label="private_key", path="/home/yibai/llmcc/sample/repos/snarkvm/console/account/src/private_key"];
+    mod_snarkvm_console_account_signature[label="signature", path="/home/yibai/llmcc/sample/repos/snarkvm/console/account/src/signature"];
     mod_snarkvm_console_account_view_key[label="view_key", path="/home/yibai/llmcc/sample/repos/snarkvm/console/account/src/view_key"];
   }
 
@@ -180,6 +184,7 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_snarkvm_console_algorithms_bhp[label="bhp", path="/home/yibai/llmcc/sample/repos/snarkvm/console/algorithms/src/bhp"];
     mod_snarkvm_console_algorithms_ecdsa[label="ecdsa", path="/home/yibai/llmcc/sample/repos/snarkvm/console/algorithms/src/ecdsa"];
     mod_snarkvm_console_algorithms_pedersen[label="pedersen", path="/home/yibai/llmcc/sample/repos/snarkvm/console/algorithms/src/pedersen"];
     mod_snarkvm_console_algorithms_poseidon[label="poseidon", path="/home/yibai/llmcc/sample/repos/snarkvm/console/algorithms/src/poseidon"];
@@ -209,8 +214,6 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_snarkvm_console_network_environment_environment[label="environment", path="/home/yibai/llmcc/sample/repos/snarkvm/console/network/environment/src"];
-    mod_snarkvm_console_network_environment_helpers[label="helpers", path="/home/yibai/llmcc/sample/repos/snarkvm/console/network/environment/src/helpers"];
     mod_snarkvm_console_network_environment_traits[label="traits", path="/home/yibai/llmcc/sample/repos/snarkvm/console/network/environment/src/traits"];
   }
 
@@ -221,7 +224,9 @@ digraph architecture {
 
     mod_snarkvm_console_program_data[label="data", path="/home/yibai/llmcc/sample/repos/snarkvm/console/program/src/data"];
     mod_snarkvm_console_program_data_types[label="data_types", path="/home/yibai/llmcc/sample/repos/snarkvm/console/program/src/data_types"];
+    mod_snarkvm_console_program_id[label="id", path="/home/yibai/llmcc/sample/repos/snarkvm/console/program/src/id"];
     mod_snarkvm_console_program_locator[label="locator", path="/home/yibai/llmcc/sample/repos/snarkvm/console/program/src/locator"];
+    mod_snarkvm_console_program_owner[label="owner", path="/home/yibai/llmcc/sample/repos/snarkvm/console/program/src/owner"];
     mod_snarkvm_console_program_request[label="request", path="/home/yibai/llmcc/sample/repos/snarkvm/console/program/src/request"];
     mod_snarkvm_console_program_state_path[label="state_path", path="/home/yibai/llmcc/sample/repos/snarkvm/console/program/src/state_path"];
   }
@@ -274,14 +279,6 @@ digraph architecture {
     mod_snarkvm_console_types_scalar_lib[label="lib", path="/home/yibai/llmcc/sample/repos/snarkvm/console/types/scalar/src"];
   }
 
-  subgraph cluster_snarkvm_console_types_string {
-    label="snarkvm-console-types-string";
-    style=rounded;
-    bgcolor="#f8f8f8";
-
-    mod_snarkvm_console_types_string_lib[label="lib", path="/home/yibai/llmcc/sample/repos/snarkvm/console/types/string/src"];
-  }
-
   subgraph cluster_snarkvm_curves {
     label="snarkvm-curves";
     style=rounded;
@@ -314,8 +311,7 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_snarkvm_ledger_error[label="error", path="/home/yibai/llmcc/sample/repos/snarkvm/ledger/src"];
-    mod_snarkvm_ledger_helpers[label="helpers", path="/home/yibai/llmcc/sample/repos/snarkvm/ledger/src/helpers"];
-    mod_snarkvm_ledger_is_solution_limit_reached[label="is_solution_limit_reached", path="/home/yibai/llmcc/sample/repos/snarkvm/ledger/src"];
+    mod_snarkvm_ledger_lib[label="lib", path="/home/yibai/llmcc/sample/repos/snarkvm/ledger/src"];
     mod_snarkvm_ledger_test_helpers[label="test_helpers", path="/home/yibai/llmcc/sample/repos/snarkvm/ledger/src/test_helpers"];
     mod_snarkvm_ledger_tests[label="tests", path="/home/yibai/llmcc/sample/repos/snarkvm/ledger/src"];
   }
@@ -337,7 +333,6 @@ digraph architecture {
     mod_snarkvm_ledger_block_helpers[label="helpers", path="/home/yibai/llmcc/sample/repos/snarkvm/ledger/block/src/helpers"];
     mod_snarkvm_ledger_block_lib[label="lib", path="/home/yibai/llmcc/sample/repos/snarkvm/ledger/block/src"];
     mod_snarkvm_ledger_block_ratifications[label="ratifications", path="/home/yibai/llmcc/sample/repos/snarkvm/ledger/block/src/ratifications"];
-    mod_snarkvm_ledger_block_ratify[label="ratify", path="/home/yibai/llmcc/sample/repos/snarkvm/ledger/block/src/ratify"];
     mod_snarkvm_ledger_block_solutions[label="solutions", path="/home/yibai/llmcc/sample/repos/snarkvm/ledger/block/src/solutions"];
     mod_snarkvm_ledger_block_transaction[label="transaction", path="/home/yibai/llmcc/sample/repos/snarkvm/ledger/block/src/transaction"];
     mod_snarkvm_ledger_block_transactions[label="transactions", path="/home/yibai/llmcc/sample/repos/snarkvm/ledger/block/src/transactions"];
@@ -385,13 +380,30 @@ digraph architecture {
     mod_snarkvm_ledger_narwhal_subdag_lib[label="lib", path="/home/yibai/llmcc/sample/repos/snarkvm/ledger/narwhal/subdag/src"];
   }
 
+  subgraph cluster_snarkvm_ledger_narwhal_transmission {
+    label="snarkvm-ledger-narwhal-transmission";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_snarkvm_ledger_narwhal_transmission_lib[label="lib", path="/home/yibai/llmcc/sample/repos/snarkvm/ledger/narwhal/transmission/src"];
+  }
+
+  subgraph cluster_snarkvm_ledger_narwhal_transmission_id {
+    label="snarkvm-ledger-narwhal-transmission-id";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_snarkvm_ledger_narwhal_transmission_id_lib[label="lib", path="/home/yibai/llmcc/sample/repos/snarkvm/ledger/narwhal/transmission-id/src"];
+  }
+
   subgraph cluster_snarkvm_ledger_puzzle {
     label="snarkvm-ledger-puzzle";
     style=rounded;
     bgcolor="#f8f8f8";
 
-    mod_snarkvm_ledger_puzzle_lib[label="lib", path="/home/yibai/llmcc/sample/repos/snarkvm/ledger/puzzle/src"];
+    mod_snarkvm_ledger_puzzle_partial_solution[label="partial_solution", path="/home/yibai/llmcc/sample/repos/snarkvm/ledger/puzzle/src/partial_solution"];
     mod_snarkvm_ledger_puzzle_solution_id[label="solution_id", path="/home/yibai/llmcc/sample/repos/snarkvm/ledger/puzzle/src/solution_id"];
+    mod_snarkvm_ledger_puzzle_solutions[label="solutions", path="/home/yibai/llmcc/sample/repos/snarkvm/ledger/puzzle/src/solutions"];
   }
 
   subgraph cluster_snarkvm_ledger_puzzle_epoch {
@@ -400,7 +412,6 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_snarkvm_ledger_puzzle_epoch_helpers[label="helpers", path="/home/yibai/llmcc/sample/repos/snarkvm/ledger/puzzle/epoch/src/synthesis/helpers"];
-    mod_snarkvm_ledger_puzzle_epoch_program[label="program", path="/home/yibai/llmcc/sample/repos/snarkvm/ledger/puzzle/epoch/src/synthesis/program"];
   }
 
   subgraph cluster_snarkvm_ledger_query {
@@ -463,6 +474,7 @@ digraph architecture {
     mod_snarkvm_synthesizer_process_finalize_types[label="finalize_types", path="/home/yibai/llmcc/sample/repos/snarkvm/synthesizer/process/src/stack/finalize_types"];
     mod_snarkvm_synthesizer_process_lib[label="lib", path="/home/yibai/llmcc/sample/repos/snarkvm/synthesizer/process/src"];
     mod_snarkvm_synthesizer_process_register_types[label="register_types", path="/home/yibai/llmcc/sample/repos/snarkvm/synthesizer/process/src/stack/register_types"];
+    mod_snarkvm_synthesizer_process_registers[label="registers", path="/home/yibai/llmcc/sample/repos/snarkvm/synthesizer/process/src/stack/registers"];
     mod_snarkvm_synthesizer_process_stack[label="stack", path="/home/yibai/llmcc/sample/repos/snarkvm/synthesizer/process/src/stack"];
     mod_snarkvm_synthesizer_process_trace[label="trace", path="/home/yibai/llmcc/sample/repos/snarkvm/synthesizer/process/src/trace"];
   }
@@ -473,8 +485,10 @@ digraph architecture {
     bgcolor="#f8f8f8";
 
     mod_snarkvm_synthesizer_program_closure[label="closure", path="/home/yibai/llmcc/sample/repos/snarkvm/synthesizer/program/src/closure"];
+    mod_snarkvm_synthesizer_program_constructor[label="constructor", path="/home/yibai/llmcc/sample/repos/snarkvm/synthesizer/program/src/constructor"];
     mod_snarkvm_synthesizer_program_finalize[label="finalize", path="/home/yibai/llmcc/sample/repos/snarkvm/synthesizer/program/src/finalize"];
     mod_snarkvm_synthesizer_program_function[label="function", path="/home/yibai/llmcc/sample/repos/snarkvm/synthesizer/program/src/function"];
+    mod_snarkvm_synthesizer_program_import[label="import", path="/home/yibai/llmcc/sample/repos/snarkvm/synthesizer/program/src/import"];
     mod_snarkvm_synthesizer_program_lib[label="lib", path="/home/yibai/llmcc/sample/repos/snarkvm/synthesizer/program/src"];
     mod_snarkvm_synthesizer_program_logic[label="logic", path="/home/yibai/llmcc/sample/repos/snarkvm/synthesizer/program/src/logic"];
     mod_snarkvm_synthesizer_program_mapping[label="mapping", path="/home/yibai/llmcc/sample/repos/snarkvm/synthesizer/program/src/mapping"];
@@ -487,9 +501,11 @@ digraph architecture {
     style=rounded;
     bgcolor="#f8f8f8";
 
+    mod_snarkvm_synthesizer_snark_certificate[label="certificate", path="/home/yibai/llmcc/sample/repos/snarkvm/synthesizer/snark/src/certificate"];
     mod_snarkvm_synthesizer_snark_proof[label="proof", path="/home/yibai/llmcc/sample/repos/snarkvm/synthesizer/snark/src/proof"];
     mod_snarkvm_synthesizer_snark_proving_key[label="proving_key", path="/home/yibai/llmcc/sample/repos/snarkvm/synthesizer/snark/src/proving_key"];
     mod_snarkvm_synthesizer_snark_universal_srs[label="universal_srs", path="/home/yibai/llmcc/sample/repos/snarkvm/synthesizer/snark/src"];
+    mod_snarkvm_synthesizer_snark_verifying_key[label="verifying_key", path="/home/yibai/llmcc/sample/repos/snarkvm/synthesizer/snark/src/verifying_key"];
   }
 
   subgraph cluster_snarkvm_utilities {
@@ -510,14 +526,14 @@ digraph architecture {
   mod_snarkvm_algorithms_crypto_hash -> mod_snarkvm_algorithms_traits;
   mod_snarkvm_algorithms_crypto_hash -> mod_snarkvm_fields_traits;
   mod_snarkvm_algorithms_cuda_lib -> mod_snarkvm_utilities_io;
-  mod_snarkvm_algorithms_fft -> mod_snarkvm_console_types_integers_lib;
   mod_snarkvm_algorithms_fft -> mod_snarkvm_fields_traits;
+  mod_snarkvm_algorithms_fft -> mod_snarkvm_ledger_store_helpers;
   mod_snarkvm_algorithms_fft -> mod_snarkvm_utilities_serialize;
+  mod_snarkvm_algorithms_msm -> mod_snarkvm_console_program_locator;
   mod_snarkvm_algorithms_msm -> mod_snarkvm_curves_templates;
   mod_snarkvm_algorithms_msm -> mod_snarkvm_curves_traits;
   mod_snarkvm_algorithms_polycommit -> mod_snarkvm_algorithms_fft;
   mod_snarkvm_algorithms_polycommit -> mod_snarkvm_algorithms_snark;
-  mod_snarkvm_algorithms_polycommit -> mod_snarkvm_algorithms_traits;
   mod_snarkvm_algorithms_polycommit -> mod_snarkvm_curves_traits;
   mod_snarkvm_algorithms_polycommit -> mod_snarkvm_fields_traits;
   mod_snarkvm_algorithms_polycommit -> mod_snarkvm_utilities_bytes;
@@ -532,40 +548,39 @@ digraph architecture {
   mod_snarkvm_algorithms_snark -> mod_snarkvm_utilities_rand;
   mod_snarkvm_algorithms_snark -> mod_snarkvm_utilities_serialize;
   mod_snarkvm_circuit_account_compute_key -> mod_snarkvm_circuit_environment_traits;
+  mod_snarkvm_circuit_account_compute_key -> mod_snarkvm_console_network_environment_traits;
+  mod_snarkvm_circuit_account_compute_key -> mod_snarkvm_utilities_bits;
   mod_snarkvm_circuit_account_graph_key -> mod_snarkvm_circuit_environment_traits;
-  mod_snarkvm_circuit_account_graph_key -> mod_snarkvm_fields_traits;
   mod_snarkvm_circuit_account_private_key -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_circuit_account_signature -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_circuit_account_signature -> mod_snarkvm_console_network_environment_traits;
+  mod_snarkvm_circuit_account_signature -> mod_snarkvm_utilities_bits;
   mod_snarkvm_circuit_account_view_key -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_circuit_algorithms_bhp -> mod_snarkvm_circuit_environment_traits;
+  mod_snarkvm_circuit_algorithms_bhp -> mod_snarkvm_console_collections_merkle_tree;
+  mod_snarkvm_circuit_algorithms_pedersen -> mod_snarkvm_circuit_algorithms_traits;
+  mod_snarkvm_circuit_algorithms_pedersen -> mod_snarkvm_circuit_environment_traits;
+  mod_snarkvm_circuit_algorithms_poseidon -> mod_snarkvm_circuit_algorithms_traits;
   mod_snarkvm_circuit_collections_kary_merkle_tree -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_circuit_collections_kary_merkle_tree -> mod_snarkvm_console_network_environment_traits;
   mod_snarkvm_circuit_collections_merkle_tree -> mod_snarkvm_circuit_environment_traits;
-  mod_snarkvm_circuit_collections_merkle_tree -> mod_snarkvm_console_network_environment_environment;
-  mod_snarkvm_circuit_collections_merkle_tree -> mod_snarkvm_fields_traits;
-  mod_snarkvm_circuit_environment_helpers -> mod_snarkvm_console_network_environment_traits;
+  mod_snarkvm_circuit_environment_helpers -> mod_snarkvm_fields_traits;
   mod_snarkvm_circuit_environment_helpers -> mod_snarkvm_utilities_bytes;
-  mod_snarkvm_circuit_environment_traits -> mod_snarkvm_console_network_environment_traits;
   mod_snarkvm_circuit_program_access -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_circuit_program_ciphertext -> mod_snarkvm_circuit_environment_traits;
-  mod_snarkvm_circuit_program_ciphertext -> mod_snarkvm_console_network_environment_traits;
   mod_snarkvm_circuit_program_future -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_circuit_program_future -> mod_snarkvm_console_network_environment_traits;
-  mod_snarkvm_circuit_program_future -> mod_snarkvm_console_program_data;
   mod_snarkvm_circuit_program_id -> mod_snarkvm_circuit_environment_traits;
-  mod_snarkvm_circuit_program_id -> mod_snarkvm_console_network_environment_traits;
   mod_snarkvm_circuit_program_identifier -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_circuit_program_identifier -> mod_snarkvm_console_network_environment_traits;
   mod_snarkvm_circuit_program_literal -> mod_snarkvm_circuit_environment_traits;
-  mod_snarkvm_circuit_program_literal -> mod_snarkvm_circuit_network_lib;
-  mod_snarkvm_circuit_program_literal -> mod_snarkvm_circuit_types_field_lib;
   mod_snarkvm_circuit_program_literal -> mod_snarkvm_circuit_types_group_lib;
-  mod_snarkvm_circuit_program_literal -> mod_snarkvm_circuit_types_scalar_lib;
   mod_snarkvm_circuit_program_literal -> mod_snarkvm_console_network_environment_traits;
   mod_snarkvm_circuit_program_literal -> mod_snarkvm_console_program_data_types;
+  mod_snarkvm_circuit_program_literal -> mod_snarkvm_console_types_boolean_lib;
+  mod_snarkvm_circuit_program_literal -> mod_snarkvm_console_types_field_lib;
   mod_snarkvm_circuit_program_literal -> mod_snarkvm_console_types_integers_lib;
-  mod_snarkvm_circuit_program_plaintext -> mod_snarkvm_utilities_bits;
+  mod_snarkvm_circuit_program_literal -> mod_snarkvm_console_types_scalar_lib;
   mod_snarkvm_circuit_program_record -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_circuit_program_record -> mod_snarkvm_circuit_program_lib;
   mod_snarkvm_circuit_program_record -> mod_snarkvm_console_network_environment_traits;
@@ -573,118 +588,116 @@ digraph architecture {
   mod_snarkvm_circuit_program_response -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_circuit_program_state_path -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_circuit_program_state_path -> mod_snarkvm_circuit_network_lib;
-  mod_snarkvm_circuit_program_state_path -> mod_snarkvm_circuit_types_field_lib;
-  mod_snarkvm_circuit_program_state_path -> mod_snarkvm_fields_traits;
+  mod_snarkvm_circuit_program_state_path -> mod_snarkvm_console_types_field_lib;
+  mod_snarkvm_circuit_program_state_path -> mod_snarkvm_utilities_bits;
   mod_snarkvm_circuit_program_value -> mod_snarkvm_circuit_environment_traits;
-  mod_snarkvm_circuit_program_value -> mod_snarkvm_console_network_environment_traits;
   mod_snarkvm_circuit_types_address_lib -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_circuit_types_address_lib -> mod_snarkvm_console_network_environment_traits;
-  mod_snarkvm_circuit_types_boolean_lib -> mod_snarkvm_algorithms_polycommit;
+  mod_snarkvm_circuit_types_boolean_lib -> mod_snarkvm_circuit_environment_helpers;
   mod_snarkvm_circuit_types_boolean_lib -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_circuit_types_boolean_lib -> mod_snarkvm_console_network_environment_traits;
   mod_snarkvm_circuit_types_field_lib -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_circuit_types_field_lib -> mod_snarkvm_console_network_environment_traits;
   mod_snarkvm_circuit_types_group_lib -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_circuit_types_group_lib -> mod_snarkvm_console_network_environment_traits;
+  mod_snarkvm_circuit_types_group_lib -> mod_snarkvm_fields_traits;
   mod_snarkvm_circuit_types_integers_lib -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_circuit_types_integers_lib -> mod_snarkvm_console_network_environment_traits;
+  mod_snarkvm_circuit_types_integers_lib -> mod_snarkvm_utilities_bits;
   mod_snarkvm_circuit_types_scalar_lib -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_circuit_types_scalar_lib -> mod_snarkvm_console_network_environment_traits;
   mod_snarkvm_circuit_types_string_lib -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_circuit_types_string_lib -> mod_snarkvm_console_network_environment_traits;
-  mod_snarkvm_console_account_compute_key -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_console_account_compute_key -> mod_snarkvm_console_network_environment_traits;
   mod_snarkvm_console_account_compute_key -> mod_snarkvm_utilities_bytes;
+  mod_snarkvm_console_account_graph_key -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_console_account_private_key -> mod_snarkvm_utilities_bytes;
+  mod_snarkvm_console_account_signature -> mod_snarkvm_console_network_environment_traits;
+  mod_snarkvm_console_account_signature -> mod_snarkvm_utilities_bits;
+  mod_snarkvm_console_account_signature -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_console_account_view_key -> mod_snarkvm_utilities_bytes;
-  mod_snarkvm_console_algorithms_ecdsa -> mod_snarkvm_console_network_environment_traits;
+  mod_snarkvm_console_algorithms_bhp -> mod_snarkvm_circuit_collections_merkle_tree;
+  mod_snarkvm_console_algorithms_bhp -> mod_snarkvm_console_collections_merkle_tree;
+  mod_snarkvm_console_algorithms_bhp -> mod_snarkvm_console_network_environment_traits;
   mod_snarkvm_console_algorithms_ecdsa -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_console_algorithms_pedersen -> mod_snarkvm_console_network_environment_traits;
-  mod_snarkvm_console_algorithms_poseidon -> mod_snarkvm_console_network_environment_environment;
   mod_snarkvm_console_algorithms_poseidon -> mod_snarkvm_fields_traits;
   mod_snarkvm_console_collections_kary_merkle_tree -> mod_snarkvm_utilities_bytes;
-  mod_snarkvm_console_collections_merkle_tree -> mod_snarkvm_console_types_field_lib;
   mod_snarkvm_console_collections_merkle_tree -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_console_network_consensus_heights -> mod_snarkvm_utilities_bytes;
-  mod_snarkvm_console_network_environment_helpers -> mod_snarkvm_utilities_io;
-  mod_snarkvm_console_network_helpers -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_console_network_helpers -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_console_program_data -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_console_program_data -> mod_snarkvm_circuit_program_future;
+  mod_snarkvm_console_program_data -> mod_snarkvm_circuit_program_lib;
+  mod_snarkvm_console_program_data -> mod_snarkvm_circuit_types_group_lib;
   mod_snarkvm_console_program_data -> mod_snarkvm_console_network_environment_traits;
   mod_snarkvm_console_program_data -> mod_snarkvm_console_network_lib;
   mod_snarkvm_console_program_data -> mod_snarkvm_console_program_data_types;
   mod_snarkvm_console_program_data -> mod_snarkvm_console_types_boolean_lib;
-  mod_snarkvm_console_program_data -> mod_snarkvm_console_types_group_lib;
+  mod_snarkvm_console_program_data -> mod_snarkvm_console_types_field_lib;
   mod_snarkvm_console_program_data -> mod_snarkvm_console_types_scalar_lib;
   mod_snarkvm_console_program_data -> mod_snarkvm_fields_traits;
+  mod_snarkvm_console_program_data -> mod_snarkvm_utilities_bits;
   mod_snarkvm_console_program_data -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_console_program_data_types -> mod_snarkvm_console_network_environment_traits;
   mod_snarkvm_console_program_data_types -> mod_snarkvm_console_network_lib;
   mod_snarkvm_console_program_data_types -> mod_snarkvm_console_program_data;
   mod_snarkvm_console_program_data_types -> mod_snarkvm_console_program_locator;
   mod_snarkvm_console_program_data_types -> mod_snarkvm_utilities_bytes;
-  mod_snarkvm_console_program_locator -> mod_snarkvm_utilities_bytes;
+  mod_snarkvm_console_program_id -> mod_snarkvm_console_network_environment_traits;
+  mod_snarkvm_console_program_id -> mod_snarkvm_utilities_bytes;
+  mod_snarkvm_console_program_owner -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_console_program_request -> mod_snarkvm_console_program_data;
   mod_snarkvm_console_program_request -> mod_snarkvm_fields_traits;
-  mod_snarkvm_console_program_request -> mod_snarkvm_utilities_bytes;
-  mod_snarkvm_console_program_state_path -> mod_snarkvm_circuit_types_field_lib;
   mod_snarkvm_console_program_state_path -> mod_snarkvm_console_network_lib;
-  mod_snarkvm_console_program_state_path -> mod_snarkvm_ledger_narwhal_data_lib;
+  mod_snarkvm_console_program_state_path -> mod_snarkvm_console_types_field_lib;
   mod_snarkvm_console_program_state_path -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_console_program_state_path -> mod_snarkvm_utilities_rand;
+  mod_snarkvm_console_types_address_lib -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_console_types_address_lib -> mod_snarkvm_console_network_environment_traits;
   mod_snarkvm_console_types_address_lib -> mod_snarkvm_utilities_bytes;
-  mod_snarkvm_console_types_boolean_lib -> mod_snarkvm_circuit_environment_traits;
-  mod_snarkvm_console_types_boolean_lib -> mod_snarkvm_console_network_environment_traits;
-  mod_snarkvm_console_types_boolean_lib -> mod_snarkvm_console_program_data;
   mod_snarkvm_console_types_field_lib -> mod_snarkvm_console_network_environment_traits;
-  mod_snarkvm_console_types_group_lib -> mod_snarkvm_circuit_environment_traits;
+  mod_snarkvm_console_types_field_lib -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_console_types_group_lib -> mod_snarkvm_console_network_environment_traits;
+  mod_snarkvm_console_types_group_lib -> mod_snarkvm_utilities_bits;
   mod_snarkvm_console_types_group_lib -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_console_types_integers_lib -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_console_types_integers_lib -> mod_snarkvm_circuit_program_literal;
   mod_snarkvm_console_types_integers_lib -> mod_snarkvm_console_network_environment_traits;
-  mod_snarkvm_console_types_scalar_lib -> mod_snarkvm_circuit_environment_traits;
-  mod_snarkvm_console_types_scalar_lib -> mod_snarkvm_console_network_environment_traits;
-  mod_snarkvm_console_types_string_lib -> mod_snarkvm_console_network_environment_traits;
-  mod_snarkvm_console_types_string_lib -> mod_snarkvm_utilities_bytes;
+  mod_snarkvm_console_types_integers_lib -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_curves_bls12_377 -> mod_snarkvm_curves_traits;
   mod_snarkvm_curves_bls12_377 -> mod_snarkvm_fields_traits;
   mod_snarkvm_curves_edwards_bls12 -> mod_snarkvm_curves_traits;
   mod_snarkvm_curves_edwards_bls12 -> mod_snarkvm_fields_traits;
-  mod_snarkvm_curves_templates -> mod_snarkvm_console_network_environment_traits;
+  mod_snarkvm_curves_templates -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_curves_templates -> mod_snarkvm_curves_traits;
-  mod_snarkvm_curves_templates -> mod_snarkvm_fields_traits;
   mod_snarkvm_curves_templates -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_curves_templates -> mod_snarkvm_utilities_rand;
   mod_snarkvm_curves_traits -> mod_snarkvm_fields_legendre;
   mod_snarkvm_curves_traits -> mod_snarkvm_fields_traits;
   mod_snarkvm_curves_traits -> mod_snarkvm_utilities_rand;
   mod_snarkvm_curves_traits -> mod_snarkvm_utilities_serialize;
-  mod_snarkvm_fields_fp12_2over3over2 -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_fields_fp12_2over3over2 -> mod_snarkvm_fields_traits;
   mod_snarkvm_fields_fp12_2over3over2 -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_fields_fp12_2over3over2 -> mod_snarkvm_utilities_serialize;
   mod_snarkvm_fields_fp2 -> mod_snarkvm_fields_traits;
   mod_snarkvm_fields_fp2 -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_fields_fp2 -> mod_snarkvm_utilities_serialize;
-  mod_snarkvm_fields_fp6_3over2 -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_fields_fp6_3over2 -> mod_snarkvm_fields_traits;
   mod_snarkvm_fields_fp6_3over2 -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_fields_fp6_3over2 -> mod_snarkvm_utilities_serialize;
   mod_snarkvm_fields_fp_256 -> mod_snarkvm_fields_traits;
   mod_snarkvm_fields_fp_256 -> mod_snarkvm_utilities_bytes;
-  mod_snarkvm_fields_fp_384 -> mod_snarkvm_circuit_environment_traits;
   mod_snarkvm_fields_fp_384 -> mod_snarkvm_fields_traits;
   mod_snarkvm_fields_fp_384 -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_fields_lib -> mod_snarkvm_fields_traits;
   mod_snarkvm_file -> mod_snarkvm_console_network_lib;
-  mod_snarkvm_file -> mod_snarkvm_console_program_data;
   mod_snarkvm_file -> mod_snarkvm_utilities_bytes;
+  mod_snarkvm_ledger_authority_lib -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_ledger_authority_lib -> mod_snarkvm_utilities_rand;
   mod_snarkvm_ledger_block_header -> mod_snarkvm_console_network_lib;
-  mod_snarkvm_ledger_block_helpers -> mod_snarkvm_console_network_lib;
+  mod_snarkvm_ledger_block_header -> mod_snarkvm_ledger_store_helpers;
+  mod_snarkvm_ledger_block_header -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_ledger_block_helpers -> mod_snarkvm_console_types_integers_lib;
   mod_snarkvm_ledger_block_lib -> mod_snarkvm_ledger_authority_lib;
   mod_snarkvm_ledger_block_lib -> mod_snarkvm_ledger_block_header;
@@ -692,79 +705,78 @@ digraph architecture {
   mod_snarkvm_ledger_block_lib -> mod_snarkvm_ledger_block_solutions;
   mod_snarkvm_ledger_block_lib -> mod_snarkvm_ledger_block_transactions;
   mod_snarkvm_ledger_block_lib -> mod_snarkvm_ledger_puzzle_solution_id;
-  mod_snarkvm_ledger_block_ratify -> mod_snarkvm_utilities_bytes;
+  mod_snarkvm_ledger_block_ratifications -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_ledger_block_transaction -> mod_snarkvm_console_network_lib;
   mod_snarkvm_ledger_block_transaction -> mod_snarkvm_ledger_block_transition;
   mod_snarkvm_ledger_block_transaction -> mod_snarkvm_synthesizer_snark_proof;
   mod_snarkvm_ledger_block_transaction -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_ledger_block_transactions -> mod_snarkvm_utilities_bytes;
-  mod_snarkvm_ledger_block_transition -> mod_snarkvm_circuit_types_field_lib;
+  mod_snarkvm_ledger_block_transition -> mod_snarkvm_console_types_field_lib;
   mod_snarkvm_ledger_block_transition -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_ledger_committee_lib -> mod_snarkvm_console_types_address_lib;
-  mod_snarkvm_ledger_committee_lib -> mod_snarkvm_utilities_bytes;
+  mod_snarkvm_ledger_committee_lib -> mod_snarkvm_console_types_field_lib;
   mod_snarkvm_ledger_committee_lib -> mod_snarkvm_utilities_rand;
+  mod_snarkvm_ledger_committee_prop_tests -> mod_snarkvm_console_account_private_key;
   mod_snarkvm_ledger_committee_prop_tests -> mod_snarkvm_ledger_committee_lib;
   mod_snarkvm_ledger_error -> mod_snarkvm_synthesizer_vm;
   mod_snarkvm_ledger_error -> mod_snarkvm_utilities_io;
-  mod_snarkvm_ledger_helpers -> mod_snarkvm_console_network_lib;
-  mod_snarkvm_ledger_is_solution_limit_reached -> mod_snarkvm_console_network_lib;
-  mod_snarkvm_ledger_narwhal_batch_certificate_lib -> mod_snarkvm_fields_traits;
+  mod_snarkvm_ledger_lib -> mod_snarkvm_ledger_store_helpers;
+  mod_snarkvm_ledger_narwhal_batch_certificate_lib -> mod_snarkvm_console_types_field_lib;
   mod_snarkvm_ledger_narwhal_batch_certificate_lib -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_ledger_narwhal_batch_certificate_lib -> mod_snarkvm_utilities_rand;
   mod_snarkvm_ledger_narwhal_batch_header_lib -> mod_snarkvm_fields_traits;
   mod_snarkvm_ledger_narwhal_batch_header_lib -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_ledger_narwhal_batch_header_lib -> mod_snarkvm_utilities_rand;
   mod_snarkvm_ledger_narwhal_data_lib -> mod_snarkvm_utilities_bytes;
+  mod_snarkvm_ledger_narwhal_subdag_lib -> mod_snarkvm_console_types_field_lib;
   mod_snarkvm_ledger_narwhal_subdag_lib -> mod_snarkvm_ledger_narwhal_batch_certificate_lib;
-  mod_snarkvm_ledger_narwhal_subdag_lib -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_ledger_narwhal_subdag_lib -> mod_snarkvm_utilities_rand;
-  mod_snarkvm_ledger_puzzle_epoch_helpers -> mod_snarkvm_console_network_lib;
-  mod_snarkvm_ledger_puzzle_epoch_helpers -> mod_snarkvm_console_program_data_types;
-  mod_snarkvm_ledger_puzzle_epoch_helpers -> mod_snarkvm_console_types_integers_lib;
+  mod_snarkvm_ledger_narwhal_transmission_id_lib -> mod_snarkvm_utilities_bytes;
+  mod_snarkvm_ledger_narwhal_transmission_lib -> mod_snarkvm_utilities_bytes;
+  mod_snarkvm_ledger_puzzle_epoch_helpers -> mod_snarkvm_console_program_locator;
+  mod_snarkvm_ledger_puzzle_epoch_helpers -> mod_snarkvm_ledger_store_helpers;
   mod_snarkvm_ledger_puzzle_epoch_helpers -> mod_snarkvm_synthesizer_program_logic;
-  mod_snarkvm_ledger_puzzle_epoch_program -> mod_snarkvm_console_network_lib;
-  mod_snarkvm_ledger_puzzle_lib -> mod_snarkvm_console_network_lib;
-  mod_snarkvm_ledger_query_query -> mod_snarkvm_fields_traits;
+  mod_snarkvm_ledger_puzzle_partial_solution -> mod_snarkvm_utilities_bytes;
+  mod_snarkvm_ledger_puzzle_solutions -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_ledger_query_query -> mod_snarkvm_ledger_query_traits;
-  mod_snarkvm_ledger_store_block -> mod_snarkvm_console_network_lib;
   mod_snarkvm_ledger_store_block -> mod_snarkvm_ledger_block_transactions;
   mod_snarkvm_ledger_store_block -> mod_snarkvm_ledger_store_helpers;
-  mod_snarkvm_ledger_store_consensus -> mod_snarkvm_console_network_lib;
+  mod_snarkvm_ledger_store_helpers -> mod_snarkvm_circuit_algorithms_traits;
+  mod_snarkvm_ledger_store_helpers -> mod_snarkvm_circuit_program_ciphertext;
   mod_snarkvm_ledger_store_helpers -> mod_snarkvm_circuit_program_future;
-  mod_snarkvm_ledger_store_helpers -> mod_snarkvm_console_network_environment_traits;
+  mod_snarkvm_ledger_store_helpers -> mod_snarkvm_circuit_types_group_lib;
   mod_snarkvm_ledger_store_helpers -> mod_snarkvm_console_program_data;
-  mod_snarkvm_ledger_store_helpers -> mod_snarkvm_console_types_group_lib;
+  mod_snarkvm_ledger_store_helpers -> mod_snarkvm_console_program_locator;
+  mod_snarkvm_ledger_store_helpers -> mod_snarkvm_console_types_field_lib;
   mod_snarkvm_ledger_store_helpers -> mod_snarkvm_ledger_store_block;
   mod_snarkvm_ledger_store_helpers -> mod_snarkvm_ledger_store_consensus;
   mod_snarkvm_ledger_store_helpers -> mod_snarkvm_ledger_store_program;
   mod_snarkvm_ledger_store_helpers -> mod_snarkvm_ledger_store_transaction;
   mod_snarkvm_ledger_store_helpers -> mod_snarkvm_ledger_store_transition;
-  mod_snarkvm_ledger_store_program -> mod_snarkvm_circuit_program_id;
-  mod_snarkvm_ledger_store_program -> mod_snarkvm_console_network_lib;
   mod_snarkvm_ledger_store_program -> mod_snarkvm_console_program_data;
+  mod_snarkvm_ledger_store_program -> mod_snarkvm_console_program_id;
+  mod_snarkvm_ledger_store_program -> mod_snarkvm_console_types_field_lib;
   mod_snarkvm_ledger_store_program -> mod_snarkvm_ledger_store_helpers;
-  mod_snarkvm_ledger_store_transaction -> mod_snarkvm_console_network_lib;
   mod_snarkvm_ledger_store_transaction -> mod_snarkvm_ledger_store_helpers;
   mod_snarkvm_ledger_store_transition -> mod_snarkvm_console_network_lib;
   mod_snarkvm_ledger_store_transition -> mod_snarkvm_ledger_store_helpers;
-  mod_snarkvm_ledger_test_helpers -> mod_snarkvm_circuit_account_private_key;
+  mod_snarkvm_ledger_test_helpers -> mod_snarkvm_console_account_private_key;
   mod_snarkvm_ledger_test_helpers -> mod_snarkvm_ledger_block_transaction;
-  mod_snarkvm_ledger_test_helpers_lib -> mod_snarkvm_circuit_types_field_lib;
+  mod_snarkvm_ledger_test_helpers_lib -> mod_snarkvm_console_program_locator;
+  mod_snarkvm_ledger_test_helpers_lib -> mod_snarkvm_console_types_field_lib;
   mod_snarkvm_ledger_test_helpers_lib -> mod_snarkvm_ledger_block_lib;
   mod_snarkvm_ledger_test_helpers_lib -> mod_snarkvm_ledger_block_transaction;
   mod_snarkvm_ledger_test_helpers_lib -> mod_snarkvm_ledger_block_transactions;
-  mod_snarkvm_ledger_test_helpers_lib -> mod_snarkvm_synthesizer_program_logic;
   mod_snarkvm_ledger_test_helpers_lib -> mod_snarkvm_utilities_rand;
   mod_snarkvm_ledger_tests -> mod_snarkvm_synthesizer_vm;
+  mod_snarkvm_package -> mod_snarkvm_console_program_id;
   mod_snarkvm_package -> mod_snarkvm_file;
   mod_snarkvm_package -> mod_snarkvm_ledger_block_transaction;
   mod_snarkvm_parameters_mainnet -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_parameters_mainnet -> mod_snarkvm_utilities_serialize;
-  mod_snarkvm_synthesizer_process_authorization -> mod_snarkvm_circuit_program_request;
+  mod_snarkvm_synthesizer_process_authorization -> mod_snarkvm_console_program_request;
   mod_snarkvm_synthesizer_process_authorization -> mod_snarkvm_ledger_block_transition;
-  mod_snarkvm_synthesizer_process_authorization -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_synthesizer_process_cost -> mod_snarkvm_console_network_consensus_heights;
-  mod_snarkvm_synthesizer_process_cost -> mod_snarkvm_console_network_lib;
   mod_snarkvm_synthesizer_process_cost -> mod_snarkvm_console_program_data;
   mod_snarkvm_synthesizer_process_cost -> mod_snarkvm_ledger_block_transaction;
   mod_snarkvm_synthesizer_process_cost -> mod_snarkvm_synthesizer_process_finalize_types;
@@ -773,28 +785,25 @@ digraph architecture {
   mod_snarkvm_synthesizer_process_error -> mod_snarkvm_circuit_environment_error;
   mod_snarkvm_synthesizer_process_error -> mod_snarkvm_synthesizer_program_logic;
   mod_snarkvm_synthesizer_process_error -> mod_snarkvm_utilities_io;
-  mod_snarkvm_synthesizer_process_finalize -> mod_snarkvm_console_network_lib;
   mod_snarkvm_synthesizer_process_finalize -> mod_snarkvm_console_program_data;
   mod_snarkvm_synthesizer_process_finalize -> mod_snarkvm_ledger_store_program;
   mod_snarkvm_synthesizer_process_finalize -> mod_snarkvm_synthesizer_process_finalize_registers;
   mod_snarkvm_synthesizer_process_finalize -> mod_snarkvm_synthesizer_process_stack;
   mod_snarkvm_synthesizer_process_finalize -> mod_snarkvm_synthesizer_program_logic;
   mod_snarkvm_synthesizer_process_finalize -> mod_snarkvm_synthesizer_program_traits;
-  mod_snarkvm_synthesizer_process_finalize_registers -> mod_snarkvm_synthesizer_program_traits;
-  mod_snarkvm_synthesizer_process_finalize_types -> mod_snarkvm_console_network_lib;
   mod_snarkvm_synthesizer_process_finalize_types -> mod_snarkvm_console_program_data_types;
   mod_snarkvm_synthesizer_process_register_types -> mod_snarkvm_console_program_data_types;
+  mod_snarkvm_synthesizer_process_registers -> mod_snarkvm_synthesizer_program_traits;
   mod_snarkvm_synthesizer_process_stack -> mod_snarkvm_console_network_lib;
   mod_snarkvm_synthesizer_process_trace -> mod_snarkvm_circuit_program_state_path;
-  mod_snarkvm_synthesizer_process_trace -> mod_snarkvm_circuit_types_field_lib;
+  mod_snarkvm_synthesizer_process_trace -> mod_snarkvm_circuit_types_group_lib;
   mod_snarkvm_synthesizer_process_trace -> mod_snarkvm_console_types_field_lib;
-  mod_snarkvm_synthesizer_process_trace -> mod_snarkvm_console_types_group_lib;
   mod_snarkvm_synthesizer_program_closure -> mod_snarkvm_console_network_environment_traits;
   mod_snarkvm_synthesizer_program_closure -> mod_snarkvm_console_program_data;
   mod_snarkvm_synthesizer_program_closure -> mod_snarkvm_console_program_data_types;
-  mod_snarkvm_synthesizer_program_closure -> mod_snarkvm_synthesizer_program_function;
   mod_snarkvm_synthesizer_program_closure -> mod_snarkvm_synthesizer_program_logic;
   mod_snarkvm_synthesizer_program_closure -> mod_snarkvm_utilities_bytes;
+  mod_snarkvm_synthesizer_program_constructor -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_synthesizer_program_finalize -> mod_snarkvm_console_network_environment_traits;
   mod_snarkvm_synthesizer_program_finalize -> mod_snarkvm_console_program_data;
   mod_snarkvm_synthesizer_program_finalize -> mod_snarkvm_utilities_bytes;
@@ -803,31 +812,32 @@ digraph architecture {
   mod_snarkvm_synthesizer_program_function -> mod_snarkvm_console_program_data_types;
   mod_snarkvm_synthesizer_program_function -> mod_snarkvm_synthesizer_program_logic;
   mod_snarkvm_synthesizer_program_function -> mod_snarkvm_utilities_bytes;
-  mod_snarkvm_synthesizer_program_lib -> mod_snarkvm_console_network_environment_traits;
+  mod_snarkvm_synthesizer_program_import -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_synthesizer_program_lib -> mod_snarkvm_console_program_data;
   mod_snarkvm_synthesizer_program_lib -> mod_snarkvm_console_program_data_types;
   mod_snarkvm_synthesizer_program_logic -> mod_snarkvm_circuit_program_future;
   mod_snarkvm_synthesizer_program_logic -> mod_snarkvm_circuit_program_value;
-  mod_snarkvm_synthesizer_program_logic -> mod_snarkvm_circuit_types_scalar_lib;
   mod_snarkvm_synthesizer_program_logic -> mod_snarkvm_console_network_environment_traits;
   mod_snarkvm_synthesizer_program_logic -> mod_snarkvm_console_network_lib;
   mod_snarkvm_synthesizer_program_logic -> mod_snarkvm_console_program_data;
   mod_snarkvm_synthesizer_program_logic -> mod_snarkvm_console_program_data_types;
   mod_snarkvm_synthesizer_program_logic -> mod_snarkvm_console_program_locator;
+  mod_snarkvm_synthesizer_program_logic -> mod_snarkvm_console_types_scalar_lib;
   mod_snarkvm_synthesizer_program_logic -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_synthesizer_program_mapping -> mod_snarkvm_console_network_environment_traits;
   mod_snarkvm_synthesizer_program_mapping -> mod_snarkvm_console_network_lib;
   mod_snarkvm_synthesizer_program_mapping -> mod_snarkvm_console_program_data_types;
   mod_snarkvm_synthesizer_program_mapping -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_synthesizer_program_parse -> mod_snarkvm_console_program_data_types;
-  mod_snarkvm_synthesizer_program_traits -> mod_snarkvm_console_network_lib;
   mod_snarkvm_synthesizer_program_traits -> mod_snarkvm_console_program_data_types;
   mod_snarkvm_synthesizer_restrictions -> mod_snarkvm_console_network_lib;
   mod_snarkvm_synthesizer_restrictions -> mod_snarkvm_utilities_bytes;
+  mod_snarkvm_synthesizer_snark_certificate -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_synthesizer_snark_proving_key -> mod_snarkvm_utilities_bytes;
   mod_snarkvm_synthesizer_snark_universal_srs -> mod_snarkvm_utilities_bytes;
+  mod_snarkvm_synthesizer_snark_verifying_key -> mod_snarkvm_utilities_bytes;
+  mod_snarkvm_synthesizer_vm -> mod_snarkvm_circuit_types_address_lib;
   mod_snarkvm_synthesizer_vm -> mod_snarkvm_console_network_lib;
-  mod_snarkvm_synthesizer_vm -> mod_snarkvm_console_types_address_lib;
   mod_snarkvm_synthesizer_vm -> mod_snarkvm_ledger_committee_lib;
   mod_snarkvm_synthesizer_vm -> mod_snarkvm_ledger_store_consensus;
   mod_snarkvm_synthesizer_vm -> mod_snarkvm_synthesizer_process_error;

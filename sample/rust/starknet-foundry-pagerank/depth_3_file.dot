@@ -8,6 +8,22 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
+  subgraph cluster_cairo_serde_macros {
+    label="cairo-serde-macros";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_cairo_serialize_rs {
+      label="cairo_serialize.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n5826[label="destruct_fields", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions/cairo-serde-macros/src/cairo_serialize.rs:102", sym_ty="Function", shape=ellipse];
+      n5611[label="Item", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions/cairo-serde-macros/src/cairo_serialize.rs:43", sym_ty="Enum", shape=box];
+    }
+
+  }
+
   subgraph cluster_cheatnet {
     label="cheatnet";
     style=rounded;
@@ -23,9 +39,10 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n1433[label="UsedResources", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/call_to_blockifier_runtime_extension/rpc.rs:28", sym_ty="Struct", shape=box];
-        n1475[label="CallResult", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/call_to_blockifier_runtime_extension/rpc.rs:36", sym_ty="Enum", shape=box];
-        n1537[label="AddressOrClassHash", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/call_to_blockifier_runtime_extension/rpc.rs:50", sym_ty="Enum", shape=box];
+        n5121[label="UsedResources", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/call_to_blockifier_runtime_extension/rpc.rs:28", sym_ty="Struct", shape=box];
+        n5177[label="CallResult", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/call_to_blockifier_runtime_extension/rpc.rs:36", sym_ty="Enum", shape=box];
+        n5239[label="CallFailure", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/call_to_blockifier_runtime_extension/rpc.rs:45", sym_ty="Enum", shape=box];
+        n5282[label="AddressOrClassHash", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/call_to_blockifier_runtime_extension/rpc.rs:50", sym_ty="Enum", shape=box];
       }
 
     }
@@ -35,7 +52,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n12837[label="build_test_entry_point", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/constants.rs:83", sym_ty="Function", shape=ellipse];
+      n7685[label="build_test_entry_point", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/constants.rs:83", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_deprecated_cheatable_starknet_extension {
@@ -48,8 +65,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n3604[label="DeprecatedStarknetRuntime", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/deprecated_cheatable_starknet_extension/runtime.rs:27", sym_ty="Struct", shape=box];
-        n4418[label="DeprecatedExtendedRuntime", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/deprecated_cheatable_starknet_extension/runtime.rs:83", sym_ty="Struct", shape=box];
+        n13459[label="DeprecatedStarknetRuntime", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/deprecated_cheatable_starknet_extension/runtime.rs:27", sym_ty="Struct", shape=box];
+        n13897[label="DeprecatedExtendedRuntime", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/deprecated_cheatable_starknet_extension/runtime.rs:83", sym_ty="Struct", shape=box];
       }
 
     }
@@ -64,9 +81,9 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n7110[label="RawForkConfig", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/forge_config_extension/config.rs:121", sym_ty="Enum", shape=box];
-        n7180[label="Expected", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/forge_config_extension/config.rs:138", sym_ty="Enum", shape=box];
-        n6728[label="BlockId", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/forge_config_extension/config.rs:39", sym_ty="Enum", shape=box];
+        n12228[label="RawForkConfig", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/forge_config_extension/config.rs:121", sym_ty="Enum", shape=box];
+        n11747[label="RawAvailableResourceBoundsConfig", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/forge_config_extension/config.rs:14", sym_ty="Struct", shape=box];
+        n11846[label="BlockId", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/forge_config_extension/config.rs:39", sym_ty="Enum", shape=box];
       }
 
     }
@@ -81,15 +98,15 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n854[label="Operation", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/forge_runtime_extension/cheatcodes/cheat_execution_info.rs:17", sym_ty="Enum", shape=box];
+        n10417[label="Operation", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/forge_runtime_extension/cheatcodes/cheat_execution_info.rs:17", sym_ty="Enum", shape=box];
       }
 
-      subgraph cluster_declare_rs {
-        label="declare.rs";
+      subgraph cluster_contracts_data_rs {
+        label="contracts_data.rs";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n11963[label="get_contract_class", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/forge_runtime_extension/cheatcodes/declare.rs:70", sym_ty="Function", shape=ellipse];
+        n10360[label="ContractsData", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/forge_runtime_extension/contracts_data.rs:19", sym_ty="Struct", shape=box];
       }
 
     }
@@ -104,8 +121,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n12745[label="ForkCacheContent", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/forking/cache.rs:25", sym_ty="Struct", shape=box];
-        n13178[label="ForkCache", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/forking/cache.rs:95", sym_ty="Struct", shape=box];
+        n2295[label="ForkCacheContent", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/forking/cache.rs:25", sym_ty="Struct", shape=box];
+        n2869[label="ForkCache", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/forking/cache.rs:95", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_data_rs {
@@ -113,7 +130,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n2086[label="ForkData", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/forking/data.rs:8", sym_ty="Struct", shape=box];
+        n14241[label="ForkData", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/forking/data.rs:8", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_state_rs {
@@ -121,7 +138,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n6985[label="ForkStateReader", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/forking/state.rs:35", sym_ty="Struct", shape=box];
+        n5152[label="ForkStateReader", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/forking/state.rs:35", sym_ty="Struct", shape=box];
       }
 
     }
@@ -131,12 +148,20 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
+      subgraph cluster_execution_rs {
+        label="execution.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n6738[label="execute_entry_point_call", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/native/execution.rs:52", sym_ty="Function", shape=ellipse];
+      }
+
       subgraph cluster_native_syscall_handler_rs {
         label="native_syscall_handler.rs";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n2705[label="CheatableNativeSyscallHandler", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/native/native_syscall_handler.rs:28", sym_ty="Struct", shape=box];
+        n5948[label="CheatableNativeSyscallHandler", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/native/native_syscall_handler.rs:28", sym_ty="Struct", shape=box];
       }
 
     }
@@ -146,12 +171,43 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
+      subgraph cluster_eth_rs {
+        label="eth.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n9924[label="eth_predeployed_contract", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/predeployment/erc20/eth.rs:12", sym_ty="Function", shape=ellipse];
+      }
+
       subgraph cluster_predeployed_contract_rs {
         label="predeployed_contract.rs";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n350[label="PredeployedContract", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/predeployment/predeployed_contract.rs:9", sym_ty="Struct", shape=box];
+        n3493[label="PredeployedContract", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/predeployment/predeployed_contract.rs:9", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_runtime_extensions {
+      label="runtime_extensions";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_cheatable_starknet_runtime_extension_rs {
+        label="cheatable_starknet_runtime_extension.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n135[label="CheatableStarknetRuntimeExtension", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/cheatable_starknet_runtime_extension.rs:29", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_forge_config_extension_rs {
+        label="forge_config_extension.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n9129[label="ForgeConfigExtension", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/runtime_extensions/forge_config_extension.rs:8", sym_ty="Struct", shape=box];
       }
 
     }
@@ -161,11 +217,11 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n1472[label="CheatStatus", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/state.rs:167", sym_ty="Enum", shape=box];
-      n1644[label="CheatedData", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/state.rs:223", sym_ty="Struct", shape=box];
-      n1674[label="CheatnetState", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/state.rs:232", sym_ty="Struct", shape=box];
-      n1073[label="CheatSpan", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/state.rs:37", sym_ty="Enum", shape=box];
-      n1105[label="ExtendedStateReader", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/state.rs:43", sym_ty="Struct", shape=box];
+      n3570[label="CheatStatus", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/state.rs:167", sym_ty="Enum", shape=box];
+      n4029[label="CheatedData", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/state.rs:223", sym_ty="Struct", shape=box];
+      n4106[label="CheatnetState", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/state.rs:232", sym_ty="Struct", shape=box];
+      n2975[label="CheatSpan", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/state.rs:37", sym_ty="Enum", shape=box];
+      n3010[label="ExtendedStateReader", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/state.rs:43", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_sync_client_rs {
@@ -173,7 +229,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n3991[label="SyncClient", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/sync_client.rs:10", sym_ty="Struct", shape=box];
+      n1909[label="SyncClient", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/sync_client.rs:10", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_trace_data_rs {
@@ -181,10 +237,9 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n13429[label="TraceData", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/trace_data.rs:20", sym_ty="Struct", shape=box];
-      n13453[label="NotEmptyCallStack", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/trace_data.rs:26", sym_ty="Struct", shape=box];
-      n13507[label="CallTrace", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/trace_data.rs:36", sym_ty="Struct", shape=box];
-      n13643[label="CallTraceNode", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/trace_data.rs:59", sym_ty="Enum", shape=box];
+      n4678[label="TraceData", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/trace_data.rs:20", sym_ty="Struct", shape=box];
+      n4700[label="NotEmptyCallStack", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/trace_data.rs:26", sym_ty="Struct", shape=box];
+      n4753[label="CallTrace", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/cheatnet/src/trace_data.rs:36", sym_ty="Struct", shape=box];
     }
 
   }
@@ -194,12 +249,20 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
+    subgraph cluster_core_rs {
+      label="core.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n10829[label="resolve_env_variables", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/configuration/src/core.rs:6", sym_ty="Function", shape=ellipse];
+    }
+
     subgraph cluster_lib_rs {
       label="lib.rs";
       style=rounded;
             bgcolor="#fafafa";
 
-      n9895[label="resolve_config_file", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/configuration/src/lib.rs:24", sym_ty="Function", shape=ellipse];
+      n83[label="resolve_config_file", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/configuration/src/lib.rs:24", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -214,7 +277,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n7290[label="ByteArray", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions/src/byte_array.rs:10", sym_ty="Struct", shape=box];
+      n10167[label="ByteArray", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions/src/byte_array.rs:10", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_lib_rs {
@@ -222,7 +285,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n3932[label="FromConv", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions/src/lib.rs:20", sym_ty="Trait", shape=box];
+      n7331[label="FromConv", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions/src/lib.rs:20", sym_ty="Trait", shape=box];
     }
 
     subgraph cluster_padded_felt_rs {
@@ -230,7 +293,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n8771[label="PaddedFelt", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions/src/padded_felt.rs:11", sym_ty="Struct", shape=box];
+      n14925[label="PaddedFelt", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions/src/padded_felt.rs:11", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_serde {
@@ -243,9 +306,9 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n3864[label="BufferReader", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions/src/serde/deserialize.rs:18", sym_ty="Struct", shape=box];
-        n3881[label="CairoDeserialize", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions/src/serde/deserialize.rs:22", sym_ty="Trait", shape=box];
-        n3726[label="BufferReadError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions/src/serde/deserialize.rs:9", sym_ty="Enum", shape=box];
+        n14587[label="BufferReader", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions/src/serde/deserialize.rs:18", sym_ty="Struct", shape=box];
+        n14606[label="CairoDeserialize", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions/src/serde/deserialize.rs:22", sym_ty="Trait", shape=box];
+        n14531[label="BufferReadError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions/src/serde/deserialize.rs:9", sym_ty="Enum", shape=box];
       }
 
       subgraph cluster_serialize_rs {
@@ -253,8 +316,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n8555[label="CairoSerialize", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions/src/serde/serialize.rs:33", sym_ty="Trait", shape=box];
-        n8378[label="BufferWriter", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions/src/serde/serialize.rs:7", sym_ty="Struct", shape=box];
+        n14913[label="CairoSerialize", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions/src/serde/serialize.rs:33", sym_ty="Trait", shape=box];
+        n14740[label="BufferWriter", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/conversions/src/serde/serialize.rs:7", sym_ty="Struct", shape=box];
       }
 
     }
@@ -271,12 +334,20 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
+      subgraph cluster_helpers_rs {
+        label="helpers.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n2259[label="ParseRadixError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/cairo_types/helpers.rs:11", sym_ty="Enum", shape=box];
+      }
+
       subgraph cluster_u256_rs {
         label="u256.rs";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n9064[label="CairoU256", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/cairo_types/u256.rs:11", sym_ty="Struct", shape=box];
+        n905[label="CairoU256", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/cairo_types/u256.rs:11", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_u384_rs {
@@ -284,7 +355,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n14719[label="CairoU384", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/cairo_types/u384.rs:10", sym_ty="Struct", shape=box];
+        n12712[label="CairoU384", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/cairo_types/u384.rs:10", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_u512_rs {
@@ -292,7 +363,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n9050[label="CairoU512", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/cairo_types/u512.rs:10", sym_ty="Struct", shape=box];
+        n11462[label="CairoU512", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/cairo_types/u512.rs:10", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_u96_rs {
@@ -300,7 +371,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n8488[label="CairoU96", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/cairo_types/u96.rs:11", sym_ty="Struct", shape=box];
+        n10782[label="CairoU96", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/cairo_types/u96.rs:11", sym_ty="Struct", shape=box];
       }
 
     }
@@ -315,8 +386,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n11941[label="TransformationError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/reverse_transformer/transform.rs:14", sym_ty="Enum", shape=box];
-        n12068[label="ReverseTransformer", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/reverse_transformer/transform.rs:41", sym_ty="Struct", shape=box];
+        n399[label="TransformationError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/reverse_transformer/transform.rs:14", sym_ty="Enum", shape=box];
+        n474[label="ReverseTransformer", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/reverse_transformer/transform.rs:41", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_types_rs {
@@ -324,8 +395,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n9692[label="Primitive", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/reverse_transformer/types.rs:31", sym_ty="Enum", shape=box];
-        n9575[label="Type", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/reverse_transformer/types.rs:9", sym_ty="Enum", shape=box];
+        n11954[label="Primitive", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/reverse_transformer/types.rs:31", sym_ty="Enum", shape=box];
+        n11787[label="Type", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/reverse_transformer/types.rs:9", sym_ty="Enum", shape=box];
       }
 
     }
@@ -340,8 +411,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n12101[label="split", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/shared/path.rs:38", sym_ty="Function", shape=ellipse];
-        n11960[label="PathSplitError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/shared/path.rs:8", sym_ty="Enum", shape=box];
+        n7208[label="split", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/shared/path.rs:38", sym_ty="Function", shape=ellipse];
+        n7178[label="PathSplitError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/shared/path.rs:8", sym_ty="Enum", shape=box];
       }
 
     }
@@ -356,9 +427,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n13624[label="CalldataStructField", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/transformer/sierra_abi/data_representation.rs:166", sym_ty="Struct", shape=box];
-        n11453[label="AllowedCalldataArgument", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/transformer/sierra_abi/data_representation.rs:30", sym_ty="Enum", shape=box];
-        n11507[label="CalldataPrimitive", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/transformer/sierra_abi/data_representation.rs:51", sym_ty="Enum", shape=box];
+        n7344[label="AllowedCalldataArgument", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/transformer/sierra_abi/data_representation.rs:30", sym_ty="Enum", shape=box];
+        n7452[label="CalldataPrimitive", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/data-transformer/src/transformer/sierra_abi/data_representation.rs:51", sym_ty="Enum", shape=box];
       }
 
     }
@@ -375,7 +445,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n8582[label="ContractsDataStore", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/contracts_data_store.rs:14", sym_ty="Struct", shape=box];
+      n719[label="ContractsDataStore", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/contracts_data_store.rs:14", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_trace {
@@ -388,7 +458,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n10828[label="Collector", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/trace/collect.rs:16", sym_ty="Struct", shape=box];
+        n13491[label="Collector", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/trace/collect.rs:16", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_components_rs {
@@ -396,8 +466,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n6083[label="Components", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/trace/components.rs:10", sym_ty="Struct", shape=box];
-        n6152[label="Component", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/trace/components.rs:30", sym_ty="Enum", shape=box];
+        n11545[label="Components", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/trace/components.rs:10", sym_ty="Struct", shape=box];
+        n11565[label="Component", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/trace/components.rs:30", sym_ty="Enum", shape=box];
       }
 
       subgraph cluster_context_rs {
@@ -405,7 +475,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n2581[label="Context", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/trace/context.rs:7", sym_ty="Struct", shape=box];
+        n13129[label="Context", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/trace/context.rs:7", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_types_rs {
@@ -413,10 +483,10 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n16[label="Trace", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/trace/types.rs:15", sym_ty="Struct", shape=box];
-        n256[label="ContractTrace", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/trace/types.rs:21", sym_ty="Struct", shape=box];
-        n308[label="Selector", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/trace/types.rs:46", sym_ty="Struct", shape=box];
-        n332[label="ContractAddress", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/trace/types.rs:55", sym_ty="Struct", shape=box];
+        n13[label="Trace", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/trace/types.rs:15", sym_ty="Struct", shape=box];
+        n113[label="ContractTrace", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/trace/types.rs:21", sym_ty="Struct", shape=box];
+        n143[label="Selector", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/trace/types.rs:46", sym_ty="Struct", shape=box];
+        n157[label="ContractAddress", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/trace/types.rs:55", sym_ty="Struct", shape=box];
       }
 
     }
@@ -431,7 +501,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n9077[label="AsTreeNode", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/tree/ui/as_tree_node.rs:7", sym_ty="Trait", shape=box];
+        n11211[label="AsTreeNode", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/tree/ui/as_tree_node.rs:7", sym_ty="Trait", shape=box];
       }
 
       subgraph cluster_builder_rs {
@@ -439,7 +509,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n14262[label="TreeBuilderWithGuard", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/tree/building/builder.rs:5", sym_ty="Struct", shape=box];
+        n12335[label="TreeBuilderWithGuard", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/tree/building/builder.rs:5", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_display_rs {
@@ -447,7 +517,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n13342[label="NodeDisplay", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/tree/ui/display.rs:13", sym_ty="Trait", shape=box];
+        n13101[label="NodeDisplay", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/tree/ui/display.rs:13", sym_ty="Trait", shape=box];
       }
 
       subgraph cluster_node_rs {
@@ -455,7 +525,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n7021[label="Node", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/tree/building/node.rs:9", sym_ty="Struct", shape=box];
+        n5516[label="Node", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/debugging/src/tree/building/node.rs:9", sym_ty="Struct", shape=box];
       }
 
     }
@@ -472,7 +542,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n13581[label="BlockNumberMap", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/block_number_map.rs:14", sym_ty="Struct", shape=box];
+      n14188[label="BlockNumberMap", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/block_number_map.rs:14", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_lib_rs {
@@ -480,10 +550,10 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n5569[label="TestArgs", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/lib.rs:136", sym_ty="Struct", shape=box];
-      n6005[label="ExitStatus", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/lib.rs:285", sym_ty="Enum", shape=box];
-      n6014[label="main_execution", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/lib.rs:291", sym_ty="Function", shape=ellipse];
-      n5335[label="ForgeSubcommand", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/lib.rs:83", sym_ty="Enum", shape=box];
+      n11017[label="TestArgs", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/lib.rs:136", sym_ty="Struct", shape=box];
+      n11471[label="ExitStatus", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/lib.rs:285", sym_ty="Enum", shape=box];
+      n11489[label="main_execution", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/lib.rs:291", sym_ty="Function", shape=ellipse];
+      n10740[label="ForgeSubcommand", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/lib.rs:83", sym_ty="Enum", shape=box];
     }
 
     subgraph cluster_main_rs {
@@ -491,7 +561,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n9230[label="main", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/main.rs:8", sym_ty="Function", shape=ellipse];
+      n4711[label="main", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/main.rs:8", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_new_rs {
@@ -499,7 +569,32 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n10784[label="new", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/new.rs:343", sym_ty="Function", shape=ellipse];
+      n7021[label="add_target_to_toml", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/new.rs:243", sym_ty="Function", shape=ellipse];
+      n7623[label="add_fork_config", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/new.rs:302", sym_ty="Function", shape=ellipse];
+      n7991[label="new", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/new.rs:343", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_profile_validation {
+      label="profile_validation";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_backtrace_rs {
+        label="backtrace.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n944[label="check_backtrace_compatibility", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/profile_validation/backtrace.rs:10", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n424[label="check_profile_compatibility", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/profile_validation/mod.rs:13", sym_ty="Function", shape=ellipse];
+      }
+
     }
 
     subgraph cluster_run_tests {
@@ -507,12 +602,12 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
-      subgraph cluster_test_target_rs {
-        label="test_target.rs";
+      subgraph cluster_package_rs {
+        label="package.rs";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n9483[label="run_for_test_target", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/run_tests/test_target.rs:24", sym_ty="Function", shape=ellipse];
+        n11254[label="run_for_package", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/run_tests/package.rs:165", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_workspace_rs {
@@ -520,7 +615,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n8022[label="run_for_workspace", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/run_tests/workspace.rs:33", sym_ty="Function", shape=ellipse];
+        n13351[label="run_for_workspace", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/run_tests/workspace.rs:33", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -530,7 +625,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n1372[label="FailedTestsCache", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/shared_cache.rs:8", sym_ty="Struct", shape=box];
+      n13665[label="FailedTestsCache", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/shared_cache.rs:8", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_test_filter_rs {
@@ -538,7 +633,15 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n2082[label="TestsFilter", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/test_filter.rs:9", sym_ty="Struct", shape=box];
+      n1783[label="TestsFilter", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/test_filter.rs:9", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_warn_rs {
+      label="warn.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n8348[label="snforge_std_recommended_version", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge/src/warn.rs:51", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -547,6 +650,29 @@ digraph architecture {
     label="forge_runner";
     style=rounded;
         bgcolor="#f8f8f8";
+
+    subgraph cluster_backtrace {
+      label="backtrace";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_data_rs {
+        label="data.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n11631[label="ContractBacktraceData", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/backtrace/data.rs:68", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_display_rs {
+        label="display.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n9500[label="Backtrace", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/backtrace/display.rs:7", sym_ty="Struct", shape=box];
+      }
+
+    }
 
     subgraph cluster_debugging {
       label="debugging";
@@ -558,7 +684,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n4693[label="TraceArgs", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/debugging/args.rs:8", sym_ty="Struct", shape=box];
+        n14014[label="TraceArgs", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/debugging/args.rs:8", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_component_rs {
@@ -566,7 +692,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n1384[label="Component", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/debugging/component.rs:7", sym_ty="Enum", shape=box];
+        n774[label="Component", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/debugging/component.rs:7", sym_ty="Enum", shape=box];
       }
 
       subgraph cluster_trace_verbosity_rs {
@@ -574,7 +700,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n1887[label="TraceVerbosity", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/debugging/trace_verbosity.rs:7", sym_ty="Enum", shape=box];
+        n6456[label="TraceVerbosity", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/debugging/trace_verbosity.rs:7", sym_ty="Enum", shape=box];
       }
 
     }
@@ -584,8 +710,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n1098[label="ExpectedTestResult", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/expected_result.rs:26", sym_ty="Enum", shape=box];
-      n1029[label="ExpectedPanicValue", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/expected_result.rs:8", sym_ty="Enum", shape=box];
+      n12980[label="ExpectedPanicValue", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/expected_result.rs:8", sym_ty="Enum", shape=box];
     }
 
     subgraph cluster_forge_config_rs {
@@ -593,9 +718,10 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n7301[label="ForgeConfig", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/forge_config.rs:13", sym_ty="Struct", shape=box];
-      n7455[label="ExecutionDataToSave", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/forge_config.rs:40", sym_ty="Struct", shape=box];
-      n7573[label="ForgeTrackedResource", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/forge_config.rs:48", sym_ty="Enum", shape=box];
+      n3052[label="ForgeConfig", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/forge_config.rs:13", sym_ty="Struct", shape=box];
+      n3212[label="ExecutionDataToSave", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/forge_config.rs:40", sym_ty="Struct", shape=box];
+      n3268[label="ForgeTrackedResource", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/forge_config.rs:48", sym_ty="Enum", shape=box];
+      n3474[label="RuntimeConfig", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/forge_config.rs:86", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_gas {
@@ -608,7 +734,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n1444[label="ContractId", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/gas/report.rs:17", sym_ty="Enum", shape=box];
+        n12171[label="format_table_output", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/gas/report.rs:161", sym_ty="Function", shape=ellipse];
+        n11316[label="ContractId", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/gas/report.rs:17", sym_ty="Enum", shape=box];
       }
 
     }
@@ -618,17 +745,62 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n1166[label="run_for_test_case", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/lib.rs:115", sym_ty="Function", shape=ellipse];
-      n1228[label="run_with_fuzzing", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/lib.rs:150", sym_ty="Function", shape=ellipse];
-      n1000[label="maybe_save_trace_and_profile", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/lib.rs:70", sym_ty="Function", shape=ellipse];
+      n4329[label="run_for_test_case", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/lib.rs:115", sym_ty="Function", shape=ellipse];
+      n3905[label="maybe_save_trace_and_profile", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/lib.rs:70", sym_ty="Function", shape=ellipse];
     }
 
-    subgraph cluster_messages_rs {
-      label="messages.rs";
+    subgraph cluster_package_tests {
+      label="package_tests";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_raw_rs {
+        label="raw.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n3513[label="TestTargetRaw", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/package_tests/raw.rs:7", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_with_config_resolved_rs {
+        label="with_config_resolved.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n1817[label="TestCaseResolvedConfig", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/package_tests/with_config_resolved.rs:47", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_package_tests_rs {
+      label="package_tests.rs";
       style=rounded;
             bgcolor="#fafafa";
 
-      n11698[label="format_detailed_resources", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/messages.rs:167", sym_ty="Function", shape=ellipse];
+      n2894[label="TestTargetLocation", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/package_tests.rs:43", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_running {
+      label="running";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_config_run_rs {
+        label="config_run.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n9530[label="PhantomStateReader", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/running/config_run.rs:23", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_with_config_rs {
+        label="with_config.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n2419[label="test_target_with_config", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/running/with_config.rs:25", sym_ty="Function", shape=ellipse];
+      }
+
     }
 
     subgraph cluster_running_rs {
@@ -636,8 +808,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n5575[label="run_test_case", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/running.rs:167", sym_ty="Function", shape=ellipse];
-      n7231[label="get_call_trace_ref", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/running.rs:478", sym_ty="Function", shape=ellipse];
+      n2145[label="run_test_case", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/running.rs:167", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_test_case_summary_rs {
@@ -645,10 +816,10 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n11820[label="AnyTestCaseSummary", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/test_case_summary.rs:138", sym_ty="Enum", shape=box];
-      n12142[label="build_expected_panic_message", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/test_case_summary.rs:236", sym_ty="Function", shape=ellipse];
-      n12221[label="check_if_matching_and_get_message", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/test_case_summary.rs:249", sym_ty="Function", shape=ellipse];
-      n11709[label="TestCaseSummary", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/test_case_summary.rs:95", sym_ty="Enum", shape=box];
+      n9575[label="AnyTestCaseSummary", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/test_case_summary.rs:138", sym_ty="Enum", shape=box];
+      n10078[label="build_expected_panic_message", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/test_case_summary.rs:236", sym_ty="Function", shape=ellipse];
+      n10155[label="check_if_matching_and_get_message", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/test_case_summary.rs:249", sym_ty="Function", shape=ellipse];
+      n9376[label="TestCaseSummary", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/test_case_summary.rs:95", sym_ty="Enum", shape=box];
     }
 
     subgraph cluster_test_target_summary_rs {
@@ -656,7 +827,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n6713[label="TestTargetSummary", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/test_target_summary.rs:5", sym_ty="Struct", shape=box];
+      n14652[label="TestTargetSummary", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/forge-runner/src/test_target_summary.rs:5", sym_ty="Struct", shape=box];
     }
 
   }
@@ -666,13 +837,44 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
+    subgraph cluster_components {
+      label="components";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_error_rs {
+        label="error.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n4131[label="ErrorMessage", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/foundry-ui/src/components/error.rs:12", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_labeled_rs {
+        label="labeled.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n5574[label="LabeledMessage", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/foundry-ui/src/components/labeled.rs:10", sym_ty="Struct", shape=box];
+      }
+
+    }
+
     subgraph cluster_lib_rs {
       label="lib.rs";
       style=rounded;
             bgcolor="#fafafa";
 
-      n3208[label="UI", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/foundry-ui/src/lib.rs:19", sym_ty="Struct", shape=box];
-      n3158[label="OutputFormat", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/foundry-ui/src/lib.rs:8", sym_ty="Enum", shape=box];
+      n6902[label="UI", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/foundry-ui/src/lib.rs:19", sym_ty="Struct", shape=box];
+      n6863[label="OutputFormat", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/foundry-ui/src/lib.rs:8", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_message_rs {
+      label="message.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n8947[label="Message", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/foundry-ui/src/message.rs:5", sym_ty="Trait", shape=box];
     }
 
     subgraph cluster_styling_rs {
@@ -680,8 +882,8 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n10794[label="OutputBuilder", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/foundry-ui/src/styling.rs:13", sym_ty="Struct", shape=box];
-      n10688[label="OutputEntry", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/foundry-ui/src/styling.rs:5", sym_ty="Enum", shape=box];
+      n3991[label="OutputBuilder", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/foundry-ui/src/styling.rs:13", sym_ty="Struct", shape=box];
+      n3888[label="OutputEntry", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/foundry-ui/src/styling.rs:5", sym_ty="Enum", shape=box];
     }
 
   }
@@ -696,12 +898,13 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n8524[label="ExtendedRuntime", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/runtime/src/lib.rs:197", sym_ty="Struct", shape=box];
-      n9337[label="SignalPropagator", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/runtime/src/lib.rs:346", sym_ty="Trait", shape=box];
-      n10165[label="ExtensionLogic", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/runtime/src/lib.rs:410", sym_ty="Trait", shape=box];
-      n10370[label="EnhancedHintError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/runtime/src/lib.rs:460", sym_ty="Enum", shape=box];
-      n7608[label="SyscallPtrAccess", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/runtime/src/lib.rs:55", sym_ty="Trait", shape=box];
-      n7645[label="StarknetRuntime", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/runtime/src/lib.rs:59", sym_ty="Struct", shape=box];
+      n3024[label="ExtendedRuntime", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/runtime/src/lib.rs:197", sym_ty="Struct", shape=box];
+      n3750[label="SignalPropagator", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/runtime/src/lib.rs:346", sym_ty="Trait", shape=box];
+      n4169[label="SyscallHandlingResult", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/runtime/src/lib.rs:393", sym_ty="Enum", shape=box];
+      n4315[label="ExtensionLogic", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/runtime/src/lib.rs:410", sym_ty="Trait", shape=box];
+      n5003[label="EnhancedHintError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/runtime/src/lib.rs:460", sym_ty="Enum", shape=box];
+      n2373[label="SyscallPtrAccess", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/runtime/src/lib.rs:55", sym_ty="Trait", shape=box];
+      n2389[label="StarknetRuntime", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/runtime/src/lib.rs:59", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_starknet {
@@ -709,12 +912,20 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
+      subgraph cluster_context_rs {
+        label="context.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n1229[label="SerializableBlockInfo", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/runtime/src/starknet/context.rs:134", sym_ty="Struct", shape=box];
+      }
+
       subgraph cluster_state_rs {
         label="state.rs";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n13367[label="DictStateReader", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/runtime/src/starknet/state.rs:14", sym_ty="Struct", shape=box];
+        n11519[label="DictStateReader", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/runtime/src/starknet/state.rs:14", sym_ty="Struct", shape=box];
       }
 
     }
@@ -726,12 +937,27 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
-    subgraph cluster_artifacts_rs {
-      label="artifacts.rs";
+    subgraph cluster_artifacts {
+      label="artifacts";
       style=rounded;
-            bgcolor="#fafafa";
+            bgcolor="#f5f5f5";
 
-      n13565[label="StarknetContractArtifacts", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/scarb-api/src/artifacts.rs:19", sym_ty="Struct", shape=box];
+      subgraph cluster_deserialized_rs {
+        label="deserialized.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n13746[label="artifacts_for_package", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/scarb-api/src/artifacts/deserialized.rs:30", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_representation_rs {
+        label="representation.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n10313[label="StarknetArtifactsRepresentation", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/scarb-api/src/artifacts/representation.rs:5", sym_ty="Struct", shape=box];
+      }
+
     }
 
     subgraph cluster_command_rs {
@@ -739,9 +965,9 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n2494[label="ScarbCommandError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/scarb-api/src/command.rs:12", sym_ty="Enum", shape=box];
-      n3424[label="ScarbUnavailableError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/scarb-api/src/command.rs:210", sym_ty="Enum", shape=box];
-      n3446[label="ensure_scarb_available", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/scarb-api/src/command.rs:217", sym_ty="Function", shape=ellipse];
+      n11864[label="ScarbCommandError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/scarb-api/src/command.rs:12", sym_ty="Enum", shape=box];
+      n13196[label="ScarbUnavailableError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/scarb-api/src/command.rs:210", sym_ty="Enum", shape=box];
+      n11897[label="ScarbCommand", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/scarb-api/src/command.rs:24", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_metadata_rs {
@@ -749,8 +975,8 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n2560[label="MetadataError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/scarb-api/src/metadata.rs:15", sym_ty="Enum", shape=box];
-      n2663[label="MetadataOpts", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/scarb-api/src/metadata.rs:24", sym_ty="Struct", shape=box];
+      n1440[label="MetadataError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/scarb-api/src/metadata.rs:15", sym_ty="Enum", shape=box];
+      n1467[label="MetadataOpts", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/scarb-api/src/metadata.rs:24", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_version_rs {
@@ -758,8 +984,8 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n6227[label="VersionError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/scarb-api/src/version.rs:22", sym_ty="Enum", shape=box];
-      n6280[label="scarb_version", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/scarb-api/src/version.rs:37", sym_ty="Function", shape=ellipse];
+      n7181[label="VersionError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/scarb-api/src/version.rs:22", sym_ty="Enum", shape=box];
+      n7202[label="scarb_version", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/scarb-api/src/version.rs:37", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -774,7 +1000,23 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n6537[label="CommandError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/shared/src/command.rs:7", sym_ty="Enum", shape=box];
+      n14511[label="CommandError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/shared/src/command.rs:7", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_test_utils {
+      label="test_utils";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_output_assert_rs {
+        label="output_assert.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n8445[label="assert_output_contains", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/shared/src/test_utils/output_assert.rs:46", sym_ty="Function", shape=ellipse];
+        n8049[label="AsOutput", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/shared/src/test_utils/output_assert.rs:5", sym_ty="Trait", shape=box];
+      }
+
     }
 
     subgraph cluster_utils_rs {
@@ -782,7 +1024,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n3536[label="build_readable_text", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/shared/src/utils.rs:6", sym_ty="Function", shape=ellipse];
+      n14335[label="build_readable_text", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/shared/src/utils.rs:6", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -802,7 +1044,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n8204[label="CastStarknetContractArtifacts", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/artifacts.rs:3", sym_ty="Struct", shape=box];
+        n4685[label="CastStarknetContractArtifacts", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/artifacts.rs:3", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_block_explorer_rs {
@@ -810,7 +1052,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n401[label="Service", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/block_explorer.rs:11", sym_ty="Enum", shape=box];
+        n9380[label="Service", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/block_explorer.rs:11", sym_ty="Enum", shape=box];
       }
 
       subgraph cluster_braavos_rs {
@@ -818,7 +1060,15 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n12559[label="BraavosAccountFactory", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/braavos.rs:12", sym_ty="Struct", shape=box];
+        n4404[label="BraavosAccountFactory", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/braavos.rs:12", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_config_rs {
+        label="config.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n7257[label="build_default_manifest", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/config.rs:38", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_configuration_rs {
@@ -826,8 +1076,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n2490[label="NetworksConfig", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/configuration.rs:16", sym_ty="Struct", shape=box];
-        n2689[label="CastConfig", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/configuration.rs:46", sym_ty="Struct", shape=box];
+        n3201[label="show_explorer_links_default", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/configuration.rs:10", sym_ty="Function", shape=ellipse];
+        n3731[label="CastConfig", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/configuration.rs:46", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_detection_rs {
@@ -835,10 +1085,10 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n12011[label="DevnetDetectionError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/devnet/detection.rs:19", sym_ty="Enum", shape=box];
-        n12073[label="detect_devnet_url", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/devnet/detection.rs:38", sym_ty="Function", shape=ellipse];
-        n12100[label="is_devnet_running", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/devnet/detection.rs:43", sym_ty="Function", shape=ellipse];
-        n12120[label="detect_devnet_from_processes", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/devnet/detection.rs:47", sym_ty="Function", shape=ellipse];
+        n3398[label="DevnetDetectionError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/devnet/detection.rs:19", sym_ty="Enum", shape=box];
+        n3472[label="detect_devnet_url", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/devnet/detection.rs:38", sym_ty="Function", shape=ellipse];
+        n3495[label="is_devnet_running", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/devnet/detection.rs:43", sym_ty="Function", shape=ellipse];
+        n3522[label="detect_devnet_from_processes", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/devnet/detection.rs:47", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_fee_rs {
@@ -846,9 +1096,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n9418[label="ScriptFeeSettings", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/fee.rs:102", sym_ty="Struct", shape=box];
-        n9479[label="FeeSettings", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/fee.rs:113", sym_ty="Struct", shape=box];
-        n9032[label="FeeArgs", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/fee.rs:8", sym_ty="Struct", shape=box];
+        n13191[label="FeeSettings", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/fee.rs:113", sym_ty="Struct", shape=box];
+        n12680[label="FeeArgs", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/fee.rs:8", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_rpc_rs {
@@ -856,7 +1105,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n8959[label="RpcArgs", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/rpc.rs:14", sym_ty="Struct", shape=box];
+        n12309[label="RpcArgs", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/rpc.rs:14", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_scarb_utils_rs {
@@ -864,8 +1113,11 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n14212[label="BuildConfig", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/scarb_utils.rs:112", sym_ty="Struct", shape=box];
-        n14265[label="build", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/scarb_utils.rs:118", sym_ty="Function", shape=ellipse];
+        n9565[label="BuildConfig", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/scarb_utils.rs:112", sym_ty="Struct", shape=box];
+        n9591[label="build", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/scarb_utils.rs:118", sym_ty="Function", shape=ellipse];
+        n9762[label="build_and_load_artifacts", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/scarb_utils.rs:145", sym_ty="Function", shape=ellipse];
+        n8898[label="get_scarb_manifest", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/scarb_utils.rs:17", sym_ty="Function", shape=ellipse];
+        n9223[label="assert_manifest_path_exists", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/helpers/scarb_utils.rs:65", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -875,13 +1127,13 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n193[label="AccountData", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/lib.rs:126", sym_ty="Struct", shape=box];
-      n216[label="WaitForTx", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/lib.rs:140", sym_ty="Struct", shape=box];
-      n224[label="ValidatedWaitParams", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/lib.rs:147", sym_ty="Struct", shape=box];
-      n89[label="AccountType", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/lib.rs:59", sym_ty="Enum", shape=box];
-      n1735[label="WaitForTransactionError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/lib.rs:624", sym_ty="Enum", shape=box];
-      n2027[label="handle_rpc_error", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/lib.rs:710", sym_ty="Function", shape=ellipse];
-      n143[label="Network", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/lib.rs:95", sym_ty="Enum", shape=box];
+      n2734[label="AccountData", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/lib.rs:126", sym_ty="Struct", shape=box];
+      n2804[label="WaitForTx", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/lib.rs:140", sym_ty="Struct", shape=box];
+      n2836[label="ValidatedWaitParams", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/lib.rs:147", sym_ty="Struct", shape=box];
+      n2220[label="AccountType", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/lib.rs:59", sym_ty="Enum", shape=box];
+      n5913[label="WaitForTransactionError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/lib.rs:624", sym_ty="Enum", shape=box];
+      n6368[label="handle_rpc_error", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/lib.rs:710", sym_ty="Function", shape=ellipse];
+      n2567[label="Network", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/lib.rs:95", sym_ty="Enum", shape=box];
     }
 
     subgraph cluster_main_rs {
@@ -889,8 +1141,9 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n7518[label="Commands", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/main.rs:146", sym_ty="Enum", shape=box];
-      n7279[label="Cli", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/main.rs:84", sym_ty="Struct", shape=box];
+      n10504[label="Commands", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/main.rs:146", sym_ty="Enum", shape=box];
+      n11425[label="run_async_command", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/main.rs:289", sym_ty="Function", shape=ellipse];
+      n10284[label="Cli", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/main.rs:84", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_response {
@@ -903,7 +1156,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n5107[label="SncastCommandMessage", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/cast_message.rs:7", sym_ty="Trait", shape=box];
+        n9094[label="SncastCommandMessage", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/cast_message.rs:7", sym_ty="Trait", shape=box];
       }
 
       subgraph cluster_create_rs {
@@ -911,7 +1164,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n10268[label="as_str", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/account/create.rs:8", sym_ty="Function", shape=ellipse];
+        n12788[label="as_str", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/account/create.rs:8", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_declare_rs {
@@ -919,7 +1172,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n3568[label="DeclareTransactionResponse", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/declare.rs:17", sym_ty="Struct", shape=box];
+        n4432[label="DeclareTransactionResponse", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/declare.rs:17", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_deploy_rs {
@@ -927,7 +1180,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n13206[label="StandardDeployResponse", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/deploy.rs:61", sym_ty="Struct", shape=box];
+        n8212[label="StandardDeployResponse", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/deploy.rs:61", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_errors_rs {
@@ -935,10 +1188,10 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n3074[label="StarknetCommandError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/errors.rs:47", sym_ty="Enum", shape=box];
-        n3118[label="handle_starknet_command_error", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/errors.rs:59", sym_ty="Function", shape=ellipse];
-        n3153[label="SNCastProviderError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/errors.rs:67", sym_ty="Enum", shape=box];
-        n3353[label="SNCastStarknetError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/errors.rs:90", sym_ty="Enum", shape=box];
+        n6952[label="StarknetCommandError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/errors.rs:47", sym_ty="Enum", shape=box];
+        n7045[label="handle_starknet_command_error", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/errors.rs:59", sym_ty="Function", shape=ellipse];
+        n7079[label="SNCastProviderError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/errors.rs:67", sym_ty="Enum", shape=box];
+        n7501[label="SNCastStarknetError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/errors.rs:90", sym_ty="Enum", shape=box];
       }
 
       subgraph cluster_explorer_link_rs {
@@ -946,8 +1199,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n10611[label="OutputLink", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/explorer_link.rs:12", sym_ty="Trait", shape=box];
-        n11926[label="block_explorer_link_if_allowed", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/explorer_link.rs:57", sym_ty="Function", shape=ellipse];
+        n9724[label="OutputLink", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/explorer_link.rs:12", sym_ty="Trait", shape=box];
+        n10029[label="block_explorer_link_if_allowed", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/explorer_link.rs:57", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_invoke_rs {
@@ -955,7 +1208,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n4114[label="InvokeResponse", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/invoke.rs:10", sym_ty="Struct", shape=box];
+        n14717[label="InvokeResponse", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/invoke.rs:10", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_ui_rs {
@@ -963,7 +1216,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n11146[label="UI", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/ui.rs:6", sym_ty="Struct", shape=box];
+        n5758[label="UI", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/response/ui.rs:6", sym_ty="Struct", shape=box];
       }
 
     }
@@ -978,7 +1231,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n5788[label="balance", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/balance.rs:70", sym_ty="Function", shape=ellipse];
+        n10819[label="balance", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/balance.rs:70", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_class_hash_rs {
@@ -986,15 +1239,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n9876[label="ClassHash", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/utils/class_hash.rs:14", sym_ty="Struct", shape=box];
-      }
-
-      subgraph cluster_deploy_rs {
-        label="deploy.rs";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n8823[label="deploy", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/deploy.rs:77", sym_ty="Function", shape=ellipse];
+        n12180[label="ClassHash", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/utils/class_hash.rs:14", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_import_rs {
@@ -1002,7 +1247,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n13327[label="import", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/account/import.rs:68", sym_ty="Function", shape=ellipse];
+        n1750[label="import", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/account/import.rs:68", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_mod_rs {
@@ -1010,12 +1255,9 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n3593[label="add_created_profile_to_configuration", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/account/mod.rs:115", sym_ty="Function", shape=ellipse];
-        n4057[label="generate_add_profile_message", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/account/mod.rs:177", sym_ty="Function", shape=ellipse];
-        n4218[label="account", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/account/mod.rs:210", sym_ty="Function", shape=ellipse];
-        n12366[label="multicall", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/multicall/mod.rs:33", sym_ty="Function", shape=ellipse];
-        n14556[label="verify", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/verify/mod.rs:120", sym_ty="Function", shape=ellipse];
-        n14162[label="Verifier", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/verify/mod.rs:71", sym_ty="Enum", shape=box];
+        n9126[label="generate_add_profile_message", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/account/mod.rs:177", sym_ty="Function", shape=ellipse];
+        n9477[label="account", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/account/mod.rs:210", sym_ty="Function", shape=ellipse];
+        n10741[label="verify", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/verify/mod.rs:120", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_run_rs {
@@ -1023,8 +1265,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n6516[label="run", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/multicall/run.rs:59", sym_ty="Function", shape=ellipse];
-        n10478[label="run", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/script/run.rs:278", sym_ty="Function", shape=ellipse];
+        n9347[label="run", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/multicall/run.rs:59", sym_ty="Function", shape=ellipse];
+        n10340[label="run", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/script/run.rs:278", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_script_runtime_rs {
@@ -1032,7 +1274,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n9662[label="CastScriptRuntime", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/script/run/script_runtime.rs:20", sym_ty="Struct", shape=box];
+        n12435[label="CastScriptRuntime", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/script/run/script_runtime.rs:20", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_serialize_rs {
@@ -1040,24 +1282,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n6210[label="Location", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/utils/serialize.rs:34", sym_ty="Enum", shape=box];
-        n6343[label="serialize", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/utils/serialize.rs:73", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_show_config_rs {
-        label="show_config.rs";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n5728[label="show_config", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/show_config.rs:18", sym_ty="Function", shape=ellipse];
-      }
-
-      subgraph cluster_voyager_rs {
-        label="voyager.rs";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n1368[label="gather_packages", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/verify/voyager.rs:68", sym_ty="Function", shape=ellipse];
+        n2266[label="Location", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/starknet_commands/utils/serialize.rs:34", sym_ty="Enum", shape=box];
       }
 
     }
@@ -1072,7 +1297,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n13107[label="SerialiseAsBytes", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/state/hashing.rs:6", sym_ty="Trait", shape=box];
+        n8598[label="SerialiseAsBytes", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/state/hashing.rs:6", sym_ty="Trait", shape=box];
       }
 
       subgraph cluster_state_file_rs {
@@ -1080,9 +1305,9 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n3744[label="ScriptTransactionEntries", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/state/state_file.rs:103", sym_ty="Struct", shape=box];
-        n3937[label="ScriptTransactionEntry", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/state/state_file.rs:129", sym_ty="Struct", shape=box];
-        n4118[label="ScriptTransactionOutput", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/state/state_file.rs:179", sym_ty="Enum", shape=box];
+        n5527[label="ScriptTransactionEntries", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/state/state_file.rs:103", sym_ty="Struct", shape=box];
+        n5785[label="ScriptTransactionEntry", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/state/state_file.rs:129", sym_ty="Struct", shape=box];
+        n6016[label="ScriptTransactionOutput", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/sncast/src/state/state_file.rs:179", sym_ty="Enum", shape=box];
       }
 
     }
@@ -1104,7 +1329,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n8367[label="NamedArgs", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/args/named.rs:12", sym_ty="Struct", shape=box];
+        n3936[label="NamedArgs", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/args/named.rs:12", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_unnamed_rs {
@@ -1112,7 +1337,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n6999[label="UnnamedArgs", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/args/unnamed.rs:6", sym_ty="Struct", shape=box];
+        n14866[label="UnnamedArgs", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/args/unnamed.rs:6", sym_ty="Struct", shape=box];
       }
 
     }
@@ -1122,7 +1347,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n9687[label="Arguments", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/args.rs:16", sym_ty="Struct", shape=box];
+      n5293[label="Arguments", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/args.rs:16", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_attributes {
@@ -1135,7 +1360,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n12771[label="AvailableGasCollector", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/attributes/available_gas.rs:11", sym_ty="Struct", shape=box];
+        n13515[label="AvailableGasCollector", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/attributes/available_gas.rs:11", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_fork_rs {
@@ -1143,7 +1368,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n12891[label="ForkCollector", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/attributes/fork.rs:16", sym_ty="Struct", shape=box];
+        n4134[label="ForkCollector", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/attributes/fork.rs:16", sym_ty="Struct", shape=box];
       }
 
     }
@@ -1153,9 +1378,9 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n2287[label="AttributeInfo", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/attributes.rs:15", sym_ty="Trait", shape=box];
-      n2308[label="AttributeTypeData", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/attributes.rs:19", sym_ty="Trait", shape=box];
-      n2327[label="AttributeCollector", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/attributes.rs:23", sym_ty="Trait", shape=box];
+      n14539[label="AttributeInfo", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/attributes.rs:15", sym_ty="Trait", shape=box];
+      n14655[label="AttributeTypeData", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/attributes.rs:19", sym_ty="Trait", shape=box];
+      n14672[label="AttributeCollector", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/attributes.rs:23", sym_ty="Trait", shape=box];
     }
 
     subgraph cluster_cairo_expression_rs {
@@ -1163,7 +1388,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n1078[label="CairoExpression", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/cairo_expression.rs:3", sym_ty="Trait", shape=box];
+      n5086[label="CairoExpression", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/cairo_expression.rs:3", sym_ty="Trait", shape=box];
     }
 
     subgraph cluster_fork {
@@ -1176,9 +1401,18 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n12051[label="BlockId", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/attributes/fork/block_id.rs:29", sym_ty="Enum", shape=box];
+        n8712[label="BlockIdVariants", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/attributes/fork/block_id.rs:12", sym_ty="Enum", shape=box];
+        n8803[label="BlockId", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/attributes/fork/block_id.rs:29", sym_ty="Enum", shape=box];
       }
 
+    }
+
+    subgraph cluster_parse_rs {
+      label="parse.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n11540[label="parse", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/parse.rs:13", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_types_rs {
@@ -1186,9 +1420,9 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n30[label="ParseFromExpr", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/types.rs:12", sym_ty="Trait", shape=box];
-      n1662[label="Felt", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/types.rs:21", sym_ty="Enum", shape=box];
-      n1880[label="Number", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/types.rs:57", sym_ty="Struct", shape=box];
+      n14[label="ParseFromExpr", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/types.rs:12", sym_ty="Trait", shape=box];
+      n230[label="Felt", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/types.rs:21", sym_ty="Enum", shape=box];
+      n304[label="Number", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin/src/types.rs:57", sym_ty="Struct", shape=box];
     }
 
   }
@@ -1208,7 +1442,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n13810[label="NamedArgs", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/args/named.rs:10", sym_ty="Struct", shape=box];
+        n12514[label="NamedArgs", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/args/named.rs:10", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_unnamed_rs {
@@ -1216,7 +1450,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n7308[label="UnnamedArgs", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/args/unnamed.rs:6", sym_ty="Struct", shape=box];
+        n14558[label="UnnamedArgs", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/args/unnamed.rs:6", sym_ty="Struct", shape=box];
       }
 
     }
@@ -1226,7 +1460,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n11512[label="Arguments", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/args.rs:16", sym_ty="Struct", shape=box];
+      n7963[label="Arguments", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/args.rs:16", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_attributes {
@@ -1234,13 +1468,12 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
-      subgraph cluster_fork_rs {
-        label="fork.rs";
+      subgraph cluster_fuzzer_rs {
+        label="fuzzer.rs";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n8726[label="ForkCollector", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/attributes/fork.rs:17", sym_ty="Struct", shape=box];
-        n8906[label="inline_args", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/attributes/fork.rs:43", sym_ty="Function", shape=ellipse];
+        n7744[label="fuzzer", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/attributes/fuzzer.rs:69", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_test_rs {
@@ -1248,7 +1481,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n4985[label="test_internal", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/attributes/test.rs:29", sym_ty="Function", shape=ellipse];
+        n1727[label="test_internal", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/attributes/test.rs:29", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -1258,9 +1491,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n3611[label="AttributeInfo", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/attributes.rs:14", sym_ty="Trait", shape=box];
-      n3656[label="AttributeTypeData", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/attributes.rs:18", sym_ty="Trait", shape=box];
-      n3674[label="AttributeCollector", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/attributes.rs:22", sym_ty="Trait", shape=box];
+      n13887[label="AttributeInfo", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/attributes.rs:14", sym_ty="Trait", shape=box];
     }
 
     subgraph cluster_cairo_expression_rs {
@@ -1268,7 +1499,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n2257[label="CairoExpression", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/cairo_expression.rs:1", sym_ty="Trait", shape=box];
+      n7031[label="CairoExpression", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/cairo_expression.rs:1", sym_ty="Trait", shape=box];
     }
 
     subgraph cluster_fork {
@@ -1281,7 +1512,23 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n12493[label="BlockId", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/attributes/fork/block_id.rs:28", sym_ty="Enum", shape=box];
+        n9466[label="BlockId", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/attributes/fork/block_id.rs:28", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_fuzzer {
+      label="fuzzer";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_wrapper_rs {
+        label="wrapper.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n8424[label="FuzzerWrapperCollector", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/attributes/fuzzer/wrapper.rs:13", sym_ty="Struct", shape=box];
+        n8518[label="fuzzer_wrapper_internal", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/attributes/fuzzer/wrapper.rs:27", sym_ty="Function", shape=ellipse];
       }
 
     }
@@ -1291,7 +1538,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n5409[label="parse", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/parse.rs:14", sym_ty="Function", shape=ellipse];
+      n3279[label="parse", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/parse.rs:14", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_types_rs {
@@ -1299,9 +1546,9 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n6645[label="ParseFromExpr", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/types.rs:10", sym_ty="Trait", shape=box];
-      n6705[label="Felt", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/types.rs:19", sym_ty="Enum", shape=box];
-      n6996[label="Number", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/types.rs:55", sym_ty="Struct", shape=box];
+      n2728[label="ParseFromExpr", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/types.rs:10", sym_ty="Trait", shape=box];
+      n2779[label="Felt", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/types.rs:19", sym_ty="Enum", shape=box];
+      n2984[label="Number", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/snforge-scarb-plugin-deprecated/src/types.rs:55", sym_ty="Struct", shape=box];
     }
 
   }
@@ -1316,7 +1563,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n14651[label="USCError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/universal-sierra-compiler-api/src/command.rs:12", sym_ty="Enum", shape=box];
+      n13949[label="USCError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/universal-sierra-compiler-api/src/command.rs:12", sym_ty="Enum", shape=box];
     }
 
     subgraph cluster_compile_rs {
@@ -1324,10 +1571,9 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n6637[label="CompilationError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/universal-sierra-compiler-api/src/compile.rs:12", sym_ty="Enum", shape=box];
-      n6746[label="SierraType", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/universal-sierra-compiler-api/src/compile.rs:28", sym_ty="Enum", shape=box];
-      n6769[label="compile_sierra", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/universal-sierra-compiler-api/src/compile.rs:34", sym_ty="Function", shape=ellipse];
-      n6885[label="compile_sierra_at_path", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/universal-sierra-compiler-api/src/compile.rs:48", sym_ty="Function", shape=ellipse];
+      n5017[label="CompilationError", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/universal-sierra-compiler-api/src/compile.rs:12", sym_ty="Enum", shape=box];
+      n5157[label="SierraType", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/universal-sierra-compiler-api/src/compile.rs:28", sym_ty="Enum", shape=box];
+      n5185[label="compile_sierra", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/universal-sierra-compiler-api/src/compile.rs:34", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_representation_rs {
@@ -1335,290 +1581,294 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n8323[label="AssembledCairoProgram", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/universal-sierra-compiler-api/src/representation.rs:22", sym_ty="Struct", shape=box];
-      n8216[label="RawCasmProgram", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/universal-sierra-compiler-api/src/representation.rs:9", sym_ty="Struct", shape=box];
+      n14843[label="AssembledCairoProgram", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/universal-sierra-compiler-api/src/representation.rs:22", sym_ty="Struct", shape=box];
+      n14751[label="RawCasmProgram", path="/home/yibai/llmcc/sample/repos/starknet-foundry/crates/universal-sierra-compiler-api/src/representation.rs:9", sym_ty="Struct", shape=box];
     }
 
   }
 
 
-  n30 -> n1662 [from="trait", to="impl"];
-  n30 -> n1880 [from="trait", to="impl"];
-  n30 -> n12051 [from="trait", to="impl"];
-  n89 -> n193 [from="type_dep", to="struct"];
-  n143 -> n2689 [from="type_dep", to="struct"];
-  n143 -> n8959 [from="type_dep", to="struct"];
-  n216 -> n4218 [from="input", to="func"];
-  n216 -> n6516 [from="input", to="func"];
-  n216 -> n8823 [from="input", to="func"];
-  n216 -> n12366 [from="input", to="func"];
-  n224 -> n216 [from="field_type", to="struct"];
-  n224 -> n2689 [from="field_type", to="struct"];
-  n256 -> n16 [from="type_dep", to="struct"];
-  n308 -> n256 [from="field_type", to="struct"];
-  n308 -> n8582 [from="type_dep", to="struct"];
-  n332 -> n350 [from="field_type", to="struct"];
-  n332 -> n854 [from="field_type", to="enum"];
-  n332 -> n854 [from="type_arg", to="generic"];
-  n332 -> n1472 [from="type_arg", to="generic"];
-  n332 -> n1537 [from="field_type", to="enum"];
-  n332 -> n1644 [from="type_dep", to="struct"];
-  n332 -> n1674 [from="type_dep", to="struct"];
-  n332 -> n6705 [from="type_arg", to="impl"];
-  n332 -> n12745 [from="type_dep", to="struct"];
-  n332 -> n13367 [from="type_dep", to="struct"];
-  n401 -> n2689 [from="type_dep", to="struct"];
-  n1029 -> n1098 [from="field_type", to="enum"];
-  n1029 -> n12142 [from="input", to="func"];
-  n1029 -> n12221 [from="input", to="func"];
-  n1073 -> n1472 [from="field_type", to="enum"];
-  n1078 -> n1662 [from="trait", to="impl"];
-  n1078 -> n1880 [from="trait", to="impl"];
-  n1078 -> n12051 [from="trait", to="impl"];
-  n1166 -> n11820 [from="func", to="type_dep"];
-  n1228 -> n11709 [from="func", to="type_dep"];
-  n1368 -> n5409 [from="caller", to="callee"];
-  n1372 -> n2082 [from="field_type", to="struct"];
-  n1384 -> n4693 [from="type_dep", to="struct"];
-  n1433 -> n11698 [from="input", to="func"];
-  n1433 -> n11709 [from="field_type", to="enum"];
-  n1472 -> n1674 [from="type_dep", to="struct"];
-  n1475 -> n13507 [from="field_type", to="struct"];
-  n1662 -> n143 [from="type_arg", to="impl"];
-  n1662 -> n193 [from="type_dep", to="struct"];
-  n1662 -> n1475 [from="field_type", to="enum"];
-  n1662 -> n6210 [from="field_type", to="enum"];
-  n1662 -> n11926 [from="input", to="func"];
-  n1662 -> n12745 [from="type_dep", to="struct"];
-  n1662 -> n13367 [from="type_dep", to="struct"];
-  n1662 -> n13507 [from="type_dep", to="struct"];
-  n1674 -> n2705 [from="field_type", to="struct"];
-  n1674 -> n4418 [from="type_arg", to="impl"];
-  n1674 -> n8524 [from="type_arg", to="impl"];
-  n1735 -> n3074 [from="field_type", to="enum"];
-  n1880 -> n1662 [from="field_type", to="enum"];
-  n1880 -> n12051 [from="field_type", to="enum"];
-  n1887 -> n4693 [from="type_dep", to="struct"];
-  n2257 -> n6705 [from="trait", to="impl"];
-  n2257 -> n6996 [from="trait", to="impl"];
-  n2257 -> n12493 [from="trait", to="impl"];
-  n2287 -> n12771 [from="trait", to="impl"];
-  n2287 -> n12891 [from="trait", to="impl"];
-  n2308 -> n12771 [from="trait", to="impl"];
-  n2308 -> n12891 [from="trait", to="impl"];
-  n2327 -> n12771 [from="trait", to="impl"];
-  n2327 -> n12891 [from="trait", to="impl"];
-  n2490 -> n2689 [from="field_type", to="struct"];
-  n2581 -> n10828 [from="field_type", to="struct"];
-  n2689 -> n3593 [from="input", to="func"];
-  n2689 -> n4057 [from="input", to="func"];
-  n2689 -> n4218 [from="input", to="func"];
-  n2689 -> n5728 [from="input", to="func"];
-  n2689 -> n6343 [from="input", to="func"];
-  n2689 -> n10478 [from="input", to="func"];
-  n2689 -> n11926 [from="input", to="func"];
-  n2689 -> n12366 [from="input", to="func"];
-  n2689 -> n13327 [from="input", to="func"];
-  n2689 -> n14556 [from="input", to="func"];
-  n3074 -> n3118 [from="input", to="func"];
-  n3118 -> n2027 [from="caller", to="callee"];
-  n3153 -> n1735 [from="field_type", to="enum"];
-  n3153 -> n2027 [from="input", to="func"];
-  n3153 -> n3074 [from="field_type", to="enum"];
-  n3158 -> n3208 [from="field_type", to="struct"];
-  n3208 -> n6014 [from="input", to="func"];
-  n3208 -> n8022 [from="input", to="func"];
-  n3353 -> n3153 [from="field_type", to="enum"];
-  n3424 -> n2560 [from="field_type", to="enum"];
-  n3424 -> n6227 [from="field_type", to="enum"];
-  n3446 -> n3424 [from="func", to="type_dep"];
-  n3593 -> n4218 [from="caller", to="callee"];
-  n3611 -> n5409 [from="bound", to="generic"];
-  n3611 -> n8726 [from="trait", to="impl"];
-  n3656 -> n8726 [from="trait", to="impl"];
-  n3674 -> n8726 [from="trait", to="impl"];
-  n3726 -> n10370 [from="type_arg", to="impl"];
-  n3726 -> n11941 [from="field_type", to="enum"];
-  n3864 -> n12068 [from="field_type", to="struct"];
-  n3881 -> n1662 [from="trait", to="impl"];
-  n3932 -> n332 [from="trait", to="impl"];
-  n3932 -> n1662 [from="trait", to="impl"];
-  n3932 -> n6705 [from="trait", to="impl"];
-  n3932 -> n8771 [from="trait", to="impl"];
-  n3937 -> n3744 [from="type_dep", to="struct"];
-  n3991 -> n6985 [from="field_type", to="struct"];
-  n4057 -> n9895 [from="caller", to="callee"];
-  n4114 -> n4118 [from="field_type", to="enum"];
-  n4118 -> n3937 [from="field_type", to="struct"];
-  n4218 -> n10268 [from="caller", to="callee"];
-  n4693 -> n5569 [from="field_type", to="struct"];
-  n5107 -> n3568 [from="trait", to="impl"];
-  n5107 -> n4114 [from="trait", to="impl"];
-  n5569 -> n5335 [from="field_type", to="enum"];
-  n5569 -> n8022 [from="input", to="func"];
-  n6005 -> n6537 [from="field_type", to="enum"];
-  n6014 -> n5409 [from="caller", to="callee"];
-  n6014 -> n6005 [from="func", to="type_dep"];
-  n6083 -> n2581 [from="field_type", to="struct"];
-  n6152 -> n6083 [from="type_dep", to="struct"];
-  n6280 -> n6227 [from="func", to="type_dep"];
-  n6343 -> n3074 [from="func", to="type_dep"];
-  n6516 -> n3118 [from="caller", to="callee"];
-  n6516 -> n10268 [from="caller", to="callee"];
-  n6537 -> n6227 [from="field_type", to="enum"];
-  n6537 -> n14651 [from="field_type", to="enum"];
-  n6645 -> n6705 [from="trait", to="impl"];
-  n6645 -> n6996 [from="trait", to="impl"];
-  n6645 -> n12493 [from="trait", to="impl"];
-  n6705 -> n332 [from="type_arg", to="impl"];
-  n6705 -> n854 [from="type_arg", to="generic"];
-  n6705 -> n1472 [from="type_arg", to="generic"];
-  n6705 -> n1674 [from="type_dep", to="struct"];
-  n6705 -> n5788 [from="input", to="func"];
-  n6705 -> n6728 [from="field_type", to="enum"];
-  n6705 -> n7180 [from="field_type", to="enum"];
-  n6705 -> n7290 [from="field_type", to="struct"];
-  n6705 -> n7290 [from="type_dep", to="struct"];
-  n6705 -> n8378 [from="type_dep", to="struct"];
-  n6705 -> n8771 [from="field_type", to="struct"];
-  n6705 -> n8823 [from="input", to="func"];
-  n6705 -> n9692 [from="field_type", to="enum"];
-  n6705 -> n11507 [from="field_type", to="enum"];
-  n6705 -> n12559 [from="field_type", to="struct"];
-  n6728 -> n3991 [from="field_type", to="struct"];
-  n6746 -> n6769 [from="input", to="func"];
-  n6746 -> n6885 [from="input", to="func"];
-  n6769 -> n6637 [from="func", to="type_dep"];
-  n6885 -> n6637 [from="func", to="type_dep"];
-  n6985 -> n1105 [from="type_dep", to="struct"];
-  n6996 -> n6705 [from="field_type", to="enum"];
-  n6996 -> n12493 [from="field_type", to="enum"];
-  n6999 -> n9687 [from="field_type", to="struct"];
-  n7231 -> n13507 [from="func", to="type_dep"];
-  n7290 -> n3353 [from="field_type", to="enum"];
-  n7290 -> n7110 [from="field_type", to="enum"];
-  n7290 -> n7180 [from="field_type", to="enum"];
-  n7290 -> n9692 [from="field_type", to="enum"];
-  n7290 -> n10370 [from="field_type", to="enum"];
-  n7290 -> n11507 [from="field_type", to="enum"];
-  n7301 -> n1166 [from="input", to="func"];
-  n7301 -> n1228 [from="input", to="func"];
-  n7301 -> n9483 [from="input", to="func"];
-  n7308 -> n11512 [from="field_type", to="struct"];
-  n7455 -> n1000 [from="input", to="func"];
-  n7518 -> n7279 [from="field_type", to="struct"];
-  n7573 -> n5569 [from="field_type", to="struct"];
-  n7573 -> n11698 [from="input", to="func"];
-  n7608 -> n3604 [from="trait", to="impl"];
-  n7608 -> n4418 [from="trait", to="impl"];
-  n7608 -> n7645 [from="trait", to="impl"];
-  n7608 -> n8524 [from="trait", to="impl"];
-  n7608 -> n9662 [from="trait", to="impl"];
-  n7645 -> n9662 [from="field_type", to="struct"];
-  n8022 -> n2663 [from="func", to="type_dep"];
-  n8022 -> n6005 [from="func", to="type_dep"];
-  n8022 -> n13581 [from="func", to="type_dep"];
-  n8204 -> n10478 [from="input", to="func"];
-  n8204 -> n14556 [from="input", to="func"];
-  n8216 -> n1166 [from="input", to="func"];
-  n8216 -> n1228 [from="input", to="func"];
-  n8216 -> n5575 [from="input", to="func"];
-  n8323 -> n8216 [from="field_type", to="struct"];
-  n8367 -> n9687 [from="field_type", to="struct"];
-  n8488 -> n6705 [from="type_arg", to="impl"];
-  n8488 -> n9692 [from="field_type", to="enum"];
-  n8488 -> n11507 [from="field_type", to="enum"];
-  n8555 -> n4118 [from="trait", to="impl"];
-  n8555 -> n11453 [from="trait", to="impl"];
-  n8555 -> n11507 [from="trait", to="impl"];
-  n8555 -> n13507 [from="trait", to="impl"];
-  n8582 -> n2581 [from="field_type", to="struct"];
-  n8771 -> n3353 [from="field_type", to="enum"];
-  n8771 -> n3568 [from="field_type", to="struct"];
-  n8771 -> n4114 [from="field_type", to="struct"];
-  n8771 -> n6705 [from="type_arg", to="impl"];
-  n8771 -> n13206 [from="field_type", to="struct"];
-  n8823 -> n3074 [from="func", to="type_dep"];
-  n8823 -> n3937 [from="func", to="type_dep"];
-  n8823 -> n13206 [from="func", to="type_dep"];
-  n8906 -> n8726 [from="func", to="type_dep"];
-  n8959 -> n4057 [from="input", to="func"];
-  n9032 -> n8823 [from="input", to="func"];
-  n9032 -> n9479 [from="type_arg", to="impl"];
-  n9050 -> n9692 [from="field_type", to="enum"];
-  n9050 -> n11507 [from="field_type", to="enum"];
-  n9064 -> n9692 [from="field_type", to="enum"];
-  n9064 -> n11507 [from="field_type", to="enum"];
-  n9077 -> n16 [from="trait", to="impl"];
-  n9077 -> n256 [from="trait", to="impl"];
-  n9230 -> n3208 [from="func", to="type_dep"];
-  n9337 -> n7645 [from="trait", to="impl"];
-  n9337 -> n8524 [from="trait", to="impl"];
-  n9337 -> n9662 [from="trait", to="impl"];
-  n9418 -> n9032 [from="type_arg", to="impl"];
-  n9692 -> n9575 [from="field_type", to="enum"];
-  n9876 -> n350 [from="field_type", to="struct"];
-  n9876 -> n1444 [from="field_type", to="enum"];
-  n9876 -> n1537 [from="field_type", to="enum"];
-  n9876 -> n1674 [from="type_dep", to="struct"];
-  n9876 -> n2086 [from="type_dep", to="struct"];
-  n9876 -> n6705 [from="type_arg", to="impl"];
-  n9876 -> n8582 [from="type_dep", to="struct"];
-  n9876 -> n12745 [from="type_dep", to="struct"];
-  n9876 -> n13367 [from="type_dep", to="struct"];
-  n10165 -> n8524 [from="trait", to="impl"];
-  n10478 -> n3536 [from="caller", to="callee"];
-  n10478 -> n13367 [from="func", to="type_dep"];
-  n10611 -> n3568 [from="trait", to="impl"];
-  n10611 -> n4114 [from="trait", to="impl"];
-  n10688 -> n10794 [from="type_dep", to="struct"];
-  n10784 -> n3446 [from="caller", to="callee"];
-  n10784 -> n6516 [from="caller", to="callee"];
-  n11146 -> n4218 [from="input", to="func"];
-  n11146 -> n6343 [from="input", to="func"];
-  n11146 -> n6516 [from="input", to="func"];
-  n11146 -> n8823 [from="input", to="func"];
-  n11146 -> n9483 [from="input", to="func"];
-  n11146 -> n10478 [from="input", to="func"];
-  n11146 -> n12366 [from="input", to="func"];
-  n11146 -> n13327 [from="input", to="func"];
-  n11146 -> n14556 [from="input", to="func"];
-  n11453 -> n13624 [from="field_type", to="struct"];
-  n11507 -> n11453 [from="field_type", to="enum"];
-  n11512 -> n4985 [from="input", to="func"];
-  n11512 -> n8906 [from="input", to="func"];
-  n11709 -> n11820 [from="field_type", to="enum"];
-  n11820 -> n1000 [from="input", to="func"];
-  n11820 -> n6713 [from="type_dep", to="struct"];
-  n11926 -> n143 [from="func", to="type_dep"];
-  n11926 -> n12100 [from="caller", to="callee"];
-  n11960 -> n11941 [from="field_type", to="enum"];
-  n12073 -> n12011 [from="func", to="type_dep"];
-  n12073 -> n12120 [from="caller", to="callee"];
-  n12100 -> n12120 [from="caller", to="callee"];
-  n12101 -> n11960 [from="func", to="type_dep"];
-  n12120 -> n12011 [from="func", to="type_dep"];
-  n12493 -> n12559 [from="field_type", to="struct"];
-  n12745 -> n13178 [from="field_type", to="struct"];
-  n12837 -> n332 [from="func", to="type_dep"];
-  n13107 -> n6705 [from="trait", to="impl"];
-  n13178 -> n6985 [from="type_dep", to="struct"];
-  n13206 -> n4118 [from="field_type", to="enum"];
-  n13327 -> n2027 [from="caller", to="callee"];
-  n13342 -> n308 [from="trait", to="impl"];
-  n13342 -> n332 [from="trait", to="impl"];
-  n13367 -> n1105 [from="field_type", to="struct"];
-  n13429 -> n1674 [from="field_type", to="struct"];
-  n13453 -> n13429 [from="field_type", to="struct"];
-  n13507 -> n10828 [from="field_type", to="struct"];
-  n13565 -> n11963 [from="input", to="func"];
-  n13643 -> n13507 [from="type_dep", to="struct"];
-  n13810 -> n11512 [from="field_type", to="struct"];
-  n14212 -> n14265 [from="input", to="func"];
-  n14262 -> n7021 [from="field_type", to="struct"];
-  n14265 -> n2494 [from="func", to="type_dep"];
-  n14556 -> n14162 [from="func", to="type_dep"];
-  n14651 -> n6637 [from="field_type", to="enum"];
-  n14719 -> n9692 [from="field_type", to="enum"];
-  n14719 -> n11507 [from="field_type", to="enum"];
+  n14 -> n230 [from="trait", to="impl"];
+  n14 -> n304 [from="trait", to="impl"];
+  n14 -> n8803 [from="trait", to="impl"];
+  n113 -> n13 [from="type_dep", to="struct"];
+  n143 -> n113 [from="field_type", to="struct"];
+  n143 -> n719 [from="type_dep", to="struct"];
+  n157 -> n1229 [from="field_type", to="struct"];
+  n157 -> n2295 [from="type_dep", to="struct"];
+  n157 -> n2779 [from="type_arg", to="impl"];
+  n157 -> n3493 [from="field_type", to="struct"];
+  n157 -> n3570 [from="type_arg", to="generic"];
+  n157 -> n4029 [from="type_dep", to="struct"];
+  n157 -> n4106 [from="type_dep", to="struct"];
+  n157 -> n5282 [from="field_type", to="enum"];
+  n157 -> n10417 [from="field_type", to="enum"];
+  n157 -> n10417 [from="type_arg", to="generic"];
+  n157 -> n11519 [from="type_dep", to="struct"];
+  n230 -> n2266 [from="field_type", to="enum"];
+  n230 -> n2567 [from="type_arg", to="impl"];
+  n230 -> n2734 [from="type_dep", to="struct"];
+  n230 -> n5177 [from="field_type", to="enum"];
+  n230 -> n5239 [from="field_type", to="enum"];
+  n230 -> n10819 [from="input", to="func"];
+  n230 -> n11846 [from="field_type", to="enum"];
+  n304 -> n230 [from="field_type", to="enum"];
+  n304 -> n8803 [from="field_type", to="enum"];
+  n719 -> n13129 [from="field_type", to="struct"];
+  n774 -> n14014 [from="type_dep", to="struct"];
+  n905 -> n7452 [from="field_type", to="enum"];
+  n905 -> n11954 [from="field_type", to="enum"];
+  n1229 -> n2295 [from="type_dep", to="struct"];
+  n1750 -> n6368 [from="caller", to="callee"];
+  n1909 -> n5152 [from="field_type", to="struct"];
+  n2220 -> n2734 [from="type_dep", to="struct"];
+  n2295 -> n2869 [from="field_type", to="struct"];
+  n2373 -> n2389 [from="trait", to="impl"];
+  n2373 -> n3024 [from="trait", to="impl"];
+  n2373 -> n12435 [from="trait", to="impl"];
+  n2373 -> n13459 [from="trait", to="impl"];
+  n2373 -> n13897 [from="trait", to="impl"];
+  n2389 -> n12435 [from="field_type", to="struct"];
+  n2567 -> n3731 [from="type_dep", to="struct"];
+  n2567 -> n12309 [from="type_dep", to="struct"];
+  n2728 -> n2779 [from="trait", to="impl"];
+  n2728 -> n2984 [from="trait", to="impl"];
+  n2728 -> n9466 [from="trait", to="impl"];
+  n2779 -> n157 [from="type_arg", to="impl"];
+  n2779 -> n2295 [from="type_dep", to="struct"];
+  n2779 -> n3570 [from="type_arg", to="generic"];
+  n2779 -> n4106 [from="type_dep", to="struct"];
+  n2779 -> n4404 [from="field_type", to="struct"];
+  n2779 -> n4753 [from="type_dep", to="struct"];
+  n2779 -> n7452 [from="field_type", to="enum"];
+  n2779 -> n10029 [from="input", to="func"];
+  n2779 -> n10167 [from="field_type", to="struct"];
+  n2779 -> n10167 [from="type_dep", to="struct"];
+  n2779 -> n10417 [from="type_arg", to="generic"];
+  n2779 -> n11519 [from="type_dep", to="struct"];
+  n2779 -> n11954 [from="field_type", to="enum"];
+  n2779 -> n14740 [from="type_dep", to="struct"];
+  n2779 -> n14925 [from="field_type", to="struct"];
+  n2804 -> n9347 [from="input", to="func"];
+  n2804 -> n9477 [from="input", to="func"];
+  n2836 -> n2804 [from="field_type", to="struct"];
+  n2836 -> n3731 [from="field_type", to="struct"];
+  n2869 -> n5152 [from="type_dep", to="struct"];
+  n2894 -> n3513 [from="field_type", to="struct"];
+  n2975 -> n3570 [from="field_type", to="enum"];
+  n2984 -> n2779 [from="field_type", to="enum"];
+  n2984 -> n9466 [from="field_type", to="enum"];
+  n3024 -> n135 [from="base", to="extends"];
+  n3052 -> n4329 [from="input", to="func"];
+  n3212 -> n3905 [from="input", to="func"];
+  n3268 -> n2419 [from="input", to="func"];
+  n3268 -> n3474 [from="field_type", to="struct"];
+  n3268 -> n11017 [from="field_type", to="struct"];
+  n3472 -> n3398 [from="func", to="type_dep"];
+  n3472 -> n3522 [from="caller", to="callee"];
+  n3474 -> n2145 [from="input", to="func"];
+  n3495 -> n3522 [from="caller", to="callee"];
+  n3513 -> n2419 [from="input", to="func"];
+  n3522 -> n3279 [from="caller", to="callee"];
+  n3522 -> n3398 [from="func", to="type_dep"];
+  n3570 -> n4106 [from="type_dep", to="struct"];
+  n3731 -> n1750 [from="input", to="func"];
+  n3731 -> n9126 [from="input", to="func"];
+  n3731 -> n9477 [from="input", to="func"];
+  n3731 -> n10029 [from="input", to="func"];
+  n3731 -> n10340 [from="input", to="func"];
+  n3731 -> n10741 [from="input", to="func"];
+  n3731 -> n11425 [from="input", to="func"];
+  n3750 -> n2389 [from="trait", to="impl"];
+  n3750 -> n3024 [from="trait", to="impl"];
+  n3750 -> n12435 [from="trait", to="impl"];
+  n3888 -> n3991 [from="type_dep", to="struct"];
+  n3936 -> n5293 [from="field_type", to="struct"];
+  n4106 -> n135 [from="field_type", to="struct"];
+  n4106 -> n5948 [from="field_type", to="struct"];
+  n4315 -> n135 [from="trait", to="impl"];
+  n4315 -> n3024 [from="trait", to="impl"];
+  n4315 -> n9129 [from="trait", to="impl"];
+  n4329 -> n9575 [from="func", to="type_dep"];
+  n4678 -> n4106 [from="field_type", to="struct"];
+  n4685 -> n10340 [from="input", to="func"];
+  n4685 -> n10741 [from="input", to="func"];
+  n4700 -> n4678 [from="field_type", to="struct"];
+  n4711 -> n5785 [from="func", to="type_dep"];
+  n4711 -> n6902 [from="func", to="type_dep"];
+  n4753 -> n13491 [from="field_type", to="struct"];
+  n5086 -> n230 [from="trait", to="impl"];
+  n5086 -> n304 [from="trait", to="impl"];
+  n5086 -> n8803 [from="trait", to="impl"];
+  n5121 -> n9376 [from="field_type", to="enum"];
+  n5152 -> n3010 [from="type_dep", to="struct"];
+  n5157 -> n5185 [from="input", to="func"];
+  n5177 -> n4753 [from="field_type", to="struct"];
+  n5185 -> n5017 [from="func", to="type_dep"];
+  n5239 -> n5177 [from="field_type", to="enum"];
+  n5758 -> n1750 [from="input", to="func"];
+  n5758 -> n9347 [from="input", to="func"];
+  n5758 -> n9477 [from="input", to="func"];
+  n5758 -> n9762 [from="input", to="func"];
+  n5758 -> n10340 [from="input", to="func"];
+  n5758 -> n10741 [from="input", to="func"];
+  n5758 -> n11254 [from="input", to="func"];
+  n5758 -> n11425 [from="input", to="func"];
+  n5758 -> n11489 [from="input", to="func"];
+  n5758 -> n13351 [from="input", to="func"];
+  n5785 -> n5527 [from="type_dep", to="struct"];
+  n5913 -> n6952 [from="field_type", to="enum"];
+  n5948 -> n6738 [from="input", to="func"];
+  n6016 -> n5785 [from="field_type", to="struct"];
+  n6456 -> n14014 [from="type_dep", to="struct"];
+  n6863 -> n6902 [from="field_type", to="struct"];
+  n6952 -> n7045 [from="input", to="func"];
+  n7021 -> n5611 [from="func", to="type_dep"];
+  n7021 -> n7991 [from="caller", to="callee"];
+  n7031 -> n2779 [from="trait", to="impl"];
+  n7031 -> n2984 [from="trait", to="impl"];
+  n7031 -> n9466 [from="trait", to="impl"];
+  n7045 -> n6368 [from="caller", to="callee"];
+  n7079 -> n5913 [from="field_type", to="enum"];
+  n7079 -> n6368 [from="input", to="func"];
+  n7079 -> n6952 [from="field_type", to="enum"];
+  n7178 -> n399 [from="field_type", to="enum"];
+  n7202 -> n7181 [from="func", to="type_dep"];
+  n7208 -> n7178 [from="func", to="type_dep"];
+  n7257 -> n3201 [from="caller", to="callee"];
+  n7331 -> n157 [from="trait", to="impl"];
+  n7331 -> n2779 [from="trait", to="impl"];
+  n7331 -> n14925 [from="trait", to="impl"];
+  n7452 -> n7344 [from="field_type", to="enum"];
+  n7501 -> n7079 [from="field_type", to="enum"];
+  n7623 -> n5785 [from="func", to="type_dep"];
+  n7623 -> n7991 [from="caller", to="callee"];
+  n7685 -> n157 [from="func", to="type_dep"];
+  n7963 -> n1727 [from="input", to="func"];
+  n7963 -> n8518 [from="input", to="func"];
+  n8212 -> n6016 [from="field_type", to="enum"];
+  n8348 -> n3279 [from="caller", to="callee"];
+  n8445 -> n14866 [from="func", to="type_dep"];
+  n8518 -> n8424 [from="func", to="type_dep"];
+  n8598 -> n2779 [from="trait", to="impl"];
+  n8803 -> n4404 [from="field_type", to="struct"];
+  n8898 -> n5785 [from="func", to="type_dep"];
+  n8947 -> n4131 [from="field_type", to="struct"];
+  n8947 -> n4131 [from="trait", to="impl"];
+  n8947 -> n5574 [from="trait", to="impl"];
+  n9094 -> n4432 [from="trait", to="impl"];
+  n9094 -> n14717 [from="trait", to="impl"];
+  n9126 -> n83 [from="caller", to="callee"];
+  n9223 -> n8898 [from="caller", to="callee"];
+  n9347 -> n7045 [from="caller", to="callee"];
+  n9347 -> n12788 [from="caller", to="callee"];
+  n9376 -> n9575 [from="field_type", to="enum"];
+  n9380 -> n3731 [from="type_dep", to="struct"];
+  n9477 -> n12788 [from="caller", to="callee"];
+  n9565 -> n9591 [from="input", to="func"];
+  n9565 -> n9762 [from="input", to="func"];
+  n9575 -> n3905 [from="input", to="func"];
+  n9575 -> n14652 [from="type_dep", to="struct"];
+  n9591 -> n11864 [from="func", to="type_dep"];
+  n9724 -> n4432 [from="trait", to="impl"];
+  n9724 -> n14717 [from="trait", to="impl"];
+  n9762 -> n4685 [from="func", to="type_dep"];
+  n9924 -> n157 [from="func", to="type_dep"];
+  n9924 -> n3493 [from="func", to="output"];
+  n10029 -> n2567 [from="func", to="type_dep"];
+  n10029 -> n3495 [from="caller", to="callee"];
+  n10167 -> n5003 [from="field_type", to="enum"];
+  n10167 -> n5239 [from="field_type", to="enum"];
+  n10167 -> n7452 [from="field_type", to="enum"];
+  n10167 -> n7501 [from="field_type", to="enum"];
+  n10167 -> n11954 [from="field_type", to="enum"];
+  n10167 -> n12228 [from="field_type", to="enum"];
+  n10284 -> n11425 [from="input", to="func"];
+  n10340 -> n11519 [from="func", to="type_dep"];
+  n10340 -> n14335 [from="caller", to="callee"];
+  n10360 -> n3474 [from="field_type", to="struct"];
+  n10504 -> n10284 [from="field_type", to="struct"];
+  n10782 -> n2779 [from="type_arg", to="impl"];
+  n10782 -> n7452 [from="field_type", to="enum"];
+  n10782 -> n11954 [from="field_type", to="enum"];
+  n11017 -> n424 [from="input", to="func"];
+  n11017 -> n944 [from="input", to="func"];
+  n11017 -> n10740 [from="field_type", to="enum"];
+  n11017 -> n13351 [from="input", to="func"];
+  n11211 -> n13 [from="trait", to="impl"];
+  n11211 -> n113 [from="trait", to="impl"];
+  n11316 -> n12171 [from="input", to="func"];
+  n11425 -> n230 [from="func", to="type_dep"];
+  n11425 -> n7045 [from="caller", to="callee"];
+  n11425 -> n9223 [from="caller", to="callee"];
+  n11462 -> n7452 [from="field_type", to="enum"];
+  n11462 -> n11954 [from="field_type", to="enum"];
+  n11471 -> n14511 [from="field_type", to="enum"];
+  n11489 -> n11471 [from="func", to="type_dep"];
+  n11489 -> n11540 [from="caller", to="callee"];
+  n11519 -> n3010 [from="field_type", to="struct"];
+  n11545 -> n13129 [from="field_type", to="struct"];
+  n11565 -> n11545 [from="type_dep", to="struct"];
+  n11747 -> n1817 [from="type_dep", to="struct"];
+  n11846 -> n1909 [from="field_type", to="struct"];
+  n11846 -> n4404 [from="type_arg", to="impl"];
+  n11954 -> n11787 [from="field_type", to="enum"];
+  n12180 -> n719 [from="type_dep", to="struct"];
+  n12180 -> n2295 [from="type_dep", to="struct"];
+  n12180 -> n2779 [from="type_arg", to="impl"];
+  n12180 -> n3493 [from="field_type", to="struct"];
+  n12180 -> n4106 [from="type_dep", to="struct"];
+  n12180 -> n5282 [from="field_type", to="enum"];
+  n12180 -> n11316 [from="field_type", to="enum"];
+  n12180 -> n11519 [from="type_dep", to="struct"];
+  n12180 -> n14241 [from="type_dep", to="struct"];
+  n12309 -> n9126 [from="input", to="func"];
+  n12335 -> n5516 [from="field_type", to="struct"];
+  n12514 -> n7963 [from="field_type", to="struct"];
+  n12680 -> n13191 [from="type_arg", to="impl"];
+  n12712 -> n7452 [from="field_type", to="enum"];
+  n12712 -> n11954 [from="field_type", to="enum"];
+  n12980 -> n10078 [from="input", to="func"];
+  n12980 -> n10155 [from="input", to="func"];
+  n13101 -> n143 [from="trait", to="impl"];
+  n13101 -> n157 [from="trait", to="impl"];
+  n13129 -> n13491 [from="field_type", to="struct"];
+  n13196 -> n1440 [from="field_type", to="enum"];
+  n13196 -> n7181 [from="field_type", to="enum"];
+  n13351 -> n1467 [from="func", to="type_dep"];
+  n13351 -> n11471 [from="func", to="type_dep"];
+  n13351 -> n14188 [from="func", to="type_dep"];
+  n13665 -> n1783 [from="field_type", to="struct"];
+  n13746 -> n12788 [from="caller", to="callee"];
+  n13887 -> n8424 [from="trait", to="impl"];
+  n13949 -> n5017 [from="field_type", to="enum"];
+  n14014 -> n11017 [from="field_type", to="struct"];
+  n14188 -> n11254 [from="input", to="func"];
+  n14511 -> n7181 [from="field_type", to="enum"];
+  n14511 -> n13949 [from="field_type", to="enum"];
+  n14531 -> n399 [from="field_type", to="enum"];
+  n14531 -> n5003 [from="type_arg", to="impl"];
+  n14539 -> n4134 [from="trait", to="impl"];
+  n14539 -> n13515 [from="trait", to="impl"];
+  n14558 -> n7963 [from="field_type", to="struct"];
+  n14587 -> n474 [from="field_type", to="struct"];
+  n14606 -> n230 [from="trait", to="impl"];
+  n14655 -> n4134 [from="trait", to="impl"];
+  n14655 -> n13515 [from="trait", to="impl"];
+  n14672 -> n4134 [from="trait", to="impl"];
+  n14672 -> n13515 [from="trait", to="impl"];
+  n14717 -> n6016 [from="field_type", to="enum"];
+  n14751 -> n2145 [from="input", to="func"];
+  n14751 -> n4329 [from="input", to="func"];
+  n14843 -> n14751 [from="field_type", to="struct"];
+  n14866 -> n5293 [from="field_type", to="struct"];
+  n14913 -> n4753 [from="trait", to="impl"];
+  n14913 -> n6016 [from="trait", to="impl"];
+  n14913 -> n7344 [from="trait", to="impl"];
+  n14913 -> n7452 [from="trait", to="impl"];
+  n14925 -> n2779 [from="type_arg", to="impl"];
+  n14925 -> n4432 [from="field_type", to="struct"];
+  n14925 -> n7501 [from="field_type", to="enum"];
+  n14925 -> n8212 [from="field_type", to="struct"];
+  n14925 -> n14717 [from="field_type", to="struct"];
 }

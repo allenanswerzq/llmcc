@@ -45,20 +45,20 @@ digraph architecture {
 
   crate_ruff -> crate_ruff_db;
   crate_ruff -> crate_ruff_linter;
-  crate_ruff -> crate_ruff_text_size;
   crate_ruff -> crate_ruff_workspace;
-  crate_ruff -> crate_ty_python_semantic;
   crate_ruff_db -> crate_ruff_source_file;
-  crate_ruff_db -> crate_ruff_text_size;
   crate_ruff_db -> crate_ty_test;
   crate_ruff_dev -> crate_ruff;
   crate_ruff_dev -> crate_ruff_db;
   crate_ruff_dev -> crate_ruff_formatter;
+  crate_ruff_dev -> crate_ruff_python_formatter;
   crate_ruff_formatter -> crate_ruff_linter;
+  crate_ruff_formatter -> crate_ruff_python_formatter;
   crate_ruff_formatter -> crate_ruff_text_size;
   crate_ruff_formatter -> crate_ty_test;
   crate_ruff_index -> crate_ruff_python_semantic;
   crate_ruff_index -> crate_ty_python_semantic;
+  crate_ruff_linter -> crate_ruff;
   crate_ruff_linter -> crate_ruff_db;
   crate_ruff_linter -> crate_ruff_diagnostics;
   crate_ruff_linter -> crate_ruff_formatter;
@@ -77,13 +77,13 @@ digraph architecture {
   crate_ruff_linter -> crate_ruff_source_file;
   crate_ruff_linter -> crate_ruff_text_size;
   crate_ruff_linter -> crate_ty_ide;
-  crate_ruff_linter -> crate_ty_project;
   crate_ruff_linter -> crate_ty_python_semantic;
   crate_ruff_linter -> crate_ty_test;
   crate_ruff_linter -> crate_ty_wasm;
   crate_ruff_macros -> crate_ruff_db;
   crate_ruff_macros -> crate_ruff_linter;
-  crate_ruff_macros -> crate_ruff_python_literal;
+  crate_ruff_macros -> crate_ruff_server;
+  crate_ruff_macros -> crate_ty_python_semantic;
   crate_ruff_python_ast -> crate_ruff_linter;
   crate_ruff_python_ast -> crate_ruff_python_formatter;
   crate_ruff_python_ast -> crate_ruff_text_size;
@@ -94,7 +94,6 @@ digraph architecture {
   crate_ruff_python_formatter -> crate_ruff_linter;
   crate_ruff_python_formatter -> crate_ruff_python_ast;
   crate_ruff_python_formatter -> crate_ruff_python_trivia;
-  crate_ruff_python_formatter -> crate_ruff_source_file;
   crate_ruff_python_formatter -> crate_ruff_text_size;
   crate_ruff_python_formatter -> crate_ty_python_semantic;
   crate_ruff_python_formatter -> crate_ty_wasm;
@@ -110,9 +109,9 @@ digraph architecture {
   crate_ruff_python_semantic -> crate_ty_python_semantic;
   crate_ruff_python_semantic -> crate_ty_test;
   crate_ruff_python_trivia -> crate_ruff_text_size;
-  crate_ruff_server -> crate_ruff_db;
   crate_ruff_server -> crate_ruff_linter;
   crate_ruff_server -> crate_ruff_workspace;
+  crate_ruff_workspace -> crate_ruff_formatter;
   crate_ruff_workspace -> crate_ruff_linter;
   crate_ruff_workspace -> crate_ruff_python_formatter;
   crate_ty -> crate_ruff_db;
@@ -120,10 +119,10 @@ digraph architecture {
   crate_ty_ide -> crate_ruff_linter;
   crate_ty_ide -> crate_ruff_python_ast;
   crate_ty_ide -> crate_ruff_python_formatter;
-  crate_ty_ide -> crate_ruff_python_semantic;
   crate_ty_ide -> crate_ruff_text_size;
+  crate_ty_ide -> crate_ty_project;
   crate_ty_ide -> crate_ty_python_semantic;
-  crate_ty_ide -> crate_ty_server;
+  crate_ty_ide -> crate_ty_test;
   crate_ty_module_resolver -> crate_ruff_db;
   crate_ty_module_resolver -> crate_ruff_linter;
   crate_ty_project -> crate_ruff_db;
@@ -136,11 +135,13 @@ digraph architecture {
   crate_ty_python_semantic -> crate_ruff_python_ast;
   crate_ty_python_semantic -> crate_ruff_text_size;
   crate_ty_python_semantic -> crate_ty_module_resolver;
+  crate_ty_python_semantic -> crate_ty_wasm;
   crate_ty_server -> crate_ruff_db;
   crate_ty_server -> crate_ty_ide;
   crate_ty_server -> crate_ty_project;
   crate_ty_server -> crate_ty_wasm;
   crate_ty_test -> crate_ruff_db;
+  crate_ty_test -> crate_ruff_linter;
   crate_ty_test -> crate_ruff_source_file;
   crate_ty_wasm -> crate_ruff_db;
 }

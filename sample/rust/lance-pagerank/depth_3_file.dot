@@ -8,10 +8,58 @@ digraph architecture {
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
+  subgraph cluster_fsst {
+    label="fsst";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_fsst_rs {
+      label="fsst.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n71711[label="build_symbol_table", path="/home/yibai/llmcc/sample/repos/lance/rust/compression/fsst/src/fsst.rs:554", sym_ty="Function", shape=ellipse];
+      n68514[label="Symbol", path="/home/yibai/llmcc/sample/repos/lance/rust/compression/fsst/src/fsst.rs:64", sym_ty="Struct", shape=box];
+    }
+
+  }
+
   subgraph cluster_lance {
     label="lance";
     style=rounded;
         bgcolor="#f8f8f8";
+
+    subgraph cluster_arrow {
+      label="arrow";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_json_rs {
+        label="json.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n72896[label="JsonField", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/arrow/json.rs:188", sym_ty="Struct", shape=box];
+        n72181[label="JsonDataType", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/arrow/json.rs:23", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_datafusion {
+      label="datafusion";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_dataframe_rs {
+        label="dataframe.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n37084[label="SessionContextExt", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/datafusion/dataframe.rs:161", sym_ty="Trait", shape=box];
+        n35630[label="LanceTableProvider", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/datafusion/dataframe.rs:39", sym_ty="Struct", shape=box];
+      }
+
+    }
 
     subgraph cluster_dataset {
       label="dataset";
@@ -23,7 +71,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n45149[label="BlobFile", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/blob.rs:369", sym_ty="Struct", shape=box];
+        n46613[label="BlobFile", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/blob.rs:369", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_builder_rs {
@@ -31,7 +79,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n779[label="DatasetBuilder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/builder.rs:33", sym_ty="Struct", shape=box];
+        n23664[label="DatasetBuilder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/builder.rs:33", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_commit_rs {
@@ -39,7 +87,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n51296[label="CommitBuilder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/write/commit.rs:38", sym_ty="Struct", shape=box];
+        n50211[label="CommitBuilder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/write/commit.rs:38", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_fragment_rs {
@@ -47,21 +95,11 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n74696[label="FragmentReader", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/fragment.rs:1911", sym_ty="Struct", shape=box];
-        n65668[label="Reader", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/fragment.rs:301", sym_ty="Struct", shape=box];
-        n67442[label="FragReadConfig", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/fragment.rs:604", sym_ty="Struct", shape=box];
-        n64035[label="FileFragment", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/fragment.rs:69", sym_ty="Struct", shape=box];
-        n64082[label="GenericFileReader", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/fragment.rs:79", sym_ty="Trait", shape=box];
-      }
-
-      subgraph cluster_merge_insert_rs {
-        label="merge_insert.rs";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n24736[label="WhenMatched", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/write/merge_insert.rs:244", sym_ty="Enum", shape=box];
-        n24911[label="MergeInsertParams", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/write/merge_insert.rs:288", sym_ty="Struct", shape=box];
-        n25127[label="MergeInsertBuilder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/write/merge_insert.rs:361", sym_ty="Struct", shape=box];
+        n59348[label="FragmentReader", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/fragment.rs:1911", sym_ty="Struct", shape=box];
+        n48877[label="Reader", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/fragment.rs:301", sym_ty="Struct", shape=box];
+        n50674[label="FragReadConfig", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/fragment.rs:604", sym_ty="Struct", shape=box];
+        n47493[label="FileFragment", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/fragment.rs:69", sym_ty="Struct", shape=box];
+        n47533[label="GenericFileReader", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/fragment.rs:79", sym_ty="Trait", shape=box];
       }
 
       subgraph cluster_optimize_rs {
@@ -69,7 +107,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n19664[label="CompactionOptions", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/optimize.rs:120", sym_ty="Struct", shape=box];
+        n26855[label="CompactionOptions", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/optimize.rs:120", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_progress_rs {
@@ -77,7 +115,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n35469[label="WriteFragmentProgress", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/progress.rs:21", sym_ty="Trait", shape=box];
+        n42989[label="WriteFragmentProgress", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/progress.rs:21", sym_ty="Trait", shape=box];
       }
 
       subgraph cluster_refs_rs {
@@ -85,7 +123,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n9309[label="Ref", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/refs.rs:29", sym_ty="Enum", shape=box];
+        n10013[label="Ref", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/refs.rs:29", sym_ty="Enum", shape=box];
       }
 
       subgraph cluster_scanner_rs {
@@ -93,8 +131,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n23078[label="DatasetRecordBatchStream", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/scanner.rs:3977", sym_ty="Struct", shape=box];
-        n1312[label="Scanner", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/scanner.rs:449", sym_ty="Struct", shape=box];
+        n22760[label="DatasetRecordBatchStream", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/scanner.rs:3977", sym_ty="Struct", shape=box];
+        n2391[label="Scanner", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/scanner.rs:449", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_take_rs {
@@ -102,7 +140,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n13564[label="do_take_rows", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/take.rs:128", sym_ty="Function", shape=ellipse];
+        n14197[label="take", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/take.rs:103", sym_ty="Function", shape=ellipse];
       }
 
       subgraph cluster_transaction_rs {
@@ -110,10 +148,9 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n25400[label="UpdateMap", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/transaction.rs:136", sym_ty="Struct", shape=box];
-        n25443[label="Operation", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/transaction.rs:145", sym_ty="Enum", shape=box];
-        n26415[label="compare_vec", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/transaction.rs:340", sym_ty="Function", shape=ellipse];
-        n24992[label="Transaction", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/transaction.rs:85", sym_ty="Struct", shape=box];
+        n14804[label="UpdateMap", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/transaction.rs:136", sym_ty="Struct", shape=box];
+        n14843[label="Operation", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/transaction.rs:145", sym_ty="Enum", shape=box];
+        n14422[label="Transaction", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/transaction.rs:85", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_write_rs {
@@ -121,9 +158,9 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n61711[label="WriteParams", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/write.rs:159", sym_ty="Struct", shape=box];
-        n60885[label="WriteDestination", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/write.rs:67", sym_ty="Enum", shape=box];
-        n41264[label="FullSchemaMergeInsertExec", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/write/merge_insert/exec/write.rs:145", sym_ty="Struct", shape=box];
+        n67522[label="WriteParams", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/write.rs:159", sym_ty="Struct", shape=box];
+        n67069[label="WriteDestination", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/write.rs:67", sym_ty="Enum", shape=box];
+        n60762[label="FullSchemaMergeInsertExec", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset/write/merge_insert/exec/write.rs:145", sym_ty="Struct", shape=box];
       }
 
     }
@@ -133,10 +170,10 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n2566[label="Dataset", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset.rs:148", sym_ty="Struct", shape=box];
-      n2784[label="Version", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset.rs:192", sym_ty="Struct", shape=box];
-      n2832[label="ReadParams", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset.rs:216", sym_ty="Struct", shape=box];
-      n3266[label="ProjectionRequest", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset.rs:322", sym_ty="Enum", shape=box];
+      n2192[label="Dataset", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset.rs:148", sym_ty="Struct", shape=box];
+      n2426[label="Version", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset.rs:192", sym_ty="Struct", shape=box];
+      n2528[label="ReadParams", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset.rs:216", sym_ty="Struct", shape=box];
+      n3005[label="ProjectionRequest", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/dataset.rs:322", sym_ty="Enum", shape=box];
     }
 
     subgraph cluster_index {
@@ -149,7 +186,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n10919[label="IvfIndexBuilder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/index/vector/builder.rs:100", sym_ty="Struct", shape=box];
+        n8698[label="IvfIndexBuilder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/index/vector/builder.rs:100", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_create_rs {
@@ -157,7 +194,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n53740[label="CreateIndexBuilder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/index/create.rs:34", sym_ty="Struct", shape=box];
+        n52397[label="CreateIndexBuilder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/index/create.rs:34", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_ivf_rs {
@@ -165,7 +202,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n44136[label="IVFIndex", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/index/vector/ivf.rs:130", sym_ty="Struct", shape=box];
+        n49238[label="IVFIndex", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/index/vector/ivf.rs:130", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_pq_rs {
@@ -173,7 +210,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n68645[label="PQIndex", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/index/vector/pq.rs:56", sym_ty="Struct", shape=box];
+        n58589[label="PQIndex", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/index/vector/pq.rs:56", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_v2_rs {
@@ -181,7 +218,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n2129[label="IVFIndex", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/index/vector/ivf/v2.rs:104", sym_ty="Struct", shape=box];
+        n500[label="IVFIndex", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/index/vector/ivf/v2.rs:104", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_vector_rs {
@@ -189,7 +226,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n19631[label="VectorIndexParams", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/index/vector.rs:102", sym_ty="Struct", shape=box];
+        n18482[label="VectorIndexParams", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/index/vector.rs:102", sym_ty="Struct", shape=box];
       }
 
     }
@@ -204,7 +241,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n42293[label="TransactionRebase", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/io/commit/conflict_resolver.rs:27", sym_ty="Struct", shape=box];
+        n46559[label="TransactionRebase", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/io/commit/conflict_resolver.rs:27", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_filtered_read_rs {
@@ -212,15 +249,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n31326[label="FilteredReadOptions", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/io/exec/filtered_read.rs:1201", sym_ty="Struct", shape=box];
-      }
-
-      subgraph cluster_scan_rs {
-        label="scan.rs";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n71815[label="LanceScanExec", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/io/exec/scan.rs:529", sym_ty="Struct", shape=box];
+        n37206[label="FilteredReadOptions", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/io/exec/filtered_read.rs:1201", sym_ty="Struct", shape=box];
       }
 
     }
@@ -230,12 +259,20 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
+      subgraph cluster_caches_rs {
+        label="caches.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n72288[label="DSMetadataCache", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/session/caches.rs:59", sym_ty="Struct", shape=box];
+      }
+
       subgraph cluster_index_extension_rs {
         label="index_extension.rs";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n66993[label="IndexExtension", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/session/index_extension.rs:13", sym_ty="Trait", shape=box];
+        n21684[label="IndexExtension", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/session/index_extension.rs:13", sym_ty="Trait", shape=box];
       }
 
     }
@@ -245,7 +282,69 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n64807[label="Session", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/session.rs:38", sym_ty="Struct", shape=box];
+      n63729[label="Session", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/session.rs:38", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_utils {
+      label="utils";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_future_rs {
+        label="future.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n71586[label="SharedPrerequisite", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/utils/future.rs:17", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_test_rs {
+        label="test.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n36428[label="FragmentCount", path="/home/yibai/llmcc/sample/repos/lance/rust/lance/src/utils/test.rs:270", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_lance_arrow {
+    label="lance-arrow";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_bfloat16_rs {
+      label="bfloat16.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n21738[label="BFloat16Array", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-arrow/src/bfloat16.rs:48", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_floats_rs {
+      label="floats.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n55519[label="ArrowFloatType", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-arrow/src/floats.rs:82", sym_ty="Trait", shape=box];
+    }
+
+  }
+
+  subgraph cluster_lance_bitpacking {
+    label="lance-bitpacking";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n75429[label="unpack_64", path="/home/yibai/llmcc/sample/repos/lance/rust/compression/bitpacking/src/lib.rs:1556", sym_ty="Macro", shape=ellipse];
+      n76179[label="pack_64", path="/home/yibai/llmcc/sample/repos/lance/rust/compression/bitpacking/src/lib.rs:1634", sym_ty="Macro", shape=ellipse];
     }
 
   }
@@ -260,8 +359,24 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n10646[label="WeakLanceCache", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/cache.rs:336", sym_ty="Struct", shape=box];
-      n7890[label="LanceCache", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/cache.rs:56", sym_ty="Struct", shape=box];
+      n18187[label="WeakLanceCache", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/cache.rs:336", sym_ty="Struct", shape=box];
+      n16083[label="LanceCache", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/cache.rs:56", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_container {
+      label="container";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_list_rs {
+        label="list.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n51251[label="ExpLinkedList", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/container/list.rs:13", sym_ty="Struct", shape=box];
+        n52262[label="ExpLinkedListIter", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/container/list.rs:169", sym_ty="Struct", shape=box];
+      }
+
     }
 
     subgraph cluster_datatypes {
@@ -274,8 +389,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n52415[label="Field", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/datatypes/field.rs:137", sym_ty="Struct", shape=box];
-        n52172[label="BlobVersion", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/datatypes/field.rs:88", sym_ty="Enum", shape=box];
+        n18098[label="Field", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/datatypes/field.rs:137", sym_ty="Struct", shape=box];
+        n17496[label="BlobVersion", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/datatypes/field.rs:88", sym_ty="Enum", shape=box];
       }
 
       subgraph cluster_schema_rs {
@@ -283,20 +398,12 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n4615[label="Projection", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/datatypes/schema.rs:1025", sym_ty="Struct", shape=box];
-        n9[label="Schema", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/datatypes/schema.rs:23", sym_ty="Struct", shape=box];
-        n4146[label="Projectable", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/datatypes/schema.rs:963", sym_ty="Trait", shape=box];
-        n4270[label="BlobHandling", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/datatypes/schema.rs:975", sym_ty="Enum", shape=box];
+        n6452[label="Projection", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/datatypes/schema.rs:1025", sym_ty="Struct", shape=box];
+        n25[label="Schema", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/datatypes/schema.rs:23", sym_ty="Struct", shape=box];
+        n6015[label="Projectable", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/datatypes/schema.rs:963", sym_ty="Trait", shape=box];
+        n6108[label="BlobHandling", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/datatypes/schema.rs:975", sym_ty="Enum", shape=box];
       }
 
-    }
-
-    subgraph cluster_datatypes_rs {
-      label="datatypes.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n14885[label="LogicalType", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/datatypes.rs:77", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_error_rs {
@@ -304,8 +411,8 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n37960[label="box_error", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/error.rs:11", sym_ty="Function", shape=ellipse];
-      n38016[label="Error", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/error.rs:17", sym_ty="Enum", shape=box];
+      n37345[label="box_error", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/error.rs:11", sym_ty="Function", shape=ellipse];
+      n37383[label="Error", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/error.rs:17", sym_ty="Enum", shape=box];
     }
 
     subgraph cluster_utils {
@@ -318,7 +425,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n22577[label="DeletionVector", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/utils/deletion.rs:16", sym_ty="Enum", shape=box];
+        n75572[label="DeletionVector", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/utils/deletion.rs:16", sym_ty="Enum", shape=box];
       }
 
       subgraph cluster_mask_rs {
@@ -326,8 +433,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n61159[label="RowAddrTreeMap", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/utils/mask.rs:258", sym_ty="Struct", shape=box];
-        n59632[label="RowAddrMask", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/utils/mask.rs:27", sym_ty="Enum", shape=box];
+        n26712[label="RowAddrTreeMap", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/utils/mask.rs:258", sym_ty="Struct", shape=box];
+        n25303[label="RowAddrMask", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/utils/mask.rs:27", sym_ty="Enum", shape=box];
       }
 
       subgraph cluster_nullable_rs {
@@ -335,15 +442,70 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n10904[label="NullableRowAddrSet", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/utils/mask/nullable.rs:18", sym_ty="Struct", shape=box];
+        n53012[label="NullableRowAddrSet", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/utils/mask/nullable.rs:18", sym_ty="Struct", shape=box];
       }
 
-      subgraph cluster_testing_rs {
-        label="testing.rs";
+      subgraph cluster_tokio_rs {
+        label="tokio.rs";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n70036[label="ProxyObjectStore", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/utils/testing.rs:90", sym_ty="Struct", shape=box];
+        n74729[label="get_num_compute_intensive_cpus", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-core/src/utils/tokio.rs:21", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_lance_datafusion {
+    label="lance-datafusion";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_planner_rs {
+      label="planner.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n65079[label="Planner", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-datafusion/src/planner.rs:230", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_udf {
+      label="udf";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_json_rs {
+        label="json.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n31802[label="JsonbType", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-datafusion/src/udf/json.rs:18", sym_ty="Enum", shape=box];
+        n33215[label="json_extract_with_type_udf", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-datafusion/src/udf/json.rs:261", sym_ty="Function", shape=ellipse];
+      }
+
+    }
+
+    subgraph cluster_udf_rs {
+      label="udf.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n70982[label="register_functions", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-datafusion/src/udf.rs:16", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_utils {
+      label="utils";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_background_iterator_rs {
+        label="background_iterator.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n12669[label="BackgroundIterator", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-datafusion/src/utils/background_iterator.rs:19", sym_ty="Struct", shape=box];
+        n13182[label="BackgroundIterState", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-datafusion/src/utils/background_iterator.rs:89", sym_ty="Enum", shape=box];
       }
 
     }
@@ -360,8 +522,9 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n39168[label="rand_type", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-datagen/src/generator.rs:2770", sym_ty="Function", shape=ellipse];
-      n21335[label="ArrayGenerator", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-datagen/src/generator.rs:63", sym_ty="Trait", shape=box];
+      n43799[label="rand_type", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-datagen/src/generator.rs:2770", sym_ty="Function", shape=ellipse];
+      n26922[label="RowCount", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-datagen/src/generator.rs:30", sym_ty="Struct", shape=box];
+      n27274[label="ArrayGenerator", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-datagen/src/generator.rs:63", sym_ty="Trait", shape=box];
     }
 
   }
@@ -376,7 +539,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n35623[label="LanceBuffer", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/buffer.rs:23", sym_ty="Struct", shape=box];
+      n76407[label="LanceBuffer", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/buffer.rs:23", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_data_rs {
@@ -384,10 +547,9 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n50463[label="FixedWidthDataBlock", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/data.rs:161", sym_ty="Struct", shape=box];
-      n54657[label="FixedSizeListBlock", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/data.rs:391", sym_ty="Struct", shape=box];
-      n55885[label="VariableWidthBlock", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/data.rs:567", sym_ty="Struct", shape=box];
-      n58305[label="DataBlock", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/data.rs:811", sym_ty="Enum", shape=box];
+      n64059[label="FixedWidthDataBlock", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/data.rs:161", sym_ty="Struct", shape=box];
+      n66915[label="VariableWidthBlock", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/data.rs:567", sym_ty="Struct", shape=box];
+      n68084[label="DataBlock", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/data.rs:811", sym_ty="Enum", shape=box];
     }
 
     subgraph cluster_decoder_rs {
@@ -395,9 +557,9 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n17029[label="SchedulerContext", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/decoder.rs:2310", sym_ty="Struct", shape=box];
-      n17077[label="ScopedSchedulerContext", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/decoder.rs:2319", sym_ty="Struct", shape=box];
-      n18675[label="DecoderMessage", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/decoder.rs:2542", sym_ty="Struct", shape=box];
+      n11418[label="SchedulerContext", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/decoder.rs:2310", sym_ty="Struct", shape=box];
+      n11475[label="ScopedSchedulerContext", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/decoder.rs:2319", sym_ty="Struct", shape=box];
+      n12946[label="DecoderMessage", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/decoder.rs:2542", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_encoder_rs {
@@ -405,8 +567,8 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n26482[label="OutOfLineBuffers", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/encoder.rs:101", sym_ty="Struct", shape=box];
-      n26759[label="FieldEncoder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/encoder.rs:146", sym_ty="Trait", shape=box];
+      n28513[label="OutOfLineBuffers", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/encoder.rs:101", sym_ty="Struct", shape=box];
+      n28764[label="FieldEncoder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/encoder.rs:146", sym_ty="Trait", shape=box];
     }
 
     subgraph cluster_encodings {
@@ -419,8 +581,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n43838[label="CompressionConfig", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/encodings/physical/block.rs:44", sym_ty="Struct", shape=box];
-        n43946[label="CompressionScheme", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/encodings/physical/block.rs:65", sym_ty="Enum", shape=box];
+        n43585[label="CompressionConfig", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/encodings/physical/block.rs:44", sym_ty="Struct", shape=box];
+        n43691[label="CompressionScheme", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/encodings/physical/block.rs:65", sym_ty="Enum", shape=box];
       }
 
       subgraph cluster_fuzz_tests_rs {
@@ -428,7 +590,15 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n32116[label="generate_test_data_for_config", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/encodings/fuzz_tests.rs:180", sym_ty="Function", shape=ellipse];
+        n77172[label="generate_test_data_for_config", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/encodings/fuzz_tests.rs:180", sym_ty="Function", shape=ellipse];
+      }
+
+      subgraph cluster_primitive_rs {
+        label="primitive.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n44293[label="WordsIter", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/encodings/logical/primitive.rs:1656", sym_ty="Struct", shape=box];
       }
 
     }
@@ -438,7 +608,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n32518[label="EncodingsIo", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/lib.rs:41", sym_ty="Trait", shape=box];
+      n14731[label="EncodingsIo", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/lib.rs:41", sym_ty="Trait", shape=box];
     }
 
     subgraph cluster_previous {
@@ -451,7 +621,16 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n56906[label="LogicalPageDecoder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/previous/decoder.rs:103", sym_ty="Trait", shape=box];
+        n67532[label="LogicalPageDecoder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/previous/decoder.rs:103", sym_ty="Trait", shape=box];
+        n67342[label="FieldScheduler", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/previous/decoder.rs:50", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_encoder_rs {
+        label="encoder.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n47386[label="ArrayEncoder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/previous/encoder.rs:84", sym_ty="Trait", shape=box];
       }
 
       subgraph cluster_struct_rs {
@@ -459,7 +638,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n4177[label="SimpleStructDecoder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/previous/encodings/logical/struct.rs:466", sym_ty="Struct", shape=box];
+        n65616[label="SimpleStructDecoder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/previous/encodings/logical/struct.rs:466", sym_ty="Struct", shape=box];
       }
 
     }
@@ -469,7 +648,31 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n26568[label="TestCases", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/testing.rs:394", sym_ty="Struct", shape=box];
+      n27041[label="TestCases", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/testing.rs:394", sym_ty="Struct", shape=box];
+      n28300[label="child", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/testing.rs:563", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_utils {
+      label="utils";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_accumulation_rs {
+        label="accumulation.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n15578[label="AccumulationQueue", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/utils/accumulation.rs:11", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_bytepack_rs {
+        label="bytepack.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n63325[label="BytepackedIntegerEncoder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/utils/bytepack.rs:82", sym_ty="Enum", shape=box];
+      }
+
     }
 
     subgraph cluster_version_rs {
@@ -477,7 +680,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n68331[label="LanceFileVersion", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/version.rs:16", sym_ty="Enum", shape=box];
+      n73595[label="LanceFileVersion", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-encoding/src/version.rs:16", sym_ty="Enum", shape=box];
     }
 
   }
@@ -492,7 +695,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n16272[label="Fields", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/datatypes.rs:85", sym_ty="Struct", shape=box];
+      n18804[label="Fields", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/datatypes.rs:85", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_format {
@@ -505,7 +708,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n58868[label="Metadata", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/previous/format/metadata.rs:17", sym_ty="Struct", shape=box];
+        n58447[label="Metadata", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/previous/format/metadata.rs:17", sym_ty="Struct", shape=box];
+        n59552[label="StatisticsMetadata", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/previous/format/metadata.rs:203", sym_ty="Struct", shape=box];
       }
 
     }
@@ -520,15 +724,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n8281[label="PageTable", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/previous/page_table.rs:32", sym_ty="Struct", shape=box];
-      }
-
-      subgraph cluster_reader_rs {
-        label="reader.rs";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n76576[label="FileReader", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/previous/reader.rs:49", sym_ty="Struct", shape=box];
+        n10637[label="PageInfo", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/previous/page_table.rs:18", sym_ty="Struct", shape=box];
+        n10728[label="PageTable", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/previous/page_table.rs:32", sym_ty="Struct", shape=box];
       }
 
     }
@@ -538,9 +735,9 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n1509[label="ReaderProjection", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/reader.rs:158", sym_ty="Struct", shape=box];
-      n2148[label="FileReaderOptions", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/reader.rs:332", sym_ty="Struct", shape=box];
-      n2227[label="FileReader", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/reader.rs:350", sym_ty="Struct", shape=box];
+      n1059[label="ReaderProjection", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/reader.rs:158", sym_ty="Struct", shape=box];
+      n1740[label="FileReaderOptions", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/reader.rs:332", sym_ty="Struct", shape=box];
+      n1791[label="FileReader", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/reader.rs:350", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_writer {
@@ -553,7 +750,15 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n12947[label="FileWriter", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/previous/writer/mod.rs:81", sym_ty="Struct", shape=box];
+        n15125[label="FileWriter", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/previous/writer/mod.rs:81", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_statistics_rs {
+        label="statistics.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n35895[label="StatisticsRow", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/previous/writer/statistics.rs:38", sym_ty="Struct", shape=box];
       }
 
     }
@@ -563,7 +768,30 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n71875[label="FileWriter", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/writer.rs:103", sym_ty="Struct", shape=box];
+      n50446[label="FileWriter", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-file/src/writer.rs:103", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_lance_geo {
+    label="lance-geo";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n47936[label="register_functions", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-geo/src/lib.rs:6", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_udf_rs {
+      label="udf.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n44282[label="register_functions", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-geo/src/udf.rs:7", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -578,7 +806,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n40428[label="FragReuseIndex", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/frag_reuse.rs:209", sym_ty="Struct", shape=box];
+      n76931[label="FragReuseIndex", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/frag_reuse.rs:209", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_lib_rs {
@@ -586,10 +814,10 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n6798[label="IndexParams", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/lib.rs:299", sym_ty="Trait", shape=box];
-      n6865[label="IndexMetadata", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/lib.rs:306", sym_ty="Struct", shape=box];
-      n5109[label="Index", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/lib.rs:69", sym_ty="Trait", shape=box];
-      n5485[label="IndexType", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/lib.rs:99", sym_ty="Enum", shape=box];
+      n8755[label="IndexParams", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/lib.rs:299", sym_ty="Trait", shape=box];
+      n8845[label="IndexMetadata", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/lib.rs:306", sym_ty="Struct", shape=box];
+      n5728[label="Index", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/lib.rs:69", sym_ty="Trait", shape=box];
+      n5977[label="IndexType", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/lib.rs:99", sym_ty="Enum", shape=box];
     }
 
     subgraph cluster_mem_wal_rs {
@@ -597,8 +825,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n44035[label="MemWal", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/mem_wal.rs:105", sym_ty="Struct", shape=box];
-      n43524[label="State", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/mem_wal.rs:21", sym_ty="Enum", shape=box];
+      n45476[label="MemWal", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/mem_wal.rs:105", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_metrics_rs {
@@ -606,8 +833,8 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n37430[label="NoOpMetricsCollector", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/metrics.rs:49", sym_ty="Struct", shape=box];
-      n37250[label="MetricsCollector", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/metrics.rs:9", sym_ty="Trait", shape=box];
+      n20715[label="NoOpMetricsCollector", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/metrics.rs:49", sym_ty="Struct", shape=box];
+      n20517[label="MetricsCollector", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/metrics.rs:9", sym_ty="Trait", shape=box];
     }
 
     subgraph cluster_optimize_rs {
@@ -615,7 +842,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n43151[label="OptimizeOptions", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/optimize.rs:7", sym_ty="Struct", shape=box];
+      n26256[label="OptimizeOptions", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/optimize.rs:7", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_scalar {
@@ -628,7 +855,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n54200[label="BTreeIndex", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/btree.rs:965", sym_ty="Struct", shape=box];
+        n45474[label="BTreeIndex", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/btree.rs:965", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_expression_rs {
@@ -636,8 +863,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n21474[label="IndexedExpression", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/expression.rs:64", sym_ty="Struct", shape=box];
-        n26187[label="ScalarIndexExpr", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/expression.rs:860", sym_ty="Enum", shape=box];
+        n21369[label="IndexedExpression", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/expression.rs:64", sym_ty="Struct", shape=box];
+        n26684[label="ScalarIndexExpr", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/expression.rs:860", sym_ty="Enum", shape=box];
       }
 
       subgraph cluster_index_rs {
@@ -645,30 +872,9 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n26574[label="PostingListReader", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/index.rs:1192", sym_ty="Struct", shape=box];
-        n18421[label="TokenSetFormat", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/index.rs:130", sym_ty="Enum", shape=box];
-        n28808[label="PostingList", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/index.rs:1544", sym_ty="Enum", shape=box];
-        n18689[label="InvertedIndex", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/index.rs:168", sym_ty="Struct", shape=box];
-        n34004[label="DocSet", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/index.rs:2126", sym_ty="Struct", shape=box];
-        n23221[label="InvertedPartition", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/index.rs:655", sym_ty="Struct", shape=box];
-        n24775[label="TokenSet", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/index.rs:899", sym_ty="Struct", shape=box];
-      }
-
-      subgraph cluster_iter_rs {
-        label="iter.rs";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n57308[label="TokenIterator", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/iter.rs:20", sym_ty="Struct", shape=box];
-      }
-
-      subgraph cluster_label_list_rs {
-        label="label_list.rs";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n30248[label="LabelListSubIndex", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/label_list.rs:40", sym_ty="Trait", shape=box];
-        n30364[label="LabelListIndex", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/label_list.rs:63", sym_ty="Struct", shape=box];
+        n19455[label="TokenSetFormat", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/index.rs:130", sym_ty="Enum", shape=box];
+        n29217[label="Item", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/index.rs:1615", sym_ty="Struct", shape=box];
+        n19737[label="InvertedIndex", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/index.rs:168", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_lance_tokenizer_rs {
@@ -676,8 +882,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n65488[label="DocType", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/tokenizer/lance_tokenizer.rs:13", sym_ty="Enum", shape=box];
-        n65822[label="LanceTokenizer", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/tokenizer/lance_tokenizer.rs:79", sym_ty="Trait", shape=box];
+        n19846[label="LanceTokenizer", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/tokenizer/lance_tokenizer.rs:79", sym_ty="Trait", shape=box];
       }
 
       subgraph cluster_query_rs {
@@ -685,11 +890,11 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n160[label="FtsQueryNode", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/query.rs:109", sym_ty="Trait", shape=box];
-        n168[label="FtsQuery", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/query.rs:115", sym_ty="Enum", shape=box];
-        n595[label="MatchQuery", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/query.rs:286", sym_ty="Struct", shape=box];
-        n2555[label="Tokens", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/query.rs:655", sym_ty="Struct", shape=box];
-        n119[label="Operator", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/query.rs:75", sym_ty="Enum", shape=box];
+        n121[label="FtsQueryNode", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/query.rs:109", sym_ty="Trait", shape=box];
+        n130[label="FtsQuery", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/query.rs:115", sym_ty="Enum", shape=box];
+        n488[label="MatchQuery", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/query.rs:286", sym_ty="Struct", shape=box];
+        n1910[label="Tokens", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/query.rs:655", sym_ty="Struct", shape=box];
+        n85[label="Operator", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/query.rs:75", sym_ty="Enum", shape=box];
       }
 
       subgraph cluster_registry_rs {
@@ -697,16 +902,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n69915[label="TrainingCriteria", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/registry.rs:30", sym_ty="Struct", shape=box];
-      }
-
-      subgraph cluster_sbbf_rs {
-        label="sbbf.rs";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n33668[label="Sbbf", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/bloomfilter/sbbf.rs:239", sym_ty="Struct", shape=box];
-        n32675[label="Block", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/bloomfilter/sbbf.rs:91", sym_ty="Struct", shape=box];
+        n69069[label="TrainingCriteria", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/registry.rs:30", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_tokenizer_rs {
@@ -714,15 +910,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n50787[label="InvertedIndexParams", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/tokenizer.rs:29", sym_ty="Struct", shape=box];
-      }
-
-      subgraph cluster_wand_rs {
-        label="wand.rs";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n693[label="PostingIterator", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/wand.rs:42", sym_ty="Struct", shape=box];
+        n53672[label="InvertedIndexParams", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar/inverted/tokenizer.rs:29", sym_ty="Struct", shape=box];
       }
 
     }
@@ -732,21 +920,11 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n71553[label="ScalarIndexParams", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar.rs:101", sym_ty="Struct", shape=box];
-      n71973[label="IndexReader", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar.rs:181", sym_ty="Trait", shape=box];
-      n72205[label="IndexStore", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar.rs:207", sym_ty="Trait", shape=box];
-      n72699[label="FullTextSearchQuery", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar.rs:260", sym_ty="Struct", shape=box];
-      n71312[label="BuiltinIndexType", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar.rs:56", sym_ty="Enum", shape=box];
-      n76073[label="UpdateCriteria", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar.rs:747", sym_ty="Struct", shape=box];
-      n76188[label="ScalarIndex", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar.rs:774", sym_ty="Trait", shape=box];
-    }
-
-    subgraph cluster_traits_rs {
-      label="traits.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n18637[label="DatasetIndexExt", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/traits.rs:123", sym_ty="Trait", shape=box];
+      n59402[label="ScalarIndexParams", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar.rs:101", sym_ty="Struct", shape=box];
+      n59863[label="IndexStore", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar.rs:207", sym_ty="Trait", shape=box];
+      n60315[label="FullTextSearchQuery", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar.rs:260", sym_ty="Struct", shape=box];
+      n63217[label="UpdateCriteria", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar.rs:747", sym_ty="Struct", shape=box];
+      n63319[label="ScalarIndex", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/scalar.rs:774", sym_ty="Trait", shape=box];
     }
 
     subgraph cluster_vector {
@@ -759,9 +937,9 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n64567[label="RabitQuantizer", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/bq/builder.rs:47", sym_ty="Struct", shape=box];
-        n34173[label="HNSW", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/hnsw/builder.rs:120", sym_ty="Struct", shape=box];
-        n60195[label="IvfBuildParams", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/ivf/builder.rs:20", sym_ty="Struct", shape=box];
+        n49012[label="RabitQuantizer", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/bq/builder.rs:47", sym_ty="Struct", shape=box];
+        n35562[label="HNSW", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/hnsw/builder.rs:120", sym_ty="Struct", shape=box];
+        n70506[label="IvfBuildParams", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/ivf/builder.rs:20", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_index_rs {
@@ -769,7 +947,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n9172[label="HNSWIndex", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/hnsw/index.rs:50", sym_ty="Struct", shape=box];
+        n11962[label="HNSWIndex", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/hnsw/index.rs:50", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_pq_rs {
@@ -777,7 +955,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n7981[label="ProductQuantizer", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/pq.rs:42", sym_ty="Struct", shape=box];
+        n50204[label="ProductQuantizer", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/pq.rs:42", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_quantizer_rs {
@@ -785,8 +963,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n63540[label="Quantizer", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/quantizer.rs:121", sym_ty="Enum", shape=box];
-        n62725[label="Quantization", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/quantizer.rs:31", sym_ty="Trait", shape=box];
+        n15019[label="Quantizer", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/quantizer.rs:121", sym_ty="Enum", shape=box];
+        n14227[label="Quantization", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/quantizer.rs:31", sym_ty="Trait", shape=box];
       }
 
       subgraph cluster_shuffler_rs {
@@ -794,7 +972,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n12145[label="ShuffleReader", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/v3/shuffler.rs:35", sym_ty="Trait", shape=box];
+        n15208[label="ShuffleReader", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/v3/shuffler.rs:35", sym_ty="Trait", shape=box];
       }
 
       subgraph cluster_sq_rs {
@@ -802,7 +980,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n69382[label="ScalarQuantizer", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/sq.rs:33", sym_ty="Struct", shape=box];
+        n24901[label="ScalarQuantizer", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/sq.rs:33", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_storage_rs {
@@ -810,13 +988,12 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n67518[label="RabitQuantizationStorage", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/bq/storage.rs:111", sym_ty="Struct", shape=box];
-        n58386[label="FlatBinStorage", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/flat/storage.rs:189", sym_ty="Struct", shape=box];
-        n57686[label="FlatFloatStorage", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/flat/storage.rs:31", sym_ty="Struct", shape=box];
-        n58141[label="IvfModel", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/ivf/storage.rs:28", sym_ty="Struct", shape=box];
-        n33429[label="ProductQuantizationStorage", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/pq/storage.rs:151", sym_ty="Struct", shape=box];
-        n15953[label="ScalarQuantizationStorage", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/sq/storage.rs:156", sym_ty="Struct", shape=box];
-        n26126[label="VectorStore", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/storage.rs:64", sym_ty="Trait", shape=box];
+        n9768[label="FlatBinStorage", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/flat/storage.rs:189", sym_ty="Struct", shape=box];
+        n8219[label="FlatFloatStorage", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/flat/storage.rs:31", sym_ty="Struct", shape=box];
+        n31301[label="IvfModel", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/ivf/storage.rs:28", sym_ty="Struct", shape=box];
+        n33244[label="ProductQuantizationStorage", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/pq/storage.rs:151", sym_ty="Struct", shape=box];
+        n75677[label="ScalarQuantizationStorage", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/sq/storage.rs:156", sym_ty="Struct", shape=box];
+        n27030[label="VectorStore", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector/storage.rs:64", sym_ty="Trait", shape=box];
       }
 
     }
@@ -826,8 +1003,8 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n41135[label="VectorIndex", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector.rs:151", sym_ty="Trait", shape=box];
-      n40710[label="Query", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector.rs:74", sym_ty="Struct", shape=box];
+      n43111[label="VectorIndex", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector.rs:151", sym_ty="Trait", shape=box];
+      n42892[label="Query", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-index/src/vector.rs:74", sym_ty="Struct", shape=box];
     }
 
   }
@@ -847,7 +1024,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n3415[label="BinaryDecoder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/encodings/binary.rs:112", sym_ty="Struct", shape=box];
+        n11784[label="BinaryDecoder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/encodings/binary.rs:112", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_plain_rs {
@@ -855,7 +1032,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n31035[label="PlainDecoder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/encodings/plain.rs:159", sym_ty="Struct", shape=box];
+        n32744[label="PlainDecoder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/encodings/plain.rs:159", sym_ty="Struct", shape=box];
       }
 
     }
@@ -865,7 +1042,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n40211[label="AsyncIndex", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/encodings.rs:34", sym_ty="Trait", shape=box];
+      n45931[label="AsyncIndex", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/encodings.rs:34", sym_ty="Trait", shape=box];
     }
 
     subgraph cluster_lib_rs {
@@ -873,7 +1050,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n48394[label="ReadBatchParams", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/lib.rs:31", sym_ty="Enum", shape=box];
+      n51541[label="ReadBatchParams", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/lib.rs:31", sym_ty="Enum", shape=box];
     }
 
     subgraph cluster_object_store {
@@ -886,8 +1063,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n59261[label="ObjectStoreProvider", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/object_store/providers.rs:33", sym_ty="Trait", shape=box];
-        n59506[label="ObjectStoreRegistry", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/object_store/providers.rs:90", sym_ty="Struct", shape=box];
+        n40817[label="ObjectStoreProvider", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/object_store/providers.rs:33", sym_ty="Trait", shape=box];
+        n41010[label="ObjectStoreRegistry", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/object_store/providers.rs:90", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_storage_options_rs {
@@ -895,7 +1072,7 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n68110[label="StorageOptionsProvider", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/object_store/storage_options.rs:56", sym_ty="Trait", shape=box];
+        n73710[label="StorageOptionsProvider", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/object_store/storage_options.rs:56", sym_ty="Trait", shape=box];
       }
 
     }
@@ -905,9 +1082,9 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n32621[label="ObjectStore", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/object_store.rs:113", sym_ty="Struct", shape=box];
-      n32905[label="WrappingObjectStore", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/object_store.rs:152", sym_ty="Trait", shape=box];
-      n33136[label="ObjectStoreParams", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/object_store.rs:186", sym_ty="Struct", shape=box];
+      n31769[label="ObjectStore", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/object_store.rs:113", sym_ty="Struct", shape=box];
+      n32034[label="WrappingObjectStore", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/object_store.rs:152", sym_ty="Trait", shape=box];
+      n32293[label="ObjectStoreParams", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/object_store.rs:186", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_object_writer_rs {
@@ -915,7 +1092,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n22715[label="ObjectWriter", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/object_writer.rs:76", sym_ty="Struct", shape=box];
+      n65220[label="ObjectWriter", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/object_writer.rs:76", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_scheduler_rs {
@@ -923,9 +1100,9 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n21214[label="ScanScheduler", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/scheduler.rs:591", sym_ty="Struct", shape=box];
-      n21292[label="Response", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/scheduler.rs:605", sym_ty="Struct", shape=box];
-      n24461[label="FileScheduler", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/scheduler.rs:800", sym_ty="Struct", shape=box];
+      n23204[label="ScanScheduler", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/scheduler.rs:591", sym_ty="Struct", shape=box];
+      n23295[label="Response", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/scheduler.rs:605", sym_ty="Struct", shape=box];
+      n24211[label="FileScheduler", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/scheduler.rs:800", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_stream_rs {
@@ -933,7 +1110,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n45887[label="RecordBatchStream", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/stream.rs:24", sym_ty="Trait", shape=box];
+      n37592[label="RecordBatchStream", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/stream.rs:24", sym_ty="Trait", shape=box];
     }
 
     subgraph cluster_traits_rs {
@@ -941,8 +1118,8 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n38632[label="Writer", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/traits.rs:21", sym_ty="Trait", shape=box];
-      n39266[label="Reader", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/traits.rs:83", sym_ty="Trait", shape=box];
+      n21952[label="Writer", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/traits.rs:21", sym_ty="Trait", shape=box];
+      n22447[label="Reader", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/traits.rs:83", sym_ty="Trait", shape=box];
     }
 
     subgraph cluster_utils {
@@ -955,9 +1132,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n3685[label="IoTrackingStore", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/utils/tracking_store.rs:205", sym_ty="Struct", shape=box];
-        n6730[label="StageGuard", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/utils/tracking_store.rs:499", sym_ty="Struct", shape=box];
-        n3181[label="IoStats", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/utils/tracking_store.rs:77", sym_ty="Struct", shape=box];
+        n362[label="IoTrackingStore", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/utils/tracking_store.rs:205", sym_ty="Struct", shape=box];
+        n1698[label="StageGuard", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-io/src/utils/tracking_store.rs:499", sym_ty="Struct", shape=box];
       }
 
     }
@@ -974,7 +1150,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n32639[label="BlockingDataset", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src/blocking_dataset.rs:73", sym_ty="Struct", shape=box];
+      n36472[label="BlockingDataset", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src/blocking_dataset.rs:73", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_error_rs {
@@ -982,8 +1158,8 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n41953[label="JavaExceptionClass", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src/error.rs:13", sym_ty="Enum", shape=box];
-      n42060[label="Error", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src/error.rs:37", sym_ty="Struct", shape=box];
+      n43793[label="JavaExceptionClass", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src/error.rs:13", sym_ty="Enum", shape=box];
+      n43902[label="Error", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src/error.rs:37", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_traits_rs {
@@ -991,7 +1167,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n60909[label="IntoJava", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src/traits.rs:18", sym_ty="Trait", shape=box];
+      n58685[label="IntoJava", path="/home/yibai/llmcc/sample/repos/lance/java/lance-jni/src/traits.rs:18", sym_ty="Trait", shape=box];
     }
 
   }
@@ -1001,12 +1177,35 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
+    subgraph cluster_distance {
+      label="distance";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_dot_rs {
+        label="dot.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n29758[label="Dot", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-linalg/src/distance/dot.rs:73", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_l2_rs {
+        label="l2.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n37629[label="L2", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-linalg/src/distance/l2.rs:28", sym_ty="Trait", shape=box];
+      }
+
+    }
+
     subgraph cluster_distance_rs {
       label="distance.rs";
       style=rounded;
             bgcolor="#fafafa";
 
-      n64295[label="DistanceType", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-linalg/src/distance.rs:36", sym_ty="Enum", shape=box];
+      n61736[label="DistanceType", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-linalg/src/distance.rs:36", sym_ty="Enum", shape=box];
     }
 
     subgraph cluster_simd {
@@ -1014,12 +1213,20 @@ digraph architecture {
       style=rounded;
             bgcolor="#f5f5f5";
 
+      subgraph cluster_f32_rs {
+        label="f32.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n15854[label="f32x8", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-linalg/src/simd/f32.rs:36", sym_ty="Struct", shape=box];
+      }
+
       subgraph cluster_u8_rs {
         label="u8.rs";
         style=rounded;
                 bgcolor="#fafafa";
 
-        n67027[label="u8x16", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-linalg/src/simd/u8.rs:30", sym_ty="Struct", shape=box];
+        n22202[label="u8x16", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-linalg/src/simd/u8.rs:30", sym_ty="Struct", shape=box];
       }
 
     }
@@ -1029,7 +1236,23 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n42569[label="SIMD", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-linalg/src/simd.rs:27", sym_ty="Trait", shape=box];
+      n25733[label="SIMD", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-linalg/src/simd.rs:27", sym_ty="Trait", shape=box];
+    }
+
+  }
+
+  subgraph cluster_lance_memtest {
+    label="lance-memtest";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_allocator_rs {
+      label="allocator.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n9007[label="extract", path="/home/yibai/llmcc/sample/repos/lance/memtest/src/allocator.rs:146", sym_ty="Function", shape=ellipse];
+      n8362[label="malloc_zone_t", path="/home/yibai/llmcc/sample/repos/lance/memtest/src/allocator.rs:47", sym_ty="Struct", shape=box];
     }
 
   }
@@ -1039,20 +1262,20 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
+    subgraph cluster_error_rs {
+      label="error.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n76088[label="ErrorCode", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace/src/error.rs:37", sym_ty="Enum", shape=box];
+    }
+
     subgraph cluster_namespace_rs {
       label="namespace.rs";
       style=rounded;
             bgcolor="#fafafa";
 
-      n8423[label="LanceNamespace", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace/src/namespace.rs:56", sym_ty="Trait", shape=box];
-    }
-
-    subgraph cluster_schema_rs {
-      label="schema.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n31563[label="arrow_type_to_json", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace/src/schema.rs:51", sym_ty="Function", shape=ellipse];
+      n68953[label="LanceNamespace", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace/src/namespace.rs:56", sym_ty="Trait", shape=box];
     }
 
   }
@@ -1072,7 +1295,15 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n21687[label="AwsCredentialVendorConfig", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src/credentials/aws.rs:25", sym_ty="Struct", shape=box];
+        n22811[label="AwsCredentialVendorConfig", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src/credentials/aws.rs:25", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_azure_rs {
+        label="azure.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n32923[label="AzureCredentialVendorConfig", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src/credentials/azure.rs:28", sym_ty="Struct", shape=box];
       }
 
     }
@@ -1082,8 +1313,8 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n13009[label="VendedPermission", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src/credentials.rs:129", sym_ty="Enum", shape=box];
-      n13949[label="CredentialVendor", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src/credentials.rs:270", sym_ty="Trait", shape=box];
+      n20641[label="VendedPermission", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src/credentials.rs:129", sym_ty="Enum", shape=box];
+      n21547[label="CredentialVendor", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src/credentials.rs:270", sym_ty="Trait", shape=box];
     }
 
     subgraph cluster_dir {
@@ -1096,7 +1327,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n20654[label="ManifestNamespace", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src/dir/manifest.rs:242", sym_ty="Struct", shape=box];
+        n1092[label="DatasetWriteGuard", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src/dir/manifest.rs:220", sym_ty="Struct", shape=box];
+        n1159[label="ManifestNamespace", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src/dir/manifest.rs:242", sym_ty="Struct", shape=box];
       }
 
     }
@@ -1106,8 +1338,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n37304[label="DirectoryNamespace", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src/dir.rs:483", sym_ty="Struct", shape=box];
-      n35368[label="DirectoryNamespaceBuilder", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src/dir.rs:89", sym_ty="Struct", shape=box];
+      n42207[label="DirectoryNamespace", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src/dir.rs:483", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_rest_rs {
@@ -1115,8 +1346,8 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n57202[label="convert_api_error", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src/rest.rs:272", sym_ty="Function", shape=ellipse];
-      n57386[label="RestNamespace", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src/rest.rs:308", sym_ty="Struct", shape=box];
+      n27014[label="convert_api_error", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src/rest.rs:272", sym_ty="Function", shape=ellipse];
+      n27251[label="RestNamespace", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src/rest.rs:308", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_rest_adapter_rs {
@@ -1124,7 +1355,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n8876[label="error_to_response", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src/rest_adapter.rs:247", sym_ty="Function", shape=ellipse];
+      n10671[label="error_to_response", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-namespace-impls/src/rest_adapter.rs:247", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -1144,8 +1375,16 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n19055[label="DataFile", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/format/fragment.rs:27", sym_ty="Struct", shape=box];
-        n20539[label="Fragment", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/format/fragment.rs:283", sym_ty="Struct", shape=box];
+        n61612[label="DataFile", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/format/fragment.rs:27", sym_ty="Struct", shape=box];
+        n63735[label="Fragment", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/format/fragment.rs:283", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_index_rs {
+        label="index.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n72995[label="IndexMetadata", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/format/index.rs:19", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_manifest_rs {
@@ -1153,8 +1392,8 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n74431[label="Manifest", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/format/manifest.rs:35", sym_ty="Struct", shape=box];
-        n76928[label="BasePath", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/format/manifest.rs:562", sym_ty="Struct", shape=box];
+        n54816[label="Manifest", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/format/manifest.rs:35", sym_ty="Struct", shape=box];
+        n56827[label="BasePath", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/format/manifest.rs:562", sym_ty="Struct", shape=box];
       }
 
     }
@@ -1169,9 +1408,32 @@ digraph architecture {
         style=rounded;
                 bgcolor="#fafafa";
 
-        n26577[label="ManifestLocation", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/io/commit.rs:214", sym_ty="Struct", shape=box];
-        n27855[label="CommitHandler", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/io/commit.rs:496", sym_ty="Trait", shape=box];
-        n25839[label="ManifestNamingScheme", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/io/commit.rs:76", sym_ty="Enum", shape=box];
+        n26412[label="ManifestLocation", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/io/commit.rs:214", sym_ty="Struct", shape=box];
+        n27795[label="CommitHandler", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/io/commit.rs:496", sym_ty="Trait", shape=box];
+        n25691[label="ManifestNamingScheme", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/io/commit.rs:76", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_rowids {
+      label="rowids";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_bitmap_rs {
+        label="bitmap.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n59592[label="Bitmap", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/rowids/bitmap.rs:7", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_version_rs {
+        label="version.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n37963[label="RowDatasetVersionSequence", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/rowids/version.rs:55", sym_ty="Struct", shape=box];
       }
 
     }
@@ -1181,7 +1443,86 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n8831[label="RowIdSequence", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/rowids.rs:55", sym_ty="Struct", shape=box];
+      n10800[label="RowIdSequence", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/rowids.rs:55", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_utils {
+      label="utils";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_stream_rs {
+        label="stream.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n14948[label="RowIdAndDeletesConfig", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/utils/stream.rs:166", sym_ty="Struct", shape=box];
+        n14208[label="ReadBatchTask", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/utils/stream.rs:27", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_utils_rs {
+      label="utils.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n44600[label="ExactSize", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-table/src/utils.rs:26", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_lance_test_macros {
+    label="lance-test-macros";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n72708[label="expand_tracing_init", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-test-macros/src/lib.rs:17", sym_ty="Function", shape=ellipse];
+      n72791[label="expand_wrapper", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-test-macros/src/lib.rs:64", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+  subgraph cluster_lance_testing {
+    label="lance-testing";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_datagen_rs {
+      label="datagen.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n46910[label="ArrayGenerator", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-testing/src/datagen.rs:23", sym_ty="Trait", shape=box];
+      n46991[label="IncrementingInt32", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-testing/src/datagen.rs:29", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_lance_tools {
+    label="lance-tools";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_main_rs {
+      label="main.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n29688[label="main", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-tools/src/main.rs:8", sym_ty="Function", shape=ellipse];
+    }
+
+    subgraph cluster_util_rs {
+      label="util.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n29982[label="get_object_store_and_path", path="/home/yibai/llmcc/sample/repos/lance/rust/lance-tools/src/util.rs:24", sym_ty="Function", shape=ellipse];
     }
 
   }
@@ -1191,13 +1532,35 @@ digraph architecture {
     style=rounded;
         bgcolor="#f8f8f8";
 
+    subgraph cluster_dataset {
+      label="dataset";
+      style=rounded;
+            bgcolor="#f5f5f5";
+
+      subgraph cluster_io_stats_rs {
+        label="io_stats.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n42738[label="IoStats", path="/home/yibai/llmcc/sample/repos/lance/python/src/dataset/io_stats.rs:17", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_optimize_rs {
+        label="optimize.rs";
+        style=rounded;
+                bgcolor="#fafafa";
+
+        n73178[label="PyRewriteResult", path="/home/yibai/llmcc/sample/repos/lance/python/src/dataset/optimize.rs:330", sym_ty="Struct", shape=box];
+      }
+
+    }
+
     subgraph cluster_dataset_rs {
       label="dataset.rs";
       style=rounded;
             bgcolor="#fafafa";
 
-      n16469[label="get_write_params", path="/home/yibai/llmcc/sample/repos/lance/python/src/dataset.rs:3065", sym_ty="Function", shape=ellipse];
-      n872[label="Dataset", path="/home/yibai/llmcc/sample/repos/lance/python/src/dataset.rs:456", sym_ty="Struct", shape=box];
+      n4803[label="Dataset", path="/home/yibai/llmcc/sample/repos/lance/python/src/dataset.rs:456", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_executor_rs {
@@ -1205,7 +1568,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n67438[label="BackgroundExecutor", path="/home/yibai/llmcc/sample/repos/lance/python/src/executor.rs:29", sym_ty="Struct", shape=box];
+      n71410[label="BackgroundExecutor", path="/home/yibai/llmcc/sample/repos/lance/python/src/executor.rs:29", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_fragment_rs {
@@ -1213,7 +1576,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n71982[label="FileFragment", path="/home/yibai/llmcc/sample/repos/lance/python/src/fragment.rs:47", sym_ty="Struct", shape=box];
+      n66302[label="FileFragment", path="/home/yibai/llmcc/sample/repos/lance/python/src/fragment.rs:47", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_lib_rs {
@@ -1221,17 +1584,10 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n46137[label="rt", path="/home/yibai/llmcc/sample/repos/lance/python/src/lib.rs:125", sym_ty="Function", shape=ellipse];
-      n46857[label="lance", path="/home/yibai/llmcc/sample/repos/lance/python/src/lib.rs:236", sym_ty="Function", shape=ellipse];
-    }
-
-    subgraph cluster_namespace_rs {
-      label="namespace.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n20924[label="PyRestNamespace", path="/home/yibai/llmcc/sample/repos/lance/python/src/namespace.rs:207", sym_ty="Struct", shape=box];
-      n19028[label="PyDirectoryNamespace", path="/home/yibai/llmcc/sample/repos/lance/python/src/namespace.rs:35", sym_ty="Struct", shape=box];
+      n49029[label="create_background_executor", path="/home/yibai/llmcc/sample/repos/lance/python/src/lib.rs:113", sym_ty="Function", shape=ellipse];
+      n49127[label="rt", path="/home/yibai/llmcc/sample/repos/lance/python/src/lib.rs:125", sym_ty="Function", shape=ellipse];
+      n49348[label="install_atfork", path="/home/yibai/llmcc/sample/repos/lance/python/src/lib.rs:157", sym_ty="Function", shape=ellipse];
+      n49752[label="lance", path="/home/yibai/llmcc/sample/repos/lance/python/src/lib.rs:236", sym_ty="Function", shape=ellipse];
     }
 
     subgraph cluster_schema_rs {
@@ -1239,8 +1595,7 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n74779[label="LanceField", path="/home/yibai/llmcc/sample/repos/lance/python/src/schema.rs:22", sym_ty="Struct", shape=box];
-      n75248[label="LanceSchema", path="/home/yibai/llmcc/sample/repos/lance/python/src/schema.rs:76", sym_ty="Struct", shape=box];
+      n65105[label="LanceSchema", path="/home/yibai/llmcc/sample/repos/lance/python/src/schema.rs:76", sym_ty="Struct", shape=box];
     }
 
     subgraph cluster_session_rs {
@@ -1248,331 +1603,275 @@ digraph architecture {
       style=rounded;
             bgcolor="#fafafa";
 
-      n46342[label="Session", path="/home/yibai/llmcc/sample/repos/lance/python/src/session.rs:18", sym_ty="Struct", shape=box];
-    }
-
-    subgraph cluster_utils_rs {
-      label="utils.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n76065[label="PyLance", path="/home/yibai/llmcc/sample/repos/lance/python/src/utils.rs:270", sym_ty="Struct", shape=box];
+      n38142[label="Session", path="/home/yibai/llmcc/sample/repos/lance/python/src/session.rs:18", sym_ty="Struct", shape=box];
     }
 
   }
 
 
-  n9 -> n1509 [from="type_dep", to="struct"];
-  n9 -> n3266 [from="type_arg", to="impl"];
-  n9 -> n12947 [from="field_type", to="struct"];
-  n9 -> n16272 [from="type_arg", to="impl"];
-  n9 -> n25443 [from="field_type", to="enum"];
-  n9 -> n65668 [from="type_dep", to="struct"];
-  n9 -> n71815 [from="type_dep", to="struct"];
-  n9 -> n74431 [from="field_type", to="struct"];
-  n9 -> n75248 [from="field_type", to="struct"];
-  n9 -> n76576 [from="field_type", to="struct"];
-  n119 -> n595 [from="field_type", to="struct"];
-  n160 -> n168 [from="trait", to="impl"];
-  n160 -> n595 [from="trait", to="impl"];
-  n168 -> n72699 [from="field_type", to="struct"];
-  n595 -> n168 [from="field_type", to="enum"];
-  n1509 -> n2227 [from="field_type", to="struct"];
-  n2129 -> n7981 [from="base", to="extends"];
-  n2129 -> n15953 [from="type_arg", to="impl"];
-  n2129 -> n63540 [from="field_type", to="enum"];
-  n2129 -> n68645 [from="type_arg", to="impl"];
-  n2129 -> n69382 [from="base", to="extends"];
-  n2148 -> n779 [from="type_dep", to="struct"];
-  n2148 -> n1312 [from="type_dep", to="struct"];
-  n2148 -> n2227 [from="field_type", to="struct"];
-  n2148 -> n2566 [from="type_dep", to="struct"];
-  n2148 -> n2832 [from="type_arg", to="impl"];
-  n2148 -> n67442 [from="type_dep", to="struct"];
-  n2566 -> n1312 [from="type_dep", to="struct"];
-  n2566 -> n10919 [from="type_dep", to="struct"];
-  n2566 -> n25127 [from="type_dep", to="struct"];
-  n2566 -> n32639 [from="field_type", to="struct"];
-  n2566 -> n32639 [from="type_arg", to="generic"];
-  n2566 -> n41264 [from="type_dep", to="struct"];
-  n2566 -> n53740 [from="field_type", to="struct"];
-  n2566 -> n60885 [from="type_arg", to="impl"];
-  n2566 -> n64035 [from="type_dep", to="struct"];
-  n2566 -> n71815 [from="type_dep", to="struct"];
-  n3181 -> n3685 [from="type_dep", to="struct"];
-  n3181 -> n6730 [from="type_arg", to="impl"];
-  n4146 -> n9 [from="trait", to="impl"];
-  n4146 -> n2566 [from="trait", to="impl"];
-  n4146 -> n4615 [from="bound", to="generic"];
-  n4146 -> n4615 [from="field_type", to="struct"];
-  n4270 -> n1312 [from="type_arg", to="impl"];
-  n4270 -> n4615 [from="field_type", to="struct"];
-  n4615 -> n31326 [from="field_type", to="struct"];
-  n5109 -> n2129 [from="trait", to="impl"];
-  n5109 -> n9172 [from="trait", to="impl"];
-  n5109 -> n18689 [from="trait", to="impl"];
-  n5109 -> n30364 [from="trait", to="impl"];
-  n5109 -> n32675 [from="trait", to="impl"];
-  n5109 -> n40428 [from="trait", to="impl"];
-  n5109 -> n44136 [from="trait", to="impl"];
-  n5109 -> n54200 [from="trait", to="impl"];
-  n5109 -> n68645 [from="trait", to="impl"];
-  n5485 -> n53740 [from="field_type", to="struct"];
-  n5485 -> n71312 [from="type_arg", to="impl"];
-  n6798 -> n19631 [from="trait", to="impl"];
-  n6798 -> n50787 [from="trait", to="impl"];
-  n6798 -> n53740 [from="bound", to="generic"];
-  n6798 -> n53740 [from="field_type", to="struct"];
-  n6798 -> n71553 [from="trait", to="impl"];
-  n6865 -> n25443 [from="field_type", to="enum"];
-  n6865 -> n42293 [from="type_dep", to="struct"];
-  n7890 -> n2227 [from="type_dep", to="struct"];
-  n7890 -> n17029 [from="type_dep", to="struct"];
-  n7981 -> n68645 [from="field_type", to="struct"];
-  n8281 -> n12947 [from="field_type", to="struct"];
-  n8281 -> n76576 [from="type_dep", to="struct"];
-  n8423 -> n20654 [from="trait", to="impl"];
-  n8423 -> n37304 [from="trait", to="impl"];
-  n8423 -> n57386 [from="trait", to="impl"];
-  n8831 -> n74696 [from="type_dep", to="struct"];
-  n8876 -> n21292 [from="func", to="output"];
-  n9309 -> n779 [from="type_dep", to="struct"];
-  n10646 -> n2129 [from="field_type", to="struct"];
-  n10646 -> n26574 [from="field_type", to="struct"];
-  n10646 -> n44136 [from="field_type", to="struct"];
-  n10646 -> n54200 [from="field_type", to="struct"];
-  n12145 -> n10919 [from="bound", to="generic"];
-  n12145 -> n10919 [from="field_type", to="struct"];
-  n13009 -> n21687 [from="field_type", to="struct"];
-  n13564 -> n9 [from="func", to="type_dep"];
-  n13564 -> n64035 [from="func", to="type_dep"];
-  n13949 -> n37304 [from="bound", to="generic"];
-  n13949 -> n37304 [from="field_type", to="struct"];
-  n14885 -> n52415 [from="field_type", to="struct"];
-  n14885 -> n74779 [from="type_dep", to="struct"];
-  n16272 -> n9 [from="type_arg", to="impl"];
-  n16272 -> n4177 [from="field_type", to="struct"];
-  n16469 -> n57308 [from="func", to="type_dep"];
-  n16469 -> n61711 [from="func", to="type_dep"];
-  n17029 -> n17077 [from="field_type", to="struct"];
-  n18421 -> n18689 [from="field_type", to="struct"];
-  n18421 -> n23221 [from="field_type", to="struct"];
-  n18637 -> n2566 [from="trait", to="impl"];
-  n18675 -> n17029 [from="type_dep", to="struct"];
-  n19055 -> n20539 [from="type_dep", to="struct"];
-  n20539 -> n1312 [from="type_dep", to="struct"];
-  n20539 -> n25443 [from="field_type", to="enum"];
-  n20539 -> n31326 [from="type_dep", to="struct"];
-  n20539 -> n64035 [from="field_type", to="struct"];
-  n20539 -> n71815 [from="type_dep", to="struct"];
-  n20539 -> n74431 [from="type_dep", to="struct"];
-  n20539 -> n74696 [from="type_arg", to="impl"];
-  n21214 -> n24461 [from="type_dep", to="struct"];
-  n21214 -> n67442 [from="type_dep", to="struct"];
-  n21335 -> n39168 [from="bound", to="generic"];
-  n22577 -> n74696 [from="type_dep", to="struct"];
-  n22715 -> n12947 [from="field_type", to="struct"];
-  n22715 -> n71875 [from="field_type", to="struct"];
-  n23221 -> n18689 [from="type_dep", to="struct"];
-  n24461 -> n65668 [from="field_type", to="struct"];
-  n24736 -> n24911 [from="field_type", to="struct"];
-  n24775 -> n23221 [from="field_type", to="struct"];
-  n24911 -> n25127 [from="field_type", to="struct"];
-  n24911 -> n41264 [from="field_type", to="struct"];
-  n24992 -> n41264 [from="type_dep", to="struct"];
-  n24992 -> n42293 [from="field_type", to="struct"];
-  n25400 -> n25443 [from="field_type", to="enum"];
-  n25443 -> n24992 [from="field_type", to="struct"];
-  n25839 -> n26577 [from="field_type", to="struct"];
-  n26126 -> n15953 [from="trait", to="impl"];
-  n26126 -> n33429 [from="trait", to="impl"];
-  n26126 -> n57686 [from="trait", to="impl"];
-  n26126 -> n58386 [from="trait", to="impl"];
-  n26126 -> n67518 [from="trait", to="impl"];
-  n26187 -> n21474 [from="type_dep", to="struct"];
-  n26415 -> n57308 [from="func", to="type_dep"];
-  n26574 -> n23221 [from="type_dep", to="struct"];
-  n26577 -> n2566 [from="field_type", to="struct"];
-  n26759 -> n71875 [from="bound", to="generic"];
-  n26759 -> n71875 [from="field_type", to="struct"];
-  n27855 -> n779 [from="bound", to="generic"];
-  n27855 -> n779 [from="field_type", to="struct"];
-  n27855 -> n2566 [from="bound", to="generic"];
-  n27855 -> n2566 [from="field_type", to="struct"];
-  n27855 -> n2832 [from="bound", to="generic"];
-  n27855 -> n2832 [from="field_type", to="struct"];
-  n27855 -> n51296 [from="bound", to="generic"];
-  n27855 -> n51296 [from="field_type", to="struct"];
-  n27855 -> n61711 [from="bound", to="generic"];
-  n27855 -> n61711 [from="field_type", to="struct"];
-  n28808 -> n693 [from="field_type", to="struct"];
-  n30248 -> n30364 [from="bound", to="generic"];
-  n30248 -> n30364 [from="field_type", to="struct"];
-  n31563 -> n76065 [from="func", to="type_dep"];
-  n32116 -> n39168 [from="caller", to="callee"];
-  n32518 -> n2227 [from="bound", to="generic"];
-  n32518 -> n2227 [from="field_type", to="struct"];
-  n32518 -> n17029 [from="bound", to="generic"];
-  n32518 -> n17029 [from="field_type", to="struct"];
-  n32621 -> n2566 [from="type_dep", to="struct"];
-  n32621 -> n3685 [from="trait", to="impl"];
-  n32621 -> n3685 [from="type_dep", to="struct"];
-  n32621 -> n10919 [from="field_type", to="struct"];
-  n32621 -> n20654 [from="type_dep", to="struct"];
-  n32621 -> n21214 [from="type_dep", to="struct"];
-  n32621 -> n37304 [from="type_dep", to="struct"];
-  n32621 -> n45149 [from="type_dep", to="struct"];
-  n32621 -> n51296 [from="type_dep", to="struct"];
-  n32621 -> n59506 [from="type_dep", to="struct"];
-  n32621 -> n70036 [from="trait", to="impl"];
-  n32621 -> n70036 [from="type_dep", to="struct"];
-  n32675 -> n33668 [from="type_dep", to="struct"];
-  n32905 -> n33136 [from="bound", to="generic"];
-  n32905 -> n33136 [from="field_type", to="struct"];
-  n33136 -> n779 [from="field_type", to="struct"];
-  n33136 -> n2566 [from="type_dep", to="struct"];
-  n33136 -> n2832 [from="type_dep", to="struct"];
-  n33136 -> n51296 [from="type_dep", to="struct"];
-  n33136 -> n61711 [from="type_dep", to="struct"];
-  n34004 -> n23221 [from="field_type", to="struct"];
-  n34173 -> n9172 [from="type_dep", to="struct"];
-  n35469 -> n61711 [from="bound", to="generic"];
-  n35469 -> n61711 [from="field_type", to="struct"];
-  n35623 -> n26482 [from="type_dep", to="struct"];
-  n35623 -> n50463 [from="field_type", to="struct"];
-  n35623 -> n55885 [from="field_type", to="struct"];
-  n37250 -> n37430 [from="trait", to="impl"];
-  n37960 -> n38016 [from="func", to="type_dep"];
-  n38632 -> n22715 [from="trait", to="impl"];
-  n39266 -> n3415 [from="bound", to="generic"];
-  n39266 -> n3415 [from="field_type", to="struct"];
-  n39266 -> n24461 [from="bound", to="generic"];
-  n39266 -> n24461 [from="field_type", to="struct"];
-  n39266 -> n31035 [from="bound", to="generic"];
-  n39266 -> n31035 [from="field_type", to="struct"];
-  n40211 -> n3415 [from="trait", to="impl"];
-  n40211 -> n31035 [from="trait", to="impl"];
-  n40428 -> n10919 [from="type_dep", to="struct"];
-  n40428 -> n54200 [from="type_dep", to="struct"];
-  n40428 -> n68645 [from="type_dep", to="struct"];
-  n40710 -> n1312 [from="type_dep", to="struct"];
-  n41135 -> n2129 [from="trait", to="impl"];
-  n41135 -> n9172 [from="trait", to="impl"];
-  n41135 -> n10919 [from="bound", to="generic"];
-  n41135 -> n10919 [from="field_type", to="struct"];
-  n41135 -> n44136 [from="bound", to="generic"];
-  n41135 -> n44136 [from="field_type", to="struct"];
-  n41135 -> n44136 [from="trait", to="impl"];
-  n41135 -> n68645 [from="trait", to="impl"];
-  n41953 -> n42060 [from="field_type", to="struct"];
-  n42060 -> n8876 [from="input", to="func"];
-  n42569 -> n67027 [from="trait", to="impl"];
-  n43151 -> n10919 [from="type_dep", to="struct"];
-  n43524 -> n44035 [from="field_type", to="struct"];
-  n43946 -> n43838 [from="field_type", to="struct"];
-  n44035 -> n24911 [from="type_dep", to="struct"];
-  n44035 -> n25443 [from="field_type", to="enum"];
-  n45887 -> n23078 [from="trait", to="impl"];
-  n46137 -> n67438 [from="func", to="output"];
-  n46342 -> n20654 [from="type_dep", to="struct"];
-  n46342 -> n35368 [from="type_arg", to="impl"];
-  n46342 -> n37304 [from="type_dep", to="struct"];
-  n46857 -> n872 [from="func", to="type_dep"];
-  n46857 -> n19028 [from="func", to="type_dep"];
-  n46857 -> n20924 [from="func", to="type_dep"];
-  n46857 -> n46342 [from="func", to="type_dep"];
-  n46857 -> n71982 [from="func", to="type_dep"];
-  n46857 -> n75248 [from="func", to="type_dep"];
-  n48394 -> n3415 [from="type_arg", to="impl"];
-  n48394 -> n31035 [from="type_arg", to="impl"];
-  n50463 -> n58305 [from="field_type", to="enum"];
-  n50787 -> n18689 [from="field_type", to="struct"];
-  n52172 -> n4615 [from="field_type", to="struct"];
-  n52415 -> n9 [from="type_arg", to="generic"];
-  n52415 -> n9 [from="type_dep", to="struct"];
-  n52415 -> n16272 [from="type_arg", to="impl"];
-  n52415 -> n65488 [from="type_arg", to="impl"];
-  n52415 -> n74779 [from="type_dep", to="struct"];
-  n54657 -> n58305 [from="field_type", to="enum"];
-  n55885 -> n58305 [from="field_type", to="enum"];
-  n56906 -> n4177 [from="trait", to="impl"];
-  n57202 -> n37960 [from="caller", to="callee"];
-  n57202 -> n42060 [from="func", to="output"];
-  n58141 -> n2129 [from="field_type", to="struct"];
-  n58141 -> n10919 [from="type_dep", to="struct"];
-  n58141 -> n44136 [from="field_type", to="struct"];
-  n58305 -> n54657 [from="type_dep", to="struct"];
-  n58868 -> n12947 [from="field_type", to="struct"];
-  n58868 -> n76576 [from="field_type", to="struct"];
-  n59261 -> n59506 [from="bound", to="generic"];
-  n59261 -> n59506 [from="field_type", to="struct"];
-  n59506 -> n64807 [from="type_dep", to="struct"];
-  n60195 -> n10919 [from="type_dep", to="struct"];
-  n60885 -> n51296 [from="field_type", to="struct"];
-  n60909 -> n9 [from="trait", to="impl"];
-  n60909 -> n2784 [from="trait", to="impl"];
-  n60909 -> n19664 [from="trait", to="impl"];
-  n60909 -> n32639 [from="trait", to="impl"];
-  n61159 -> n10904 [from="field_type", to="struct"];
-  n61159 -> n42293 [from="type_dep", to="struct"];
-  n61159 -> n51296 [from="type_dep", to="struct"];
-  n61159 -> n59632 [from="field_type", to="enum"];
-  n62725 -> n2129 [from="trait", to="impl"];
-  n62725 -> n64567 [from="trait", to="impl"];
-  n63540 -> n2129 [from="type_arg", to="impl"];
-  n63540 -> n7981 [from="type_arg", to="impl"];
-  n63540 -> n64567 [from="type_arg", to="impl"];
-  n63540 -> n69382 [from="type_arg", to="impl"];
-  n64035 -> n20539 [from="type_arg", to="impl"];
-  n64082 -> n65668 [from="trait", to="impl"];
-  n64082 -> n74696 [from="bound", to="generic"];
-  n64082 -> n74696 [from="field_type", to="struct"];
-  n64295 -> n2129 [from="field_type", to="struct"];
-  n64295 -> n10919 [from="field_type", to="struct"];
-  n64295 -> n15953 [from="type_arg", to="impl"];
-  n64295 -> n33429 [from="type_arg", to="impl"];
-  n64295 -> n40710 [from="field_type", to="struct"];
-  n64295 -> n57686 [from="type_arg", to="impl"];
-  n64295 -> n58386 [from="type_arg", to="impl"];
-  n64295 -> n67518 [from="type_arg", to="impl"];
-  n64567 -> n63540 [from="field_type", to="enum"];
-  n64807 -> n779 [from="type_dep", to="struct"];
-  n64807 -> n2566 [from="type_dep", to="struct"];
-  n64807 -> n2832 [from="type_arg", to="impl"];
-  n64807 -> n51296 [from="type_dep", to="struct"];
-  n64807 -> n61711 [from="type_dep", to="struct"];
-  n65488 -> n2555 [from="field_type", to="struct"];
-  n65668 -> n44136 [from="type_dep", to="struct"];
-  n65668 -> n76576 [from="type_dep", to="struct"];
-  n65822 -> n18689 [from="bound", to="generic"];
-  n65822 -> n18689 [from="field_type", to="struct"];
-  n66993 -> n64807 [from="bound", to="generic"];
-  n66993 -> n64807 [from="field_type", to="struct"];
-  n68110 -> n33136 [from="bound", to="generic"];
-  n68110 -> n33136 [from="field_type", to="struct"];
-  n68331 -> n26568 [from="type_dep", to="struct"];
-  n68331 -> n51296 [from="type_dep", to="struct"];
-  n68331 -> n61711 [from="type_dep", to="struct"];
-  n69382 -> n15953 [from="field_type", to="struct"];
-  n69915 -> n76073 [from="field_type", to="struct"];
-  n71973 -> n26574 [from="bound", to="generic"];
-  n71973 -> n26574 [from="field_type", to="struct"];
-  n72205 -> n18689 [from="bound", to="generic"];
-  n72205 -> n18689 [from="field_type", to="struct"];
-  n72205 -> n23221 [from="bound", to="generic"];
-  n72205 -> n23221 [from="field_type", to="struct"];
-  n72205 -> n54200 [from="bound", to="generic"];
-  n72205 -> n54200 [from="field_type", to="struct"];
-  n72699 -> n1312 [from="type_dep", to="struct"];
-  n74431 -> n779 [from="type_dep", to="struct"];
-  n74431 -> n2566 [from="type_dep", to="struct"];
-  n74431 -> n2784 [from="type_arg", to="impl"];
-  n75248 -> n71875 [from="type_dep", to="struct"];
-  n76188 -> n18689 [from="trait", to="impl"];
-  n76188 -> n30364 [from="trait", to="impl"];
-  n76188 -> n54200 [from="trait", to="impl"];
-  n76576 -> n2129 [from="field_type", to="struct"];
-  n76928 -> n25443 [from="field_type", to="enum"];
-  n76928 -> n61711 [from="type_dep", to="struct"];
-  n76928 -> n74431 [from="type_dep", to="struct"];
+  n25 -> n1059 [from="type_dep", to="struct"];
+  n25 -> n3005 [from="type_arg", to="impl"];
+  n25 -> n14843 [from="field_type", to="enum"];
+  n25 -> n15125 [from="field_type", to="struct"];
+  n25 -> n18804 [from="type_arg", to="impl"];
+  n25 -> n35630 [from="type_dep", to="struct"];
+  n25 -> n48877 [from="type_dep", to="struct"];
+  n25 -> n54816 [from="field_type", to="struct"];
+  n25 -> n59552 [from="field_type", to="struct"];
+  n25 -> n65105 [from="field_type", to="struct"];
+  n85 -> n488 [from="field_type", to="struct"];
+  n121 -> n130 [from="trait", to="impl"];
+  n121 -> n488 [from="trait", to="impl"];
+  n130 -> n60315 [from="field_type", to="struct"];
+  n488 -> n130 [from="field_type", to="enum"];
+  n500 -> n15019 [from="field_type", to="enum"];
+  n500 -> n24901 [from="base", to="extends"];
+  n500 -> n50204 [from="base", to="extends"];
+  n500 -> n58589 [from="type_arg", to="impl"];
+  n500 -> n75677 [from="type_arg", to="impl"];
+  n1059 -> n1791 [from="field_type", to="struct"];
+  n1740 -> n1791 [from="field_type", to="struct"];
+  n1740 -> n2192 [from="type_dep", to="struct"];
+  n1740 -> n2391 [from="type_dep", to="struct"];
+  n1740 -> n2528 [from="type_arg", to="impl"];
+  n1740 -> n23664 [from="type_dep", to="struct"];
+  n1740 -> n50674 [from="type_dep", to="struct"];
+  n1910 -> n72791 [from="input", to="func"];
+  n2192 -> n1092 [from="type_dep", to="struct"];
+  n2192 -> n2391 [from="type_dep", to="struct"];
+  n2192 -> n8698 [from="type_dep", to="struct"];
+  n2192 -> n14197 [from="input", to="func"];
+  n2192 -> n35630 [from="type_dep", to="struct"];
+  n2192 -> n36472 [from="field_type", to="struct"];
+  n2192 -> n36472 [from="type_arg", to="generic"];
+  n2192 -> n47493 [from="type_dep", to="struct"];
+  n2192 -> n52397 [from="field_type", to="struct"];
+  n2192 -> n60762 [from="type_dep", to="struct"];
+  n2192 -> n67069 [from="type_arg", to="impl"];
+  n3005 -> n14197 [from="input", to="func"];
+  n5728 -> n500 [from="trait", to="impl"];
+  n5728 -> n11962 [from="trait", to="impl"];
+  n5728 -> n19737 [from="trait", to="impl"];
+  n5728 -> n45474 [from="trait", to="impl"];
+  n5728 -> n49238 [from="trait", to="impl"];
+  n5728 -> n58589 [from="trait", to="impl"];
+  n5728 -> n76931 [from="trait", to="impl"];
+  n5977 -> n52397 [from="field_type", to="struct"];
+  n6015 -> n25 [from="trait", to="impl"];
+  n6015 -> n2192 [from="trait", to="impl"];
+  n6015 -> n6452 [from="field_type", to="struct"];
+  n6108 -> n2391 [from="type_arg", to="impl"];
+  n6108 -> n6452 [from="field_type", to="struct"];
+  n6452 -> n37206 [from="field_type", to="struct"];
+  n8755 -> n18482 [from="trait", to="impl"];
+  n8755 -> n52397 [from="field_type", to="struct"];
+  n8755 -> n53672 [from="trait", to="impl"];
+  n8755 -> n59402 [from="trait", to="impl"];
+  n8845 -> n46559 [from="type_dep", to="struct"];
+  n10013 -> n23664 [from="type_dep", to="struct"];
+  n10637 -> n10728 [from="type_dep", to="struct"];
+  n10671 -> n23295 [from="func", to="output"];
+  n10728 -> n15125 [from="field_type", to="struct"];
+  n10800 -> n14948 [from="type_dep", to="struct"];
+  n10800 -> n59348 [from="type_dep", to="struct"];
+  n11418 -> n11475 [from="field_type", to="struct"];
+  n12946 -> n11418 [from="type_dep", to="struct"];
+  n13182 -> n12669 [from="field_type", to="struct"];
+  n14227 -> n500 [from="trait", to="impl"];
+  n14227 -> n49012 [from="trait", to="impl"];
+  n14422 -> n46559 [from="field_type", to="struct"];
+  n14422 -> n60762 [from="type_dep", to="struct"];
+  n14731 -> n1791 [from="field_type", to="struct"];
+  n14731 -> n11418 [from="field_type", to="struct"];
+  n14804 -> n14843 [from="field_type", to="enum"];
+  n14843 -> n14422 [from="field_type", to="struct"];
+  n15019 -> n500 [from="type_arg", to="impl"];
+  n15019 -> n24901 [from="type_arg", to="impl"];
+  n15019 -> n49012 [from="type_arg", to="impl"];
+  n15019 -> n50204 [from="type_arg", to="impl"];
+  n15208 -> n8698 [from="field_type", to="struct"];
+  n16083 -> n1791 [from="type_dep", to="struct"];
+  n16083 -> n11418 [from="type_dep", to="struct"];
+  n16083 -> n72288 [from="field_type", to="struct"];
+  n17496 -> n6452 [from="field_type", to="struct"];
+  n18098 -> n25 [from="type_arg", to="generic"];
+  n18098 -> n25 [from="type_dep", to="struct"];
+  n18098 -> n18804 [from="type_arg", to="impl"];
+  n18098 -> n72896 [from="type_arg", to="impl"];
+  n18187 -> n500 [from="field_type", to="struct"];
+  n18187 -> n45474 [from="field_type", to="struct"];
+  n18187 -> n49238 [from="field_type", to="struct"];
+  n18804 -> n25 [from="type_arg", to="impl"];
+  n18804 -> n65616 [from="field_type", to="struct"];
+  n19455 -> n19737 [from="field_type", to="struct"];
+  n19846 -> n19737 [from="field_type", to="struct"];
+  n20517 -> n20715 [from="trait", to="impl"];
+  n20641 -> n22811 [from="field_type", to="struct"];
+  n20641 -> n32923 [from="field_type", to="struct"];
+  n21547 -> n42207 [from="field_type", to="struct"];
+  n21684 -> n63729 [from="field_type", to="struct"];
+  n21952 -> n65220 [from="trait", to="impl"];
+  n22447 -> n11784 [from="field_type", to="struct"];
+  n22447 -> n24211 [from="field_type", to="struct"];
+  n22447 -> n32744 [from="field_type", to="struct"];
+  n23204 -> n24211 [from="type_dep", to="struct"];
+  n23204 -> n50674 [from="type_dep", to="struct"];
+  n24211 -> n48877 [from="field_type", to="struct"];
+  n24901 -> n75677 [from="field_type", to="struct"];
+  n25691 -> n26412 [from="field_type", to="struct"];
+  n25733 -> n15854 [from="trait", to="impl"];
+  n25733 -> n22202 [from="trait", to="impl"];
+  n26256 -> n8698 [from="type_dep", to="struct"];
+  n26412 -> n2192 [from="field_type", to="struct"];
+  n26684 -> n21369 [from="type_dep", to="struct"];
+  n26712 -> n25303 [from="field_type", to="enum"];
+  n26712 -> n46559 [from="type_dep", to="struct"];
+  n26712 -> n50211 [from="type_dep", to="struct"];
+  n26712 -> n53012 [from="field_type", to="struct"];
+  n27014 -> n37345 [from="caller", to="callee"];
+  n27014 -> n43902 [from="func", to="output"];
+  n27030 -> n8219 [from="trait", to="impl"];
+  n27030 -> n9768 [from="trait", to="impl"];
+  n27030 -> n33244 [from="trait", to="impl"];
+  n27030 -> n75677 [from="trait", to="impl"];
+  n27795 -> n2192 [from="field_type", to="struct"];
+  n27795 -> n2528 [from="field_type", to="struct"];
+  n27795 -> n23664 [from="field_type", to="struct"];
+  n27795 -> n50211 [from="field_type", to="struct"];
+  n27795 -> n67522 [from="field_type", to="struct"];
+  n28300 -> n11475 [from="func", to="type_dep"];
+  n28764 -> n50446 [from="field_type", to="struct"];
+  n29688 -> n37383 [from="func", to="type_dep"];
+  n31301 -> n500 [from="field_type", to="struct"];
+  n31301 -> n8698 [from="type_dep", to="struct"];
+  n31301 -> n49238 [from="field_type", to="struct"];
+  n31769 -> n362 [from="trait", to="impl"];
+  n31769 -> n362 [from="type_dep", to="struct"];
+  n31769 -> n1159 [from="type_dep", to="struct"];
+  n31769 -> n2192 [from="type_dep", to="struct"];
+  n31769 -> n8698 [from="field_type", to="struct"];
+  n31769 -> n23204 [from="type_dep", to="struct"];
+  n31769 -> n41010 [from="type_dep", to="struct"];
+  n31769 -> n42207 [from="type_dep", to="struct"];
+  n31769 -> n46613 [from="type_dep", to="struct"];
+  n31769 -> n50211 [from="type_dep", to="struct"];
+  n32034 -> n32293 [from="field_type", to="struct"];
+  n32293 -> n2192 [from="type_dep", to="struct"];
+  n32293 -> n2528 [from="type_dep", to="struct"];
+  n32293 -> n23664 [from="field_type", to="struct"];
+  n32293 -> n50211 [from="type_dep", to="struct"];
+  n32293 -> n67522 [from="type_dep", to="struct"];
+  n35562 -> n11962 [from="type_dep", to="struct"];
+  n37345 -> n37383 [from="func", to="type_dep"];
+  n37592 -> n22760 [from="trait", to="impl"];
+  n38142 -> n1159 [from="type_dep", to="struct"];
+  n38142 -> n42207 [from="type_dep", to="struct"];
+  n40817 -> n41010 [from="field_type", to="struct"];
+  n41010 -> n63729 [from="type_dep", to="struct"];
+  n42892 -> n2391 [from="type_dep", to="struct"];
+  n42989 -> n67522 [from="field_type", to="struct"];
+  n43111 -> n500 [from="trait", to="impl"];
+  n43111 -> n8698 [from="field_type", to="struct"];
+  n43111 -> n11962 [from="trait", to="impl"];
+  n43111 -> n49238 [from="field_type", to="struct"];
+  n43111 -> n49238 [from="trait", to="impl"];
+  n43111 -> n58589 [from="trait", to="impl"];
+  n43691 -> n43585 [from="field_type", to="struct"];
+  n43793 -> n43902 [from="field_type", to="struct"];
+  n43902 -> n10671 [from="input", to="func"];
+  n45476 -> n14843 [from="field_type", to="enum"];
+  n45931 -> n11784 [from="trait", to="impl"];
+  n45931 -> n32744 [from="trait", to="impl"];
+  n46910 -> n46991 [from="trait", to="impl"];
+  n47533 -> n48877 [from="trait", to="impl"];
+  n47533 -> n59348 [from="field_type", to="struct"];
+  n48877 -> n49238 [from="type_dep", to="struct"];
+  n49012 -> n15019 [from="field_type", to="enum"];
+  n49029 -> n71410 [from="func", to="output"];
+  n49127 -> n49029 [from="caller", to="callee"];
+  n49127 -> n49348 [from="caller", to="callee"];
+  n49127 -> n71410 [from="func", to="output"];
+  n49752 -> n4803 [from="func", to="type_dep"];
+  n49752 -> n38142 [from="func", to="type_dep"];
+  n49752 -> n42738 [from="func", to="type_dep"];
+  n49752 -> n65105 [from="func", to="type_dep"];
+  n49752 -> n66302 [from="func", to="type_dep"];
+  n49752 -> n73178 [from="func", to="type_dep"];
+  n50204 -> n58589 [from="field_type", to="struct"];
+  n51541 -> n11784 [from="type_arg", to="impl"];
+  n51541 -> n14948 [from="field_type", to="struct"];
+  n51541 -> n32744 [from="type_arg", to="impl"];
+  n53672 -> n19737 [from="field_type", to="struct"];
+  n54816 -> n2192 [from="type_dep", to="struct"];
+  n54816 -> n2426 [from="type_arg", to="impl"];
+  n54816 -> n23664 [from="type_dep", to="struct"];
+  n56827 -> n14843 [from="field_type", to="enum"];
+  n56827 -> n54816 [from="type_dep", to="struct"];
+  n56827 -> n67522 [from="type_dep", to="struct"];
+  n58447 -> n15125 [from="field_type", to="struct"];
+  n58685 -> n25 [from="trait", to="impl"];
+  n58685 -> n2426 [from="trait", to="impl"];
+  n58685 -> n26855 [from="trait", to="impl"];
+  n58685 -> n36472 [from="trait", to="impl"];
+  n59552 -> n58447 [from="type_dep", to="struct"];
+  n59863 -> n19737 [from="field_type", to="struct"];
+  n59863 -> n45474 [from="field_type", to="struct"];
+  n60315 -> n2391 [from="type_dep", to="struct"];
+  n61612 -> n63735 [from="type_dep", to="struct"];
+  n61736 -> n500 [from="field_type", to="struct"];
+  n61736 -> n8219 [from="field_type", to="struct"];
+  n61736 -> n8698 [from="field_type", to="struct"];
+  n61736 -> n9768 [from="field_type", to="struct"];
+  n61736 -> n33244 [from="field_type", to="struct"];
+  n61736 -> n42892 [from="field_type", to="struct"];
+  n61736 -> n50204 [from="field_type", to="struct"];
+  n61736 -> n75677 [from="field_type", to="struct"];
+  n63319 -> n19737 [from="trait", to="impl"];
+  n63319 -> n45474 [from="trait", to="impl"];
+  n63729 -> n2192 [from="type_dep", to="struct"];
+  n63729 -> n2528 [from="type_arg", to="impl"];
+  n63729 -> n23664 [from="type_dep", to="struct"];
+  n63729 -> n50211 [from="type_dep", to="struct"];
+  n63729 -> n67522 [from="type_dep", to="struct"];
+  n63735 -> n2391 [from="type_dep", to="struct"];
+  n63735 -> n14843 [from="field_type", to="enum"];
+  n63735 -> n37206 [from="type_dep", to="struct"];
+  n63735 -> n47493 [from="field_type", to="struct"];
+  n63735 -> n54816 [from="type_dep", to="struct"];
+  n63735 -> n59348 [from="type_arg", to="impl"];
+  n64059 -> n68084 [from="field_type", to="enum"];
+  n65105 -> n50446 [from="type_dep", to="struct"];
+  n65220 -> n15125 [from="field_type", to="struct"];
+  n65220 -> n50446 [from="field_type", to="struct"];
+  n66915 -> n68084 [from="field_type", to="enum"];
+  n67069 -> n50211 [from="field_type", to="struct"];
+  n67532 -> n65616 [from="trait", to="impl"];
+  n68514 -> n71711 [from="input", to="func"];
+  n68953 -> n1159 [from="trait", to="impl"];
+  n68953 -> n27251 [from="trait", to="impl"];
+  n68953 -> n42207 [from="trait", to="impl"];
+  n69069 -> n63217 [from="field_type", to="struct"];
+  n70506 -> n8698 [from="type_dep", to="struct"];
+  n70982 -> n33215 [from="caller", to="callee"];
+  n72181 -> n72896 [from="field_type", to="struct"];
+  n72288 -> n2192 [from="type_dep", to="struct"];
+  n72708 -> n1910 [from="func", to="output"];
+  n72791 -> n1910 [from="func", to="output"];
+  n72791 -> n72708 [from="caller", to="callee"];
+  n72896 -> n18098 [from="type_arg", to="impl"];
+  n72896 -> n72181 [from="type_dep", to="struct"];
+  n72995 -> n14843 [from="field_type", to="enum"];
+  n73595 -> n27041 [from="type_dep", to="struct"];
+  n73595 -> n50211 [from="type_dep", to="struct"];
+  n73595 -> n67522 [from="type_dep", to="struct"];
+  n73710 -> n32293 [from="field_type", to="struct"];
+  n75572 -> n14948 [from="type_dep", to="struct"];
+  n75572 -> n59348 [from="type_dep", to="struct"];
+  n76407 -> n28513 [from="type_dep", to="struct"];
+  n76407 -> n64059 [from="field_type", to="struct"];
+  n76407 -> n66915 [from="field_type", to="struct"];
+  n76931 -> n8698 [from="type_dep", to="struct"];
+  n76931 -> n45474 [from="type_dep", to="struct"];
+  n76931 -> n58589 [from="type_dep", to="struct"];
+  n77172 -> n43799 [from="caller", to="callee"];
 }
