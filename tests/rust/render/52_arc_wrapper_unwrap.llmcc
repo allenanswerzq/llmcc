@@ -1,0 +1,187 @@
+===============================================================================
+arc-wrapper-unwrap
+===============================================================================
+Unwrap wrapper types like Arc<T>, Mutex<T>, RwLock<T> to expose inner type dependencies.
+The outer struct should have edges to the inner types, not just to Arc/Mutex/RwLock.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod context;
+mod state;
+
+--- file: sample/src/context.rs ---
+pub struct GlobalCtxt {
+    pub id: u64,
+}
+
+pub struct TaskManager {
+    pub active: bool,
+}
+
+pub struct FlagLoader {
+    pub enabled: bool,
+}
+
+pub struct EventManager {
+    pub count: u32,
+}
+
+pub struct MemoryStore {
+    pub size: usize,
+}
+
+pub struct RunningBatchQueue {
+    pub len: u32,
+}
+
+--- file: sample/src/state.rs ---
+use std::sync::{Arc, Mutex, RwLock};
+use crate::context::{GlobalCtxt, TaskManager, FlagLoader, EventManager, MemoryStore, RunningBatchQueue};
+
+struct CommonInitializedInner {
+    ctxt: GlobalCtxt,
+    task_manager: TaskManager,
+    flag_loader: FlagLoader,
+    event_manager: EventManager,
+    store: MemoryStore,
+    batch_queue: RunningBatchQueue,
+}
+
+/// Arc wrapper should be unwrapped: CommonInitialized -> CommonInitializedInner
+pub struct CommonInitialized {
+    inner: Arc<CommonInitializedInner>,
+}
+
+/// Mutex wrapper should be unwrapped: MutexState -> GlobalCtxt
+pub struct MutexState {
+    state: Mutex<GlobalCtxt>,
+}
+
+/// RwLock wrapper should be unwrapped: RwLockState -> TaskManager
+pub struct RwLockState {
+    state: RwLock<TaskManager>,
+}
+
+/// Nested wrappers: Arc<Mutex<T>> should unwrap to T
+pub struct ArcMutexState {
+    state: Arc<Mutex<EventManager>>,
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (module:2 context)
+  (module:3 state)
+)
+
+(root:4 context ($TMP/sample/src/context.rs)
+  (class:5 GlobalCtxt
+    (field:6 id @type u64)
+  )
+  (class:7 TaskManager
+    (field:8 active @type bool)
+  )
+  (class:9 FlagLoader
+    (field:10 enabled @type bool)
+  )
+  (class:11 EventManager
+    (field:12 count @type u32)
+  )
+  (class:13 MemoryStore
+    (field:14 size @type usize)
+  )
+  (class:15 RunningBatchQueue
+    (field:16 len @type u32)
+  )
+)
+
+(root:17 state ($TMP/sample/src/state.rs)
+  (class:18 CommonInitializedInner
+    (field:19 ctxt @type:5 GlobalCtxt)
+    (field:20 task_manager @type:7 TaskManager)
+    (field:21 flag_loader @type:9 FlagLoader)
+    (field:22 event_manager @type:11 EventManager)
+    (field:23 store @type:13 MemoryStore)
+    (field:24 batch_queue @type:15 RunningBatchQueue)
+    (@tdep:5 GlobalCtxt)
+    (@tdep:7 TaskManager)
+    (@tdep:9 FlagLoader)
+    (@tdep:11 EventManager)
+    (@tdep:13 MemoryStore)
+    (@tdep:15 RunningBatchQueue)
+  )
+  (class:25 CommonInitialized
+    (field:26 inner @type:18 CommonInitializedInner)
+    (@tdep:18 CommonInitializedInner)
+  )
+  (class:27 MutexState
+    (field:28 state @type:5 GlobalCtxt)
+    (@tdep:5 GlobalCtxt)
+  )
+  (class:29 RwLockState
+    (field:30 state @type:7 TaskManager)
+    (@tdep:7 TaskManager)
+  )
+  (class:31 ArcMutexState
+    (field:32 state @type:11 EventManager)
+    (@tdep:11 EventManager)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_context_rs {
+      label="context.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n5[label="GlobalCtxt", path="$TMP/sample/src/context.rs:1", sym_ty="Struct", shape=box];
+      n11[label="EventManager", path="$TMP/sample/src/context.rs:13", sym_ty="Struct", shape=box];
+      n13[label="MemoryStore", path="$TMP/sample/src/context.rs:17", sym_ty="Struct", shape=box];
+      n15[label="RunningBatchQueue", path="$TMP/sample/src/context.rs:21", sym_ty="Struct", shape=box];
+      n7[label="TaskManager", path="$TMP/sample/src/context.rs:5", sym_ty="Struct", shape=box];
+      n9[label="FlagLoader", path="$TMP/sample/src/context.rs:9", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_state_rs {
+      label="state.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n25[label="CommonInitialized", path="$TMP/sample/src/state.rs:14", sym_ty="Struct", shape=box];
+      n27[label="MutexState", path="$TMP/sample/src/state.rs:19", sym_ty="Struct", shape=box];
+      n29[label="RwLockState", path="$TMP/sample/src/state.rs:24", sym_ty="Struct", shape=box];
+      n31[label="ArcMutexState", path="$TMP/sample/src/state.rs:29", sym_ty="Struct", shape=box];
+      n18[label="CommonInitializedInner", path="$TMP/sample/src/state.rs:4", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+
+  n5 -> n18 [from="field_type", to="struct"];
+  n5 -> n27 [from="type_dep", to="struct"];
+  n7 -> n18 [from="field_type", to="struct"];
+  n7 -> n29 [from="type_dep", to="struct"];
+  n9 -> n18 [from="field_type", to="struct"];
+  n11 -> n18 [from="field_type", to="struct"];
+  n11 -> n31 [from="type_dep", to="struct"];
+  n13 -> n18 [from="field_type", to="struct"];
+  n15 -> n18 [from="field_type", to="struct"];
+  n18 -> n25 [from="type_dep", to="struct"];
+}

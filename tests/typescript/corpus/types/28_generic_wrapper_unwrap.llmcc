@@ -1,0 +1,123 @@
+===============================================================================
+generic-wrapper-unwrap
+===============================================================================
+Unwrap wrapper types like Promise<T>, Ref<T>, Readonly<T> to expose inner type dependencies.
+lang: typescript
+
+--- file: src/context.ts ---
+export interface GlobalCtxt {
+    id: number;
+}
+
+export interface TaskManager {
+    active: boolean;
+}
+
+export interface EventManager {
+    count: number;
+}
+
+--- file: src/state.ts ---
+import { GlobalCtxt, TaskManager, EventManager } from './context';
+
+interface StateInner {
+    ctxt: GlobalCtxt;
+    tasks: TaskManager;
+    events: EventManager;
+}
+
+// Promise wrapper should unwrap: AsyncState -> StateInner
+export interface AsyncState {
+    inner: Promise<StateInner>;
+}
+
+// Ref wrapper should unwrap: RefState -> GlobalCtxt
+export interface RefState {
+    state: Ref<GlobalCtxt>;
+}
+
+// Readonly wrapper should unwrap: ReadonlyState -> TaskManager
+export interface ReadonlyState {
+    state: Readonly<TaskManager>;
+}
+
+// Nested wrappers: Promise<Readonly<T>> should unwrap to T
+export interface NestedState {
+    state: Promise<Readonly<EventManager>>;
+}
+
+--- expect:block-graph ---
+(root:1 context ($TMP/src/context.ts)
+  (interface:2 GlobalCtxt
+    (field:3 id @type number)
+  )
+  (interface:4 TaskManager
+    (field:5 active @type boolean)
+  )
+  (interface:6 EventManager
+    (field:7 count @type number)
+  )
+)
+
+(root:8 state ($TMP/src/state.ts)
+  (interface:9 StateInner
+    (field:10 ctxt @type:2 GlobalCtxt)
+    (field:11 tasks @type:4 TaskManager)
+    (field:12 events @type:6 EventManager)
+  )
+  (interface:13 AsyncState
+    (field:14 inner @type:9 StateInner)
+  )
+  (interface:15 RefState
+    (field:16 state @type:2 GlobalCtxt)
+  )
+  (interface:17 ReadonlyState
+    (field:18 state @type:4 TaskManager)
+  )
+  (interface:19 NestedState
+    (field:20 state @type:6 EventManager)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_context_ts {
+    label="context.ts";
+    style=rounded;
+        bgcolor="#fafafa";
+
+    n2[label="GlobalCtxt", path="$TMP/src/context.ts:1", sym_ty="Interface", shape=box];
+    n4[label="TaskManager", path="$TMP/src/context.ts:5", sym_ty="Interface", shape=box];
+    n6[label="EventManager", path="$TMP/src/context.ts:9", sym_ty="Interface", shape=box];
+  }
+
+  subgraph cluster_state_ts {
+    label="state.ts";
+    style=rounded;
+        bgcolor="#fafafa";
+
+    n13[label="AsyncState", path="$TMP/src/state.ts:10", sym_ty="Interface", shape=box];
+    n15[label="RefState", path="$TMP/src/state.ts:15", sym_ty="Interface", shape=box];
+    n17[label="ReadonlyState", path="$TMP/src/state.ts:20", sym_ty="Interface", shape=box];
+    n19[label="NestedState", path="$TMP/src/state.ts:25", sym_ty="Interface", shape=box];
+    n9[label="StateInner", path="$TMP/src/state.ts:3", sym_ty="Interface", shape=box];
+  }
+
+
+  n2 -> n9 [from="field_type", to="struct"];
+  n2 -> n15 [from="field_type", to="struct"];
+  n4 -> n9 [from="field_type", to="struct"];
+  n4 -> n17 [from="field_type", to="struct"];
+  n6 -> n9 [from="field_type", to="struct"];
+  n6 -> n19 [from="field_type", to="struct"];
+  n9 -> n13 [from="field_type", to="struct"];
+}
