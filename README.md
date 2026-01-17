@@ -61,7 +61,7 @@ Here's a small portion of the graph at depth 3, showing the core abstraction lay
 
 llmcc is designed to be very fast, and we will try to make it faster.
 
-The repo contains benchmark for many famous project output here: [sample/benchmark_results_16.md](sample/benchmark_results_8_linux.md).
+The repo contains benchmark for many famous project output here: [sample/benchmark_results_16.md](sample/benchmark_results_8_linux_rust.md).
 
 Excerpt (PageRank timing, depth=3, top-200):
 
