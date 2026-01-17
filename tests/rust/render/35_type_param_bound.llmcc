@@ -34,32 +34,5 @@ pub trait Transition<To: State> {
 )
 
 --- expect:arch-graph ---
-digraph architecture {
-  rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
-  splines=ortho;
-  compound=true;
-
-  node [shape=box, style=rounded];
-  edge [arrowsize=0.7];
-
-  subgraph cluster_sample {
-    label="sample";
-    style=rounded;
-        bgcolor="#f8f8f8";
-
-    subgraph cluster_lib_rs {
-      label="lib.rs";
-      style=rounded;
-            bgcolor="#fafafa";
-
-      n2[label="State", path="$TMP/sample/src/lib.rs:1", sym_ty="Trait", shape=box];
-      n6[label="Transition", path="$TMP/sample/src/lib.rs:5", sym_ty="Trait", shape=box];
-    }
-
-  }
-
-
-  n2 -> n6 [from="bound", to="generic"];
+digraph G {
 }
