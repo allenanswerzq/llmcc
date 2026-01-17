@@ -106,6 +106,7 @@ Generate a crate-level graph for Codex (DOT to stdout):
 llmcc \
 	-d sample/repos/codex/codex-rs \
 	--graph \
+	--lang rust \
 	--depth 1
 ```
 
@@ -117,6 +118,7 @@ llmcc \
 	--graph \
 	--depth 3 \
 	--pagerank-top-k 200 \
+	--lang rust \
 	-o /tmp/codex_depth3_pagerank.dot
 ```
 
