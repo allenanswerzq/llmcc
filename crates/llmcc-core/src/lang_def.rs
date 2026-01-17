@@ -321,8 +321,8 @@ impl<'tree> ParseNode for TreeSitterParseNode<'tree> {
 
 /// Scopes trait defining language-specific AST handling.
 pub trait LanguageTrait {
-    /// Get the manifest file name for this language (e.g., "Cargo.toml", "package.json").
-    fn manifest_name() -> &'static str;
+    /// Get the manifest file names for this language (e.g., ["Cargo.toml"], ["CMakeLists.txt", "BUILD"]).
+    fn manifest_names() -> &'static [&'static str];
 
     /// Get the container directories that don't add semantic meaning.
     /// These directories are skipped in module detection (e.g., "src", "lib").
@@ -410,8 +410,8 @@ pub trait LanguageTraitImpl: LanguageTrait {
     /// Supported file extensions for this language.
     fn supported_extensions_impl() -> &'static [&'static str];
 
-    /// The manifest file name for this language (e.g., "Cargo.toml", "package.json").
-    fn manifest_name_impl() -> &'static str;
+    /// The manifest file names for this language (e.g., ["Cargo.toml"], ["CMakeLists.txt", "BUILD"]).
+    fn manifest_names_impl() -> &'static [&'static str];
 
     /// Container directories that don't add semantic meaning (e.g., "src", "lib").
     fn container_dirs_impl() -> &'static [&'static str];
@@ -486,8 +486,8 @@ macro_rules! define_lang {
 
             /// Language Trait Implementation
             impl $crate::lang_def::LanguageTrait for [<Lang $suffix>] {
-                fn manifest_name() -> &'static str {
-                    <Self as $crate::lang_def::LanguageTraitImpl>::manifest_name_impl()
+                fn manifest_names() -> &'static [&'static str] {
+                    <Self as $crate::lang_def::LanguageTraitImpl>::manifest_names_impl()
                 }
 
                 fn container_dirs() -> &'static [&'static str] {

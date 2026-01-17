@@ -1,0 +1,194 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  subgraph cluster_db_stress_tool {
+    label="db_stress_tool";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_db_stress_tool_db_stress_common[label="db_stress_common", path="/home/yibai/llmcc/sample/repos/rocksdb/db_stress_tool"];
+    mod_db_stress_tool_db_stress_test_base[label="db_stress_test_base", path="/home/yibai/llmcc/sample/repos/rocksdb/db_stress_tool"];
+  }
+
+  subgraph cluster_gtest {
+    label="gtest";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_gtest_gtest_all[label="gtest-all", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest"];
+  }
+
+  subgraph cluster_java {
+    label="java";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_java_rocksjni[label="rocksjni", path="/home/yibai/llmcc/sample/repos/rocksdb/java/rocksjni"];
+  }
+
+  subgraph cluster_microbench {
+    label="microbench";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_microbench_db_basic_bench[label="db_basic_bench", path="/home/yibai/llmcc/sample/repos/rocksdb/microbench"];
+  }
+
+  subgraph cluster_rocksdb {
+    label="rocksdb";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_rocksdb_cache[label="cache", path="/home/yibai/llmcc/sample/repos/rocksdb/cache"];
+    mod_rocksdb_db[label="db", path="/home/yibai/llmcc/sample/repos/rocksdb/db"];
+    mod_rocksdb_env[label="env", path="/home/yibai/llmcc/sample/repos/rocksdb/env"];
+    mod_rocksdb_file[label="file", path="/home/yibai/llmcc/sample/repos/rocksdb/file"];
+    mod_rocksdb_logging[label="logging", path="/home/yibai/llmcc/sample/repos/rocksdb/logging"];
+    mod_rocksdb_memtable[label="memtable", path="/home/yibai/llmcc/sample/repos/rocksdb/memtable"];
+    mod_rocksdb_monitoring[label="monitoring", path="/home/yibai/llmcc/sample/repos/rocksdb/monitoring"];
+    mod_rocksdb_options[label="options", path="/home/yibai/llmcc/sample/repos/rocksdb/options"];
+    mod_rocksdb_port[label="port", path="/home/yibai/llmcc/sample/repos/rocksdb/port"];
+    mod_rocksdb_rocksdb[label="rocksdb", path="/home/yibai/llmcc/sample/repos/rocksdb/include/rocksdb"];
+    mod_rocksdb_table[label="table", path="/home/yibai/llmcc/sample/repos/rocksdb/table"];
+    mod_rocksdb_test_util[label="test_util", path="/home/yibai/llmcc/sample/repos/rocksdb/test_util"];
+    mod_rocksdb_trace_replay[label="trace_replay", path="/home/yibai/llmcc/sample/repos/rocksdb/trace_replay"];
+    mod_rocksdb_util[label="util", path="/home/yibai/llmcc/sample/repos/rocksdb/util"];
+    mod_rocksdb_utilities[label="utilities", path="/home/yibai/llmcc/sample/repos/rocksdb/utilities"];
+  }
+
+  subgraph cluster_tools {
+    label="tools";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_tools_db_bench_tool[label="db_bench_tool", path="/home/yibai/llmcc/sample/repos/rocksdb/tools"];
+    mod_tools_ldb_cmd[label="ldb_cmd", path="/home/yibai/llmcc/sample/repos/rocksdb/tools"];
+    mod_tools_ldb_cmd_impl[label="ldb_cmd_impl", path="/home/yibai/llmcc/sample/repos/rocksdb/tools"];
+    mod_tools_ldb_cmd_test[label="ldb_cmd_test", path="/home/yibai/llmcc/sample/repos/rocksdb/tools"];
+  }
+
+  subgraph cluster_unknown {
+    label="unknown";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_unknown_unknown[label="unknown", path="/home/yibai/llmcc/sample/repos/rocksdb/third-party/gtest-1.8.1/fused-src/gtest"];
+  }
+
+
+  mod_db_stress_tool_db_stress_common -> mod_rocksdb_db;
+  mod_db_stress_tool_db_stress_test_base -> mod_rocksdb_rocksdb;
+  mod_gtest_gtest_all -> mod_unknown_unknown;
+  mod_java_rocksjni -> mod_db_stress_tool_db_stress_common;
+  mod_java_rocksjni -> mod_rocksdb_db;
+  mod_java_rocksjni -> mod_rocksdb_rocksdb;
+  mod_java_rocksjni -> mod_rocksdb_table;
+  mod_java_rocksjni -> mod_rocksdb_trace_replay;
+  mod_java_rocksjni -> mod_rocksdb_util;
+  mod_java_rocksjni -> mod_unknown_unknown;
+  mod_microbench_db_basic_bench -> mod_unknown_unknown;
+  mod_rocksdb_cache -> mod_rocksdb_db;
+  mod_rocksdb_cache -> mod_rocksdb_rocksdb;
+  mod_rocksdb_cache -> mod_rocksdb_util;
+  mod_rocksdb_cache -> mod_unknown_unknown;
+  mod_rocksdb_db -> mod_gtest_gtest_all;
+  mod_rocksdb_db -> mod_rocksdb_cache;
+  mod_rocksdb_db -> mod_rocksdb_env;
+  mod_rocksdb_db -> mod_rocksdb_file;
+  mod_rocksdb_db -> mod_rocksdb_logging;
+  mod_rocksdb_db -> mod_rocksdb_memtable;
+  mod_rocksdb_db -> mod_rocksdb_monitoring;
+  mod_rocksdb_db -> mod_rocksdb_options;
+  mod_rocksdb_db -> mod_rocksdb_port;
+  mod_rocksdb_db -> mod_rocksdb_rocksdb;
+  mod_rocksdb_db -> mod_rocksdb_table;
+  mod_rocksdb_db -> mod_rocksdb_test_util;
+  mod_rocksdb_db -> mod_rocksdb_trace_replay;
+  mod_rocksdb_db -> mod_rocksdb_util;
+  mod_rocksdb_db -> mod_rocksdb_utilities;
+  mod_rocksdb_db -> mod_unknown_unknown;
+  mod_rocksdb_env -> mod_rocksdb_db;
+  mod_rocksdb_env -> mod_rocksdb_options;
+  mod_rocksdb_env -> mod_rocksdb_port;
+  mod_rocksdb_env -> mod_rocksdb_rocksdb;
+  mod_rocksdb_env -> mod_rocksdb_table;
+  mod_rocksdb_env -> mod_rocksdb_test_util;
+  mod_rocksdb_env -> mod_rocksdb_utilities;
+  mod_rocksdb_env -> mod_tools_db_bench_tool;
+  mod_rocksdb_env -> mod_unknown_unknown;
+  mod_rocksdb_file -> mod_rocksdb_db;
+  mod_rocksdb_file -> mod_rocksdb_env;
+  mod_rocksdb_file -> mod_rocksdb_options;
+  mod_rocksdb_file -> mod_rocksdb_rocksdb;
+  mod_rocksdb_file -> mod_rocksdb_test_util;
+  mod_rocksdb_file -> mod_tools_db_bench_tool;
+  mod_rocksdb_file -> mod_unknown_unknown;
+  mod_rocksdb_logging -> mod_rocksdb_db;
+  mod_rocksdb_logging -> mod_unknown_unknown;
+  mod_rocksdb_memtable -> mod_rocksdb_rocksdb;
+  mod_rocksdb_monitoring -> mod_rocksdb_db;
+  mod_rocksdb_monitoring -> mod_rocksdb_rocksdb;
+  mod_rocksdb_options -> mod_rocksdb_cache;
+  mod_rocksdb_options -> mod_rocksdb_db;
+  mod_rocksdb_options -> mod_rocksdb_rocksdb;
+  mod_rocksdb_options -> mod_rocksdb_table;
+  mod_rocksdb_options -> mod_rocksdb_utilities;
+  mod_rocksdb_options -> mod_unknown_unknown;
+  mod_rocksdb_port -> mod_unknown_unknown;
+  mod_rocksdb_rocksdb -> mod_rocksdb_db;
+  mod_rocksdb_rocksdb -> mod_rocksdb_env;
+  mod_rocksdb_rocksdb -> mod_rocksdb_options;
+  mod_rocksdb_rocksdb -> mod_rocksdb_table;
+  mod_rocksdb_rocksdb -> mod_rocksdb_test_util;
+  mod_rocksdb_rocksdb -> mod_rocksdb_util;
+  mod_rocksdb_rocksdb -> mod_rocksdb_utilities;
+  mod_rocksdb_rocksdb -> mod_tools_db_bench_tool;
+  mod_rocksdb_rocksdb -> mod_tools_ldb_cmd_impl;
+  mod_rocksdb_rocksdb -> mod_unknown_unknown;
+  mod_rocksdb_table -> mod_gtest_gtest_all;
+  mod_rocksdb_table -> mod_rocksdb_db;
+  mod_rocksdb_table -> mod_rocksdb_memtable;
+  mod_rocksdb_table -> mod_rocksdb_options;
+  mod_rocksdb_table -> mod_rocksdb_port;
+  mod_rocksdb_table -> mod_rocksdb_rocksdb;
+  mod_rocksdb_table -> mod_rocksdb_test_util;
+  mod_rocksdb_table -> mod_rocksdb_util;
+  mod_rocksdb_table -> mod_rocksdb_utilities;
+  mod_rocksdb_table -> mod_unknown_unknown;
+  mod_rocksdb_test_util -> mod_rocksdb_db;
+  mod_rocksdb_test_util -> mod_rocksdb_rocksdb;
+  mod_rocksdb_test_util -> mod_rocksdb_util;
+  mod_rocksdb_trace_replay -> mod_rocksdb_table;
+  mod_rocksdb_util -> mod_gtest_gtest_all;
+  mod_rocksdb_util -> mod_rocksdb_db;
+  mod_rocksdb_util -> mod_rocksdb_port;
+  mod_rocksdb_util -> mod_rocksdb_rocksdb;
+  mod_rocksdb_util -> mod_rocksdb_table;
+  mod_rocksdb_util -> mod_rocksdb_test_util;
+  mod_rocksdb_util -> mod_unknown_unknown;
+  mod_rocksdb_utilities -> mod_gtest_gtest_all;
+  mod_rocksdb_utilities -> mod_rocksdb_cache;
+  mod_rocksdb_utilities -> mod_rocksdb_db;
+  mod_rocksdb_utilities -> mod_rocksdb_env;
+  mod_rocksdb_utilities -> mod_rocksdb_options;
+  mod_rocksdb_utilities -> mod_rocksdb_port;
+  mod_rocksdb_utilities -> mod_rocksdb_rocksdb;
+  mod_rocksdb_utilities -> mod_rocksdb_table;
+  mod_rocksdb_utilities -> mod_rocksdb_test_util;
+  mod_rocksdb_utilities -> mod_rocksdb_util;
+  mod_rocksdb_utilities -> mod_tools_db_bench_tool;
+  mod_rocksdb_utilities -> mod_unknown_unknown;
+  mod_tools_ldb_cmd -> mod_rocksdb_rocksdb;
+  mod_tools_ldb_cmd_test -> mod_rocksdb_db;
+  mod_tools_ldb_cmd_test -> mod_unknown_unknown;
+}

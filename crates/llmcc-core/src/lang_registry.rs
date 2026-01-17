@@ -18,8 +18,8 @@ pub trait LanguageHandler: Send + Sync {
     /// Get supported file extensions for this language
     fn extensions(&self) -> &'static [&'static str];
 
-    /// Get the manifest file name (e.g., "Cargo.toml", "package.json")
-    fn manifest_name(&self) -> &'static str;
+    /// Get the manifest file names (e.g., ["Cargo.toml"], ["CMakeLists.txt", "BUILD"])
+    fn manifest_names(&self) -> &'static [&'static str];
 
     /// Check if a file extension is supported by this language
     fn supports_extension(&self, ext: &str) -> bool {
@@ -61,8 +61,8 @@ where
         L::supported_extensions()
     }
 
-    fn manifest_name(&self) -> &'static str {
-        L::manifest_name()
+    fn manifest_names(&self) -> &'static [&'static str] {
+        L::manifest_names()
     }
 
     fn parse(&self, text: &[u8]) -> Option<Box<dyn ParseTree>> {
@@ -182,8 +182,8 @@ mod tests {
             self.extensions
         }
 
-        fn manifest_name(&self) -> &'static str {
-            "mock.toml"
+        fn manifest_names(&self) -> &'static [&'static str] {
+            &["mock.toml"]
         }
 
         fn parse(&self, _text: &[u8]) -> Option<Box<dyn ParseTree>> {

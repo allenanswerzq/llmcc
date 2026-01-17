@@ -1,0 +1,741 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  subgraph cluster_api {
+    label="api";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_api_flatbuffer_conversions[label="flatbuffer_conversions", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/lite/core/api"];
+  }
+
+  subgraph cluster_bytecode {
+    label="bytecode";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_bytecode_span[label="span", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/tfrt/mlrt/bytecode"];
+  }
+
+  subgraph cluster_c {
+    label="c";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_c_c_api[label="c_api", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/core/experimental/acceleration/mini_benchmark/c"];
+    mod_c_c_api_internal[label="c_api_internal", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/c"];
+    mod_c_c_api_test[label="c_api_test", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/core/c"];
+  }
+
+  subgraph cluster_cc {
+    label="cc";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_cc_framework[label="framework", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/cc/framework"];
+    mod_cc_gradients[label="gradients", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/cc/gradients"];
+  }
+
+  subgraph cluster_ci_build {
+    label="ci_build";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_ci_build_builds[label="builds", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/tools/ci_build/builds"];
+  }
+
+  subgraph cluster_common {
+    label="common";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_common_data_type[label="data_type", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common"];
+    mod_common_gpu_model_generated[label="gpu_model_generated", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common"];
+    mod_common_operations[label="operations", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common"];
+  }
+
+  subgraph cluster_common_runtime {
+    label="common_runtime";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_common_runtime_lower_if_op[label="lower_if_op", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime"];
+    mod_common_runtime_session[label="session", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime"];
+    mod_common_runtime_single_threaded_cpu_device[label="single_threaded_cpu_device", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime"];
+  }
+
+  subgraph cluster_configuration {
+    label="configuration";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_configuration_configuration_generated[label="configuration_generated", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/experimental/acceleration/configuration"];
+  }
+
+  subgraph cluster_data {
+    label="data";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_data_parallel_interleave_dataset_op[label="parallel_interleave_dataset_op", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/kernels/data"];
+  }
+
+  subgraph cluster_eager {
+    label="eager";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_eager_c_api[label="c_api", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/c/eager"];
+    mod_eager_c_api_experimental[label="c_api_experimental", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/c/eager"];
+    mod_eager_pywrap_tfe_src[label="pywrap_tfe_src", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/python/eager"];
+  }
+
+  subgraph cluster_fallback {
+    label="fallback";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_fallback_op_kernel_runner[label="op_kernel_runner", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/tfrt/fallback"];
+  }
+
+  subgraph cluster_framework {
+    label="framework";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_framework_common_shape_fns[label="common_shape_fns", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework"];
+    mod_framework_dataset[label="dataset", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework"];
+    mod_framework_function[label="function", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework"];
+    mod_framework_memory_types[label="memory_types", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework"];
+    mod_framework_metrics[label="metrics", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework"];
+    mod_framework_node_def_util[label="node_def_util", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework"];
+    mod_framework_op_kernel[label="op_kernel", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework"];
+    mod_framework_ref_var[label="ref_var", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework"];
+    mod_framework_tensor_types[label="tensor_types", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/framework"];
+  }
+
+  subgraph cluster_gradient {
+    label="gradient";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_gradient_bcast_grad_args[label="bcast_grad_args", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/gradient"];
+  }
+
+  subgraph cluster_grappler {
+    label="grappler";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_grappler_op_types[label="op_types", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/grappler"];
+  }
+
+  subgraph cluster_image {
+    label="image";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_image_mirror_pad_op[label="mirror_pad_op", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/kernels/image"];
+  }
+
+  subgraph cluster_internal {
+    label="internal";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_internal_optimized[label="optimized", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/internal/optimized"];
+    mod_internal_reference[label="reference", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/internal/reference"];
+    mod_internal_runtime_shape[label="runtime_shape", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/internal"];
+    mod_internal_types[label="types", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels/internal"];
+  }
+
+  subgraph cluster_ir {
+    label="ir";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_ir_tf_op_registry[label="tf_op_registry", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/ir"];
+  }
+
+  subgraph cluster_jit {
+    label="jit";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_jit_node_matchers[label="node_matchers", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/jit"];
+  }
+
+  subgraph cluster_kernels {
+    label="kernels";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_kernels_cwise_ops[label="cwise_ops", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/kernels"];
+    mod_kernels_pad_test[label="pad_test", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels"];
+    mod_kernels_reduce_test[label="reduce_test", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels"];
+    mod_kernels_stablehlo_reduce_window_test_util_test[label="stablehlo_reduce_window_test_util_test", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels"];
+    mod_kernels_test_util[label="test_util", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/kernels"];
+    mod_kernels_training_ops_gpu_cu[label="training_ops_gpu.cu", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/kernels"];
+    mod_kernels_variant_ops_util[label="variant_ops_util", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/kernels"];
+  }
+
+  subgraph cluster_legacy {
+    label="legacy";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_legacy_shlo[label="shlo", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/experimental/shlo/legacy/include"];
+  }
+
+  subgraph cluster_lite {
+    label="lite";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_lite_tensorflow_profiler_logger[label="tensorflow_profiler_logger", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite"];
+    mod_lite_transforms[label="transforms", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/lite/transforms"];
+    mod_lite_utils[label="utils", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/lite/utils"];
+  }
+
+  subgraph cluster_mini_benchmark {
+    label="mini_benchmark";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_mini_benchmark_decode_jpeg_status[label="decode_jpeg_status", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/experimental/acceleration/mini_benchmark"];
+  }
+
+  subgraph cluster_mlir {
+    label="mlir";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_mlir_expansions[label="expansions", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/dtensor/mlir/expansions"];
+  }
+
+  subgraph cluster_next_pluggable_device {
+    label="next_pluggable_device";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_next_pluggable_device_plugin_op_kernel[label="plugin_op_kernel", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/common_runtime/next_pluggable_device"];
+  }
+
+  subgraph cluster_nnapi {
+    label="nnapi";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_nnapi_nnapi_delegate_test[label="nnapi_delegate_test", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/nnapi"];
+  }
+
+  subgraph cluster_platform {
+    label="platform";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_platform_status[label="status", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/platform"];
+  }
+
+  subgraph cluster_proto {
+    label="proto";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_proto_descriptor_pool_registry_test[label="descriptor_pool_registry_test", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/util/proto"];
+  }
+
+  subgraph cluster_proto_text {
+    label="proto_text";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_proto_text_gen_proto_text_functions_lib[label="gen_proto_text_functions_lib", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/tools/proto_text"];
+  }
+
+  subgraph cluster_schema {
+    label="schema";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_schema_conversion_metadata_generated[label="conversion_metadata_generated", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/lite/schema"];
+    mod_schema_schema_generated[label="schema_generated", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/lite/schema"];
+  }
+
+  subgraph cluster_sparse {
+    label="sparse";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_sparse_sparse_tensor[label="sparse_tensor", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/util/sparse"];
+  }
+
+  subgraph cluster_stablehlo {
+    label="stablehlo";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_stablehlo_passes[label="passes", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/quantization/stablehlo/passes"];
+    mod_stablehlo_transforms[label="transforms", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/lite/stablehlo/transforms"];
+  }
+
+  subgraph cluster_task {
+    label="task";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_task_tflite_serialization_base_generated[label="tflite_serialization_base_generated", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/gpu/common/task"];
+  }
+
+  subgraph cluster_tensorflow {
+    label="tensorflow";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_tensorflow_ir[label="ir", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/tensorflow/ir"];
+    mod_tensorflow_passes[label="passes", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/quantization/tensorflow/passes"];
+    mod_tensorflow_utils[label="utils", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/tensorflow/utils"];
+  }
+
+  subgraph cluster_tf2tensorrt {
+    label="tf2tensorrt";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_tf2tensorrt_convert[label="convert", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/tf2tensorrt/convert"];
+    mod_tf2tensorrt_utils[label="utils", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/tf2tensorrt/utils"];
+  }
+
+  subgraph cluster_tf2xla {
+    label="tf2xla";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_tf2xla_xla_op_kernel[label="xla_op_kernel", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/tf2xla"];
+  }
+
+  subgraph cluster_tfrt {
+    label="tfrt";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_tfrt_transforms[label="transforms", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/tfrt/transforms"];
+  }
+
+  subgraph cluster_toco {
+    label="toco";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_toco_graph_transformations[label="graph_transformations", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/toco/graph_transformations"];
+    mod_toco_model[label="model", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/toco"];
+    mod_toco_tooling_util[label="tooling_util", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/toco"];
+  }
+
+  subgraph cluster_tosa {
+    label="tosa";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_tosa_transforms[label="transforms", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/tosa/transforms"];
+  }
+
+  subgraph cluster_transforms {
+    label="transforms";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_transforms_legalize_tf[label="legalize_tf", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/tf2xla/transforms"];
+    mod_transforms_passes[label="passes", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/tensorflow/transforms"];
+    mod_transforms_rewriters[label="rewriters", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/compiler/mlir/tools/kernel_gen/transforms"];
+  }
+
+  subgraph cluster_utils {
+    label="utils";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_utils_graph_view_test[label="graph_view_test", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/core/grappler/utils"];
+  }
+
+  subgraph cluster_xnnpack {
+    label="xnnpack";
+    style=rounded;
+    bgcolor="#f8f8f8";
+
+    mod_xnnpack_xnnpack_delegate[label="xnnpack_delegate", path="/home/yibai/llmcc/sample/repos/tensorflow/tensorflow/lite/delegates/xnnpack"];
+  }
+
+
+  mod_api_flatbuffer_conversions -> mod_c_c_api_test;
+  mod_api_flatbuffer_conversions -> mod_configuration_configuration_generated;
+  mod_api_flatbuffer_conversions -> mod_image_mirror_pad_op;
+  mod_api_flatbuffer_conversions -> mod_schema_schema_generated;
+  mod_api_flatbuffer_conversions -> mod_task_tflite_serialization_base_generated;
+  mod_api_flatbuffer_conversions -> mod_toco_model;
+  mod_c_c_api -> mod_c_c_api_internal;
+  mod_c_c_api -> mod_ci_build_builds;
+  mod_c_c_api -> mod_common_gpu_model_generated;
+  mod_c_c_api -> mod_common_runtime_lower_if_op;
+  mod_c_c_api -> mod_configuration_configuration_generated;
+  mod_c_c_api -> mod_image_mirror_pad_op;
+  mod_c_c_api -> mod_lite_tensorflow_profiler_logger;
+  mod_c_c_api -> mod_platform_status;
+  mod_c_c_api -> mod_schema_conversion_metadata_generated;
+  mod_c_c_api -> mod_schema_schema_generated;
+  mod_c_c_api -> mod_sparse_sparse_tensor;
+  mod_c_c_api -> mod_task_tflite_serialization_base_generated;
+  mod_c_c_api -> mod_tf2tensorrt_utils;
+  mod_c_c_api -> mod_tf2xla_xla_op_kernel;
+  mod_c_c_api_internal -> mod_common_runtime_session;
+  mod_c_c_api_internal -> mod_tensorflow_utils;
+  mod_c_c_api_test -> mod_c_c_api;
+  mod_c_c_api_test -> mod_c_c_api_internal;
+  mod_c_c_api_test -> mod_configuration_configuration_generated;
+  mod_c_c_api_test -> mod_gradient_bcast_grad_args;
+  mod_c_c_api_test -> mod_image_mirror_pad_op;
+  mod_c_c_api_test -> mod_schema_schema_generated;
+  mod_c_c_api_test -> mod_task_tflite_serialization_base_generated;
+  mod_c_c_api_test -> mod_toco_tooling_util;
+  mod_cc_framework -> mod_ci_build_builds;
+  mod_cc_framework -> mod_common_gpu_model_generated;
+  mod_cc_framework -> mod_common_runtime_single_threaded_cpu_device;
+  mod_cc_framework -> mod_configuration_configuration_generated;
+  mod_cc_framework -> mod_kernels_variant_ops_util;
+  mod_cc_framework -> mod_mini_benchmark_decode_jpeg_status;
+  mod_cc_framework -> mod_platform_status;
+  mod_cc_framework -> mod_proto_text_gen_proto_text_functions_lib;
+  mod_cc_framework -> mod_schema_schema_generated;
+  mod_cc_framework -> mod_task_tflite_serialization_base_generated;
+  mod_cc_framework -> mod_tf2xla_xla_op_kernel;
+  mod_cc_gradients -> mod_cc_framework;
+  mod_cc_gradients -> mod_ci_build_builds;
+  mod_cc_gradients -> mod_common_data_type;
+  mod_cc_gradients -> mod_configuration_configuration_generated;
+  mod_cc_gradients -> mod_internal_reference;
+  mod_cc_gradients -> mod_mini_benchmark_decode_jpeg_status;
+  mod_cc_gradients -> mod_schema_schema_generated;
+  mod_cc_gradients -> mod_task_tflite_serialization_base_generated;
+  mod_cc_gradients -> mod_tf2xla_xla_op_kernel;
+  mod_cc_gradients -> mod_toco_graph_transformations;
+  mod_common_operations -> mod_schema_schema_generated;
+  mod_common_operations -> mod_sparse_sparse_tensor;
+  mod_common_operations -> mod_task_tflite_serialization_base_generated;
+  mod_configuration_configuration_generated -> mod_task_tflite_serialization_base_generated;
+  mod_data_parallel_interleave_dataset_op -> mod_configuration_configuration_generated;
+  mod_data_parallel_interleave_dataset_op -> mod_framework_dataset;
+  mod_data_parallel_interleave_dataset_op -> mod_mini_benchmark_decode_jpeg_status;
+  mod_data_parallel_interleave_dataset_op -> mod_platform_status;
+  mod_data_parallel_interleave_dataset_op -> mod_proto_text_gen_proto_text_functions_lib;
+  mod_data_parallel_interleave_dataset_op -> mod_task_tflite_serialization_base_generated;
+  mod_data_parallel_interleave_dataset_op -> mod_tf2xla_xla_op_kernel;
+  mod_eager_c_api -> mod_c_c_api_internal;
+  mod_eager_c_api -> mod_common_gpu_model_generated;
+  mod_eager_c_api -> mod_configuration_configuration_generated;
+  mod_eager_c_api -> mod_image_mirror_pad_op;
+  mod_eager_c_api -> mod_schema_conversion_metadata_generated;
+  mod_eager_c_api -> mod_task_tflite_serialization_base_generated;
+  mod_eager_c_api -> mod_tf2xla_xla_op_kernel;
+  mod_eager_c_api_experimental -> mod_c_c_api_internal;
+  mod_eager_c_api_experimental -> mod_configuration_configuration_generated;
+  mod_eager_c_api_experimental -> mod_eager_pywrap_tfe_src;
+  mod_eager_c_api_experimental -> mod_platform_status;
+  mod_eager_c_api_experimental -> mod_schema_schema_generated;
+  mod_eager_c_api_experimental -> mod_task_tflite_serialization_base_generated;
+  mod_eager_c_api_experimental -> mod_tf2xla_xla_op_kernel;
+  mod_eager_pywrap_tfe_src -> mod_common_data_type;
+  mod_eager_pywrap_tfe_src -> mod_common_gpu_model_generated;
+  mod_eager_pywrap_tfe_src -> mod_common_runtime_session;
+  mod_eager_pywrap_tfe_src -> mod_configuration_configuration_generated;
+  mod_eager_pywrap_tfe_src -> mod_grappler_op_types;
+  mod_eager_pywrap_tfe_src -> mod_image_mirror_pad_op;
+  mod_eager_pywrap_tfe_src -> mod_mini_benchmark_decode_jpeg_status;
+  mod_eager_pywrap_tfe_src -> mod_platform_status;
+  mod_eager_pywrap_tfe_src -> mod_schema_schema_generated;
+  mod_eager_pywrap_tfe_src -> mod_task_tflite_serialization_base_generated;
+  mod_eager_pywrap_tfe_src -> mod_tf2xla_xla_op_kernel;
+  mod_fallback_op_kernel_runner -> mod_common_gpu_model_generated;
+  mod_fallback_op_kernel_runner -> mod_common_runtime_single_threaded_cpu_device;
+  mod_fallback_op_kernel_runner -> mod_framework_ref_var;
+  mod_framework_common_shape_fns -> mod_configuration_configuration_generated;
+  mod_framework_common_shape_fns -> mod_platform_status;
+  mod_framework_common_shape_fns -> mod_schema_schema_generated;
+  mod_framework_common_shape_fns -> mod_sparse_sparse_tensor;
+  mod_framework_common_shape_fns -> mod_task_tflite_serialization_base_generated;
+  mod_framework_common_shape_fns -> mod_tf2xla_xla_op_kernel;
+  mod_framework_dataset -> mod_configuration_configuration_generated;
+  mod_framework_dataset -> mod_framework_ref_var;
+  mod_framework_dataset -> mod_platform_status;
+  mod_framework_dataset -> mod_sparse_sparse_tensor;
+  mod_framework_dataset -> mod_task_tflite_serialization_base_generated;
+  mod_framework_function -> mod_common_gpu_model_generated;
+  mod_framework_function -> mod_configuration_configuration_generated;
+  mod_framework_function -> mod_data_parallel_interleave_dataset_op;
+  mod_framework_function -> mod_framework_dataset;
+  mod_framework_function -> mod_framework_memory_types;
+  mod_framework_function -> mod_framework_node_def_util;
+  mod_framework_function -> mod_platform_status;
+  mod_framework_function -> mod_task_tflite_serialization_base_generated;
+  mod_framework_memory_types -> mod_common_data_type;
+  mod_framework_metrics -> mod_common_gpu_model_generated;
+  mod_framework_metrics -> mod_configuration_configuration_generated;
+  mod_framework_metrics -> mod_task_tflite_serialization_base_generated;
+  mod_framework_node_def_util -> mod_bytecode_span;
+  mod_framework_node_def_util -> mod_common_data_type;
+  mod_framework_node_def_util -> mod_common_gpu_model_generated;
+  mod_framework_node_def_util -> mod_framework_memory_types;
+  mod_framework_node_def_util -> mod_mini_benchmark_decode_jpeg_status;
+  mod_framework_node_def_util -> mod_platform_status;
+  mod_framework_node_def_util -> mod_schema_schema_generated;
+  mod_framework_node_def_util -> mod_task_tflite_serialization_base_generated;
+  mod_framework_op_kernel -> mod_common_gpu_model_generated;
+  mod_framework_op_kernel -> mod_configuration_configuration_generated;
+  mod_framework_op_kernel -> mod_framework_function;
+  mod_framework_op_kernel -> mod_framework_memory_types;
+  mod_framework_op_kernel -> mod_framework_node_def_util;
+  mod_framework_op_kernel -> mod_mini_benchmark_decode_jpeg_status;
+  mod_framework_op_kernel -> mod_platform_status;
+  mod_framework_tensor_types -> mod_schema_schema_generated;
+  mod_grappler_op_types -> mod_configuration_configuration_generated;
+  mod_grappler_op_types -> mod_framework_memory_types;
+  mod_internal_optimized -> mod_ci_build_builds;
+  mod_internal_optimized -> mod_configuration_configuration_generated;
+  mod_internal_optimized -> mod_image_mirror_pad_op;
+  mod_internal_optimized -> mod_internal_reference;
+  mod_internal_optimized -> mod_internal_runtime_shape;
+  mod_internal_optimized -> mod_internal_types;
+  mod_internal_optimized -> mod_kernels_cwise_ops;
+  mod_internal_optimized -> mod_schema_schema_generated;
+  mod_internal_optimized -> mod_task_tflite_serialization_base_generated;
+  mod_internal_optimized -> mod_tf2tensorrt_utils;
+  mod_internal_reference -> mod_ci_build_builds;
+  mod_internal_reference -> mod_configuration_configuration_generated;
+  mod_internal_reference -> mod_image_mirror_pad_op;
+  mod_internal_reference -> mod_internal_runtime_shape;
+  mod_internal_reference -> mod_internal_types;
+  mod_internal_reference -> mod_lite_tensorflow_profiler_logger;
+  mod_internal_reference -> mod_schema_schema_generated;
+  mod_internal_reference -> mod_task_tflite_serialization_base_generated;
+  mod_internal_runtime_shape -> mod_sparse_sparse_tensor;
+  mod_internal_runtime_shape -> mod_task_tflite_serialization_base_generated;
+  mod_internal_runtime_shape -> mod_tf2tensorrt_utils;
+  mod_internal_types -> mod_internal_runtime_shape;
+  mod_internal_types -> mod_sparse_sparse_tensor;
+  mod_internal_types -> mod_tf2tensorrt_utils;
+  mod_jit_node_matchers -> mod_bytecode_span;
+  mod_jit_node_matchers -> mod_c_c_api_internal;
+  mod_jit_node_matchers -> mod_common_gpu_model_generated;
+  mod_jit_node_matchers -> mod_common_runtime_lower_if_op;
+  mod_kernels_pad_test -> mod_cc_framework;
+  mod_kernels_pad_test -> mod_gradient_bcast_grad_args;
+  mod_kernels_pad_test -> mod_kernels_test_util;
+  mod_kernels_pad_test -> mod_schema_schema_generated;
+  mod_kernels_reduce_test -> mod_configuration_configuration_generated;
+  mod_kernels_reduce_test -> mod_gradient_bcast_grad_args;
+  mod_kernels_reduce_test -> mod_internal_optimized;
+  mod_kernels_reduce_test -> mod_kernels_test_util;
+  mod_kernels_reduce_test -> mod_schema_schema_generated;
+  mod_kernels_reduce_test -> mod_toco_graph_transformations;
+  mod_kernels_stablehlo_reduce_window_test_util_test -> mod_image_mirror_pad_op;
+  mod_kernels_stablehlo_reduce_window_test_util_test -> mod_sparse_sparse_tensor;
+  mod_kernels_test_util -> mod_schema_schema_generated;
+  mod_kernels_test_util -> mod_task_tflite_serialization_base_generated;
+  mod_kernels_training_ops_gpu_cu -> mod_kernels_cwise_ops;
+  mod_kernels_training_ops_gpu_cu -> mod_task_tflite_serialization_base_generated;
+  mod_legacy_shlo -> mod_bytecode_span;
+  mod_legacy_shlo -> mod_task_tflite_serialization_base_generated;
+  mod_lite_transforms -> mod_configuration_configuration_generated;
+  mod_lite_transforms -> mod_lite_utils;
+  mod_lite_transforms -> mod_proto_descriptor_pool_registry_test;
+  mod_lite_transforms -> mod_schema_conversion_metadata_generated;
+  mod_lite_transforms -> mod_schema_schema_generated;
+  mod_lite_transforms -> mod_sparse_sparse_tensor;
+  mod_lite_transforms -> mod_task_tflite_serialization_base_generated;
+  mod_lite_transforms -> mod_tensorflow_ir;
+  mod_lite_transforms -> mod_tensorflow_utils;
+  mod_lite_transforms -> mod_transforms_rewriters;
+  mod_lite_utils -> mod_image_mirror_pad_op;
+  mod_lite_utils -> mod_ir_tf_op_registry;
+  mod_lite_utils -> mod_lite_transforms;
+  mod_lite_utils -> mod_proto_descriptor_pool_registry_test;
+  mod_lite_utils -> mod_schema_conversion_metadata_generated;
+  mod_lite_utils -> mod_schema_schema_generated;
+  mod_lite_utils -> mod_task_tflite_serialization_base_generated;
+  mod_lite_utils -> mod_tensorflow_ir;
+  mod_lite_utils -> mod_tensorflow_utils;
+  mod_lite_utils -> mod_transforms_rewriters;
+  mod_mlir_expansions -> mod_common_gpu_model_generated;
+  mod_mlir_expansions -> mod_configuration_configuration_generated;
+  mod_mlir_expansions -> mod_platform_status;
+  mod_mlir_expansions -> mod_proto_descriptor_pool_registry_test;
+  mod_mlir_expansions -> mod_schema_schema_generated;
+  mod_mlir_expansions -> mod_task_tflite_serialization_base_generated;
+  mod_mlir_expansions -> mod_tensorflow_ir;
+  mod_nnapi_nnapi_delegate_test -> mod_cc_framework;
+  mod_nnapi_nnapi_delegate_test -> mod_ci_build_builds;
+  mod_nnapi_nnapi_delegate_test -> mod_gradient_bcast_grad_args;
+  mod_nnapi_nnapi_delegate_test -> mod_kernels_pad_test;
+  mod_nnapi_nnapi_delegate_test -> mod_kernels_test_util;
+  mod_proto_text_gen_proto_text_functions_lib -> mod_common_gpu_model_generated;
+  mod_proto_text_gen_proto_text_functions_lib -> mod_task_tflite_serialization_base_generated;
+  mod_schema_schema_generated -> mod_c_c_api;
+  mod_sparse_sparse_tensor -> mod_bytecode_span;
+  mod_sparse_sparse_tensor -> mod_kernels_variant_ops_util;
+  mod_sparse_sparse_tensor -> mod_next_pluggable_device_plugin_op_kernel;
+  mod_sparse_sparse_tensor -> mod_task_tflite_serialization_base_generated;
+  mod_stablehlo_passes -> mod_c_c_api_internal;
+  mod_stablehlo_passes -> mod_configuration_configuration_generated;
+  mod_stablehlo_passes -> mod_proto_descriptor_pool_registry_test;
+  mod_stablehlo_passes -> mod_schema_schema_generated;
+  mod_stablehlo_passes -> mod_stablehlo_transforms;
+  mod_stablehlo_passes -> mod_task_tflite_serialization_base_generated;
+  mod_stablehlo_passes -> mod_tensorflow_ir;
+  mod_stablehlo_passes -> mod_transforms_rewriters;
+  mod_stablehlo_transforms -> mod_ci_build_builds;
+  mod_stablehlo_transforms -> mod_lite_utils;
+  mod_stablehlo_transforms -> mod_proto_descriptor_pool_registry_test;
+  mod_stablehlo_transforms -> mod_schema_conversion_metadata_generated;
+  mod_stablehlo_transforms -> mod_schema_schema_generated;
+  mod_stablehlo_transforms -> mod_sparse_sparse_tensor;
+  mod_stablehlo_transforms -> mod_task_tflite_serialization_base_generated;
+  mod_stablehlo_transforms -> mod_tensorflow_ir;
+  mod_stablehlo_transforms -> mod_tensorflow_utils;
+  mod_stablehlo_transforms -> mod_transforms_rewriters;
+  mod_tensorflow_ir -> mod_common_gpu_model_generated;
+  mod_tensorflow_ir -> mod_configuration_configuration_generated;
+  mod_tensorflow_ir -> mod_proto_descriptor_pool_registry_test;
+  mod_tensorflow_ir -> mod_schema_schema_generated;
+  mod_tensorflow_ir -> mod_stablehlo_transforms;
+  mod_tensorflow_ir -> mod_task_tflite_serialization_base_generated;
+  mod_tensorflow_ir -> mod_tensorflow_utils;
+  mod_tensorflow_ir -> mod_tf2tensorrt_utils;
+  mod_tensorflow_passes -> mod_ci_build_builds;
+  mod_tensorflow_passes -> mod_common_gpu_model_generated;
+  mod_tensorflow_passes -> mod_proto_descriptor_pool_registry_test;
+  mod_tensorflow_passes -> mod_schema_schema_generated;
+  mod_tensorflow_passes -> mod_stablehlo_transforms;
+  mod_tensorflow_passes -> mod_task_tflite_serialization_base_generated;
+  mod_tensorflow_passes -> mod_tensorflow_ir;
+  mod_tensorflow_passes -> mod_tensorflow_utils;
+  mod_tensorflow_utils -> mod_c_c_api_internal;
+  mod_tensorflow_utils -> mod_ci_build_builds;
+  mod_tensorflow_utils -> mod_common_data_type;
+  mod_tensorflow_utils -> mod_common_gpu_model_generated;
+  mod_tensorflow_utils -> mod_common_runtime_single_threaded_cpu_device;
+  mod_tensorflow_utils -> mod_configuration_configuration_generated;
+  mod_tensorflow_utils -> mod_fallback_op_kernel_runner;
+  mod_tensorflow_utils -> mod_framework_node_def_util;
+  mod_tensorflow_utils -> mod_image_mirror_pad_op;
+  mod_tensorflow_utils -> mod_ir_tf_op_registry;
+  mod_tensorflow_utils -> mod_kernels_variant_ops_util;
+  mod_tensorflow_utils -> mod_mini_benchmark_decode_jpeg_status;
+  mod_tensorflow_utils -> mod_platform_status;
+  mod_tensorflow_utils -> mod_proto_descriptor_pool_registry_test;
+  mod_tensorflow_utils -> mod_proto_text_gen_proto_text_functions_lib;
+  mod_tensorflow_utils -> mod_schema_schema_generated;
+  mod_tensorflow_utils -> mod_sparse_sparse_tensor;
+  mod_tensorflow_utils -> mod_stablehlo_transforms;
+  mod_tensorflow_utils -> mod_task_tflite_serialization_base_generated;
+  mod_tensorflow_utils -> mod_tensorflow_ir;
+  mod_tensorflow_utils -> mod_tf2xla_xla_op_kernel;
+  mod_tf2tensorrt_convert -> mod_bytecode_span;
+  mod_tf2tensorrt_convert -> mod_cc_framework;
+  mod_tf2tensorrt_convert -> mod_common_data_type;
+  mod_tf2tensorrt_convert -> mod_common_gpu_model_generated;
+  mod_tf2tensorrt_convert -> mod_common_runtime_lower_if_op;
+  mod_tf2tensorrt_convert -> mod_common_runtime_session;
+  mod_tf2tensorrt_convert -> mod_configuration_configuration_generated;
+  mod_tf2tensorrt_convert -> mod_fallback_op_kernel_runner;
+  mod_tf2tensorrt_convert -> mod_framework_memory_types;
+  mod_tf2tensorrt_convert -> mod_framework_ref_var;
+  mod_tf2tensorrt_convert -> mod_image_mirror_pad_op;
+  mod_tf2tensorrt_convert -> mod_internal_reference;
+  mod_tf2tensorrt_convert -> mod_internal_runtime_shape;
+  mod_tf2tensorrt_convert -> mod_jit_node_matchers;
+  mod_tf2tensorrt_convert -> mod_kernels_variant_ops_util;
+  mod_tf2tensorrt_convert -> mod_mini_benchmark_decode_jpeg_status;
+  mod_tf2tensorrt_convert -> mod_next_pluggable_device_plugin_op_kernel;
+  mod_tf2tensorrt_convert -> mod_proto_text_gen_proto_text_functions_lib;
+  mod_tf2tensorrt_convert -> mod_schema_conversion_metadata_generated;
+  mod_tf2tensorrt_convert -> mod_schema_schema_generated;
+  mod_tf2tensorrt_convert -> mod_sparse_sparse_tensor;
+  mod_tf2tensorrt_convert -> mod_task_tflite_serialization_base_generated;
+  mod_tf2tensorrt_convert -> mod_tf2tensorrt_utils;
+  mod_tf2tensorrt_convert -> mod_tf2xla_xla_op_kernel;
+  mod_tf2tensorrt_utils -> mod_framework_ref_var;
+  mod_tf2tensorrt_utils -> mod_internal_runtime_shape;
+  mod_tf2tensorrt_utils -> mod_next_pluggable_device_plugin_op_kernel;
+  mod_tf2tensorrt_utils -> mod_sparse_sparse_tensor;
+  mod_tf2tensorrt_utils -> mod_task_tflite_serialization_base_generated;
+  mod_tf2tensorrt_utils -> mod_tf2tensorrt_convert;
+  mod_tf2xla_xla_op_kernel -> mod_common_data_type;
+  mod_tf2xla_xla_op_kernel -> mod_kernels_variant_ops_util;
+  mod_tf2xla_xla_op_kernel -> mod_mini_benchmark_decode_jpeg_status;
+  mod_tf2xla_xla_op_kernel -> mod_platform_status;
+  mod_tf2xla_xla_op_kernel -> mod_schema_schema_generated;
+  mod_tf2xla_xla_op_kernel -> mod_sparse_sparse_tensor;
+  mod_tf2xla_xla_op_kernel -> mod_task_tflite_serialization_base_generated;
+  mod_tfrt_transforms -> mod_common_gpu_model_generated;
+  mod_tfrt_transforms -> mod_fallback_op_kernel_runner;
+  mod_tfrt_transforms -> mod_lite_utils;
+  mod_tfrt_transforms -> mod_platform_status;
+  mod_tfrt_transforms -> mod_proto_descriptor_pool_registry_test;
+  mod_tfrt_transforms -> mod_schema_conversion_metadata_generated;
+  mod_tfrt_transforms -> mod_task_tflite_serialization_base_generated;
+  mod_tfrt_transforms -> mod_tensorflow_ir;
+  mod_tfrt_transforms -> mod_transforms_rewriters;
+  mod_toco_graph_transformations -> mod_ci_build_builds;
+  mod_toco_graph_transformations -> mod_common_gpu_model_generated;
+  mod_toco_graph_transformations -> mod_configuration_configuration_generated;
+  mod_toco_graph_transformations -> mod_image_mirror_pad_op;
+  mod_toco_graph_transformations -> mod_internal_types;
+  mod_toco_graph_transformations -> mod_schema_schema_generated;
+  mod_toco_graph_transformations -> mod_sparse_sparse_tensor;
+  mod_toco_graph_transformations -> mod_task_tflite_serialization_base_generated;
+  mod_toco_graph_transformations -> mod_tf2tensorrt_utils;
+  mod_toco_graph_transformations -> mod_toco_model;
+  mod_toco_model -> mod_internal_types;
+  mod_toco_tooling_util -> mod_ci_build_builds;
+  mod_toco_tooling_util -> mod_common_gpu_model_generated;
+  mod_toco_tooling_util -> mod_configuration_configuration_generated;
+  mod_toco_tooling_util -> mod_image_mirror_pad_op;
+  mod_toco_tooling_util -> mod_internal_reference;
+  mod_toco_tooling_util -> mod_schema_schema_generated;
+  mod_toco_tooling_util -> mod_sparse_sparse_tensor;
+  mod_toco_tooling_util -> mod_task_tflite_serialization_base_generated;
+  mod_toco_tooling_util -> mod_tf2tensorrt_utils;
+  mod_toco_tooling_util -> mod_toco_graph_transformations;
+  mod_toco_tooling_util -> mod_toco_model;
+  mod_tosa_transforms -> mod_configuration_configuration_generated;
+  mod_tosa_transforms -> mod_proto_descriptor_pool_registry_test;
+  mod_tosa_transforms -> mod_schema_schema_generated;
+  mod_tosa_transforms -> mod_sparse_sparse_tensor;
+  mod_tosa_transforms -> mod_task_tflite_serialization_base_generated;
+  mod_tosa_transforms -> mod_tensorflow_ir;
+  mod_tosa_transforms -> mod_tensorflow_utils;
+  mod_tosa_transforms -> mod_transforms_rewriters;
+  mod_transforms_legalize_tf -> mod_lite_utils;
+  mod_transforms_legalize_tf -> mod_proto_descriptor_pool_registry_test;
+  mod_transforms_legalize_tf -> mod_schema_schema_generated;
+  mod_transforms_legalize_tf -> mod_task_tflite_serialization_base_generated;
+  mod_transforms_legalize_tf -> mod_tensorflow_utils;
+  mod_transforms_passes -> mod_transforms_rewriters;
+  mod_transforms_rewriters -> mod_stablehlo_passes;
+  mod_utils_graph_view_test -> mod_common_runtime_lower_if_op;
+  mod_utils_graph_view_test -> mod_configuration_configuration_generated;
+  mod_utils_graph_view_test -> mod_task_tflite_serialization_base_generated;
+  mod_xnnpack_xnnpack_delegate -> mod_configuration_configuration_generated;
+  mod_xnnpack_xnnpack_delegate -> mod_lite_tensorflow_profiler_logger;
+  mod_xnnpack_xnnpack_delegate -> mod_schema_conversion_metadata_generated;
+  mod_xnnpack_xnnpack_delegate -> mod_schema_schema_generated;
+}

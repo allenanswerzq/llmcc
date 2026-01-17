@@ -1,0 +1,50 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  crate_ATen[label="ATen", path="/home/yibai/llmcc/sample/repos/pytorch/aten/src/ATen"];
+  crate_c10[label="c10", path="/home/yibai/llmcc/sample/repos/pytorch/c10"];
+  crate_cuda[label="cuda", path="/home/yibai/llmcc/sample/repos/pytorch/c10/cuda"];
+  crate_headeronly[label="headeronly", path="/home/yibai/llmcc/sample/repos/pytorch/torch/headeronly"];
+  crate_model_tracer[label="model_tracer", path="/home/yibai/llmcc/sample/repos/pytorch/torch/csrc/jit/mobile/model_tracer"];
+  crate_perfkernels[label="perfkernels", path="/home/yibai/llmcc/sample/repos/pytorch/caffe2/perfkernels"];
+  crate_pytorch[label="pytorch", path="/home/yibai/llmcc/sample/repos/pytorch"];
+  crate_qnnpack[label="qnnpack", path="/home/yibai/llmcc/sample/repos/pytorch/aten/src/ATen/native/quantized/cpu/qnnpack"];
+  crate_quantized[label="quantized", path="/home/yibai/llmcc/sample/repos/pytorch/aten/src/ATen/quantized"];
+  crate_serialize[label="serialize", path="/home/yibai/llmcc/sample/repos/pytorch/caffe2/serialize"];
+  crate_torch[label="torch", path="/home/yibai/llmcc/sample/repos/pytorch/torch"];
+  crate_unknown[label="unknown"];
+
+  crate_ATen -> crate_c10;
+  crate_ATen -> crate_headeronly;
+  crate_ATen -> crate_quantized;
+  crate_ATen -> crate_torch;
+  crate_ATen -> crate_unknown;
+  crate_c10 -> crate_ATen;
+  crate_c10 -> crate_headeronly;
+  crate_c10 -> crate_torch;
+  crate_cuda -> crate_headeronly;
+  crate_cuda -> crate_torch;
+  crate_headeronly -> crate_c10;
+  crate_model_tracer -> crate_ATen;
+  crate_perfkernels -> crate_ATen;
+  crate_pytorch -> crate_ATen;
+  crate_pytorch -> crate_torch;
+  crate_qnnpack -> crate_ATen;
+  crate_qnnpack -> crate_quantized;
+  crate_quantized -> crate_torch;
+  crate_serialize -> crate_ATen;
+  crate_torch -> crate_ATen;
+  crate_torch -> crate_c10;
+  crate_torch -> crate_headeronly;
+  crate_torch -> crate_unknown;
+}
