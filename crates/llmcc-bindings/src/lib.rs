@@ -5,6 +5,7 @@ use llmcc::{LlmccOptions, run_main};
 use llmcc_dot::ComponentDepth;
 // use llmcc_python::LangPython;  // TODO: will be added back in the future
 use llmcc_rust::LangRust;
+use llmcc_ts::LangTypeScript;
 use pyo3::{exceptions::PyValueError, prelude::*, wrap_pyfunction};
 
 /// Main llmcc module interface - Direct Rust API exposure
@@ -63,10 +64,10 @@ fn run_llmcc(
 
     let result = match lang {
         "rust" => run_main::<LangRust>(&opts),
-        // "python" => run_main::<LangPython>(&opts),  // TODO: will be added back in the future
+        "typescript" | "ts" => run_main::<LangTypeScript>(&opts),
         other => {
             return Err(PyValueError::new_err(format!(
-                "Unknown language: {other}. Use 'rust'"
+                "Unknown language: {other}. Use 'rust' or 'typescript'"
             )));
         }
     };
