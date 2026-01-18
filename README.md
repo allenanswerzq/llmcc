@@ -4,7 +4,7 @@
 
 **problem**: grep and rag based solution don't scale well: slow searches, token cost, stale indexes, expensive cloud infra etc. they dont work too well on large codebases.
 
-llmcc tries a different approach. It builds a multi-depth architecture view that lets agents *zoom out* to see the big picture, then *zoom in* to see extact symbols they need, such that agents can have a highly comprehensive understanding in very fast speed, **no complex rag stuff**, fully agentic method, its like grep but for architecture.
+llmcc tries a different approach. It builds a multi-depth architecture view that lets agents *zoom out* to see the big picture, *zoom in* to see extact symbols they need, such that agents can have a highly comprehensive understanding in very fast speed and token efficient, **no complex RAG stuff**, fully agentic method, its like grep but for architecture.
 
 ## Supported Languages
 
@@ -50,11 +50,24 @@ This repo includes many examples under [sample](sample). Download and open them 
 	<img src="sample/rust/codex-pagerank/depth_3_file.svg" alt="Codex file and symbol graph (depth 3)" style="max-width: 100%; height: auto;" />
 </p>
 
-Here's a small portion of the graph at depth 3, showing the core abstraction layer for prompt handling in Codex. Developers and AI agents can quickly grasp the architecture by examining this view.
+<!-- Here's a small portion of the graph at depth 3, showing the core abstraction layer for prompt handling in Codex. Developers and AI agents can quickly grasp the architecture by examining this view.
 
 <p style="height: 200px; text-align: center;">
 	<img src="doc/codex.jpg" alt="codex core logic" style="max-width: 100%; height: auto;" />
-</p>
+</p> -->
+
+## Examples
+
+By feeding the architectual view into the model, model can very quickly understand the codebase.
+
+### Question (one shot/seconds time): explain the core architectual component
+
+<img width="775" height="673" alt="Image" src="./doc/example_1.png" />
+
+### Question (one shot/seconds time):  if we want to make some chagnes to how promopts gets handled, what places should we looking into you think
+
+<img width="951" height="670" alt="Image" src="./doc/example_2.png" />
+
 
 
 ## Performance
@@ -78,7 +91,6 @@ Excerpt (PageRank timing, depth=3, top-200):
 The easiest way to use llmcc is via npm. No build required:
 
 ```bash
-# Or install globally
 npm install -g llmcc-cli
 llmcc --help
 ```
