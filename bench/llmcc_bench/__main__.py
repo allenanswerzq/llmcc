@@ -255,14 +255,14 @@ def cmd_compare(args, config: Config) -> int:
     elif args.runner == "claude":
         from .agent.runner import ClaudeAgentRunner
         runner = ClaudeAgentRunner(
-            model=getattr(args, 'model', 'opus'),
-            timeout=getattr(args, 'timeout', 600),
+            model=args.model or "opus",
+            timeout=args.timeout or 600,
         )
     elif args.runner == "codex":
         from .agent.runner import CodexAgentRunner
         runner = CodexAgentRunner(
-            model=getattr(args, 'model', 'o3'),
-            timeout=getattr(args, 'timeout', 600),
+            model=args.model or "o3",
+            timeout=args.timeout or 600,
         )
     else:
         print(f"Unknown runner: {args.runner}")
@@ -273,7 +273,8 @@ def cmd_compare(args, config: Config) -> int:
     print(f"Repository: {repo}")
     print(f"Conditions: {[c.value for c in conditions]}")
     print(f"Runs per condition: {args.runs}")
-    print(f"Graph config: {args.graph_config}")
+    gc = exp_config.graph_config
+    print(f"Graph: depth={gc.depth}, top_k={gc.pagerank_top_k}")
     print(f"Runner: {args.runner}")
     print(f"Output: {output_dir}")
     print()
@@ -444,8 +445,8 @@ def main() -> int:
     compare_parser.add_argument(
         "--graph-config",
         choices=["minimal", "compact", "standard", "detailed", "full"],
-        default="standard",
-        help="Graph configuration preset (default: standard)",
+        default="detailed",
+        help="Graph configuration preset (default: detailed)",
     )
     compare_parser.add_argument(
         "--baseline-only",

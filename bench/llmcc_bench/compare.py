@@ -59,6 +59,7 @@ async def run_single_task(
     repo_path: Path,
     config: ExperimentConfig,
     graph_content: Optional[str] = None,
+    output_dir: Optional[Path] = None,
 ) -> List[TaskMetrics]:
     """
     Run a single task under all conditions.
@@ -80,6 +81,11 @@ async def run_single_task(
             except Exception as e:
                 print(f"    Warning: Failed to reset workspace: {e}")
 
+            # Set up trace file
+            trace_file = None
+            if output_dir:
+                trace_file = output_dir / f"trace_{task.id}_{run_id}.jsonl"
+
             # Create run context
             context = RunContext(
                 task=task,
@@ -88,6 +94,7 @@ async def run_single_task(
                 graph_context=graph_content if condition == Condition.WITH_LLMCC else None,
                 run_id=run_id,
                 limits=config.run_limits,
+                trace_file=trace_file,
             )
 
             # Run the agent
@@ -103,9 +110,17 @@ async def run_single_task(
 
             # Print summary
             status = "✓" if metrics.task_completed else "✗"
-            print(f"    {status} {metrics.tool_calls_total} tools, "
-                  f"{metrics.tokens_input + metrics.tokens_output} tokens, "
-                  f"{metrics.wall_time_seconds:.1f}s")
+            total_tokens = metrics.tokens_input + metrics.tokens_output
+            # Show marginal tokens (excluding graph context) for with_llmcc
+            if metrics.graph_tokens > 0:
+                marginal_tokens = total_tokens - metrics.graph_tokens
+                print(f"    {status} {metrics.tool_calls_total} tools, "
+                      f"{total_tokens} tokens ({marginal_tokens} marginal), "
+                      f"{metrics.wall_time_seconds:.1f}s")
+            else:
+                print(f"    {status} {metrics.tool_calls_total} tools, "
+                      f"{total_tokens} tokens, "
+                      f"{metrics.wall_time_seconds:.1f}s")
 
     return results
 
@@ -158,7 +173,8 @@ async def run_comparison(
     # Generate graph once (if any condition uses it)
     graph_content: Optional[str] = None
     if Condition.WITH_LLMCC in config.conditions:
-        print("Generating llmcc graph...")
+        gc = config.graph_config
+        print(f"Generating graph (depth={gc.depth}, top_k={gc.pagerank_top_k})...")
         try:
             # Detect language from project config
             projects = load_projects()
@@ -173,7 +189,7 @@ async def run_comparison(
                 config.graph_config,
                 language=language,
             )
-            print(f"  Generated graph: {nodes} nodes, {edges} edges")
+            print(f"  {nodes} nodes, {edges} edges")
 
             # Warn if graph is empty
             if nodes == 0:
@@ -197,6 +213,7 @@ async def run_comparison(
             repo_path=repo_path,
             config=config,
             graph_content=graph_content,
+            output_dir=output_dir,
         )
 
         # Save results incrementally
@@ -235,8 +252,8 @@ def main():
     parser.add_argument(
         "--graph-config",
         choices=list(GRAPH_CONFIGS.keys()),
-        default="standard",
-        help="Graph configuration preset (default: standard)",
+        default="detailed",
+        help="Graph configuration preset (default: detailed)",
     )
     parser.add_argument(
         "--baseline-only",
@@ -258,7 +275,7 @@ def main():
     )
     parser.add_argument(
         "--model",
-        default="claude-sonnet-4-20250514",
+        default="claude-opus-4-5-20251101",
         help="LLM model to use",
     )
     parser.add_argument(
