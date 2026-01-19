@@ -16,9 +16,7 @@ Codex is an AI coding agent that executes tools. Find:
 
 Report the file paths and key type/function names.
 """
-expected_answer = ["tool", "execute", "dispatch"]
 max_tool_calls = 20
-tags = ["tools", "exploration", "core"]
 
 [[tasks]]
 id = "codex-find-context-building"
@@ -36,9 +34,7 @@ Look for:
 
 Report the relevant modules and key functions.
 """
-expected_answer = ["context", "prompt", "message"]
 max_tool_calls = 30
-tags = ["context", "llm", "exploration"]
 
 [[tasks]]
 id = "codex-find-sandbox"
@@ -56,9 +52,7 @@ Codex needs to safely execute terminal commands. Find:
 
 Report the relevant files and describe the sandboxing approach.
 """
-expected_answer = ["sandbox", "container", "isolation"]
 max_tool_calls = 25
-tags = ["security", "sandbox", "exploration"]
 
 [[tasks]]
 id = "codex-add-tool-timing"
@@ -79,7 +73,6 @@ Use appropriate logging (tracing crate if Rust).
 expected_files = ["src/"]
 validation_command = "grep -r 'duration\\|elapsed\\|timing' src/"
 max_tool_calls = 35
-tags = ["logging", "tools", "small-change"]
 
 [[tasks]]
 id = "codex-add-file-read-limit"
@@ -100,7 +93,6 @@ This prevents accidentally reading huge files into context.
 expected_files = ["src/"]
 validation_command = "grep -r 'max.*file\\|file.*limit\\|size.*limit' src/"
 max_tool_calls = 40
-tags = ["tools", "config", "safety"]
 
 [[tasks]]
 id = "codex-add-grep-context-lines"
@@ -121,7 +113,6 @@ This is similar to grep's -C flag.
 expected_files = ["src/"]
 validation_command = "grep -r 'context.*line\\|before\\|after' src/"
 max_tool_calls = 45
-tags = ["tools", "search", "feature"]
 
 [[tasks]]
 id = "codex-add-command-timeout"
@@ -143,7 +134,6 @@ This prevents runaway commands from blocking the agent.
 expected_files = ["src/"]
 validation_command = "grep -r 'timeout\\|kill\\|duration' src/"
 max_tool_calls = 50
-tags = ["terminal", "timeout", "safety"]
 
 [[tasks]]
 id = "codex-add-workspace-stats"
@@ -165,7 +155,6 @@ Create either a new tool or a CLI subcommand.
 expected_files = ["src/"]
 validation_command = "grep -r 'stats\\|statistics\\|summary' src/"
 max_tool_calls = 60
-tags = ["tools", "workspace", "feature"]
 
 [[tasks]]
 id = "codex-improve-error-messages"
@@ -184,7 +173,6 @@ Make errors more actionable for debugging.
 """
 expected_files = ["src/"]
 max_tool_calls = 30
-tags = ["errors", "ux", "small-change"]
 
 [[tasks]]
 id = "codex-add-dry-run-mode"
@@ -206,4 +194,3 @@ This is useful for previewing agent actions before applying them.
 expected_files = ["src/"]
 validation_command = "grep -r 'dry.run\\|preview\\|simulate' src/"
 max_tool_calls = 70
-tags = ["cli", "safety", "feature"]

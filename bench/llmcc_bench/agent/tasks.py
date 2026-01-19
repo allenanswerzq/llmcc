@@ -67,9 +67,6 @@ class Task:
     expected_files: List[str] = field(default_factory=list)
     """Files expected to be modified (for non-exploration tasks)."""
 
-    expected_answer: List[str] = field(default_factory=list)
-    """Expected answer content (for exploration tasks)."""
-
     validation_command: Optional[str] = None
     """Shell command to validate success (exit 0 = success)."""
 
@@ -81,9 +78,6 @@ class Task:
     """Max tokens for this task (overrides experiment config)."""
 
     # Metadata
-    tags: List[str] = field(default_factory=list)
-    """Optional tags for filtering."""
-
     notes: Optional[str] = None
     """Notes about this task (not shown to agent)."""
 
@@ -97,11 +91,9 @@ class Task:
             category=TaskCategory(data.get("category", "small")),
             difficulty=TaskDifficulty(data.get("difficulty", "medium")),
             expected_files=data.get("expected_files", []),
-            expected_answer=data.get("expected_answer", []),
             validation_command=data.get("validation_command"),
             max_tool_calls=data.get("max_tool_calls"),
             max_tokens=data.get("max_tokens"),
-            tags=data.get("tags", []),
             notes=data.get("notes"),
         )
 
@@ -117,16 +109,12 @@ class Task:
 
         if self.expected_files:
             result["expected_files"] = self.expected_files
-        if self.expected_answer:
-            result["expected_answer"] = self.expected_answer
         if self.validation_command:
             result["validation_command"] = self.validation_command
         if self.max_tool_calls:
             result["max_tool_calls"] = self.max_tool_calls
         if self.max_tokens:
             result["max_tokens"] = self.max_tokens
-        if self.tags:
-            result["tags"] = self.tags
         if self.notes:
             result["notes"] = self.notes
 
@@ -163,7 +151,6 @@ def load_tasks(
     repo: Optional[str] = None,
     category: Optional[TaskCategory] = None,
     difficulty: Optional[TaskDifficulty] = None,
-    tags: Optional[List[str]] = None,
 ) -> List[Task]:
     """
     Load tasks from the tasks directory.
@@ -174,7 +161,6 @@ def load_tasks(
         repo: Filter by repository (e.g., 'tokio-rs/tokio').
         category: Filter by task category.
         difficulty: Filter by difficulty level.
-        tags: Filter by tags (task must have all specified tags).
 
     Returns:
         List of matching tasks.
@@ -202,9 +188,6 @@ def load_tasks(
 
     if difficulty:
         filtered = [t for t in filtered if t.difficulty == difficulty]
-
-    if tags:
-        filtered = [t for t in filtered if all(tag in t.tags for tag in tags)]
 
     return filtered
 

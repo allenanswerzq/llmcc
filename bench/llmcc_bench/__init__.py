@@ -29,7 +29,6 @@ from .core import (
     get_os_info,
     get_system_info,
 )
-from .__main__ import main
 
 __all__ = [
     "PROJECTS",
@@ -39,5 +38,4 @@ __all__ = [
     "get_memory_info",
     "get_os_info",
     "get_system_info",
-    "main",
 ]

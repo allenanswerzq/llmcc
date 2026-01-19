@@ -90,7 +90,7 @@ GRAPH_CONFIGS = {
     "minimal": GraphConfig(depth=1, pagerank_top_k=20),
     "compact": GraphConfig(depth=2, pagerank_top_k=50),
     "standard": GraphConfig(depth=2, pagerank_top_k=100),
-    "detailed": GraphConfig(depth=3, pagerank_top_k=100),
+    "detailed": GraphConfig(depth=3, pagerank_top_k=200),
     "full": GraphConfig(depth=3, pagerank_top_k=None),
 }
 
@@ -118,7 +118,7 @@ class ExperimentConfig:
     )
     """Conditions to compare."""
 
-    graph_config: GraphConfig = field(default_factory=lambda: GRAPH_CONFIGS["standard"])
+    graph_config: GraphConfig = field(default_factory=lambda: GRAPH_CONFIGS["detailed"])
     """Graph configuration for WITH_LLMCC condition."""
 
     run_limits: RunLimits = field(default_factory=RunLimits)
@@ -129,7 +129,7 @@ class ExperimentConfig:
     """Directory for results. If None, uses bench/results/<timestamp>_<repo>/."""
 
     # LLM settings
-    model: str = "claude-sonnet-4-20250514"
+    model: str = "claude-opus-4-5-20251101"
     """LLM model to use."""
 
     temperature: float = 0.0
