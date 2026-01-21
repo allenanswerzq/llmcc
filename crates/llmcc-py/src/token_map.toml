@@ -1,0 +1,79 @@
+# Python token mappings for llmcc
+# Maps tree-sitter node types to HirKind and BlockKind
+
+default_hir_kind = "Internal"
+
+#
+# Node tokens - AST node types
+#
+
+# Root
+[[nodes]]
+ts_name = "module"
+hir_kind = "Scope"
+block_kind = "Root"
+
+# Class definitions
+[[nodes]]
+ts_name = "class_definition"
+hir_kind = "Scope"
+block_kind = "Class"
+
+# Function definitions
+[[nodes]]
+ts_name = "function_definition"
+hir_kind = "Scope"
+block_kind = "Func"
+
+# Identifiers
+[[nodes]]
+ts_name = "identifier"
+hir_kind = "Identifier"
+
+# Decorators
+[[nodes]]
+ts_name = "decorator"
+hir_kind = "Internal"
+
+# Parameters and blocks
+[[nodes]]
+ts_name = "parameters"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "block"
+hir_kind = "Internal"
+
+#
+# Field tokens - node field names
+#
+[[fields]]
+name = "field_name"
+field_name = "name"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_body"
+field_name = "body"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_parameters"
+field_name = "parameters"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_superclasses"
+field_name = "superclasses"
+hir_kind = "Internal"
+
+# Required fields for LanguageTrait default helpers
+[[fields]]
+name = "field_type"
+field_name = "name"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_trait"
+field_name = "name"
+hir_kind = "Internal"

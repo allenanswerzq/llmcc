@@ -1,0 +1,23 @@
+===============================================================================
+simple-class-function
+===============================================================================
+Test that Python classes and functions appear in the architecture graph.
+lang: python
+
+--- file: sample/src/app.py ---
+
+class User:
+    pass
+
+def greet(user):
+    return "hi"
+
+--- expect:block-graph ---
+(root:1 app ($TMP/sample/src/app.py)
+  (class:2 User)
+  (func:3 greet)
+)
+
+--- expect:arch-graph ---
+digraph G {
+}
