@@ -1,0 +1,59 @@
+===============================================================================
+comprehensions
+===============================================================================
+List, dict, set comprehensions and generator expressions.
+lang: python
+
+--- file: src/lib.py ---
+class Data:
+    items: list
+
+def list_comp(data: Data) -> list:
+    return [x * 2 for x in data.items]
+
+def nested_comp(matrix: list) -> list:
+    return [x for row in matrix for x in row]
+
+def filtered_comp(items: list) -> list:
+    return [x for x in items if x > 0]
+
+def dict_comp(items: list) -> dict:
+    return {i: v for i, v in enumerate(items)}
+
+def set_comp(items: list) -> set:
+    return {x for x in items}
+
+def generator(items: list):
+    return (x * 2 for x in items)
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Data
+    (field:3 items @type list)
+  )
+  (func:4 list_comp
+    (parameter:5 data @type:2 Data)
+    (return:6 @type list)
+    (@tdep:2 Data)
+  )
+  (func:7 nested_comp
+    (parameter:8 matrix @type list)
+    (return:9 @type list)
+  )
+  (func:10 filtered_comp
+    (parameter:11 items @type list)
+    (return:12 @type list)
+  )
+  (func:13 dict_comp
+    (parameter:14 items @type list)
+    (return:15 @type dict)
+  )
+  (func:16 set_comp
+    (parameter:17 items @type list)
+    (return:18 @type set)
+  )
+  (func:19 generator
+    (parameter:20 items @type list)
+  )
+)
+

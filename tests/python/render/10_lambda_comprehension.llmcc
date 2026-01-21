@@ -1,0 +1,43 @@
+===============================================================================
+lambda-comprehension
+===============================================================================
+Test that lambdas and comprehensions are handled correctly.
+lang: python
+
+--- file: sample/src/functional.py ---
+
+class Data:
+    values: list
+
+def transform(data: Data):
+    # Lambda
+    mapper = lambda x: x * 2
+
+    # List comprehension
+    doubled = [x * 2 for x in data.values]
+
+    # Dict comprehension
+    indexed = {i: v for i, v in enumerate(data.values)}
+
+    return doubled
+
+def filter_data(items: list) -> list:
+    # Generator expression
+    filtered = (x for x in items if x > 0)
+    return list(filtered)
+
+--- expect:block-graph ---
+(root:1 functional ($TMP/sample/src/functional.py)
+  (class:2 Data
+    (field:3 values @type list)
+  )
+  (func:4 transform
+    (parameter:5 data @type:2 Data)
+    (@tdep:2 Data)
+  )
+  (func:6 filter_data
+    (parameter:7 items @type list)
+    (return:8 @type list)
+  )
+)
+

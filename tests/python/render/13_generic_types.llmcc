@@ -1,0 +1,77 @@
+===============================================================================
+generic-types
+===============================================================================
+Test that generic type annotations are handled.
+lang: python
+
+--- file: sample/src/generics.py ---
+
+from typing import Generic, TypeVar, Optional, List, Dict
+
+T = TypeVar('T')
+K = TypeVar('K')
+V = TypeVar('V')
+
+class Container(Generic[T]):
+    value: T
+
+    def get(self) -> T:
+        return self.value
+
+    def set(self, value: T) -> None:
+        self.value = value
+
+class Cache(Generic[K, V]):
+    data: Dict[K, V]
+
+    def get(self, key: K) -> Optional[V]:
+        return self.data.get(key)
+
+    def put(self, key: K, value: V) -> None:
+        self.data[key] = value
+
+class User:
+    name: str
+
+def get_users() -> List[User]:
+    return []
+
+def find_user(cache: Cache[str, User], name: str) -> Optional[User]:
+    return cache.get(name)
+
+--- expect:block-graph ---
+(root:1 generics ($TMP/sample/src/generics.py)
+  (class:2 Container
+    (field:3 value @type T)
+    (method:4 get
+      (return:5 @type T)
+    )
+    (method:6 set
+      (parameter:7 value @type T)
+    )
+  )
+  (class:8 Cache
+    (field:9 data @type Dict)
+    (method:10 get
+      (parameter:11 key @type K)
+      (return:12 @type Optional)
+    )
+    (method:13 put
+      (parameter:14 key @type K)
+      (parameter:15 value @type V)
+    )
+  )
+  (class:16 User
+    (field:17 name @type str)
+  )
+  (func:18 get_users
+    (return:19 @type List)
+  )
+  (func:20 find_user
+    (parameter:21 cache @type:8 Cache)
+    (parameter:22 name @type str)
+    (return:23 @type Optional)
+    (@tdep:8 Cache)
+  )
+)
+

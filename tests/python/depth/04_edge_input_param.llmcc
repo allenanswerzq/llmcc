@@ -1,0 +1,55 @@
+===============================================================================
+edge-input-param
+===============================================================================
+Test that function parameter types create input edges.
+lang: python
+
+--- file: sample/src/app.py ---
+class User:
+    name: str
+
+class Request:
+    user: User
+
+def process_user(user: User) -> None:
+    pass
+
+def handle_request(req: Request, user: User) -> str:
+    return "ok"
+
+--- expect:arch-graph ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_app_py {
+      label="app.py";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n2[label="User", path="$TMP/sample/src/app.py:1", sym_ty="Struct", shape=box];
+      n4[label="Request", path="$TMP/sample/src/app.py:4", sym_ty="Struct", shape=box];
+      n6[label="process_user", path="$TMP/sample/src/app.py:7", sym_ty="Function", shape=ellipse];
+      n8[label="handle_request", path="$TMP/sample/src/app.py:10", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+
+  n2 -> n4 [from="field_type", to="struct"];
+  n2 -> n6 [from="input", to="func"];
+  n2 -> n8 [from="input", to="func"];
+  n4 -> n8 [from="input", to="func"];
+}
+

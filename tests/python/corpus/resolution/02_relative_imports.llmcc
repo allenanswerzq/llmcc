@@ -1,0 +1,93 @@
+===============================================================================
+relative-imports
+===============================================================================
+Test relative import resolution.
+lang: python
+
+--- file: src/package/__init__.py ---
+pass
+
+--- file: src/package/models.py ---
+class Entity:
+    id: int
+
+class User(Entity):
+    name: str
+
+--- file: src/package/services.py ---
+from .models import User, Entity
+
+class UserService:
+    user: User
+
+    def get_entity(self) -> Entity:
+        return self.user
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/src/package/__init__.py)
+)
+
+(root:2 models ($TMP/src/package/models.py)
+  (class:3 Entity
+    (field:4 id @type int)
+  )
+  (class:5 User
+    (field:6 name @type str)
+    (@inherit:3 Entity)
+  )
+)
+
+(root:7 services ($TMP/src/package/services.py)
+  (class:8 UserService
+    (field:9 user @type:5 User)
+    (method:10 get_entity
+      (return:11 @type:3 Entity)
+      (@tdep:3 Entity)
+    )
+    (@tdep:5 User)
+  )
+)
+
+
+===============================================================================
+module-alias-imports
+===============================================================================
+Test module alias imports.
+lang: python
+
+--- file: src/database.py ---
+class Connection:
+    host: str
+    port: int
+
+def connect(host: str, port: int) -> Connection:
+    return Connection()
+
+--- file: src/app.py ---
+import database as db
+
+def get_connection() -> db.Connection:
+    return db.connect("localhost", 5432)
+
+--- expect:block-graph ---
+(root:1 database ($TMP/src/database.py)
+  (class:2 Connection
+    (field:3 host @type str)
+    (field:4 port @type int)
+  )
+  (func:5 connect
+    (parameter:6 host @type str)
+    (parameter:7 port @type int)
+    (return:8 @type:2 Connection)
+    (@tdep:2 Connection)
+  )
+)
+
+(root:9 app ($TMP/src/app.py)
+  (func:10 get_connection
+    (return:11 @type:2 Connection)
+    (@fdep:5 connect)
+    (@tdep:2 Connection)
+  )
+)
+

@@ -1,0 +1,59 @@
+===============================================================================
+enums
+===============================================================================
+Test that Enum classes are captured correctly.
+lang: python
+
+--- file: sample/src/enums.py ---
+
+from enum import Enum, auto
+
+class Color(Enum):
+    RED = 1
+    GREEN = 2
+    BLUE = 3
+
+class Status(Enum):
+    PENDING = auto()
+    ACTIVE = auto()
+    COMPLETED = auto()
+
+class Priority(Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+class Task:
+    status: Status
+    priority: Priority
+
+def process_by_status(task: Task) -> Color:
+    if task.status == Status.COMPLETED:
+        return Color.GREEN
+    return Color.RED
+
+--- expect:block-graph ---
+(root:1 enums ($TMP/sample/src/enums.py)
+  (class:2 Color
+    (@inherit Enum)
+  )
+  (class:3 Status
+    (@inherit Enum)
+  )
+  (class:4 Priority
+    (@inherit Enum)
+  )
+  (class:5 Task
+    (field:6 status @type:3 Status)
+    (field:7 priority @type:4 Priority)
+    (@tdep:3 Status)
+    (@tdep:4 Priority)
+  )
+  (func:8 process_by_status
+    (parameter:9 task @type:5 Task)
+    (return:10 @type:2 Color)
+    (@tdep:5 Task)
+    (@tdep:2 Color)
+  )
+)
+

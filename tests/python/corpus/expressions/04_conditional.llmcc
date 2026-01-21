@@ -1,0 +1,49 @@
+===============================================================================
+conditional-expressions
+===============================================================================
+Conditional (ternary) expressions.
+lang: python
+
+--- file: src/lib.py ---
+def simple_ternary(flag: bool) -> str:
+    return "yes" if flag else "no"
+
+def nested_ternary(a: int, b: int) -> str:
+    return "a" if a > b else ("equal" if a == b else "b")
+
+def ternary_with_calls(x: int) -> int:
+    return process(x) if validate(x) else default()
+
+def validate(x):
+    return x > 0
+
+def process(x):
+    return x * 2
+
+def default():
+    return 0
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 simple_ternary
+    (parameter:3 flag @type bool)
+    (return:4 @type str)
+  )
+  (func:5 nested_ternary
+    (parameter:6 a @type int)
+    (parameter:7 b @type int)
+    (return:8 @type str)
+  )
+  (func:9 ternary_with_calls
+    (parameter:10 x @type int)
+    (return:11 @type int)
+  )
+  (func:12 validate
+    (parameter:13 x)
+  )
+  (func:14 process
+    (parameter:15 x)
+  )
+  (func:16 default)
+)
+

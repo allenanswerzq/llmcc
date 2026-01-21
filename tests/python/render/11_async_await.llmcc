@@ -1,0 +1,58 @@
+===============================================================================
+async-await
+===============================================================================
+Test that async functions and await expressions are captured.
+lang: python
+
+--- file: sample/src/async_service.py ---
+
+class Response:
+    data: str
+
+class Client:
+    async def fetch(self, url: str) -> Response:
+        return Response()
+
+    async def post(self, url: str, data: str) -> Response:
+        return Response()
+
+async def get_data(client: Client, url: str) -> Response:
+    response = await client.fetch(url)
+    return response
+
+async def send_data(client: Client) -> bool:
+    await client.post("/api", "data")
+    return True
+
+--- expect:block-graph ---
+(root:1 async_service ($TMP/sample/src/async_service.py)
+  (class:2 Response
+    (field:3 data @type str)
+  )
+  (class:4 Client
+    (method:5 fetch
+      (parameter:6 url @type str)
+      (return:7 @type:2 Response)
+      (@tdep:2 Response)
+    )
+    (method:8 post
+      (parameter:9 url @type str)
+      (parameter:10 data @type str)
+      (return:11 @type:2 Response)
+      (@tdep:2 Response)
+    )
+  )
+  (func:12 get_data
+    (parameter:13 client @type:4 Client)
+    (parameter:14 url @type str)
+    (return:15 @type:2 Response)
+    (@tdep:4 Client)
+    (@tdep:2 Response)
+  )
+  (func:16 send_data
+    (parameter:17 client @type:4 Client)
+    (return:18 @type bool)
+    (@tdep:4 Client)
+  )
+)
+

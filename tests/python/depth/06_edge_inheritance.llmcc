@@ -1,0 +1,56 @@
+===============================================================================
+edge-inheritance
+===============================================================================
+Test that class inheritance creates edges.
+lang: python
+
+--- file: sample/src/app.py ---
+class Entity:
+    id: int
+
+class User(Entity):
+    name: str
+
+class Admin(User):
+    role: str
+
+class Service:
+    user: User
+    admin: Admin
+
+--- expect:arch-graph ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_app_py {
+      label="app.py";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n2[label="Entity", path="$TMP/sample/src/app.py:1", sym_ty="Struct", shape=box];
+      n4[label="User", path="$TMP/sample/src/app.py:4", sym_ty="Struct", shape=box];
+      n6[label="Admin", path="$TMP/sample/src/app.py:7", sym_ty="Struct", shape=box];
+      n8[label="Service", path="$TMP/sample/src/app.py:10", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+
+  n2 -> n4 [from="class", to="inherit"];
+  n4 -> n6 [from="class", to="inherit"];
+  n4 -> n8 [from="field_type", to="struct"];
+  n6 -> n8 [from="field_type", to="struct"];
+}
+
