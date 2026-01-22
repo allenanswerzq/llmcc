@@ -54,7 +54,8 @@ class TaskSummary:
 
     # With llmcc stats
     llmcc_tool_calls: MeanStd
-    llmcc_tokens: MeanStd
+    llmcc_tokens: MeanStd  # Total tokens (including graph)
+    llmcc_marginal_tokens: MeanStd  # Marginal tokens (excluding graph context)
     llmcc_time: MeanStd
     llmcc_success_rate: float
 
@@ -173,6 +174,8 @@ def summarize_task(
 
     llmcc_tools = [m.tool_calls_total for m in llmcc_metrics]
     llmcc_tokens = [m.tokens_input + m.tokens_output for m in llmcc_metrics]
+    # Marginal tokens = total tokens - graph tokens (for fair comparison)
+    llmcc_marginal_tokens = [m.tokens_input + m.tokens_output - m.graph_tokens for m in llmcc_metrics]
     llmcc_times = [m.wall_time_seconds for m in llmcc_metrics]
     llmcc_success = sum(1 for m in llmcc_metrics if m.task_completed) / len(llmcc_metrics)
 
@@ -183,11 +186,12 @@ def summarize_task(
 
     llmcc_tool_mean = MeanStd.from_values(llmcc_tools)
     llmcc_token_mean = MeanStd.from_values(llmcc_tokens)
+    llmcc_marginal_token_mean = MeanStd.from_values(llmcc_marginal_tokens)
     llmcc_time_mean = MeanStd.from_values(llmcc_times)
 
-    # Calculate improvements
+    # Calculate improvements (using marginal tokens for fair comparison)
     tool_change = calculate_improvement(baseline_tool_mean.mean, llmcc_tool_mean.mean)
-    token_change = calculate_improvement(baseline_token_mean.mean, llmcc_token_mean.mean)
+    token_change = calculate_improvement(baseline_token_mean.mean, llmcc_marginal_token_mean.mean)
     time_change = calculate_improvement(baseline_time_mean.mean, llmcc_time_mean.mean)
     success_change = (llmcc_success - baseline_success) * 100
 
@@ -204,6 +208,7 @@ def summarize_task(
         baseline_success_rate=baseline_success * 100,
         llmcc_tool_calls=llmcc_tool_mean,
         llmcc_tokens=llmcc_token_mean,
+        llmcc_marginal_tokens=llmcc_marginal_token_mean,
         llmcc_time=llmcc_time_mean,
         llmcc_success_rate=llmcc_success * 100,
         tool_call_change_pct=tool_change,
@@ -296,70 +301,200 @@ def format_change(value: float) -> str:
         return f"{value:+.1f}%"
 
 
-def generate_markdown_report(summary: ExperimentSummary) -> str:
+def generate_markdown_report(summary: ExperimentSummary, all_metrics: List[TaskMetrics] = None) -> str:
     """Generate a markdown report from experiment summary."""
+
+    # Calculate win rate from eval scores
+    wins_llmcc = 0
+    wins_baseline = 0
+    ties = 0
+
+    if all_metrics:
+        # Group metrics by task
+        task_metrics = {}
+        for m in all_metrics:
+            if m.task_id not in task_metrics:
+                task_metrics[m.task_id] = {"baseline": [], "with_llmcc": []}
+            task_metrics[m.task_id][m.condition].append(m)
+
+        # Compare eval_overall scores
+        for task_id, conditions in task_metrics.items():
+            baseline_list = conditions.get("baseline", [])
+            llmcc_list = conditions.get("with_llmcc", [])
+            for b, l in zip(baseline_list, llmcc_list):
+                if l.eval_overall > b.eval_overall:
+                    wins_llmcc += 1
+                elif b.eval_overall > l.eval_overall:
+                    wins_baseline += 1
+                else:
+                    ties += 1
+
+    total_comparisons = wins_llmcc + wins_baseline + ties
+    win_rate_llmcc = (wins_llmcc / total_comparisons * 100) if total_comparisons > 0 else 0
+    win_rate_baseline = (wins_baseline / total_comparisons * 100) if total_comparisons > 0 else 0
+
+    # Calculate averages for display
+    # Use marginal tokens for llmcc (excluding graph context) for fair comparison
+    avg_baseline_tokens = sum(t.baseline_tokens.mean for t in summary.task_summaries) / len(summary.task_summaries) if summary.task_summaries else 0
+    avg_llmcc_marginal_tokens = sum(t.llmcc_marginal_tokens.mean for t in summary.task_summaries) / len(summary.task_summaries) if summary.task_summaries else 0
+    avg_baseline_time = sum(t.baseline_time.mean for t in summary.task_summaries) / len(summary.task_summaries) if summary.task_summaries else 0
+    avg_llmcc_time = sum(t.llmcc_time.mean for t in summary.task_summaries) / len(summary.task_summaries) if summary.task_summaries else 0
+    avg_baseline_tools = sum(t.baseline_tool_calls.mean for t in summary.task_summaries) / len(summary.task_summaries) if summary.task_summaries else 0
+    avg_llmcc_tools = sum(t.llmcc_tool_calls.mean for t in summary.task_summaries) / len(summary.task_summaries) if summary.task_summaries else 0
+
+    # Calculate change % from displayed values for consistency
+    token_change_pct = calculate_improvement(avg_baseline_tokens, avg_llmcc_marginal_tokens) if avg_baseline_tokens > 0 else 0
+    time_change_pct = calculate_improvement(avg_baseline_time, avg_llmcc_time) if avg_baseline_time > 0 else 0
+    tool_change_pct = calculate_improvement(avg_baseline_tools, avg_llmcc_tools) if avg_baseline_tools > 0 else 0
+
     lines = [
-        f"# llmcc Agent Benchmark Results",
+        f"# llmcc Agent Benchmark Report",
         "",
         f"**Repository:** {summary.repo}  ",
         f"**Date:** {summary.timestamp}  ",
+        f"**Tasks evaluated:** {summary.total_tasks}  ",
         f"**Runs per condition:** {summary.runs_per_condition}  ",
-        f"**Graph config:** {summary.graph_config}",
         "",
-        "## Executive Summary",
+        "---",
         "",
-        f"- **Tasks evaluated:** {summary.total_tasks}",
-        f"- **Tasks improved with llmcc:** {summary.tasks_improved}/{summary.total_tasks} "
-        f"({summary.tasks_improved / summary.total_tasks * 100:.0f}%)",
+        "## Methodology",
         "",
-        "### Average Improvements",
+        "### Experimental Setup",
         "",
-        "| Metric | Change |",
-        "|--------|--------|",
-        f"| Tool Calls | {format_change(summary.avg_tool_call_change_pct)} |",
-        f"| Tokens | {format_change(summary.avg_token_change_pct)} |",
-        f"| Time | {format_change(summary.avg_time_change_pct)} |",
-        f"| Success Rate | {format_change(summary.avg_success_rate_change_pct)} |",
+        "This benchmark compares two conditions:",
         "",
-        "> Negative percentages indicate improvement (reduction in tool calls/tokens/time).",
+        "1. **Baseline (vanilla)**: Claude Code agent without any graph context",
+        "2. **With llmcc**: Claude Code agent with llmcc-generated code graph context",
+        "",
+        "### Graph Configuration",
+        "",
+        f"- **Config preset:** {summary.graph_config}",
+    ]
+
+    # Add graph info from first task
+    if summary.task_summaries:
+        first_task = summary.task_summaries[0]
+        lines.extend([
+            f"- **Graph size:** {first_task.graph_nodes} nodes, {first_task.graph_edges} edges",
+            f"- **Graph tokens:** ~{first_task.graph_tokens:,}",
+        ])
+
+    # Generate chart data JSON (use marginal tokens for fair comparison)
+    chart_data = json.dumps({
+        "avg_tokens": {"baseline": round(avg_baseline_tokens), "with_llmcc_marginal": round(avg_llmcc_marginal_tokens)},
+        "avg_time_seconds": {"baseline": round(avg_baseline_time, 2), "with_llmcc": round(avg_llmcc_time, 2)},
+        "win_rate_percent": {"baseline": round(win_rate_baseline, 1), "with_llmcc": round(win_rate_llmcc, 1)},
+    }, indent=2)
+
+    lines.extend([
+        "",
+        "### Evaluation Method",
+        "",
+        "Each task is run under both conditions. After completion, answers are compared",
+        "head-to-head using an LLM-as-judge (Claude Sonnet) that evaluates:",
+        "",
+        "- **Completeness**: Does the answer address all parts of the question?",
+        "- **Accuracy**: Is the information factually correct?",
+        "- **Specificity**: Are specific file paths and function names provided?",
+        "- **Understanding**: Does the answer show understanding of component relationships?",
+        "",
+        "The judge declares a winner (baseline, llmcc, or tie) with scores from 1-10.",
+        "",
+        "---",
+        "",
+        "## Results Summary",
+        "",
+        "### Key Metrics",
+        "",
+        "| Metric | Baseline | With llmcc (marginal) | Change |",
+        "|--------|----------|----------------------|--------|",
+        f"| Avg. Tokens | {avg_baseline_tokens:,.0f} | {avg_llmcc_marginal_tokens:,.0f} | {format_change(token_change_pct)} |",
+        f"| Avg. Time (s) | {avg_baseline_time:.1f} | {avg_llmcc_time:.1f} | {format_change(time_change_pct)} |",
+        f"| Avg. Tool Calls | {avg_baseline_tools:.1f} | {avg_llmcc_tools:.1f} | {format_change(tool_change_pct)} |",
+        "",
+        "### Win Rate (Answer Quality)",
+        "",
+        f"| Condition | Wins | Rate |",
+        f"|-----------|------|------|",
+        f"| **With llmcc** | {wins_llmcc} | **{win_rate_llmcc:.0f}%** |",
+        f"| Baseline | {wins_baseline} | {win_rate_baseline:.0f}% |",
+        f"| Ties | {ties} | {(ties/total_comparisons*100) if total_comparisons > 0 else 0:.0f}% |",
+        "",
+        "### Chart Data (for visualization)",
+        "",
+        "```json",
+        chart_data,
+        "```",
+        "",
+        "> **Note:** llmcc tokens shown are *marginal* (excluding graph context overhead) for fair comparison.",
+        "> Negative change percentages indicate improvement (reduction in tokens/time/tool calls).",
+        "",
+        "---",
         "",
         "## Per-Task Results",
         "",
-        "| Task | Baseline Tools | llmcc Tools | Tool Δ | Baseline Success | llmcc Success |",
-        "|------|---------------|-------------|--------|-----------------|---------------|",
-    ]
+        "| Task | Baseline Tools | llmcc Tools | Δ Tools | Winner | Scores |",
+        "|------|----------------|-------------|---------|--------|--------|",
+    ])
+
+    # Get eval info for each task
+    task_eval_info = {}
+    if all_metrics:
+        for m in all_metrics:
+            if m.task_id not in task_eval_info:
+                task_eval_info[m.task_id] = {"baseline": [], "with_llmcc": []}
+            task_eval_info[m.task_id][m.condition].append(m)
 
     for task in summary.task_summaries:
+        # Determine winner from eval scores
+        winner = "—"
+        scores = "—"
+        if task.task_id in task_eval_info:
+            b_list = task_eval_info[task.task_id].get("baseline", [])
+            l_list = task_eval_info[task.task_id].get("with_llmcc", [])
+            if b_list and l_list:
+                b_score = b_list[0].eval_overall
+                l_score = l_list[0].eval_overall
+                if l_score > b_score:
+                    winner = "**llmcc**"
+                elif b_score > l_score:
+                    winner = "baseline"
+                else:
+                    winner = "tie"
+                scores = f"{b_score} vs {l_score}"
+
         lines.append(
             f"| {task.task_id} | {task.baseline_tool_calls} | {task.llmcc_tool_calls} | "
-            f"{format_change(task.tool_call_change_pct)} | {task.baseline_success_rate:.0f}% | "
-            f"{task.llmcc_success_rate:.0f}% |"
+            f"{format_change(task.tool_call_change_pct)} | {winner} | {scores} |"
         )
 
     lines.extend([
         "",
-        "## Detailed Results",
+        "---",
+        "",
+        "## Questions and Answers (with llmcc)",
+        "",
+        "Below are all the questions and the answers produced by the agent **with llmcc graph context**.",
         "",
     ])
 
-    for task in summary.task_summaries:
-        lines.extend([
-            f"### {task.task_id}",
-            "",
-            "| Metric | Baseline | With llmcc | Change |",
-            "|--------|----------|------------|--------|",
-            f"| Tool Calls | {task.baseline_tool_calls} | {task.llmcc_tool_calls} | "
-            f"{format_change(task.tool_call_change_pct)} |",
-            f"| Tokens | {task.baseline_tokens} | {task.llmcc_tokens} | "
-            f"{format_change(task.token_change_pct)} |",
-            f"| Time (s) | {task.baseline_time} | {task.llmcc_time} | "
-            f"{format_change(task.time_change_pct)} |",
-            f"| Success Rate | {task.baseline_success_rate:.0f}% | {task.llmcc_success_rate:.0f}% | "
-            f"{format_change(task.success_rate_change_pct)} |",
-            "",
-            f"Graph: {task.graph_nodes} nodes, {task.graph_edges} edges, ~{task.graph_tokens} tokens",
-            "",
-        ])
+    # Add Q&A section
+    if all_metrics:
+        llmcc_metrics = [m for m in all_metrics if m.condition == "with_llmcc"]
+        for m in sorted(llmcc_metrics, key=lambda x: x.task_id):
+            lines.extend([
+                f"### {m.task_id}",
+                "",
+                f"**Score:** {m.eval_overall}/10" if m.eval_overall > 0 else "",
+                "",
+                "<details>",
+                "<summary>View Answer</summary>",
+                "",
+                m.answer if m.answer else "*No answer captured*",
+                "",
+                "</details>",
+                "",
+            ])
 
     lines.extend([
         "---",
@@ -434,6 +569,12 @@ def generate_report(
     Returns:
         Report content or None if data is missing.
     """
+    # Load metrics for answers and eval scores
+    metrics_path = results_dir / "raw_metrics.jsonl"
+    all_metrics = None
+    if metrics_path.exists():
+        all_metrics = load_metrics_jsonl(metrics_path)
+
     summary = summarize_experiment(results_dir)
     if summary is None:
         return None
@@ -441,7 +582,7 @@ def generate_report(
     if output_format == "json":
         return generate_json_report(summary)
     else:
-        return generate_markdown_report(summary)
+        return generate_markdown_report(summary, all_metrics)
 
 
 def main():

@@ -1,196 +1,874 @@
+# ============================================================================
 # Codex benchmark tasks
-# Tasks for benchmarking agent performance on openai/codex
+#
+# Codebase Comprehension Tasks (50 questions requiring structural understanding)
+# These tasks test whether llmcc helps with understanding
+# cross-module relationships, data flow, and architectural patterns.
+# ============================================================================
 
 [[tasks]]
 id = "codex-find-tool-execution"
-repo = "openai/codex"
+repo = "codex"
 category = "exploration"
 difficulty = "easy"
 description = """
 Find where tool execution happens in the Codex codebase.
 
-Codex is an AI coding agent that executes tools. Find:
+Find:
 1. The main file/module responsible for executing tools
 2. The function or struct that dispatches tool calls
 3. How tool results are collected and returned
 
 Report the file paths and key type/function names.
 """
-max_tool_calls = 20
 
 [[tasks]]
-id = "codex-find-context-building"
-repo = "openai/codex"
+id = "codex-qa-001"
+repo = "codex"
 category = "exploration"
 difficulty = "medium"
 description = """
-Find how Codex builds context for LLM requests.
+Trace the complete flow when a user types a prompt in the TUI:
+1. Where does the TUI capture user input?
+2. How does the input get passed to the core agent?
+3. What intermediate structs/types carry the message?
+4. Where does it finally reach the LLM API call?
 
-Look for:
-1. How file contents are collected and formatted
-2. How system prompts are constructed
-3. How conversation history is managed
-4. Any context window management/truncation logic
+List the sequence of files and functions involved in this flow.
 
-Report the relevant modules and key functions.
+TASK COMPLETE when you trace the full path from TUI input to LLM API call.
 """
-max_tool_calls = 30
 
 [[tasks]]
-id = "codex-find-sandbox"
-repo = "openai/codex"
+id = "codex-qa-002"
+repo = "codex"
 category = "exploration"
 difficulty = "medium"
 description = """
-Find how Codex implements sandboxing for code execution.
+Trace how a tool execution result flows back to the user:
+1. Where does the tool result get generated?
+2. How is it passed back through the agent?
+3. Where does it get formatted for display?
+4. How does it reach the TUI for rendering?
 
-Codex needs to safely execute terminal commands. Find:
-1. The sandbox implementation (Docker, VM, process isolation, etc.)
-2. How file system access is restricted
-3. How network access is controlled
-4. Security policies and configurations
+Identify all the types that wrap/transform the result along the way.
 
-Report the relevant files and describe the sandboxing approach.
+TASK COMPLETE when you trace the return path from tool execution to TUI display.
 """
-max_tool_calls = 25
 
 [[tasks]]
-id = "codex-add-tool-timing"
-repo = "openai/codex"
-category = "small"
-difficulty = "easy"
-description = """
-Add timing information to tool execution logs.
-
-Modify the tool execution code to:
-1. Record the start time before executing a tool
-2. Record the end time after execution completes
-3. Log the duration in milliseconds
-4. Include the tool name in the log message
-
-Use appropriate logging (tracing crate if Rust).
-"""
-expected_files = ["src/"]
-validation_command = "grep -r 'duration\\|elapsed\\|timing' src/"
-max_tool_calls = 35
-
-[[tasks]]
-id = "codex-add-file-read-limit"
-repo = "openai/codex"
-category = "small"
+id = "codex-qa-003"
+repo = "codex"
+category = "exploration"
 difficulty = "medium"
 description = """
-Add a configurable maximum file size limit for the read_file tool.
+If I wanted to add a new sandbox type (e.g., for FreeBSD), what would I need to modify?
+1. What trait/interface do sandbox implementations share?
+2. Where is the sandbox type selected/instantiated?
+3. What configuration would need updating?
+4. What tests would need to be added?
 
-Implement:
-1. A configuration option for max_file_read_bytes (default: 1MB)
-2. Check file size before reading
-3. Return an error if file exceeds the limit
-4. Include the file size and limit in the error message
+List all files that would need changes.
 
-This prevents accidentally reading huge files into context.
+TASK COMPLETE when you identify the sandbox abstraction and all integration points.
 """
-expected_files = ["src/"]
-validation_command = "grep -r 'max.*file\\|file.*limit\\|size.*limit' src/"
-max_tool_calls = 40
 
 [[tasks]]
-id = "codex-add-grep-context-lines"
-repo = "openai/codex"
-category = "small"
+id = "codex-qa-004"
+repo = "codex"
+category = "exploration"
 difficulty = "medium"
 description = """
-Add context lines option to the grep/search tool.
+Trace how authentication tokens flow through the system:
+1. Where are credentials first obtained (login)?
+2. How are they stored (keyring)?
+3. How do they get attached to API requests?
+4. Where are they refreshed if expired?
 
-Modify the search functionality to:
-1. Accept an optional 'context_lines' parameter (default: 0)
-2. Return N lines before and after each match
-3. Handle overlapping context (don't duplicate lines)
-4. Update the tool documentation/schema
+Map the complete token lifecycle across modules.
 
-This is similar to grep's -C flag.
+TASK COMPLETE when you trace the auth token from acquisition to API usage.
 """
-expected_files = ["src/"]
-validation_command = "grep -r 'context.*line\\|before\\|after' src/"
-max_tool_calls = 45
 
 [[tasks]]
-id = "codex-add-command-timeout"
-repo = "openai/codex"
-category = "medium"
+id = "codex-qa-005"
+repo = "codex"
+category = "exploration"
 difficulty = "medium"
 description = """
-Add a configurable timeout for terminal command execution.
+How does the execution policy system interact with the sandbox?
+1. Where is policy checked before command execution?
+2. How does policy affect sandbox configuration?
+3. What's the relationship between execpolicy and command_safety?
+4. Can a policy override sandbox restrictions?
 
-Implement:
-1. A configuration option for command_timeout_seconds (default: 300)
-2. Kill the process if it exceeds the timeout
-3. Return a clear error message indicating timeout
-4. Include the command and timeout duration in the error
-5. Ensure proper cleanup of child processes
+Trace the interaction between these security layers.
 
-This prevents runaway commands from blocking the agent.
+TASK COMPLETE when you explain how policy and sandbox coordinate.
 """
-expected_files = ["src/"]
-validation_command = "grep -r 'timeout\\|kill\\|duration' src/"
-max_tool_calls = 50
 
 [[tasks]]
-id = "codex-add-workspace-stats"
-repo = "openai/codex"
-category = "medium"
+id = "codex-qa-006"
+repo = "codex"
+category = "exploration"
 difficulty = "medium"
 description = """
-Add a workspace statistics command/tool that reports:
+If I wanted to add a new LLM provider (e.g., Anthropic Claude), what would I need to implement?
+1. What trait/interface do providers implement?
+2. Where are providers registered/selected?
+3. How do providers handle streaming differently?
+4. What configuration is needed?
 
-1. Total number of files
-2. Lines of code by language
-3. Number of directories
-4. Largest files (top 5)
-5. Git status summary (if git repo)
+List the provider abstraction and all required implementations.
 
-This helps the agent understand the scope of the workspace.
-Create either a new tool or a CLI subcommand.
+TASK COMPLETE when you identify the provider interface and integration points.
 """
-expected_files = ["src/"]
-validation_command = "grep -r 'stats\\|statistics\\|summary' src/"
-max_tool_calls = 60
 
 [[tasks]]
-id = "codex-improve-error-messages"
-repo = "openai/codex"
-category = "small"
-difficulty = "easy"
-description = """
-Improve error messages in the file reading tool.
-
-Find the file reading implementation and enhance error messages to include:
-1. The full file path that failed
-2. The specific error type (not found, permission denied, etc.)
-3. Suggested actions (check path, check permissions)
-
-Make errors more actionable for debugging.
-"""
-expected_files = ["src/"]
-max_tool_calls = 30
-
-[[tasks]]
-id = "codex-add-dry-run-mode"
-repo = "openai/codex"
-category = "medium"
+id = "codex-qa-007"
+repo = "codex"
+category = "exploration"
 difficulty = "hard"
 description = """
-Add a dry-run mode for file modifications.
+Trace the complete lifecycle of a file edit operation:
+1. LLM decides to edit a file - where is this decision made?
+2. How is the edit represented?
+3. Where is the edit validated before applying?
+4. How is it applied to the filesystem?
+5. How is the result reported back?
 
-Implement:
-1. A --dry-run flag for the CLI
-2. When enabled, show what changes would be made without applying them
-3. Display diffs for file edits
-4. Show files that would be created/deleted
-5. Log commands that would be executed
+Map the entire edit flow across all involved modules.
 
-This is useful for previewing agent actions before applying them.
+TASK COMPLETE when you trace file edit from LLM decision to filesystem write.
 """
-expected_files = ["src/"]
-validation_command = "grep -r 'dry.run\\|preview\\|simulate' src/"
-max_tool_calls = 70
+
+[[tasks]]
+id = "codex-qa-008"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+How does context window management work across the system?
+1. Where is token counting performed?
+2. How does truncation interact with message_history?
+3. How does the context_manager prioritize what to keep?
+4. Where is the final context assembled before the API call?
+
+Trace how context is built and trimmed across modules.
+
+TASK COMPLETE when you map the context assembly and truncation flow.
+"""
+
+[[tasks]]
+id = "codex-qa-009"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+What would break if I removed the protocol crate?
+1. What other crates depend on types defined in protocol?
+2. What communication paths use these protocol types?
+3. Which would be app-server vs TUI vs CLI affected?
+
+Analyze the dependency impact of the protocol crate.
+
+TASK COMPLETE when you list all dependents and their usage of protocol types.
+"""
+
+[[tasks]]
+id = "codex-qa-010"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+Trace how MCP (Model Context Protocol) tools integrate with native tools:
+1. Where are MCP tools discovered/loaded?
+2. How are they unified with built-in tools?
+3. Where is the tool dispatch that handles both types?
+4. How do their results get normalized?
+
+Map the tool unification architecture.
+
+TASK COMPLETE when you explain how MCP and native tools share the same execution path.
+"""
+
+[[tasks]]
+id = "codex-qa-011"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+How does state synchronization work between TUI and core?
+1. What state is maintained in the TUI crate?
+2. What state is maintained in core?
+3. How are they kept in sync during execution?
+4. What events trigger state updates?
+
+Trace the state synchronization mechanism.
+
+TASK COMPLETE when you map the state flow between TUI and core.
+"""
+
+[[tasks]]
+id = "codex-qa-012"
+repo = "codex"
+category = "exploration"
+difficulty = "medium"
+description = """
+If command execution times out, trace what happens:
+1. Where is the timeout configured?
+2. What component monitors for timeout?
+3. How is the process killed?
+4. How does the error propagate back to the user?
+
+Map the timeout handling flow.
+
+TASK COMPLETE when you trace timeout from detection to user notification.
+"""
+
+[[tasks]]
+id = "codex-qa-013"
+repo = "codex"
+category = "exploration"
+difficulty = "medium"
+description = """
+How does the turn_diff_tracker relate to the TUI display?
+1. Where are diffs captured during a turn?
+2. How are they stored/accumulated?
+3. Where does the TUI read diff information?
+4. How are diffs formatted for display?
+
+Trace the diff data flow from capture to display.
+
+TASK COMPLETE when you map how diffs flow from tracker to TUI.
+"""
+
+[[tasks]]
+id = "codex-qa-014"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+What is the relationship between codex-api, backend-client, and codex-client?
+1. What role does each crate play?
+2. How do they depend on each other?
+3. Which handles raw HTTP, which handles business logic?
+4. Where would I add retry logic for API failures?
+
+Map the API client architecture layers.
+
+TASK COMPLETE when you explain the layered client architecture.
+"""
+
+[[tasks]]
+id = "codex-qa-015"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+Trace how SSE (Server-Sent Events) streaming works end-to-end:
+1. Where is the SSE connection established?
+2. How are streaming events parsed?
+3. How do they flow to the TUI for incremental display?
+4. How is the connection closed/handled on completion?
+
+Map the complete streaming pipeline.
+
+TASK COMPLETE when you trace SSE from connection to TUI rendering.
+"""
+
+[[tasks]]
+id = "codex-qa-016"
+repo = "codex"
+category = "exploration"
+difficulty = "medium"
+description = """
+How do skills interact with the core agent loop?
+1. Where are skills defined?
+2. How does the agent decide to use a skill?
+3. How do skills modify the conversation or context?
+4. Where do skill results get incorporated?
+
+Trace skill activation and execution flow.
+
+TASK COMPLETE when you map how skills integrate with the agent loop.
+"""
+
+[[tasks]]
+id = "codex-qa-017"
+repo = "codex"
+category = "exploration"
+difficulty = "medium"
+description = """
+If I wanted to add rate limiting to tool execution, where would I add it?
+1. Is there existing rate limiting infrastructure?
+2. What's the common tool execution path?
+3. Where would a rate limiter have visibility into all tools?
+4. How would it interact with the async execution?
+
+Identify the best integration point for rate limiting.
+
+TASK COMPLETE when you identify where rate limiting should be added and why.
+"""
+
+[[tasks]]
+id = "codex-qa-018"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+How does the exec-server relate to the linux-sandbox?
+1. Does exec-server use linux-sandbox directly?
+2. Are they alternatives or layered?
+3. Where is the decision made which to use?
+4. What's the process isolation model for each?
+
+Map the execution/sandboxing architecture choices.
+
+TASK COMPLETE when you explain how exec-server and linux-sandbox relate.
+"""
+
+[[tasks]]
+id = "codex-qa-019"
+repo = "codex"
+category = "exploration"
+difficulty = "medium"
+description = """
+Trace error propagation for a file read failure:
+1. Where is the file read attempted?
+2. What error type is returned?
+3. How is it transformed as it propagates up?
+4. Where is it finally formatted for user display?
+
+Map the error path from filesystem to TUI.
+
+TASK COMPLETE when you trace error transformation through all layers.
+"""
+
+[[tasks]]
+id = "codex-qa-020"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+How does compact mode affect the entire system?
+1. Where is compact mode configured/enabled?
+2. What components check for compact mode?
+3. How does it change context building?
+4. How does it affect API calls?
+5. How does it change the TUI display?
+
+Trace compact mode's impact across all layers.
+
+TASK COMPLETE when you map all components affected by compact mode.
+"""
+
+[[tasks]]
+id = "codex-qa-021"
+repo = "codex"
+category = "exploration"
+difficulty = "medium"
+description = """
+What is the relationship between config, config_loader, and flags?
+1. What does each module handle?
+2. How do command-line flags override config file settings?
+3. Where is the final configuration assembled?
+4. How do components access configuration?
+
+Map the configuration loading and merging architecture.
+
+TASK COMPLETE when you explain the config assembly flow.
+"""
+
+[[tasks]]
+id = "codex-qa-022"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+If the OpenTelemetry endpoint is unreachable, trace what happens:
+1. Where is the otel connection established?
+2. How are failures detected?
+3. Does it block the main application?
+4. How are metrics buffered or dropped?
+
+Map the observability failure handling.
+
+TASK COMPLETE when you trace otel failure impact on the main application.
+"""
+
+[[tasks]]
+id = "codex-qa-023"
+repo = "codex"
+category = "exploration"
+difficulty = "medium"
+description = """
+How do project_doc and git_info contribute to the system prompt?
+1. Where is project documentation discovered?
+2. Where is git information collected?
+3. Where are they merged into the system prompt?
+4. What's the priority if they conflict or are too large?
+
+Trace how project context reaches the LLM.
+
+TASK COMPLETE when you map project doc and git info to system prompt assembly.
+"""
+
+[[tasks]]
+id = "codex-qa-024"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+Trace a complete MCP tool call lifecycle:
+1. Where is the MCP connection established?
+2. How is the tool call serialized for the MCP protocol?
+3. How is the response deserialized?
+4. How does it rejoin the main agent flow?
+
+Map the full MCP round-trip.
+
+TASK COMPLETE when you trace MCP tool call from request to response integration.
+"""
+
+[[tasks]]
+id = "codex-qa-025"
+repo = "codex"
+category = "exploration"
+difficulty = "medium"
+description = """
+What components would be affected if I changed the tool result format?
+1. Where is the tool result type defined?
+2. What components serialize/deserialize it?
+3. Where is it displayed to the user?
+4. Where is it sent to the LLM?
+
+List all code locations that depend on tool result structure.
+
+TASK COMPLETE when you identify all tool result consumers.
+"""
+
+[[tasks]]
+id = "codex-qa-026"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+How does the unified_exec module abstract over different execution modes?
+1. What execution modes exist?
+2. What trait/interface unifies them?
+3. How is the appropriate mode selected?
+4. Where do the modes diverge in behavior?
+
+Map the execution abstraction architecture.
+
+TASK COMPLETE when you explain the unified_exec abstraction and its implementations.
+"""
+
+[[tasks]]
+id = "codex-qa-027"
+repo = "codex"
+category = "exploration"
+difficulty = "medium"
+description = """
+Trace how user_notification reaches different output targets:
+1. What types of notifications exist?
+2. How do they reach the TUI?
+3. Can they also go to logs or other outputs?
+4. Where is notification priority/filtering handled?
+
+Map the notification dispatch architecture.
+
+TASK COMPLETE when you trace notifications from creation to all consumers.
+"""
+
+[[tasks]]
+id = "codex-qa-028"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+What is the interaction between app-server, app-server-protocol, and the TUI?
+1. When is app-server used vs direct execution?
+2. What does the protocol define?
+3. How does TUI communicate with app-server?
+4. What's serialized over the wire?
+
+Map the app-server architecture and when it's used.
+
+TASK COMPLETE when you explain the app-server communication model.
+"""
+
+[[tasks]]
+id = "codex-qa-029"
+repo = "codex"
+category = "exploration"
+difficulty = "medium"
+description = """
+If I wanted to add a new tool (e.g., "run_python"), what would I need to implement?
+1. What trait/interface do tools implement?
+2. Where are tools registered?
+3. How is tool schema exposed to the LLM?
+4. Where would validation logic go?
+
+List the tool implementation requirements.
+
+TASK COMPLETE when you identify the tool interface and registration points.
+"""
+
+[[tasks]]
+id = "codex-qa-030"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+Trace how the review system uses the code diff:
+1. Where are review_prompts loaded?
+2. How does the diff get incorporated?
+3. What context is added from git_info?
+4. Where is the review request sent to the LLM?
+
+Map the code review flow from diff to LLM request.
+
+TASK COMPLETE when you trace the review feature's data flow.
+"""
+
+[[tasks]]
+id = "codex-qa-031"
+repo = "codex"
+category = "exploration"
+difficulty = "medium"
+description = """
+How does environment_context interact with shell and spawn?
+1. What environment info is collected?
+2. How does it affect shell selection?
+3. How is environment passed to spawned processes?
+4. Where is environment sanitization done?
+
+Map the environment flow to process execution.
+
+TASK COMPLETE when you trace environment from collection to process spawning.
+"""
+
+[[tasks]]
+id = "codex-qa-032"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+What would break if I removed the conversation_manager?
+1. What state does it maintain?
+2. What other components depend on it?
+3. How would message_history be affected?
+4. How would context_manager be affected?
+
+Analyze the dependency impact of conversation_manager.
+
+TASK COMPLETE when you list all components that would break and why.
+"""
+
+[[tasks]]
+id = "codex-qa-033"
+repo = "codex"
+category = "exploration"
+difficulty = "medium"
+description = """
+Trace how rollout flags affect feature availability:
+1. Where are rollout flags checked?
+2. How do they interact with local feature flags?
+3. Where are rollout configurations stored?
+4. How does this affect the UI or available tools?
+
+Map the rollout system's impact on features.
+
+TASK COMPLETE when you trace rollout flag from check to feature gating.
+"""
+
+[[tasks]]
+id = "codex-qa-034"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+How do the three sandbox implementations (Seatbelt, Landlock, Windows) share code?
+1. Is there a common sandbox trait?
+2. Where is platform detection done?
+3. What capabilities do all sandboxes guarantee?
+4. How does each implement file access control?
+
+Map the cross-platform sandbox abstraction.
+
+TASK COMPLETE when you explain the sandbox abstraction and platform-specific implementations.
+"""
+
+[[tasks]]
+id = "codex-qa-035"
+repo = "codex"
+category = "exploration"
+difficulty = "medium"
+description = """
+Trace how file-search results flow to the LLM context:
+1. Where does file-search execute?
+2. What format are results returned in?
+3. How are results ranked/filtered?
+4. Where are they formatted for the LLM?
+
+Map file search from execution to context inclusion.
+
+TASK COMPLETE when you trace search results to LLM context.
+"""
+
+[[tasks]]
+id = "codex-qa-036"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+How does the feedback crate integrate with the main application?
+1. When is feedback collected?
+2. What triggers a feedback prompt?
+3. How is feedback transmitted?
+4. What components know about feedback state?
+
+Map the feedback collection integration.
+
+TASK COMPLETE when you trace feedback from trigger to transmission.
+"""
+
+[[tasks]]
+id = "codex-qa-037"
+repo = "codex"
+category = "exploration"
+difficulty = "medium"
+description = """
+What is the relationship between bash.rs, powershell.rs, and shell.rs?
+1. What does each file handle?
+2. Is there a common interface?
+3. How is the right shell selected?
+4. What shell-specific behaviors exist?
+
+Map the shell abstraction architecture.
+
+TASK COMPLETE when you explain the shell abstraction and specializations.
+"""
+
+[[tasks]]
+id = "codex-qa-038"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+Trace how custom_prompts override default prompts:
+1. Where are default prompts defined?
+2. Where are custom prompts loaded from?
+3. How is the merge/override performed?
+4. What variables can be templated?
+
+Map the prompt customization system.
+
+TASK COMPLETE when you trace custom prompt loading and merging.
+"""
+
+[[tasks]]
+id = "codex-qa-039"
+repo = "codex"
+category = "exploration"
+difficulty = "medium"
+description = """
+How does the keyring-store integrate with the login flow?
+1. Where does login produce credentials?
+2. How are they passed to keyring-store?
+3. How does backend-client retrieve them?
+4. What happens if keyring access fails?
+
+Map credential flow from login to API usage.
+
+TASK COMPLETE when you trace credentials through the keyring system.
+"""
+
+[[tasks]]
+id = "codex-qa-040"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+What is the async runtime architecture in Codex?
+1. What async runtime is used (tokio, async-std)?
+2. Where is the runtime initialized?
+3. How do blocking operations interact with async?
+4. Are there multiple runtimes or one shared?
+
+Map the async execution model.
+
+TASK COMPLETE when you explain the async architecture and runtime management.
+"""
+
+[[tasks]]
+id = "codex-qa-041"
+repo = "codex"
+category = "exploration"
+difficulty = "medium"
+description = """
+How does apply_patch handle conflicts or failures?
+1. What validation happens before applying?
+2. How are conflicts detected?
+3. What happens on partial failure?
+4. Is there rollback capability?
+
+Map the patch application safety mechanisms.
+
+TASK COMPLETE when you explain patch conflict handling and recovery.
+"""
+
+[[tasks]]
+id = "codex-qa-042"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+Trace how models_manager interacts with provider selection:
+1. Where are available models defined?
+2. How does model selection affect provider choice?
+3. Where is model capability checked?
+4. How do model-specific parameters flow to the API?
+
+Map the model-to-provider-to-API flow.
+
+TASK COMPLETE when you trace model selection to API configuration.
+"""
+
+[[tasks]]
+id = "codex-qa-043"
+repo = "codex"
+category = "exploration"
+difficulty = "medium"
+description = """
+How does command_safety interact with user confirmation?
+1. Where are commands classified as safe/unsafe?
+2. How does this trigger user confirmation?
+3. Where is the confirmation UI shown?
+4. How does the response flow back?
+
+Map the safety check to user interaction flow.
+
+TASK COMPLETE when you trace unsafe command from detection to user confirmation.
+"""
+
+[[tasks]]
+id = "codex-qa-044"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+What is the relationship between tui and tui2?
+1. Why are there two TUI implementations?
+2. What do they share?
+3. Where is the decision made which to use?
+4. Are they both actively maintained?
+
+Map the TUI architecture history and current state.
+
+TASK COMPLETE when you explain the relationship between tui and tui2.
+"""
+
+[[tasks]]
+id = "codex-qa-045"
+repo = "codex"
+category = "exploration"
+difficulty = "medium"
+description = """
+How does cloud-tasks interact with the local agent?
+1. What triggers a cloud task?
+2. How is the task dispatched?
+3. How are results retrieved?
+4. What's executed locally vs in cloud?
+
+Map the cloud task execution model.
+
+TASK COMPLETE when you explain local vs cloud task distribution.
+"""
+
+[[tasks]]
+id = "codex-qa-046"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+Trace how rate_limits affect API retry behavior:
+1. Where are rate limits tracked?
+2. How do they influence request timing?
+3. Where is backoff logic implemented?
+4. How do rate limits propagate to the TUI?
+
+Map rate limit handling across the client stack.
+
+TASK COMPLETE when you trace rate limit detection to retry behavior.
+"""
+
+[[tasks]]
+id = "codex-qa-047"
+repo = "codex"
+category = "exploration"
+difficulty = "medium"
+description = """
+How does shell_snapshot work with the execution model?
+1. What state is captured in a snapshot?
+2. When are snapshots taken?
+3. How do they affect subsequent commands?
+4. Where are they stored/retrieved?
+
+Map the shell snapshot lifecycle.
+
+TASK COMPLETE when you explain shell snapshot capture and usage.
+"""
+
+[[tasks]]
+id = "codex-qa-048"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+What is the error type hierarchy in Codex?
+1. Where is the main error type defined?
+2. How do crate-specific errors convert to it?
+3. How do errors flow through async boundaries?
+4. Where are errors converted for user display?
+
+Map the error type architecture.
+
+TASK COMPLETE when you trace error types from definition to user display.
+"""
+
+[[tasks]]
+id = "codex-qa-049"
+repo = "codex"
+category = "exploration"
+difficulty = "medium"
+description = """
+How does the tasks system (codex-rs/core/src/tasks/) integrate with the agent?
+1. What is a task in this context?
+2. How do tasks relate to tools?
+3. Where are tasks scheduled/executed?
+4. How do task results affect the conversation?
+
+Map the task abstraction and execution model.
+
+TASK COMPLETE when you explain the task system's role in the agent.
+"""
+
+[[tasks]]
+id = "codex-qa-050"
+repo = "codex"
+category = "exploration"
+difficulty = "hard"
+description = """
+Trace the complete initialization sequence when starting Codex CLI:
+1. What's the order of component initialization?
+2. Which initializations can fail and how are they handled?
+3. What dependencies exist between init steps?
+4. When is the system ready to accept user input?
+
+Map the full startup sequence with dependencies.
+
+TASK COMPLETE when you trace CLI startup from main() to ready state.
+"""

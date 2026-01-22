@@ -11,6 +11,9 @@ test-all *ARGS:
 bench lang:
     cd {{root}}/bench && python3 -m llmcc_bench benchmark --lang {{lang}}
 
+compare:
+    cd {{root}}/bench && python3 -m llmcc_bench compare
+
 # Generate benchmark graphs for a specific language (rust or typescript)
 gen lang:
     cd {{root}}/bench && python3 -m llmcc_bench generate --lang {{lang}} --svg

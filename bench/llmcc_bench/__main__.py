@@ -239,6 +239,8 @@ def cmd_compare(args, config: Config) -> int:
             max_tool_calls=args.max_tool_calls,
         ),
         task_ids=task_ids,
+        parallel=args.parallel,
+        sample=args.sample,
     )
 
     # Create output directory
@@ -276,11 +278,19 @@ def cmd_compare(args, config: Config) -> int:
     gc = exp_config.graph_config
     print(f"Graph: depth={gc.depth}, top_k={gc.pagerank_top_k}")
     print(f"Runner: {args.runner}")
+    print(f"Evaluation: {'enabled (' + args.eval_model + ')' if args.eval else 'disabled'}")
+    print(f"Parallel: {args.parallel}")
     print(f"Output: {output_dir}")
     print()
 
+    # Create evaluator if requested
+    evaluator = None
+    if args.eval:
+        from .eval import Evaluator
+        evaluator = Evaluator(model=args.eval_model)
+
     # Run benchmark
-    asyncio.run(run_comparison(exp_config, runner, output_dir))
+    asyncio.run(run_comparison(exp_config, runner, output_dir, evaluator))
 
     return 0
 
@@ -302,6 +312,13 @@ def cmd_report(args, config: Config) -> int:
         print(report)
 
     return 0
+
+
+def cmd_eval(args, config: Config) -> int:
+    """Evaluate benchmark results - deprecated, use --eval with compare command."""
+    print("The separate 'eval' command is deprecated.")
+    print("Use 'compare --eval' to enable inline evaluation during benchmark runs.")
+    return 1
 
 
 def main() -> int:
@@ -498,6 +515,28 @@ def main() -> int:
         type=Path,
         help="Local path to repository (skip automatic lookup)",
     )
+    compare_parser.add_argument(
+        "--eval",
+        action="store_true",
+        help="Enable LLM-as-judge evaluation of answer quality",
+    )
+    compare_parser.add_argument(
+        "--eval-model",
+        default="claude-opus-4-20250514",
+        help="Model to use for evaluation (default: claude-opus-4-20250514)",
+    )
+    compare_parser.add_argument(
+        "--parallel", "-j",
+        type=int,
+        default=1,
+        help="Number of tasks to run in parallel (default: 1)",
+    )
+    compare_parser.add_argument(
+        "--sample",
+        type=int,
+        default=None,
+        help="Randomly sample N tasks (for quick testing)",
+    )
 
     # report command
     report_parser = subparsers.add_parser(
@@ -549,6 +588,7 @@ def main() -> int:
         "info": cmd_info,
         "compare": cmd_compare,
         "report": cmd_report,
+        "eval": cmd_eval,
     }
 
     handler = commands.get(args.command)

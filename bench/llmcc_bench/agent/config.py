@@ -145,6 +145,12 @@ class ExperimentConfig:
     task_difficulties: Optional[List[str]] = None
     """Filter tasks by difficulty (small, medium, large)."""
 
+    parallel: int = 1
+    """Number of tasks to run in parallel. Default 1 (sequential)."""
+
+    sample: Optional[int] = None
+    """Randomly sample this many tasks. If None, run all tasks."""
+
     def validate(self) -> None:
         """Validate configuration."""
         if self.runs_per_condition < 1:

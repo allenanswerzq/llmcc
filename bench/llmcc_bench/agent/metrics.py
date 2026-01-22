@@ -156,6 +156,31 @@ class TaskMetrics:
     graph_edges: int = 0
     """Number of edges in the graph."""
 
+    # Answer and evaluation
+    answer: str = ""
+    """The agent's final answer text."""
+
+    eval_completeness: int = 0
+    """How completely the answer addresses all parts of the question (1-5)."""
+
+    eval_accuracy: int = 0
+    """How accurate the information is (1-5)."""
+
+    eval_specificity: int = 0
+    """How specific the answer is with file paths, function names, etc. (1-5)."""
+
+    eval_understanding: int = 0
+    """How well the answer demonstrates understanding of component relationships (1-5)."""
+
+    eval_overall: int = 0
+    """Overall quality score (1-5)."""
+
+    eval_reasoning: str = ""
+    """Brief explanation of the evaluation scores."""
+
+    eval_error: str = ""
+    """Error message if evaluation failed."""
+
     def to_dict(self) -> Dict:
         """Convert to dictionary for JSON serialization."""
         return {
@@ -181,6 +206,14 @@ class TaskMetrics:
             "graph_tokens": self.graph_tokens,
             "graph_nodes": self.graph_nodes,
             "graph_edges": self.graph_edges,
+            "answer": self.answer,
+            "eval_completeness": self.eval_completeness,
+            "eval_accuracy": self.eval_accuracy,
+            "eval_specificity": self.eval_specificity,
+            "eval_understanding": self.eval_understanding,
+            "eval_overall": self.eval_overall,
+            "eval_reasoning": self.eval_reasoning,
+            "eval_error": self.eval_error,
         }
 
     @classmethod
@@ -210,6 +243,14 @@ class TaskMetrics:
         metrics.graph_tokens = data.get("graph_tokens", 0)
         metrics.graph_nodes = data.get("graph_nodes", 0)
         metrics.graph_edges = data.get("graph_edges", 0)
+        metrics.answer = data.get("answer", "")
+        metrics.eval_completeness = data.get("eval_completeness", 0)
+        metrics.eval_accuracy = data.get("eval_accuracy", 0)
+        metrics.eval_specificity = data.get("eval_specificity", 0)
+        metrics.eval_understanding = data.get("eval_understanding", 0)
+        metrics.eval_overall = data.get("eval_overall", 0)
+        metrics.eval_reasoning = data.get("eval_reasoning", "")
+        metrics.eval_error = data.get("eval_error", "")
         return metrics
 
     def to_json(self) -> str:
@@ -250,6 +291,7 @@ class MetricsCollector:
         self._graph_tokens = 0
         self._graph_nodes = 0
         self._graph_edges = 0
+        self._answer = ""
 
     def start(self) -> None:
         """Mark the start of the run."""
@@ -293,6 +335,10 @@ class MetricsCollector:
         self._graph_tokens = tokens
         self._graph_nodes = nodes
         self._graph_edges = edges
+
+    def set_answer(self, answer: str) -> None:
+        """Set the agent's final answer."""
+        self._answer = answer
 
     @property
     def tool_calls_total(self) -> int:
@@ -342,6 +388,7 @@ class MetricsCollector:
             graph_tokens=self._graph_tokens,
             graph_nodes=self._graph_nodes,
             graph_edges=self._graph_edges,
+            answer=self._answer,
         )
 
 

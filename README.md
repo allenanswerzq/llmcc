@@ -15,6 +15,7 @@ llmcc tries a different approach. It builds a multi-depth architecture view that
 | C++ | 🔜 Planned |
 | Python | 🔜 Planned |
 | Go | 🔜 Planned |
+| markdown | 🔜 Planned |
 | more |
 
 ## Why multi-depth graphs?

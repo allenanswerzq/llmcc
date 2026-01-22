@@ -10,6 +10,7 @@ import argparse
 import asyncio
 import json
 import os
+import random
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -33,6 +34,10 @@ from .agent.runner import (
 )
 from .agent.tasks import Task, get_task_by_id, load_tasks
 from .core import PROJECTS, load_projects
+from .eval import Evaluator
+
+# Max retries for tasks that don't complete
+MAX_TASK_RETRIES = 3
 
 
 def get_repo_path(repo: str, sample_dir: Optional[Path] = None) -> Path:
@@ -60,6 +65,7 @@ async def run_single_task(
     config: ExperimentConfig,
     graph_content: Optional[str] = None,
     output_dir: Optional[Path] = None,
+    evaluator: Optional[Evaluator] = None,
 ) -> List[TaskMetrics]:
     """
     Run a single task under all conditions.
@@ -73,38 +79,49 @@ async def run_single_task(
         for run_num in range(config.runs_per_condition):
             run_id = f"{condition.value}_{run_num}"
 
-            print(f"  Running {task.id} [{condition.value}] run {run_num + 1}/{config.runs_per_condition}...")
+            print(f"  [{condition.value}] {task.id} run {run_num + 1}/{config.runs_per_condition}...")
 
-            # Reset workspace before each run
-            try:
-                reset_workspace(repo_path)
-            except Exception as e:
-                print(f"    Warning: Failed to reset workspace: {e}")
+            # Retry loop for tasks that don't complete
+            metrics = None
+            for attempt in range(MAX_TASK_RETRIES):
+                if attempt > 0:
+                    print(f"    Retry {attempt}/{MAX_TASK_RETRIES - 1} (no TASK COMPLETE)...")
 
-            # Set up trace file
-            trace_file = None
-            if output_dir:
-                trace_file = output_dir / f"trace_{task.id}_{run_id}.jsonl"
+                # Reset workspace before each run
+                try:
+                    reset_workspace(repo_path)
+                except Exception as e:
+                    print(f"    Warning: Failed to reset workspace: {e}")
 
-            # Create run context
-            context = RunContext(
-                task=task,
-                condition=condition,
-                workspace_path=repo_path,
-                graph_context=graph_content if condition == Condition.WITH_LLMCC else None,
-                run_id=run_id,
-                limits=config.run_limits,
-                trace_file=trace_file,
-            )
+                # Set up trace file (append attempt number for retries)
+                trace_file = None
+                if output_dir:
+                    suffix = f"_retry{attempt}" if attempt > 0 else ""
+                    trace_file = output_dir / f"trace_{task.id}_{run_id}{suffix}.jsonl"
 
-            # Run the agent
-            metrics = await runner.run(context)
+                # Create run context
+                context = RunContext(
+                    task=task,
+                    condition=condition,
+                    workspace_path=repo_path,
+                    graph_context=graph_content if condition == Condition.WITH_LLMCC else None,
+                    run_id=run_id,
+                    limits=config.run_limits,
+                    trace_file=trace_file,
+                )
 
-            # Run validation if specified
-            if task.validation_command:
-                passed, output = await run_validation(task, repo_path)
-                metrics.validation_passed = passed
-                metrics.validation_output = output
+                # Run the agent
+                metrics = await runner.run(context)
+
+                # Run validation if specified
+                if task.validation_command:
+                    passed, output = await run_validation(task, repo_path)
+                    metrics.validation_passed = passed
+                    metrics.validation_output = output
+
+                # If task completed, no need to retry
+                if metrics.task_completed:
+                    break
 
             results.append(metrics)
 
@@ -122,6 +139,57 @@ async def run_single_task(
                       f"{total_tokens} tokens, "
                       f"{metrics.wall_time_seconds:.1f}s")
 
+    # After all runs, compare baseline vs llmcc if evaluator is provided
+    if evaluator and len(config.conditions) == 2:
+        # Group results by run number
+        baseline_results = [r for r in results if r.condition == Condition.BASELINE.value]
+        llmcc_results = [r for r in results if r.condition == Condition.WITH_LLMCC.value]
+
+        comparisons = []
+        for run_num in range(config.runs_per_condition):
+            if run_num < len(baseline_results) and run_num < len(llmcc_results):
+                baseline = baseline_results[run_num]
+                llmcc = llmcc_results[run_num]
+
+                print(f"  [eval] Comparing run {run_num + 1}...", end="", flush=True)
+                comparison = await evaluator.compare_answers(
+                    question=task.description,
+                    baseline_answer=baseline.answer or "",
+                    llmcc_answer=llmcc.answer or "",
+                    task_id=task.id,
+                    run_id=str(run_num),
+                )
+
+                comparisons.append(comparison)
+
+                if comparison.error:
+                    print(f" error: {comparison.error}")
+                else:
+                    # Store comparison results in both metrics
+                    baseline.eval_overall = comparison.baseline_score
+                    llmcc.eval_overall = comparison.llmcc_score
+                    baseline.eval_reasoning = comparison.reasoning
+                    llmcc.eval_reasoning = comparison.reasoning
+
+                    winner_str = {
+                        "baseline": "baseline wins",
+                        "llmcc": "llmcc wins",
+                        "tie": "tie",
+                    }.get(comparison.winner, "tie")
+                    print(f" {winner_str} ({comparison.margin}): "
+                          f"baseline={comparison.baseline_score}/10, "
+                          f"llmcc={comparison.llmcc_score}/10")
+
+        # Save eval results to file
+        if output_dir and comparisons:
+            eval_path = output_dir / f"eval_{task.id}.json"
+            with open(eval_path, "w") as f:
+                json.dump({
+                    "task_id": task.id,
+                    "question": task.description,
+                    "comparisons": [c.to_dict() for c in comparisons],
+                }, f, indent=2)
+
     return results
 
 
@@ -129,6 +197,7 @@ async def run_comparison(
     config: ExperimentConfig,
     runner: AgentRunner,
     output_dir: Path,
+    evaluator: Optional[Evaluator] = None,
 ) -> List[TaskMetrics]:
     """
     Run the full comparison benchmark.
@@ -137,6 +206,7 @@ async def run_comparison(
         config: Experiment configuration.
         runner: Agent runner to use.
         output_dir: Directory for results.
+        evaluator: Optional evaluator for answer quality.
 
     Returns:
         List of all TaskMetrics.
@@ -167,6 +237,11 @@ async def run_comparison(
     if not tasks:
         print(f"No tasks found for repo: {config.repo}")
         return []
+
+    # Random sampling if requested
+    if config.sample and config.sample < len(tasks):
+        tasks = random.sample(tasks, config.sample)
+        print(f"Randomly sampled {config.sample} tasks")
 
     print(f"Found {len(tasks)} tasks")
 
@@ -203,24 +278,81 @@ async def run_comparison(
     all_results: List[TaskMetrics] = []
     results_path = output_dir / "raw_metrics.jsonl"
 
-    for i, task in enumerate(tasks):
-        print(f"\n[{i + 1}/{len(tasks)}] Task: {task.id}")
-        print(f"  Category: {task.category.value}, Difficulty: {task.difficulty.value}")
+    # Check for parallel execution
+    parallel = getattr(config, 'parallel', 1)
 
-        task_results = await run_single_task(
-            task=task,
-            runner=runner,
-            repo_path=repo_path,
-            config=config,
-            graph_content=graph_content,
-            output_dir=output_dir,
-        )
+    if parallel > 1:
+        # Run tasks in parallel batches
+        print(f"\nRunning {len(tasks)} tasks with parallelism={parallel}")
 
-        # Save results incrementally
-        for metrics in task_results:
-            append_metrics_jsonl(metrics, results_path)
+        async def run_task_wrapper(i: int, task: Task) -> List[TaskMetrics]:
+            """Wrapper to run a single task and save results to its own file."""
+            print(f"\n[{i + 1}/{len(tasks)}] Task: {task.id}")
+            print(f"  Category: {task.category.value}, Difficulty: {task.difficulty.value}")
 
-        all_results.extend(task_results)
+            task_results = await run_single_task(
+                task=task,
+                runner=runner,
+                repo_path=repo_path,
+                config=config,
+                graph_content=graph_content,
+                output_dir=output_dir,
+                evaluator=evaluator,
+            )
+
+            # Save to task-specific file
+            task_results_path = output_dir / f"metrics_{task.id}.jsonl"
+            for metrics in task_results:
+                append_metrics_jsonl(metrics, task_results_path)
+
+            return task_results
+
+        # Process in batches
+        for batch_start in range(0, len(tasks), parallel):
+            batch_end = min(batch_start + parallel, len(tasks))
+            batch = tasks[batch_start:batch_end]
+
+            batch_tasks = [
+                run_task_wrapper(batch_start + j, task)
+                for j, task in enumerate(batch)
+            ]
+
+            batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)
+
+            for result in batch_results:
+                if isinstance(result, Exception):
+                    print(f"  Error: {result}")
+                else:
+                    all_results.extend(result)
+
+        # Combine all task-specific files into raw_metrics.jsonl
+        for task in tasks:
+            task_results_path = output_dir / f"metrics_{task.id}.jsonl"
+            if task_results_path.exists():
+                with open(task_results_path) as f:
+                    with open(results_path, "a") as out:
+                        out.write(f.read())
+    else:
+        # Sequential execution (original behavior)
+        for i, task in enumerate(tasks):
+            print(f"\n[{i + 1}/{len(tasks)}] Task: {task.id}")
+            print(f"  Category: {task.category.value}, Difficulty: {task.difficulty.value}")
+
+            task_results = await run_single_task(
+                task=task,
+                runner=runner,
+                repo_path=repo_path,
+                config=config,
+                graph_content=graph_content,
+                output_dir=output_dir,
+                evaluator=evaluator,
+            )
+
+            # Save results incrementally
+            for metrics in task_results:
+                append_metrics_jsonl(metrics, results_path)
+
+            all_results.extend(task_results)
 
     print(f"\nResults saved to: {output_dir}")
     return all_results
@@ -240,6 +372,14 @@ def main():
     group.add_argument(
         "--repo",
         help="Repository to run all tasks for (e.g., 'tokio-rs/tokio')",
+    )
+
+    # Task sampling
+    parser.add_argument(
+        "--sample",
+        type=int,
+        default=None,
+        help="Randomly sample N tasks (for quick testing)",
     )
 
     # Experiment settings
@@ -317,6 +457,16 @@ def main():
         type=Path,
         help="Local path to repository (skip automatic lookup)",
     )
+    parser.add_argument(
+        "--eval",
+        action="store_true",
+        help="Enable LLM-as-judge evaluation of answer quality",
+    )
+    parser.add_argument(
+        "--eval-model",
+        default="gpt-4o-mini",
+        help="Model to use for evaluation (default: gpt-4o-mini)",
+    )
 
     args = parser.parse_args()
 
@@ -353,6 +503,7 @@ def main():
         ),
         model=args.model,
         task_ids=task_ids,
+        sample=args.sample,
     )
 
     # Create output directory
@@ -389,11 +540,18 @@ def main():
     print(f"Runs per condition: {args.runs}")
     print(f"Graph config: {args.graph_config}")
     print(f"Runner: {args.runner}")
+    print(f"Evaluation: {'enabled' if args.eval else 'disabled'}")
     print(f"Output: {output_dir}")
     print()
 
+    # Create evaluator if requested
+    evaluator = None
+    if args.eval:
+        evaluator = Evaluator(model=args.eval_model)
+        print(f"Evaluator initialized with model: {args.eval_model}")
+
     # Run benchmark
-    asyncio.run(run_comparison(config, runner, output_dir))
+    asyncio.run(run_comparison(config, runner, output_dir, evaluator))
 
 
 if __name__ == "__main__":
