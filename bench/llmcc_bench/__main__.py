@@ -241,6 +241,7 @@ def cmd_compare(args, config: Config) -> int:
         task_ids=task_ids,
         parallel=args.parallel,
         sample=args.sample,
+        debug=getattr(args, 'debug', False),
     )
 
     # Create output directory
@@ -280,6 +281,8 @@ def cmd_compare(args, config: Config) -> int:
     print(f"Runner: {args.runner}")
     print(f"Evaluation: {'enabled (' + args.eval_model + ')' if args.eval else 'disabled'}")
     print(f"Parallel: {args.parallel}")
+    if exp_config.debug:
+        print(f"Debug: enabled (model will explain reasoning)")
     print(f"Output: {output_dir}")
     print()
 
@@ -536,6 +539,11 @@ def main() -> int:
         type=int,
         default=None,
         help="Randomly sample N tasks (for quick testing)",
+    )
+    compare_parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug mode: model explains reasoning for each tool call",
     )
 
     # report command

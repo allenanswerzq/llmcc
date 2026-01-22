@@ -151,6 +151,9 @@ class ExperimentConfig:
     sample: Optional[int] = None
     """Randomly sample this many tasks. If None, run all tasks."""
 
+    debug: bool = False
+    """Enable debug mode: model explains reasoning for each tool call."""
+
     def validate(self) -> None:
         """Validate configuration."""
         if self.runs_per_condition < 1:

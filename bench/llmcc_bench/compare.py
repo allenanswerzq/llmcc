@@ -108,6 +108,7 @@ async def run_single_task(
                     run_id=run_id,
                     limits=config.run_limits,
                     trace_file=trace_file,
+                    debug=config.debug,
                 )
 
                 # Run the agent

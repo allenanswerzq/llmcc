@@ -42,6 +42,9 @@ class RunContext:
     trace_file: Optional[Path] = None
     """Path to write conversation trace (prompts and responses)."""
 
+    debug: bool = False
+    """Enable debug mode to show model reasoning for each step."""
+
     def __post_init__(self):
         if self.limits is None:
             self.limits = RunLimits()
@@ -267,37 +270,43 @@ def build_graph_context(graph: Optional[str] = None) -> Optional[str]:
     if not graph:
         return None
 
-    return f"""## llmcc - Multi-depth Architecture View
+    return f"""## llmcc - A Local Code Analysis Tool (run via Bash)
 
-You have `llmcc` - a tool that builds architecture views of codebases. It's like grep but for architecture: lets you zoom out to see the big picture or zoom in for implementation details.
+⚠️ `llmcc` is a LOCAL command-line tool installed on this system. Run it using Bash/terminal, NOT as a built-in tool.
 
-**Depth levels (choose based on your need):**
+**How to use:** Run `llmcc` commands via Bash like any other shell command:
+```bash
+llmcc -d <folder> --graph --depth <1|2|3> --lang rust --pagerank-top-k N
+```
+
+**The MOST IDEAL WORKFLOW:**
+1. Run `llmcc` via Bash to see important modules and architectural symbols
+2. Identify relevant modules/crates/files/symbols from the graph output
+3. THEN use grep/read only for specific details - the graph already has file paths and line numbers
+4. Use --pagerank-top-k to reduce noise and focus on important nodes
+
+**Depth levels:**
 | Depth | View | Best for |
 |-------|------|----------|
 | 1 | Crate/library | ownership boundaries, public API flow |
-| 2 | Module | subsystem structure, quick overview |
+| 2 | Module | subsystem structure, quick overview (START HERE) |
 | 3 | File + symbol | implementation details, finding specific code |
 
-**Usage:**
+**Examples (run via Bash):**
 ```bash
-llmcc -d <folder> --graph --depth <1|2|3> --lang rust
-
-# Examples:
 llmcc -d codex-rs/core --graph --depth 2 --lang rust    # module overview
 llmcc -d codex-rs/core/src --graph --depth 3 --lang rust  # detailed symbols
 llmcc -d . --graph --depth 1 --lang rust                # whole project crates
 ```
 
 **Options:**
-- `-d <folder>` - director to analyze (can repeat: `-d foo -d bar`)
+- `-d <folder>` - directory to analyze (can repeat: `-d foo -d bar`)
 - `-f <file>` - specific file(s) to analyze (can repeat)
 - `--depth 1|2|3` - zoom level
 - `--pagerank-top-k N` - show only top N important nodes (reduces noise)
 - `--lang rust|typescript`
 
-**When to use:** When you find a new folder and want to understand its structure fast - much faster than reading files one by one!
-
-Below is a starting graph. Run `llmcc` on specific folders as you explore.
+Below is a starting graph (depth 3, whole repo). Run `llmcc` via Bash on specific folders for cleaner views.
 
 ```dot
 {graph}
@@ -413,7 +422,16 @@ class ClaudeAgentRunner(AgentRunner):
         graph_context = build_graph_context(context.graph_context)
 
         # Build the completion instruction - make it very clear
-        completion_instruction = """
+        debug_instruction = """
+
+⚠️ STEP-BY-STEP MODE ENABLED:
+You MUST think out loud before EVERY action. Before calling ANY tool, first write a brief paragraph explaining:
+"I will use [TOOL NAME] because [REASON]. I'm looking for [WHAT] and expect to find [EXPECTED RESULT]."
+
+DO NOT call tools silently. Always explain your thinking first, then call the tool.""" if context.debug else ""
+
+        completion_instruction = f"""{debug_instruction}
+
 IMPORTANT: You MUST end your response with one of these exact phrases:
 - "TASK COMPLETE" followed by a brief summary if successful
 - "TASK FAILED" followed by explanation if unsuccessful
@@ -448,19 +466,27 @@ Workspace: {context.workspace_path}
         env.setdefault("ANTHROPIC_API_KEY", "sk-copilot-bridge")
 
         # System prompt to ensure proper completion (enhanced for llmcc condition)
+        debug_system_note = """
+
+⚠️ STEP-BY-STEP MODE: Before EVERY tool call, you MUST first write out your reasoning explaining what you're about to do and why.""" if context.debug else ""
+
         if context.graph_context:
-            system_prompt = """You are a coding assistant completing benchmark tasks.
+            system_prompt = f"""You are a coding assistant completing benchmark tasks.{debug_system_note}
 
-You have `llmcc` - use it to quickly understand code architecture before diving into files:
-  llmcc -d <folder> --graph --depth 2 --lang rust   # module overview
-  llmcc -d <folder> --graph --depth 3 --lang rust   # file+symbol detail
+IMPORTANT WORKFLOW: You can use `llmcc` (via Bash) as an exploration tool:
 
-This is much faster than reading files one by one. Use depth 2 for quick overview, depth 3 for implementation details.
+1. Run `llmcc -d <folder> --graph --depth 2(3) --lang rust` via Bash to understand architecture
+2. Use grep/read for specific details the graph reveals
+
+Example:
+  llmcc -d codex-rs/core --graph --depth 2 --lang rust                                      # see module structure
+  llmcc -d codex-rs/core/src/config --graph --depth 3 --lang rust --pagerank-top-k 200      # zoom into details with most 200 important nodes
+  llmcc -d codex-rs/core -d corex-rs/cli --graph --depth 3 --lang rust  --pagerank-top-k 200  # shoule mulitile folders architecture
 
 CRITICAL: Every task response MUST end with either "TASK COMPLETE" or "TASK FAILED" in your final message.
 Never end a task with just tool calls - always provide a final summary with the completion status."""
         else:
-            system_prompt = """You are a coding assistant completing benchmark tasks.
+            system_prompt = f"""You are a coding assistant completing benchmark tasks.{debug_system_note}
 CRITICAL: Every task response MUST end with either "TASK COMPLETE" or "TASK FAILED" in your final message.
 Never end a task with just tool calls - always provide a final summary with the completion status."""
 
@@ -518,6 +544,7 @@ Never end a task with just tool calls - always provide a final summary with the 
                 # Track cumulative usage for computing deltas
                 last_usage: Dict[str, int] = {"input_tokens": 0, "output_tokens": 0}
                 final_answer = ""
+                debug_mode = context.debug
 
                 while True:
                     line = await process.stdout.readline()
@@ -532,7 +559,7 @@ Never end a task with just tool calls - always provide a final summary with the 
                             trace_file.write(json.dumps(event) + "\n")
                             trace_file.flush()
 
-                        last_usage = await self._process_event(event, collector, last_usage=last_usage)
+                        last_usage = await self._process_event(event, collector, last_usage=last_usage, debug=debug_mode)
 
                         # Check for completion and capture final answer
                         if event.get("type") == "assistant":
@@ -596,6 +623,7 @@ Never end a task with just tool calls - always provide a final summary with the 
         collector: MetricsCollector,
         verbose: bool = True,
         last_usage: Optional[Dict[str, int]] = None,
+        debug: bool = False,
     ) -> Dict[str, int]:
         """Process a streaming event from Claude.
 
@@ -608,6 +636,15 @@ Never end a task with just tool calls - always provide a final summary with the 
             # Assistant message - may contain tool_use blocks
             message = event.get("message", {})
             content = message.get("content", [])
+
+            # In debug mode, print any text output from the model
+            if debug:
+                for block in content:
+                    if block.get("type") == "text":
+                        text = block.get("text", "").strip()
+                        if text:
+                            print(f"      💭 {text[:200]}")
+
             for block in content:
                 if block.get("type") == "tool_use":
                     tool_name = block.get("name", "unknown")
@@ -629,6 +666,11 @@ Never end a task with just tool calls - always provide a final summary with the 
                         # Summarize input
                         input_summary = self._summarize_tool_input(tool_name, tool_input)
                         print(f"      [{call_num}] {tool_name}: {input_summary}")
+                        # In debug mode, show full tool input for insight
+                        if debug and tool_name == "Bash":
+                            cmd = tool_input.get("command", "")
+                            if len(cmd) > 100:
+                                print(f"          cmd: {cmd[:150]}...")
             # Record usage from assistant message if present
             # Note: Claude CLI reports CUMULATIVE usage, so compute deltas
             usage = message.get("usage", {})
