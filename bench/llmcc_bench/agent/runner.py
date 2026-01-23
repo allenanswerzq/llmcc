@@ -402,6 +402,10 @@ IMPORTANT: You MUST MUST end your response with one of these exact phrases:
 Do NOT end with tool calls or partial work. Always provide a final text response with TASK COMPLETE or TASK FAILED."""
 
         # Build the prompt - include graph context in the user prompt for reliability
+        # Include explicit repo path note to prevent llmcc path mistakes
+        repo_path_note = f"""
+⚠️ IMPORTANT: The repository path is: {context.workspace_path} """
+
         if graph_context:
             prompt = f"""{graph_context}
 
@@ -410,6 +414,7 @@ Task: {context.task.description}
 Expected files to modify/create: {', '.join(context.task.expected_files) if context.task.expected_files else 'As needed'}
 
 Workspace: {context.workspace_path}
+{repo_path_note}
 {completion_instruction}"""
         else:
             prompt = f"""Task: {context.task.description}
@@ -417,6 +422,7 @@ Workspace: {context.workspace_path}
 Expected files to modify/create: {', '.join(context.task.expected_files) if context.task.expected_files else 'As needed'}
 
 Workspace: {context.workspace_path}
+{repo_path_note}
 {completion_instruction}"""
 
         # Set up environment
