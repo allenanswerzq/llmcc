@@ -124,8 +124,9 @@ ${JSON.stringify(session, null, 2)}
 }
 function printWelcome(session, config) {
     console.log(`${colors.cyan}${colors.bold}llcraft${colors.reset} ${colors.dim}v0.1.0${colors.reset}`);
+    const llmccStatus = config.llmcc ? `${colors.green}✓ llmcc${colors.reset}` : '';
     const chromeStatus = config.chrome ? `${colors.green}✓ chrome${colors.reset}` : '';
-    console.log(`${colors.dim}Model: ${config.model} | API: ${config.baseUrl}${colors.reset} ${chromeStatus}`);
+    console.log(`${colors.dim}Model: ${config.model} | API: ${config.baseUrl}${colors.reset} ${llmccStatus} ${chromeStatus}`);
     if (session.messages.length > 0) {
         console.log(`${colors.dim}Restored session with ${session.messages.length} messages${colors.reset}`);
     }
@@ -232,6 +233,10 @@ async function handleInput(input, session, config) {
                 else if (name === 'computer' && parsed.action) {
                     summary = `: ${parsed.action}`;
                 }
+                else if (name === 'llmcc' && parsed.dirs) {
+                    const dirList = Array.isArray(parsed.dirs) ? parsed.dirs.join(', ') : parsed.dirs;
+                    summary = `: ${dirList} (depth=${parsed.depth || 3})`;
+                }
             }
             catch {
                 // Ignore parse errors
@@ -285,6 +290,10 @@ async function main() {
             console.log(`${colors.dim}Install with: cd ../chrome && npm install && npm run build${colors.reset}`);
             config.chrome = false;
         }
+    }
+    // Enable llmcc if --llmcc flag is passed
+    if (args.includes('--llmcc') || args.includes('-l')) {
+        config.llmcc = true;
     }
     printWelcome(session, config);
     const rl = readline.createInterface({
