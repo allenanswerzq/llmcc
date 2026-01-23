@@ -31,6 +31,11 @@ export interface ToolResult {
     role: 'tool';
     content: string;
 }
+/**
+ * llmcc tool definition - for code architecture analysis
+ * Exported separately so it can be conditionally included
+ */
+export declare const llmccTool: ToolDefinition;
 export declare const builtinTools: ToolDefinition[];
 /**
  * Execute a tool call and return the result
@@ -39,4 +44,4 @@ export declare function executeTool(toolCall: ToolCall): ToolResult;
 /**
  * Format tools for display
  */
-export declare function formatToolList(includeBrowser?: boolean): string;
+export declare function formatToolList(includeBrowser?: boolean, includeLlmcc?: boolean): string;

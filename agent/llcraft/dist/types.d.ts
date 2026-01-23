@@ -19,6 +19,7 @@ export interface Config {
     maxTokens: number;
     systemPrompt: string;
     chrome?: boolean;
+    llmcc?: boolean;
 }
 export interface APIMessage {
     role: 'user' | 'assistant';

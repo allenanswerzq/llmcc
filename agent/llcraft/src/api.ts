@@ -5,7 +5,7 @@
  */
 
 import { Message, Config, APIMessage } from './types.js';
-import { builtinTools, executeTool, ToolCall, ToolDefinition } from './tools.js';
+import { builtinTools, executeTool, ToolCall, ToolDefinition, llmccTool } from './tools.js';
 import { browserTools, isBrowserTool, executeBrowserTool } from './browser.js';
 
 interface OpenAIMessage {
@@ -81,6 +81,9 @@ async function callOpenAIAPIWithTools(
 ): Promise<string> {
     // Collect available tools
     const availableTools = [...builtinTools];
+    if (config.llmcc) {
+        availableTools.push(llmccTool);
+    }
     if (config.chrome) {
         availableTools.push(...browserTools);
     }
@@ -113,7 +116,7 @@ Only use tools when necessary to complete the user's request.`;
         })),
     ];
 
-    const maxIterations = 10;
+    const maxIterations = 50;  // Increased for complex tasks
     let iterations = 0;
 
     while (iterations < maxIterations) {

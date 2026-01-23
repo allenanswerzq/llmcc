@@ -22,6 +22,7 @@ export interface Config {
     maxTokens: number;
     systemPrompt: string;
     chrome?: boolean;  // Enable browser automation
+    llmcc?: boolean;   // Enable llmcc code architecture tool
 }
 
 export interface APIMessage {

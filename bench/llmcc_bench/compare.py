@@ -246,34 +246,9 @@ async def run_comparison(
 
     print(f"Found {len(tasks)} tasks")
 
-    # Generate graph once (if any condition uses it)
+    # Note: We no longer pre-generate graphs since the llmcc skill guides Claude
+    # to run llmcc on its own. This saves time and lets Claude explore as needed.
     graph_content: Optional[str] = None
-    if Condition.WITH_LLMCC in config.conditions:
-        gc = config.graph_config
-        print(f"Generating graph (depth={gc.depth}, top_k={gc.pagerank_top_k})...")
-        try:
-            # Detect language from project config
-            projects = load_projects()
-            language = "rust"
-            for name, proj in projects.items():
-                if proj.github_path == config.repo:
-                    language = proj.language
-                    break
-
-            graph_content, nodes, edges = generate_graph(
-                repo_path,
-                config.graph_config,
-                language=language,
-            )
-            print(f"  {nodes} nodes, {edges} edges")
-
-            # Warn if graph is empty
-            if nodes == 0:
-                print("  ⚠️  WARNING: Graph is empty! Results may not be meaningful.")
-                print("     This usually means the repository doesn't exist or llmcc failed.")
-        except Exception as e:
-            print(f"  Warning: Failed to generate graph: {e}")
-            print("  Continuing without graph...")
 
     # Run all tasks
     all_results: List[TaskMetrics] = []
@@ -410,7 +385,7 @@ def main():
     # Runner settings
     parser.add_argument(
         "--runner",
-        choices=["mock", "claude"],
+        choices=["mock", "claude", "llcraft"],
         default="mock",
         help="Agent runner to use (default: mock)",
     )
@@ -522,6 +497,12 @@ def main():
         from .agent.runner import ClaudeAgentRunner
         runner = ClaudeAgentRunner(
             model=getattr(args, 'model', None) or 'opus',
+            timeout=getattr(args, 'max_time', 600),
+        )
+    elif args.runner == "llcraft":
+        from .agent.runner import LlcraftAgentRunner
+        runner = LlcraftAgentRunner(
+            model=getattr(args, 'model', None) or 'claude-opus-4-5-20251101',
             timeout=getattr(args, 'max_time', 600),
         )
     elif args.runner == "codex":

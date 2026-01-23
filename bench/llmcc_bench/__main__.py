@@ -267,6 +267,12 @@ def cmd_compare(args, config: Config) -> int:
             model=args.model or "o3",
             timeout=args.timeout or 600,
         )
+    elif args.runner == "llcraft":
+        from .agent.runner import LlcraftAgentRunner
+        runner = LlcraftAgentRunner(
+            model=args.model or "claude-opus-4-5-20251101",
+            timeout=args.timeout or 600,
+        )
     else:
         print(f"Unknown runner: {args.runner}")
         return 1
@@ -480,7 +486,7 @@ def main() -> int:
     )
     compare_parser.add_argument(
         "--runner",
-        choices=["mock", "claude", "codex"],
+        choices=["mock", "claude", "codex", "llcraft"],
         default="mock",
         help="Agent runner to use (default: mock)",
     )
