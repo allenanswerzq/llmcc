@@ -1,0 +1,69 @@
+===============================================================================
+method-sym-type
+===============================================================================
+Test that methods inside structs are correctly classified as Method (not Function).
+This catches the bug where field_declaration_list was creating a new scope
+that broke the parent context, causing methods to be classified as functions.
+lang: cpp
+
+--- file: sample/CMakeLists.txt ---
+cmake_minimum_required(VERSION 3.10)
+project(sample)
+
+--- file: sample/src/lib.cpp ---
+struct Config {
+    int value;
+
+    int getValue() const {
+        return value;
+    }
+
+    void setValue(int v) {
+        value = v;
+    }
+};
+
+// Free function that uses the struct
+void process(Config& cfg) {
+    int v = cfg.getValue();
+    cfg.setValue(v + 1);
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.cpp)
+  (class:2 Config
+    (field:3 int @type int)
+    (method:4 getValue)
+    (method:5 setValue
+      (parameter:6 v @type int)
+    )
+  )
+  (func:7 process
+    (parameter:8 cfg @type:2 Config)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_cpp {
+    label="lib.cpp";
+    style=rounded;
+        bgcolor="#fafafa";
+
+    n2[label="Config", path="$TMP/sample/src/lib.cpp:1", sym_ty="Struct", shape=box];
+    n7[label="process", path="$TMP/sample/src/lib.cpp:14", sym_ty="Function", shape=ellipse];
+  }
+
+
+  n2 -> n7 [from="input", to="func"];
+}
+

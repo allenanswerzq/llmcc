@@ -227,6 +227,19 @@ impl<'a> CollectorScopes<'a> {
         Some(allocated)
     }
 
+    /// Insert an anonymous symbol (for anonymous structs/enums/namespaces).
+    /// Returns a reference to the symbol so it can be used as a parent context.
+    #[inline]
+    pub fn insert_anonymous(&self, node: &HirNode<'a>, kind: SymKind) -> Option<&'a Symbol> {
+        // Use empty string for anonymous symbols
+        let name_key = self.interner().intern("");
+        let new_symbol = Symbol::new(node.id(), name_key);
+        let sym_id = new_symbol.id().0;
+        let allocated = self.arena().alloc_with_id(sym_id, new_symbol);
+        self.init_symbol(allocated, "", node, kind);
+        Some(allocated)
+    }
+
     /// Lookup symbols by name with options
     #[inline]
     pub fn lookup_symbols(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {

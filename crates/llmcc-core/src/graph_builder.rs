@@ -674,21 +674,30 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
             if context_kind != base_kind && Self::is_block_kind(context_kind) {
                 // Parent context creates a block that wouldn't exist otherwise
                 // For tuple struct fields, pass the index as the name
-                self.build_block_with_kind_and_index(
-                    unit,
-                    *child,
-                    parent,
-                    context_kind,
-                    tuple_field_index,
-                );
+                // Use stacker to grow stack for deeply nested structures
+                stacker::maybe_grow(32 * 1024, 1024 * 1024, || {
+                    self.build_block_with_kind_and_index(
+                        unit,
+                        *child,
+                        parent,
+                        context_kind,
+                        tuple_field_index,
+                    );
+                });
                 tuple_field_index += 1;
             } else if context_kind == BlockKind::Undefined && Self::is_block_kind(base_kind) {
                 // Parent context suppresses block creation (e.g., return_type inside function_type)
                 // Just visit children without creating a block
-                self.visit_children(unit, *child, parent);
+                // Use stacker to grow stack for deeply nested structures
+                stacker::maybe_grow(32 * 1024, 1024 * 1024, || {
+                    self.visit_children(unit, *child, parent);
+                });
             } else {
                 // Normal path - let visit_node handle it
-                self.visit_node(unit, *child, parent);
+                // Use stacker to grow stack for deeply nested structures
+                stacker::maybe_grow(32 * 1024, 1024 * 1024, || {
+                    self.visit_node(unit, *child, parent);
+                });
             }
         }
     }

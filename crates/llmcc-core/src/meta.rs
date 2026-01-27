@@ -153,7 +153,7 @@ struct PackageInfo {
 
 /// Detects and caches module structure for a project.
 pub struct UnitMetaBuilder {
-    manifest_name: &'static str,
+    manifest_names: &'static [&'static str],
     container_dirs: &'static [&'static str],
     project_root: PathBuf,
     project_name: String,
@@ -165,14 +165,14 @@ impl UnitMetaBuilder {
     /// This is the preferred way to create a UnitMetaBuilder from a language type.
     /// Automatically computes the project root from file paths.
     pub fn from_lang_trait<L: crate::lang_def::LanguageTrait>(files: &[PathBuf]) -> Self {
-        Self::with_lang_config(files, L::manifest_name(), L::container_dirs())
+        Self::with_lang_config(files, L::manifest_names(), L::container_dirs())
     }
 
     /// Create a detector with explicit language configuration.
     /// Automatically computes the project root from file paths.
     pub fn with_lang_config(
         files: &[PathBuf],
-        manifest_name: &'static str,
+        manifest_names: &'static [&'static str],
         container_dirs: &'static [&'static str],
     ) -> Self {
         let project_root = Self::compute_project_root(files);
@@ -183,7 +183,7 @@ impl UnitMetaBuilder {
             .to_string();
 
         let mut detector = Self {
-            manifest_name,
+            manifest_names,
             container_dirs,
             project_root,
             project_name,
@@ -253,27 +253,35 @@ impl UnitMetaBuilder {
     }
 
     // Step 1: Detect Packages
-
     fn detect_packages(&mut self, files: &[PathBuf]) {
         let mut seen = std::collections::HashSet::new();
 
         for file in files {
             let mut dir = file.parent();
             while let Some(current) = dir {
-                let manifest = current.join(self.manifest_name);
-                if manifest.exists() && !seen.contains(current) {
-                    seen.insert(current.to_path_buf());
+                if !seen.contains(current) {
+                    // Check if any of the manifest files exist in this directory
+                    let has_manifest = self.manifest_names.iter().any(|m| current.join(m).exists());
 
-                    if let Some(name) = self.parse_manifest_name(current) {
-                        self.packages.push(PackageInfo {
-                            name,
-                            root: current.to_path_buf(),
-                            trie: TrieNode::new(),
-                            total_files: 0,
-                            has_manifest: true, // Real package from manifest file
-                        });
+                    if has_manifest {
+                        seen.insert(current.to_path_buf());
+
+                        // Use directory name as package name - simple and universal
+                        if let Some(name) = current
+                            .file_name()
+                            .and_then(|n| n.to_str())
+                            .map(|s| s.to_string())
+                        {
+                            self.packages.push(PackageInfo {
+                                name,
+                                root: current.to_path_buf(),
+                                trie: TrieNode::new(),
+                                total_files: 0,
+                                has_manifest: true,
+                            });
+                        }
+                        break;
                     }
-                    break;
                 }
                 dir = current.parent();
             }
@@ -286,45 +294,6 @@ impl UnitMetaBuilder {
                 .count()
                 .cmp(&a.root.components().count())
         });
-    }
-
-    fn parse_manifest_name(&self, dir: &Path) -> Option<String> {
-        let content = std::fs::read_to_string(dir.join(self.manifest_name)).ok()?;
-
-        // Try JSON format first (package.json)
-        if self.manifest_name == "package.json" {
-            // Parse "name": "value" from JSON
-            let name_pos = content.find("\"name\"")?;
-            let after_name = &content[name_pos + 6..];
-            let colon_pos = after_name.find(':')?;
-            let after_colon = &after_name[colon_pos + 1..];
-            let start_quote = after_colon.find('"')?;
-            let value_start = &after_colon[start_quote + 1..];
-            let end_quote = value_start.find('"')?;
-            let value = &value_start[..end_quote];
-            Some(value.replace('@', "").replace('/', "_"))
-        } else if self.manifest_name == "Cargo.toml" {
-            // Parse TOML format (Cargo.toml)
-            let mut in_package = false;
-            for line in content.lines() {
-                let line = line.trim();
-                if line == "[package]" {
-                    in_package = true;
-                } else if line.starts_with('[') {
-                    in_package = false;
-                } else if in_package && line.starts_with("name") {
-                    return line
-                        .find('=')
-                        .map(|pos| line[pos + 1..].trim().trim_matches('"').to_string());
-                }
-            }
-            None
-        } else {
-            // Unknown manifest format - use directory name
-            dir.file_name()
-                .and_then(|n| n.to_str())
-                .map(|s| s.to_string())
-        }
     }
 
     // Step 2: Build Tries

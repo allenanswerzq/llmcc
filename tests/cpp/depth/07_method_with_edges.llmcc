@@ -1,0 +1,69 @@
+===============================================================================
+method-with-edges
+===============================================================================
+Test that methods inside structs are correctly classified as Method in block-graph.
+The block-graph shows method:6 and method:7 (not func:), proving the fix works.
+Note: arch-graph currently doesn't show method return/parameter type edges.
+lang: cpp
+
+--- file: sample/CMakeLists.txt ---
+cmake_minimum_required(VERSION 3.10)
+project(sample)
+
+--- file: sample/src/lib.cpp ---
+struct Data {
+    int value;
+};
+
+struct Processor {
+    Data data;
+
+    // Method that returns Data - creates edge from method to Data
+    Data getData() const {
+        return data;
+    }
+
+    // Method that takes Data as input - creates edge from Data to method
+    void setData(Data d) {
+        data = d;
+    }
+};
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.cpp)
+  (class:2 Data
+    (field:3 int @type int)
+  )
+  (class:4 Processor
+    (field:5 Data @type:2 Data)
+    (method:6 getData)
+    (method:7 setData
+      (parameter:8 d @type:2 Data)
+    )
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lib_cpp {
+    label="lib.cpp";
+    style=rounded;
+        bgcolor="#fafafa";
+
+    n2[label="Data", path="$TMP/sample/src/lib.cpp:1", sym_ty="Struct", shape=box];
+    n4[label="Processor", path="$TMP/sample/src/lib.cpp:5", sym_ty="Struct", shape=box];
+  }
+
+
+  n2 -> n4 [from="field_type", to="struct"];
+}
+

@@ -1,0 +1,60 @@
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#888888", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+
+  crate_ATen[label="ATen", path="/home/yibai/llmcc/sample/repos/pytorch/aten/src/ATen"];
+  crate_PYTORCH_QNNPACK[label="PYTORCH_QNNPACK", path="/home/yibai/llmcc/sample/repos/pytorch/aten/src/ATen/native/quantized/cpu/qnnpack"];
+  crate_autograd[label="autograd", path="/home/yibai/llmcc/sample/repos/pytorch/tools/autograd"];
+  crate_c10[label="c10", path="/home/yibai/llmcc/sample/repos/pytorch/c10"];
+  crate_core[label="core", path="/home/yibai/llmcc/sample/repos/pytorch/c10/core"];
+  crate_cuda[label="cuda", path="/home/yibai/llmcc/sample/repos/pytorch/c10/cuda"];
+  crate_headeronly[label="headeronly", path="/home/yibai/llmcc/sample/repos/pytorch/torch/headeronly"];
+  crate_model_tracer[label="model_tracer", path="/home/yibai/llmcc/sample/repos/pytorch/torch/csrc/jit/mobile/model_tracer"];
+  crate_perfkernels[label="perfkernels", path="/home/yibai/llmcc/sample/repos/pytorch/caffe2/perfkernels"];
+  crate_quantized[label="quantized", path="/home/yibai/llmcc/sample/repos/pytorch/aten/src/ATen/quantized"];
+  crate_serialize[label="serialize", path="/home/yibai/llmcc/sample/repos/pytorch/caffe2/serialize"];
+  crate_torch[label="torch", path="/home/yibai/llmcc/sample/repos/pytorch/torch"];
+  crate_unknown[label="unknown"];
+  crate_util[label="util", path="/home/yibai/llmcc/sample/repos/pytorch/c10/util"];
+
+  crate_ATen -> crate_core;
+  crate_ATen -> crate_headeronly;
+  crate_ATen -> crate_quantized;
+  crate_ATen -> crate_torch;
+  crate_ATen -> crate_unknown;
+  crate_ATen -> crate_util;
+  crate_PYTORCH_QNNPACK -> crate_ATen;
+  crate_PYTORCH_QNNPACK -> crate_quantized;
+  crate_autograd -> crate_ATen;
+  crate_autograd -> crate_torch;
+  crate_c10 -> crate_headeronly;
+  crate_c10 -> crate_torch;
+  crate_core -> crate_ATen;
+  crate_core -> crate_headeronly;
+  crate_core -> crate_torch;
+  crate_cuda -> crate_ATen;
+  crate_cuda -> crate_headeronly;
+  crate_cuda -> crate_torch;
+  crate_headeronly -> crate_util;
+  crate_model_tracer -> crate_ATen;
+  crate_perfkernels -> crate_ATen;
+  crate_quantized -> crate_torch;
+  crate_serialize -> crate_ATen;
+  crate_torch -> crate_ATen;
+  crate_torch -> crate_PYTORCH_QNNPACK;
+  crate_torch -> crate_core;
+  crate_torch -> crate_headeronly;
+  crate_torch -> crate_unknown;
+  crate_torch -> crate_util;
+  crate_util -> crate_ATen;
+  crate_util -> crate_torch;
+}

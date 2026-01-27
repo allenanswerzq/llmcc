@@ -47,7 +47,7 @@ class TimingResult:
 
             # Extract timing values using regex
             patterns = {
-                'files': r'Parsing total (\d+)',
+                'files': r'Parsing (\d+)',
                 'parse': r'Parsing & tree-sitter: ([0-9.]+)s',
                 'ir_symbols': r'IR build \+ Symbol collection: ([0-9.]+)s',
                 'binding': r'Symbol binding: ([0-9.]+)s',
