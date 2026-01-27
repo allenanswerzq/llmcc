@@ -1,0 +1,52 @@
+===============================================================================
+decorators
+===============================================================================
+Test that decorated classes and functions are captured correctly.
+lang: python
+
+--- file: sample/src/web.py ---
+
+from dataclasses import dataclass
+
+@dataclass
+class Point:
+    x: int
+    y: int
+
+def logger(func):
+    def wrapper(*args):
+        return func(*args)
+    return wrapper
+
+@logger
+def process(data):
+    return data
+
+class Handler:
+    @staticmethod
+    def handle_static():
+        pass
+
+    @classmethod
+    def handle_class(cls):
+        pass
+
+    @property
+    def name(self):
+        return "handler"
+
+--- expect:block-graph ---
+(root:1 web ($TMP/sample/src/web.py)
+  (class:2 Point
+    (field:3 x @type int)
+    (field:4 y @type int)
+  )
+  (func:5 logger)
+  (func:6 process)
+  (class:7 Handler
+    (method:8 handle_static)
+    (method:9 handle_class)
+    (method:10 name)
+  )
+)
+

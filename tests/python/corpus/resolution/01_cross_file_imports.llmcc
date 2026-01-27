@@ -1,0 +1,98 @@
+===============================================================================
+cross-file-import-basic
+===============================================================================
+Test basic cross-file imports.
+lang: python
+
+--- file: src/models.py ---
+class User:
+    name: str
+    email: str
+
+class Product:
+    id: int
+    name: str
+
+--- file: src/services.py ---
+from models import User, Product
+
+class UserService:
+    current_user: User
+
+    def get_user(self) -> User:
+        return User()
+
+def process_product(product: Product) -> bool:
+    return True
+
+--- expect:block-graph ---
+(root:1 models ($TMP/src/models.py)
+  (class:2 User
+    (field:3 name @type str)
+    (field:4 email @type str)
+  )
+  (class:5 Product
+    (field:6 id @type int)
+    (field:7 name @type str)
+  )
+)
+
+(root:8 services ($TMP/src/services.py)
+  (class:9 UserService
+    (field:10 current_user @type:2 User)
+    (method:11 get_user
+      (return:12 @type:2 User)
+      (@tdep:2 User)
+    )
+    (@tdep:2 User)
+  )
+  (func:13 process_product
+    (parameter:14 product @type:5 Product)
+    (return:15 @type bool)
+    (@tdep:5 Product)
+  )
+)
+
+
+===============================================================================
+cross-file-function-calls
+===============================================================================
+Test cross-file function call resolution.
+lang: python
+
+--- file: src/utils.py ---
+def helper(x: int) -> int:
+    return x * 2
+
+def validate(data: str) -> bool:
+    return len(data) > 0
+
+--- file: src/main.py ---
+from utils import helper, validate
+
+def process(value: int) -> int:
+    if validate(str(value)):
+        return helper(value)
+    return 0
+
+--- expect:block-graph ---
+(root:1 utils ($TMP/src/utils.py)
+  (func:2 helper
+    (parameter:3 x @type int)
+    (return:4 @type int)
+  )
+  (func:5 validate
+    (parameter:6 data @type str)
+    (return:7 @type bool)
+  )
+)
+
+(root:8 main ($TMP/src/main.py)
+  (func:9 process
+    (parameter:10 value @type int)
+    (return:11 @type int)
+    (@fdep:5 validate)
+    (@fdep:2 helper)
+  )
+)
+

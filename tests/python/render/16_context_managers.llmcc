@@ -1,0 +1,77 @@
+===============================================================================
+context-managers
+===============================================================================
+Test that context managers (with statements) are handled correctly.
+lang: python
+
+--- file: sample/src/resources.py ---
+
+class Connection:
+    host: str
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+class FileHandle:
+    path: str
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+def process_data(conn: Connection) -> str:
+    with conn as c:
+        return c.host
+
+def read_file(handle: FileHandle) -> str:
+    with handle:
+        return handle.path
+
+def multi_context(conn: Connection, handle: FileHandle) -> tuple:
+    with conn, handle:
+        return (conn.host, handle.path)
+
+--- expect:block-graph ---
+(root:1 resources ($TMP/sample/src/resources.py)
+  (class:2 Connection
+    (field:3 host @type str)
+    (method:4 __enter__)
+    (method:5 __exit__
+      (parameter:6 exc_type)
+      (parameter:7 exc_val)
+      (parameter:8 exc_tb)
+    )
+  )
+  (class:9 FileHandle
+    (field:10 path @type str)
+    (method:11 __enter__)
+    (method:12 __exit__
+      (parameter:13 exc_type)
+      (parameter:14 exc_val)
+      (parameter:15 exc_tb)
+    )
+  )
+  (func:16 process_data
+    (parameter:17 conn @type:2 Connection)
+    (return:18 @type str)
+    (@tdep:2 Connection)
+  )
+  (func:19 read_file
+    (parameter:20 handle @type:9 FileHandle)
+    (return:21 @type str)
+    (@tdep:9 FileHandle)
+  )
+  (func:22 multi_context
+    (parameter:23 conn @type:2 Connection)
+    (parameter:24 handle @type:9 FileHandle)
+    (return:25 @type tuple)
+    (@tdep:2 Connection)
+    (@tdep:9 FileHandle)
+  )
+)
+

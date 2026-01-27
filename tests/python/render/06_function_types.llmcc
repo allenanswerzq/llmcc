@@ -1,0 +1,56 @@
+===============================================================================
+function-types
+===============================================================================
+Test that function parameters and return types create edges.
+lang: python
+
+--- file: sample/src/funcs.py ---
+
+class Request:
+    path: str
+
+class Response:
+    body: str
+
+class Handler:
+    pass
+
+def handle_request(req: Request) -> Response:
+    return Response()
+
+def create_handler(name: str) -> Handler:
+    return Handler()
+
+def process(handler: Handler, request: Request) -> Response:
+    return Response()
+
+--- expect:block-graph ---
+(root:1 funcs ($TMP/sample/src/funcs.py)
+  (class:2 Request
+    (field:3 path @type str)
+  )
+  (class:4 Response
+    (field:5 body @type str)
+  )
+  (class:6 Handler)
+  (func:7 handle_request
+    (parameter:8 req @type:2 Request)
+    (return:9 @type:4 Response)
+    (@tdep:2 Request)
+    (@tdep:4 Response)
+  )
+  (func:10 create_handler
+    (parameter:11 name @type str)
+    (return:12 @type:6 Handler)
+    (@tdep:6 Handler)
+  )
+  (func:13 process
+    (parameter:14 handler @type:6 Handler)
+    (parameter:15 request @type:2 Request)
+    (return:16 @type:4 Response)
+    (@tdep:6 Handler)
+    (@tdep:2 Request)
+    (@tdep:4 Response)
+  )
+)
+

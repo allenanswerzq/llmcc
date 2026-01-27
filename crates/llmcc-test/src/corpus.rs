@@ -12,6 +12,8 @@ const CASE_BANNER: &str =
 fn detect_language(suite: &str) -> String {
     if suite.starts_with("typescript/") || suite.starts_with("ts/") {
         "typescript".to_string()
+    } else if suite.starts_with("python/") || suite.starts_with("py/") {
+        "python".to_string()
     } else if suite.starts_with("auto/") {
         "auto".to_string()
     } else {

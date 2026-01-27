@@ -1,0 +1,63 @@
+===============================================================================
+exception-handling
+===============================================================================
+Test that exception classes are captured.
+lang: python
+
+--- file: sample/src/errors.py ---
+
+class AppError(Exception):
+    message: str
+
+class ValidationError(AppError):
+    field: str
+
+class NotFoundError(AppError):
+    resource: str
+
+class Service:
+    def validate(self, data: dict) -> None:
+        if not data:
+            raise ValidationError()
+
+    def find(self, id: int) -> dict:
+        raise NotFoundError()
+
+def safe_process(service: Service, data: dict) -> bool:
+    try:
+        service.validate(data)
+        return True
+    except ValidationError:
+        return False
+
+--- expect:block-graph ---
+(root:1 errors ($TMP/sample/src/errors.py)
+  (class:2 AppError
+    (field:3 message @type str)
+    (@inherit Exception)
+  )
+  (class:4 ValidationError
+    (field:5 field @type str)
+    (@inherit:2 AppError)
+  )
+  (class:6 NotFoundError
+    (field:7 resource @type str)
+    (@inherit:2 AppError)
+  )
+  (class:8 Service
+    (method:9 validate
+      (parameter:10 data @type dict)
+    )
+    (method:11 find
+      (parameter:12 id @type int)
+      (return:13 @type dict)
+    )
+  )
+  (func:14 safe_process
+    (parameter:15 service @type:8 Service)
+    (parameter:16 data @type dict)
+    (return:17 @type bool)
+    (@tdep:8 Service)
+  )
+)
+

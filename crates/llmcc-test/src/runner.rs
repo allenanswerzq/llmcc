@@ -14,6 +14,7 @@ use llmcc_dot::{ComponentDepth, render_graph};
 use llmcc_error::{Error, ErrorKind, Result};
 
 use llmcc_cpp::LangCpp;
+use llmcc_py::LangPython;
 use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
 use llmcc_rust::LangRust;
 use llmcc_ts::LangTypeScript;
@@ -438,6 +439,7 @@ fn build_pipeline_summary(
         "rust" => collect_pipeline::<LangRust>(project.root(), &options)?,
         "typescript" | "ts" => collect_pipeline::<LangTypeScript>(project.root(), &options)?,
         "cpp" | "c++" | "c" => collect_pipeline::<LangCpp>(project.root(), &options)?,
+        "python" | "py" => collect_pipeline::<LangPython>(project.root(), &options)?,
         "auto" => collect_pipeline_auto(project.root(), &options)?,
         other => {
             return Err(Error::new(
@@ -1633,7 +1635,7 @@ fn strip_numeric_prefix_from_path(path: &str) -> String {
     path.to_string_lossy().to_string()
 }
 
-/// Auto-mode pipeline that processes both Rust and TypeScript files
+/// Auto-mode pipeline that processes Rust, TypeScript, and Python files
 /// and merges their architecture graphs.
 fn collect_pipeline_auto(
     project_root: &Path,
@@ -1643,6 +1645,7 @@ fn collect_pipeline_auto(
     // let each pipeline discover its own files to preserve logical path handling)
     let rust_files = discover_language_files::<LangRust>(project_root, options.parallel)?;
     let ts_files = discover_language_files::<LangTypeScript>(project_root, options.parallel)?;
+    let py_files = discover_language_files::<LangPython>(project_root, options.parallel)?;
 
     // We need to process each language separately and merge the arch graphs
     let mut arch_graphs: Vec<String> = Vec::new();
@@ -1674,6 +1677,26 @@ fn collect_pipeline_auto(
     // Process TypeScript files if any exist
     if !ts_files.is_empty() {
         let summary = collect_pipeline::<LangTypeScript>(project_root, options)?;
+        if let Some(graph) = summary.arch_graph_dot {
+            arch_graphs.push(graph);
+        }
+        if let Some(graph) = summary.arch_graph_depth_0 {
+            arch_graphs_d0.push(graph);
+        }
+        if let Some(graph) = summary.arch_graph_depth_1 {
+            arch_graphs_d1.push(graph);
+        }
+        if let Some(graph) = summary.arch_graph_depth_2 {
+            arch_graphs_d2.push(graph);
+        }
+        if let Some(graph) = summary.arch_graph_depth_3 {
+            arch_graphs_d3.push(graph);
+        }
+    }
+
+    // Process Python files if any exist
+    if !py_files.is_empty() {
+        let summary = collect_pipeline::<LangPython>(project_root, options)?;
         if let Some(graph) = summary.arch_graph_dot {
             arch_graphs.push(graph);
         }

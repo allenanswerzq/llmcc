@@ -1,0 +1,62 @@
+===============================================================================
+dataclass-protocol
+===============================================================================
+Test that dataclasses and protocols are captured.
+lang: python
+
+--- file: sample/src/protocols.py ---
+
+from dataclasses import dataclass
+from typing import Protocol
+
+class Comparable(Protocol):
+    def compare(self, other) -> int:
+        ...
+
+@dataclass
+class Point:
+    x: int
+    y: int
+
+    def compare(self, other: Point) -> int:
+        return self.x - other.x
+
+@dataclass
+class Rectangle:
+    origin: Point
+    width: int
+    height: int
+
+def sort_items(items: list, key: Comparable) -> list:
+    return sorted(items)
+
+--- expect:block-graph ---
+(root:1 protocols ($TMP/sample/src/protocols.py)
+  (class:2 Comparable
+    (method:3 compare
+      (return:4 @type int)
+    )
+  )
+  (class:5 Point
+    (field:6 x @type int)
+    (field:7 y @type int)
+    (method:8 compare
+      (parameter:9 other @type:5 Point)
+      (return:10 @type int)
+      (@tdep:5 Point)
+    )
+  )
+  (class:11 Rectangle
+    (field:12 origin @type:5 Point)
+    (field:13 width @type int)
+    (field:14 height @type int)
+    (@tdep:5 Point)
+  )
+  (func:15 sort_items
+    (parameter:16 items @type list)
+    (parameter:17 key @type:2 Comparable)
+    (return:18 @type list)
+    (@tdep:2 Comparable)
+  )
+)
+

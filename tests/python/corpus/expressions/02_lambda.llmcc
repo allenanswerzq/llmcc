@@ -1,0 +1,40 @@
+===============================================================================
+lambda-expressions
+===============================================================================
+Lambda expressions.
+lang: python
+
+--- file: src/lib.py ---
+def use_lambdas():
+    # Simple lambda
+    identity = lambda x: x
+    
+    # Multiple args
+    add = lambda a, b: a + b
+    
+    # With default
+    greet = lambda name="world": f"Hello, {name}"
+    
+    # Used immediately
+    result = (lambda x: x * 2)(5)
+    
+    return result
+
+def higher_order(items: list) -> list:
+    return list(map(lambda x: x * 2, items))
+
+class Processor:
+    transform = lambda self, x: x.upper()
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 use_lambdas)
+  (func:3 higher_order
+    (parameter:4 items @type list)
+    (return:5 @type list)
+  )
+  (class:6 Processor
+    (field:7 transform)
+  )
+)
+
