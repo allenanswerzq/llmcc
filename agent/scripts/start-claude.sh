@@ -19,7 +19,7 @@ fi
 # Configure Claude Code to use the Copilot API Bridge
 export ANTHROPIC_BASE_URL="http://${HOST_IP}:5168"
 # Use ANTHROPIC_AUTH_TOKEN (preferred for gateways) - bridge accepts any value
-export ANTHROPIC_AUTH_TOKEN="sk-copilot-bridge"
+#export ANTHROPIC_AUTH_TOKEN="sk-copilot-bridge"
 # Also set API_KEY as fallback
 export ANTHROPIC_API_KEY="sk-copilot-bridge"
 

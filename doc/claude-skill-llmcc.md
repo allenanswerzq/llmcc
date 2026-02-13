@@ -1,152 +1,189 @@
 ---
 name: llmcc
-description: "Use llmcc for any codebase question. Run llmcc graph FIRST, then TRUST THE GRAPH and answer. Do NOT read files to confirm what the graph already gives better information"
+description: "Use llmcc graph as a MAP to navigate codebases efficiently. For location questions, answer from graph. For comprehension questions, use graph to identify files, then read those files for implementation details."
 ---
 
-# llmcc: multi-depth architecture views for code understanding and generation in extremely fast speed
+# llmcc: Architecture graphs for fast codebase navigation
 
-llmcc builds a multi-depth architecture view that lets agents zoom out to see the big picture, zoom in to see exact symbols they need, such that agents can have a highly comprehensive understanding in very fast speed and token efficient, no complex RAG stuff, fully agentic method, its like grep but for architecture.
+llmcc builds architecture graphs that show symbols (types, functions) and their relationships. Use it as a map to navigate codebases efficiently instead of blind grep exploration.
 
-## 🎯 Target: 3 tools (ideal)
+## Depth Levels
 
-| Tool calls | When |
-|------------|------|
-| **3** | Graph answers the question → llmcc + read output + DONE |
-| **4-5** | Symbol missing from graph → explore subfolder |
-| >5 | only for stuff not in any graph, can use grep or go subfolder |
+| Depth | Perspective | Best for |
+|-------|-------------|----------|
+| 0 | Project | multi-workspace / repo-to-repo relationships |
+| 1 | Library/Crate | ownership boundaries, public API flow |
+| 2 | Module | subsystem structure, refactor planning |
+| 3 | File + symbol | implementation details, edit planning |
 
-## ⚠️ CRITICAL: TRUST THE GRAPH 100%
+Most tasks use depth 3. Use depth 1-2 for architecture overview.
 
-**The graph IS the definitive answer.** When you see a symbol with its `path` and relationships:
-- ✅ **Report it immediately** - that IS where it is, DONE
-- ✅ **Stop after the graph** - you have everything you need
+## How Graph Answers Questions Directly
 
-**STOP. DO NOT:**
-- ❌ Read files "to confirm" - the graph is correct
-- ❌ Read files "to see details" - file:line IS the detail
-- ❌ Grep "to double check" - completely redundant
-- ❌ Explore more - if graph answered, STOP IMMEDIATELY
+The graph shows top 200 PageRanked symbols with their relationships (edges).
 
-**The graph gives better information than reading files** because it shows relationships.
-Reading a file would give you LESS context, not more.
+### Task: "What depends on X?" / "What breaks if I remove X?"
+**Graph answers this DIRECTLY - DO NOT GREP**
 
-## WORKFLOW (follow strictly)
-
-**⚠️ ALWAYS use explicit full paths - NEVER use "." or "./"**
-This makes it clear exactly which folder llmcc is analyzing.
-
-### Step 1: Run llmcc on full repo
-```bash
-# Always use explicit path - NEVER use "."
-llmcc -d /path/to/repo --graph --depth 3 --lang rust --pagerank-top-k 200
+Look at edges pointing TO symbols in X:
+```dot
+n5[label="CoreEngine", path="core/engine.rs:10"]  # in core crate
+n12[label="Protocol", path="protocol/lib.rs:5"]    # in protocol crate
+n5 -> n12 [from="uses", to="type"]                 # core DEPENDS ON protocol
 ```
 
-### Step 2: Read graph → Answer IMMEDIATELY
+The edge `n5 -> n12` means CoreEngine uses Protocol. Count incoming edges to Protocol's symbols = count of dependents. **No grep needed.**
 
-**Graph has the symbol/relationship?** → **ANSWER NOW. STOP. DO NOT READ ANY FILES.**
+### Task: "Where is X defined?"
+**Graph answers this DIRECTLY - DO NOT GREP**
 
-The graph gives you: name, file path, line number, type, and all relationships.
-That is COMPLETE information. There is NOTHING more to learn from reading the file.
-The graph already extracted everything relevant.
+```dot
+n3[label="ToolRouter", path="src/router.rs:45", sym_ty="Struct"]
+```
 
-**WRONG ❌**: "I see `dispatch` at router.rs:100, let me read the file to confirm..."
-**RIGHT ✅**: "The graph shows `dispatch` at router.rs:100, here's the answer."
+Answer: "ToolRouter is at src/router.rs:45". Done. No file read needed.
 
-**Symbol NOT in graph?** → Step 3 (only if truly missing)
+### Task: "How does X work?" / "Trace flow from A to B"
+**Graph provides TARGETS - then read 2-4 files only**
 
-### Step 3: Run llmcc on a smaller folder (NOT grep!)
+1. Find X in graph, note its file path
+2. Follow edges to find related symbols (callers, callees)
+3. Read ONLY those 2-4 files
+4. Answer immediately - don't keep exploring
+
+## Workflow
+
+ALWAYS use explicit full paths - NEVER use "." or "./"
+
+### Step 1: Run llmcc on full repo
+
+```bash
+llmcc -d /path/to/repo --graph --depth 3 --lang <language> --pagerank-top-k 200
+```
+
+Language detection:
+- .rs files: --lang rust
+- .ts/.js files: --lang typescript
+- .cpp/.cc/.h files: --lang cpp
+
+### Step 2: Answer from graph OR read targeted files
+
+**CRITICAL DECISION TREE:**
+
+```
+Is the question about LOCATION or DEPENDENCIES?
+  YES → Answer from graph edges/paths. DO NOT read files. DO NOT grep. STOP.
+  NO → Continue below
+
+Is the question about HOW something works (implementation)?
+  YES → Graph tells you which 2-4 files to read. Read those ONLY. Then STOP.
+  NO → You probably don't need llmcc for this task.
+```
+
+**For dependency questions ("what uses X", "what breaks if X removed"):**
+1. Look at graph edges pointing TO symbols in X
+2. Each edge source = a dependent. List them.
+3. ANSWER IMMEDIATELY. You're done.
+4. DO NOT grep to "verify" - the graph IS the verification
+
+**For implementation questions ("how does X work"):**
+1. Find X in graph, note the file path
+2. Find 2-3 connected symbols, note their paths
+3. Read those 2-3 files ONLY
+4. ANSWER. Stop exploring.
+
+### Step 3: If symbol not in graph
 
 The graph shows top 200 PageRanked nodes. Less-central symbols may be filtered.
 
+Option A - Run llmcc on subfolder:
 ```bash
-# Use full path to the subfolder
 llmcc -d /path/to/repo/src/specific_folder --graph --depth 3 --lang rust --pagerank-top-k 200
 ```
 
-### Step 4: Last resort grep (rare)
-
-Only for constants/strings that don't appear in any graph:
+Option B - Grep as last resort (for constants, strings, peripheral symbols):
 ```bash
 grep -r "EXACT_NAME" /path/to/repo/src/
 ```
 
----
-
-## ⚠️ PageRank Filtering
-
-The graph shows the **top 200 most important** symbols. Less-central symbols may be filtered.
-
-**If what you need IS in the graph** → Answer immediately. No confirmation needed.
-
-**If what you need is NOT in the graph** → Run llmcc on a subfolder.
-
----
-
-## 🚫 NEVER DO THESE (CRITICAL)
-
-After running llmcc and getting the graph, NEVER:
-
-| Bad Pattern | Why It's Wrong | What To Do Instead |
-|-------------|----------------|-------------------|
-| ❌ Read files to "confirm" | Graph is 100% accurate | Answer from graph |
-| ❌ Read files for "more details" | Graph has file:line, that's all you need | Answer from graph |
-| ❌ Grep after llmcc | Redundant, wastes tokens | Answer from graph |
-| ❌ Glob after llmcc | Graph already shows structure | Answer from graph |
-| ❌ "Let me verify by reading" | NO. Graph IS the verification | Answer from graph |
-
-**If you find yourself thinking "let me confirm" or "let me read to be sure" - STOP.**
-**The graph already gave you the answer. Just report it.**
-
----
-
-### Reading Graph Output
+## Reading Graph Output
 
 ```dot
 n1[label="ToolRouter", path="src/router.rs:45", sym_ty="Struct"]
 n2[label="dispatch", path="src/router.rs:100", sym_ty="Function"]
-n1 -> n2 [from="method", to="impl"]      // dispatch is method of ToolRouter
+n1 -> n2 [from="method", to="impl"]
 ```
 
-- `label` = name, `path` = file:line, `sym_ty` = type
-- Edges show relationships: caller→callee, field→type, trait→impl
+- label = name, path = file:line, sym_ty = type
+- Edges show relationships: caller to callee, field to type, trait to impl
 
----
+## Anti-patterns - NEVER DO THESE
 
-## Example: Graph has everything (3-4 tools) ✅ IDEAL
+| Pattern | Why It Destroys Value |
+|---------|----------------------|
+| Run llmcc then grep for same info | Graph already has it! You just doubled the cost |
+| Grep each folder for "uses X" | Graph edges show uses. Zero greps needed |
+| "Verify" graph by reading files | Graph is ground truth from AST parsing |
+| Read 10+ files | You missed the point - graph tells you the 2-4 that matter |
+| Grep `X::` in every crate | Graph edges already show which crates use X |
 
-**Task**: "Find where tool execution happens"
+**The #1 failure mode:** Running llmcc, getting the graph, then falling back to grep-based exploration anyway. This is WORSE than not using llmcc at all (you pay the graph cost AND the grep cost).
 
-1. `llmcc --graph` → outputs graph
-2. Read graph output file
-3. **ANSWER**: "Tool execution is in `ToolRouter::dispatch` at router.rs:120, called by X, calls Y"
+Key insight: Graph is for NAVIGATION (picking targets), file reads are for UNDERSTANDING (getting details).
+STOP as soon as you can answer. Don't explore for exploration's sake.
 
-**DONE. 3-4 tools. NO file reads. Graph told us everything needed.**
+## Examples
 
-**BAD EXAMPLE ❌** (what NOT to do):
-1. `llmcc --graph` → outputs graph
-2. Read graph → see `ToolRouter::dispatch` at router.rs:120
-3. Read router.rs ← **WRONG! Why read when graph already told you?**
-4. Answer
+### Dependency question (2-3 tools) - NO GREP ALLOWED
 
-**This wastes tokens and time. The graph was already complete.**
+Task: "What would break if I removed the protocol crate?
+1. `llmcc --graph` outputs graph with edges
+2. Read graph - find all edges pointing TO protocol/* symbols:
+   ```
+   core::Engine -> protocol::Message      # core depends on protocol
+   cli::Args -> protocol::Config          # cli depends on protocol
+   tui::View -> protocol::Event           # tui depends on protocol
+   ```
+3. ANSWER: "core, cli, and tui crates depend on protocol. Removing it breaks those."
 
-## Example: Symbol missing (4 tools)
+**DONE in 3 tools.** No grep. No file reads. Graph edges ARE the dependency list.
 
-**Task**: "Find ErrorFormatter implementation"
+### Location question (2-3 tools) - NO GREP ALLOWED
 
-1. `llmcc -d /path/to/repo --graph` → ErrorFormatter not in top 200
-2. Graph shows `error/` folder → run `llmcc -d /path/to/repo/src/error --graph`
-3. Read subfolder graph → Found `ErrorFormatter` at `error/format.rs:50`
-4. **ANSWER**: "ErrorFormatter is at src/error/format.rs:50"
+Task: "Find where tool execution happens"
 
-**4 tools. Still NO file reads - subfolder graph was enough.**
+1. `llmcc --graph` outputs graph
+2. Read graph: `n5[label="ToolRouter::dispatch", path="router.rs:120"]`
+3. ANSWER: "Tool execution is in ToolRouter::dispatch at router.rs:120"
 
-## Example: Constant lookup - grep needed (4 tools)
+**DONE in 3 tools.** Graph has file:line. No need to read the file.
 
-**Task**: "Find TEST_CONSTANT value"
+### Comprehension question (4-6 tools) - READ ONLY GRAPH-IDENTIFIED FILES
 
-1. `llmcc -d /path/to/repo --graph` → constants not in graph
-2. `grep -r "TEST_CONSTANT" /path/to/repo/` → `tests/fixtures.rs:TEST_CONSTANT = 42`
-3. **ANSWER**: "TEST_CONSTANT = 42 in tests/fixtures.rs"
+Task: "How does context window management work?"
 
-**Grep justified - constants aren't in architecture graphs.**
+1. `llmcc --graph` shows: ContextManager at history.rs:18, TruncationPolicy at truncate.rs:14
+2. Graph edges show: Session → ContextManager → TruncationPolicy
+3. Read history.rs (has ContextManager) and truncate.rs (has TruncationPolicy) - **2 files only**
+4. ANSWER: explain the flow based on those 2 files
+
+**DONE in 5-6 tools.** Graph identified the 2 key files. Read only those. Stop.
+
+### Symbol not in main graph (5-6 tools)
+
+Task: "Find ErrorFormatter implementation"
+
+1. llmcc --graph on full repo - ErrorFormatter not in top 200
+2. Graph shows error/ folder exists - run llmcc on /path/to/repo/src/error
+3. Subfolder graph shows ErrorFormatter at error/format.rs:50
+4. ANSWER: "ErrorFormatter is at src/error/format.rs:50"
+
+### Constant lookup - grep needed (3-4 tools)
+
+Task: "Find TEST_CONSTANT value"
+
+1. llmcc --graph - constants not in architecture graph
+2. grep -r "TEST_CONSTANT" /path/to/repo/ shows tests/fixtures.rs:TEST_CONSTANT = 42
+3. ANSWER: "TEST_CONSTANT = 42 in tests/fixtures.rs"
+
+Grep justified - constants are not in architecture graphs.

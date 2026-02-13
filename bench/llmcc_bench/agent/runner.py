@@ -33,6 +33,9 @@ class RunContext:
     graph_context: Optional[str] = None
     """DOT graph content (for with_llmcc condition)."""
 
+    plan_context: Optional[str] = None
+    """Pre-computed reading plan (for with_plan condition)."""
+
     run_id: str = ""
     """Unique identifier for this run."""
 
@@ -395,6 +398,12 @@ DO NOT call tools silently. Always explain your thinking first, then call the to
 
         completion_instruction = f"""{debug_instruction}
 
+⚠️ AUTOMATED BENCHMARK - NO INTERACTION:
+- Do NOT use plan mode or create plans - just execute directly
+- Do NOT ask user questions or request clarification - make reasonable assumptions
+- Do NOT wait for user input or confirmation - proceed autonomously
+- Execute tools immediately without asking permission
+
 IMPORTANT: You MUST MUST end your response with one of these exact phrases:
 - "TASK COMPLETE" followed by a brief summary if successful
 - "TASK FAILED" followed by explanation if unsuccessful
@@ -406,7 +415,13 @@ Do NOT end with tool calls or partial work. Always provide a final text response
         repo_path_note = f"""
 ⚠️ IMPORTANT: The repository path is: {context.workspace_path} """
 
-        if graph_context:
+        # Build prompt based on condition
+        if context.plan_context:
+            # WITH_PLAN condition: use the pre-computed reading plan
+            prompt = f"""{context.plan_context}
+{repo_path_note}
+{completion_instruction}"""
+        elif graph_context:
             prompt = f"""{graph_context}
 
 Task: {context.task.description}
@@ -440,21 +455,35 @@ Workspace: {context.workspace_path}
 ⚠️ STEP-BY-STEP MODE: Before EVERY tool call, you MUST first write out your reasoning explaining what you're about to do and why.""" if context.debug else ""
 
         # Simple system prompt - llmcc skill handles exploration guidance
-        system_prompt = f"""You are a coding assistant completing benchmark tasks.{debug_system_note}
-CRITICAL: Every task response MUST end with either "TASK COMPLETE" or "TASK FAILED" in your final message.
-Never end a task with just tool calls - always provide a final summary with the completion status."""
+        system_prompt = f"""You are a coding assistant completing automated benchmark tasks.{debug_system_note}
+
+CRITICAL RULES FOR AUTOMATED BENCHMARKING:
+1. Do NOT use plan mode - execute tasks directly without planning steps
+2. Do NOT ask questions or request clarification - make reasonable assumptions and proceed
+3. Do NOT wait for user confirmation - you have full permission to read/write/execute
+4. Every task response MUST end with either "TASK COMPLETE" or "TASK FAILED" in your final message
+5. Never end a task with just tool calls - always provide a final summary with the completion status
+
+This is an automated benchmark - there is no human to interact with. Execute autonomously."""
 
         # Manage llmcc skill symlink based on condition
-        # The skill is at ~/.claude/skills/llmcc/SKILL.md -> <project>/doc/claude-skill-llmcc.md
-        skill_link = Path.home() / ".claude" / "skills" / "llmcc" / "SKILL.md"
+        # The skill must be in the TARGET repo's .claude/skills/ directory for Claude to load it
+        # Skill link: <target_repo>/.claude/skills/llmcc/SKILL.md -> <llmcc_project>/doc/claude-skill-llmcc.md
+        workspace_root = context.workspace_path
+        skill_link = workspace_root / ".claude" / "skills" / "llmcc" / "SKILL.md"
         # Get project root: runner.py is at bench/llmcc_bench/agent/runner.py
         project_root = Path(__file__).parent.parent.parent.parent
         skill_target = project_root / "doc" / "claude-skill-llmcc.md"
 
-        if context.condition == Condition.BASELINE:
-            # Remove symlink for baseline so Claude can't use the skill
+        if context.condition == Condition.BASELINE or context.condition == Condition.WITH_PLAN:
+            # Remove symlink for baseline/with_plan so Claude can't use the skill
+            # For WITH_PLAN: the plan already comes from llmcc analysis, no need to run it again
             if skill_link.is_symlink():
                 skill_link.unlink()
+            # Also remove the skills directory if empty
+            skill_dir = skill_link.parent
+            if skill_dir.exists() and not any(skill_dir.iterdir()):
+                skill_dir.rmdir()
         else:
             # Ensure symlink exists for with_llmcc condition
             if not skill_link.exists():
@@ -517,9 +546,26 @@ Never end a task with just tool calls - always provide a final summary with the 
                 last_usage: Dict[str, int] = {"input_tokens": 0, "output_tokens": 0}
                 final_answer = ""
                 debug_mode = context.debug
+                idle_timeout = 120.0  # 2 minutes without output = stuck
+                last_activity = time.time()
 
                 while True:
-                    line = await process.stdout.readline()
+                    try:
+                        line = await asyncio.wait_for(
+                            process.stdout.readline(),
+                            timeout=30.0  # Check every 30s
+                        )
+                        last_activity = time.time()
+                    except asyncio.TimeoutError:
+                        # Check if we've been idle too long
+                        idle_time = time.time() - last_activity
+                        if idle_time > idle_timeout:
+                            last_error = f"No output for {idle_time:.0f}s, assuming stuck"
+                            collector.record_error(last_error)
+                            print(f"      ⚠️ {last_error}")
+                            break
+                        # Otherwise continue waiting
+                        continue
                     if not line:
                         break
 
@@ -563,20 +609,50 @@ Never end a task with just tool calls - always provide a final summary with the 
             try:
                 await asyncio.wait_for(read_stream(), timeout=self.timeout)
             except asyncio.TimeoutError:
-                process.kill()
                 last_error = f"Timeout after {self.timeout}s"
                 collector.record_error(last_error)
+                print(f"      ⚠️ {last_error}")
+            except asyncio.CancelledError:
+                last_error = "Task cancelled"
+                collector.record_error(last_error)
+                print(f"      ⚠️ {last_error}")
+                raise  # Re-raise to propagate cancellation
+            finally:
+                # Ensure process is terminated - use sync kill to avoid async issues during cleanup
+                if process.returncode is None:
+                    try:
+                        process.kill()
+                    except ProcessLookupError:
+                        pass  # Already dead
+                    try:
+                        # Use a shield to protect wait() from cancellation
+                        await asyncio.shield(asyncio.wait_for(process.wait(), timeout=5.0))
+                    except (asyncio.TimeoutError, asyncio.CancelledError):
+                        pass  # Best effort cleanup
 
-            await process.wait()
+            if process.returncode is None:
+                try:
+                    await asyncio.wait_for(process.wait(), timeout=2.0)
+                except asyncio.TimeoutError:
+                    pass
 
             if process.returncode != 0:
-                stderr = await process.stderr.read()
-                last_error = stderr.decode()[:500]
-                collector.record_error(last_error)
+                stderr = await process.stderr.read() if process.stderr else b""
+                last_error = stderr.decode()[:500] if stderr else ""
+                if last_error:
+                    collector.record_error(last_error)
 
         except FileNotFoundError:
             last_error = "claude command not found. Install Claude Code first."
             collector.record_error(last_error)
+        except asyncio.CancelledError:
+            # Clean up subprocess on cancellation
+            if 'process' in locals() and process.returncode is None:
+                try:
+                    process.kill()
+                except ProcessLookupError:
+                    pass
+            raise
         except Exception as e:
             last_error = str(e)
             collector.record_error(last_error)
@@ -1047,7 +1123,7 @@ CRITICAL: End every response with "TASK COMPLETE" or "TASK FAILED"."""
             prompt_input = f"{prompt}\n"
 
             async def read_output():
-                nonlocal task_completed, final_answer
+                nonlocal task_completed, final_answer, last_error
                 output_lines = []
                 waiting_for_prompt = True
                 response_started = False
@@ -1092,7 +1168,9 @@ CRITICAL: End every response with "TASK COMPLETE" or "TASK FAILED"."""
                                 pass
                             # Continue reading to get "Session saved" etc
                             continue
-                        elif idle_count >= 30:  # 60 second total timeout for response
+                        elif idle_count >= 30:  # 150 second total timeout for response
+                            last_error = f"No output for {idle_count * 5}s, assuming stuck"
+                            print(f"      ⚠️ {last_error}")
                             break
                         continue
 
@@ -1157,21 +1235,49 @@ CRITICAL: End every response with "TASK COMPLETE" or "TASK FAILED"."""
                 # Read output (will send /exit when response is complete)
                 await asyncio.wait_for(read_output(), timeout=self.timeout)
             except asyncio.TimeoutError:
-                process.kill()
                 last_error = f"Timeout after {self.timeout}s"
                 collector.record_error(last_error)
+                print(f"      ⚠️ {last_error}")
+            except asyncio.CancelledError:
+                last_error = "Task cancelled"
+                collector.record_error(last_error)
+                print(f"      ⚠️ {last_error}")
+                raise
+            finally:
+                # Ensure process is terminated - use sync kill to avoid async issues
+                if process.returncode is None:
+                    try:
+                        process.kill()
+                    except ProcessLookupError:
+                        pass
+                    try:
+                        await asyncio.shield(asyncio.wait_for(process.wait(), timeout=5.0))
+                    except (asyncio.TimeoutError, asyncio.CancelledError):
+                        pass
 
-            await process.wait()
+            if process.returncode is None:
+                try:
+                    await asyncio.wait_for(process.wait(), timeout=2.0)
+                except asyncio.TimeoutError:
+                    pass
 
             if process.returncode != 0:
-                stderr = await process.stderr.read()
-                last_error = stderr.decode()[:500]
+                stderr = await process.stderr.read() if process.stderr else b""
+                last_error = stderr.decode()[:500] if stderr else ""
                 if last_error:
                     collector.record_error(last_error)
 
         except FileNotFoundError:
             last_error = f"llcraft not found at {llcraft_path}. Run 'npm run build' in agent/llcraft first."
             collector.record_error(last_error)
+        except asyncio.CancelledError:
+            # Clean up subprocess on cancellation
+            if 'process' in locals() and process.returncode is None:
+                try:
+                    process.kill()
+                except ProcessLookupError:
+                    pass
+            raise
         except Exception as e:
             last_error = str(e)
             collector.record_error(last_error)

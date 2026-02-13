@@ -12,6 +12,7 @@ class Condition(str, Enum):
     """Experiment condition."""
     BASELINE = "baseline"
     WITH_LLMCC = "with_llmcc"
+    WITH_PLAN = "with_plan"  # AI planner generates reading plan from graph
 
 
 @dataclass

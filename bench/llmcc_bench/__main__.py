@@ -215,6 +215,10 @@ def cmd_compare(args, config: Config) -> int:
         conditions = [Condition.BASELINE]
     elif args.llmcc_only:
         conditions = [Condition.WITH_LLMCC]
+    elif getattr(args, 'plan_only', False):
+        conditions = [Condition.WITH_PLAN]
+    elif getattr(args, 'with_plan', False):
+        conditions = [Condition.BASELINE, Condition.WITH_PLAN]
 
     # Determine repo and tasks
     if args.task:
@@ -483,6 +487,16 @@ def main() -> int:
         "--llmcc-only",
         action="store_true",
         help="Only run with_llmcc condition",
+    )
+    compare_parser.add_argument(
+        "--with-plan",
+        action="store_true",
+        help="Run with_plan condition (AI planner generates navigation plan from graph)",
+    )
+    compare_parser.add_argument(
+        "--plan-only",
+        action="store_true",
+        help="Only run with_plan condition",
     )
     compare_parser.add_argument(
         "--runner",
