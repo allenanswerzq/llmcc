@@ -24,6 +24,10 @@ pub trait HirVisitor<'v> {
         self.visit_children(unit, node, parent);
     }
 
+    fn visit_comment(&mut self, unit: CompileUnit<'v>, node: HirNode<'v>, parent: BlockId) {
+        self.visit_children(unit, node, parent);
+    }
+
     fn visit_internal(&mut self, unit: CompileUnit<'v>, node: HirNode<'v>, parent: BlockId) {
         self.visit_children(unit, node, parent);
     }
@@ -41,6 +45,7 @@ pub trait HirVisitor<'v> {
             HirKind::File => self.visit_file(unit, node, parent),
             HirKind::Scope => self.visit_scope(unit, node, parent),
             HirKind::Text => self.visit_text(unit, node, parent),
+            HirKind::Comment => self.visit_comment(unit, node, parent),
             HirKind::Internal => self.visit_internal(unit, node, parent),
             HirKind::Undefined => self.visit_undefined(unit, node, parent),
             HirKind::Identifier => self.visit_ident(unit, node, parent),

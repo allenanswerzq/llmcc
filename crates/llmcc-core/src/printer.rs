@@ -673,8 +673,10 @@ fn render_node_compact(
 
     for child in &node.children {
         let mut child_line = format!("({})", child.label);
-        if config.include_line_info && child.line_info.is_some() {
-            child_line.push_str(&format!(" {}", child.line_info.as_ref().unwrap()));
+        if let Some(ref info) = child.line_info
+            && config.include_line_info
+        {
+            child_line.push_str(&format!(" {info}"));
         }
         line.push_str(&format!(" {child_line}"));
     }

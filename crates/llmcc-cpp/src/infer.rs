@@ -105,7 +105,7 @@ fn infer_type_impl<'tcx>(
             .child_by_field(unit, LangCpp::field_function)
             .and_then(|func_node| infer_type_impl(unit, scopes, &func_node, depth + 1))
             .and_then(|sym| {
-                if sym.kind() == SymKind::Function
+                if matches!(sym.kind(), SymKind::Function | SymKind::Method)
                     && let Some(ret_id) = sym.type_of()
                 {
                     return unit.opt_get_symbol(ret_id);
@@ -115,6 +115,10 @@ fn infer_type_impl<'tcx>(
 
         // New expression: new Type()
         LangCpp::new_expression => {
+            if let Some(type_node) = node.child_by_field(unit, LangCpp::field_type) {
+                return infer_type_impl(unit, scopes, &type_node, depth + 1);
+            }
+
             // Get the first child which is the type being allocated
             for child in node.children(unit) {
                 if !child.is_trivia()
@@ -142,12 +146,26 @@ fn infer_type_impl<'tcx>(
         }
 
         // Conditional expression: cond ? a : b
-        LangCpp::conditional_expression => node
-            .child_by_field(unit, LangCpp::field_consequence)
-            .and_then(|conseq_node| infer_type_impl(unit, scopes, &conseq_node, depth + 1)),
+        LangCpp::conditional_expression => {
+            if let Some(conseq_node) = node.child_by_field(unit, LangCpp::field_consequence)
+                && let Some(sym) = infer_type_impl(unit, scopes, &conseq_node, depth + 1)
+            {
+                return Some(sym);
+            }
+
+            if let Some(alt_node) = node.child_by_field(unit, LangCpp::field_alternative) {
+                return infer_type_impl(unit, scopes, &alt_node, depth + 1);
+            }
+
+            None
+        }
 
         // Cast expression: (Type)value
         LangCpp::cast_expression => {
+            if let Some(type_node) = node.child_by_field(unit, LangCpp::field_type) {
+                return infer_type_impl(unit, scopes, &type_node, depth + 1);
+            }
+
             // First child should be the type
             for child in node.children(unit) {
                 if !child.is_trivia() && child.kind() != HirKind::Text {
@@ -315,6 +333,21 @@ fn infer_qualified_identifier<'tcx>(
     let full_name = unit.hir_text(node);
     if let Some(sym) = scopes.lookup_symbol(&full_name, SYM_KIND_TYPES) {
         return Some(sym);
+    }
+
+    if let Some(sym) = scopes.lookup_global(&full_name, SYM_KIND_TYPES) {
+        return Some(sym);
+    }
+
+    if let Some(name_node) = node.child_by_field(unit, LangCpp::field_name)
+        && let Some(ident) = name_node.find_ident(unit)
+    {
+        if let Some(sym) = scopes.lookup_symbol(ident.name, SYM_KIND_TYPES) {
+            return Some(sym);
+        }
+        if let Some(sym) = scopes.lookup_global(ident.name, SYM_KIND_TYPES) {
+            return Some(sym);
+        }
     }
 
     None

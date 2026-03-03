@@ -1,0 +1,70 @@
+===============================================================================
+method-chain-field-resolution
+===============================================================================
+Method call return-type propagation for chained field access.
+lang: cpp
+
+--- file: src/lib.cpp ---
+struct Meta {
+    int code;
+};
+
+struct Service {
+    Meta get_meta() { return Meta{}; }
+};
+
+int read_code(Service svc) {
+    return svc.get_meta().code;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.cpp)
+  (class:2 Meta
+    (field:3 int @type int)
+  )
+  (class:4 Service
+    (method:5 get_meta)
+  )
+  (func:6 read_code
+    (parameter:7 svc @type:4 Service)
+  )
+)
+
+--- expect:symbols ---
+u0:0  | Primitive | int       | [global]
+u0:1  | Primitive | short     | [global]
+u0:2  | Primitive | long      | [global]
+u0:3  | Primitive | char      | [global]
+u0:4  | Primitive | signed    | [global]
+u0:5  | Primitive | unsigned  | [global]
+u0:6  | Primitive | int8_t    | [global]
+u0:7  | Primitive | int16_t   | [global]
+u0:8  | Primitive | int32_t   | [global]
+u0:9  | Primitive | int64_t   | [global]
+u0:10 | Primitive | uint8_t   | [global]
+u0:11 | Primitive | uint16_t  | [global]
+u0:12 | Primitive | uint32_t  | [global]
+u0:13 | Primitive | uint64_t  | [global]
+u0:14 | Primitive | size_t    | [global]
+u0:15 | Primitive | ssize_t   | [global]
+u0:16 | Primitive | ptrdiff_t | [global]
+u0:17 | Primitive | intptr_t  | [global]
+u0:18 | Primitive | uintptr_t | [global]
+u0:19 | Primitive | float     | [global]
+u0:20 | Primitive | double    | [global]
+u0:21 | Primitive | bool      | [global]
+u0:22 | Primitive | _Bool     | [global]
+u0:23 | Primitive | void      | [global]
+u0:24 | Primitive | wchar_t   | [global]
+u0:25 | Primitive | char16_t  | [global]
+u0:26 | Primitive | char32_t  | [global]
+u0:27 | Primitive | char8_t   | [global]
+u0:28 | Primitive | auto      | [global]
+u0:29 | Primitive | nullptr_t | [global]
+u0:30 | File      | lib       | [global]
+u0:31 | Struct    | Meta      | [global]
+u0:32 | Field     | code      |
+u0:33 | Struct    | Service   | [global]
+u0:34 | Method    | get_meta  |
+u0:35 | Function  | read_code | [global]
+u0:36 | Variable  | svc       |
