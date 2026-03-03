@@ -127,6 +127,24 @@ impl<'tcx> BinderVisitor<'tcx> {
 
         None
     }
+
+    fn bind_identifier_with_kinds(
+        &self,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        kinds: SymKindSet,
+    ) {
+        let ident = node.as_ident().unwrap();
+        if let Some(existing) = ident.opt_symbol()
+            && existing.kind().is_resolved()
+        {
+            return;
+        }
+
+        if let Some(symbol) = scopes.lookup_symbol(ident.name, kinds) {
+            ident.set_symbol(symbol);
+        }
+    }
 }
 
 impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
@@ -187,16 +205,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
-        let ident = node.as_ident().unwrap();
-        if let Some(existing) = ident.opt_symbol()
-            && existing.kind().is_resolved()
-        {
-            return;
-        }
-
-        if let Some(symbol) = scopes.lookup_symbol(ident.name, SYM_KIND_ALL) {
-            ident.set_symbol(symbol);
-        }
+        self.bind_identifier_with_kinds(node, scopes, SYM_KIND_ALL);
     }
 
     // Type identifier binding
@@ -208,16 +217,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
-        let ident = node.as_ident().unwrap();
-        if let Some(existing) = ident.opt_symbol()
-            && existing.kind().is_resolved()
-        {
-            return;
-        }
-
-        if let Some(symbol) = scopes.lookup_symbol(ident.name, SYM_KIND_TYPES) {
-            ident.set_symbol(symbol);
-        }
+        self.bind_identifier_with_kinds(node, scopes, SYM_KIND_TYPES);
     }
 
     // Primitive type (int, char, double, etc.)

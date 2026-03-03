@@ -175,6 +175,28 @@ impl<'tcx> CollectorVisitor<'tcx> {
         scopes.pop_until(depth);
     }
 
+    fn visit_with_fresh_scope(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+        on_enter: impl FnOnce(&mut Self, &CompileUnit<'tcx>, &HirNode<'tcx>, &mut CollectorScopes<'tcx>),
+    ) {
+        if let Some(sn) = node.as_scope() {
+            let scope = unit.cc.alloc_scope(node.id());
+            sn.set_scope(scope);
+            on_enter(self, unit, node, scopes);
+
+            scopes.push_scope(scope);
+            self.visit_children(unit, node, scopes, scope, parent);
+            scopes.pop_scope();
+        } else {
+            self.visit_children(unit, node, scopes, namespace, parent);
+        }
+    }
+
     /// Extract the name from a declarator (handles nested declarators like pointers, references)
     fn get_declarator_name<'a>(
         &self,
@@ -603,16 +625,15 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
-        let Some(sn) = node.as_scope() else { return };
+        let Some(sn) = node.as_scope() else {
+            self.visit_children(unit, node, scopes, _namespace, _parent);
+            return;
+        };
 
         // Get namespace name from the 'name' field
         let Some(name_ident) = node.ident_by_field(unit, LangCpp::field_name) else {
             // Anonymous namespace - still need to set up scope
-            let scope = unit.cc.alloc_scope(node.id());
-            sn.set_scope(scope);
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, None);
-            scopes.pop_scope();
+            self.visit_with_fresh_scope(unit, node, scopes, _namespace, None, |_s, _u, _n, _sc| {});
             return;
         };
 
@@ -620,11 +641,14 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
             Some(s) => s,
             None => {
                 // Still need to set up scope even if symbol creation failed
-                let scope = unit.cc.alloc_scope(node.id());
-                sn.set_scope(scope);
-                scopes.push_scope(scope);
-                self.visit_children(unit, node, scopes, scope, None);
-                scopes.pop_scope();
+                self.visit_with_fresh_scope(
+                    unit,
+                    node,
+                    scopes,
+                    _namespace,
+                    None,
+                    |_s, _u, _n, _sc| {},
+                );
                 return;
             }
         };
@@ -650,11 +674,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
 
         let Some(name_ident) = name_ident else {
             // Anonymous class/struct - still need to set up scope for nested members
-            let scope = unit.cc.alloc_scope(node.id());
-            sn.set_scope(scope);
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, None);
-            scopes.pop_scope();
+            self.visit_with_fresh_scope(unit, node, scopes, _namespace, None, |_s, _u, _n, _sc| {});
             return;
         };
 
@@ -662,11 +682,14 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
             Some(s) => s,
             None => {
                 // Still need to set up scope even if symbol creation failed
-                let scope = unit.cc.alloc_scope(node.id());
-                sn.set_scope(scope);
-                scopes.push_scope(scope);
-                self.visit_children(unit, node, scopes, scope, None);
-                scopes.pop_scope();
+                self.visit_with_fresh_scope(
+                    unit,
+                    node,
+                    scopes,
+                    _namespace,
+                    None,
+                    |_s, _u, _n, _sc| {},
+                );
                 return;
             }
         };
@@ -717,11 +740,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
 
         let Some(name_ident) = node.ident_by_field(unit, LangCpp::field_name) else {
             // Anonymous enum - still need to set up scope for nested enumerators
-            let scope = unit.cc.alloc_scope(node.id());
-            sn.set_scope(scope);
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, None);
-            scopes.pop_scope();
+            self.visit_with_fresh_scope(unit, node, scopes, _namespace, None, |_s, _u, _n, _sc| {});
             return;
         };
 
@@ -729,11 +748,14 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
             Some(s) => s,
             None => {
                 // Still need to set up scope even if symbol creation failed
-                let scope = unit.cc.alloc_scope(node.id());
-                sn.set_scope(scope);
-                scopes.push_scope(scope);
-                self.visit_children(unit, node, scopes, scope, None);
-                scopes.pop_scope();
+                self.visit_with_fresh_scope(
+                    unit,
+                    node,
+                    scopes,
+                    _namespace,
+                    None,
+                    |_s, _u, _n, _sc| {},
+                );
                 return;
             }
         };
@@ -782,11 +804,14 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
         // Get declarator which contains the function name
         let Some(decl_node) = node.child_by_field(unit, LangCpp::field_declarator) else {
             // No declarator, still need to visit children to set up nested scopes
-            let scope = unit.cc.alloc_scope(node.id());
-            sn.set_scope(scope);
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
+            self.visit_with_fresh_scope(
+                unit,
+                node,
+                scopes,
+                _namespace,
+                parent,
+                |_s, _u, _n, _sc| {},
+            );
             return;
         };
 
@@ -797,11 +822,14 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
 
         let Some(name_ident) = name_ident else {
             // Still visit children to set up nested scopes even without a name
-            let scope = unit.cc.alloc_scope(node.id());
-            sn.set_scope(scope);
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
+            self.visit_with_fresh_scope(
+                unit,
+                node,
+                scopes,
+                _namespace,
+                parent,
+                |_s, _u, _n, _sc| {},
+            );
             return;
         };
 
@@ -910,16 +938,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(sn) = node.as_scope() {
-            let scope = unit.cc.alloc_scope(node.id());
-            sn.set_scope(scope);
-
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
-        }
+        self.visit_with_fresh_scope(unit, node, scopes, namespace, parent, |_s, _u, _n, _sc| {});
     }
 
     // Declaration (variable declarations, function declarations/prototypes)
@@ -1097,16 +1116,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(sn) = node.as_scope() {
-            let scope = unit.cc.alloc_scope(node.id());
-            sn.set_scope(scope);
-
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
-        }
+        self.visit_with_fresh_scope(unit, node, scopes, namespace, parent, |_s, _u, _n, _sc| {});
     }
 
     // Function declarator (nested within function_definition, creates its own scope for parameters)
@@ -1118,16 +1128,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(sn) = node.as_scope() {
-            let scope = unit.cc.alloc_scope(node.id());
-            sn.set_scope(scope);
-
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
-        }
+        self.visit_with_fresh_scope(unit, node, scopes, namespace, parent, |_s, _u, _n, _sc| {});
     }
 
     // Template function
@@ -1139,16 +1140,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(sn) = node.as_scope() {
-            let scope = unit.cc.alloc_scope(node.id());
-            sn.set_scope(scope);
-
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
-        }
+        self.visit_with_fresh_scope(unit, node, scopes, namespace, parent, |_s, _u, _n, _sc| {});
     }
 
     // Template method
@@ -1160,16 +1152,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(sn) = node.as_scope() {
-            let scope = unit.cc.alloc_scope(node.id());
-            sn.set_scope(scope);
-
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
-        }
+        self.visit_with_fresh_scope(unit, node, scopes, namespace, parent, |_s, _u, _n, _sc| {});
     }
 
     // Type parameter declaration (template<typename T>)
@@ -1181,23 +1164,21 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(sn) = node.as_scope() {
-            let scope = unit.cc.alloc_scope(node.id());
-            sn.set_scope(scope);
-
-            // Register the type parameter as a symbol
-            if let Some(ident) = node.find_ident(unit)
-                && let Some(sym) = scopes.lookup_or_insert(ident.name, node, SymKind::TypeParameter)
-            {
-                ident.set_symbol(sym);
-            }
-
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
-        }
+        self.visit_with_fresh_scope(
+            unit,
+            node,
+            scopes,
+            namespace,
+            parent,
+            |_, unit, node, scopes| {
+                if let Some(ident) = node.find_ident(unit)
+                    && let Some(sym) =
+                        scopes.lookup_or_insert(ident.name, node, SymKind::TypeParameter)
+                {
+                    ident.set_symbol(sym);
+                }
+            },
+        );
     }
 
     // Variadic type parameter declaration (template<typename... Args>)
@@ -1209,23 +1190,21 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(sn) = node.as_scope() {
-            let scope = unit.cc.alloc_scope(node.id());
-            sn.set_scope(scope);
-
-            // Register the type parameter as a symbol
-            if let Some(ident) = node.find_ident(unit)
-                && let Some(sym) = scopes.lookup_or_insert(ident.name, node, SymKind::TypeParameter)
-            {
-                ident.set_symbol(sym);
-            }
-
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
-        }
+        self.visit_with_fresh_scope(
+            unit,
+            node,
+            scopes,
+            namespace,
+            parent,
+            |_, unit, node, scopes| {
+                if let Some(ident) = node.find_ident(unit)
+                    && let Some(sym) =
+                        scopes.lookup_or_insert(ident.name, node, SymKind::TypeParameter)
+                {
+                    ident.set_symbol(sym);
+                }
+            },
+        );
     }
 
     // Optional type parameter declaration (C++ default template types)
@@ -1237,23 +1216,21 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(sn) = node.as_scope() {
-            let scope = unit.cc.alloc_scope(node.id());
-            sn.set_scope(scope);
-
-            // Register the type parameter as a symbol
-            if let Some(ident) = node.find_ident(unit)
-                && let Some(sym) = scopes.lookup_or_insert(ident.name, node, SymKind::TypeParameter)
-            {
-                ident.set_symbol(sym);
-            }
-
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
-        }
+        self.visit_with_fresh_scope(
+            unit,
+            node,
+            scopes,
+            namespace,
+            parent,
+            |_, unit, node, scopes| {
+                if let Some(ident) = node.find_ident(unit)
+                    && let Some(sym) =
+                        scopes.lookup_or_insert(ident.name, node, SymKind::TypeParameter)
+                {
+                    ident.set_symbol(sym);
+                }
+            },
+        );
     }
 
     // Template template parameter declaration
@@ -1265,23 +1242,21 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(sn) = node.as_scope() {
-            let scope = unit.cc.alloc_scope(node.id());
-            sn.set_scope(scope);
-
-            // Register the template template parameter as a symbol
-            if let Some(ident) = node.find_ident(unit)
-                && let Some(sym) = scopes.lookup_or_insert(ident.name, node, SymKind::TypeParameter)
-            {
-                ident.set_symbol(sym);
-            }
-
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
-        }
+        self.visit_with_fresh_scope(
+            unit,
+            node,
+            scopes,
+            namespace,
+            parent,
+            |_, unit, node, scopes| {
+                if let Some(ident) = node.find_ident(unit)
+                    && let Some(sym) =
+                        scopes.lookup_or_insert(ident.name, node, SymKind::TypeParameter)
+                {
+                    ident.set_symbol(sym);
+                }
+            },
+        );
     }
 
     // Explicit object parameter declaration (C++23 deducing this)
@@ -1293,16 +1268,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(sn) = node.as_scope() {
-            let scope = unit.cc.alloc_scope(node.id());
-            sn.set_scope(scope);
-
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
-        }
+        self.visit_with_fresh_scope(unit, node, scopes, namespace, parent, |_s, _u, _n, _sc| {});
     }
 
     // Field declaration list (class body)
@@ -1314,16 +1280,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(sn) = node.as_scope() {
-            let scope = unit.cc.alloc_scope(node.id());
-            sn.set_scope(scope);
-
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
-        }
+        self.visit_with_fresh_scope(unit, node, scopes, namespace, parent, |_s, _u, _n, _sc| {});
     }
 
     // Catch clause
@@ -1335,16 +1292,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(sn) = node.as_scope() {
-            let scope = unit.cc.alloc_scope(node.id());
-            sn.set_scope(scope);
-
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
-        }
+        self.visit_with_fresh_scope(unit, node, scopes, namespace, parent, |_s, _u, _n, _sc| {});
     }
 
     // Using declaration
@@ -1356,16 +1304,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(sn) = node.as_scope() {
-            let scope = unit.cc.alloc_scope(node.id());
-            sn.set_scope(scope);
-
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
-        }
+        self.visit_with_fresh_scope(unit, node, scopes, namespace, parent, |_s, _u, _n, _sc| {});
     }
 
     // Requires expression (C++20)
@@ -1377,16 +1316,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(sn) = node.as_scope() {
-            let scope = unit.cc.alloc_scope(node.id());
-            sn.set_scope(scope);
-
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
-        }
+        self.visit_with_fresh_scope(unit, node, scopes, namespace, parent, |_s, _u, _n, _sc| {});
     }
 
     // Module declaration (C++20)
