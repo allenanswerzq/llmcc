@@ -3,7 +3,7 @@
  * Supports both Anthropic API and OpenAI-compatible APIs (like Copilot bridge)
  * With tool calling support including browser tools
  */
-import { builtinTools, executeTool } from './tools.js';
+import { builtinTools, executeTool, llmccTool } from './tools.js';
 import { browserTools, isBrowserTool, executeBrowserTool } from './browser.js';
 /**
  * Call API - auto-detects Anthropic vs OpenAI format based on URL
@@ -34,6 +34,9 @@ export async function callAPI(messages, config, onToolCall) {
 async function callOpenAIAPIWithTools(messages, config, onToolCall) {
     // Collect available tools
     const availableTools = [...builtinTools];
+    if (config.llmcc) {
+        availableTools.push(llmccTool);
+    }
     if (config.chrome) {
         availableTools.push(...browserTools);
     }
@@ -62,7 +65,7 @@ Only use tools when necessary to complete the user's request.`;
             content: m.content,
         })),
     ];
-    const maxIterations = 10;
+    const maxIterations = 50; // Increased for complex tasks
     let iterations = 0;
     while (iterations < maxIterations) {
         iterations++;

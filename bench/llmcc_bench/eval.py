@@ -180,12 +180,21 @@ class Evaluator:
                 },
             )
 
-            # Run in thread pool to not block
+            # Run in thread pool with explicit asyncio timeout wrapper
             loop = asyncio.get_event_loop()
-            response_data = await loop.run_in_executor(
-                None,
-                lambda: urllib.request.urlopen(req, timeout=timeout).read()
-            )
+            try:
+                response_data = await asyncio.wait_for(
+                    loop.run_in_executor(
+                        None,
+                        lambda: urllib.request.urlopen(req, timeout=timeout).read()
+                    ),
+                    timeout=timeout + 10.0  # Extra buffer for executor overhead
+                )
+            except asyncio.TimeoutError:
+                return ComparisonResult(
+                    task_id=task_id, run_id=run_id,
+                    error=f"Evaluation timed out after {timeout}s"
+                )
 
             resp = json.loads(response_data)
             content = resp["choices"][0]["message"]["content"].strip()

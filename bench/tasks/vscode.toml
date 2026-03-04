@@ -1,0 +1,862 @@
+# ============================================================================
+# VS Code benchmark tasks
+#
+# Codebase Comprehension Tasks (50 questions requiring structural understanding)
+# These tasks test whether llmcc helps with understanding
+# cross-module relationships, data flow, and architectural patterns.
+# ============================================================================
+
+[[tasks]]
+id = "vscode-qa-001"
+repo = "vscode"
+category = "exploration"
+difficulty = "easy"
+description = """
+Find the main entry point for VS Code's desktop application.
+
+Find:
+1. The main electron entry file
+2. How the window is created and initialized
+3. The bootstrap sequence that loads VS Code
+
+Report the file paths and key function names.
+
+TASK COMPLETE when you identify the main entry point and bootstrap flow.
+"""
+
+[[tasks]]
+id = "vscode-qa-002"
+repo = "vscode"
+category = "exploration"
+difficulty = "easy"
+description = """
+Find where VS Code defines its extension API types.
+
+Find:
+1. The main vscode.d.ts definition file location
+2. Where proposed APIs are defined
+3. How the API types are organized
+
+Report the file paths and explain the API type structure.
+
+TASK COMPLETE when you locate all API definition files.
+"""
+
+[[tasks]]
+id = "vscode-qa-003"
+repo = "vscode"
+category = "exploration"
+difficulty = "easy"
+description = """
+Locate the command registration and execution system.
+
+Find:
+1. The interface/type for command registration
+2. Where built-in commands are registered
+3. How commands are executed when invoked
+
+Report the key files and types involved.
+
+TASK COMPLETE when you identify the command system architecture.
+"""
+
+[[tasks]]
+id = "vscode-qa-004"
+repo = "vscode"
+category = "exploration"
+difficulty = "medium"
+description = """
+Trace the complete flow when a user opens a file in VS Code:
+1. Where does the file open request originate (command, click, etc.)?
+2. How does it get routed to the editor service?
+3. What service loads the file content?
+4. How does the editor model get created?
+5. How does it reach the text editor for rendering?
+
+List the sequence of services and functions involved.
+
+TASK COMPLETE when you trace from user action to file displayed in editor.
+"""
+
+[[tasks]]
+id = "vscode-qa-005"
+repo = "vscode"
+category = "exploration"
+difficulty = "medium"
+description = """
+Trace how IntelliSense (code completion) works:
+1. Where does completion get triggered?
+2. How does VS Code communicate with language servers?
+3. What service aggregates completion items?
+4. How are completion items rendered in the UI?
+
+Map the completion flow from keystroke to suggestion display.
+
+TASK COMPLETE when you trace the complete IntelliSense pipeline.
+"""
+
+[[tasks]]
+id = "vscode-qa-006"
+repo = "vscode"
+category = "exploration"
+difficulty = "medium"
+description = """
+If I wanted to add a new built-in extension, what would I need to do?
+1. Where are built-in extensions located?
+2. What is the structure of a built-in extension?
+3. How are they registered/loaded differently from marketplace extensions?
+4. What build configuration is needed?
+
+List all files and configurations that would need changes.
+
+TASK COMPLETE when you identify the built-in extension integration points.
+"""
+
+[[tasks]]
+id = "vscode-qa-007"
+repo = "vscode"
+category = "exploration"
+difficulty = "medium"
+description = """
+Trace how the debug adapter protocol is implemented:
+1. Where is the debug adapter interface defined?
+2. How does VS Code communicate with debug adapters?
+3. Where is the debug session state managed?
+4. How are breakpoints sent to the debug adapter?
+
+Map the debug protocol implementation across modules.
+
+TASK COMPLETE when you trace the debug adapter communication flow.
+"""
+
+[[tasks]]
+id = "vscode-qa-008"
+repo = "vscode"
+category = "exploration"
+difficulty = "medium"
+description = """
+How does the terminal integration work?
+1. Where is the terminal created/spawned?
+2. How does VS Code communicate with the PTY process?
+3. Where is terminal output rendered?
+4. How does the terminal handle input?
+
+Trace the terminal lifecycle from creation to I/O handling.
+
+TASK COMPLETE when you map the terminal integration architecture.
+"""
+
+[[tasks]]
+id = "vscode-qa-009"
+repo = "vscode"
+category = "exploration"
+difficulty = "medium"
+description = """
+Trace how extension activation works:
+1. Where are extension activation events defined?
+2. How does VS Code determine when to activate an extension?
+3. What service manages extension lifecycle?
+4. How is the extension host started?
+
+Map the extension activation flow.
+
+TASK COMPLETE when you trace from activation event to extension running.
+"""
+
+[[tasks]]
+id = "vscode-qa-010"
+repo = "vscode"
+category = "exploration"
+difficulty = "medium"
+description = """
+How does the notification system work?
+1. Where are notifications created?
+2. What service manages the notification queue?
+3. How are notifications rendered in the UI?
+4. How do notification actions get handled?
+
+Trace notification from creation to display.
+
+TASK COMPLETE when you map the notification system architecture.
+"""
+
+[[tasks]]
+id = "vscode-qa-011"
+repo = "vscode"
+category = "exploration"
+difficulty = "medium"
+description = """
+Trace how keyboard shortcuts are processed:
+1. Where does the keybinding service capture key events?
+2. How are keybindings resolved to commands?
+3. Where is the keybinding context evaluated?
+4. How does "when" clause evaluation work?
+
+Map the keybinding resolution flow.
+
+TASK COMPLETE when you trace from keypress to command execution.
+"""
+
+[[tasks]]
+id = "vscode-qa-012"
+repo = "vscode"
+category = "exploration"
+difficulty = "medium"
+description = """
+How does the settings system work?
+1. Where is configuration schema defined?
+2. How are user/workspace settings merged?
+3. Where is configuration change propagated?
+4. How do extensions contribute settings?
+
+Trace the configuration system architecture.
+
+TASK COMPLETE when you understand the settings hierarchy and change propagation.
+"""
+
+[[tasks]]
+id = "vscode-qa-013"
+repo = "vscode"
+category = "exploration"
+difficulty = "medium"
+description = """
+Trace how the Source Control (SCM) integration works:
+1. Where is the SCM API defined?
+2. How does the git extension register as an SCM provider?
+3. Where is SCM state managed?
+4. How are SCM decorations rendered?
+
+Map the SCM integration architecture.
+
+TASK COMPLETE when you trace the SCM provider registration and state flow.
+"""
+
+[[tasks]]
+id = "vscode-qa-014"
+repo = "vscode"
+category = "exploration"
+difficulty = "medium"
+description = """
+How does the workspace trust feature work?
+1. Where is workspace trust state stored?
+2. How does trust affect extension activation?
+3. Where is the trust prompt displayed?
+4. How do restricted mode restrictions apply?
+
+Trace the workspace trust implementation.
+
+TASK COMPLETE when you map the trust system and its effects.
+"""
+
+[[tasks]]
+id = "vscode-qa-015"
+repo = "vscode"
+category = "exploration"
+difficulty = "medium"
+description = """
+Trace how the Quick Pick (Ctrl+P) works:
+1. Where is the quick input UI implemented?
+2. How does it fetch and filter items?
+3. Where are different quick pick providers registered?
+4. How does fuzzy matching work?
+
+Map the quick pick architecture.
+
+TASK COMPLETE when you trace quick pick from trigger to selection.
+"""
+
+[[tasks]]
+id = "vscode-qa-016"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+Trace the complete notebook execution flow:
+1. Where does cell execution get triggered?
+2. How does VS Code communicate with notebook kernels?
+3. Where is execution state managed?
+4. How are cell outputs rendered?
+5. How does the notebook diff with execution results?
+
+Map the notebook execution architecture across all components.
+
+TASK COMPLETE when you trace from cell run to output display.
+"""
+
+[[tasks]]
+id = "vscode-qa-017"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+How does the remote development architecture work?
+1. Where is the remote authority resolved?
+2. How does the extension host run remotely?
+3. What communication protocol is used?
+4. How is file system access proxied?
+
+Trace the remote development components and their interactions.
+
+TASK COMPLETE when you map the remote architecture from connection to operation.
+"""
+
+[[tasks]]
+id = "vscode-qa-018"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+Trace how the chat/Copilot integration works:
+1. Where is the chat participant API defined?
+2. How do chat participants register themselves?
+3. Where is chat message history managed?
+4. How are chat responses streamed and rendered?
+
+Map the chat integration architecture.
+
+TASK COMPLETE when you trace chat from user input to response display.
+"""
+
+[[tasks]]
+id = "vscode-qa-019"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+How does the language server protocol (LSP) implementation work?
+1. Where is the LSP client implemented?
+2. How are language features registered with VS Code?
+3. Where does request/response serialization happen?
+4. How does VS Code multiplex multiple language servers?
+
+Map the LSP client architecture.
+
+TASK COMPLETE when you trace LSP from request to response handling.
+"""
+
+[[tasks]]
+id = "vscode-qa-020"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+Trace how the testing API works:
+1. Where is the test controller API defined?
+2. How are test items discovered and organized?
+3. Where is test execution managed?
+4. How are test results displayed?
+
+Map the testing architecture from discovery to results.
+
+TASK COMPLETE when you trace the complete testing pipeline.
+"""
+
+[[tasks]]
+id = "vscode-qa-021"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+If I wanted to add a new workbench panel (like the Terminal panel), what would I need?
+1. What interfaces do panels implement?
+2. Where are panels registered?
+3. How does the layout system position panels?
+4. What contribution points are needed?
+
+List all integration points for adding a new panel.
+
+TASK COMPLETE when you identify the panel contribution architecture.
+"""
+
+[[tasks]]
+id = "vscode-qa-022"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+Trace how the inline completions (ghost text) feature works:
+1. Where are inline completion providers registered?
+2. How is the inline completion triggered?
+3. Where is the ghost text rendered?
+4. How does accept/reject work?
+
+Map the inline completion flow.
+
+TASK COMPLETE when you trace from trigger to text insertion.
+"""
+
+[[tasks]]
+id = "vscode-qa-023"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+How does the diff editor work?
+1. Where is the diff computed?
+2. How are inline changes highlighted?
+3. Where is side-by-side rendering handled?
+4. How does the diff navigator work?
+
+Trace the diff editor implementation.
+
+TASK COMPLETE when you map the diff computation and rendering flow.
+"""
+
+[[tasks]]
+id = "vscode-qa-024"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+Trace how code actions (quick fixes, refactorings) work:
+1. Where is the code action provider API defined?
+2. How are code actions requested from providers?
+3. Where is the lightbulb/code action menu displayed?
+4. How is a code action applied?
+
+Map the code action architecture.
+
+TASK COMPLETE when you trace from diagnostic to fix applied.
+"""
+
+[[tasks]]
+id = "vscode-qa-025"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+How does the multi-root workspace feature work?
+1. Where is workspace configuration stored?
+2. How are multiple folders managed?
+3. Where does file watching handle multiple roots?
+4. How do extensions see workspace folders?
+
+Trace the multi-root workspace implementation.
+
+TASK COMPLETE when you map workspace folder management and visibility.
+"""
+
+[[tasks]]
+id = "vscode-qa-026"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+What would break if the instantiation service was removed?
+1. What is the dependency injection pattern used?
+2. How are services registered and resolved?
+3. What services depend on instantiation?
+4. How would alternative patterns work?
+
+Analyze the DI system architecture.
+
+TASK COMPLETE when you explain the instantiation service role and dependencies.
+"""
+
+[[tasks]]
+id = "vscode-qa-027"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+Trace how the webview system works:
+1. Where are webviews created?
+2. How does VS Code communicate with webview content?
+3. Where is webview state persisted?
+4. How is webview security enforced?
+
+Map the webview architecture.
+
+TASK COMPLETE when you trace webview from creation to message passing.
+"""
+
+[[tasks]]
+id = "vscode-qa-028"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+How does the extension host process work?
+1. Where is the extension host spawned?
+2. How does it communicate with the main process?
+3. Where are extension APIs proxied?
+4. How is extension isolation achieved?
+
+Trace the extension host architecture.
+
+TASK COMPLETE when you map the extension host lifecycle and communication.
+"""
+
+[[tasks]]
+id = "vscode-qa-029"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+Trace how semantic highlighting works:
+1. Where is the semantic token provider API?
+2. How are semantic tokens requested?
+3. Where does token classification happen?
+4. How are semantic tokens merged with textmate scopes?
+
+Map the semantic highlighting pipeline.
+
+TASK COMPLETE when you trace from provider to colored tokens.
+"""
+
+[[tasks]]
+id = "vscode-qa-030"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+How does the integrated task system work?
+1. Where are tasks defined and parsed?
+2. How does task detection work?
+3. Where is task execution managed?
+4. How do problem matchers parse output?
+
+Trace the task system architecture.
+
+TASK COMPLETE when you map from task definition to output parsing.
+"""
+
+[[tasks]]
+id = "vscode-qa-031"
+repo = "vscode"
+category = "exploration"
+difficulty = "medium"
+description = """
+How does the editor decorations system work?
+1. Where are decorations defined and registered?
+2. How does the decoration service manage decorations?
+3. Where are decorations rendered in the editor?
+4. How do different decoration types (highlight, gutter, overview ruler) differ?
+
+Trace the decoration system.
+
+TASK COMPLETE when you map decoration from registration to rendering.
+"""
+
+[[tasks]]
+id = "vscode-qa-032"
+repo = "vscode"
+category = "exploration"
+difficulty = "medium"
+description = """
+Trace how the file system provider API works:
+1. Where is the FileSystemProvider interface defined?
+2. How do custom file systems register?
+3. Where does file operation routing happen?
+4. How does VS Code handle virtual files?
+
+Map the file system provider architecture.
+
+TASK COMPLETE when you trace custom file system integration.
+"""
+
+[[tasks]]
+id = "vscode-qa-033"
+repo = "vscode"
+category = "exploration"
+difficulty = "medium"
+description = """
+How does the authentication API work?
+1. Where is the authentication provider interface?
+2. How do providers register (GitHub, Microsoft)?
+3. Where is authentication state managed?
+4. How do extensions request authentication?
+
+Trace the authentication system.
+
+TASK COMPLETE when you map auth from provider registration to token acquisition.
+"""
+
+[[tasks]]
+id = "vscode-qa-034"
+repo = "vscode"
+category = "exploration"
+difficulty = "medium"
+description = """
+Trace how the tree view API works:
+1. Where is the TreeDataProvider interface defined?
+2. How do tree views register in the sidebar?
+3. Where is tree state (expansion, selection) managed?
+4. How are tree items rendered?
+
+Map the tree view architecture.
+
+TASK COMPLETE when you trace tree view from registration to rendering.
+"""
+
+[[tasks]]
+id = "vscode-qa-035"
+repo = "vscode"
+category = "exploration"
+difficulty = "medium"
+description = """
+How does the hover provider system work?
+1. Where are hover providers registered?
+2. How does VS Code aggregate hovers from multiple providers?
+3. Where is hover content rendered?
+4. How do markdown hovers work?
+
+Trace the hover system.
+
+TASK COMPLETE when you map hover from trigger to display.
+"""
+
+[[tasks]]
+id = "vscode-qa-036"
+repo = "vscode"
+category = "exploration"
+difficulty = "medium"
+description = """
+Trace how the problems/diagnostics system works:
+1. Where is the DiagnosticCollection API?
+2. How do diagnostics get reported?
+3. Where is the Problems panel populated?
+4. How are inline diagnostics rendered?
+
+Map the diagnostics architecture.
+
+TASK COMPLETE when you trace from diagnostic report to display.
+"""
+
+[[tasks]]
+id = "vscode-qa-037"
+repo = "vscode"
+category = "exploration"
+difficulty = "medium"
+description = """
+How does the extension search and install flow work?
+1. Where is the marketplace API called?
+2. How are extensions downloaded and extracted?
+3. Where is extension installation managed?
+4. How does extension update detection work?
+
+Trace extension installation.
+
+TASK COMPLETE when you map from search to installed extension.
+"""
+
+[[tasks]]
+id = "vscode-qa-038"
+repo = "vscode"
+category = "exploration"
+difficulty = "medium"
+description = """
+Trace how the output channel API works:
+1. Where is the OutputChannel interface defined?
+2. How do output channels get created?
+3. Where is output panel content stored?
+4. How does output channel logging work?
+
+Map the output channel architecture.
+
+TASK COMPLETE when you trace from channel creation to content display.
+"""
+
+[[tasks]]
+id = "vscode-qa-039"
+repo = "vscode"
+category = "exploration"
+difficulty = "medium"
+description = """
+How does the status bar API work?
+1. Where are status bar items defined?
+2. How do items get positioned (left/right, priority)?
+3. Where is status bar rendering handled?
+4. How do status bar click handlers work?
+
+Trace the status bar system.
+
+TASK COMPLETE when you map status bar from item creation to interaction.
+"""
+
+[[tasks]]
+id = "vscode-qa-040"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+Trace how the MCP (Model Context Protocol) integration works:
+1. Where is the MCP client implemented?
+2. How are MCP servers discovered and connected?
+3. Where are MCP tools registered?
+4. How do MCP resources integrate with VS Code?
+
+Map the MCP architecture.
+
+TASK COMPLETE when you trace MCP from server connection to tool usage.
+"""
+
+[[tasks]]
+id = "vscode-qa-041"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+How does the inline chat feature work?
+1. Where is inline chat triggered?
+2. How does it communicate with the chat participant?
+3. Where is the inline diff computed?
+4. How does accept/reject work?
+
+Trace the inline chat architecture.
+
+TASK COMPLETE when you map inline chat from trigger to edit applied.
+"""
+
+[[tasks]]
+id = "vscode-qa-042"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+Trace how the folding system works:
+1. Where is the folding provider API?
+2. How are folding ranges computed?
+3. Where is folding state managed?
+4. How do indentation-based and syntax-based folding differ?
+
+Map the folding architecture.
+
+TASK COMPLETE when you trace folding from computation to UI state.
+"""
+
+[[tasks]]
+id = "vscode-qa-043"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+How does the merge editor work?
+1. Where is merge conflict detected?
+2. How are base/current/incoming compared?
+3. Where is the 3-way merge UI implemented?
+4. How does conflict resolution apply?
+
+Trace the merge editor implementation.
+
+TASK COMPLETE when you map merge from conflict detection to resolution.
+"""
+
+[[tasks]]
+id = "vscode-qa-044"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+Trace how the references/call hierarchy features work:
+1. Where is the reference provider API?
+2. How does "Find All References" aggregate results?
+3. Where is the references view implemented?
+4. How does call hierarchy differ from references?
+
+Map the references architecture.
+
+TASK COMPLETE when you trace from find references trigger to result display.
+"""
+
+[[tasks]]
+id = "vscode-qa-045"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+How does the editor minimap work?
+1. Where is minimap rendering implemented?
+2. How are minimap decorations handled?
+3. Where is the minimap slider tracked?
+4. How does minimap scale with document size?
+
+Trace the minimap implementation.
+
+TASK COMPLETE when you map minimap from rendering to interaction.
+"""
+
+[[tasks]]
+id = "vscode-qa-046"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+Trace how snippet insertion works:
+1. Where are snippets defined and parsed?
+2. How does snippet expansion work (tabstops, placeholders)?
+3. Where is snippet session state managed?
+4. How does multi-cursor snippet insertion work?
+
+Map the snippet architecture.
+
+TASK COMPLETE when you trace from snippet trigger to final text insertion.
+"""
+
+[[tasks]]
+id = "vscode-qa-047"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+How does the undo/redo system work?
+1. Where is the undo stack managed?
+2. How are edits grouped into undo stops?
+3. Where does cross-file undo work?
+4. How does workspace-level undo coordinate?
+
+Trace the undo system.
+
+TASK COMPLETE when you map undo from edit grouping to state restoration.
+"""
+
+[[tasks]]
+id = "vscode-qa-048"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+Trace how the text buffer (piece table) works:
+1. Where is the piece table implemented?
+2. How are edits applied to the buffer?
+3. Where is line information cached?
+4. How does it handle large files?
+
+Map the text buffer architecture.
+
+TASK COMPLETE when you understand the piece table data structure and operations.
+"""
+
+[[tasks]]
+id = "vscode-qa-049"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+How does the split editor system work?
+1. Where is editor group management implemented?
+2. How does the grid layout work?
+3. Where is editor state synchronized across splits?
+4. How does focus management work?
+
+Trace the split editor architecture.
+
+TASK COMPLETE when you map editor groups from creation to layout management.
+"""
+
+[[tasks]]
+id = "vscode-qa-050"
+repo = "vscode"
+category = "exploration"
+difficulty = "hard"
+description = """
+Trace how the context key system works:
+1. Where are context keys defined?
+2. How are context values set and updated?
+3. Where is "when" clause parsing implemented?
+4. How does context affect command/menu visibility?
+
+Map the context key architecture.
+
+TASK COMPLETE when you trace context from definition to conditional evaluation.
+"""

@@ -215,6 +215,10 @@ def cmd_compare(args, config: Config) -> int:
         conditions = [Condition.BASELINE]
     elif args.llmcc_only:
         conditions = [Condition.WITH_LLMCC]
+    elif getattr(args, 'plan_only', False):
+        conditions = [Condition.WITH_PLAN]
+    elif getattr(args, 'with_plan', False):
+        conditions = [Condition.BASELINE, Condition.WITH_PLAN]
 
     # Determine repo and tasks
     if args.task:
@@ -265,6 +269,12 @@ def cmd_compare(args, config: Config) -> int:
         from .agent.runner import CodexAgentRunner
         runner = CodexAgentRunner(
             model=args.model or "o3",
+            timeout=args.timeout or 600,
+        )
+    elif args.runner == "llcraft":
+        from .agent.runner import LlcraftAgentRunner
+        runner = LlcraftAgentRunner(
+            model=args.model or "claude-opus-4-5-20251101",
             timeout=args.timeout or 600,
         )
     else:
@@ -479,8 +489,18 @@ def main() -> int:
         help="Only run with_llmcc condition",
     )
     compare_parser.add_argument(
+        "--with-plan",
+        action="store_true",
+        help="Run with_plan condition (AI planner generates navigation plan from graph)",
+    )
+    compare_parser.add_argument(
+        "--plan-only",
+        action="store_true",
+        help="Only run with_plan condition",
+    )
+    compare_parser.add_argument(
         "--runner",
-        choices=["mock", "claude", "codex"],
+        choices=["mock", "claude", "codex", "llcraft"],
         default="mock",
         help="Agent runner to use (default: mock)",
     )

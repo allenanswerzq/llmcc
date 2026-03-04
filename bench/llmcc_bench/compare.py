@@ -24,6 +24,7 @@ from .agent.config import (
     RunLimits,
 )
 from .agent.metrics import TaskMetrics, append_metrics_jsonl
+from .agent.planner import NavigationPlan, build_navigation_prompt, generate_plan
 from .agent.runner import (
     AgentRunner,
     MockAgentRunner,
@@ -58,6 +59,48 @@ def get_repo_path(repo: str, sample_dir: Optional[Path] = None) -> Path:
     return repo_path
 
 
+def generate_multi_depth_graphs(
+    repo_path: Path,
+    base_config: GraphConfig,
+    language: str = "rust",
+) -> dict:
+    """
+    Generate graphs at multiple depth levels.
+
+    Returns:
+        Dict with keys 'depth_1', 'depth_3' etc. mapping to graph content.
+    """
+    graphs = {}
+
+    # Generate depth 1 (crate level) for high-level view
+    try:
+        config_1 = GraphConfig(
+            depth=1,
+            pagerank_top_k=base_config.pagerank_top_k,
+            cluster_by_crate=base_config.cluster_by_crate,
+        )
+        graph_1, _, _ = generate_graph(repo_path, config_1, language)
+        graphs['depth_1'] = graph_1
+    except Exception as e:
+        print(f"    Warning: Failed to generate depth 1 graph: {e}")
+        graphs['depth_1'] = None
+
+    # Generate depth 3 (file/symbol level) for detail
+    try:
+        config_3 = GraphConfig(
+            depth=3,
+            pagerank_top_k=base_config.pagerank_top_k,
+            cluster_by_crate=base_config.cluster_by_crate,
+        )
+        graph_3, _, _ = generate_graph(repo_path, config_3, language)
+        graphs['depth_3'] = graph_3
+    except Exception as e:
+        print(f"    Warning: Failed to generate depth 3 graph: {e}")
+        graphs['depth_3'] = None
+
+    return graphs
+
+
 async def run_single_task(
     task: Task,
     runner: AgentRunner,
@@ -74,6 +117,41 @@ async def run_single_task(
         List of TaskMetrics for each run.
     """
     results: List[TaskMetrics] = []
+
+    # Generate multi-depth graphs if needed for WITH_PLAN condition
+    multi_depth_graphs = None
+    navigation_plan = None
+
+    if Condition.WITH_PLAN in config.conditions:
+        print(f"    Generating multi-depth architecture graphs...")
+        try:
+            multi_depth_graphs = generate_multi_depth_graphs(
+                repo_path,
+                config.graph_config,
+                language="rust",  # TODO: detect from repo
+            )
+            print(f"    Generated depth 1 and depth 3 graphs")
+        except Exception as e:
+            print(f"    Warning: Failed to generate graphs: {e}")
+
+        if multi_depth_graphs and multi_depth_graphs.get('depth_3'):
+            print(f"    Generating navigation plan from architecture...")
+            try:
+                navigation_plan = await generate_plan(
+                    task_description=task.description,
+                    depth_3_graph=multi_depth_graphs['depth_3'],
+                    workspace_path=repo_path,
+                    depth_1_graph=multi_depth_graphs.get('depth_1'),
+                )
+                if navigation_plan.direct_answer:
+                    print(f"    Plan: DIRECT ANSWER from graph")
+                else:
+                    print(f"    Plan: {len(navigation_plan.entry_points)} entry points, "
+                          f"{len(navigation_plan.exploration_paths)} exploration paths")
+            except Exception as e:
+                print(f"    Warning: Failed to generate plan: {e}")
+                import traceback
+                traceback.print_exc()
 
     for condition in config.conditions:
         for run_num in range(config.runs_per_condition):
@@ -99,12 +177,24 @@ async def run_single_task(
                     suffix = f"_retry{attempt}" if attempt > 0 else ""
                     trace_file = output_dir / f"trace_{task.id}_{run_id}{suffix}.jsonl"
 
+                # Build navigation context if WITH_PLAN condition
+                plan_context = None
+                if condition == Condition.WITH_PLAN and navigation_plan:
+                    plan_context = build_navigation_prompt(
+                        navigation_plan,
+                        task.description,
+                        repo_path,
+                        depth_1_graph=multi_depth_graphs.get('depth_1') if multi_depth_graphs else None,
+                        depth_3_graph=multi_depth_graphs.get('depth_3') if multi_depth_graphs else None,
+                    )
+
                 # Create run context
                 context = RunContext(
                     task=task,
                     condition=condition,
                     workspace_path=repo_path,
                     graph_context=graph_content if condition == Condition.WITH_LLMCC else None,
+                    plan_context=plan_context,
                     run_id=run_id,
                     limits=config.run_limits,
                     trace_file=trace_file,
@@ -246,34 +336,9 @@ async def run_comparison(
 
     print(f"Found {len(tasks)} tasks")
 
-    # Generate graph once (if any condition uses it)
+    # Note: We no longer pre-generate graphs since the llmcc skill guides Claude
+    # to run llmcc on its own. This saves time and lets Claude explore as needed.
     graph_content: Optional[str] = None
-    if Condition.WITH_LLMCC in config.conditions:
-        gc = config.graph_config
-        print(f"Generating graph (depth={gc.depth}, top_k={gc.pagerank_top_k})...")
-        try:
-            # Detect language from project config
-            projects = load_projects()
-            language = "rust"
-            for name, proj in projects.items():
-                if proj.github_path == config.repo:
-                    language = proj.language
-                    break
-
-            graph_content, nodes, edges = generate_graph(
-                repo_path,
-                config.graph_config,
-                language=language,
-            )
-            print(f"  {nodes} nodes, {edges} edges")
-
-            # Warn if graph is empty
-            if nodes == 0:
-                print("  ⚠️  WARNING: Graph is empty! Results may not be meaningful.")
-                print("     This usually means the repository doesn't exist or llmcc failed.")
-        except Exception as e:
-            print(f"  Warning: Failed to generate graph: {e}")
-            print("  Continuing without graph...")
 
     # Run all tasks
     all_results: List[TaskMetrics] = []
@@ -339,21 +404,28 @@ async def run_comparison(
             print(f"\n[{i + 1}/{len(tasks)}] Task: {task.id}")
             print(f"  Category: {task.category.value}, Difficulty: {task.difficulty.value}")
 
-            task_results = await run_single_task(
-                task=task,
-                runner=runner,
-                repo_path=repo_path,
-                config=config,
-                graph_content=graph_content,
-                output_dir=output_dir,
-                evaluator=evaluator,
-            )
+            try:
+                task_results = await run_single_task(
+                    task=task,
+                    runner=runner,
+                    repo_path=repo_path,
+                    config=config,
+                    graph_content=graph_content,
+                    output_dir=output_dir,
+                    evaluator=evaluator,
+                )
 
-            # Save results incrementally
-            for metrics in task_results:
-                append_metrics_jsonl(metrics, results_path)
+                # Save results incrementally
+                for metrics in task_results:
+                    append_metrics_jsonl(metrics, results_path)
 
-            all_results.extend(task_results)
+                all_results.extend(task_results)
+            except asyncio.CancelledError:
+                print(f"\n⚠️ Task {task.id} cancelled, saving partial results...")
+                raise
+            except Exception as e:
+                print(f"\n⚠️ Task {task.id} failed: {e}")
+                # Continue to next task instead of crashing
 
     print(f"\nResults saved to: {output_dir}")
     return all_results
@@ -406,11 +478,21 @@ def main():
         action="store_true",
         help="Only run with_llmcc condition",
     )
+    parser.add_argument(
+        "--with-plan",
+        action="store_true",
+        help="Run with_plan condition (AI planner generates reading plan from graph)",
+    )
+    parser.add_argument(
+        "--plan-only",
+        action="store_true",
+        help="Only run with_plan condition",
+    )
 
     # Runner settings
     parser.add_argument(
         "--runner",
-        choices=["mock", "claude"],
+        choices=["mock", "claude", "llcraft"],
         default="mock",
         help="Agent runner to use (default: mock)",
     )
@@ -468,6 +550,11 @@ def main():
         default="gpt-4o-mini",
         help="Model to use for evaluation (default: gpt-4o-mini)",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug mode (model explains reasoning for each tool call)",
+    )
 
     args = parser.parse_args()
 
@@ -477,6 +564,10 @@ def main():
         conditions = [Condition.BASELINE]
     elif args.llmcc_only:
         conditions = [Condition.WITH_LLMCC]
+    elif args.plan_only:
+        conditions = [Condition.WITH_PLAN]
+    elif args.with_plan:
+        conditions = [Condition.BASELINE, Condition.WITH_PLAN]
 
     # Determine repo
     if args.task:
@@ -505,6 +596,7 @@ def main():
         model=args.model,
         task_ids=task_ids,
         sample=args.sample,
+        debug=getattr(args, 'debug', False),
     )
 
     # Create output directory
@@ -522,6 +614,12 @@ def main():
         from .agent.runner import ClaudeAgentRunner
         runner = ClaudeAgentRunner(
             model=getattr(args, 'model', None) or 'opus',
+            timeout=getattr(args, 'max_time', 600),
+        )
+    elif args.runner == "llcraft":
+        from .agent.runner import LlcraftAgentRunner
+        runner = LlcraftAgentRunner(
+            model=getattr(args, 'model', None) or 'claude-opus-4-5-20251101',
             timeout=getattr(args, 'max_time', 600),
         )
     elif args.runner == "codex":

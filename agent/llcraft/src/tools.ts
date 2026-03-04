@@ -41,6 +41,52 @@ export interface ToolResult {
     content: string;
 }
 
+/**
+ * llmcc tool definition - for code architecture analysis
+ * Exported separately so it can be conditionally included
+ */
+export const llmccTool: ToolDefinition = {
+    type: 'function',
+    function: {
+        name: 'llmcc',
+        description: 'Generate multi-depth architecture graphs for code understanding. Analyzes Rust or TypeScript codebases and produces DOT graph output showing dependencies at various granularity levels. Use this to quickly understand the structure and architecture of complex codebases.',
+        parameters: {
+            type: 'object',
+            properties: {
+                dirs: {
+                    type: 'array',
+                    description: 'Directories to scan recursively (conflicts with files)',
+                },
+                files: {
+                    type: 'array',
+                    description: 'Individual files to compile (conflicts with dirs)',
+                },
+                lang: {
+                    type: 'string',
+                    description: 'Language: rust, typescript, or ts (default: rust)',
+                },
+                depth: {
+                    type: 'number',
+                    description: 'Component depth: 0=project, 1=crate/lib, 2=module, 3=file+symbol (default: 3)',
+                },
+                pagerank_top_k: {
+                    type: 'number',
+                    description: 'Show only top K nodes by PageRank score to focus on most important components',
+                },
+                cluster_by_crate: {
+                    type: 'boolean',
+                    description: 'Cluster modules by their parent crate (default: false)',
+                },
+                short_labels: {
+                    type: 'boolean',
+                    description: 'Use shortened labels - module name only (default: false)',
+                },
+            },
+            required: [],
+        },
+    },
+};
+
 // Built-in tools
 export const builtinTools: ToolDefinition[] = [
     {
@@ -264,6 +310,9 @@ export function executeTool(toolCall: ToolCall): ToolResult {
             case 'create_patch':
                 result = executeCreatePatch(args.path, args.oldContent, args.newContent);
                 break;
+            case 'llmcc':
+                result = executeLlmcc(args.dirs, args.files, args.lang, args.depth, args.pagerank_top_k, args.cluster_by_crate, args.short_labels);
+                break;
             default:
                 result = `Unknown tool: ${name}`;
         }
@@ -456,14 +505,92 @@ function executeCreatePatch(filePath: string, oldContent: string, newContent: st
 }
 
 /**
+ * Execute llmcc to generate architecture graphs
+ */
+function executeLlmcc(
+    dirs?: string[],
+    files?: string[],
+    lang?: string,
+    depth?: number,
+    pagerankTopK?: number,
+    clusterByCrate?: boolean,
+    shortLabels?: boolean
+): string {
+    if (!dirs && !files) {
+        return 'Error: Either dirs or files must be provided';
+    }
+
+    try {
+        // Build the llmcc command
+        const cmdParts: string[] = ['llmcc'];
+
+        // Add directories
+        if (dirs && Array.isArray(dirs)) {
+            for (const dir of dirs) {
+                cmdParts.push('-d', `"${dir}"`);
+            }
+        }
+
+        // Add files
+        if (files && Array.isArray(files)) {
+            for (const file of files) {
+                cmdParts.push('-f', `"${file}"`);
+            }
+        }
+
+        // Add language (default to rust)
+        cmdParts.push('--lang', lang || 'rust');
+
+        // Add graph flag (always generate graph output)
+        cmdParts.push('--graph');
+
+        // Add depth (default to 3)
+        cmdParts.push('--depth', (depth ?? 3).toString());
+
+        // Add optional flags
+        if (pagerankTopK) {
+            cmdParts.push('--pagerank-top-k', pagerankTopK.toString());
+        }
+        if (clusterByCrate) {
+            cmdParts.push('--cluster-by-crate');
+        }
+        if (shortLabels) {
+            cmdParts.push('--short-labels');
+        }
+
+        const command = cmdParts.join(' ');
+
+        const result = execSync(command, {
+            encoding: 'utf-8',
+            timeout: 120 * 1000, // 2 minute timeout
+            maxBuffer: 50 * 1024 * 1024, // 50MB max output for large graphs
+        });
+
+        return result || '(no output)';
+    } catch (error: any) {
+        if (error.stdout || error.stderr) {
+            return `Exit code: ${error.status}\nstdout: ${error.stdout}\nstderr: ${error.stderr}`;
+        }
+        return `llmcc failed: ${error.message}`;
+    }
+}
+
+/**
  * Format tools for display
  */
-export function formatToolList(includeBrowser?: boolean): string {
+export function formatToolList(includeBrowser?: boolean, includeLlmcc?: boolean): string {
     let tools = builtinTools.map(t => {
         const f = t.function;
         const params = Object.keys(f.parameters.properties).join(', ');
         return `  ${f.name}(${params}) - ${f.description}`;
     }).join('\n');
+
+    if (includeLlmcc) {
+        tools += '\n\n  Code Architecture tool (--llmcc):\n';
+        const f = llmccTool.function;
+        const params = Object.keys(f.parameters.properties).join(', ');
+        tools += `  ${f.name}(${params}) - ${f.description}`;
+    }
 
     if (includeBrowser) {
         tools += '\n\n  Browser tools (--chrome):\n';

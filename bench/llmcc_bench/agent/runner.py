@@ -33,6 +33,9 @@ class RunContext:
     graph_context: Optional[str] = None
     """DOT graph content (for with_llmcc condition)."""
 
+    plan_context: Optional[str] = None
+    """Pre-computed reading plan (for with_plan condition)."""
+
     run_id: str = ""
     """Unique identifier for this run."""
 
@@ -266,51 +269,14 @@ def build_graph_context(graph: Optional[str] = None) -> Optional[str]:
 
     Returns:
         Graph context string or None.
+
+    Note: We no longer include the graph in the prompt since the llmcc skill
+    should guide Claude to run llmcc on its own. This function is kept for
+    potential future use but currently returns None.
     """
-    if not graph:
-        return None
-
-    return f"""## llmcc - A Local Code Analysis Tool (run via Bash)
-
-⚠️ `llmcc` is a LOCAL command-line tool installed on this system. Run it using Bash/terminal, NOT as a built-in tool.
-
-**How to use:** Run `llmcc` commands via Bash like any other shell command:
-```bash
-llmcc -d <folder> --graph --depth <1|2|3> --lang rust --pagerank-top-k N
-```
-
-**The MOST IDEAL WORKFLOW:**
-1. Run `llmcc` via Bash to see important modules and architectural symbols
-2. Identify relevant modules/crates/files/symbols from the graph output
-3. THEN use grep/read only for specific details - the graph already has file paths and line numbers
-4. Use --pagerank-top-k to reduce noise and focus on important nodes
-
-**Depth levels:**
-| Depth | View | Best for |
-|-------|------|----------|
-| 1 | Crate/library | ownership boundaries, public API flow |
-| 2 | Module | subsystem structure, quick overview (START HERE) |
-| 3 | File + symbol | implementation details, finding specific code |
-
-**Examples (run via Bash):**
-```bash
-llmcc -d codex-rs/core --graph --depth 2 --lang rust    # module overview
-llmcc -d codex-rs/core/src --graph --depth 3 --lang rust  # detailed symbols
-llmcc -d . --graph --depth 1 --lang rust                # whole project crates
-```
-
-**Options:**
-- `-d <folder>` - directory to analyze (can repeat: `-d foo -d bar`)
-- `-f <file>` - specific file(s) to analyze (can repeat)
-- `--depth 1|2|3` - zoom level
-- `--pagerank-top-k N` - show only top N important nodes (reduces noise)
-- `--lang rust|typescript`
-
-Below is a starting graph (depth 3, whole repo). Run `llmcc` via Bash on specific folders for cleaner views.
-
-```dot
-{graph}
-```"""
+    # The llmcc skill (~/.claude/skills/llmcc/SKILL.md) should guide Claude
+    # to run llmcc on its own. We don't pre-feed the graph anymore.
+    return None
 
 
 async def run_validation(
@@ -432,14 +398,30 @@ DO NOT call tools silently. Always explain your thinking first, then call the to
 
         completion_instruction = f"""{debug_instruction}
 
-IMPORTANT: You MUST end your response with one of these exact phrases:
+⚠️ AUTOMATED BENCHMARK - NO INTERACTION:
+- Do NOT use plan mode or create plans - just execute directly
+- Do NOT ask user questions or request clarification - make reasonable assumptions
+- Do NOT wait for user input or confirmation - proceed autonomously
+- Execute tools immediately without asking permission
+
+IMPORTANT: You MUST MUST end your response with one of these exact phrases:
 - "TASK COMPLETE" followed by a brief summary if successful
 - "TASK FAILED" followed by explanation if unsuccessful
 
 Do NOT end with tool calls or partial work. Always provide a final text response with TASK COMPLETE or TASK FAILED."""
 
         # Build the prompt - include graph context in the user prompt for reliability
-        if graph_context:
+        # Include explicit repo path note to prevent llmcc path mistakes
+        repo_path_note = f"""
+⚠️ IMPORTANT: The repository path is: {context.workspace_path} """
+
+        # Build prompt based on condition
+        if context.plan_context:
+            # WITH_PLAN condition: use the pre-computed reading plan
+            prompt = f"""{context.plan_context}
+{repo_path_note}
+{completion_instruction}"""
+        elif graph_context:
             prompt = f"""{graph_context}
 
 Task: {context.task.description}
@@ -447,6 +429,7 @@ Task: {context.task.description}
 Expected files to modify/create: {', '.join(context.task.expected_files) if context.task.expected_files else 'As needed'}
 
 Workspace: {context.workspace_path}
+{repo_path_note}
 {completion_instruction}"""
         else:
             prompt = f"""Task: {context.task.description}
@@ -454,6 +437,7 @@ Workspace: {context.workspace_path}
 Expected files to modify/create: {', '.join(context.task.expected_files) if context.task.expected_files else 'As needed'}
 
 Workspace: {context.workspace_path}
+{repo_path_note}
 {completion_instruction}"""
 
         # Set up environment
@@ -465,30 +449,46 @@ Workspace: {context.workspace_path}
         env.setdefault("ANTHROPIC_AUTH_TOKEN", "sk-copilot-bridge")
         env.setdefault("ANTHROPIC_API_KEY", "sk-copilot-bridge")
 
-        # System prompt to ensure proper completion (enhanced for llmcc condition)
+        # System prompt to ensure proper completion
         debug_system_note = """
 
 ⚠️ STEP-BY-STEP MODE: Before EVERY tool call, you MUST first write out your reasoning explaining what you're about to do and why.""" if context.debug else ""
 
-        if context.graph_context:
-            system_prompt = f"""You are a coding assistant completing benchmark tasks.{debug_system_note}
+        # Simple system prompt - llmcc skill handles exploration guidance
+        system_prompt = f"""You are a coding assistant completing automated benchmark tasks.{debug_system_note}
 
-IMPORTANT WORKFLOW: You can use `llmcc` (via Bash) as an exploration tool:
+CRITICAL RULES FOR AUTOMATED BENCHMARKING:
+1. Do NOT use plan mode - execute tasks directly without planning steps
+2. Do NOT ask questions or request clarification - make reasonable assumptions and proceed
+3. Do NOT wait for user confirmation - you have full permission to read/write/execute
+4. Every task response MUST end with either "TASK COMPLETE" or "TASK FAILED" in your final message
+5. Never end a task with just tool calls - always provide a final summary with the completion status
 
-1. Run `llmcc -d <folder> --graph --depth 2(3) --lang rust` via Bash to understand architecture
-2. Use grep/read for specific details the graph reveals
+This is an automated benchmark - there is no human to interact with. Execute autonomously."""
 
-Example:
-  llmcc -d codex-rs/core --graph --depth 2 --lang rust                                      # see module structure
-  llmcc -d codex-rs/core/src/config --graph --depth 3 --lang rust --pagerank-top-k 200      # zoom into details with most 200 important nodes
-  llmcc -d codex-rs/core -d corex-rs/cli --graph --depth 3 --lang rust  --pagerank-top-k 200  # shoule mulitile folders architecture
+        # Manage llmcc skill symlink based on condition
+        # The skill must be in the TARGET repo's .claude/skills/ directory for Claude to load it
+        # Skill link: <target_repo>/.claude/skills/llmcc/SKILL.md -> <llmcc_project>/doc/claude-skill-llmcc.md
+        workspace_root = context.workspace_path
+        skill_link = workspace_root / ".claude" / "skills" / "llmcc" / "SKILL.md"
+        # Get project root: runner.py is at bench/llmcc_bench/agent/runner.py
+        project_root = Path(__file__).parent.parent.parent.parent
+        skill_target = project_root / "doc" / "claude-skill-llmcc.md"
 
-CRITICAL: Every task response MUST end with either "TASK COMPLETE" or "TASK FAILED" in your final message.
-Never end a task with just tool calls - always provide a final summary with the completion status."""
+        if context.condition == Condition.BASELINE or context.condition == Condition.WITH_PLAN:
+            # Remove symlink for baseline/with_plan so Claude can't use the skill
+            # For WITH_PLAN: the plan already comes from llmcc analysis, no need to run it again
+            if skill_link.is_symlink():
+                skill_link.unlink()
+            # Also remove the skills directory if empty
+            skill_dir = skill_link.parent
+            if skill_dir.exists() and not any(skill_dir.iterdir()):
+                skill_dir.rmdir()
         else:
-            system_prompt = f"""You are a coding assistant completing benchmark tasks.{debug_system_note}
-CRITICAL: Every task response MUST end with either "TASK COMPLETE" or "TASK FAILED" in your final message.
-Never end a task with just tool calls - always provide a final summary with the completion status."""
+            # Ensure symlink exists for with_llmcc condition
+            if not skill_link.exists():
+                skill_link.parent.mkdir(parents=True, exist_ok=True)
+                skill_link.symlink_to(skill_target)
 
         # Build command
         cmd = [
@@ -499,8 +499,9 @@ Never end a task with just tool calls - always provide a final summary with the 
             "--dangerously-skip-permissions",
             "--model", self.model,
             "--system-prompt", system_prompt,
-            prompt,
         ]
+
+        cmd.append(prompt)
 
         # Record graph info if present
         if context.graph_context:
@@ -545,9 +546,26 @@ Never end a task with just tool calls - always provide a final summary with the 
                 last_usage: Dict[str, int] = {"input_tokens": 0, "output_tokens": 0}
                 final_answer = ""
                 debug_mode = context.debug
+                idle_timeout = 120.0  # 2 minutes without output = stuck
+                last_activity = time.time()
 
                 while True:
-                    line = await process.stdout.readline()
+                    try:
+                        line = await asyncio.wait_for(
+                            process.stdout.readline(),
+                            timeout=30.0  # Check every 30s
+                        )
+                        last_activity = time.time()
+                    except asyncio.TimeoutError:
+                        # Check if we've been idle too long
+                        idle_time = time.time() - last_activity
+                        if idle_time > idle_timeout:
+                            last_error = f"No output for {idle_time:.0f}s, assuming stuck"
+                            collector.record_error(last_error)
+                            print(f"      ⚠️ {last_error}")
+                            break
+                        # Otherwise continue waiting
+                        continue
                     if not line:
                         break
 
@@ -591,20 +609,50 @@ Never end a task with just tool calls - always provide a final summary with the 
             try:
                 await asyncio.wait_for(read_stream(), timeout=self.timeout)
             except asyncio.TimeoutError:
-                process.kill()
                 last_error = f"Timeout after {self.timeout}s"
                 collector.record_error(last_error)
+                print(f"      ⚠️ {last_error}")
+            except asyncio.CancelledError:
+                last_error = "Task cancelled"
+                collector.record_error(last_error)
+                print(f"      ⚠️ {last_error}")
+                raise  # Re-raise to propagate cancellation
+            finally:
+                # Ensure process is terminated - use sync kill to avoid async issues during cleanup
+                if process.returncode is None:
+                    try:
+                        process.kill()
+                    except ProcessLookupError:
+                        pass  # Already dead
+                    try:
+                        # Use a shield to protect wait() from cancellation
+                        await asyncio.shield(asyncio.wait_for(process.wait(), timeout=5.0))
+                    except (asyncio.TimeoutError, asyncio.CancelledError):
+                        pass  # Best effort cleanup
 
-            await process.wait()
+            if process.returncode is None:
+                try:
+                    await asyncio.wait_for(process.wait(), timeout=2.0)
+                except asyncio.TimeoutError:
+                    pass
 
             if process.returncode != 0:
-                stderr = await process.stderr.read()
-                last_error = stderr.decode()[:500]
-                collector.record_error(last_error)
+                stderr = await process.stderr.read() if process.stderr else b""
+                last_error = stderr.decode()[:500] if stderr else ""
+                if last_error:
+                    collector.record_error(last_error)
 
         except FileNotFoundError:
             last_error = "claude command not found. Install Claude Code first."
             collector.record_error(last_error)
+        except asyncio.CancelledError:
+            # Clean up subprocess on cancellation
+            if 'process' in locals() and process.returncode is None:
+                try:
+                    process.kill()
+                except ProcessLookupError:
+                    pass
+            raise
         except Exception as e:
             last_error = str(e)
             collector.record_error(last_error)
@@ -666,11 +714,15 @@ Never end a task with just tool calls - always provide a final summary with the 
                         # Summarize input
                         input_summary = self._summarize_tool_input(tool_name, tool_input)
                         print(f"      [{call_num}] {tool_name}: {input_summary}")
-                        # In debug mode, show full tool input for insight
-                        if debug and tool_name == "Bash":
+                        # Print description/explanation if present
+                        description = tool_input.get("description") or tool_input.get("explanation") or tool_input.get("reason")
+                        if description:
+                            print(f"          → {description[:150]}")
+                        # For Bash, always print full command
+                        if tool_name == "Bash":
                             cmd = tool_input.get("command", "")
-                            if len(cmd) > 100:
-                                print(f"          cmd: {cmd[:150]}...")
+                            if cmd:
+                                print(f"          $ {cmd}")
             # Record usage from assistant message if present
             # Note: Claude CLI reports CUMULATIVE usage, so compute deltas
             usage = message.get("usage", {})
@@ -708,7 +760,14 @@ Never end a task with just tool calls - always provide a final summary with the 
         # File-related tools
         if tool_name in ("Read", "read_file"):
             path = tool_input.get("file_path") or tool_input.get("path", "")
-            return self._short_path(path)
+            start_line = tool_input.get("start_line") or tool_input.get("startLine")
+            end_line = tool_input.get("end_line") or tool_input.get("endLine")
+            short_path = self._short_path(path)
+            if start_line and end_line:
+                return f"{short_path}:{start_line}-{end_line}"
+            elif start_line:
+                return f"{short_path}:{start_line}-"
+            return short_path
         if tool_name in ("Glob", "file_search"):
             pattern = tool_input.get("pattern", "")
             return f"'{pattern}'"
@@ -942,12 +1001,311 @@ Do NOT end with tool calls or partial work. Always provide a final text response
             )
 
 
+class LlcraftAgentRunner(AgentRunner):
+    """
+    Runner for llcraft - custom agent with llmcc tool support.
+
+    Uses llcraft with --llmcc flag to enable the llmcc tool.
+    For baseline condition, runs WITHOUT --llmcc so the tool isn't available.
+    """
+
+    def __init__(
+        self,
+        model: str = "claude-opus-4-5-20251101",
+        timeout: float = 600,
+        env_overrides: Optional[Dict[str, str]] = None,
+    ):
+        self.model = model
+        self.timeout = timeout
+        self.env_overrides = env_overrides or {}
+
+    def get_name(self) -> str:
+        return "llcraft"
+
+    async def run(self, context: RunContext) -> TaskMetrics:
+        """Execute llcraft on the task."""
+        import json
+
+        collector = MetricsCollector(
+            task_id=context.task.id,
+            condition=context.condition.value,
+            run_id=context.run_id,
+        )
+
+        collector.start()
+
+        # Build the prompt - for llcraft we don't pre-load graph, llmcc is a tool
+        debug_instruction = """
+
+⚠️ STEP-BY-STEP MODE ENABLED:
+Before EVERY tool call, explain your reasoning briefly.""" if context.debug else ""
+
+        # System prompt varies by condition
+        if context.condition == Condition.WITH_LLMCC:
+            system_prompt = f"""You are a coding assistant with access to the llmcc code architecture tool.{debug_instruction}
+
+For complex codebase exploration, consider using the llmcc tool to understand architecture:
+- llmcc(dirs=["/path"], depth=2) - shows module-level structure
+- llmcc(dirs=["/path"], depth=3, pagerank_top_k=100) - detailed view with top 100 important nodes
+
+WORKFLOW:
+1. Use llmcc to understand architecture when exploring a new codebase
+2. Use grep/read_file for specific code details
+3. Always end with "TASK COMPLETE" or "TASK FAILED"
+
+CRITICAL: End every response with "TASK COMPLETE" or "TASK FAILED"."""
+        else:
+            system_prompt = f"""You are a coding assistant completing benchmark tasks.{debug_instruction}
+
+Use available tools (read_file, search_files, list_dir, run_command) to explore the codebase.
+
+CRITICAL: End every response with "TASK COMPLETE" or "TASK FAILED"."""
+
+        # Format prompt as single line to work with readline REPL
+        task_desc = context.task.description.replace('\n', ' ').replace('  ', ' ')
+        expected = ', '.join(context.task.expected_files) if context.task.expected_files else 'As needed'
+        prompt = f"Task: {task_desc} | Workspace: {context.workspace_path} | Expected files: {expected} | IMPORTANT: End with TASK COMPLETE followed by your answer, or TASK FAILED with explanation."
+
+        # Set up environment
+        env = os.environ.copy()
+        env.update(self.env_overrides)
+        env.setdefault("ANTHROPIC_BASE_URL", "http://localhost:5168")
+        env.setdefault("ANTHROPIC_API_KEY", "sk-copilot-bridge")
+
+        # Build command - conditionally add --llmcc flag
+        llcraft_path = Path(__file__).parent.parent.parent.parent / "agent" / "llcraft" / "dist" / "index.js"
+
+        cmd = [
+            "node", str(llcraft_path),
+            "--new",  # Fresh session
+        ]
+
+        # Only add --llmcc for WITH_LLMCC condition
+        if context.condition == Condition.WITH_LLMCC:
+            cmd.append("--llmcc")
+
+        # Debug: print the command being run
+        print(f"      Running: {' '.join(cmd)}", flush=True)
+
+        task_completed = False
+        last_error = ""
+        final_answer = ""
+
+        # Open trace file if specified
+        trace_file = None
+        if context.trace_file:
+            trace_file = open(context.trace_file, "a")
+            trace_file.write(json.dumps({
+                "type": "init",
+                "task_id": context.task.id,
+                "run_id": context.run_id,
+                "condition": context.condition.value,
+                "with_llmcc_tool": context.condition == Condition.WITH_LLMCC,
+                "prompt": prompt,
+                "timestamp": time.time(),
+            }) + "\n")
+            trace_file.flush()
+
+        try:
+            # Start llcraft process
+            # Force Node.js to unbuffer stdout
+            env["FORCE_COLOR"] = "1"  # Often helps with output buffering
+            process = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,  # Merge stderr to stdout
+                cwd=str(context.workspace_path),
+                env=env,
+            )
+
+            # Send the prompt first, wait for response, then exit
+            prompt_input = f"{prompt}\n"
+
+            async def read_output():
+                nonlocal task_completed, final_answer, last_error
+                output_lines = []
+                waiting_for_prompt = True
+                response_started = False
+                idle_count = 0
+                exit_sent = False
+                lines_after_complete = 0
+
+                while True:
+                    try:
+                        # Use a longer timeout to allow for API calls
+                        line = await asyncio.wait_for(
+                            process.stdout.readline(),
+                            timeout=5.0
+                        )
+                        idle_count = 0  # Reset idle counter on data
+
+                        # Track lines after TASK COMPLETE
+                        if task_completed and not exit_sent:
+                            lines_after_complete += 1
+                            # After 150 lines post-completion, force exit
+                            if lines_after_complete >= 150:
+                                try:
+                                    process.stdin.write(b"/exit\n")
+                                    await process.stdin.drain()
+                                    exit_sent = True
+                                except:
+                                    pass
+                    except asyncio.TimeoutError:
+                        idle_count += 1
+                        # If we've already sent exit and been idle, break
+                        if exit_sent and idle_count >= 2:
+                            print(f"      >>> Breaking after /exit (idle={idle_count})", flush=True)
+                            break
+                        # If we've seen a response and been idle, send exit
+                        if response_started and idle_count >= 5 and not exit_sent:
+                            print(f"      >>> Sending /exit (idle={idle_count}, response_started={response_started})", flush=True)
+                            try:
+                                process.stdin.write(b"/exit\n")
+                                await process.stdin.drain()
+                                exit_sent = True
+                            except:
+                                pass
+                            # Continue reading to get "Session saved" etc
+                            continue
+                        elif idle_count >= 30:  # 150 second total timeout for response
+                            last_error = f"No output for {idle_count * 5}s, assuming stuck"
+                            print(f"      ⚠️ {last_error}")
+                            break
+                        continue
+
+                    if not line:
+                        break
+
+                    decoded = line.decode().rstrip()
+                    output_lines.append(decoded)
+
+                    if trace_file:
+                        trace_file.write(json.dumps({"type": "output", "line": decoded}) + "\n")
+                        trace_file.flush()
+
+                    # Strip ANSI codes for detection
+                    stripped = re.sub(r'\x1b\[[0-9;]*m', '', decoded)
+
+                    # Detect when llcraft starts responding (after the prompt echo)
+                    if "llcraft:" in stripped and not response_started:
+                        response_started = True
+
+                    # Detect when llcraft exits (after /exit command)
+                    if "Goodbye!" in stripped or "Session saved" in stripped:
+                        # Wait a tiny bit for any final output then break
+                        await asyncio.sleep(0.1)
+                        break
+
+                    # Parse tool calls from output (llcraft shows them as [tool_name: args] with ANSI colors)
+                    # Strip ANSI codes first
+                    stripped = re.sub(r'\x1b\[[0-9;]*m', '', decoded)
+                    # Find all tool calls in the line (may have multiple)
+                    tool_matches = re.findall(r'\[(\w+):\s*([^\]]+)\]', stripped)
+                    for tool_name, tool_args in tool_matches:
+                        tool_call = ToolCall(
+                            timestamp=monotonic_time(),
+                            tool_name=tool_name,
+                            parameters={"summary": tool_args},
+                            result_preview="",
+                            duration_seconds=0,
+                            tokens_in=0,
+                            tokens_out=0,
+                            success=True,
+                        )
+                        collector.record_tool_call(tool_call)
+                        print(f"      [{collector.tool_calls_total}] {tool_name}: {tool_args[:60]}", flush=True)
+
+                    # Check for completion
+                    if "TASK COMPLETE" in decoded.upper():
+                        task_completed = True
+                        print(f"      >>> TASK COMPLETE detected", flush=True)
+                    elif "TASK FAILED" in decoded.upper():
+                        task_completed = False
+                        print(f"      >>> TASK FAILED detected", flush=True)
+
+                # Capture final output as answer
+                final_answer = "\n".join(output_lines[-20:])  # Last 20 lines as answer
+
+            try:
+                # Write prompt first
+                process.stdin.write(prompt_input.encode())
+                await process.stdin.drain()
+
+                # Read output (will send /exit when response is complete)
+                await asyncio.wait_for(read_output(), timeout=self.timeout)
+            except asyncio.TimeoutError:
+                last_error = f"Timeout after {self.timeout}s"
+                collector.record_error(last_error)
+                print(f"      ⚠️ {last_error}")
+            except asyncio.CancelledError:
+                last_error = "Task cancelled"
+                collector.record_error(last_error)
+                print(f"      ⚠️ {last_error}")
+                raise
+            finally:
+                # Ensure process is terminated - use sync kill to avoid async issues
+                if process.returncode is None:
+                    try:
+                        process.kill()
+                    except ProcessLookupError:
+                        pass
+                    try:
+                        await asyncio.shield(asyncio.wait_for(process.wait(), timeout=5.0))
+                    except (asyncio.TimeoutError, asyncio.CancelledError):
+                        pass
+
+            if process.returncode is None:
+                try:
+                    await asyncio.wait_for(process.wait(), timeout=2.0)
+                except asyncio.TimeoutError:
+                    pass
+
+            if process.returncode != 0:
+                stderr = await process.stderr.read() if process.stderr else b""
+                last_error = stderr.decode()[:500] if stderr else ""
+                if last_error:
+                    collector.record_error(last_error)
+
+        except FileNotFoundError:
+            last_error = f"llcraft not found at {llcraft_path}. Run 'npm run build' in agent/llcraft first."
+            collector.record_error(last_error)
+        except asyncio.CancelledError:
+            # Clean up subprocess on cancellation
+            if 'process' in locals() and process.returncode is None:
+                try:
+                    process.kill()
+                except ProcessLookupError:
+                    pass
+            raise
+        except Exception as e:
+            last_error = str(e)
+            collector.record_error(last_error)
+        finally:
+            if trace_file:
+                trace_file.close()
+
+        collector.set_answer(final_answer)
+        collector.set_task_completed(task_completed)
+        collector.end("completed" if task_completed else "failed")
+
+        # Print answer summary
+        if final_answer:
+            print(f"\n      === ANSWER ===")
+            for line in final_answer.strip().split("\n")[-10:]:
+                print(f"      {line}")
+            print(f"      ===============\n")
+
+        return collector.get_metrics()
+
+
 # Export for external agent implementations
 __all__ = [
     "AgentRunner",
     "MockAgentRunner",
     "ClaudeAgentRunner",
     "CodexAgentRunner",
+    "LlcraftAgentRunner",
     "RunContext",
     "generate_graph",
     "build_system_prompt",
