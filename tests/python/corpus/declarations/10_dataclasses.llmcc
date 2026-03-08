@@ -1,0 +1,51 @@
+===============================================================================
+dataclasses
+===============================================================================
+Dataclass declarations.
+lang: python
+
+--- file: src/lib.py ---
+from dataclasses import dataclass, field
+from typing import List
+
+@dataclass
+class Point:
+    x: int
+    y: int
+
+@dataclass
+class Circle:
+    center: Point
+    radius: float
+
+@dataclass
+class Container:
+    items: List[Point] = field(default_factory=list)
+    name: str = "default"
+
+@dataclass(frozen=True)
+class ImmutablePoint:
+    x: int
+    y: int
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Point
+    (field:3 x @type int)
+    (field:4 y @type int)
+  )
+  (class:5 Circle
+    (field:6 center @type:2 Point)
+    (field:7 radius @type float)
+    (@tdep:2 Point)
+  )
+  (class:8 Container
+    (field:9 items @type List)
+    (field:10 name @type str)
+  )
+  (class:11 ImmutablePoint
+    (field:12 x @type int)
+    (field:13 y @type int)
+  )
+)
+

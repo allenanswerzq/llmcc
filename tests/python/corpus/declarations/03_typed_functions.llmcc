@@ -1,0 +1,49 @@
+===============================================================================
+typed-functions
+===============================================================================
+Functions with type annotations.
+lang: python
+
+--- file: src/lib.py ---
+def identity(x: int) -> int:
+    return x
+
+def add(a: int, b: int) -> int:
+    return a + b
+
+def concat(s1: str, s2: str) -> str:
+    return s1 + s2
+
+def optional_return(flag: bool) -> str | None:
+    if flag:
+        return "yes"
+    return None
+
+def no_return(msg: str) -> None:
+    print(msg)
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 identity
+    (parameter:3 x @type int)
+    (return:4 @type int)
+  )
+  (func:5 add
+    (parameter:6 a @type int)
+    (parameter:7 b @type int)
+    (return:8 @type int)
+  )
+  (func:9 concat
+    (parameter:10 s1 @type str)
+    (parameter:11 s2 @type str)
+    (return:12 @type str)
+  )
+  (func:13 optional_return
+    (parameter:14 flag @type bool)
+    (return:15 @type str)
+  )
+  (func:16 no_return
+    (parameter:17 msg @type str)
+  )
+)
+

@@ -1,0 +1,79 @@
+===============================================================================
+abstract-base-class
+===============================================================================
+Test that abstract base classes and abstract methods are captured.
+lang: python
+
+--- file: sample/src/abc_example.py ---
+
+from abc import ABC, abstractmethod
+
+class Shape(ABC):
+    @abstractmethod
+    def area(self) -> float:
+        pass
+
+    @abstractmethod
+    def perimeter(self) -> float:
+        pass
+
+class Rectangle(Shape):
+    width: float
+    height: float
+
+    def area(self) -> float:
+        return self.width * self.height
+
+    def perimeter(self) -> float:
+        return 2 * (self.width + self.height)
+
+class Circle(Shape):
+    radius: float
+
+    def area(self) -> float:
+        return 3.14159 * self.radius ** 2
+
+    def perimeter(self) -> float:
+        return 2 * 3.14159 * self.radius
+
+def calculate_total_area(shapes: list) -> float:
+    return sum(s.area() for s in shapes)
+
+--- expect:block-graph ---
+(root:1 abc_example ($TMP/sample/src/abc_example.py)
+  (class:2 Shape
+    (method:3 area
+      (return:4 @type float)
+    )
+    (method:5 perimeter
+      (return:6 @type float)
+    )
+    (@inherit ABC)
+  )
+  (class:7 Rectangle
+    (field:8 width @type float)
+    (field:9 height @type float)
+    (method:10 area
+      (return:11 @type float)
+    )
+    (method:12 perimeter
+      (return:13 @type float)
+    )
+    (@inherit:2 Shape)
+  )
+  (class:14 Circle
+    (field:15 radius @type float)
+    (method:16 area
+      (return:17 @type float)
+    )
+    (method:18 perimeter
+      (return:19 @type float)
+    )
+    (@inherit:2 Shape)
+  )
+  (func:20 calculate_total_area
+    (parameter:21 shapes @type list)
+    (return:22 @type float)
+  )
+)
+

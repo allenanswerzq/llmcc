@@ -1,0 +1,58 @@
+===============================================================================
+tuple-unpacking
+===============================================================================
+Tuple and list unpacking patterns.
+lang: python
+
+--- file: src/lib.py ---
+class Point:
+    x: int
+    y: int
+
+def simple_unpack():
+    a, b = 1, 2
+    return a + b
+
+def list_unpack():
+    items = [1, 2, 3]
+    first, second, third = items
+    return first
+
+def starred_unpack():
+    items = [1, 2, 3, 4, 5]
+    first, *middle, last = items
+    return middle
+
+def nested_unpack():
+    data = ((1, 2), (3, 4))
+    (a, b), (c, d) = data
+    return a + d
+
+def for_unpack(pairs: list) -> list:
+    return [x + y for x, y in pairs]
+
+def function_unpack(point: Point) -> tuple:
+    x, y = point.x, point.y
+    return (x, y)
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Point
+    (field:3 x @type int)
+    (field:4 y @type int)
+  )
+  (func:5 simple_unpack)
+  (func:6 list_unpack)
+  (func:7 starred_unpack)
+  (func:8 nested_unpack)
+  (func:9 for_unpack
+    (parameter:10 pairs @type list)
+    (return:11 @type list)
+  )
+  (func:12 function_unpack
+    (parameter:13 point @type:2 Point)
+    (return:14 @type tuple)
+    (@tdep:2 Point)
+  )
+)
+

@@ -1,0 +1,50 @@
+===============================================================================
+async-functions
+===============================================================================
+Async function declarations.
+lang: python
+
+--- file: src/lib.py ---
+async def fetch():
+    pass
+
+async def fetch_url(url: str) -> str:
+    return url
+
+async def process_batch(items: list) -> list:
+    results = []
+    for item in items:
+        results.append(item)
+    return results
+
+class AsyncService:
+    async def start(self) -> None:
+        pass
+
+    async def stop(self) -> None:
+        pass
+
+    async def process(self, data: str) -> str:
+        return data
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 fetch)
+  (func:3 fetch_url
+    (parameter:4 url @type str)
+    (return:5 @type str)
+  )
+  (func:6 process_batch
+    (parameter:7 items @type list)
+    (return:8 @type list)
+  )
+  (class:9 AsyncService
+    (method:10 start)
+    (method:11 stop)
+    (method:12 process
+      (parameter:13 data @type str)
+      (return:14 @type str)
+    )
+  )
+)
+

@@ -1,0 +1,55 @@
+===============================================================================
+functions
+===============================================================================
+Basic function declarations.
+lang: python
+
+--- file: src/lib.py ---
+def simple():
+    pass
+
+def with_return():
+    return 42
+
+def with_params(a, b, c):
+    return a + b + c
+
+def with_defaults(x, y=10, z=20):
+    return x + y + z
+
+def with_args(*args):
+    return args
+
+def with_kwargs(**kwargs):
+    return kwargs
+
+def with_all(a, *args, **kwargs):
+    return a
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 simple)
+  (func:3 with_return)
+  (func:4 with_params
+    (parameter:5 a)
+    (parameter:6 b)
+    (parameter:7 c)
+  )
+  (func:8 with_defaults
+    (parameter:9 x)
+    (parameter:10 y)
+    (parameter:11 z)
+  )
+  (func:12 with_args
+    (parameter:13 args)
+  )
+  (func:14 with_kwargs
+    (parameter:15 kwargs)
+  )
+  (func:16 with_all
+    (parameter:17 a)
+    (parameter:18 args)
+    (parameter:19 kwargs)
+  )
+)
+

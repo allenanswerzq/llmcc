@@ -1,0 +1,43 @@
+===============================================================================
+nested-classes
+===============================================================================
+Nested class declarations.
+lang: python
+
+--- file: src/lib.py ---
+class Outer:
+    class Inner:
+        value: int
+
+    class Config:
+        debug: bool
+
+        class SubConfig:
+            level: int
+
+    inner: Inner
+
+    def get_config(self) -> Config:
+        return Outer.Config()
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Outer
+    (class:3 Inner
+      (field:4 value @type int)
+    )
+    (class:5 Config
+      (field:6 debug @type bool)
+      (class:7 SubConfig
+        (field:8 level @type int)
+      )
+    )
+    (field:9 inner @type:3 Inner)
+    (method:10 get_config
+      (return:11 @type:5 Config)
+      (@tdep:5 Config)
+    )
+    (@tdep:3 Inner)
+  )
+)
+

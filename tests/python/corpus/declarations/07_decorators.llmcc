@@ -1,0 +1,49 @@
+===============================================================================
+decorators
+===============================================================================
+Decorated classes and functions.
+lang: python
+
+--- file: src/lib.py ---
+def decorator(func):
+    return func
+
+def with_args(arg):
+    def inner(func):
+        return func
+    return inner
+
+@decorator
+def decorated():
+    pass
+
+@with_args("test")
+def decorated_with_args():
+    pass
+
+@decorator
+@with_args("chain")
+def chained():
+    pass
+
+@decorator
+class DecoratedClass:
+    value: int
+
+    @decorator
+    def method(self):
+        pass
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 decorator)
+  (func:3 with_args)
+  (func:4 decorated)
+  (func:5 decorated_with_args)
+  (func:6 chained)
+  (class:7 DecoratedClass
+    (field:8 value @type int)
+    (method:9 method)
+  )
+)
+

@@ -1,0 +1,62 @@
+===============================================================================
+edge-output-return
+===============================================================================
+Test that function return types create output edges.
+lang: python
+
+--- file: sample/src/app.py ---
+class User:
+    name: str
+
+class Profile:
+    bio: str
+
+def create_user() -> User:
+    return User()
+
+def get_profile(user: User) -> Profile:
+    return Profile()
+
+def process() -> tuple:
+    user = create_user()
+    profile = get_profile(user)
+    return (user, profile)
+
+--- expect:arch-graph ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_app_py {
+      label="app.py";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n2[label="User", path="$TMP/sample/src/app.py:1", sym_ty="Struct", shape=box];
+      n4[label="Profile", path="$TMP/sample/src/app.py:4", sym_ty="Struct", shape=box];
+      n6[label="create_user", path="$TMP/sample/src/app.py:7", sym_ty="Function", shape=ellipse];
+      n8[label="get_profile", path="$TMP/sample/src/app.py:10", sym_ty="Function", shape=ellipse];
+      n11[label="process", path="$TMP/sample/src/app.py:13", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+
+  n2 -> n6 [from="func", to="output"];
+  n2 -> n8 [from="input", to="func"];
+  n4 -> n8 [from="func", to="output"];
+  n6 -> n11 [from="caller", to="callee"];
+  n8 -> n11 [from="caller", to="callee"];
+}
+

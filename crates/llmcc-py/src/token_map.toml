@@ -1,0 +1,440 @@
+# Python token mappings for llmcc
+# Maps tree-sitter node types to HirKind and BlockKind
+
+default_hir_kind = "Internal"
+
+#
+# Node tokens - AST node types
+#
+
+# Root
+[[nodes]]
+ts_name = "module"
+hir_kind = "Scope"
+block_kind = "Root"
+
+# Class definitions
+[[nodes]]
+ts_name = "class_definition"
+hir_kind = "Scope"
+block_kind = "Class"
+
+# Function definitions
+[[nodes]]
+ts_name = "function_definition"
+hir_kind = "Scope"
+block_kind = "Func"
+
+# Lambda expressions (anonymous functions)
+[[nodes]]
+ts_name = "lambda"
+hir_kind = "Scope"
+block_kind = "Func"
+
+# Decorated definitions (functions/classes with decorators)
+[[nodes]]
+ts_name = "decorated_definition"
+hir_kind = "Internal"
+
+# Identifiers
+[[nodes]]
+ts_name = "identifier"
+hir_kind = "Identifier"
+
+# Type annotation nodes are handled through field access, not as separate nodes
+# (tree-sitter-python uses 'type' field on typed parameters)
+
+# Decorators
+[[nodes]]
+ts_name = "decorator"
+hir_kind = "Internal"
+
+# Parameters and blocks
+[[nodes]]
+ts_name = "parameters"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "block"
+hir_kind = "Scope"
+
+# Parameter types
+[[nodes]]
+ts_name = "typed_parameter"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "typed_default_parameter"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "default_parameter"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "list_splat_pattern"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "dictionary_splat_pattern"
+hir_kind = "Internal"
+
+# Assignments
+[[nodes]]
+ts_name = "assignment"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "augmented_assignment"
+hir_kind = "Internal"
+
+# Import statements
+[[nodes]]
+ts_name = "import_statement"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "import_from_statement"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "aliased_import"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "dotted_name"
+hir_kind = "Internal"
+
+# Expressions
+[[nodes]]
+ts_name = "call"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "attribute"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "subscript"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "binary_operator"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "unary_operator"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "comparison_operator"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "boolean_operator"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "not_operator"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "conditional_expression"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "named_expression"
+hir_kind = "Internal"
+
+# Literals
+[[nodes]]
+ts_name = "string"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "concatenated_string"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "integer"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "float"
+hir_kind = "Internal"
+
+# Note: 'true', 'false', 'await' are Rust keywords so we skip them
+# and handle these nodes by checking the string representation instead
+
+
+[[nodes]]
+ts_name = "none"
+hir_kind = "Internal"
+
+# Collections
+[[nodes]]
+ts_name = "list"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "tuple"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "dictionary"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "set"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "list_comprehension"
+hir_kind = "Scope"
+
+[[nodes]]
+ts_name = "dictionary_comprehension"
+hir_kind = "Scope"
+
+[[nodes]]
+ts_name = "set_comprehension"
+hir_kind = "Scope"
+
+[[nodes]]
+ts_name = "generator_expression"
+hir_kind = "Scope"
+
+# Patterns (for unpacking)
+[[nodes]]
+ts_name = "tuple_pattern"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "list_pattern"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "pattern_list"
+hir_kind = "Internal"
+
+# Match/case (Python 3.10+)
+[[nodes]]
+ts_name = "match_statement"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "case_clause"
+hir_kind = "Scope"
+
+# Control flow
+[[nodes]]
+ts_name = "if_statement"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "for_statement"
+hir_kind = "Scope"
+
+[[nodes]]
+ts_name = "while_statement"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "try_statement"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "with_statement"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "with_clause"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "with_item"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "except_clause"
+hir_kind = "Scope"
+
+# Return type annotation
+[[nodes]]
+ts_name = "return_statement"
+hir_kind = "Internal"
+block_kind = "Return"
+
+# Type alias (Python 3.12+)
+[[nodes]]
+ts_name = "type_alias_statement"
+hir_kind = "Internal"
+
+# Argument types
+[[nodes]]
+ts_name = "argument_list"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "keyword_argument"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "list_splat"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "dictionary_splat"
+hir_kind = "Internal"
+
+# Global/nonlocal
+[[nodes]]
+ts_name = "global_statement"
+hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "nonlocal_statement"
+hir_kind = "Internal"
+
+# Async
+# 'await' is also skipped as it's a Rust keyword
+
+# Expression statement
+[[nodes]]
+ts_name = "expression_statement"
+hir_kind = "Internal"
+
+# Parenthesized expression
+[[nodes]]
+ts_name = "parenthesized_expression"
+hir_kind = "Internal"
+
+# Ellipsis
+[[nodes]]
+ts_name = "ellipsis"
+hir_kind = "Internal"
+
+#
+# Field tokens - node field names
+#
+[[fields]]
+name = "field_name"
+field_name = "name"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_body"
+field_name = "body"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_parameters"
+field_name = "parameters"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_superclasses"
+field_name = "superclasses"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_return_type"
+field_name = "return_type"
+hir_kind = "Internal"
+block_kind = "Return"
+
+[[fields]]
+name = "field_type"
+field_name = "type"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_value"
+field_name = "value"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_left"
+field_name = "left"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_right"
+field_name = "right"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_function"
+field_name = "function"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_arguments"
+field_name = "arguments"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_object"
+field_name = "object"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_attribute"
+field_name = "attribute"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_module"
+field_name = "module_name"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_alias"
+field_name = "alias"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_definition"
+field_name = "definition"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_alternative"
+field_name = "alternative"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_consequence"
+field_name = "consequence"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_condition"
+field_name = "condition"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_subject"
+field_name = "subject"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_operators"
+field_name = "operators"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_operator"
+field_name = "operator"
+hir_kind = "Internal"
+
+[[fields]]
+name = "field_argument"
+field_name = "argument"
+hir_kind = "Internal"
+
+# Required fields for LanguageTrait default helpers
+[[fields]]
+name = "field_trait"
+field_name = "name"
+hir_kind = "Internal"

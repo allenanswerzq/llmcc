@@ -1,0 +1,82 @@
+===============================================================================
+match-statements
+===============================================================================
+Pattern matching with match statements (Python 3.10+).
+lang: python
+
+--- file: src/lib.py ---
+class Point:
+    x: int
+    y: int
+
+class Circle:
+    center: Point
+    radius: float
+
+def match_literal(value: int) -> str:
+    match value:
+        case 0:
+            return "zero"
+        case 1:
+            return "one"
+        case _:
+            return "other"
+
+def match_capture(item):
+    match item:
+        case [x, y]:
+            return x + y
+        case {"key": value}:
+            return value
+        case _:
+            return None
+
+def match_class(shape) -> float:
+    match shape:
+        case Circle(center=Point(x=0, y=0), radius=r):
+            return r
+        case Circle(radius=r):
+            return r * 2
+        case _:
+            return 0.0
+
+def match_guard(point: Point) -> str:
+    match point:
+        case Point(x=x, y=y) if x == y:
+            return "diagonal"
+        case Point(x=0, y=_):
+            return "y-axis"
+        case Point(x=_, y=0):
+            return "x-axis"
+        case _:
+            return "other"
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Point
+    (field:3 x @type int)
+    (field:4 y @type int)
+  )
+  (class:5 Circle
+    (field:6 center @type:2 Point)
+    (field:7 radius @type float)
+    (@tdep:2 Point)
+  )
+  (func:8 match_literal
+    (parameter:9 value @type int)
+    (return:10 @type str)
+  )
+  (func:11 match_capture
+    (parameter:12 item)
+  )
+  (func:13 match_class
+    (parameter:14 shape)
+    (return:15 @type float)
+  )
+  (func:16 match_guard
+    (parameter:17 point @type:2 Point)
+    (return:18 @type str)
+    (@tdep:2 Point)
+  )
+)
+

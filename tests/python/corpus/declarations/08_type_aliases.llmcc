@@ -1,0 +1,39 @@
+===============================================================================
+type-aliases
+===============================================================================
+Type alias declarations.
+lang: python
+
+--- file: src/lib.py ---
+from typing import TypeAlias, Union, List, Dict
+
+# Simple type alias
+UserId: TypeAlias = int
+Username: TypeAlias = str
+
+# Complex type alias
+UserMap: TypeAlias = Dict[UserId, Username]
+UserList: TypeAlias = List[UserId]
+
+# Union type alias
+StringOrInt: TypeAlias = Union[str, int]
+OptionalStr: TypeAlias = str | None
+
+class User:
+    id: UserId
+    name: Username
+
+def get_users() -> UserList:
+    return []
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 User
+    (field:3 id @type UserId)
+    (field:4 name @type Username)
+  )
+  (func:5 get_users
+    (return:6 @type UserList)
+  )
+)
+

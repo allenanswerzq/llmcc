@@ -1,0 +1,49 @@
+===============================================================================
+multiple-inheritance
+===============================================================================
+Test that multiple inheritance creates multiple edges.
+lang: python
+
+--- file: sample/src/mixins.py ---
+
+class Serializable:
+    def to_json(self):
+        pass
+
+class Printable:
+    def print(self):
+        pass
+
+class Loggable:
+    def log(self):
+        pass
+
+class Document(Serializable, Printable):
+    content: str
+
+class Report(Document, Loggable):
+    title: str
+
+--- expect:block-graph ---
+(root:1 mixins ($TMP/sample/src/mixins.py)
+  (class:2 Serializable
+    (method:3 to_json)
+  )
+  (class:4 Printable
+    (method:5 print)
+  )
+  (class:6 Loggable
+    (method:7 log)
+  )
+  (class:8 Document
+    (field:9 content @type str)
+    (@inherit:2 Serializable)
+    (@inherit:4 Printable)
+  )
+  (class:10 Report
+    (field:11 title @type str)
+    (@inherit:8 Document)
+    (@inherit:6 Loggable)
+  )
+)
+

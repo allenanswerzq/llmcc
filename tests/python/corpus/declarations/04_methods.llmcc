@@ -1,0 +1,60 @@
+===============================================================================
+methods
+===============================================================================
+Class methods and special methods.
+lang: python
+
+--- file: src/lib.py ---
+class Calculator:
+    value: int
+
+    def __init__(self, initial: int = 0):
+        self.value = initial
+
+    def add(self, n: int) -> int:
+        self.value += n
+        return self.value
+
+    def subtract(self, n: int) -> int:
+        self.value -= n
+        return self.value
+
+    @staticmethod
+    def zero() -> int:
+        return 0
+
+    @classmethod
+    def from_string(cls, s: str):
+        return cls(int(s))
+
+    @property
+    def current(self) -> int:
+        return self.value
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Calculator
+    (field:3 value @type int)
+    (method:4 __init__
+      (parameter:5 initial @type int)
+    )
+    (method:6 add
+      (parameter:7 n @type int)
+      (return:8 @type int)
+    )
+    (method:9 subtract
+      (parameter:10 n @type int)
+      (return:11 @type int)
+    )
+    (method:12 zero
+      (return:13 @type int)
+    )
+    (method:14 from_string
+      (parameter:15 s @type str)
+    )
+    (method:16 current
+      (return:17 @type int)
+    )
+  )
+)
+

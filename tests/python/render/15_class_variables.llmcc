@@ -1,0 +1,52 @@
+===============================================================================
+class-variables
+===============================================================================
+Test that class variables and instance variables are distinguished.
+lang: python
+
+--- file: sample/src/variables.py ---
+
+class Counter:
+    count: int = 0  # class variable
+
+    def __init__(self, value: int):
+        self.value = value  # instance variable
+
+    def increment(self) -> int:
+        Counter.count += 1
+        return self.value
+
+class Config:
+    DEBUG: bool = False
+    VERSION: str = "1.0"
+
+    host: str
+    port: int
+
+    def __init__(self, host: str, port: int):
+        self.host = host
+        self.port = port
+
+--- expect:block-graph ---
+(root:1 variables ($TMP/sample/src/variables.py)
+  (class:2 Counter
+    (field:3 count @type int)
+    (method:4 __init__
+      (parameter:5 value @type int)
+    )
+    (method:6 increment
+      (return:7 @type int)
+    )
+  )
+  (class:8 Config
+    (field:9 DEBUG @type bool)
+    (field:10 VERSION @type str)
+    (field:11 host @type str)
+    (field:12 port @type int)
+    (method:13 __init__
+      (parameter:14 host @type str)
+      (parameter:15 port @type int)
+    )
+  )
+)
+

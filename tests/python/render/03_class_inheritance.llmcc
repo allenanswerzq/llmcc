@@ -1,0 +1,68 @@
+===============================================================================
+class-inheritance
+===============================================================================
+Test that Python class inheritance creates edges in the architecture graph.
+lang: python
+
+--- file: sample/src/animals.py ---
+
+class Animal:
+    def speak(self):
+        pass
+
+class Dog(Animal):
+    def speak(self):
+        return "woof"
+
+class Cat(Animal):
+    def speak(self):
+        return "meow"
+
+--- expect:block-graph ---
+(root:1 animals ($TMP/sample/src/animals.py)
+  (class:2 Animal
+    (method:3 speak)
+  )
+  (class:4 Dog
+    (method:5 speak)
+    (@inherit:2 Animal)
+  )
+  (class:6 Cat
+    (method:7 speak)
+    (@inherit:2 Animal)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_animals_py {
+      label="animals.py";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n2[label="Animal", path="$TMP/sample/src/animals.py:2", sym_ty="Struct", shape=box];
+      n4[label="Dog", path="$TMP/sample/src/animals.py:6", sym_ty="Struct", shape=box];
+      n6[label="Cat", path="$TMP/sample/src/animals.py:10", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+
+  n2 -> n4 [from="class", to="inherit"];
+  n2 -> n6 [from="class", to="inherit"];
+}
+

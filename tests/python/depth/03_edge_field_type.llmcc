@@ -1,0 +1,52 @@
+===============================================================================
+edge-field-type
+===============================================================================
+Test that field type annotations create edges.
+lang: python
+
+--- file: sample/src/app.py ---
+class Config:
+    value: str
+
+class Database:
+    config: Config
+    name: str
+
+class Service:
+    db: Database
+    config: Config
+
+--- expect:arch-graph ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_app_py {
+      label="app.py";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n2[label="Config", path="$TMP/sample/src/app.py:1", sym_ty="Struct", shape=box];
+      n4[label="Database", path="$TMP/sample/src/app.py:4", sym_ty="Struct", shape=box];
+      n7[label="Service", path="$TMP/sample/src/app.py:8", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+
+  n2 -> n4 [from="field_type", to="struct"];
+  n2 -> n7 [from="field_type", to="struct"];
+  n4 -> n7 [from="field_type", to="struct"];
+}
+

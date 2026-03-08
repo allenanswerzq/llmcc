@@ -1,0 +1,67 @@
+===============================================================================
+file-detail
+===============================================================================
+Test that depth 3 (File) shows individual symbols within files.
+lang: python
+
+--- file: sample/src/models.py ---
+class User:
+    id: int
+    name: str
+
+class Profile:
+    bio: str
+    user: User
+
+--- file: sample/src/services.py ---
+from models import User, Profile
+
+class UserService:
+    user: User
+
+def get_profile(user: User) -> Profile:
+    return Profile()
+
+--- expect:arch-graph-depth-3 ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_models_py {
+      label="models.py";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n2[label="User", path="$TMP/sample/src/models.py:1", sym_ty="Struct", shape=box];
+      n5[label="Profile", path="$TMP/sample/src/models.py:5", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_services_py {
+      label="services.py";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n8[label="UserService", path="$TMP/sample/src/services.py:3", sym_ty="Struct", shape=box];
+      n10[label="get_profile", path="$TMP/sample/src/services.py:6", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+
+  n2 -> n5 [from="field_type", to="struct"];
+  n2 -> n8 [from="field_type", to="struct"];
+  n2 -> n10 [from="input", to="func"];
+  n5 -> n10 [from="func", to="output"];
+}
+

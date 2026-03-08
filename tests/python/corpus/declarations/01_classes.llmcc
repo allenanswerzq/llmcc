@@ -1,0 +1,39 @@
+===============================================================================
+classes
+===============================================================================
+Basic class declarations.
+lang: python
+
+--- file: src/lib.py ---
+class Empty:
+    pass
+
+class Person:
+    name: str
+    age: int
+
+class Point:
+    x: int = 0
+    y: int = 0
+
+class Container:
+    items: list
+    count: int = 0
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Empty)
+  (class:3 Person
+    (field:4 name @type str)
+    (field:5 age @type int)
+  )
+  (class:6 Point
+    (field:7 x @type int)
+    (field:8 y @type int)
+  )
+  (class:9 Container
+    (field:10 items @type list)
+    (field:11 count @type int)
+  )
+)
+

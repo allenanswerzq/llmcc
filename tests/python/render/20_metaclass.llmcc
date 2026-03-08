@@ -1,0 +1,59 @@
+===============================================================================
+metaclass
+===============================================================================
+Test that metaclass usage is handled.
+lang: python
+
+--- file: sample/src/meta.py ---
+
+class Meta(type):
+    def __new__(mcs, name, bases, namespace):
+        return super().__new__(mcs, name, bases, namespace)
+
+class Singleton(type):
+    _instances: dict
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super().__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+class BaseModel(metaclass=Meta):
+    id: int
+
+class Service(metaclass=Singleton):
+    name: str
+
+class UserModel(BaseModel):
+    username: str
+
+--- expect:block-graph ---
+(root:1 meta ($TMP/sample/src/meta.py)
+  (class:2 Meta
+    (method:3 __new__
+      (parameter:4 name)
+      (parameter:5 bases)
+      (parameter:6 namespace)
+    )
+    (@inherit type)
+  )
+  (class:7 Singleton
+    (field:8 _instances @type dict)
+    (method:9 __call__
+      (parameter:10 args)
+      (parameter:11 kwargs)
+    )
+    (@inherit type)
+  )
+  (class:12 BaseModel
+    (field:13 id @type int)
+  )
+  (class:14 Service
+    (field:15 name @type str)
+  )
+  (class:16 UserModel
+    (field:17 username @type str)
+    (@inherit:12 BaseModel)
+  )
+)
+

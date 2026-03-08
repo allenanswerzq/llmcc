@@ -1,0 +1,44 @@
+===============================================================================
+type-annotations
+===============================================================================
+Test that type annotations create edges in the architecture graph.
+lang: python
+
+--- file: sample/src/types.py ---
+
+class User:
+    name: str
+    age: int
+
+class Config:
+    value: str
+
+class Service:
+    config: Config
+    users: list
+
+def process_user(user: User) -> Config:
+    return Config()
+
+--- expect:block-graph ---
+(root:1 types ($TMP/sample/src/types.py)
+  (class:2 User
+    (field:3 name @type str)
+    (field:4 age @type int)
+  )
+  (class:5 Config
+    (field:6 value @type str)
+  )
+  (class:7 Service
+    (field:8 config @type:5 Config)
+    (field:9 users @type list)
+    (@tdep:5 Config)
+  )
+  (func:10 process_user
+    (parameter:11 user @type:2 User)
+    (return:12 @type:5 Config)
+    (@tdep:2 User)
+    (@tdep:5 Config)
+  )
+)
+

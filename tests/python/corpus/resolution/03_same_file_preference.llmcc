@@ -1,0 +1,68 @@
+===============================================================================
+prefer-same-file
+===============================================================================
+Test that symbol resolution prefers definitions in the same file.
+lang: python
+
+--- file: src/types.py ---
+class Config:
+    global_value: str
+
+--- file: src/services.py ---
+# Local Config should be preferred over types.Config
+class Config:
+    local_value: int
+
+class Service:
+    # Should resolve to local Config
+    config: Config
+
+--- expect:block-graph ---
+(root:1 types ($TMP/src/types.py)
+  (class:2 Config
+    (field:3 global_value @type str)
+  )
+)
+
+(root:4 services ($TMP/src/services.py)
+  (class:5 Config
+    (field:6 local_value @type int)
+  )
+  (class:7 Service
+    (field:8 config @type:5 Config)
+    (@tdep:5 Config)
+  )
+)
+
+
+===============================================================================
+prefer-import-over-builtin
+===============================================================================
+Test that imported symbols are preferred over same-named local definitions.
+lang: python
+
+--- file: src/models.py ---
+class List:
+    items: list
+
+--- file: src/app.py ---
+from models import List
+
+def process(data: List) -> int:
+    return len(data.items)
+
+--- expect:block-graph ---
+(root:1 models ($TMP/src/models.py)
+  (class:2 List
+    (field:3 items @type list)
+  )
+)
+
+(root:4 app ($TMP/src/app.py)
+  (func:5 process
+    (parameter:6 data @type:2 List)
+    (return:7 @type int)
+    (@tdep:2 List)
+  )
+)
+

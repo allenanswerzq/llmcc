@@ -1,0 +1,48 @@
+===============================================================================
+inheritance
+===============================================================================
+Class inheritance patterns.
+lang: python
+
+--- file: src/lib.py ---
+class Base:
+    pass
+
+class Single(Base):
+    pass
+
+class Mixin1:
+    def method1(self):
+        pass
+
+class Mixin2:
+    def method2(self):
+        pass
+
+class Multiple(Mixin1, Mixin2):
+    pass
+
+class Grandchild(Single):
+    pass
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Base)
+  (class:3 Single
+    (@inherit:2 Base)
+  )
+  (class:4 Mixin1
+    (method:5 method1)
+  )
+  (class:6 Mixin2
+    (method:7 method2)
+  )
+  (class:8 Multiple
+    (@inherit:4 Mixin1)
+    (@inherit:6 Mixin2)
+  )
+  (class:9 Grandchild
+    (@inherit:3 Single)
+  )
+)
+
