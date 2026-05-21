@@ -3,6 +3,7 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 use llmcc::{LlmccOptions, run_main};
 use llmcc_dot::ComponentDepth;
+use llmcc_go::LangGo;
 // use llmcc_python::LangPython;  // TODO: will be added back in the future
 use llmcc_rust::LangRust;
 use llmcc_ts::LangTypeScript;
@@ -65,9 +66,10 @@ fn run_llmcc(
     let result = match lang {
         "rust" => run_main::<LangRust>(&opts),
         "typescript" | "ts" => run_main::<LangTypeScript>(&opts),
+        "go" | "golang" => run_main::<LangGo>(&opts),
         other => {
             return Err(PyValueError::new_err(format!(
-                "Unknown language: {other}. Use 'rust' or 'typescript'"
+                "Unknown language: {other}. Use 'rust', 'typescript', or 'go'"
             )));
         }
     };

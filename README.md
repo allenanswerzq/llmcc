@@ -12,9 +12,9 @@ llmcc tries a different approach. It builds a multi-depth architecture view that
 |----------|--------|
 | Rust | ✅ Supported |
 | TypeScript | ✅ Supported |
-| C++ | 🔜 Planned |
+| C++ | ✅ Supported |
+| Go | ✅ Supported |
 | Python | 🔜 Planned |
-| Go | 🔜 Planned |
 | markdown | 🔜 Planned |
 | more |
 

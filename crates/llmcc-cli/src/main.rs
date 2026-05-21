@@ -16,6 +16,7 @@ use llmcc::run_main;
 use llmcc_core::Result;
 use llmcc_cpp::LangCpp;
 use llmcc_dot::ComponentDepth;
+use llmcc_go::LangGo;
 use llmcc_rust::LangRust;
 use llmcc_ts::LangTypeScript;
 
@@ -49,7 +50,7 @@ pub struct Cli {
     )]
     dirs: Vec<String>,
 
-    /// Language to use: 'rust', 'typescript' (or 'ts'), 'cpp'
+    /// Language to use: 'rust', 'typescript' (or 'ts'), 'cpp', 'go'
     #[arg(long, value_name = "LANG", default_value = "rust")]
     lang: String,
 
@@ -114,9 +115,10 @@ pub fn run(args: Cli) -> Result<()> {
         "rust" => run_main::<LangRust>(&opts),
         "typescript" | "ts" => run_main::<LangTypeScript>(&opts),
         "cpp" | "c++" | "c" => run_main::<LangCpp>(&opts),
+        "go" | "golang" => run_main::<LangGo>(&opts),
         _ => {
             return Err(format!(
-                "Unknown language: {}. Use 'rust', 'typescript', or 'cpp'",
+                "Unknown language: {}. Use 'rust', 'typescript', 'cpp', or 'go'",
                 args.lang
             )
             .into());
