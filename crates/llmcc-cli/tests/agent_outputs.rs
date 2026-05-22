@@ -1,0 +1,330 @@
+use std::fs;
+use std::path::Path;
+use std::process::Command;
+
+use serde_json::Value;
+use tempfile::TempDir;
+
+fn fixture() -> TempDir {
+    let temp = tempfile::tempdir().expect("create tempdir");
+    write_fixture(temp.path());
+    temp
+}
+
+fn write_fixture(root: &Path) {
+    fs::create_dir_all(root.join("src")).expect("create src");
+    fs::create_dir_all(root.join("tests")).expect("create tests");
+    fs::write(
+        root.join("src/lib.rs"),
+        "pub mod util;\npub fn entry() { util::helper(); }\n",
+    )
+    .expect("write lib");
+    fs::write(
+        root.join("src/util.rs"),
+        "pub fn helper() { private_helper(); }\nfn private_helper() {}\n",
+    )
+    .expect("write util");
+    fs::write(
+        root.join("tests/entry_test.rs"),
+        "#[test]\nfn entry_test() { fixture::entry(); }\n",
+    )
+    .expect("write test");
+}
+
+fn llmcc() -> Command {
+    Command::new(env!("CARGO_BIN_EXE_llmcc"))
+}
+
+fn run_fixture(root: &Path, args: &[&str]) -> std::process::Output {
+    let mut cmd = llmcc();
+    cmd.args(["--lang", "rust", "--dir"])
+        .arg(root)
+        .args(args)
+        .output()
+        .expect("run llmcc")
+}
+
+fn stdout(output: &std::process::Output) -> String {
+    String::from_utf8(output.stdout.clone()).expect("stdout utf8")
+}
+
+fn stderr(output: &std::process::Output) -> String {
+    String::from_utf8(output.stderr.clone()).expect("stderr utf8")
+}
+
+#[test]
+fn default_dir_analysis_has_no_stdout() {
+    let temp = fixture();
+    let output = run_fixture(temp.path(), &[]);
+
+    assert!(
+        output.status.success(),
+        "status: {:?}\nstderr:\n{}",
+        output.status,
+        stderr(&output)
+    );
+    let out = stdout(&output);
+    assert_eq!("", out);
+    assert!(!out.contains("digraph"));
+}
+
+#[test]
+fn pagerank_table_is_text_without_dot() {
+    let temp = fixture();
+    let output = run_fixture(temp.path(), &["--pagerank-top-k", "5"]);
+
+    assert!(
+        output.status.success(),
+        "status: {:?}\nstderr:\n{}",
+        output.status,
+        stderr(&output)
+    );
+    let out = stdout(&output);
+    assert!(out.starts_with("rank score influence orchestration kind symbol path\n"));
+    assert!(!out.contains("digraph"));
+}
+
+#[test]
+fn json_output_has_stable_agent_graph_schema() {
+    let temp = fixture();
+    let output = run_fixture(temp.path(), &["--format", "json"]);
+
+    assert!(
+        output.status.success(),
+        "status: {:?}\nstderr:\n{}",
+        output.status,
+        stderr(&output)
+    );
+    let graph: Value = serde_json::from_slice(&output.stdout).expect("json output");
+    assert_eq!(graph["schema_version"], 1);
+    let nodes = graph["nodes"].as_array().expect("nodes array");
+    assert!(!nodes.is_empty());
+    let pagerank = graph["pagerank"].as_array().expect("pagerank array");
+    assert!(pagerank.is_empty());
+
+    let node_ids: std::collections::HashSet<_> = nodes
+        .iter()
+        .map(|node| node["id"].as_str().expect("node id"))
+        .collect();
+    for node in nodes {
+        for key in [
+            "id",
+            "unit_index",
+            "block_id",
+            "name",
+            "block_kind",
+            "sym_kind",
+            "location",
+            "file_path",
+            "line_start",
+            "crate_name",
+            "module_path",
+            "is_exported",
+        ] {
+            assert!(node.get(key).is_some(), "missing key {key} in {node:?}");
+        }
+    }
+    for edge in graph["edges"].as_array().expect("edges array") {
+        assert!(node_ids.contains(edge["from"].as_str().expect("edge from")));
+        assert!(node_ids.contains(edge["to"].as_str().expect("edge to")));
+    }
+}
+
+#[test]
+fn markdown_agent_summary_reports_sections_and_public_api() {
+    let temp = fixture();
+    let output = run_fixture(
+        temp.path(),
+        &[
+            "--format",
+            "markdown",
+            "--agent-summary",
+            "--pagerank-top-k",
+            "20",
+        ],
+    );
+
+    assert!(
+        output.status.success(),
+        "status: {:?}\nstderr:\n{}",
+        output.status,
+        stderr(&output)
+    );
+    let out = stdout(&output);
+    for heading in [
+        "Top Symbols",
+        "Public API Surface",
+        "Caller Callee Clusters",
+        "Cross File Coupling",
+        "Likely Refactor Entry Points",
+        "Inferred Tests",
+    ] {
+        assert!(out.contains(heading), "missing heading {heading}\n{out}");
+    }
+    let public_api = out
+        .split("## Public API Surface")
+        .nth(1)
+        .and_then(|s| s.split("## Caller Callee Clusters").next())
+        .expect("public api section");
+    assert!(public_api.contains("entry"));
+    assert!(public_api.contains("helper"));
+    assert!(!public_api.contains("private_helper"));
+}
+
+#[test]
+fn package_deps_text_table() {
+    let temp = fixture();
+    let output = run_fixture(temp.path(), &["--package-deps", "--format", "text"]);
+
+    assert!(
+        output.status.success(),
+        "status: {:?}\nstderr:\n{}",
+        output.status,
+        stderr(&output)
+    );
+    assert!(stdout(&output).starts_with("source target edges\n"));
+}
+
+#[test]
+fn graph_level_package_only_exported_and_exclude_are_accepted() {
+    let temp = fixture();
+
+    let package = run_fixture(temp.path(), &["--graph", "--graph-level", "package"]);
+    assert!(package.status.success(), "{}", stderr(&package));
+
+    let exported = run_fixture(temp.path(), &["--format", "json", "--only-exported"]);
+    assert!(exported.status.success(), "{}", stderr(&exported));
+    let graph: Value = serde_json::from_slice(&exported.stdout).expect("json output");
+    let nodes = graph["nodes"].as_array().expect("nodes array");
+    assert!(nodes.iter().all(|node| node["is_exported"] == true));
+
+    let excluded = run_fixture(temp.path(), &["--format", "json", "--exclude", "*_test.rs"]);
+    assert!(excluded.status.success(), "{}", stderr(&excluded));
+}
+
+#[test]
+fn blast_radius_markdown_for_symbol() {
+    let temp = fixture();
+    let output = run_fixture(
+        temp.path(),
+        &[
+            "--symbol",
+            "helper",
+            "--blast-radius",
+            "--format",
+            "markdown",
+        ],
+    );
+
+    assert!(
+        output.status.success(),
+        "status: {:?}\nstderr:\n{}",
+        output.status,
+        stderr(&output)
+    );
+    let out = stdout(&output);
+    for heading in [
+        "Direct Callers",
+        "Transitive Callers",
+        "Callees",
+        "Dependent Types",
+        "Affected Files",
+        "Inferred Tests",
+    ] {
+        assert!(out.contains(heading), "missing heading {heading}\n{out}");
+    }
+}
+
+#[test]
+fn tests_for_text_infers_rust_integration_test() {
+    let temp = fixture();
+    let output = run_fixture(
+        temp.path(),
+        &["--tests-for", "src/lib.rs", "--format", "text"],
+    );
+
+    assert!(
+        output.status.success(),
+        "status: {:?}\nstderr:\n{}",
+        output.status,
+        stderr(&output)
+    );
+    assert!(stdout(&output).contains("tests/entry_test.rs"));
+}
+
+#[test]
+fn ambiguous_symbol_exits_nonzero() {
+    let temp = tempfile::tempdir().expect("create tempdir");
+    fs::create_dir_all(temp.path().join("src")).expect("create src");
+    fs::write(
+        temp.path().join("src/lib.rs"),
+        "mod a { pub fn helper() {} }\nmod b { pub fn helper() {} }\n",
+    )
+    .expect("write lib");
+
+    let output = run_fixture(
+        temp.path(),
+        &[
+            "--symbol",
+            "helper",
+            "--blast-radius",
+            "--format",
+            "markdown",
+        ],
+    );
+
+    assert!(!output.status.success());
+    assert!(stderr(&output).contains("ambiguous symbol"));
+}
+
+#[test]
+fn git_diff_agent_summary_marks_changed_files() {
+    let temp = fixture();
+    let init = Command::new("git")
+        .args(["init"])
+        .current_dir(temp.path())
+        .output()
+        .expect("git init");
+    assert!(init.status.success(), "{}", stderr(&init));
+    let add = Command::new("git")
+        .args(["add", "."])
+        .current_dir(temp.path())
+        .output()
+        .expect("git add");
+    assert!(add.status.success(), "{}", stderr(&add));
+    let commit = Command::new("git")
+        .args([
+            "-c",
+            "user.email=test@example.com",
+            "-c",
+            "user.name=Test",
+            "commit",
+            "-m",
+            "init",
+        ])
+        .current_dir(temp.path())
+        .output()
+        .expect("git commit");
+    assert!(commit.status.success(), "{}", stderr(&commit));
+    fs::write(
+        temp.path().join("src/lib.rs"),
+        "pub mod util;\npub fn entry() { util::helper(); }\npub fn changed() {}\n",
+    )
+    .expect("modify lib");
+
+    let output = run_fixture(
+        temp.path(),
+        &["--git-diff", "--agent-summary", "--format", "markdown"],
+    );
+
+    assert!(
+        output.status.success(),
+        "status: {:?}\nstderr:\n{}",
+        output.status,
+        stderr(&output)
+    );
+    let out = stdout(&output);
+    assert!(out.contains("Changed Files"));
+    assert!(out.contains("src/lib.rs"));
+    assert!(out.contains("src/util.rs"));
+}

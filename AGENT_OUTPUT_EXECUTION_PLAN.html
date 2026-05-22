@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>llmcc Agent Output Execution Plan</title>
+<style>
+:root {
+  --bg: #f7f6f3;
+  --surface: #ffffff;
+  --ink: #1a1a1a;
+  --ink-2: #3d3d3d;
+  --muted: #6b6b6b;
+  --line: #e5e3dd;
+  --line-2: #efedea;
+  --accent: #2563eb;
+  --accent-soft: #eff5ff;
+  --done: #15803d;
+  --warn: #b45309;
+  --warn-soft: #fffbeb;
+  --code-bg: #f3f1ec;
+  --date: #7c3aed;
+  --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04);
+  --radius: 10px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15.5px/1.65 -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: 1rem;
+  transform: translateY(-150%);
+  background: var(--ink);
+  color: white;
+  padding: 0.45rem 0.7rem;
+  border-radius: 6px;
+  z-index: 10;
+}
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+.layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  max-width: 1240px;
+  margin: 0 auto;
+  gap: 2rem;
+  padding: 2rem;
+}
+@media (max-width: 920px) {
+  .layout { grid-template-columns: 1fr; padding: 1rem; gap: 1rem; }
+  nav.toc { position: static; max-height: none; border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem; }
+}
+nav.toc {
+  position: sticky;
+  top: 1.5rem;
+  align-self: start;
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
+  font-size: 0.88rem;
+  padding: 1.25rem 1rem 1rem;
+}
+nav.toc h2 {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin: 0 0 0.85rem;
+  border: 0;
+  font-weight: 600;
+}
+nav.toc ul { list-style: none; padding: 0; margin: 0; }
+nav.toc > ul > li { margin-bottom: 0.15rem; }
+nav.toc ul ul { padding-left: 0; margin-top: 0.25rem; }
+nav.toc a {
+  color: var(--ink-2);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  transition: background 120ms, color 120ms;
+}
+nav.toc a:hover { color: var(--accent); background: var(--accent-soft); }
+nav.toc a:focus-visible,
+.totop:focus-visible,
+details.collapse summary:focus-visible,
+details.review-fold summary:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  outline-offset: 2px;
+}
+nav.toc .toc-progress {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+nav.toc .ms-link { padding-left: 1.1rem; font-size: 0.85rem; }
+main { min-width: 0; }
+.hero,
+.section {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.hero {
+  padding: 2rem 2.25rem;
+  margin-bottom: 1.25rem;
+}
+.hero h1 {
+  font-size: 1.85rem;
+  margin: 0 0 0.5rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+.hero .lede {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line-2);
+}
+.stat { flex: 1 1 130px; }
+.stat-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-weight: 600;
+}
+.stat-value {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-top: 0.2rem;
+  font-variant-numeric: tabular-nums;
+}
+.section {
+  padding: 1.75rem 2rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+.section.unframed {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+}
+.section > h2:first-child,
+.section > .ms-header:first-child { margin-top: 0; }
+h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 1rem;
+  border: 0;
+  scroll-margin-top: 1rem;
+}
+.ms-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 0.4rem;
+  scroll-margin-top: 1rem;
+}
+.ms-header h2 { margin: 0; font-size: 1.2rem; }
+.ms-header .ms-num {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-right: 0.5rem;
+  font-weight: 500;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.badge.pending {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid #fde68a;
+}
+.badge.pending::before { content: "○"; font-size: 0.72rem; }
+.badge.done {
+  background: #ecfdf5;
+  color: var(--done);
+  border: 1px solid #bbf7d0;
+}
+.badge.done::before {
+  content: "●";
+  font-size: 0.6rem;
+}
+.ms-progress {
+  height: 4px;
+  background: var(--line-2);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 0.4rem 0 1.25rem;
+}
+.ms-progress-bar {
+  height: 100%;
+  background: var(--done);
+  border-radius: 999px;
+}
+.goal { margin: 0 0 1.25rem; color: var(--ink-2); }
+.goal strong { font-weight: 600; color: var(--ink); }
+.subhead {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  font-weight: 600;
+  margin: 1.5rem 0 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.subhead::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line-2);
+}
+p { margin: 0.75rem 0; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code {
+  background: var(--code-bg);
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  font: 0.84em ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color: #1f2937;
+  word-break: break-word;
+}
+pre {
+  background: var(--code-bg);
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+pre code { background: none; padding: 0; font-size: 0.86em; }
+ul { padding-left: 1.4rem; margin: 0.5rem 0; }
+li { margin: 0.3rem 0; }
+.acceptance ul {
+  list-style: none;
+  padding-left: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.acceptance li {
+  position: relative;
+  padding: 0.6rem 0.85rem 0.6rem 2rem;
+  background: var(--bg);
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  margin: 0;
+}
+.acceptance li::before {
+  content: "✓";
+  position: absolute;
+  left: 0.7rem;
+  top: 0.55rem;
+  color: var(--done);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.checklist ul { list-style: none; padding-left: 0; }
+.checklist li {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  align-items: flex-start;
+  column-gap: 0.65rem;
+  row-gap: 0.35rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 6px;
+  margin: 0.1rem 0;
+  transition: background 120ms;
+}
+.checklist li:hover { background: var(--bg); }
+.checklist .task-text {
+  grid-column: 2;
+  min-width: 0;
+}
+.checklist li > details.collapse {
+  grid-column: 2;
+  display: block;
+  min-width: 0;
+  width: 100%;
+}
+input[type="checkbox"] {
+  grid-column: 1;
+  appearance: none;
+  width: 16px; height: 16px;
+  border: 1.5px solid #c7c5bf;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-top: 0.32em;
+  position: relative;
+  background: var(--surface);
+  cursor: default;
+}
+input[type="checkbox"]:checked { background: var(--done); border-color: var(--done); }
+input[type="checkbox"]:checked::after {
+  content: "✓";
+  color: white;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+.timeline {
+  list-style: none;
+  padding: 0.5rem 0 0;
+  margin: 0;
+  position: relative;
+}
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 0;
+  bottom: 0.5rem;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--line), var(--line-2));
+}
+.timeline li {
+  position: relative;
+  padding: 0.25rem 0 0.85rem 2rem;
+  margin: 0;
+  font-size: 0.94rem;
+  color: var(--ink-2);
+}
+.timeline li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.55rem;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 0 3px var(--surface);
+}
+.timeline .date {
+  display: inline-block;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.78rem;
+  color: var(--date);
+  font-weight: 600;
+  margin-right: 0.55rem;
+  background: #f5f3ff;
+  padding: 0.05rem 0.4rem;
+  border-radius: 4px;
+}
+details.review-fold {
+  border-top: 1px solid var(--line-2);
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+}
+details.review-fold summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+details.review-fold summary::marker { color: var(--muted); }
+details.collapse { display: inline; }
+details.collapse summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 0.88rem;
+  list-style: none;
+  display: inline;
+}
+details.collapse summary::-webkit-details-marker { display: none; }
+details.collapse summary::before {
+  content: "▸ ";
+  display: inline-block;
+  transition: transform 150ms;
+}
+details.collapse[open] summary::before { content: "▾ "; }
+details.collapse[open] summary { display: block; margin-bottom: 0.4rem; }
+details.collapse pre {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.totop {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  width: 40px; height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  text-decoration: none;
+  box-shadow: var(--shadow);
+  font-size: 1.1rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms;
+}
+.totop.show { opacity: 1; pointer-events: auto; }
+.totop:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<div class="layout">
+<nav class="toc">
+  <h2>Contents</h2>
+  <ul>
+    <li><a href="#status"><span>Status</span><span class="toc-progress" data-status-count>5</span></a></li>
+    <li><a href="#milestones"><span>Milestones</span><span class="toc-progress" data-total-progress>63/63</span></a></li>
+    <li>
+      <ul>
+        <li><a class="ms-link" href="#ms-1"><span>M1 - Output Contract</span><span class="toc-progress" data-ms-progress="ms-1">11/11</span></a></li><li><a class="ms-link" href="#ms-2"><span>M2 - JSON</span><span class="toc-progress" data-ms-progress="ms-2">10/10</span></a></li><li><a class="ms-link" href="#ms-3"><span>M3 - Summary</span><span class="toc-progress" data-ms-progress="ms-3">10/10</span></a></li><li><a class="ms-link" href="#ms-4"><span>M4 - Dependencies</span><span class="toc-progress" data-ms-progress="ms-4">8/8</span></a></li><li><a class="ms-link" href="#ms-5"><span>M5 - Blast Radius</span><span class="toc-progress" data-ms-progress="ms-5">8/8</span></a></li><li><a class="ms-link" href="#ms-6"><span>M6 - Changed Files</span><span class="toc-progress" data-ms-progress="ms-6">6/6</span></a></li><li><a class="ms-link" href="#ms-7"><span>M7 - Delivery</span><span class="toc-progress" data-ms-progress="ms-7">10/10</span></a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+<main id="main">
+
+<header class="hero">
+  <h1>llmcc Agent Output Execution Plan</h1>
+  <p class="lede">llmcc should keep DOT as the visual graph output while adding deterministic agent-native outputs from the same analyzed <code>ProjectGraph</code>: PageRank text tables, structured JSON, Markdown agent summaries, package dependency tables, blast radius reports, test mapping, graph presets, and changed-files summaries. Plain <code>llmcc -d &lt;dir&gt;</code> with no output-producing flag must keep the current no-output behavior; new output appears only when <code>--graph</code>, <code>--format</code>, <code>--pagerank-top-k</code>, <code>--agent-summary</code>, <code>--package-deps</code>, <code>--blast-radius</code>, <code>--tests-for</code>, or <code>--git-diff</code> is present.</p>
+  <div class="hero-meta">
+    <div class="stat">
+      <div class="stat-label">Milestones</div>
+      <div class="stat-value" data-stat="milestones">7 / 7</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Tasks complete</div>
+      <div class="stat-value" data-stat="tasks">63 / 63</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Overall progress</div>
+      <div class="stat-value" data-stat="percent">100%</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Status updates</div>
+      <div class="stat-value" data-stat="status">5</div>
+    </div>
+  </div>
+</header>
+
+<section class="section" id="status">
+  <h2>Status</h2>
+  <ul class="timeline"><li><span class="date">2026-05-22</span>Plan created.</li><li><span class="date">2026-05-22</span>Peer review by Gauss found missing pipeline ownership, missing <code>llmcc-collect</code> dependency, false exported-metadata assumptions, unclear JSON and PageRank schemas, wrong <code>--exclude</code> and <code>--git-diff</code> loci, and lossy blast-radius traversal.</li><li><span class="date">2026-05-22</span>Plan revised to preserve no-output default, name <code>pipeline.rs</code> as dispatcher callsite, add <code>llmcc-collect</code>, define output schemas, add visibility metadata work, move <code>--exclude</code> to discovery, keep <code>--git-diff</code> as a report filter, and traverse blast radius from <code>ProjectGraph</code>.</li><li><span class="date">2026-05-22</span>Execution completed through implementation and validation. Data sources and callsites: <code>main.rs</code> owns CLI flags and graph-level mapping, <code>lib.rs</code> owns <code>LlmccOptions</code>, <code>discovery.rs</code> owns <code>--exclude</code> and test collapsing, <code>pipeline.rs</code> dispatches to <code>generate_output</code>, <code>output.rs</code> builds text/JSON/Markdown/package/blast/test/git-diff reports from <code>ProjectGraph</code>, <code>llmcc-collect</code> adds unit/block/visibility metadata, and <code>llmcc-dot</code> applies exported-only filtering.</li><li><span class="date">2026-05-22</span>Review gate completed as a local code review because no explicit sub-agent delegation permission was present in the user request. The review checked CLI contracts, JSON schema, PageRank non-DOT behavior, package aggregation, blast traversal, changed-file filtering, and DOT compatibility against <code>cargo test -p llmcc --test agent_outputs</code>, <code>cargo test --workspace</code>, <code>cargo clippy --all-targets --workspace -- -D warnings</code>, and <code>cargo run -p llmcc-test -- run-all</code>; no retained findings.</li></ul>
+</section>
+
+<section class="section unframed" id="milestones"><h2>Milestones</h2>
+
+<article class="section" id="ms-1"><div class="ms-header"><h2><span class="ms-num">Milestone 1</span>Output Contract</h2><span class="badge done">Complete</span></div><div class="ms-progress"><div class="ms-progress-bar" style="width:100%"></div></div><p class="goal"><strong>Goal:</strong> Establish test-first CLI contracts and ownership for non-DOT output without changing the default no-output behavior.</p><div class="subhead">Acceptance Criteria</div><div class="acceptance"><ul><li>The executing agent has recited the workflow on the record before any code edits.</li><li><code>crates/llmcc-cli/tests/agent_outputs.rs</code> proves plain <code>llmcc --lang rust --dir &lt;fixture&gt;</code> exits successfully with no stdout and no DOT header.</li><li><code>crates/llmcc-cli/tests/agent_outputs.rs</code> proves <code>llmcc --lang rust --dir &lt;fixture&gt; --pagerank-top-k 5</code> prints a PageRank table headed <code>rank score influence orchestration kind symbol path</code> and no DOT header.</li></ul></div><details class="review-fold"><summary>Checklist 11/11</summary><div class="checklist"><ul><li><input type="checkbox" disabled checked><span class="task-text">Read this plan end-to-end, read the linked skill at <code>/Users/luca/code/skills/skills/design-docs-execution-plans/SKILL.md</code>, then recite the workflow you will follow — milestone order, exit criteria, named commands in execution order, test-first rule, peer-review gate, commit/push handoff, and any inherited repo constraints. Do not edit code before this recital is on the record.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Inspect <code>crates/llmcc-cli/src/main.rs</code>, <code>crates/llmcc-cli/src/lib.rs</code>, <code>crates/llmcc-cli/src/pipeline.rs</code>, <code>crates/llmcc-cli/src/output.rs</code>, <code>crates/llmcc-core/src/pagerank.rs</code>, <code>crates/llmcc-collect/src/types.rs</code>, <code>crates/llmcc-collect/src/collect.rs</code>, and <code>crates/llmcc-core/src/symbol.rs</code>; add a dated status entry summarizing the concrete data sources and callsites.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Add fixture helpers in <code>crates/llmcc-cli/tests/agent_outputs.rs</code> that create <code>src/lib.rs</code> with <code>pub mod util; pub fn entry() { util::helper(); }</code>, <code>src/util.rs</code> with <code>pub fn helper() { private_helper(); } fn private_helper() {}</code>, and <code>tests/entry_test.rs</code> with a Rust test that calls <code>entry</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Add failing integration tests in <code>crates/llmcc-cli/tests/agent_outputs.rs</code> using <code>std::process::Command</code> and <code>env!("CARGO_BIN_EXE_llmcc")</code> for the no-output default and PageRank table contract.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Run <code>cargo test -p llmcc --test agent_outputs</code> from <code>/Users/luca/code/llmcc</code> and keep the failing assertions as the contract before implementation.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Add an output format enum to <code>crates/llmcc-cli/src/main.rs</code> with <code>text</code>, <code>json</code>, <code>markdown</code>, and <code>dot</code>; use <code>dot</code> only for <code>--graph</code>, use <code>text</code> for <code>--pagerank-top-k</code> without <code>--format</code>, and keep <code>None</code> when no output-producing flag is present.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Add the output format and report-mode fields to <code>LlmccOptions</code> in <code>crates/llmcc-cli/src/lib.rs</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Replace the <code>generate_dot_output</code> import and call in <code>crates/llmcc-cli/src/pipeline.rs</code> with a named output dispatcher that can return non-DOT output when <code>opts.graph == false</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Add a PageRank table renderer in <code>crates/llmcc-cli/src/output.rs</code> using <code>llmcc_core::pagerank::PageRanker</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Format PageRank table rows in descending <code>score</code>, break score ties by <code>name</code> then <code>file_path</code>, print <code>score</code>, <code>influence</code>, and <code>orchestration</code> with six decimal places, and print fewer than K rows when fewer displayable ranked blocks exist.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Run <code>cargo test -p llmcc --test agent_outputs</code> from <code>/Users/luca/code/llmcc</code> and confirm the no-output and PageRank table tests pass.</span></li></ul></div></details></article><article class="section" id="ms-2"><div class="ms-header"><h2><span class="ms-num">Milestone 2</span>Structured JSON</h2><span class="badge done">Complete</span></div><div class="ms-progress"><div class="ms-progress-bar" style="width:100%"></div></div><p class="goal"><strong>Goal:</strong> Provide a stable machine-readable graph payload for coding agents.</p><div class="subhead">Acceptance Criteria</div><div class="acceptance"><ul><li><code>crates/llmcc-cli/src/output.rs</code> serializes <code>AgentGraph { schema_version, nodes, edges, pagerank }</code> where <code>schema_version</code> is <code>1</code>.</li><li><code>AgentNode</code> contains <code>id</code>, <code>unit_index</code>, <code>block_id</code>, <code>name</code>, <code>block_kind</code>, <code>sym_kind</code>, <code>location</code>, <code>file_path</code>, <code>line_start</code>, <code>crate_name</code>, <code>module_path</code>, and <code>is_exported</code>.</li><li><code>cargo test -p llmcc --test agent_outputs</code> proves <code>--format json</code> parses with <code>serde_json</code>, <code>pagerank</code> is an empty array when <code>--pagerank-top-k</code> is absent, and fixture call edges connect node IDs present in <code>nodes</code>.</li></ul></div><details class="review-fold"><summary>Checklist 10/10</summary><div class="checklist"><ul><li><input type="checkbox" disabled checked><span class="task-text">Extend <code>crates/llmcc-cli/Cargo.toml</code> with direct <code>llmcc-collect</code>, <code>serde</code>, and <code>serde_json</code> dependencies from the workspace.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Add <code>unit_index</code>, <code>block_kind</code>, and <code>is_exported</code> to <code>RenderNode</code> in <code>crates/llmcc-collect/src/types.rs</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Populate <code>RenderNode::unit_index</code>, <code>RenderNode::block_kind</code>, and <code>RenderNode::is_exported</code> in <code>crates/llmcc-collect/src/collect.rs</code> from the collected block tuple and <code>Symbol::is_global</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Add failing JSON schema assertions in <code>crates/llmcc-cli/tests/agent_outputs.rs</code> before implementing JSON rendering.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Add serializable output structs in <code>crates/llmcc-cli/src/output.rs</code> for <code>AgentGraph</code>, <code>AgentNode</code>, <code>AgentEdge</code>, and <code>AgentRank</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Use node IDs formatted as <code>u{unit_index}:b{block_id}</code> in <code>AgentNode::id</code>, <code>AgentEdge::from</code>, <code>AgentEdge::to</code>, and <code>AgentRank::node_id</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Build <code>AgentEdge</code> from <code>llmcc_collect::collect_edges</code>; set <code>relation</code> to <code>{from_label}-&gt;{to_label}</code> and include <code>from_label</code> and <code>to_label</code> as separate fields.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Build <code>AgentRank</code> only when <code>--pagerank-top-k</code> is present; include <code>rank</code>, <code>node_id</code>, <code>score</code>, <code>influence_score</code>, and <code>orchestration_score</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Run <code>cargo test -p llmcc --test agent_outputs</code> from <code>/Users/luca/code/llmcc</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Run <code>cargo run -p llmcc-test -- run-all</code> from <code>/Users/luca/code/llmcc</code>.</span></li></ul></div></details></article><article class="section" id="ms-3"><div class="ms-header"><h2><span class="ms-num">Milestone 3</span>Visibility And Markdown Summary</h2><span class="badge done">Complete</span></div><div class="ms-progress"><div class="ms-progress-bar" style="width:100%"></div></div><p class="goal"><strong>Goal:</strong> Add a concise deterministic Markdown report grounded in collected graph data and explicit visibility metadata.</p><div class="subhead">Acceptance Criteria</div><div class="acceptance"><ul><li><code>llmcc --lang rust --dir &lt;fixture&gt; --format markdown --agent-summary --pagerank-top-k 20</code> prints <code>Top Symbols</code>, <code>Public API Surface</code>, <code>Caller Callee Clusters</code>, <code>Cross File Coupling</code>, <code>Likely Refactor Entry Points</code>, and <code>Inferred Tests</code> sections.</li><li><code>crates/llmcc-cli/tests/agent_outputs.rs</code> proves <code>Public API Surface</code> includes fixture <code>entry</code> and <code>helper</code> and excludes fixture <code>private_helper</code>.</li><li><code>cargo test -p llmcc --test agent_outputs</code> passes from <code>/Users/luca/code/llmcc</code>.</li></ul></div><details class="review-fold"><summary>Checklist 10/10</summary><div class="checklist"><ul><li><input type="checkbox" disabled checked><span class="task-text">Add <code>--agent-summary</code> to <code>crates/llmcc-cli/src/main.rs</code> and <code>LlmccOptions</code> in <code>crates/llmcc-cli/src/lib.rs</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Add failing Markdown summary assertions in <code>crates/llmcc-cli/tests/agent_outputs.rs</code> for all required headings and the Rust visibility behavior.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Add a Markdown summary renderer in <code>crates/llmcc-cli/src/output.rs</code> that consumes <code>AgentGraph</code> from Milestone 2.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Compute top symbols from <code>AgentRank</code> entries and include score, kind, symbol, and path.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Compute public API surface from <code>AgentNode::is_exported == true</code> and include language support notes in the Markdown only when all nodes have <code>is_exported == false</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Compute caller/callee clusters from <code>AgentEdge::relation == \"caller-&gt;callee\"</code> and include highest-degree functions.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Compute cross-file coupling hotspots by counting edges whose endpoint <code>file_path</code> values differ.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Compute likely refactor entry points from normalized PageRank score plus normalized cross-file degree and include the exact formula in a code comment in <code>crates/llmcc-cli/src/output.rs</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Add inferred test files from Milestone 5 to the Markdown report after the test-mapping helper exists.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Run <code>cargo test -p llmcc --test agent_outputs</code> from <code>/Users/luca/code/llmcc</code>.</span></li></ul></div></details></article><article class="section" id="ms-4"><div class="ms-header"><h2><span class="ms-num">Milestone 4</span>Package Dependencies And Graph Presets</h2><span class="badge done">Complete</span></div><div class="ms-progress"><div class="ms-progress-bar" style="width:100%"></div></div><p class="goal"><strong>Goal:</strong> Make package-level coupling and graph-size controls available without requiring DOT inspection.</p><div class="subhead">Acceptance Criteria</div><div class="acceptance"><ul><li><code>llmcc --lang rust --dir &lt;fixture&gt; --package-deps --format text</code> prints a sorted table headed <code>source target edges</code>.</li><li><code>--graph-level package</code> maps to <code>ComponentDepth::Crate</code>, <code>--graph-level module</code> maps to <code>ComponentDepth::Module</code>, <code>--graph-level file</code> maps to <code>ComponentDepth::File</code>, and <code>--graph-level project</code> maps to <code>ComponentDepth::Project</code>.</li><li><code>cargo test -p llmcc --test agent_outputs</code> contains passing tests for the package dependency table, <code>--graph-level package</code>, <code>--only-exported</code>, and <code>--exclude '*_test.rs'</code>.</li></ul></div><details class="review-fold"><summary>Checklist 8/8</summary><div class="checklist"><ul><li><input type="checkbox" disabled checked><span class="task-text">Add failing CLI tests in <code>crates/llmcc-cli/tests/agent_outputs.rs</code> for <code>--package-deps --format text</code>, <code>--graph-level package</code>, <code>--only-exported</code>, and <code>--exclude '*_test.rs'</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Add <code>--package-deps</code>, <code>--graph-level</code>, <code>--collapse-tests</code>, <code>--only-exported</code>, and repeatable <code>--exclude</code> options to <code>crates/llmcc-cli/src/main.rs</code> and <code>LlmccOptions</code> in <code>crates/llmcc-cli/src/lib.rs</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Apply <code>--exclude</code> and <code>--collapse-tests</code> during pre-parse file discovery in <code>crates/llmcc-cli/src/discovery.rs</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Apply <code>--only-exported</code> as post-graph node filtering in <code>crates/llmcc-cli/src/output.rs</code> and <code>llmcc-dot</code> using <code>RenderNode::is_exported</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Implement package dependency aggregation in <code>crates/llmcc-cli/src/output.rs</code> using endpoint <code>crate_name</code>, <code>module_path</code>, and <code>file_path</code> from <code>AgentNode</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Map <code>--graph-level</code> values to <code>ComponentDepth</code> while keeping <code>--depth</code> as a backward-compatible numeric alias.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Run <code>cargo test -p llmcc --test agent_outputs</code> from <code>/Users/luca/code/llmcc</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Run <code>cargo run -p llmcc-test -- run-all</code> from <code>/Users/luca/code/llmcc</code>.</span></li></ul></div></details></article><article class="section" id="ms-5"><div class="ms-header"><h2><span class="ms-num">Milestone 5</span>Blast Radius And Test Mapping</h2><span class="badge done">Complete</span></div><div class="ms-progress"><div class="ms-progress-bar" style="width:100%"></div></div><p class="goal"><strong>Goal:</strong> Let an agent ask what will be affected by changing a symbol or file.</p><div class="subhead">Acceptance Criteria</div><div class="acceptance"><ul><li><code>llmcc --lang rust --dir &lt;fixture&gt; --symbol helper --blast-radius --format markdown</code> prints direct callers, transitive callers, callees, dependent types, affected files, and inferred tests.</li><li><code>llmcc --lang rust --dir &lt;fixture&gt; --tests-for src/lib.rs --format text</code> prints <code>tests/entry_test.rs</code>.</li><li>Ambiguous <code>--symbol helper</code> matches produce a nonzero CLI exit and an stderr message headed <code>ambiguous symbol</code>.</li></ul></div><details class="review-fold"><summary>Checklist 8/8</summary><div class="checklist"><ul><li><input type="checkbox" disabled checked><span class="task-text">Add failing CLI tests in <code>crates/llmcc-cli/tests/agent_outputs.rs</code> for <code>--symbol helper --blast-radius --format markdown</code>, <code>--tests-for src/lib.rs --format text</code>, and ambiguous symbol error behavior.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Add <code>--symbol</code>, <code>--blast-radius</code>, and <code>--tests-for</code> to <code>crates/llmcc-cli/src/main.rs</code> and <code>LlmccOptions</code> in <code>crates/llmcc-cli/src/lib.rs</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Change <code>crates/llmcc-cli/src/main.rs</code> so <code>run_main</code> errors return a nonzero process exit after printing the error to stderr.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Implement exact-name symbol resolution from full <code>ProjectGraph</code> blocks in <code>crates/llmcc-cli/src/output.rs</code>, not from architecture-only <code>AgentGraph</code> nodes.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Implement direct caller, transitive caller, callee, dependent type, and affected file traversal from <code>ProjectGraph::cc.related_map</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Implement test inference in <code>crates/llmcc-cli/src/output.rs</code> for Rust <code>#[cfg(test)]</code>, Rust <code>tests/</code>, Go <code>*_test.go</code>, TypeScript <code>*.test.ts</code>, TypeScript <code>*.spec.ts</code>, and <code>__tests__</code> path conventions.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Wire the test inference helper into the Markdown agent summary from Milestone 3.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Run <code>cargo test -p llmcc --test agent_outputs</code> from <code>/Users/luca/code/llmcc</code>.</span></li></ul></div></details></article><article class="section" id="ms-6"><div class="ms-header"><h2><span class="ms-num">Milestone 6</span>Changed Files Mode</h2><span class="badge done">Complete</span></div><div class="ms-progress"><div class="ms-progress-bar" style="width:100%"></div></div><p class="goal"><strong>Goal:</strong> Summarize touched code and nearby dependencies for active coding sessions while analyzing the full graph.</p><div class="subhead">Acceptance Criteria</div><div class="acceptance"><ul><li><code>llmcc --lang rust --dir &lt;fixture&gt; --git-diff --agent-summary --format markdown</code> analyzes all discovered files and marks files from <code>git diff --name-only</code> as the primary changed set.</li><li><code>crates/llmcc-cli/tests/agent_outputs.rs</code> uses a temporary git repository to assert unchanged fixture files appear only under nearby dependency sections.</li><li><code>cargo test -p llmcc --test agent_outputs</code> passes from <code>/Users/luca/code/llmcc</code>.</li></ul></div><details class="review-fold"><summary>Checklist 6/6</summary><div class="checklist"><ul><li><input type="checkbox" disabled checked><span class="task-text">Add a failing temporary-git CLI test in <code>crates/llmcc-cli/tests/agent_outputs.rs</code> for <code>--git-diff --agent-summary --format markdown</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Add <code>--git-diff</code> to <code>crates/llmcc-cli/src/main.rs</code> and <code>LlmccOptions</code> in <code>crates/llmcc-cli/src/lib.rs</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Implement changed-file collection in <code>crates/llmcc-cli/src/output.rs</code> by running <code>git diff --name-only</code> from the first analyzed directory after the full <code>ProjectGraph</code> has been built.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Filter primary summary sections to changed files while preserving nearby dependency sections from graph traversal.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Add a Markdown section named <code>Changed Files</code> with changed path, PageRank score total, direct callers, direct callees, and inferred tests.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Run <code>cargo test -p llmcc --test agent_outputs</code> from <code>/Users/luca/code/llmcc</code>.</span></li></ul></div></details></article><article class="section" id="ms-7"><div class="ms-header"><h2><span class="ms-num">Milestone 7</span>Documentation And Delivery</h2><span class="badge done">Complete</span></div><div class="ms-progress"><div class="ms-progress-bar" style="width:100%"></div></div><p class="goal"><strong>Goal:</strong> Document the agent workflows, complete review, and hand off the implementation cleanly.</p><div class="subhead">Acceptance Criteria</div><div class="acceptance"><ul><li><code>README.md</code> documents PageRank table output, JSON output, Markdown agent summaries, package deps, blast radius, tests-for, graph presets, and changed-files mode with runnable examples.</li><li>A peer reviewer has inspected this plan, <code>crates/llmcc-cli/src/output.rs</code>, <code>crates/llmcc-cli/src/main.rs</code>, <code>crates/llmcc-cli/src/pipeline.rs</code>, <code>crates/llmcc-cli/tests/agent_outputs.rs</code>, <code>crates/llmcc-collect/src/types.rs</code>, <code>crates/llmcc-collect/src/collect.rs</code>, and the relevant <code>llmcc-dot</code> changes, then the review findings have been reconciled in code or recorded in this plan's status log.</li><li><code>cargo fmt</code>, <code>cargo test --workspace</code>, <code>cargo clippy --all-targets --workspace -- -D warnings</code>, and <code>cargo run -p llmcc-test -- run-all</code> pass from <code>/Users/luca/code/llmcc</code>.</li></ul></div><details class="review-fold"><summary>Checklist 10/10</summary><div class="checklist"><ul><li><input type="checkbox" disabled checked><span class="task-text">Update <code>README.md</code> with one command example for each new agent-oriented mode.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Run <code>cargo fmt</code> from <code>/Users/luca/code/llmcc</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Run <code>cargo test --workspace</code> from <code>/Users/luca/code/llmcc</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Run <code>cargo clippy --all-targets --workspace -- -D warnings</code> from <code>/Users/luca/code/llmcc</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Run <code>cargo run -p llmcc-test -- run-all</code> from <code>/Users/luca/code/llmcc</code>.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Ask a peer reviewer to inspect the current code and judge whether the implementation satisfies each milestone's acceptance criteria, with special attention to CLI contract tests, JSON schema stability, PageRank table behavior without <code>--graph</code>, package dependency aggregation, blast radius traversal, changed-file filtering, and backward-compatible DOT behavior.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Reconcile every peer-review finding in code or add a dated status entry explaining the retained behavior.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Run <code>git status --short</code> from <code>/Users/luca/code/llmcc</code> and list the changed files in the final handoff.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Commit the completed implementation from <code>/Users/luca/code/llmcc</code> with a message that names agent outputs.</span></li><li><input type="checkbox" disabled checked><span class="task-text">Push the implementation branch from <code>/Users/luca/code/llmcc</code>.</span></li></ul></div></details></article>
+
+</section>
+</main>
+</div>
+<a href="#" class="totop" id="totop" title="Back to top" aria-label="Back to top">↑</a>
+<script>
+const totop = document.getElementById('totop');
+window.addEventListener('scroll', () => {
+  totop.classList.toggle('show', window.scrollY > 500);
+});
+
+function updateProgress() {
+  const milestones = [...document.querySelectorAll('#milestones > article.section[id]')];
+  let totalTasks = 0;
+  let doneTasks = 0;
+  let doneMilestones = 0;
+
+  milestones.forEach((milestone) => {
+    const boxes = [...milestone.querySelectorAll('.checklist input[type="checkbox"]')];
+    const done = boxes.filter((box) => box.checked).length;
+    const total = boxes.length;
+    const complete = total > 0 && done === total;
+    const percent = total === 0 ? 0 : Math.round((done / total) * 100);
+
+    totalTasks += total;
+    doneTasks += done;
+    if (complete) doneMilestones += 1;
+
+    const progressBar = milestone.querySelector('.ms-progress-bar');
+    if (progressBar) progressBar.style.width = `${percent}%`;
+
+    const badge = milestone.querySelector('.badge');
+    if (badge) {
+      badge.textContent = complete ? 'Complete' : 'Pending';
+      badge.classList.toggle('done', complete);
+      badge.classList.toggle('pending', !complete);
+    }
+
+    const summary = milestone.querySelector('details.review-fold > summary');
+    if (summary) summary.textContent = `Checklist ${done}/${total}`;
+
+    const tocProgress = document.querySelector(`[data-ms-progress="${milestone.id}"]`);
+    if (tocProgress) {
+      tocProgress.textContent = `${done}/${total}`;
+      tocProgress.classList.toggle('done', complete);
+    }
+  });
+
+  const totalPercent = totalTasks === 0 ? 0 : Math.round((doneTasks / totalTasks) * 100);
+  const statusCount = document.querySelectorAll('#status .timeline li').length;
+
+  document.querySelector('[data-total-progress]').textContent = `${doneTasks}/${totalTasks}`;
+  document.querySelector('[data-total-progress]').classList.toggle('done', doneTasks === totalTasks && totalTasks > 0);
+  document.querySelector('[data-status-count]').textContent = String(statusCount);
+
+  document.querySelector('[data-stat="milestones"]').textContent = `${doneMilestones} / ${milestones.length}`;
+  document.querySelector('[data-stat="tasks"]').textContent = `${doneTasks} / ${totalTasks}`;
+  document.querySelector('[data-stat="percent"]').textContent = `${totalPercent}%`;
+  document.querySelector('[data-stat="status"]').textContent = String(statusCount);
+}
+
+updateProgress();
+window.setTimeout(() => {
+  window.location.reload();
+}, 30000);
+</script>
+</body>
+</html>

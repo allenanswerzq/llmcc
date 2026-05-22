@@ -141,6 +141,62 @@ Render DOT to SVG (requires Graphviz):
 dot -Tsvg /tmp/codex_depth3_pagerank.dot -o /tmp/codex_depth3_pagerank.svg
 ```
 
+## CLI: agent outputs
+
+Plain directory analysis keeps the no-output default:
+
+```bash
+llmcc --lang rust --dir sample/repos/codex/codex-rs
+```
+
+Print a deterministic PageRank table:
+
+```bash
+llmcc --lang rust --dir sample/repos/codex/codex-rs --pagerank-top-k 20
+```
+
+Print structured JSON for agents:
+
+```bash
+llmcc --lang rust --dir sample/repos/codex/codex-rs --format json
+```
+
+Print a Markdown agent summary:
+
+```bash
+llmcc --lang rust --dir sample/repos/codex/codex-rs --agent-summary --format markdown --pagerank-top-k 20
+```
+
+Print package dependency counts:
+
+```bash
+llmcc --lang rust --dir sample/repos/codex/codex-rs --package-deps --format text
+```
+
+Use graph presets instead of numeric depth:
+
+```bash
+llmcc --lang rust --dir sample/repos/codex/codex-rs --graph --graph-level package
+```
+
+Report blast radius for a symbol:
+
+```bash
+llmcc --lang rust --dir sample/repos/codex/codex-rs --symbol run_main --blast-radius --format markdown
+```
+
+Infer tests for a source file:
+
+```bash
+llmcc --lang rust --dir sample/repos/codex/codex-rs --tests-for src/lib.rs --format text
+```
+
+Summarize changed files from `git diff --name-only`:
+
+```bash
+llmcc --lang rust --dir . --git-diff --agent-summary --format markdown --pagerank-top-k 20
+```
+
 For generating sample graphs:
 
 ```bash
