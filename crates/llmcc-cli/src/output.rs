@@ -18,7 +18,7 @@ use llmcc_dot::{RenderOptions, render_graph_with_options};
 
 use crate::{LlmccOptions, OutputFormat};
 
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 pub struct AgentGraph {
     schema_version: u8,
     nodes: Vec<AgentNode>,
@@ -336,10 +336,22 @@ fn render_markdown_summary<'tcx>(
     graph: &AgentGraph,
 ) -> String {
     let mut output = String::new();
+    let changed_files = if opts.git_diff {
+        git_changed_files(opts)
+    } else {
+        BTreeSet::new()
+    };
 
     if opts.git_diff {
-        render_changed_files_section(opts, pg, graph, &mut output);
+        render_changed_files_section(opts, pg, graph, &changed_files, &mut output);
     }
+
+    let summary_graph = if opts.git_diff && !changed_files.is_empty() {
+        filter_graph_to_files(graph, &changed_files)
+    } else {
+        graph.clone()
+    };
+    let graph = &summary_graph;
 
     output.push_str("## Top Symbols\n");
     if graph.pagerank.is_empty() {
@@ -428,6 +440,39 @@ fn render_markdown_summary<'tcx>(
     render_test_rows(&mut output, &tests);
 
     output
+}
+
+fn filter_graph_to_files(graph: &AgentGraph, files: &BTreeSet<String>) -> AgentGraph {
+    let nodes: Vec<_> = graph
+        .nodes
+        .iter()
+        .filter(|node| {
+            files
+                .iter()
+                .any(|file| path_matches_changed(node.file_path.as_deref(), file))
+        })
+        .cloned()
+        .collect();
+    let node_ids: HashSet<_> = nodes.iter().map(|node| node.id.as_str()).collect();
+    let edges = graph
+        .edges
+        .iter()
+        .filter(|edge| node_ids.contains(edge.from.as_str()) && node_ids.contains(edge.to.as_str()))
+        .cloned()
+        .collect();
+    let pagerank = graph
+        .pagerank
+        .iter()
+        .filter(|rank| node_ids.contains(rank.node_id.as_str()))
+        .cloned()
+        .collect();
+
+    AgentGraph {
+        schema_version: graph.schema_version,
+        nodes,
+        edges,
+        pagerank,
+    }
 }
 
 fn render_degree_rows(output: &mut String, graph: &AgentGraph, degree: BTreeMap<String, usize>) {
@@ -662,17 +707,23 @@ fn infer_tests_for_files<'a>(
     for file in files {
         let file_path = Path::new(file);
         let file_name = file_path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+        let is_crate_root = matches!(
+            file_path.file_name().and_then(|s| s.to_str()),
+            Some("lib.rs" | "main.rs")
+        );
         for test in &all_tests {
             let normalized = normalize_path_for_output(opts, test);
-            if normalized.contains(file_name)
-                || normalized.contains("tests/")
-                || normalized.contains("__tests__/")
-            {
+            if test_matches_source(&normalized, file_name, is_crate_root) {
                 inferred.insert(normalized);
             }
         }
     }
     inferred
+}
+
+fn test_matches_source(test_path: &str, source_stem: &str, is_crate_root: bool) -> bool {
+    test_path.contains(source_stem)
+        || (is_crate_root && (test_path.contains("tests/") || test_path.contains("__tests__/")))
 }
 
 fn collect_test_files(root: &Path) -> BTreeSet<PathBuf> {
@@ -754,27 +805,28 @@ fn render_changed_files_section<'tcx>(
     opts: &LlmccOptions,
     pg: &'tcx ProjectGraph<'tcx>,
     graph: &AgentGraph,
+    changed: &BTreeSet<String>,
     output: &mut String,
 ) {
-    let changed = git_changed_files(opts);
     output.push_str("## Changed Files\n");
     if changed.is_empty() {
         output.push_str("- No changed files from git diff.\n\n");
         return;
     }
 
-    let ranks: HashMap<&str, f64> = graph
-        .pagerank
-        .iter()
-        .map(|rank| (rank.node_id.as_str(), rank.score))
+    let ranks: HashMap<u32, f64> = PageRanker::new(pg)
+        .rank()
+        .blocks
+        .into_iter()
+        .map(|rank| (rank.node.block_id.as_u32(), rank.score))
         .collect();
 
     for changed_file in changed {
         let score_total: f64 = graph
             .nodes
             .iter()
-            .filter(|node| path_matches_changed(node.file_path.as_deref(), &changed_file))
-            .map(|node| ranks.get(node.id.as_str()).copied().unwrap_or(0.0))
+            .filter(|node| path_matches_changed(node.file_path.as_deref(), changed_file))
+            .map(|node| ranks.get(&node.block_id).copied().unwrap_or(0.0))
             .sum();
         let tests = infer_tests_for_files(opts, std::iter::once(changed_file.as_str()));
         let _ = writeln!(output, "- {changed_file} pagerank_total={score_total:.6}");
@@ -782,14 +834,14 @@ fn render_changed_files_section<'tcx>(
         for node in graph
             .nodes
             .iter()
-            .filter(|node| path_matches_changed(node.file_path.as_deref(), &changed_file))
+            .filter(|node| path_matches_changed(node.file_path.as_deref(), changed_file))
         {
-            related.extend(related_names(
+            related.extend(related_node_labels(
                 pg,
                 BlockId::new(node.block_id),
                 BlockRelation::CalledBy,
             ));
-            related.extend(related_names(
+            related.extend(related_node_labels(
                 pg,
                 BlockId::new(node.block_id),
                 BlockRelation::Calls,
@@ -799,6 +851,23 @@ fn render_changed_files_section<'tcx>(
         render_test_rows(output, &tests);
     }
     output.push('\n');
+}
+
+fn related_node_labels<'tcx>(
+    pg: &'tcx ProjectGraph<'tcx>,
+    block_id: BlockId,
+    relation: BlockRelation,
+) -> BTreeSet<String> {
+    pg.cc
+        .related_map
+        .get_related(block_id, relation)
+        .into_iter()
+        .filter_map(|id| {
+            let name = block_display_name(pg, id)?;
+            let path = block_file_path(pg, id)?;
+            Some(format!("{name} {path}"))
+        })
+        .collect()
 }
 
 fn git_changed_files(opts: &LlmccOptions) -> BTreeSet<String> {

@@ -253,6 +253,23 @@ fn tests_for_text_infers_rust_integration_test() {
 }
 
 #[test]
+fn tests_for_text_does_not_return_every_integration_test() {
+    let temp = fixture();
+    let output = run_fixture(
+        temp.path(),
+        &["--tests-for", "src/util.rs", "--format", "text"],
+    );
+
+    assert!(
+        output.status.success(),
+        "status: {:?}\nstderr:\n{}",
+        output.status,
+        stderr(&output)
+    );
+    assert!(!stdout(&output).contains("tests/entry_test.rs"));
+}
+
+#[test]
 fn ambiguous_symbol_exits_nonzero() {
     let temp = tempfile::tempdir().expect("create tempdir");
     fs::create_dir_all(temp.path().join("src")).expect("create src");
@@ -326,5 +343,20 @@ fn git_diff_agent_summary_marks_changed_files() {
     let out = stdout(&output);
     assert!(out.contains("Changed Files"));
     assert!(out.contains("src/lib.rs"));
-    assert!(out.contains("src/util.rs"));
+    let changed = out
+        .split("## Changed Files")
+        .nth(1)
+        .and_then(|s| s.split("## Top Symbols").next())
+        .expect("changed files section");
+    assert!(changed.contains("src/util.rs"));
+    assert!(!changed.contains("pagerank_total=0.000000"));
+
+    let public_api = out
+        .split("## Public API Surface")
+        .nth(1)
+        .and_then(|s| s.split("## Caller Callee Clusters").next())
+        .expect("public api section");
+    assert!(public_api.contains("entry"));
+    assert!(!public_api.contains("helper"));
+    assert!(!public_api.contains("src/util.rs"));
 }
