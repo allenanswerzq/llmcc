@@ -452,6 +452,8 @@ def count_files(src_dir: Path, language: str = "rust") -> int:
         "rust": [".rs"],
         "typescript": [".ts", ".tsx"],
         "python": [".py"],
+        "go": [".go"],
+        "cpp": [".cpp", ".cc", ".cxx", ".c", ".h", ".hpp", ".hxx"],
     }
 
     # Directories to skip (common non-source directories)
@@ -490,6 +492,7 @@ def count_loc(src_dir: Path, language: str = "rust") -> int:
         "typescript": "TypeScript",
         "python": "Python",
         "cpp": "C++",
+        "go": "Go",
     }
     tokei_type = tokei_types.get(language, "Rust")
 
@@ -524,6 +527,7 @@ def count_loc(src_dir: Path, language: str = "rust") -> int:
         "typescript": [".ts", ".tsx"],
         "python": [".py"],
         "cpp": [".cpp", ".cc", ".cxx", ".c", ".h", ".hpp", ".hxx"],
+        "go": [".go"],
     }
     exts = extensions.get(language, [".rs"])
 

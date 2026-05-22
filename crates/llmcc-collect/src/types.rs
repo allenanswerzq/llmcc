@@ -88,6 +88,8 @@ pub struct RenderOptions {
     pub cluster_by_crate: bool,
     /// If true, use shortened labels (just module name instead of crate::module).
     pub short_labels: bool,
+    /// If true, include only exported/public nodes.
+    pub only_exported: bool,
 }
 
 // Render Node & Edge
@@ -95,7 +97,9 @@ pub struct RenderOptions {
 /// Node representation for rendering.
 #[derive(Clone)]
 pub struct RenderNode {
+    pub unit_index: usize,
     pub block_id: BlockId,
+    pub block_kind: BlockKind,
     /// Display name (e.g., "User", "process")
     pub name: String,
     /// File location (e.g., "src/model/user.rs:42")
@@ -112,6 +116,12 @@ pub struct RenderNode {
     pub file_name: Option<String>,
     /// Symbol kind (Struct, Trait, Enum, Function, Method)
     pub sym_kind: Option<SymKind>,
+    /// Source file path without line suffix.
+    pub file_path: Option<String>,
+    /// 1-based source line when available.
+    pub line_start: Option<usize>,
+    /// Whether the defining symbol is globally visible/exported.
+    pub is_exported: bool,
 }
 
 /// Edge with semantic labels.

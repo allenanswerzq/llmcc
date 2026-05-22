@@ -14,6 +14,7 @@ use llmcc_dot::{ComponentDepth, render_graph};
 use llmcc_error::{Error, ErrorKind, Result};
 
 use llmcc_cpp::LangCpp;
+use llmcc_go::LangGo;
 use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
 use llmcc_rust::LangRust;
 use llmcc_ts::LangTypeScript;
@@ -438,6 +439,7 @@ fn build_pipeline_summary(
         "rust" => collect_pipeline::<LangRust>(project.root(), &options)?,
         "typescript" | "ts" => collect_pipeline::<LangTypeScript>(project.root(), &options)?,
         "cpp" | "c++" | "c" => collect_pipeline::<LangCpp>(project.root(), &options)?,
+        "go" | "golang" => collect_pipeline::<LangGo>(project.root(), &options)?,
         "auto" => collect_pipeline_auto(project.root(), &options)?,
         other => {
             return Err(Error::new(

@@ -58,18 +58,16 @@ pub fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
                 .and_then(|scope| scope.opt_symbol());
 
             let sym_kind = symbol_opt.map(|s| s.kind());
+            let is_exported = symbol_opt.map(|s| s.is_global()).unwrap_or(false);
 
             let raw_path = unit
                 .file_path()
                 .or_else(|| unit.file().path())
                 .unwrap_or("<unknown>");
 
-            let location = block
-                .opt_node()
-                .map(|node| {
-                    let line = node.start_line();
-                    format!("{raw_path}:{line}")
-                })
+            let line_start = block.opt_node().map(|node| node.start_line());
+            let location = line_start
+                .map(|line| format!("{raw_path}:{line}"))
                 .or(Some(raw_path.to_string()));
 
             // Get crate_name and module_path from BlockRoot of this unit
@@ -87,7 +85,9 @@ pub fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
                 .unwrap_or((None, None, None, None, None));
 
             Some(RenderNode {
+                unit_index,
                 block_id,
+                block_kind: kind,
                 name: display_name,
                 location,
                 crate_name,
@@ -96,6 +96,9 @@ pub fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
                 module_root,
                 file_name,
                 sym_kind,
+                file_path: Some(raw_path.to_string()),
+                line_start,
+                is_exported,
             })
         })
         .collect();

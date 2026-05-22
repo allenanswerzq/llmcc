@@ -5,7 +5,7 @@ use std::io;
 use std::time::Instant;
 
 use ignore::WalkBuilder;
-use tracing::{info, warn};
+use tracing::{debug, info};
 
 use llmcc_core::Result;
 
@@ -40,8 +40,70 @@ fn should_skip_dir(name: &str) -> bool {
 
 /// Check if a file should be skipped (e.g., due to size).
 /// Returns Some(reason) if skipped, None otherwise.
-fn should_skip_file(_path: &std::path::Path) -> Option<String> {
+fn should_skip_file(path: &std::path::Path, opts: &LlmccOptions) -> Option<String> {
+    let path_text = path.to_string_lossy();
+    if opts.collapse_tests && is_test_path(&path_text) {
+        return Some("test file collapsed".to_string());
+    }
+    if opts
+        .exclude
+        .iter()
+        .any(|pattern| wildcard_match(pattern, &path_text))
+    {
+        return Some("matched --exclude".to_string());
+    }
     None
+}
+
+fn is_test_path(path: &str) -> bool {
+    path.contains("/tests/")
+        || path.contains("\\tests\\")
+        || path.ends_with("_test.rs")
+        || path.ends_with("_test.go")
+        || path.ends_with(".test.ts")
+        || path.ends_with(".spec.ts")
+        || path.contains("/__tests__/")
+        || path.contains("\\__tests__\\")
+}
+
+fn wildcard_match(pattern: &str, text: &str) -> bool {
+    if pattern == "*" {
+        return true;
+    }
+    let parts: Vec<&str> = pattern.split('*').collect();
+    if parts.len() == 1 {
+        return text == pattern || text.ends_with(pattern);
+    }
+
+    let mut remaining = text;
+    if let Some(first) = parts.first()
+        && !first.is_empty()
+    {
+        if !remaining.starts_with(first) && !remaining.contains(first) {
+            return false;
+        }
+        let Some(pos) = remaining.find(first) else {
+            return false;
+        };
+        remaining = &remaining[pos + first.len()..];
+    }
+
+    for part in parts.iter().skip(1).take(parts.len().saturating_sub(2)) {
+        if part.is_empty() {
+            continue;
+        }
+        let Some(pos) = remaining.find(part) else {
+            return false;
+        };
+        remaining = &remaining[pos + part.len()..];
+    }
+
+    if let Some(last) = parts.last()
+        && !last.is_empty()
+    {
+        return remaining.ends_with(last) || remaining.contains(last);
+    }
+    true
 }
 
 /// Discover files matching any of the given extensions.
@@ -60,8 +122,8 @@ pub fn discover_files(opts: &LlmccOptions, extensions: &HashSet<&str>) -> Result
         if seen.contains(path) {
             return;
         }
-        if let Some(reason) = should_skip_file(std::path::Path::new(path)) {
-            warn!("Skipping {}: {}", path, reason);
+        if let Some(reason) = should_skip_file(std::path::Path::new(path), opts) {
+            debug!("Skipping {}: {}", path, reason);
             skipped_count += 1;
             return;
         }
@@ -128,7 +190,7 @@ pub fn discover_files(opts: &LlmccOptions, extensions: &HashSet<&str>) -> Result
     }
 
     if skipped_count > 0 {
-        info!("Skipped {} files due to size limits", skipped_count);
+        info!("Skipped {} files during discovery", skipped_count);
     }
 
     info!(

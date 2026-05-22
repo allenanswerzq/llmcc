@@ -14,6 +14,14 @@ pub use options::{CommonTestOptions, GraphOptions, ProcessingOptions};
 pub use pipeline::process_files;
 pub use profile::profile_phase;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum OutputFormat {
+    Text,
+    Json,
+    Markdown,
+    Dot,
+}
+
 /// Options for running llmcc.
 pub struct LlmccOptions {
     pub files: Vec<String>,
@@ -24,6 +32,19 @@ pub struct LlmccOptions {
     pub graph: bool,
     pub component_depth: ComponentDepth,
     pub pagerank_top_k: Option<usize>,
+    pub output_format: Option<OutputFormat>,
+    pub agent_summary: bool,
+    pub package_deps: bool,
+    pub collapse_tests: bool,
+    pub only_exported: bool,
+    pub exclude: Vec<String>,
+    pub symbol: Option<String>,
+    pub blast_radius: bool,
+    pub tests_for: Option<String>,
+    pub git_diff: bool,
+    pub rank_all: bool,
+    pub include_generated: bool,
+    pub include_tests: bool,
     pub cluster_by_crate: bool,
     pub short_labels: bool,
 }

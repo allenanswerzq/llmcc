@@ -1,0 +1,68 @@
+===============================================================================
+named-types-and-functions
+===============================================================================
+Test that Go named types, function parameters, and return types appear in the architecture graph.
+lang: go
+
+--- file: sample/go.mod ---
+module example.com/sample
+
+go 1.22
+
+--- file: sample/main.go ---
+package sample
+
+type User struct {
+    Name string
+}
+
+func NewUser(name string) User {
+    return User{Name: name}
+}
+
+func Greet(u User) string {
+    return u.Name
+}
+
+--- expect:block-graph ---
+(root:1 main ($TMP/sample/main.go)
+  (class:2 User
+    (field:3 Name @type string)
+  )
+  (func:4 NewUser
+    (parameter:5 name @type string)
+    (return:6 @type:2 User)
+    (@tdep:2 User)
+  )
+  (func:7 Greet
+    (parameter:8 u @type:2 User)
+    (return:9 @type string)
+    (@tdep:2 User)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_main_go {
+    label="main.go";
+    style=rounded;
+        bgcolor="#fafafa";
+
+    n7[label="Greet", path="$TMP/sample/main.go:11", sym_ty="Function", shape=ellipse];
+    n2[label="User", path="$TMP/sample/main.go:3", sym_ty="Struct", shape=box];
+    n4[label="NewUser", path="$TMP/sample/main.go:7", sym_ty="Function", shape=ellipse];
+  }
+
+
+  n2 -> n7 [from="input", to="func"];
+  n4 -> n2 [from="func", to="output"];
+}

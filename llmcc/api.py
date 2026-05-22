@@ -39,7 +39,7 @@ def run(
         dirs: Directories to scan recursively (repeatable list).
 
     **Language** (optional):
-        lang: Programming language - 'rust' or 'python' [default: 'rust'].
+        lang: Programming language - 'rust', 'typescript', 'cpp', or 'go' [default: 'rust'].
 
     **Analysis** (optional):
         design_graph: Generate high-level design graph [default: False].

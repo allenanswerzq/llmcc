@@ -13,7 +13,7 @@ use llmcc_core::{CompileCtxt, Result, print_llmcc_graph};
 use llmcc_resolver::{ResolverOption, bind_symbols_with, build_and_collect_symbols};
 
 use crate::LlmccOptions;
-use crate::output::generate_dot_output;
+use crate::output::generate_output;
 use crate::profile::profile_phase;
 
 /// Process a set of files for a single language.
@@ -90,7 +90,7 @@ where
     }
 
     // 6. Generate output
-    Ok(generate_dot_output(opts, &pg))
+    generate_output(opts, &pg)
 }
 
 /// Log parsing performance metrics.

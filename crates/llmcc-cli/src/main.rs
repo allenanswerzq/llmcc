@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use clap::ArgGroup;
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 
 #[cfg(not(target_env = "msvc"))]
 #[global_allocator]
@@ -12,10 +12,12 @@ static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 use llmcc::LlmccOptions;
+use llmcc::OutputFormat;
 use llmcc::run_main;
 use llmcc_core::Result;
 use llmcc_cpp::LangCpp;
 use llmcc_dot::ComponentDepth;
+use llmcc_go::LangGo;
 use llmcc_rust::LangRust;
 use llmcc_ts::LangTypeScript;
 
@@ -49,7 +51,7 @@ pub struct Cli {
     )]
     dirs: Vec<String>,
 
-    /// Language to use: 'rust', 'typescript' (or 'ts'), 'cpp'
+    /// Language to use: 'rust', 'typescript' (or 'ts'), 'cpp', 'go'
     #[arg(long, value_name = "LANG", default_value = "rust")]
     lang: String,
 
@@ -73,6 +75,62 @@ pub struct Cli {
     #[arg(long = "pagerank-top-k")]
     pagerank_top_k: Option<usize>,
 
+    /// Output format for agent-native reports
+    #[arg(long = "format", value_enum)]
+    format: Option<CliOutputFormat>,
+
+    /// Print a Markdown summary for coding agents
+    #[arg(long = "agent-summary", default_value_t = false)]
+    agent_summary: bool,
+
+    /// Print package-level dependency table
+    #[arg(long = "package-deps", default_value_t = false)]
+    package_deps: bool,
+
+    /// Component grouping preset: project, package, module, file
+    #[arg(long = "graph-level", value_enum)]
+    graph_level: Option<GraphLevel>,
+
+    /// Collapse test files during discovery
+    #[arg(long = "collapse-tests", default_value_t = false)]
+    collapse_tests: bool,
+
+    /// Include only exported/public nodes in outputs
+    #[arg(long = "only-exported", default_value_t = false)]
+    only_exported: bool,
+
+    /// Exclude matching paths during discovery. Supports '*' wildcards.
+    #[arg(long = "exclude", action = clap::ArgAction::Append)]
+    exclude: Vec<String>,
+
+    /// Symbol name for symbol-centered reports
+    #[arg(long = "symbol")]
+    symbol: Option<String>,
+
+    /// Print a blast-radius report for --symbol
+    #[arg(long = "blast-radius", default_value_t = false)]
+    blast_radius: bool,
+
+    /// Infer tests for a source file
+    #[arg(long = "tests-for")]
+    tests_for: Option<String>,
+
+    /// Use git diff --name-only as the primary changed-file set
+    #[arg(long = "git-diff", default_value_t = false)]
+    git_diff: bool,
+
+    /// Use raw PageRank ordering instead of production-first ranking
+    #[arg(long = "rank-all", default_value_t = false)]
+    rank_all: bool,
+
+    /// Do not downrank generated or likely generated files
+    #[arg(long = "include-generated", default_value_t = false)]
+    include_generated: bool,
+
+    /// Do not downrank tests in ranking and summary output
+    #[arg(long = "include-tests", default_value_t = false)]
+    include_tests: bool,
+
     /// Cluster modules by their parent crate (for module-level graphs)
     #[arg(long = "cluster-by-crate")]
     cluster_by_crate: bool,
@@ -86,6 +144,22 @@ pub struct Cli {
     output: Option<String>,
 }
 
+#[derive(Clone, Debug, ValueEnum)]
+pub enum CliOutputFormat {
+    Text,
+    Json,
+    Markdown,
+    Dot,
+}
+
+#[derive(Clone, Debug, ValueEnum)]
+pub enum GraphLevel {
+    Project,
+    Package,
+    Module,
+    File,
+}
+
 pub fn run(args: Cli) -> Result<()> {
     let total_start = Instant::now();
 
@@ -97,6 +171,24 @@ pub fn run(args: Cli) -> Result<()> {
             .init();
     }
 
+    let component_depth = args
+        .graph_level
+        .as_ref()
+        .map(|level| match level {
+            GraphLevel::Project => ComponentDepth::Project,
+            GraphLevel::Package => ComponentDepth::Crate,
+            GraphLevel::Module => ComponentDepth::Module,
+            GraphLevel::File => ComponentDepth::File,
+        })
+        .unwrap_or_else(|| ComponentDepth::from_number(args.component_depth));
+
+    let output_format = args.format.as_ref().map(|format| match format {
+        CliOutputFormat::Text => OutputFormat::Text,
+        CliOutputFormat::Json => OutputFormat::Json,
+        CliOutputFormat::Markdown => OutputFormat::Markdown,
+        CliOutputFormat::Dot => OutputFormat::Dot,
+    });
+
     let opts = LlmccOptions {
         files: args.files,
         dirs: args.dirs,
@@ -104,8 +196,21 @@ pub fn run(args: Cli) -> Result<()> {
         print_ir: args.print_ir,
         print_block: args.print_block,
         graph: args.graph,
-        component_depth: ComponentDepth::from_number(args.component_depth),
+        component_depth,
         pagerank_top_k: args.pagerank_top_k,
+        output_format,
+        agent_summary: args.agent_summary,
+        package_deps: args.package_deps,
+        collapse_tests: args.collapse_tests,
+        only_exported: args.only_exported,
+        exclude: args.exclude,
+        symbol: args.symbol,
+        blast_radius: args.blast_radius,
+        tests_for: args.tests_for,
+        git_diff: args.git_diff,
+        rank_all: args.rank_all,
+        include_generated: args.include_generated,
+        include_tests: args.include_tests,
         cluster_by_crate: args.cluster_by_crate,
         short_labels: args.short_labels,
     };
@@ -114,9 +219,10 @@ pub fn run(args: Cli) -> Result<()> {
         "rust" => run_main::<LangRust>(&opts),
         "typescript" | "ts" => run_main::<LangTypeScript>(&opts),
         "cpp" | "c++" | "c" => run_main::<LangCpp>(&opts),
+        "go" | "golang" => run_main::<LangGo>(&opts),
         _ => {
             return Err(format!(
-                "Unknown language: {}. Use 'rust', 'typescript', or 'cpp'",
+                "Unknown language: {}. Use 'rust', 'typescript', 'cpp', or 'go'",
                 args.lang
             )
             .into());
@@ -138,6 +244,7 @@ pub fn run(args: Cli) -> Result<()> {
         Err(e) => {
             eprintln!("Error: {e}");
             tracing::error!(error = %e, "execution failed");
+            return Err(e);
         }
     }
 

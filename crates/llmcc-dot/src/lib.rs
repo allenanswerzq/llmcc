@@ -30,6 +30,7 @@ pub fn render_graph_with_pagerank(
         pagerank_top_k,
         cluster_by_crate: false,
         short_labels: false,
+        only_exported: false,
     };
     render_graph_with_options(project, depth, &options)
 }
@@ -40,7 +41,10 @@ pub fn render_graph_with_options(
     depth: ComponentDepth,
     options: &RenderOptions,
 ) -> String {
-    let nodes = collect_nodes(project);
+    let mut nodes = collect_nodes(project);
+    if options.only_exported {
+        nodes.retain(|node| node.is_exported);
+    }
     if nodes.is_empty() {
         return "digraph G {\n}\n".to_string();
     }
