@@ -18,6 +18,33 @@ use llmcc_dot::{RenderOptions, render_graph_with_options};
 
 use crate::{LlmccOptions, OutputFormat};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum FileRole {
+    Source,
+    Generated,
+    LikelyGenerated,
+    Test,
+    Migration,
+    Script,
+    BuildArtifact,
+    Vendor,
+}
+
+impl FileRole {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Source => "source",
+            Self::Generated => "generated",
+            Self::LikelyGenerated => "likely_generated",
+            Self::Test => "test",
+            Self::Migration => "migration",
+            Self::Script => "script",
+            Self::BuildArtifact => "build_artifact",
+            Self::Vendor => "vendor",
+        }
+    }
+}
+
 #[derive(Clone, Serialize)]
 pub struct AgentGraph {
     schema_version: u8,
@@ -40,6 +67,7 @@ pub struct AgentNode {
     crate_name: Option<String>,
     module_path: Option<String>,
     is_exported: bool,
+    file_role: String,
 }
 
 #[derive(Clone, Serialize)]
@@ -181,11 +209,17 @@ fn ranked_display_blocks<'tcx>(
 ) -> Vec<RankedBlock> {
     let nodes = filtered_render_nodes(opts, pg);
     let node_ids: HashSet<BlockId> = nodes.iter().map(|node| node.block_id).collect();
+    let mut role_cache = HashMap::new();
     let mut ranked: Vec<_> = PageRanker::new(pg)
         .rank()
         .blocks
         .into_iter()
         .filter(|block| node_ids.contains(&block.node.block_id))
+        .map(|mut block| {
+            let weight = ranking_weight(opts, &block, &mut role_cache);
+            block.score *= weight;
+            block
+        })
         .collect();
     ranked.sort_by(|a, b| {
         b.score
@@ -195,6 +229,154 @@ fn ranked_display_blocks<'tcx>(
             .then_with(|| a.file_path.cmp(&b.file_path))
     });
     ranked
+}
+
+fn ranking_weight(
+    opts: &LlmccOptions,
+    block: &RankedBlock,
+    role_cache: &mut HashMap<String, FileRole>,
+) -> f64 {
+    if opts.rank_all {
+        return 1.0;
+    }
+
+    let role = block
+        .file_path
+        .as_ref()
+        .map(|path| {
+            *role_cache
+                .entry(path.clone())
+                .or_insert_with(|| classify_file_role(path))
+        })
+        .unwrap_or(FileRole::Source);
+
+    let file_weight = match role {
+        FileRole::Source => 1.0,
+        FileRole::Generated if opts.include_generated => 1.0,
+        FileRole::LikelyGenerated if opts.include_generated => 1.0,
+        FileRole::Test if opts.include_tests => 1.0,
+        FileRole::Generated => 0.04,
+        FileRole::LikelyGenerated => 0.25,
+        FileRole::Test => 0.25,
+        FileRole::Migration => 0.65,
+        FileRole::Script => 0.75,
+        FileRole::BuildArtifact => 0.10,
+        FileRole::Vendor => 0.05,
+    };
+
+    file_weight * symbol_role_weight(block)
+}
+
+fn symbol_role_weight(block: &RankedBlock) -> f64 {
+    let name = block.name.to_ascii_lowercase();
+    if name.starts_with("decode")
+        || name.starts_with("encode")
+        || name.ends_with("response")
+        || name.ends_with("request")
+    {
+        return 0.50;
+    }
+    match block.kind {
+        BlockKind::Class | BlockKind::Trait | BlockKind::Interface | BlockKind::Enum => 1.05,
+        BlockKind::Func if is_probably_exported_name(&block.name) => 1.10,
+        _ => 1.0,
+    }
+}
+
+fn classify_file_role(path: &str) -> FileRole {
+    let lower = path.to_ascii_lowercase();
+    let file_name = Path::new(path)
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+
+    if has_path_component(&lower, &["vendor", "node_modules", "third_party"]) {
+        return FileRole::Vendor;
+    }
+    if has_path_component(&lower, &["target", "build", "dist", "out", ".cache"]) {
+        return FileRole::BuildArtifact;
+    }
+    if is_test_path(&lower, &file_name) {
+        return FileRole::Test;
+    }
+    if has_generated_header(path) || is_generated_filename(&file_name) {
+        return FileRole::Generated;
+    }
+    if has_path_component(&lower, &["gen", "generated", ".generated", "__generated__"]) {
+        return FileRole::Generated;
+    }
+    if file_name.ends_with(".d.ts") || lower.contains("generated") {
+        return FileRole::LikelyGenerated;
+    }
+    if lower.contains("/migration")
+        || lower.contains("/migrations/")
+        || file_name.contains("migration")
+    {
+        return FileRole::Migration;
+    }
+    if has_path_component(&lower, &["scripts"]) {
+        return FileRole::Script;
+    }
+    FileRole::Source
+}
+
+fn has_path_component(path: &str, components: &[&str]) -> bool {
+    path.split(['/', '\\'])
+        .any(|part| components.contains(&part))
+}
+
+fn is_test_path(path: &str, file_name: &str) -> bool {
+    path.contains("/tests/")
+        || path.contains("\\tests\\")
+        || has_path_component(path, &["testutil", "testdata", "fixtures", "mocks"])
+        || path.contains("/__tests__/")
+        || path.contains("\\__tests__\\")
+        || file_name.ends_with("_test.go")
+        || file_name.ends_with("_test.rs")
+        || file_name.ends_with(".test.ts")
+        || file_name.ends_with(".spec.ts")
+}
+
+fn is_generated_filename(file_name: &str) -> bool {
+    file_name.ends_with(".pb.go")
+        || file_name.ends_with(".pb.gw.go")
+        || file_name.ends_with("_generated.go")
+        || file_name.ends_with(".generated.go")
+        || file_name.ends_with(".gen.go")
+        || file_name.starts_with("zz_generated.")
+        || file_name.ends_with(".generated.ts")
+        || file_name.ends_with(".graphql.ts")
+        || file_name.ends_with(".g.dart")
+        || file_name.ends_with(".freezed.dart")
+        || file_name.ends_with(".designer.cs")
+}
+
+fn has_generated_header(path: &str) -> bool {
+    let Ok(bytes) = std::fs::read(path) else {
+        return false;
+    };
+    let limit = bytes.len().min(8192);
+    let header = String::from_utf8_lossy(&bytes[..limit]).to_ascii_lowercase();
+    header.lines().take(40).any(|line| {
+        (line.contains("code generated") && line.contains("do not edit"))
+            || line.contains("@generated")
+            || line.contains("<auto-generated")
+            || line.contains("generated by")
+            || line.contains("do not edit")
+            || line.contains("openapi-generator")
+            || line.contains("swagger codegen")
+            || line.contains("sqlc generated")
+            || line.contains("entc generated")
+            || line.contains("protoc")
+    })
+}
+
+fn is_probably_exported_name(name: &str) -> bool {
+    name.chars()
+        .next()
+        .map(|ch| ch.is_uppercase())
+        .unwrap_or(false)
 }
 
 fn filtered_render_nodes<'tcx>(
@@ -271,6 +453,11 @@ fn agent_node_from_render_node(node: &RenderNode) -> AgentNode {
         crate_name: node.crate_name.clone(),
         module_path: node.module_path.clone(),
         is_exported: node.is_exported,
+        file_role: node
+            .file_path
+            .as_ref()
+            .map(|path| classify_file_role(path).as_str().to_string())
+            .unwrap_or_else(|| FileRole::Source.as_str().to_string()),
     }
 }
 

@@ -42,6 +42,9 @@ pub struct LlmccOptions {
     pub blast_radius: bool,
     pub tests_for: Option<String>,
     pub git_diff: bool,
+    pub rank_all: bool,
+    pub include_generated: bool,
+    pub include_tests: bool,
     pub cluster_by_crate: bool,
     pub short_labels: bool,
 }

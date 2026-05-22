@@ -69,6 +69,9 @@ fn run_llmcc(
         blast_radius: false,
         tests_for: None,
         git_diff: false,
+        rank_all: false,
+        include_generated: false,
+        include_tests: false,
         cluster_by_crate: false,
         short_labels: false,
     };

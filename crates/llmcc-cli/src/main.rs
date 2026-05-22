@@ -119,6 +119,18 @@ pub struct Cli {
     #[arg(long = "git-diff", default_value_t = false)]
     git_diff: bool,
 
+    /// Use raw PageRank ordering instead of production-first ranking
+    #[arg(long = "rank-all", default_value_t = false)]
+    rank_all: bool,
+
+    /// Do not downrank generated or likely generated files
+    #[arg(long = "include-generated", default_value_t = false)]
+    include_generated: bool,
+
+    /// Do not downrank tests in ranking and summary output
+    #[arg(long = "include-tests", default_value_t = false)]
+    include_tests: bool,
+
     /// Cluster modules by their parent crate (for module-level graphs)
     #[arg(long = "cluster-by-crate")]
     cluster_by_crate: bool,
@@ -196,6 +208,9 @@ pub fn run(args: Cli) -> Result<()> {
         blast_radius: args.blast_radius,
         tests_for: args.tests_for,
         git_diff: args.git_diff,
+        rank_all: args.rank_all,
+        include_generated: args.include_generated,
+        include_tests: args.include_tests,
         cluster_by_crate: args.cluster_by_crate,
         short_labels: args.short_labels,
     };

@@ -155,6 +155,20 @@ Print a deterministic PageRank table:
 llmcc --lang rust --dir sample/repos/codex/codex-rs --pagerank-top-k 20
 ```
 
+Agent ranking is production-first by default: generated files, tests, test helpers,
+migrations, scripts, build outputs, and vendored code are downranked in reports
+without being removed from analysis. Use raw ranking when that is the goal:
+
+```bash
+llmcc --lang rust --dir sample/repos/codex/codex-rs --pagerank-top-k 20 --rank-all
+```
+
+Generated and test code can be promoted back into normal ranking independently:
+
+```bash
+llmcc --lang go --dir . --pagerank-top-k 20 --include-generated --include-tests
+```
+
 Print structured JSON for agents:
 
 ```bash

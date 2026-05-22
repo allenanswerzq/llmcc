@@ -5,7 +5,7 @@ use std::io;
 use std::time::Instant;
 
 use ignore::WalkBuilder;
-use tracing::{info, warn};
+use tracing::{debug, info};
 
 use llmcc_core::Result;
 
@@ -123,7 +123,7 @@ pub fn discover_files(opts: &LlmccOptions, extensions: &HashSet<&str>) -> Result
             return;
         }
         if let Some(reason) = should_skip_file(std::path::Path::new(path), opts) {
-            warn!("Skipping {}: {}", path, reason);
+            debug!("Skipping {}: {}", path, reason);
             skipped_count += 1;
             return;
         }
@@ -190,7 +190,7 @@ pub fn discover_files(opts: &LlmccOptions, extensions: &HashSet<&str>) -> Result
     }
 
     if skipped_count > 0 {
-        info!("Skipped {} files due to size limits", skipped_count);
+        info!("Skipped {} files during discovery", skipped_count);
     }
 
     info!(
