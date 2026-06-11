@@ -25,13 +25,13 @@ pub enum FileOrder {
     /// Sort by file size descending (better parallel load balancing for large projects).
     BySizeDescending,
 }
-use crate::Result;
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirBase, HirId, HirIdent, HirKind, HirNode};
 use crate::ir_builder::reset_hir_id_counter;
 use crate::lang_def::{Language, ParseTree};
 use crate::scope::Scope;
 use crate::symbol::{ScopeId, SymId, Symbol, reset_scope_id_counter, reset_symbol_id_counter};
+use crate::{Error, ErrorKind, Result};
 
 /// Thread-safe wrapper for raw Symbol pointer.
 /// SAFETY: The Symbol is allocated in a bump arena that outlives all usage,
@@ -109,12 +109,25 @@ impl<'tcx> CompileUnit<'tcx> {
         &self.cc.files[self.index]
     }
 
-    /// Get the generic parse tree for this compilation unit
-    pub fn parse_tree(&self) -> Option<&dyn ParseTree> {
+    /// Get the generic parse tree for this compilation unit if it is available.
+    pub fn try_parse_tree(&self) -> Option<&dyn ParseTree> {
         self.cc
             .parse_trees
             .get(self.index)
             .map(|tree| tree.as_ref())
+    }
+
+    /// Get the generic parse tree for this compilation unit.
+    pub fn parse_tree(&self) -> Result<&dyn ParseTree> {
+        self.try_parse_tree().ok_or_else(|| {
+            Error::new(
+                ErrorKind::InvariantViolation,
+                "parse tree is not available for compilation unit",
+            )
+            .with_operation("parse_tree")
+            .with_context("unit_index", self.index.to_string())
+            .with_context("path", self.file_path().unwrap_or("<memory>"))
+        })
     }
 
     /// Access the shared string interner.
@@ -147,8 +160,20 @@ impl<'tcx> CompileUnit<'tcx> {
         self.resolve_name_or(symbol, "<unnamed>")
     }
 
-    pub fn file_root_id(&self) -> Option<HirId> {
-        self.cc.file_root_id(self.index)
+    pub fn try_file_root_id(&self) -> Option<HirId> {
+        self.cc.try_file_root_id(self.index)
+    }
+
+    pub fn file_root_id(&self) -> Result<HirId> {
+        self.try_file_root_id().ok_or_else(|| {
+            Error::new(
+                ErrorKind::InvariantViolation,
+                "HIR root is not available for compilation unit",
+            )
+            .with_operation("file_root_id")
+            .with_context("unit_index", self.index.to_string())
+            .with_context("path", self.file_path().unwrap_or("<memory>"))
+        })
     }
 
     pub fn file_path(&self) -> Option<&str> {
@@ -701,17 +726,42 @@ impl<'tcx> CompileCtxt<'tcx> {
         }
     }
 
-    pub fn file_root_id(&self, index: usize) -> Option<HirId> {
+    pub fn try_file_root_id(&self, index: usize) -> Option<HirId> {
         self.hir_root_ids.read().get(index).and_then(|opt| *opt)
+    }
+
+    pub fn file_root_id(&self, index: usize) -> Result<HirId> {
+        self.try_file_root_id(index).ok_or_else(|| {
+            Error::new(
+                ErrorKind::InvariantViolation,
+                "HIR root is not available for compilation unit",
+            )
+            .with_operation("file_root_id")
+            .with_context("unit_index", index.to_string())
+            .with_context("path", self.file_path(index).unwrap_or("<memory>"))
+        })
     }
 
     pub fn file_path(&self, index: usize) -> Option<&str> {
         self.files.get(index).and_then(|file| file.path())
     }
 
-    /// Get the generic parse tree for a specific file
-    pub fn get_parse_tree(&self, index: usize) -> Option<&dyn ParseTree> {
+    /// Get the generic parse tree for a specific file if it is available.
+    pub fn try_parse_tree(&self, index: usize) -> Option<&dyn ParseTree> {
         self.parse_trees.get(index).map(|tree| tree.as_ref())
+    }
+
+    /// Get the generic parse tree for a specific file.
+    pub fn parse_tree(&self, index: usize) -> Result<&dyn ParseTree> {
+        self.try_parse_tree(index).ok_or_else(|| {
+            Error::new(
+                ErrorKind::InvariantViolation,
+                "parse tree is not available for compilation unit",
+            )
+            .with_operation("parse_tree")
+            .with_context("unit_index", index.to_string())
+            .with_context("path", self.file_path(index).unwrap_or("<memory>"))
+        })
     }
 
     /// Get all file paths from the compilation context

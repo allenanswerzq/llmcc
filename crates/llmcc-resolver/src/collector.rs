@@ -2,12 +2,12 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;
 
-use llmcc_core::Language;
 use llmcc_core::context::CompileCtxt;
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::{Arena, HirNode};
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
 use llmcc_core::symbol::{SymKind, SymKindSet, Symbol};
+use llmcc_core::{Language, Result};
 
 use rayon::prelude::*;
 
@@ -277,7 +277,7 @@ impl<'a> CollectorScopes<'a> {
 pub fn collect_symbols_with<'a, L: Language>(
     cc: &'a CompileCtxt<'a>,
     config: &ResolveOptions,
-) -> &'a Scope<'a> {
+) -> Result<&'a Scope<'a>> {
     let total_start = Instant::now();
     let unit_count = cc.files.len();
     tracing::info!(unit_count, "starting symbol collection");
@@ -291,7 +291,7 @@ pub fn collect_symbols_with<'a, L: Language>(
     let clone_time_ns = AtomicU64::new(0);
     let visit_time_ns = AtomicU64::new(0);
 
-    let collect_unit = |i: usize| {
+    let collect_unit = |i: usize| -> Result<&'a Scope<'a>> {
         let clone_start = Instant::now();
         let unit_scope_stack = scope_stack_clone.clone();
         clone_time_ns.fetch_add(clone_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
@@ -299,7 +299,7 @@ pub fn collect_symbols_with<'a, L: Language>(
         let unit = cc.compile_unit(i);
 
         let visit_start = Instant::now();
-        let node = unit.hir_node(unit.file_root_id().unwrap());
+        let node = unit.hir_node(unit.file_root_id()?);
         let unit_globals = L::collect_symbols(unit, node, unit_scope_stack, config);
         visit_time_ns.fetch_add(visit_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
 
@@ -308,7 +308,7 @@ pub fn collect_symbols_with<'a, L: Language>(
             let _ = print_llmcc_ir(unit);
         }
 
-        unit_globals
+        Ok(unit_globals)
     };
 
     let parallel_start = Instant::now();
@@ -320,6 +320,7 @@ pub fn collect_symbols_with<'a, L: Language>(
             .map(collect_unit)
             .collect::<Vec<_>>()
     };
+    let unit_globals_vec = unit_globals_vec.into_iter().collect::<Result<Vec<_>>>()?;
     let parallel_time = parallel_start.elapsed();
 
     let globals = scope_stack.globals();
@@ -348,7 +349,7 @@ pub fn collect_symbols_with<'a, L: Language>(
         total_ms,
         "symbol collection complete"
     );
-    globals
+    Ok(globals)
 }
 
 /// Fused IR build + symbol collection for better parallel efficiency.
@@ -360,7 +361,7 @@ pub fn build_and_collect_symbols<'a, L: Language>(
     cc: &'a CompileCtxt<'a>,
     ir_config: llmcc_core::ir_builder::IrBuildOption,
     resolver_config: &ResolveOptions,
-) -> Result<&'a Scope<'a>, llmcc_core::Error> {
+) -> Result<&'a Scope<'a>> {
     use llmcc_core::ir_builder::{build_llmcc_ir_inner, reset_ir_build_counters};
     use std::sync::atomic::Ordering;
 
@@ -380,16 +381,14 @@ pub fn build_and_collect_symbols<'a, L: Language>(
     let collect_ns = AtomicU64::new(0);
 
     // Fused per-file operation: IR build then collect
-    let build_and_collect_unit = |i: usize| -> Result<&'a Scope<'a>, llmcc_core::Error> {
+    let build_and_collect_unit = |i: usize| -> Result<&'a Scope<'a>> {
         // Phase 1: IR Build
         let ir_start = Instant::now();
 
         let file_path = cc.file_path(i).map(|p| p.to_string());
         let file_bytes = cc.files[i].content();
 
-        let parse_tree = cc
-            .get_parse_tree(i)
-            .ok_or_else(|| format!("No parse tree for unit {i}"))?;
+        let parse_tree = cc.parse_tree(i)?;
 
         let file_root_id =
             build_llmcc_ir_inner::<L>(file_path, file_bytes, parse_tree, &cc.arena, ir_config)?;
@@ -420,21 +419,21 @@ pub fn build_and_collect_symbols<'a, L: Language>(
 
     // Run fused operation in parallel
     let parallel_start = Instant::now();
-    let unit_globals_vec: Vec<Result<&'a Scope<'a>, llmcc_core::Error>> =
-        if resolver_config.sequential {
-            (0..cc.files.len()).map(build_and_collect_unit).collect()
-        } else {
-            (0..cc.files.len())
-                .into_par_iter()
-                .map(build_and_collect_unit)
-                .collect()
-        };
+    let unit_globals_vec = if resolver_config.sequential {
+        (0..cc.files.len())
+            .map(build_and_collect_unit)
+            .collect::<Vec<_>>()
+    } else {
+        (0..cc.files.len())
+            .into_par_iter()
+            .map(build_and_collect_unit)
+            .collect::<Vec<_>>()
+    };
     let parallel_time = parallel_start.elapsed();
 
     // Unwrap results
-    let unit_globals_vec: Vec<&'a Scope<'a>> = unit_globals_vec
-        .into_iter()
-        .collect::<Result<Vec<_>, _>>()?;
+    let unit_globals_vec: Vec<&'a Scope<'a>> =
+        unit_globals_vec.into_iter().collect::<Result<Vec<_>>>()?;
 
     let globals = scope_stack.globals();
 

@@ -279,9 +279,7 @@ pub fn build_llmcc_ir<'tcx, L: Language>(
         let file_path = cc.file_path(index).map(|p| p.to_string());
         let file_bytes = cc.files[index].content();
 
-        let parse_tree = cc
-            .get_parse_tree(index)
-            .ok_or_else(|| format!("No parse tree for unit {index}"))?;
+        let parse_tree = cc.parse_tree(index)?;
 
         let file_root_id =
             build_llmcc_ir_inner::<L>(file_path, file_bytes, parse_tree, &cc.arena, config)?;

@@ -1417,20 +1417,20 @@ where
             .collect()
     };
 
-    let cc = CompileCtxt::from_files_with_logical::<L>(&files).unwrap();
+    let cc = CompileCtxt::from_files_with_logical::<L>(&files)?;
 
     // Use sequential mode when not parallel to ensure stable ordering
     let sequential = !options.parallel;
     let ir_option = IrBuildOption::new().with_sequential(sequential);
-    build_llmcc_ir::<L>(&cc, ir_option).unwrap();
+    build_llmcc_ir::<L>(&cc, ir_option)?;
 
     let resolve_options = ResolveOptions::default()
         .with_print_ir(options.print_ir)
         .with_sequential(sequential);
-    let globals = collect_symbols_with::<L>(&cc, &resolve_options);
+    let globals = collect_symbols_with::<L>(&cc, &resolve_options)?;
 
     // Bind symbols using new unified API
-    bind_symbols_with::<L>(&cc, globals, &resolve_options);
+    bind_symbols_with::<L>(&cc, globals, &resolve_options)?;
     let mut project_graph = if options.build_block_reports
         || options.build_block_graph
         || options.keep_block_relations

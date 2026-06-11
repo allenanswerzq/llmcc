@@ -6,7 +6,7 @@ use llmcc_core::interner::InternPool;
 use llmcc_core::ir::HirScope;
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
 use llmcc_core::symbol::{ScopeId, SymKind, SymKindSet, Symbol};
-use llmcc_core::{CompileCtxt, Language};
+use llmcc_core::{CompileCtxt, Language, Result};
 
 use rayon::prelude::*;
 
@@ -296,28 +296,33 @@ pub fn bind_symbols_with<'a, L: Language>(
     cc: &'a CompileCtxt<'a>,
     globals: &'a Scope<'a>,
     config: &ResolveOptions,
-) {
+) -> Result<()> {
     let total_start = Instant::now();
     let unit_count = cc.files.len();
     tracing::info!(unit_count, "starting symbol binding");
 
     let bind_cpu_time_ns = AtomicU64::new(0);
 
-    let bind_unit = |unit_index: usize| {
+    let bind_unit = |unit_index: usize| -> Result<()> {
         let bind_start = Instant::now();
         let unit = cc.compile_unit(unit_index);
-        let id = unit.file_root_id().unwrap();
+        let id = unit.file_root_id()?;
         let node = unit.hir_node(id);
         L::bind_symbols(unit, node, globals, config);
         bind_cpu_time_ns.fetch_add(bind_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
+        Ok(())
     };
 
     let parallel_start = Instant::now();
-    if config.sequential {
-        (0..unit_count).for_each(bind_unit);
+    let results = if config.sequential {
+        (0..unit_count).map(bind_unit).collect::<Vec<_>>()
     } else {
-        (0..unit_count).into_par_iter().for_each(bind_unit);
-    }
+        (0..unit_count)
+            .into_par_iter()
+            .map(bind_unit)
+            .collect::<Vec<_>>()
+    };
+    results.into_iter().collect::<Result<Vec<_>>>()?;
     let parallel_ms = parallel_time_ms(parallel_start);
     let bind_cpu_ms = bind_cpu_time_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
     let total_ms = parallel_time_ms(total_start);
@@ -328,6 +333,7 @@ pub fn bind_symbols_with<'a, L: Language>(
         total_ms,
         "symbol binding complete"
     );
+    Ok(())
 }
 
 fn parallel_time_ms(start: Instant) -> f64 {

@@ -347,7 +347,7 @@ pub fn render_llmcc_ir_with_config(
     let hir_root = unit.hir_node(root);
 
     // Build AST render tree from parse tree if available
-    let ast_render = if let Some(parse_tree) = unit.parse_tree() {
+    let ast_render = if let Some(parse_tree) = unit.try_parse_tree() {
         let root_node = parse_tree.root();
         build_ast_render(&*root_node, unit, config, 0)?
     } else {
@@ -375,7 +375,7 @@ pub fn print_llmcc_ir(unit: CompileUnit<'_>) -> RenderResult<()> {
 /// Print HIR to stdout with custom configuration
 pub fn print_llmcc_ir_with_config(unit: CompileUnit<'_>, config: &PrintConfig) -> RenderResult<()> {
     let root = unit
-        .file_root_id()
+        .try_file_root_id()
         .ok_or_else(|| RenderError::new("No HIR root node found"))?;
 
     let (ast, _hir) = render_llmcc_ir_with_config(root, unit, config)?;

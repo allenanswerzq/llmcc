@@ -10,7 +10,7 @@ use llmcc_core::graph::ProjectGraph;
 use llmcc_core::graph_builder::{GraphBuildOption, build_llmcc_graph};
 use llmcc_core::ir_builder::IrBuildOption;
 use llmcc_core::lang_def::Language as CoreLanguage;
-use llmcc_core::{CompileCtxt, ResolveOptions, Result, print_llmcc_graph};
+use llmcc_core::{CompileCtxt, Error, ResolveOptions, Result, print_llmcc_graph};
 use llmcc_cpp::LangCpp;
 use llmcc_dot::{RenderOptions, render_graph_with_options};
 use llmcc_resolver::{bind_symbols_with, build_and_collect_symbols};
@@ -31,7 +31,10 @@ impl Runner {
 
     pub fn execute(self) -> Result<()> {
         let started = Instant::now();
-        self.do_execute()?;
+        if let Err(err) = self.do_execute() {
+            tracing::error!(error = %err, "execution failed");
+            return Err(err);
+        }
 
         let total_secs = started.elapsed().as_secs_f64();
         tracing::info!(total_secs, "complete");
@@ -44,7 +47,7 @@ impl Runner {
             Language::Rust => self.process_language::<LangRust>(),
             Language::Typescript => self.process_language::<LangTypeScript>(),
             Language::Cpp => self.process_language::<LangCpp>(),
-        };
+        }?;
 
         self.emit_output(output)
     }
@@ -79,7 +82,7 @@ impl Runner {
         );
 
         let bind_start = Instant::now();
-        bind_symbols_with::<L>(&cc, globals, &resolve_options);
+        bind_symbols_with::<L>(&cc, globals, &resolve_options)?;
         info!("Symbol binding: {:.2}s", bind_start.elapsed().as_secs_f64());
 
         let graph_start = Instant::now();
@@ -180,10 +183,9 @@ impl Runner {
         );
 
         if files.is_empty() {
-            return Err(
-                "No input files found. Check that the directory contains supported file types."
-                    .into(),
-            );
+            return Err(Error::invalid_argument(
+                "No input files found. Check that the directory contains supported file types.",
+            ));
         }
 
         Ok(files)
@@ -210,14 +212,9 @@ impl Runner {
         }
     }
 
-    fn emit_output(&self, result: Result<Option<String>>) -> Result<()> {
-        let output = match result {
-            Ok(Some(output)) => output,
-            Ok(None) => return Ok(()),
-            Err(err) => {
-                tracing::error!(error = %err, "execution failed");
-                return Err(err);
-            }
+    fn emit_output(&self, output: Option<String>) -> Result<()> {
+        let Some(output) = output else {
+            return Ok(());
         };
 
         if let Some(path) = self.options.output.as_deref() {

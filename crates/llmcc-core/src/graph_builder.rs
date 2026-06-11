@@ -754,7 +754,7 @@ pub fn build_unit_graph<'tcx, L: Language>(
     unit_index: usize,
     config: GraphBuildConfig,
 ) -> Result<Option<UnitGraph>> {
-    let root_hir = unit.file_root_id().ok_or("missing file start HIR id")?;
+    let root_hir = unit.file_root_id()?;
     let mut builder = GraphBuilder::<L>::new(unit, config);
     let root_node = unit.hir_node(root_hir);
     builder.visit_node(unit, root_node, BlockId::ROOT_PARENT);
