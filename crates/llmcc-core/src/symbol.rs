@@ -215,12 +215,10 @@ pub struct Symbol {
     /// Examples: impl blocks, declaration merging, overloads, or split type
     /// definitions. `owner` plus `defining` is the full definition set.
     pub defining: RwLock<Vec<HirId>>,
-    /// Scope: scope that directly contains this symbol.
+    /// Scope introduced by this symbol, when the symbol owns a namespace/body.
     ///
     /// Encoding: `0` means `None`, `n` means `Some(ScopeId(n - 1))`.
-    pub scope: AtomicUsize,
-    /// Scope: lexical or ownership parent used for upward traversal.
-    pub parent_scope: RwLock<Option<ScopeId>>,
+    owned_scope: AtomicUsize,
     /// Classification: compact `SymKind` tag.
     ///
     /// Encoding: stored as `u8` and decoded through `SymKind::from_u8`.
@@ -235,11 +233,6 @@ pub struct Symbol {
     pub block_id: AtomicU32,
     /// Visibility: true when this symbol can be found through global/export lookup.
     pub is_global: AtomicBool,
-    /// Shadowing: previous symbol hidden or superseded by this one.
-    ///
-    /// Used to build a linked list for nested-scope shadowing and repeated
-    /// definitions of the same name.
-    pub previous: RwLock<Option<SymId>>,
     /// Type: component or related type ids owned by this symbol.
     ///
     /// Examples: tuple element types, array element type, struct field types,
@@ -263,13 +256,11 @@ impl Clone for Symbol {
             name: self.name,
             unit_crate_index: AtomicU64::new(self.unit_crate_index.load(Ordering::Relaxed)),
             defining: RwLock::new(self.defining.read().clone()),
-            scope: AtomicUsize::new(self.scope.load(Ordering::Relaxed)),
-            parent_scope: RwLock::new(*self.parent_scope.read()),
+            owned_scope: AtomicUsize::new(self.owned_scope.load(Ordering::Relaxed)),
             kind: AtomicU8::new(self.kind.load(Ordering::Relaxed)),
             type_of: AtomicUsize::new(self.type_of.load(Ordering::Relaxed)),
             block_id: AtomicU32::new(self.block_id.load(Ordering::Relaxed)),
             is_global: AtomicBool::new(self.is_global.load(Ordering::Relaxed)),
-            previous: RwLock::new(*self.previous.read()),
             nested_types: RwLock::new(self.nested_types.read().clone()),
             field_of: AtomicUsize::new(self.field_of.load(Ordering::Relaxed)),
             decorators: RwLock::new(self.decorators.read().clone()),
@@ -313,13 +304,11 @@ impl Symbol {
             name: name_key,
             unit_crate_index: AtomicU64::new(Self::pack_indices(INDEX_NONE, INDEX_NONE)),
             defining: RwLock::new(Vec::new()),
-            scope: AtomicUsize::new(0),
-            parent_scope: RwLock::new(None),
+            owned_scope: AtomicUsize::new(0),
             kind: AtomicU8::new(SymKind::Unknown as u8),
             type_of: AtomicUsize::new(0),
             block_id: AtomicU32::new(0),
             is_global: AtomicBool::new(false),
-            previous: RwLock::new(None),
             nested_types: RwLock::new(Vec::new()),
             field_of: AtomicUsize::new(0),
             decorators: RwLock::new(Vec::new()),
@@ -357,34 +346,22 @@ impl Symbol {
         }
     }
 
-    /// Gets the scope ID this symbol belongs to.
+    /// Scope introduced by this symbol, if it owns one.
     #[inline]
-    pub fn opt_scope(&self) -> Option<ScopeId> {
-        let v = self.scope.load(Ordering::Relaxed);
+    pub fn opt_owned_scope(&self) -> Option<ScopeId> {
+        let v = self.owned_scope.load(Ordering::Relaxed);
         if v == 0 { None } else { Some(ScopeId(v - 1)) }
     }
 
     #[inline]
-    pub fn scope(&self) -> ScopeId {
-        self.opt_scope().unwrap()
+    pub fn owned_scope(&self) -> ScopeId {
+        self.opt_owned_scope().unwrap()
     }
 
-    /// Sets the scope ID this symbol belongs to.
+    /// Attach the semantic scope introduced by this symbol.
     #[inline]
-    pub fn set_scope(&self, scope_id: ScopeId) {
-        self.scope.store(scope_id.0 + 1, Ordering::Relaxed);
-    }
-
-    /// Gets the parent scope ID in the scope hierarchy.
-    #[inline]
-    pub fn parent_scope(&self) -> Option<ScopeId> {
-        *self.parent_scope.read()
-    }
-
-    /// Sets the parent scope ID in the scope hierarchy.
-    #[inline]
-    pub fn set_parent_scope(&self, scope_id: ScopeId) {
-        *self.parent_scope.write() = Some(scope_id);
+    pub fn set_owned_scope(&self, scope_id: ScopeId) {
+        self.owned_scope.store(scope_id.0 + 1, Ordering::Relaxed);
     }
 
     /// Gets the symbol kind (function, struct, variable, etc.).
@@ -531,20 +508,6 @@ impl Symbol {
     #[inline]
     pub fn set_block_id(&self, block_id: BlockId) {
         self.block_id.store(block_id.0 + 1, Ordering::Relaxed);
-    }
-
-    /// Gets the previous definition of this symbol (for shadowing).
-    /// Symbols with the same name in nested scopes form a chain via this field.
-    #[inline]
-    pub fn previous(&self) -> Option<SymId> {
-        *self.previous.read()
-    }
-
-    /// Sets the previous definition of this symbol.
-    /// Used to build shadowing chains when a symbol name is reused in a nested scope.
-    #[inline]
-    pub fn set_previous(&self, sym_id: SymId) {
-        *self.previous.write() = Some(sym_id);
     }
 
     /// Gets the nested types for compound types (tuples, arrays, structs, enums).

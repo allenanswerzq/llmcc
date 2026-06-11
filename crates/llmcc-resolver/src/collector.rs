@@ -5,7 +5,7 @@ use std::time::Instant;
 use llmcc_core::context::CompileCtxt;
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::{Arena, HirNode};
-use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
+use llmcc_core::scope::{InsertOptions, Scope, ScopeStack, SymbolFilter};
 use llmcc_core::symbol::{SymKind, SymKindSet, Symbol};
 use llmcc_core::{Language, Result};
 
@@ -83,7 +83,7 @@ impl<'a> CollectorScopes<'a> {
     #[inline]
     pub fn push_scope_with(&mut self, node: &HirNode<'a>, symbol: Option<&'a Symbol>) {
         if let Some(symbol) = symbol
-            && let Some(existing_scope_id) = symbol.opt_scope()
+            && let Some(existing_scope_id) = symbol.opt_owned_scope()
             && let Some(existing_scope) = self.cc.opt_get_scope(existing_scope_id)
         {
             self.push_scope(existing_scope);
@@ -95,10 +95,7 @@ impl<'a> CollectorScopes<'a> {
         let scope_id = scope_val.id().0;
         let scope = self.arena().alloc_with_id(scope_id, scope_val);
         if let Some(symbol) = symbol {
-            symbol.set_scope(scope.id());
-            if let Some(parent_scope) = self.scopes.top() {
-                symbol.set_parent_scope(parent_scope.id());
-            }
+            symbol.set_owned_scope(scope.id());
         }
         self.push_scope(scope);
     }
@@ -147,9 +144,6 @@ impl<'a> CollectorScopes<'a> {
             symbol.set_unit_index(self.unit_index());
             symbol.set_crate_index(self.crate_index());
             symbol.add_defining(node.id());
-            if let Some(parent) = self.top() {
-                symbol.set_parent_scope(parent.id());
-            }
         }
     }
 
@@ -163,7 +157,7 @@ impl<'a> CollectorScopes<'a> {
     ) -> Option<&'a Symbol> {
         let symbols = self
             .scopes
-            .lookup_or_insert(name, node.id(), LookupOptions::current())?;
+            .lookup_or_insert(name, node.id(), InsertOptions::current())?;
         let symbol = symbols.last().copied()?;
         self.init_symbol(symbol, name, node, kind);
         Some(symbol)
@@ -179,7 +173,7 @@ impl<'a> CollectorScopes<'a> {
     ) -> Option<&'a Symbol> {
         // Use kind filter to avoid collisions between symbols of different kinds
         // e.g., crate "auth" and file "auth" should be separate symbols
-        let options = LookupOptions::global().with_kind_set(SymKindSet::from_kind(kind));
+        let options = InsertOptions::global().with_existing_kinds(SymKindSet::from_kind(kind));
         let symbols = self.scopes.lookup_or_insert(name, node.id(), options)?;
         let symbol = symbols.last().copied()?;
         self.init_symbol(symbol, name, node, kind);
@@ -230,7 +224,7 @@ impl<'a> CollectorScopes<'a> {
     /// Lookup symbols by name with options
     #[inline]
     pub fn lookup_symbols(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
-        let options = LookupOptions::current().with_kind_set(kind_filters);
+        let options = SymbolFilter::kinds(kind_filters);
         self.scopes.lookup_symbols(name, options)
     }
 

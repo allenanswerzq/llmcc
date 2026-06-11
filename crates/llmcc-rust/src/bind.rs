@@ -85,7 +85,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(ref crate_name) = meta.package_name
             && let Some(symbol) =
                 scopes.lookup_symbol(crate_name, SymKindSet::from_kind(SymKind::Crate))
-            && let Some(scope_id) = symbol.opt_scope()
+            && let Some(scope_id) = symbol.opt_owned_scope()
         {
             scopes.push_scope(scope_id);
         }
@@ -93,7 +93,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(ref module_name) = meta.module_name
             && let Some(symbol) =
                 scopes.lookup_symbol(module_name, SymKindSet::from_kind(SymKind::Module))
-            && let Some(scope_id) = symbol.opt_scope()
+            && let Some(scope_id) = symbol.opt_owned_scope()
         {
             scopes.push_scope(scope_id);
         }
@@ -101,7 +101,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(ref file_name) = meta.file_name
             && let Some(file_sym) =
                 scopes.lookup_symbol(file_name, SymKindSet::from_kind(SymKind::File))
-            && let Some(scope_id) = file_sym.opt_scope()
+            && let Some(scope_id) = file_sym.opt_owned_scope()
         {
             scopes.push_scope(scope_id);
 
@@ -317,8 +317,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                         && let Some(struct_sym) = sn.opt_symbol()
                     {
                         self_sym.set_type_of(struct_sym.id());
-                        if let Some(struct_scope) = struct_sym.opt_scope() {
-                            self_sym.set_scope(struct_scope);
+                        if let Some(struct_scope) = struct_sym.opt_owned_scope() {
+                            self_sym.set_owned_scope(struct_scope);
                         }
                     }
                 }
@@ -351,8 +351,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                         && let Some(trait_sym) = sn.opt_symbol()
                     {
                         self_sym.set_type_of(trait_sym.id());
-                        if let Some(trait_scope) = trait_sym.opt_scope() {
-                            self_sym.set_scope(trait_scope);
+                        if let Some(trait_scope) = trait_sym.opt_owned_scope() {
+                            self_sym.set_owned_scope(trait_scope);
                         }
                     }
                 }
@@ -419,8 +419,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                     target_sym.set_kind(resolved.kind());
                     target_sym.set_is_global(resolved.is_global());
 
-                    if let Some(resolved_scope) = resolved.opt_scope()
-                        && let Some(target_scoped) = target_sym.opt_scope()
+                    if let Some(resolved_scope) = resolved.opt_owned_scope()
+                        && let Some(target_scoped) = target_sym.opt_owned_scope()
                     {
                         let target_scope = unit.get_scope(target_scoped);
                         let resolved_scope = unit.get_scope(resolved_scope);
@@ -445,8 +445,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
                     // Build parent scope relationship if target is resolved
                     if let Some(target_resolved) = target_resolved
-                        && let Some(target_scope) = target_resolved.opt_scope()
-                        && let Some(trait_scope) = trait_sym.opt_scope()
+                        && let Some(target_scope) = target_resolved.opt_owned_scope()
+                        && let Some(trait_scope) = trait_sym.opt_owned_scope()
                     {
                         let target_scope = unit.get_scope(target_scope);
                         let trait_scope = unit.get_scope(trait_scope);
@@ -475,7 +475,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             }
 
             let sn = node.as_scope().unwrap();
-            let target_scope = unit.get_scope(target_sym.opt_scope().unwrap());
+            let target_scope = unit.get_scope(target_sym.opt_owned_scope().unwrap());
             self.visit_scoped_named(unit, node, sn, scopes, target_scope, Some(target_sym), None);
         }
     }

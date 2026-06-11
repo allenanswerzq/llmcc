@@ -107,9 +107,9 @@ impl<'tcx> CollectorVisitor<'tcx> {
         }
 
         if let Some(symbol) = scopes.lookup_or_insert(name, node, kind) {
-            if symbol.opt_scope().is_none() {
+            if symbol.opt_owned_scope().is_none() {
                 let scope = self.alloc_scope(unit, symbol);
-                symbol.set_scope(scope.id());
+                symbol.set_owned_scope(scope.id());
             }
             return Some(symbol);
         }
@@ -131,7 +131,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         sn.set_ident(ident);
 
         let depth = scopes.scope_depth();
-        if let Some(scope_id) = sym.opt_scope()
+        if let Some(scope_id) = sym.opt_owned_scope()
             && let Some(scope) = self.get_scope(scope_id)
         {
             sn.set_scope(scope);
@@ -142,7 +142,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         }
 
         let scope = self.alloc_scope(unit, sym);
-        sym.set_scope(scope.id());
+        sym.set_owned_scope(scope.id());
         sn.set_scope(scope);
         scopes.push_scope(scope);
         self.visit_children(unit, node, scopes, scope, Some(sym));
@@ -202,7 +202,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectorScopes<'tcx>> for CollectorVisito
                 ident.set_symbol(file_sym);
 
                 let file_scope = self.alloc_scope(unit, file_sym);
-                file_sym.set_scope(file_scope.id());
+                file_sym.set_owned_scope(file_scope.id());
 
                 // Set up parent relationships for hierarchy traversal
                 // Add package scope first (if any)

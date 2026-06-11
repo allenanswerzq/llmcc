@@ -161,7 +161,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         // Type parameter bounds: for `function<T extends HasLength>`, create edge HasLength -> func
         // HasLength (bound) is used by func (this function)
         if let Some(func_sym) = func.base.symbol
-            && let Some(scope_id) = func_sym.opt_scope()
+            && let Some(scope_id) = func_sym.opt_owned_scope()
         {
             let scope = unit.get_scope(scope_id);
             // Look for type parameters in the function's scope
@@ -494,7 +494,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         // Type parameter bounds: for `trait Foo<T: Bar>`, create edge Bar -> Foo
         // Bar (bound) is used by Foo (this trait)
         if let Some(trait_sym) = trait_block.base.symbol
-            && let Some(scope_id) = trait_sym.opt_scope()
+            && let Some(scope_id) = trait_sym.opt_owned_scope()
         {
             let scope = unit.get_scope(scope_id);
             // Look for type parameters in the trait's scope
@@ -555,7 +555,7 @@ impl<'tcx> ProjectGraph<'tcx> {
 
         // Type parameter bounds: for `interface EventHandler<T extends Event>`, create edge Event -> EventHandler
         if let Some(iface_sym) = iface_block.base.symbol
-            && let Some(scope_id) = iface_sym.opt_scope()
+            && let Some(scope_id) = iface_sym.opt_owned_scope()
         {
             let scope = unit.get_scope(scope_id);
             // Look for type parameters in the interface's scope

@@ -4,7 +4,7 @@ use std::time::Instant;
 use llmcc_core::context::CompileUnit;
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::HirScope;
-use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
+use llmcc_core::scope::{QualifiedLookup, Scope, ScopeStack, SymbolFilter};
 use llmcc_core::symbol::{ScopeId, SymKind, SymKindSet, Symbol};
 use llmcc_core::{CompileCtxt, Language, Result};
 
@@ -107,7 +107,7 @@ impl<'a> BinderScopes<'a> {
 
     #[inline]
     pub fn lookup_globals(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
-        let options = LookupOptions::current().with_kind_set(kind_filters);
+        let options = SymbolFilter::kinds(kind_filters);
         let name_key = self.unit.cc.interner.intern(name);
         self.scopes.globals().lookup_symbols(name_key, options)
     }
@@ -128,7 +128,7 @@ impl<'a> BinderScopes<'a> {
     /// Lookup symbols by name with options
     #[inline]
     pub fn lookup_symbols(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
-        let options = LookupOptions::current().with_kind_set(kind_filters);
+        let options = SymbolFilter::kinds(kind_filters);
         self.scopes.lookup_symbols(name, options)
     }
 
@@ -218,7 +218,7 @@ impl<'a> BinderScopes<'a> {
             obj_type_symbol
         };
 
-        let scope_id = effective_symbol.opt_scope()?;
+        let scope_id = effective_symbol.opt_owned_scope()?;
         let scope = self.unit.get_scope(scope_id);
 
         // Create isolated scope stack for member lookup to avoid falling back to lexical scopes
@@ -226,9 +226,9 @@ impl<'a> BinderScopes<'a> {
         scopes.push_recursive(scope);
 
         let options = if let Some(filter) = kind_filter {
-            LookupOptions::current().with_kind_set(SymKindSet::from_kind(filter))
+            SymbolFilter::kinds(SymKindSet::from_kind(filter))
         } else {
-            LookupOptions::current()
+            SymbolFilter::any()
         };
 
         scopes
@@ -243,9 +243,9 @@ impl<'a> BinderScopes<'a> {
         qualified_name: &[&str],
         kind_filters: SymKindSet,
     ) -> Option<Vec<&'a Symbol>> {
-        let mut options = LookupOptions::default().with_shift_start(true);
+        let mut options = QualifiedLookup::lexical();
         if !kind_filters.is_empty() {
-            options = options.with_kind_set(kind_filters)
+            options = options.with_result_kinds(kind_filters)
         }
         let symbols = self.scopes.lookup_qualified(qualified_name, options)?;
         Some(symbols)

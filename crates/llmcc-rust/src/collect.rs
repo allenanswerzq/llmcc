@@ -144,9 +144,9 @@ impl<'tcx> CollectorVisitor<'tcx> {
         }
 
         if let Some(symbol) = scopes.lookup_or_insert(name, node, kind) {
-            if symbol.opt_scope().is_none() {
+            if symbol.opt_owned_scope().is_none() {
                 let scope = self.alloc_scope(unit, symbol);
-                symbol.set_scope(scope.id());
+                symbol.set_owned_scope(scope.id());
             }
             return Some(symbol);
         }
@@ -170,13 +170,13 @@ impl<'tcx> CollectorVisitor<'tcx> {
         ident.set_symbol(sym);
         sn.set_ident(ident);
 
-        let scope = if sym.opt_scope().is_none() {
+        let scope = if sym.opt_owned_scope().is_none() {
             self.alloc_scope(unit, sym)
         } else {
-            self.get_scope(sym.scope())
+            self.get_scope(sym.owned_scope())
                 .unwrap_or_else(|| self.alloc_scope(unit, sym))
         };
-        sym.set_scope(scope.id());
+        sym.set_owned_scope(scope.id());
         sn.set_scope(scope);
 
         scopes.push_scope(scope);
@@ -277,7 +277,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
                 mod_scope.add_parent(crate_s);
             }
             module_wrapper_scope = Some(mod_scope);
-            // Note: We don't change module_sym.set_scope() - that stays pointing to
+            // Note: We don't change module_sym.set_owned_scope() - that stays pointing to
             // the file scope for path resolution (e.g., `::helper` resolves in utils.rs scope)
         }
 
@@ -291,7 +291,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             sn.set_ident(ident);
 
             let scope = self.alloc_scope(unit, file_sym);
-            file_sym.set_scope(scope.id());
+            file_sym.set_owned_scope(scope.id());
             sn.set_scope(scope);
 
             // Add crate and module scopes as parents for hierarchy traversal
@@ -305,7 +305,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             scopes.push_scope(scope);
 
             if let Some(crate_sym) = scopes.lookup_or_insert_global("crate", node, SymKind::Module) {
-                crate_sym.set_scope(scopes.scopes().globals().id());
+                crate_sym.set_owned_scope(scopes.scopes().globals().id());
             }
 
             // For top-level files (not lib.rs or main.rs), create a module symbol
@@ -315,13 +315,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             // (e.g., `crate_b::utils::helper` needs `utils` in `crate_b`'s scope).
             if file_name != "lib" && file_name != "main" && module_wrapper_scope.is_none() {
                 if let Some(mod_sym) = scopes.insert_in_global(file_name, node, SymKind::Module) {
-                    mod_sym.set_scope(scope.id());
+                    mod_sym.set_owned_scope(scope.id());
                 }
                 if let Some(crate_s) = crate_scope
                     && let Some(mod_sym) =
                         scopes.insert_in_scope(crate_s, file_name, node, SymKind::Module)
                 {
-                    mod_sym.set_scope(scope.id());
+                    mod_sym.set_owned_scope(scope.id());
                 }
             }
         }
@@ -352,7 +352,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         // Callback to insert `super` symbol pointing to parent module scope
         let on_scope_enter: ScopeEntryCallback<'tcx> = Box::new(move |node, scopes| {
             if let Some(super_sym) = scopes.lookup_or_insert("super", node, SymKind::Module) {
-                super_sym.set_scope(parent_scope_id);
+                super_sym.set_owned_scope(parent_scope_id);
             }
         });
 

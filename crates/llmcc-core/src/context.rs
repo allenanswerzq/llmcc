@@ -714,7 +714,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// Any future lookup of second's scope ID will redirect to first.
     pub fn merge_two_scopes(&'tcx self, first: &'tcx Scope<'tcx>, second: &'tcx Scope<'tcx>) {
         // Merge symbols from second into first
-        first.merge_with(second, self.arena());
+        first.merge_with(second);
         // Redirect second's scope ID to first's scope ID so lookups redirect
         second.set_redirect(first.id());
     }

@@ -135,9 +135,9 @@ impl<'tcx> CollectorVisitor<'tcx> {
         }
 
         if let Some(symbol) = scopes.lookup_or_insert(name, node, kind) {
-            if symbol.opt_scope().is_none() {
+            if symbol.opt_owned_scope().is_none() {
                 let scope = self.alloc_scope(unit, symbol);
-                symbol.set_scope(scope.id());
+                symbol.set_owned_scope(scope.id());
             }
             return Some(symbol);
         }
@@ -159,7 +159,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         sn.set_ident(ident);
 
         let depth = scopes.scope_depth();
-        if let Some(scope_id) = sym.opt_scope()
+        if let Some(scope_id) = sym.opt_owned_scope()
             && let Some(scope) = self.get_scope(scope_id)
         {
             sn.set_scope(scope);
@@ -170,7 +170,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         }
 
         let scope = self.alloc_scope(unit, sym);
-        sym.set_scope(scope.id());
+        sym.set_owned_scope(scope.id());
         sn.set_scope(scope);
         scopes.push_scope(scope);
         self.visit_children(unit, node, scopes, scope, Some(sym));
@@ -990,7 +990,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
                         // The HirScope node needs to have its scope set for graph_builder to create a block
                         if let Some(scope_node) = func_decl.as_scope() {
                             let scope = self.alloc_scope(unit, sym);
-                            sym.set_scope(scope.id());
+                            sym.set_owned_scope(scope.id());
                             scope_node.set_scope(scope);
                             name_ident.set_symbol(sym);
 
