@@ -41,30 +41,15 @@ jobs:
         with:
           components: rustfmt, clippy
       - uses: swatinem/rust-cache@v2
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-
-      - name: Install Python development headers
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-dev
-
-      - name: Set PYO3_PYTHON
-        run: echo "PYO3_PYTHON=$(python3 -c 'import sys; print(sys.executable)')" >> $GITHUB_ENV
 
       - name: Check Rust formatting
         run: cargo fmt --all -- --check
 
       - name: Run Clippy
         run: cargo clippy --all-targets --workspace -- -D warnings
-        env:
-          PYO3_PYTHON: ${{ env.PYO3_PYTHON }}
 
       - name: Check documentation
         run: cargo doc --no-deps --workspace
-        env:
-          PYO3_PYTHON: ${{ env.PYO3_PYTHON }}
 
   llmcc-test:
     name: LLMCC Test Suite

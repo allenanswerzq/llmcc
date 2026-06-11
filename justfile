@@ -7,22 +7,7 @@ root := justfile_directory()
 test-all *ARGS:
     cargo run -p llmcc-test -- run-all {{ARGS}}
 
-uv-sync:
-    PIP_NO_BINARY="mypy" uv sync --extra dev
-
-build-bindings: uv-sync
-    uv run maturin develop --manifest-path "{{root}}/crates/llmcc-bindings/Cargo.toml"
-
-# TODO: enable full python api test
-run-py: build-bindings verify-wheel
-    uv run pytest "{{root}}/tests/test_python_api.py" -k "TestAPIExistence"
-
-verify-wheel:
-    env PYO3_PYTHON="$(python3 -c 'import sys; print(sys.executable)')" \
-        uv run maturin build --release
-    uv run python "{{root}}/scripts/verify_wheel.py"
-
-test: run-py cargo-format cargo-test cargo-clippy cargo-release qtest
+test: cargo-format cargo-test cargo-clippy cargo-release qtest
 
 fmt:
     cargo fmt
@@ -108,35 +93,6 @@ release version:
         echo "  ok: updated llmcc-* dependency version entries"
     fi
 
-    # Update Python package versions
-    echo "Updating Python package versions..."
-    if [ -f "{{root}}/pyproject.toml" ]; then
-        sed -i.bak 's/^version = .*/version = "'$VERSION'"/' "{{root}}/pyproject.toml"
-        rm -f "{{root}}/pyproject.toml.bak"
-        git add "{{root}}/pyproject.toml"
-        echo "  ok: pyproject.toml"
-    fi
-    if [ -f "{{root}}/llmcc/__init__.py" ]; then
-        sed -i.bak 's/^__version__ = .*/__version__ = "'$VERSION'"/' "{{root}}/llmcc/__init__.py"
-        rm -f "{{root}}/llmcc/__init__.py.bak"
-        git add "{{root}}/llmcc/__init__.py"
-        echo "  ok: llmcc/__init__.py"
-    fi
-
-    if [ -f "{{root}}/crates/llmcc-bindings/pyproject.toml" ]; then
-        sed -i.bak 's/^version = .*/version = "'$VERSION'"/' "{{root}}/crates/llmcc-bindings/pyproject.toml"
-        rm -f "{{root}}/crates/llmcc-bindings/pyproject.toml.bak"
-        git add "{{root}}/crates/llmcc-bindings/pyproject.toml"
-        echo "  ok: crates/llmcc-bindings/pyproject.toml"
-    fi
-
-    if [ -f "{{root}}/setup.py" ]; then
-        sed -i.bak 's/version=.*/version="'$VERSION'",/' "{{root}}/setup.py"
-        git add "{{root}}/setup.py"
-        rm -f "{{root}}/setup.py.bak"
-        echo "  ok: setup.py"
-    fi
-
     # Update npm package version
     echo "Updating npm package version..."
     if [ -f "{{root}}/npm/package.json" ]; then
@@ -147,7 +103,6 @@ release version:
     fi
 
     env \
-        PYO3_PYTHON="$(python3 -c 'import sys; print(sys.executable)')" \
         RUSTFLAGS="$(if [[ '$OSTYPE' == 'darwin'* ]]; then echo '-C link-arg=-undefined -C link-arg=dynamic_lookup'; fi)" \
         cargo build --release --workspace
     git add {{root}}/Cargo.toml

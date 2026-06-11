@@ -31,7 +31,7 @@ jobs:
       contents: read
     env:
       # Order matters! Dependencies must be published before dependents
-      CRATES: llmcc-bumpalo llmcc-tree llmcc-core llmcc-resolver llmcc-collect llmcc-rust llmcc-ts llmcc-dot llmcc llmcc-bindings
+      CRATES: llmcc-bumpalo llmcc-tree llmcc-core llmcc-resolver llmcc-collect llmcc-rust llmcc-ts llmcc-dot llmcc
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,73 +47,6 @@ jobs:
             cargo publish -p "$crate" --token "$TOKEN"
             sleep 10
           done
-
-  build-wheels:
-    name: Build wheels
-    needs: test
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Build wheels
-        uses: PyO3/maturin-action@v1
-        with:
-          args: --release --out dist
-          sccache: 'true'
-      - name: Upload wheels
-        uses: actions/upload-artifact@v4
-        with:
-          name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
-          path: dist/*.whl
-
-  build-sdist:
-    name: Build sdist
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Build sdist
-        uses: PyO3/maturin-action@v1
-        with:
-          command: sdist
-          args: --out dist
-      - uses: actions/upload-artifact@v4
-        with:
-          name: sdist
-          path: dist/*.tar.gz
-
-  publish-wheels:
-    name: Publish wheels to PyPI
-    needs: [build-wheels, build-sdist]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: dist
-      - name: Flatten artifacts
-        run: |
-          mkdir -p final-wheels
-          find dist -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec mv {} final-wheels/ \;
-      - uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
-          packages-dir: final-wheels
-          skip-existing: true
 
   build-binaries:
     name: Build binaries
@@ -175,7 +108,7 @@ jobs:
 
   collect-artifacts:
     name: Collect all artifacts
-    needs: [publish-crates, publish-wheels, build-binaries]
+    needs: [publish-crates, build-binaries]
     runs-on: ubuntu-latest
     steps:
       - name: Determine version
@@ -185,15 +118,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: binary-artifacts
-      - name: Download wheels
-        uses: actions/download-artifact@v4
-        with:
-          path: wheel-artifacts
       - name: Prepare artifact directory
         run: |
           mkdir -p final-dist
           find binary-artifacts -type f -exec mv {} final-dist/ \;
-          find wheel-artifacts -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec mv {} final-dist/ \;
       - uses: actions/upload-artifact@v4
         with:
           name: final-release-artifacts
@@ -228,5 +156,5 @@ jobs:
           TAG="${{ steps.version.outputs.tag }}"
           gh release create "$TAG" \
             --title "Released llmcc $TAG" \
-            --notes "Published to crates.io and PyPI" \
+            --notes "Published to crates.io" \
             dist/*
