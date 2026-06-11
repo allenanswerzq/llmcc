@@ -3,11 +3,11 @@ use dashmap::DashMap;
 use parking_lot::RwLock;
 use std::collections::HashSet;
 use std::fmt;
-use std::sync::atomic::Ordering;
 
+use crate::id::next_scope_id;
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId};
-use crate::symbol::{NEXT_SCOPE_ID, ScopeId, SymId, SymKindSet, Symbol};
+use crate::symbol::{ScopeId, SymId, SymKindSet, Symbol};
 
 /// Represents a single level in the scope hierarchy.
 pub struct Scope<'tcx> {
@@ -45,7 +45,7 @@ impl<'tcx> Scope<'tcx> {
         interner: Option<&'tcx InternPool>,
     ) -> Self {
         Self {
-            id: ScopeId(NEXT_SCOPE_ID.fetch_add(1, Ordering::Relaxed)),
+            id: next_scope_id(),
             symbols: DashMap::new(),
             owner,
             symbol: RwLock::new(symbol),
@@ -65,7 +65,7 @@ impl<'tcx> Scope<'tcx> {
         shard_count: usize,
     ) -> Self {
         Self {
-            id: ScopeId(NEXT_SCOPE_ID.fetch_add(1, Ordering::Relaxed)),
+            id: next_scope_id(),
             symbols: DashMap::with_hasher_and_shard_amount(
                 std::hash::RandomState::new(),
                 shard_count,

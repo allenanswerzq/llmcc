@@ -2,11 +2,12 @@
 
 use parking_lot::RwLock;
 use std::collections::HashSet;
-use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
 use crate::context::CompileUnit;
 use crate::declare_arena;
+pub use crate::id::{BlockId, reset_block_id_counter};
 use crate::ir::HirNode;
 use crate::symbol::Symbol;
 
@@ -256,50 +257,6 @@ impl<'blk> BasicBlock<'blk> {
             BasicBlock::Call(c) => Some(c),
             _ => None,
         }
-    }
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Hash, Default, PartialOrd, Ord)]
-pub struct BlockId(pub u32);
-
-/// Global counter for allocating unique Block IDs
-static BLOCK_ID_COUNTER: AtomicU32 = AtomicU32::new(1);
-
-/// Reset global BlockId counter (primarily for deterministic tests)
-pub fn reset_block_id_counter() {
-    BLOCK_ID_COUNTER.store(1, Ordering::Relaxed);
-}
-
-impl std::fmt::Display for BlockId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl BlockId {
-    pub fn new(id: u32) -> Self {
-        Self(id)
-    }
-
-    /// Allocate a new unique BlockId
-    pub fn allocate() -> Self {
-        let id = BLOCK_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
-        BlockId(id)
-    }
-
-    /// Get the next BlockId that will be allocated (useful for diagnostics)
-    pub fn next() -> Self {
-        BlockId(BLOCK_ID_COUNTER.load(Ordering::Relaxed))
-    }
-
-    pub fn as_u32(self) -> u32 {
-        self.0
-    }
-
-    pub const ROOT_PARENT: BlockId = BlockId(u32::MAX);
-
-    pub fn is_root_parent(self) -> bool {
-        self.0 == u32::MAX
     }
 }
 

@@ -7,6 +7,7 @@ pub mod context;
 pub mod file;
 pub mod graph;
 pub mod graph_builder;
+pub mod id;
 pub mod interner;
 pub mod ir;
 pub mod ir_builder;
@@ -25,10 +26,13 @@ pub use llmcc_error::{Error, ErrorKind, ErrorStatus, Result};
 
 pub use context::{CompileCtxt, CompileUnit, FileOrder};
 pub use graph::{ProjectGraph, UnitGraph, UnitNode};
-pub use graph_builder::{BlockId, BlockRelation, GraphBuildConfig, build_llmcc_graph};
-pub use ir::HirId;
+pub use graph_builder::{BlockRelation, GraphBuildConfig, build_llmcc_graph};
+pub use id::{
+    BlockId, HirId, ScopeId, SymId, SymbolId, next_hir_id, reset_block_id_counter,
+    reset_hir_id_counter, reset_scope_id_counter, reset_symbol_id_counter,
+};
 pub use ir_builder::{
-    IrBuildOption, build_llmcc_ir, build_llmcc_ir_inner, get_ir_build_cpu_time_ms, next_hir_id,
+    IrBuildOption, build_llmcc_ir, build_llmcc_ir_inner, get_ir_build_cpu_time_ms,
     reset_ir_build_counters,
 };
 pub use lang_def::{ChildWithFieldId, LanguageImpl, LanguageTrait};
@@ -38,5 +42,4 @@ pub use paste;
 pub use printer::{PrintConfig, PrintFormat, print_llmcc_graph, print_llmcc_ir, render_llmcc_ir};
 // TODO: Re-enable after ProjectGraph query methods are implemented
 // pub use query::{GraphBlockInfo, ProjectQuery, QueryResult};
-pub use symbol::{ScopeId, SymId};
 pub use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};

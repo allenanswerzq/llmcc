@@ -4,20 +4,18 @@
 //! This avoids locks during parallel builds and ensures deterministic ID allocation.
 use smallvec::SmallVec;
 use std::marker::PhantomData;
-use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;
 
 use rayon::prelude::*;
 
 use crate::Result;
 use crate::context::CompileCtxt;
+pub use crate::id::{next_hir_id, reset_hir_id_counter};
 use crate::ir::{
     Arena, HirBase, HirFile, HirId, HirIdent, HirInternal, HirKind, HirNode, HirScope, HirText,
 };
 use crate::lang_def::{LanguageTrait, ParseNode, ParseTree};
-
-/// Global atomic counter for HIR ID allocation (used during parallel builds).
-static HIR_ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 // Timing counters for IR building
 static IR_BUILD_CPU_TIME_NS: AtomicU64 = AtomicU64::new(0);
@@ -28,18 +26,6 @@ pub fn reset_ir_build_counters() {
 
 pub fn get_ir_build_cpu_time_ms() -> f64 {
     IR_BUILD_CPU_TIME_NS.load(Ordering::Relaxed) as f64 / 1_000_000.0
-}
-
-/// Reserve a new globally-unique HIR ID.
-#[inline]
-pub fn next_hir_id() -> HirId {
-    let id = HIR_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
-    HirId(id)
-}
-
-/// Reset the global HIR ID counter to 0 (for testing isolation)
-pub fn reset_hir_id_counter() {
-    HIR_ID_COUNTER.store(0, Ordering::Relaxed);
 }
 
 /// Configuration for IR building behavior.

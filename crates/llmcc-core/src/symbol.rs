@@ -13,56 +13,13 @@ use std::fmt;
 use strum_macros::EnumIter;
 
 use crate::graph_builder::BlockId;
+pub use crate::id::{ScopeId, SymId, SymbolId, reset_scope_id_counter, reset_symbol_id_counter};
 use crate::interner::InternedStr;
 use crate::ir::HirId;
 use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU32, AtomicU64, AtomicUsize, Ordering};
 
 /// Sentinel value for "not set" in unit/crate index.
 pub const INDEX_NONE: u32 = u32::MAX;
-
-/// Global atomic counter for assigning unique symbol IDs.
-/// Incremented on each new symbol creation to ensure uniqueness.
-static NEXT_SYMBOL_ID: AtomicUsize = AtomicUsize::new(0);
-
-/// Resets the global symbol ID counter to 0.
-/// Use this only during testing or when resetting the entire symbol table.
-#[inline]
-pub fn reset_symbol_id_counter() {
-    NEXT_SYMBOL_ID.store(0, Ordering::Relaxed);
-}
-
-/// Global atomic counter for assigning unique scope IDs.
-/// Incremented on each new scope creation to ensure uniqueness.
-pub(crate) static NEXT_SCOPE_ID: AtomicUsize = AtomicUsize::new(0);
-
-/// Resets the global scope ID counter to 0.
-/// Use this only during testing or when resetting the entire scope table.
-#[inline]
-pub fn reset_scope_id_counter() {
-    NEXT_SCOPE_ID.store(0, Ordering::Relaxed);
-}
-
-/// Unique identifier for symbols within a compilation unit.
-/// Symbols are allocated sequentially, starting from ID 1.
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default, PartialOrd, Ord)]
-pub struct SymId(pub usize);
-
-impl std::fmt::Display for SymId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-/// Unique identifier for scopes within a compilation unit.
-/// Scopes are allocated sequentially, starting from ID 1.
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default, PartialOrd, Ord)]
-pub struct ScopeId(pub usize);
-
-impl std::fmt::Display for ScopeId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
 
 /// Classification of what kind of named entity a symbol represents.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, EnumIter, Default)]
@@ -365,8 +322,7 @@ impl Symbol {
 
     /// Creates a new symbol with the given HIR node owner and interned name.
     pub fn new(owner: HirId, name_key: InternedStr) -> Self {
-        let id = NEXT_SYMBOL_ID.fetch_add(1, Ordering::Relaxed);
-        let sym_id = SymId(id);
+        let sym_id = crate::id::next_symbol_id();
 
         Self {
             id: sym_id,

@@ -2,12 +2,12 @@
 
 use parking_lot::RwLock;
 use smallvec::SmallVec;
-use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::{AtomicPtr, Ordering};
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
 use crate::context::CompileUnit;
 use crate::declare_arena;
+pub use crate::id::HirId;
 use crate::scope::Scope;
 use crate::symbol::Symbol;
 
@@ -468,33 +468,6 @@ impl<'hir> HirNode<'hir> {
             return ident.opt_symbol();
         }
         None
-    }
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Hash, Default)]
-/// Unique identifier for a HIR node within a compilation unit. IDs are stable,
-/// sequential, and used for parent-child relationships and symbol references.
-pub struct HirId(pub usize);
-
-/// Global counter for allocating unique HIR IDs
-static HIR_ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
-
-impl HirId {
-    /// Allocate a new unique HIR ID
-    pub fn new() -> Self {
-        let id = HIR_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
-        HirId(id)
-    }
-
-    /// Get the next HIR ID that will be allocated (useful for diagnostics)
-    pub fn next() -> Self {
-        HirId(HIR_ID_COUNTER.load(Ordering::Relaxed))
-    }
-}
-
-impl std::fmt::Display for HirId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
     }
 }
 
