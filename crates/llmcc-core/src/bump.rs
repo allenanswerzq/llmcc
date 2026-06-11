@@ -14,10 +14,6 @@
 // Arena allocates in thread-local bump (fast, no contention).
 // DashMap stores raw pointers for O(1) concurrent lookup by ID.
 // No Vec, no RwLock - maximum parallel performance!
-//
-// SAFETY: The raw pointers point to data allocated in the bump arena.
-// The arena outlives all usage of the pointers.
-
 #[macro_export]
 macro_rules! declare_arena {
     ($arena_name:ident { $($field:ident : $ty:ty),* $(,)? }) => {
@@ -84,87 +80,17 @@ macro_rules! declare_arena {
                 value.insert_into(self)
             }
 
-            /// Allocate a value in the thread-local bump allocator.
-            /// Uses thread_local to cache the Member per thread, avoiding mutex contention.
+            /// Allocate a value in this thread's herd-owned bump allocator.
             #[inline]
             pub fn alloc_in_herd<T>(&self, value: T) -> &T {
-                // PERFORMANCE CRITICAL: llmcc_bumpalo::Herd::get() contains a mutex.
-                // Calling it millions of times causes severe lock contention at high thread counts.
-                // We use thread_local to cache the Member per-thread.
-                //
-                // PROBLEM: Member::drop tries to lock the parent Herd's mutex. If the Herd is
-                // dropped before thread-local cleanup runs (e.g., at program exit), this causes
-                // a hang or segfault.
-                //
-                // SOLUTION: Use ManuallyDrop to prevent Member::drop from running. The Herd
-                // still owns all the memory and will free it when dropped. We also track the
-                // Herd pointer to invalidate the cache when a different Herd is used.
-                use std::mem::ManuallyDrop;
-
-                thread_local! {
-                    static CACHED: std::cell::RefCell<Option<(usize, ManuallyDrop<llmcc_bumpalo::Member<'static>>)>> =
-                        const { std::cell::RefCell::new(None) };
-                }
-
-                let herd_ptr = &self.herd as *const _ as usize;
-
-                CACHED.with(|cell| {
-                    let mut borrow = cell.borrow_mut();
-
-                    // Check if we have a cached member for THIS herd
-                    let need_new = match &*borrow {
-                        Some((cached_ptr, _)) => *cached_ptr != herd_ptr,
-                        None => true,
-                    };
-
-                    if need_new {
-                        // Get a new member and cache it (wrapped in ManuallyDrop)
-                        let member = self.herd.get();
-                        // SAFETY: We use ManuallyDrop so Member::drop never runs.
-                        // The Herd owns the memory and will free it.
-                        let static_member = unsafe {
-                            std::mem::transmute::<llmcc_bumpalo::Member<'_>, llmcc_bumpalo::Member<'static>>(member)
-                        };
-                        *borrow = Some((herd_ptr, ManuallyDrop::new(static_member)));
-                    }
-
-                    let (_, member) = borrow.as_mut().unwrap();
-                    member.alloc(value)
-                })
+                self.herd.alloc(value)
             }
 
-            /// Allocate a string in the thread-local bump allocator.
+            /// Allocate a string in this thread's herd-owned bump allocator.
             /// Returns a reference to the arena-allocated string, avoiding heap allocation.
             #[inline]
             pub fn alloc_str(&self, src: &str) -> &str {
-                use std::mem::ManuallyDrop;
-
-                thread_local! {
-                    static CACHED_STR: std::cell::RefCell<Option<(usize, ManuallyDrop<llmcc_bumpalo::Member<'static>>)>> =
-                        const { std::cell::RefCell::new(None) };
-                }
-
-                let herd_ptr = &self.herd as *const _ as usize;
-
-                CACHED_STR.with(|cell| {
-                    let mut borrow = cell.borrow_mut();
-
-                    let need_new = match &*borrow {
-                        Some((cached_ptr, _)) => *cached_ptr != herd_ptr,
-                        None => true,
-                    };
-
-                    if need_new {
-                        let member = self.herd.get();
-                        let static_member = unsafe {
-                            std::mem::transmute::<llmcc_bumpalo::Member<'_>, llmcc_bumpalo::Member<'static>>(member)
-                        };
-                        *borrow = Some((herd_ptr, ManuallyDrop::new(static_member)));
-                    }
-
-                    let (_, member) = borrow.as_mut().unwrap();
-                    member.alloc_str(src)
-                })
+                self.herd.alloc_str(src)
             }
 
             // ----- Auto-generated getters -----
@@ -269,25 +195,155 @@ macro_rules! declare_arena {
 
         // ---- Auto-generate impls for each field ----
         $(
-            impl<'a> ArenaInsertWithId<'a> for $ty {
+            impl<'a> ArenaInsertWithId<'a> for $ty
+            where
+                $ty: Send + Sync,
+            {
                 #[inline]
                 fn insert_with_id(self, arena: &'a ArenaInner, id: usize) -> &'a Self {
-                    // PERFORMANCE: Use alloc_with_member to avoid repeated herd.get() calls
-                    // The llmcc_bumpalo::Member is cached per-thread
                     let r: &'a Self = arena.alloc_in_herd(self);
-                    // Store raw pointer as *const () to avoid lifetime issues
-                    arena.$field.insert(id, r as *const Self as *const ());
+                    let old = arena.$field.insert(id, r as *const Self as *const ());
+                    debug_assert!(
+                        old.is_none(),
+                        "duplicate id {id} inserted into arena field {}",
+                        stringify!($field),
+                    );
                     r
                 }
             }
 
-            impl<'a> ArenaInsert<'a> for $ty {
+            impl<'a> ArenaInsert<'a> for $ty
+            where
+                $ty: Send + Sync,
+            {
                 #[inline]
                 fn insert_into(self, arena: &'a ArenaInner) -> &'a Self {
-                    // Just allocate, no DashMap insert
                     arena.alloc_in_herd(self)
                 }
             }
         )*
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use std::ptr;
+    use std::time::{Duration, Instant};
+
+    #[derive(Debug, PartialEq, Eq)]
+    pub(crate) struct TestNode {
+        value: usize,
+    }
+
+    #[derive(Debug, PartialEq, Eq)]
+    pub(crate) struct TestRef<'a> {
+        name: &'a str,
+    }
+
+    declare_arena!(TestArena {
+        node: TestNode,
+        named: TestRef<'a>,
+    });
+
+    #[test]
+    fn allocates_and_looks_up_by_id() {
+        let arena = TestArena::new();
+
+        let node = arena.alloc_with_id(7, TestNode { value: 42 });
+        let fetched = arena.get_node(7).expect("node should be indexed");
+
+        assert_eq!(fetched.value, 42);
+        assert!(ptr::eq(node, fetched));
+        assert_eq!(arena.len_node(), 1);
+    }
+
+    #[test]
+    fn allocates_without_indexing() {
+        let arena = TestArena::new();
+
+        let node = arena.alloc(TestNode { value: 11 });
+
+        assert_eq!(node.value, 11);
+        assert_eq!(arena.len_node(), 0);
+    }
+
+    #[test]
+    fn allocates_strings_for_arena_lifetime() {
+        let arena = TestArena::new();
+        let source = String::from("module::item");
+
+        let stored = arena.alloc_str(&source);
+        let named = arena.alloc_with_id(1, TestRef { name: stored });
+
+        drop(source);
+
+        assert_eq!(named.name, "module::item");
+        assert_eq!(arena.get_named(1).unwrap().name, "module::item");
+    }
+
+    #[cfg(debug_assertions)]
+    #[test]
+    #[should_panic(expected = "duplicate id 1 inserted into arena field node")]
+    fn duplicate_ids_panic_in_debug_builds() {
+        let arena = TestArena::new();
+
+        arena.alloc_with_id(1, TestNode { value: 1 });
+        arena.alloc_with_id(1, TestNode { value: 2 });
+    }
+
+    #[test]
+    fn reset_clears_indexes_and_keeps_arena_reusable() {
+        let mut arena = TestArena::new();
+
+        arena.alloc_with_id(1, TestNode { value: 1 });
+        assert_eq!(arena.len_node(), 1);
+
+        arena.reset();
+        assert_eq!(arena.len_node(), 0);
+        assert!(arena.get_node(1).is_none());
+
+        arena.alloc_with_id(2, TestNode { value: 2 });
+        assert_eq!(arena.get_node(2).unwrap().value, 2);
+    }
+
+    #[test]
+    fn supports_concurrent_allocations_and_lookups() {
+        let arena: TestArena<'static> = TestArena::new();
+        const THREADS: usize = 8;
+        const PER_THREAD: usize = 1_000;
+
+        std::thread::scope(|scope| {
+            for thread_index in 0..THREADS {
+                let arena = arena.clone();
+                scope.spawn(move || {
+                    for offset in 0..PER_THREAD {
+                        let id = thread_index * PER_THREAD + offset;
+                        arena.alloc_with_id(id, TestNode { value: id });
+                    }
+                });
+            }
+        });
+
+        assert_eq!(arena.len_node(), THREADS * PER_THREAD);
+        for id in [0, 999, 1_000, 4_321, 7_999] {
+            assert_eq!(arena.get_node(id).unwrap().value, id);
+        }
+    }
+
+    #[test]
+    fn bulk_allocation_performance_smoke_test() {
+        let arena = TestArena::new();
+        let started = Instant::now();
+
+        for id in 0..50_000 {
+            arena.alloc_with_id(id, TestNode { value: id });
+        }
+
+        assert_eq!(arena.len_node(), 50_000);
+        assert!(
+            started.elapsed() < Duration::from_secs(5),
+            "50k arena allocations took {:?}",
+            started.elapsed()
+        );
+    }
 }
