@@ -144,7 +144,9 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
 
         // For fields, use the language's name_field to avoid finding decorator identifiers
         if kind == BlockKind::Field
-            && let Some(ident) = node.ident_with_field(&self.unit, Language::name_field())
+            && let Some(ident) = node
+                .query(&self.unit)
+                .ident_with_field(Language::name_field())
             && let Some(sym) = ident.opt_symbol()
         {
             return Some(sym);
@@ -153,7 +155,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         // For parameters, prefer a bound variable identifier over decorator identifiers.
         // This avoids cases like `handle(@inject req: string)` where `find_ident` returns `inject`.
         if kind == BlockKind::Parameter {
-            for ident in node.identifiers(&self.unit) {
+            for ident in node.query(&self.unit).identifiers() {
                 if let Some(sym) = ident.opt_symbol()
                     && matches!(sym.kind(), SymKind::Variable)
                 {
@@ -163,7 +165,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         }
 
         // Try identifier (for parameters, etc.)
-        if let Some(ident) = node.first_ident(&self.unit)
+        if let Some(ident) = node.query(&self.unit).first_ident()
             && let Some(sym) = ident.opt_symbol()
         {
             return Some(sym);
@@ -278,7 +280,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 // For call blocks, symbol is the callee (if resolved)
                 let stmt = BlockCall::new_with_symbol(id, node, parent, children, symbol);
                 // Set callee from resolved symbol
-                if let Some(callee_sym) = node.resolved_symbol(&self.unit)
+                if let Some(callee_sym) = node.query(&self.unit).resolved_symbol()
                     && let Some(callee_block_id) = callee_sym.block_id()
                 {
                     stmt.set_callee(callee_block_id);
@@ -298,7 +300,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             BlockKind::Const => {
                 let mut stmt = BlockConst::new_with_symbol(id, node, parent, children, symbol);
                 // Find identifier name from children
-                if let Some(ident) = node.first_ident(&self.unit) {
+                if let Some(ident) = node.query(&self.unit).first_ident() {
                     stmt.name = ident.name.to_string();
                 }
                 // Resolve and set type info
@@ -312,8 +314,9 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 let mut block = BlockImpl::new(id, node, parent, children);
 
                 // Get target type from the "type" field (e.g., `impl Foo` or `impl Trait for Foo`)
-                if let Some(target_ident) =
-                    node.ident_with_field(&self.unit, Language::type_field())
+                if let Some(target_ident) = node
+                    .query(&self.unit)
+                    .ident_with_field(Language::type_field())
                     && let Some(sym) = target_ident.opt_symbol()
                 {
                     // Follow type_of chain to get the actual type symbol for block_id
@@ -326,8 +329,9 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 }
 
                 // Get trait from the "trait" field (e.g., `impl Trait for Foo`)
-                if let Some(trait_ident) =
-                    node.ident_with_field(&self.unit, Language::trait_field())
+                if let Some(trait_ident) = node
+                    .query(&self.unit)
+                    .ident_with_field(Language::trait_field())
                     && let Some(sym) = trait_ident.opt_symbol()
                 {
                     // Follow type_of chain to get the actual trait symbol
@@ -345,9 +349,12 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 let mut block = BlockField::new_with_symbol(id, node, parent, children, symbol);
                 // Find identifier name from children using ident_by_field with the language's name field
                 // This avoids finding decorator identifiers before the actual field name
-                if let Some(ident) = node.ident_with_field(&self.unit, Language::name_field()) {
+                if let Some(ident) = node
+                    .query(&self.unit)
+                    .ident_with_field(Language::name_field())
+                {
                     block.name = ident.name.to_string();
-                } else if let Some(ident) = node.first_ident(&self.unit) {
+                } else if let Some(ident) = node.query(&self.unit).first_ident() {
                     // Fallback to find_ident for languages that don't use name field
                     block.name = ident.name.to_string();
                 }
@@ -360,15 +367,20 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             BlockKind::Parameter => {
                 let mut block = BlockParameter::new_with_symbol(id, node, parent, children, symbol);
                 // Prefer variable identifier for parameter name to avoid decorator identifiers.
-                if let Some(ident) = node.identifiers(&self.unit).into_iter().find(|ident| {
-                    ident
-                        .opt_symbol()
-                        .is_some_and(|sym| matches!(sym.kind(), crate::symbol::SymKind::Variable))
-                }) {
+                if let Some(ident) =
+                    node.query(&self.unit)
+                        .identifiers()
+                        .into_iter()
+                        .find(|ident| {
+                            ident.opt_symbol().is_some_and(|sym| {
+                                matches!(sym.kind(), crate::symbol::SymKind::Variable)
+                            })
+                        })
+                {
                     block.name = ident.name.to_string();
-                } else if let Some(ident) = node.first_ident(&self.unit) {
+                } else if let Some(ident) = node.query(&self.unit).first_ident() {
                     block.name = ident.name.to_string();
-                } else if let Some(text) = node.find_text(&self.unit) {
+                } else if let Some(text) = node.query(&self.unit).text() {
                     // Fallback: look for text nodes like "self" keyword
                     block.name = text.to_string();
                 }
@@ -388,7 +400,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             BlockKind::Alias => {
                 let mut block = BlockAlias::new_with_symbol(id, node, parent, children, symbol);
                 // Find identifier name from children
-                if let Some(ident) = node.first_ident(&self.unit) {
+                if let Some(ident) = node.query(&self.unit).first_ident() {
                     block.name = ident.name.to_string();
                 }
                 let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
@@ -397,7 +409,8 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             BlockKind::Module => {
                 // Get module name from identifier
                 let name = node
-                    .first_ident(&self.unit)
+                    .query(&self.unit)
+                    .first_ident()
                     .map(|ident| ident.name.to_string())
                     .unwrap_or_default();
                 // Inline modules have children (the module body), file modules don't
@@ -436,7 +449,8 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         // 2. Parent block is an Impl (handles field/method name collision case)
         if block_kind == BlockKind::Func {
             let is_method_by_symbol = node
-                .opt_symbol()
+                .query(&self.unit)
+                .symbol()
                 .is_some_and(|sym| sym.kind() == crate::symbol::SymKind::Method);
 
             // Check if parent is an impl block using parent_kind_stack
@@ -459,7 +473,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         // Don't set for impl blocks - they reference existing type symbols
         // Don't set for return blocks - the return type node's symbol belongs to the type definition
         if block_kind != BlockKind::Impl && block_kind != BlockKind::Return {
-            node.set_block_id(id);
+            node.query(&self.unit).attach_block_id(id);
         }
 
         let children_with_kinds = if recursive {
@@ -530,13 +544,14 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         // For tuple fields, the node is the type itself. Find the type symbol.
         // Strategy 1: Use find_ident to get the identifier and its symbol
         let mut type_symbol = node
-            .first_ident(&self.unit)
+            .query(&self.unit)
+            .first_ident()
             .and_then(|ident| ident.opt_symbol());
 
         // Strategy 2: Look at children for symbol
         if type_symbol.is_none() {
             for child in node.children(&self.unit) {
-                if let Some(sym) = child.opt_symbol() {
+                if let Some(sym) = child.query(&self.unit).symbol() {
                     type_symbol = Some(sym);
                     break;
                 }
@@ -551,7 +566,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         }
         // Strategy 4: Node's own symbol
         if type_symbol.is_none() {
-            type_symbol = node.opt_symbol();
+            type_symbol = node.query(&self.unit).symbol();
         }
 
         let mut block = BlockField::new_with_symbol(id, node, parent, children, type_symbol);

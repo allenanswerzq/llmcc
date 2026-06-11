@@ -13,7 +13,7 @@ use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
 use crate::context::CompileUnit;
 use crate::declare_arena;
-use crate::id::BlockId;
+use crate::hir_query::HirQuery;
 pub use crate::id::HirId;
 use crate::scope::Scope;
 use crate::symbol::Symbol;
@@ -87,6 +87,11 @@ impl<'hir> HirNode<'hir> {
         self.base()
             .map(|base| format!("{}:{}", base.kind, base.id))
             .unwrap_or_else(|| "undefined".to_string())
+    }
+
+    /// Build a query helper for traversal and symbol lookup from this node.
+    pub fn query<'unit>(self, unit: &'unit CompileUnit<'hir>) -> HirQuery<'hir, 'unit> {
+        HirQuery::new(self, unit)
     }
 
     /// Shared metadata for this node, if it is not `Undefined`.
@@ -191,162 +196,6 @@ impl<'hir> HirNode<'hir> {
             .find(|child| child.base().is_some_and(|base| base.kind_id == kind_id))
     }
 
-    /// Symbol referenced by the identifier under a specific child field.
-    pub fn resolved_symbol_by_field(
-        &self,
-        unit: &CompileUnit<'hir>,
-        field_id: u16,
-    ) -> Option<&'hir Symbol> {
-        let child = self.child_by_field(unit, field_id)?;
-        let ident = child.first_ident(unit)?;
-        ident.opt_symbol()
-    }
-
-    /// Best symbol associated with this subtree.
-    ///
-    /// Prefer the deepest/rightmost identifier that already has a symbol. This
-    /// handles scoped paths where the resolved target is not the first token.
-    pub fn resolved_symbol(&self, unit: &CompileUnit<'hir>) -> Option<&'hir Symbol> {
-        if let Some(ident) = self.resolved_ident(unit) {
-            return ident.opt_symbol();
-        }
-
-        let ident = self.first_ident(unit)?;
-        ident.opt_symbol()
-    }
-
-    /// First descendant with the given tree-sitter field id.
-    pub fn descendant_with_field(
-        &self,
-        unit: &CompileUnit<'hir>,
-        field_id: u16,
-    ) -> Option<HirNode<'hir>> {
-        if let Some(direct_child) = self.child_by_field(unit, field_id) {
-            return Some(direct_child);
-        }
-
-        for child in self.children(unit) {
-            if let Some(recursive_match) = child.descendant_with_field(unit, field_id) {
-                return Some(recursive_match);
-            }
-        }
-
-        None
-    }
-
-    /// First identifier in this subtree.
-    ///
-    /// This is intentionally shallow-first and is useful for declarations where
-    /// the first identifier is usually the declared name.
-    pub fn first_ident(&self, unit: &CompileUnit<'hir>) -> Option<&'hir HirIdent<'hir>> {
-        if self.is_kind(HirKind::Identifier) {
-            return self.as_ident();
-        }
-        for child in self.children(unit) {
-            if child.is_kind(HirKind::Identifier) {
-                return child.as_ident();
-            }
-            if child.is_kind(HirKind::Internal)
-                && let Some(id) = child.first_ident(unit)
-            {
-                return Some(id);
-            }
-        }
-        None
-    }
-
-    /// Deepest/rightmost identifier in this subtree that already has a symbol.
-    ///
-    /// This is useful for call expressions where `crate::module::func` should
-    /// resolve to `func`, not the first path segment.
-    pub fn resolved_ident(&self, unit: &CompileUnit<'hir>) -> Option<&'hir HirIdent<'hir>> {
-        let mut result: Option<&'hir HirIdent<'hir>> = None;
-        self.resolved_ident_inner(unit, &mut result);
-        result
-    }
-
-    fn resolved_ident_inner(
-        &self,
-        unit: &CompileUnit<'hir>,
-        result: &mut Option<&'hir HirIdent<'hir>>,
-    ) {
-        if self.is_kind(HirKind::Identifier) {
-            if let Some(ident) = self.as_ident()
-                && ident.opt_symbol().is_some()
-            {
-                *result = Some(ident);
-            }
-            return;
-        }
-        for child in self.children(unit) {
-            if child.is_kind(HirKind::Identifier) {
-                if let Some(ident) = child.as_ident()
-                    && ident.opt_symbol().is_some()
-                {
-                    *result = Some(ident);
-                }
-            } else if child.is_kind(HirKind::Internal) {
-                child.resolved_ident_inner(unit, result);
-            }
-        }
-    }
-
-    /// First text child content, useful for keywords such as `self`.
-    pub fn find_text(&self, unit: &CompileUnit<'hir>) -> Option<&str> {
-        for child in self.children(unit) {
-            if child.is_kind(HirKind::Text)
-                && let Some(text) = child.as_text()
-            {
-                return Some(text.text());
-            }
-        }
-        None
-    }
-
-    /// Identifier under the first child with the given field id.
-    ///
-    /// Scoped types return their direct type identifier; generic types recurse
-    /// through the type child to return the generic callee (`Repository` in
-    /// `Repository<User>`).
-    pub fn ident_with_field(
-        &self,
-        unit: &CompileUnit<'hir>,
-        field_id: u16,
-    ) -> Option<&'hir HirIdent<'hir>> {
-        debug_assert!(!self.is_kind(HirKind::Identifier));
-        for child in self.children(unit) {
-            if child.base().is_some_and(|base| base.field_id == field_id) {
-                return Self::find_type_ident(&child, unit);
-            }
-        }
-        None
-    }
-
-    /// Type identifier from a possibly scoped or generic type node.
-    fn find_type_ident(
-        node: &HirNode<'hir>,
-        unit: &CompileUnit<'hir>,
-    ) -> Option<&'hir HirIdent<'hir>> {
-        if node.is_kind(HirKind::Identifier) {
-            return node.as_ident();
-        }
-
-        for child in node.children(unit) {
-            if child.is_kind(HirKind::Identifier) {
-                return child.as_ident();
-            }
-        }
-
-        // Recurse into the first structural child only. For `generic_type`,
-        // this avoids type arguments and keeps the callee identifier.
-        for child in node.children(unit) {
-            if child.is_kind(HirKind::Internal) {
-                return Self::find_type_ident(&child, unit);
-            }
-        }
-        None
-    }
-
     #[inline]
     pub fn as_root(&self) -> Option<&'hir HirRoot> {
         match self {
@@ -368,46 +217,6 @@ impl<'hir> HirNode<'hir> {
         match self {
             HirNode::Scope(r) => Some(r),
             _ => None,
-        }
-    }
-
-    /// Scope node paired with an identifier under the given field id.
-    #[inline]
-    pub fn scope_and_ident_with_field(
-        &self,
-        unit: &CompileUnit<'hir>,
-        field_id: u16,
-    ) -> Option<(&'hir HirScope<'hir>, &'hir HirIdent<'hir>)> {
-        let scope = self.as_scope()?;
-        let ident = self.ident_with_field(unit, field_id)?;
-        Some((scope, ident))
-    }
-
-    /// All identifier descendants whose field id matches `field_id`.
-    pub fn idents_with_field(
-        &self,
-        unit: &CompileUnit<'hir>,
-        field_id: u16,
-    ) -> Vec<&'hir HirIdent<'hir>> {
-        let mut idents = Vec::new();
-        self.collect_idents_with_field(unit, field_id, &mut idents);
-        idents
-    }
-
-    fn collect_idents_with_field(
-        &self,
-        unit: &CompileUnit<'hir>,
-        field_id: u16,
-        idents: &mut Vec<&'hir HirIdent<'hir>>,
-    ) {
-        if self.base().is_some_and(|base| base.field_id == field_id)
-            && let Some(ident) = self.as_ident()
-        {
-            idents.push(ident);
-        }
-
-        for child in self.children(unit) {
-            child.collect_idents_with_field(unit, field_id, idents);
         }
     }
 
@@ -435,78 +244,9 @@ impl<'hir> HirNode<'hir> {
         }
     }
 
-    /// All identifier descendants in source order.
-    pub fn identifiers(&self, unit: &CompileUnit<'hir>) -> Vec<&'hir HirIdent<'hir>> {
-        let mut idents = Vec::new();
-        self.collect_identifiers(unit, &mut idents);
-        idents
-    }
-
-    fn collect_identifiers(
-        &self,
-        unit: &CompileUnit<'hir>,
-        idents: &mut Vec<&'hir HirIdent<'hir>>,
-    ) {
-        if let Some(ident) = self.as_ident() {
-            idents.push(ident);
-        }
-
-        for child in self.children(unit) {
-            child.collect_identifiers(unit, idents);
-        }
-    }
-
     /// True for trivia nodes that usually do not participate in semantic analysis.
     pub fn is_trivia(&self) -> bool {
         matches!(self.kind(), HirKind::Text | HirKind::Comment)
-    }
-
-    /// Set the block ID on the symbol associated with this node.
-    /// Works for both HirScope (gets symbol from scope) and HirIdent (has direct symbol).
-    /// Does nothing if no symbol is associated or if the symbol is a primitive (shared globally).
-    pub fn set_block_id(&self, block_id: BlockId) {
-        use crate::symbol::SymKind;
-        // Try HirScope first
-        if let Some(scope) = self.as_scope() {
-            // First try scope's symbol
-            if let Some(symbol) = scope.opt_symbol() {
-                // Don't set block_id on primitives - they are shared globally
-                if symbol.kind() != SymKind::Primitive {
-                    symbol.set_block_id(block_id);
-                }
-                return;
-            }
-            // If no scope symbol, try the scope's ident (for type aliases, etc.)
-            if let Some(ident) = scope.opt_ident()
-                && let Some(symbol) = ident.opt_symbol()
-            {
-                if symbol.kind() != SymKind::Primitive {
-                    symbol.set_block_id(block_id);
-                }
-                return;
-            }
-        }
-        // Try HirIdent
-        if let Some(ident) = self.as_ident()
-            && let Some(symbol) = ident.opt_symbol()
-        {
-            // Don't set block_id on primitives - they are shared globally
-            if symbol.kind() != SymKind::Primitive {
-                symbol.set_block_id(block_id);
-            }
-        }
-    }
-
-    /// Get the symbol associated with this node if any.
-    /// Works for both HirScope and HirIdent nodes.
-    pub fn opt_symbol(&self) -> Option<&'hir Symbol> {
-        if let Some(scope) = self.as_scope() {
-            return scope.opt_symbol();
-        }
-        if let Some(ident) = self.as_ident() {
-            return ident.opt_symbol();
-        }
-        None
     }
 }
 

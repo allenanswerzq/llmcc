@@ -37,7 +37,7 @@ pub fn bind_pattern_types<'tcx>(
         }
         _ => {
             // For other patterns, try to find and bind any identifier
-            if let Some(ident) = pattern.first_ident(unit) {
+            if let Some(ident) = pattern.query(unit).first_ident() {
                 assign_type_to_ident(unit, scopes, ident, pattern_type);
             }
         }
@@ -88,7 +88,7 @@ fn assign_type_to_structured_binding<'tcx>(
     for child in pattern.children(unit) {
         if let Some(ident) = child.as_ident() {
             assign_type_to_ident(unit, scopes, ident, pattern_type);
-        } else if let Some(ident) = child.first_ident(unit) {
+        } else if let Some(ident) = child.query(unit).first_ident() {
             assign_type_to_ident(unit, scopes, ident, pattern_type);
         }
     }

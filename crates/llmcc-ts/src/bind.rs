@@ -80,7 +80,10 @@ impl<'tcx> BinderVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
     ) {
         // Get the field symbol from its name
-        if let Some(field_sym) = node.resolved_symbol_by_field(unit, LangTypeScript::field_name) {
+        if let Some(field_sym) = node
+            .query(unit)
+            .resolved_symbol_by_field(LangTypeScript::field_name)
+        {
             // Set field_of to parent struct/trait
             if let Some(parent_sym) = namespace.opt_symbol() {
                 field_sym.set_field_of(parent_sym.id());
@@ -103,7 +106,9 @@ impl<'tcx> BinderVisitor<'tcx> {
         scopes: &BinderScopes<'tcx>,
     ) {
         // Parameters use "pattern" field for the name identifier
-        if let Some(param_sym) = node.resolved_symbol_by_field(unit, LangTypeScript::field_pattern)
+        if let Some(param_sym) = node
+            .query(unit)
+            .resolved_symbol_by_field(LangTypeScript::field_pattern)
         {
             // Get the type annotation and resolve it
             if let Some(type_node) = node.child_by_field(unit, LangTypeScript::field_type)
@@ -123,7 +128,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         scopes: &BinderScopes<'tcx>,
     ) {
         // Get the identifier from the rest_pattern (could be direct child or find_ident)
-        if let Some(ident) = node.first_ident(unit)
+        if let Some(ident) = node.query(unit).first_ident()
             && let Some(param_sym) = ident.opt_symbol()
         {
             // The type annotation is on the parent required_parameter
@@ -154,7 +159,7 @@ impl<'tcx> BinderVisitor<'tcx> {
             // Infer the return type with unwrapping (Promise<T> -> T)
             if let Some(unwrapped_type) = crate::infer::infer_type(unit, scopes, &ret_type_node) {
                 // Find the first identifier in the return type and set it to the unwrapped type
-                if let Some(ident) = ret_type_node.first_ident(unit) {
+                if let Some(ident) = ret_type_node.query(unit).first_ident() {
                     // Only update if the unwrapped type is different from current
                     if let Some(current_sym) = ident.opt_symbol() {
                         if unwrapped_type.id() != current_sym.id() {
@@ -301,7 +306,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
                         // - Simple: @Log -> decorator > identifier
                         // - Called: @Injectable() -> decorator > call_expression > identifier
                         // Find the decorator function identifier
-                        if let Some(decorator_ident) = child.first_ident(unit)
+                        if let Some(decorator_ident) = child.query(unit).first_ident()
                             && let Some(decorator_sym) =
                                 scopes.lookup_symbol(decorator_ident.name, SYM_KIND_CALLABLE)
                         {
@@ -318,7 +323,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
                                 if let Some(value_node) =
                                     heritage_child.child_by_field(unit, LangTypeScript::field_value)
                                 {
-                                    if let Some(type_ident) = value_node.first_ident(unit)
+                                    if let Some(type_ident) = value_node.query(unit).first_ident()
                                         && let Some(type_sym) =
                                             scopes.lookup_symbol(type_ident.name, SYM_KIND_TYPES)
                                     {
@@ -333,7 +338,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
                                 for type_child_id in heritage_child.child_ids() {
                                     let type_node = unit.hir_node(*type_child_id);
                                     // Try to resolve each implemented interface
-                                    if let Some(type_ident) = type_node.first_ident(unit)
+                                    if let Some(type_ident) = type_node.query(unit).first_ident()
                                         && let Some(type_sym) =
                                             scopes.lookup_symbol(type_ident.name, SYM_KIND_TYPES)
                                     {
@@ -381,7 +386,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
                         for type_child_id in child.child_ids() {
                             let type_node = unit.hir_node(*type_child_id);
                             // Try to resolve the extended type
-                            if let Some(type_ident) = type_node.first_ident(unit)
+                            if let Some(type_ident) = type_node.query(unit).first_ident()
                                 && let Some(type_sym) =
                                     scopes.lookup_symbol(type_ident.name, SYM_KIND_TYPES)
                             {
@@ -465,7 +470,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
         if let Some(parent_sym) = parent {
             for child in node.children(unit) {
                 if child.kind_id() == LangTypeScript::decorator {
-                    if let Some(decorator_ident) = child.first_ident(unit)
+                    if let Some(decorator_ident) = child.query(unit).first_ident()
                         && let Some(decorator_sym) =
                             scopes.lookup_symbol(decorator_ident.name, SYM_KIND_CALLABLE)
                     {
@@ -514,8 +519,9 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
         self.visit_children(unit, node, scopes, namespace, parent);
 
         // Get the type parameter name symbol
-        if let Some(type_param_sym) =
-            node.resolved_symbol_by_field(unit, LangTypeScript::field_name)
+        if let Some(type_param_sym) = node
+            .query(unit)
+            .resolved_symbol_by_field(LangTypeScript::field_name)
         {
             // Look for constraint (T extends SomeType)
             if let Some(constraint_node) =
@@ -624,7 +630,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
         }
 
         // Handle simple identifier: let a = ...
-        if let Some(var_sym) = name_node.resolved_symbol(unit) {
+        if let Some(var_sym) = name_node.query(unit).resolved_symbol() {
             // Try to get type from explicit annotation: let a: number
             if let Some(type_node) = node.child_by_field(unit, LangTypeScript::field_type)
                 && let Some(type_sym) = crate::infer::infer_type(unit, scopes, &type_node)

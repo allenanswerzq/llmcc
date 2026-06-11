@@ -44,7 +44,7 @@ pub fn bind_pattern_types<'tcx>(
         // AST: ...rest
         LangTypeScript::rest_pattern => {
             // Rest pattern gets the same type (it will be an array of remaining elements)
-            if let Some(inner) = pattern.first_ident(unit) {
+            if let Some(inner) = pattern.query(unit).first_ident() {
                 assign_type_to_ident(unit, scopes, inner, pattern_type);
             }
         }
@@ -57,7 +57,7 @@ pub fn bind_pattern_types<'tcx>(
         }
         _ => {
             // For other patterns, try to find and bind any identifier
-            if let Some(ident) = pattern.first_ident(unit) {
+            if let Some(ident) = pattern.query(unit).first_ident() {
                 assign_type_to_ident(unit, scopes, ident, pattern_type);
             }
         }
@@ -162,7 +162,7 @@ fn assign_type_to_object_pattern<'tcx>(
                 && let Some(value_node) = child.child_by_field(unit, LangTypeScript::field_value)
             {
                 // Get the key name to look up field type
-                if let Some(key_ident) = key_node.first_ident(unit) {
+                if let Some(key_ident) = key_node.query(unit).first_ident() {
                     if let Some(field_sym) = scopes.lookup_member_symbols(
                         pattern_type,
                         key_ident.name,
@@ -181,7 +181,7 @@ fn assign_type_to_object_pattern<'tcx>(
         // Handle rest: { ...rest }
         else if kind_id == LangTypeScript::rest_pattern {
             // Rest gets the same object type (could refine to Omit<T, ...> but that's complex)
-            if let Some(ident) = child.first_ident(unit) {
+            if let Some(ident) = child.query(unit).first_ident() {
                 assign_type_to_ident(unit, scopes, ident, pattern_type);
             }
         }
@@ -189,7 +189,7 @@ fn assign_type_to_object_pattern<'tcx>(
         else if kind_id == LangTypeScript::object_assignment_pattern {
             // Get the left side (the binding) and look up its field type
             if let Some(left) = child.child_by_field(unit, LangTypeScript::field_left) {
-                if let Some(ident) = left.first_ident(unit) {
+                if let Some(ident) = left.query(unit).first_ident() {
                     if let Some(field_sym) = scopes.lookup_member_symbols(
                         pattern_type,
                         ident.name,
