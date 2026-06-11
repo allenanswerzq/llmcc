@@ -2,7 +2,7 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;
 
-use llmcc_core::LanguageTrait;
+use llmcc_core::Language;
 use llmcc_core::context::CompileCtxt;
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::{Arena, HirNode};
@@ -11,7 +11,7 @@ use llmcc_core::symbol::{SymKind, SymKindSet, Symbol};
 
 use rayon::prelude::*;
 
-use crate::ResolverOption;
+use crate::ResolveOptions;
 
 /// Core symbol collector for a single compilation unit
 pub struct CollectorScopes<'a> {
@@ -274,9 +274,9 @@ impl<'a> CollectorScopes<'a> {
 /// At the collect pass, we can only know all the stuff in a single compilation unit due to
 /// random order of collection. For symbols we can't resolve at the unit level, we create
 /// placeholder symbols and resolve them in the later binding phase.
-pub fn collect_symbols_with<'a, L: LanguageTrait>(
+pub fn collect_symbols_with<'a, L: Language>(
     cc: &'a CompileCtxt<'a>,
-    config: &ResolverOption,
+    config: &ResolveOptions,
 ) -> &'a Scope<'a> {
     let total_start = Instant::now();
     let unit_count = cc.files.len();
@@ -356,10 +356,10 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
 /// This eliminates the gap between IR build and collection phases by doing both
 /// in a single parallel pass. While the straggler file is still doing IR build,
 /// other threads can finish both IR build AND collection for their files.
-pub fn build_and_collect_symbols<'a, L: LanguageTrait>(
+pub fn build_and_collect_symbols<'a, L: Language>(
     cc: &'a CompileCtxt<'a>,
     ir_config: llmcc_core::ir_builder::IrBuildOption,
-    resolver_config: &ResolverOption,
+    resolver_config: &ResolveOptions,
 ) -> Result<&'a Scope<'a>, llmcc_core::Error> {
     use llmcc_core::ir_builder::{build_llmcc_ir_inner, reset_ir_build_counters};
     use std::sync::atomic::Ordering;

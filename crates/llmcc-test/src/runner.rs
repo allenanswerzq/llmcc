@@ -2,18 +2,18 @@ use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use llmcc_core::ProjectGraph;
 use llmcc_core::block::reset_block_id_counter;
 use llmcc_core::context::{CompileCtxt, CompileUnit};
 use llmcc_core::graph_builder::{BlockId, GraphBuildOption, build_llmcc_graph};
 use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
-use llmcc_core::lang_def::LanguageImpl;
+use llmcc_core::lang_def::Language;
 use llmcc_core::symbol::reset_symbol_id_counter;
+use llmcc_core::{ProjectGraph, ResolveOptions};
 use llmcc_dot::{ComponentDepth, render_graph};
 use llmcc_error::{Error, ErrorKind, Result};
 
 use llmcc_cpp::LangCpp;
-use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
+use llmcc_resolver::{bind_symbols_with, collect_symbols_with};
 use llmcc_rust::LangRust;
 use llmcc_ts::LangTypeScript;
 use similar::TextDiff;
@@ -1394,7 +1394,7 @@ fn materialize_case(case: &CorpusCase, keep_temps: bool) -> Result<MaterializedP
 
 fn collect_pipeline<L>(project_root: &Path, options: &PipelineOptions) -> Result<PipelineSummary>
 where
-    L: LanguageImpl,
+    L: Language,
 {
     // Use provided file paths (preserves declaration order) or discover them
     let files: Vec<(String, String)> = if options.file_paths.is_empty() {
@@ -1424,13 +1424,13 @@ where
     let ir_option = IrBuildOption::new().with_sequential(sequential);
     build_llmcc_ir::<L>(&cc, ir_option).unwrap();
 
-    let resolver_option = ResolverOption::default()
+    let resolve_options = ResolveOptions::default()
         .with_print_ir(options.print_ir)
         .with_sequential(sequential);
-    let globals = collect_symbols_with::<L>(&cc, &resolver_option);
+    let globals = collect_symbols_with::<L>(&cc, &resolve_options);
 
     // Bind symbols using new unified API
-    bind_symbols_with::<L>(&cc, globals, &resolver_option);
+    bind_symbols_with::<L>(&cc, globals, &resolve_options);
     let mut project_graph = if options.build_block_reports
         || options.build_block_graph
         || options.keep_block_relations
@@ -1556,7 +1556,7 @@ where
     })
 }
 
-fn discover_language_files<L: LanguageImpl>(
+fn discover_language_files<L: Language>(
     root: &Path,
     _parallel: bool,
 ) -> Result<Vec<(String, String)>> {

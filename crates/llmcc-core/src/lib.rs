@@ -19,6 +19,7 @@ pub mod meta;
 pub mod pagerank;
 pub mod printer;
 pub mod query;
+pub mod resolve;
 pub mod scope;
 pub mod symbol;
 pub mod visit;
@@ -37,11 +38,12 @@ pub use ir_builder::{
     IrBuildOption, build_llmcc_ir, build_llmcc_ir_inner, get_ir_build_cpu_time_ms,
     reset_ir_build_counters,
 };
-pub use lang_def::{ChildWithFieldId, LanguageImpl, LanguageTrait};
+pub use lang_def::{Language, LanguageHooks, NO_FIELD_ID, ParseChild};
 pub use lang_registry::{LanguageHandler, LanguageHandlerImpl, LanguageRegistry};
 pub use meta::{ArchDepth, UnitMeta, UnitMetaBuilder};
 pub use paste;
 pub use printer::{PrintConfig, PrintFormat, print_llmcc_graph, print_llmcc_ir, render_llmcc_ir};
+pub use resolve::ResolveOptions;
 // TODO: Re-enable after ProjectGraph query methods are implemented
 // pub use query::{GraphBlockInfo, ProjectQuery, QueryResult};
 pub use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};

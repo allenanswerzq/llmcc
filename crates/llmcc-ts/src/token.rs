@@ -1,11 +1,10 @@
-use llmcc_core::LanguageImpl;
+use llmcc_core::LanguageHooks;
 use llmcc_core::graph_builder::BlockKind;
 use llmcc_core::ir::{HirKind, HirNode};
-use llmcc_core::lang_def::{LanguageTrait, ParseNode, ParseTree, TreeSitterParseTree};
+use llmcc_core::lang_def::{Language, ParseNode, ParseTree, TreeSitterParseTree};
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{SymKind, Symbol};
-use llmcc_core::{CompileCtxt, CompileUnit};
-use llmcc_resolver::ResolverOption;
+use llmcc_core::{CompileCtxt, CompileUnit, Error, ResolveOptions, Result};
 
 #[allow(clippy::single_component_path_imports)]
 use tree_sitter_typescript;
@@ -14,20 +13,20 @@ use tree_sitter_typescript;
 // The generated file contains a define_lang! call that expands to LangTypeScript
 include!(concat!(env!("OUT_DIR"), "/typescript_tokens.rs"));
 
-impl LanguageImpl for LangTypeScript {
+impl LanguageHooks for LangTypeScript {
     /// Block kind with parent context - handles special TypeScript cases
-    fn block_kind_with_parent_impl(kind_id: u16, field_id: u16, _parent_kind_id: u16) -> BlockKind {
+    fn block_kind_for_child(kind_id: u16, field_id: u16, _parent_kind_id: u16) -> BlockKind {
         // Default behavior: check field kind first, then node kind
-        let field_kind = <Self as LanguageTrait>::block_kind(field_id);
+        let field_kind = <Self as Language>::block_kind(field_id);
         if field_kind != BlockKind::Undefined {
             field_kind
         } else {
-            <Self as LanguageTrait>::block_kind(kind_id)
+            <Self as Language>::block_kind(kind_id)
         }
     }
 
     #[rustfmt::skip]
-    fn collect_init_impl<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> ScopeStack<'tcx> {
+    fn initial_scopes<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> ScopeStack<'tcx> {
         let stack = ScopeStack::new(cc.arena(), &cc.interner);
         let globals = cc.create_globals();
         stack.push(globals);
@@ -46,7 +45,7 @@ impl LanguageImpl for LangTypeScript {
         stack
     }
 
-    fn parse_impl(text: impl AsRef<[u8]>) -> Option<Box<dyn ParseTree>> {
+    fn parse_source(text: impl AsRef<[u8]>) -> Result<Box<dyn ParseTree>> {
         use std::cell::RefCell;
 
         // Thread-local parser reuse to avoid contention from Parser::new()
@@ -61,26 +60,30 @@ impl LanguageImpl for LangTypeScript {
         PARSER.with(|parser| {
             let mut parser = parser.borrow_mut();
             let bytes = text.as_ref();
-            let tree = parser.parse(bytes, None)?;
-            Some(Box::new(TreeSitterParseTree { tree }) as Box<dyn ParseTree>)
+            let tree = parser.parse(bytes, None).ok_or_else(|| {
+                Error::parse_failed("tree-sitter returned no parse tree")
+                    .with_operation("parse_source")
+                    .with_context("language", "typescript")
+            })?;
+            Ok(Box::new(TreeSitterParseTree::new(tree)) as Box<dyn ParseTree>)
         })
     }
 
-    fn supported_extensions_impl() -> &'static [&'static str] {
+    fn file_extensions() -> &'static [&'static str] {
         &["ts", "mts", "cts"]
     }
 
-    fn manifest_name_impl() -> &'static str {
+    fn manifest_file() -> &'static str {
         "package.json"
     }
 
-    fn container_dirs_impl() -> &'static [&'static str] {
+    fn container_dirs() -> &'static [&'static str] {
         &["src", "lib", "dist", "build", "out", "source"]
     }
 
     /// Check if the given parse node is a TypeScript test attribute.
     /// Detects: @test, describe(), it(), test(), etc.
-    fn is_test_attribute_impl(node: &dyn ParseNode, source: &[u8]) -> bool {
+    fn is_test_attribute(node: &dyn ParseNode, source: &[u8]) -> bool {
         let kind_id = node.kind_id();
 
         // Check for decorator nodes (e.g., @Test)
@@ -106,27 +109,21 @@ impl LanguageImpl for LangTypeScript {
         false
     }
 
-    fn collect_symbols_impl<'tcx, C>(
+    fn collect_symbols<'tcx>(
         unit: CompileUnit<'tcx>,
         node: HirNode<'tcx>,
         scope_stack: ScopeStack<'tcx>,
-        config: &C,
+        options: &ResolveOptions,
     ) -> &'tcx Scope<'tcx> {
-        unsafe {
-            let config_ref = config as *const C as *const ResolverOption;
-            crate::collect::collect_symbols(unit, &node, scope_stack, &*config_ref)
-        }
+        crate::collect::collect_symbols(unit, &node, scope_stack, options)
     }
 
-    fn bind_symbols_impl<'tcx, C>(
+    fn bind_symbols<'tcx>(
         unit: CompileUnit<'tcx>,
         node: HirNode<'tcx>,
         globals: &'tcx Scope<'tcx>,
-        config: &C,
+        options: &ResolveOptions,
     ) {
-        unsafe {
-            let config = config as *const C as *const ResolverOption;
-            crate::bind::bind_symbols(unit, &node, globals, &*config);
-        }
+        crate::bind::bind_symbols(unit, &node, globals, options);
     }
 }

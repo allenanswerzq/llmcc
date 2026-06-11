@@ -6,11 +6,11 @@ use llmcc_core::interner::InternPool;
 use llmcc_core::ir::HirScope;
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
 use llmcc_core::symbol::{ScopeId, SymKind, SymKindSet, Symbol};
-use llmcc_core::{CompileCtxt, LanguageImpl};
+use llmcc_core::{CompileCtxt, Language};
 
 use rayon::prelude::*;
 
-use crate::ResolverOption;
+use crate::ResolveOptions;
 
 #[derive(Debug)]
 pub struct BinderScopes<'a> {
@@ -292,10 +292,10 @@ impl<'a> BinderScopes<'a> {
 ///
 /// The binding phase resolves all symbol references and establishes relationships between symbols
 /// across compilation units. This happens after collection when all symbols have been discovered.
-pub fn bind_symbols_with<'a, L: LanguageImpl>(
+pub fn bind_symbols_with<'a, L: Language>(
     cc: &'a CompileCtxt<'a>,
     globals: &'a Scope<'a>,
-    config: &ResolverOption,
+    config: &ResolveOptions,
 ) {
     let total_start = Instant::now();
     let unit_count = cc.files.len();

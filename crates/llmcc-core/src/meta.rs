@@ -161,10 +161,10 @@ pub struct UnitMetaBuilder {
 }
 
 impl UnitMetaBuilder {
-    /// Create a detector using LanguageTrait configuration.
+    /// Create a detector using Language configuration.
     /// This is the preferred way to create a UnitMetaBuilder from a language type.
     /// Automatically computes the project root from file paths.
-    pub fn from_lang_trait<L: crate::lang_def::LanguageTrait>(files: &[PathBuf]) -> Self {
+    pub fn from_language<L: crate::lang_def::Language>(files: &[PathBuf]) -> Self {
         Self::with_lang_config(files, L::manifest_name(), L::container_dirs())
     }
 

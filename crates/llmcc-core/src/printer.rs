@@ -348,17 +348,8 @@ pub fn render_llmcc_ir_with_config(
 
     // Build AST render tree from parse tree if available
     let ast_render = if let Some(parse_tree) = unit.parse_tree() {
-        if let Some(root_node) = parse_tree.root_node() {
-            build_ast_render(&*root_node, unit, config, 0)?
-        } else {
-            RenderNode::new(
-                "No AST root node found".to_string(),
-                None,
-                None,
-                vec![],
-                None,
-            )
-        }
+        let root_node = parse_tree.root();
+        build_ast_render(&*root_node, unit, config, 0)?
     } else {
         RenderNode::new(
             "Parse tree not available for this compilation unit".to_string(),
@@ -451,7 +442,7 @@ fn build_ast_render_with(
     let field_name: Option<&str> = parent.and_then(|p| p.child_field_name(child_index));
 
     // Use the trait method to format the label
-    let label = node.format_node_label(field_name);
+    let label = node.label(field_name);
 
     // Line range info
     let line_info = Some(format!("[{}-{}]", node.start_byte(), node.end_byte()));

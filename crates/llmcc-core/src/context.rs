@@ -25,10 +25,11 @@ pub enum FileOrder {
     /// Sort by file size descending (better parallel load balancing for large projects).
     BySizeDescending,
 }
+use crate::Result;
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirBase, HirId, HirIdent, HirKind, HirNode};
 use crate::ir_builder::reset_hir_id_counter;
-use crate::lang_def::{LanguageTrait, ParseTree};
+use crate::lang_def::{Language, ParseTree};
 use crate::scope::Scope;
 use crate::symbol::{ScopeId, SymId, Symbol, reset_scope_id_counter, reset_symbol_id_counter};
 
@@ -113,7 +114,7 @@ impl<'tcx> CompileUnit<'tcx> {
         self.cc
             .parse_trees
             .get(self.index)
-            .and_then(|t| t.as_deref())
+            .map(|tree| tree.as_ref())
     }
 
     /// Access the shared string interner.
@@ -305,7 +306,7 @@ pub struct CompileCtxt<'tcx> {
     /// Per-file metadata: package/module/file names and roots.
     pub unit_metas: Vec<UnitMeta>,
     /// Generic parse trees from language-specific parsers
-    pub parse_trees: Vec<Option<Box<dyn ParseTree>>>,
+    pub parse_trees: Vec<Box<dyn ParseTree>>,
     pub hir_root_ids: RwLock<Vec<Option<HirId>>>,
 
     pub block_arena: BlockArena<'tcx>,
@@ -331,42 +332,36 @@ impl<'tcx> std::fmt::Debug for CompileCtxt<'tcx> {
 
 impl<'tcx> CompileCtxt<'tcx> {
     /// Create a new CompileCtxt from source code
-    pub fn from_sources<L: LanguageTrait>(sources: &[Vec<u8>]) -> Self {
+    pub fn from_sources<L: Language>(sources: &[Vec<u8>]) -> Result<Self> {
         // Write sources to a unique temporary directory using UUID
         let temp_dir = std::env::temp_dir()
             .join("llmcc")
             .join(Uuid::new_v4().to_string());
-        let _ = fs::create_dir_all(&temp_dir);
+        fs::create_dir_all(&temp_dir)?;
 
-        let paths: Vec<String> = sources
+        let extension = L::extensions().first().copied().unwrap_or("txt");
+
+        let paths: Result<Vec<String>> = sources
             .iter()
             .enumerate()
             .map(|(index, src)| {
-                let path = temp_dir.join(format!("source_{index}.rs"));
-                if let Ok(mut file) = fs::File::create(&path) {
-                    let _ = file.write_all(src);
-                }
-                path.to_string_lossy().to_string()
+                let path = temp_dir.join(format!("source_{index}.{extension}"));
+                let mut file = fs::File::create(&path)?;
+                file.write_all(src)?;
+                Ok(path.to_string_lossy().to_string())
             })
             .collect();
 
-        // Use from_files to parse and build context
-        Self::from_files::<L>(&paths).unwrap_or_else(|_| {
-            // Fallback: create empty context if temp file creation fails
-            Self::default()
-        })
+        Self::from_files::<L>(&paths?)
     }
 
     /// Create a new CompileCtxt from files with default (original) ordering.
-    pub fn from_files<L: LanguageTrait>(paths: &[String]) -> std::io::Result<Self> {
+    pub fn from_files<L: Language>(paths: &[String]) -> Result<Self> {
         Self::from_files_with_order::<L>(paths, FileOrder::Original)
     }
 
     /// Create a new CompileCtxt from files with specified ordering.
-    pub fn from_files_with_order<L: LanguageTrait>(
-        paths: &[String],
-        order: FileOrder,
-    ) -> std::io::Result<Self> {
+    pub fn from_files_with_order<L: Language>(paths: &[String], order: FileOrder) -> Result<Self> {
         reset_hir_id_counter();
         reset_symbol_id_counter();
         reset_scope_id_counter();
@@ -377,11 +372,11 @@ impl<'tcx> CompileCtxt<'tcx> {
         let mut files_with_index: Vec<(usize, File)> = paths
             .par_iter()
             .enumerate()
-            .map(|(index, path)| -> std::io::Result<(usize, File)> {
+            .map(|(index, path)| -> Result<(usize, File)> {
                 let file = File::new_file(path.clone())?;
                 Ok((index, file))
             })
-            .collect::<std::io::Result<Vec<_>>>()?;
+            .collect::<Result<Vec<_>>>()?;
 
         // Sort files based on ordering strategy
         match order {
@@ -394,7 +389,7 @@ impl<'tcx> CompileCtxt<'tcx> {
 
         let file_read_seconds = read_start.elapsed().as_secs_f64();
 
-        let (parse_trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files);
+        let (parse_trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files)?;
         metrics.file_read_seconds = file_read_seconds;
 
         // Build unit metadata using UnitMetaBuilder
@@ -418,17 +413,15 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// Create a new CompileCtxt from files with separate physical and logical paths.
     /// Physical paths are used to read files from disk; logical paths are stored for display.
     /// Each element is (physical_path, logical_path).
-    pub fn from_files_with_logical<L: LanguageTrait>(
-        paths: &[(String, String)],
-    ) -> std::io::Result<Self> {
+    pub fn from_files_with_logical<L: Language>(paths: &[(String, String)]) -> Result<Self> {
         Self::from_files_with_logical_and_order::<L>(paths, FileOrder::Original)
     }
 
     /// Create a new CompileCtxt from files with separate physical and logical paths and specified ordering.
-    pub fn from_files_with_logical_and_order<L: LanguageTrait>(
+    pub fn from_files_with_logical_and_order<L: Language>(
         paths: &[(String, String)],
         order: FileOrder,
-    ) -> std::io::Result<Self> {
+    ) -> Result<Self> {
         reset_hir_id_counter();
         reset_symbol_id_counter();
         reset_scope_id_counter();
@@ -439,13 +432,11 @@ impl<'tcx> CompileCtxt<'tcx> {
         let mut files_with_index: Vec<(usize, File)> = paths
             .par_iter()
             .enumerate()
-            .map(
-                |(index, (physical, logical))| -> std::io::Result<(usize, File)> {
-                    let file = File::new_file_with_logical(physical, logical.clone())?;
-                    Ok((index, file))
-                },
-            )
-            .collect::<std::io::Result<Vec<_>>>()?;
+            .map(|(index, (physical, logical))| -> Result<(usize, File)> {
+                let file = File::new_file_with_logical(physical, logical.clone())?;
+                Ok((index, file))
+            })
+            .collect::<Result<Vec<_>>>()?;
 
         // Sort files based on ordering strategy
         match order {
@@ -458,7 +449,7 @@ impl<'tcx> CompileCtxt<'tcx> {
 
         let file_read_seconds = read_start.elapsed().as_secs_f64();
 
-        let (parse_trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files);
+        let (parse_trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files)?;
         metrics.file_read_seconds = file_read_seconds;
 
         // Build unit metadata using UnitMetaBuilder
@@ -480,7 +471,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     /// Build unit metadata for all files using UnitMetaBuilder.
-    fn build_unit_metas<L: LanguageTrait>(files: &[File]) -> Vec<UnitMeta> {
+    fn build_unit_metas<L: Language>(files: &[File]) -> Vec<UnitMeta> {
         if files.is_empty() {
             return Vec::new();
         }
@@ -496,7 +487,7 @@ impl<'tcx> CompileCtxt<'tcx> {
         }
 
         // Build the detector (computes project root internally)
-        let builder = UnitMetaBuilder::from_lang_trait::<L>(&file_paths);
+        let builder = UnitMetaBuilder::from_language::<L>(&file_paths);
 
         // Generate metadata for each file
         let mut metas: Vec<UnitMeta> = files
@@ -532,11 +523,11 @@ impl<'tcx> CompileCtxt<'tcx> {
         metas
     }
 
-    fn parse_files_with_metrics<L: LanguageTrait>(
+    fn parse_files_with_metrics<L: Language>(
         files: &[File],
-    ) -> (Vec<Option<Box<dyn ParseTree>>>, BuildMetrics) {
+    ) -> Result<(Vec<Box<dyn ParseTree>>, BuildMetrics)> {
         struct ParseRecord {
-            tree: Option<Box<dyn ParseTree>>,
+            tree: Box<dyn ParseTree>,
             elapsed: f64,
             path: Option<String>,
         }
@@ -547,15 +538,19 @@ impl<'tcx> CompileCtxt<'tcx> {
             .map(|file| {
                 let path = file.path().map(|p| p.to_string());
                 let per_file_start = Instant::now();
-                let tree = L::parse(file.content());
+                let tree = L::parse(file.content()).map_err(|error| {
+                    error
+                        .with_operation("parse_file")
+                        .with_context("path", path.as_deref().unwrap_or("<memory>"))
+                })?;
                 let elapsed = per_file_start.elapsed().as_secs_f64();
-                ParseRecord {
+                Ok(ParseRecord {
                     tree,
                     elapsed,
                     path,
-                }
+                })
             })
-            .collect();
+            .collect::<Result<Vec<_>>>()?;
         let parse_wall_seconds = parse_wall_start.elapsed().as_secs_f64();
 
         let mut trees = Vec::with_capacity(records.len());
@@ -593,7 +588,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             parse_slowest: slowest,
         };
 
-        (trees, metrics)
+        Ok((trees, metrics))
     }
 
     /// Sentinel owner id reserved for the global scope so that file-level scopes
@@ -716,7 +711,7 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     /// Get the generic parse tree for a specific file
     pub fn get_parse_tree(&self, index: usize) -> Option<&dyn ParseTree> {
-        self.parse_trees.get(index).and_then(|t| t.as_deref())
+        self.parse_trees.get(index).map(|tree| tree.as_ref())
     }
 
     /// Get all file paths from the compilation context

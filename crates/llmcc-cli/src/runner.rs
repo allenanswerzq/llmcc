@@ -9,11 +9,11 @@ use llmcc_core::context::{BuildMetrics, FileOrder};
 use llmcc_core::graph::ProjectGraph;
 use llmcc_core::graph_builder::{GraphBuildOption, build_llmcc_graph};
 use llmcc_core::ir_builder::IrBuildOption;
-use llmcc_core::lang_def::LanguageImpl;
-use llmcc_core::{CompileCtxt, Result, print_llmcc_graph};
+use llmcc_core::lang_def::Language as CoreLanguage;
+use llmcc_core::{CompileCtxt, ResolveOptions, Result, print_llmcc_graph};
 use llmcc_cpp::LangCpp;
 use llmcc_dot::{RenderOptions, render_graph_with_options};
-use llmcc_resolver::{ResolverOption, bind_symbols_with, build_and_collect_symbols};
+use llmcc_resolver::{bind_symbols_with, build_and_collect_symbols};
 use llmcc_rust::LangRust;
 use llmcc_ts::LangTypeScript;
 
@@ -49,7 +49,7 @@ impl Runner {
         self.emit_output(output)
     }
 
-    fn process_language<L: LanguageImpl>(&self) -> Result<Option<String>> {
+    fn process_language<L: CoreLanguage>(&self) -> Result<Option<String>> {
         let files = self.discover_files(L::extensions())?;
 
         let lang_name = L::extensions().first().unwrap_or(&"unknown");
@@ -66,12 +66,12 @@ impl Runner {
         Self::log_parse_metrics(&cc.build_metrics);
 
         let build_start = Instant::now();
-        let resolver_option = ResolverOption::default()
+        let resolve_options = ResolveOptions::default()
             .with_print_ir(self.options.print_ir)
             .with_sequential(false);
 
         let globals =
-            build_and_collect_symbols::<L>(&cc, IrBuildOption::default(), &resolver_option)?;
+            build_and_collect_symbols::<L>(&cc, IrBuildOption::default(), &resolve_options)?;
 
         info!(
             "IR build + Symbol collection: {:.2}s",
@@ -79,7 +79,7 @@ impl Runner {
         );
 
         let bind_start = Instant::now();
-        bind_symbols_with::<L>(&cc, globals, &resolver_option);
+        bind_symbols_with::<L>(&cc, globals, &resolve_options);
         info!("Symbol binding: {:.2}s", bind_start.elapsed().as_secs_f64());
 
         let graph_start = Instant::now();

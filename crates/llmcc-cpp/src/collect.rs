@@ -3,12 +3,13 @@
 
 use std::collections::HashMap;
 
+use llmcc_core::ResolveOptions;
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirIdent, HirNode, HirScope};
 use llmcc_core::next_hir_id;
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{ScopeId, SymKind, SymKindSet, Symbol};
-use llmcc_resolver::{CollectorScopes, ResolverOption};
+use llmcc_resolver::CollectorScopes;
 
 use crate::LangCpp;
 use crate::token::AstVisitorCpp;
@@ -1344,7 +1345,7 @@ pub fn collect_symbols<'tcx>(
     unit: CompileUnit<'tcx>,
     node: &HirNode<'tcx>,
     scope_stack: ScopeStack<'tcx>,
-    _config: &ResolverOption,
+    _config: &ResolveOptions,
 ) -> &'tcx Scope<'tcx> {
     use llmcc_core::ir::HirId;
 

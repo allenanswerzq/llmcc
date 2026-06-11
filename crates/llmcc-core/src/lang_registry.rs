@@ -7,10 +7,11 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::lang_def::{LanguageImpl, ParseTree};
+use crate::Result;
+use crate::lang_def::{Language, ParseTree};
 
 /// Object-safe language handler trait.
-/// This wraps static `LanguageTrait` methods into dynamic dispatch.
+/// This wraps static `Language` methods into dynamic dispatch.
 pub trait LanguageHandler: Send + Sync {
     /// Get the unique name of this language (e.g., "rust", "typescript")
     fn name(&self) -> &'static str;
@@ -27,10 +28,10 @@ pub trait LanguageHandler: Send + Sync {
     }
 
     /// Parse source code and return a generic parse tree
-    fn parse(&self, text: &[u8]) -> Option<Box<dyn ParseTree>>;
+    fn parse(&self, text: &[u8]) -> Result<Box<dyn ParseTree>>;
 }
 
-/// A language handler implementation that wraps a LanguageImpl.
+/// A language handler implementation that wraps a static language type.
 pub struct LanguageHandlerImpl<L> {
     _marker: std::marker::PhantomData<L>,
     name: &'static str,
@@ -38,7 +39,7 @@ pub struct LanguageHandlerImpl<L> {
 
 impl<L> LanguageHandlerImpl<L>
 where
-    L: LanguageImpl,
+    L: Language,
 {
     /// Create a new handler for the given language
     pub fn new(name: &'static str) -> Self {
@@ -51,7 +52,7 @@ where
 
 impl<L> LanguageHandler for LanguageHandlerImpl<L>
 where
-    L: LanguageImpl + Send + Sync + 'static,
+    L: Language + Send + Sync + 'static,
 {
     fn name(&self) -> &'static str {
         self.name
@@ -65,7 +66,7 @@ where
         L::manifest_name()
     }
 
-    fn parse(&self, text: &[u8]) -> Option<Box<dyn ParseTree>> {
+    fn parse(&self, text: &[u8]) -> Result<Box<dyn ParseTree>> {
         L::parse(text)
     }
 }
@@ -104,10 +105,10 @@ impl LanguageRegistry {
         }
     }
 
-    /// Register a language by its LanguageImpl type
+    /// Register a language by its static language type.
     pub fn register_language<L>(&mut self, name: &'static str)
     where
-        L: LanguageImpl + Send + Sync + 'static,
+        L: Language + Send + Sync + 'static,
     {
         let handler = Arc::new(LanguageHandlerImpl::<L>::new(name));
         self.register(handler);
@@ -186,8 +187,8 @@ mod tests {
             "mock.toml"
         }
 
-        fn parse(&self, _text: &[u8]) -> Option<Box<dyn ParseTree>> {
-            None
+        fn parse(&self, _text: &[u8]) -> Result<Box<dyn ParseTree>> {
+            Err(crate::Error::parse_failed("mock handler cannot parse"))
         }
     }
 

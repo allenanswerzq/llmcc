@@ -12,7 +12,7 @@ use crate::block::{
 use crate::context::{CompileCtxt, CompileUnit};
 use crate::graph::UnitGraph;
 use crate::ir::HirNode;
-use crate::lang_def::LanguageTrait;
+use crate::lang_def::Language;
 use crate::visit::HirVisitor;
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -35,7 +35,7 @@ impl GraphBuildOption {
 }
 
 #[derive(Debug)]
-struct GraphBuilder<'tcx, Language> {
+struct GraphBuilder<'tcx, L> {
     unit: CompileUnit<'tcx>,
     root: Option<BlockId>,
     /// Stack of children being collected. Each entry is (BlockId, BlockKind) pairs.
@@ -43,10 +43,10 @@ struct GraphBuilder<'tcx, Language> {
     /// Stack of parent kinds - tracks what kind of block we're currently inside
     parent_kind_stack: Vec<BlockKind>,
     _config: GraphBuildConfig,
-    _marker: PhantomData<Language>,
+    _marker: PhantomData<L>,
 }
 
-impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
+impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
     fn new(unit: CompileUnit<'tcx>, config: GraphBuildConfig) -> Self {
         Self {
             unit,
@@ -144,9 +144,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
 
         // For fields, use the language's name_field to avoid finding decorator identifiers
         if kind == BlockKind::Field
-            && let Some(ident) = node
-                .query(&self.unit)
-                .ident_with_field(Language::name_field())
+            && let Some(ident) = node.query(&self.unit).ident_with_field(L::name_field())
             && let Some(sym) = ident.opt_symbol()
         {
             return Some(sym);
@@ -314,9 +312,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 let mut block = BlockImpl::new(id, node, parent, children);
 
                 // Get target type from the "type" field (e.g., `impl Foo` or `impl Trait for Foo`)
-                if let Some(target_ident) = node
-                    .query(&self.unit)
-                    .ident_with_field(Language::type_field())
+                if let Some(target_ident) = node.query(&self.unit).ident_with_field(L::type_field())
                     && let Some(sym) = target_ident.opt_symbol()
                 {
                     // Follow type_of chain to get the actual type symbol for block_id
@@ -329,9 +325,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 }
 
                 // Get trait from the "trait" field (e.g., `impl Trait for Foo`)
-                if let Some(trait_ident) = node
-                    .query(&self.unit)
-                    .ident_with_field(Language::trait_field())
+                if let Some(trait_ident) = node.query(&self.unit).ident_with_field(L::trait_field())
                     && let Some(sym) = trait_ident.opt_symbol()
                 {
                     // Follow type_of chain to get the actual trait symbol
@@ -349,10 +343,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 let mut block = BlockField::new_with_symbol(id, node, parent, children, symbol);
                 // Find identifier name from children using ident_by_field with the language's name field
                 // This avoids finding decorator identifiers before the actual field name
-                if let Some(ident) = node
-                    .query(&self.unit)
-                    .ident_with_field(Language::name_field())
-                {
+                if let Some(ident) = node.query(&self.unit).ident_with_field(L::name_field()) {
                     block.name = ident.name.to_string();
                 } else if let Some(ident) = node.query(&self.unit).first_ident() {
                     // Fallback to find_ident for languages that don't use name field
@@ -436,11 +427,11 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
     ) {
         let id = self.next_id();
         // Try field-based block_kind first, then fall back to node-based
-        let field_kind = Language::block_kind(node.field_id());
+        let field_kind = L::block_kind(node.field_id());
         let mut block_kind = if field_kind != BlockKind::Undefined {
             field_kind
         } else {
-            Language::block_kind(node.kind_id())
+            L::block_kind(node.kind_id())
         };
         assert_ne!(block_kind, BlockKind::Undefined);
 
@@ -643,11 +634,11 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
 
     /// Get the effective block kind for a node, checking field first then node type.
     fn effective_block_kind(node: HirNode<'tcx>) -> BlockKind {
-        let field_kind = Language::block_kind(node.field_id());
+        let field_kind = L::block_kind(node.field_id());
         if field_kind != BlockKind::Undefined {
             field_kind
         } else {
-            Language::block_kind(node.kind_id())
+            L::block_kind(node.kind_id())
         }
     }
 
@@ -674,7 +665,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
     }
 }
 
-impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Language> {
+impl<'tcx, L: Language> HirVisitor<'tcx> for GraphBuilder<'tcx, L> {
     fn visit_children(&mut self, unit: CompileUnit<'tcx>, node: HirNode<'tcx>, parent: BlockId) {
         let parent_kind_id = node.kind_id();
         let children = node.child_ids();
@@ -686,7 +677,7 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
             // Only intercept if the parent context changes the block kind
             let base_kind = Self::effective_block_kind(*child);
             let context_kind =
-                Language::block_kind_with_parent(child.kind_id(), child.field_id(), parent_kind_id);
+                L::block_kind_with_parent(child.kind_id(), child.field_id(), parent_kind_id);
 
             if context_kind != base_kind && Self::is_block_kind(context_kind) {
                 // Parent context creates a block that wouldn't exist otherwise
@@ -758,7 +749,7 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
     }
 }
 
-pub fn build_unit_graph<'tcx, L: LanguageTrait>(
+pub fn build_unit_graph<'tcx, L: Language>(
     unit: CompileUnit<'tcx>,
     unit_index: usize,
     config: GraphBuildConfig,
@@ -776,7 +767,7 @@ pub fn build_unit_graph<'tcx, L: LanguageTrait>(
 }
 
 /// Build unit graphs for all compilation units in parallel.
-pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
+pub fn build_llmcc_graph<'tcx, L: Language>(
     cc: &'tcx CompileCtxt<'tcx>,
     config: GraphBuildOption,
 ) -> Result<Vec<UnitGraph>> {

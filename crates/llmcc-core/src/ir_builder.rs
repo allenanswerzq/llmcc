@@ -15,7 +15,7 @@ pub use crate::id::{next_hir_id, reset_hir_id_counter};
 use crate::ir::{
     Arena, HirBase, HirFile, HirId, HirIdent, HirInternal, HirKind, HirNode, HirScope, HirText,
 };
-use crate::lang_def::{LanguageTrait, ParseNode, ParseTree};
+use crate::lang_def::{Language, NO_FIELD_ID, ParseNode, ParseTree};
 
 // Timing counters for IR building
 static IR_BUILD_CPU_TIME_NS: AtomicU64 = AtomicU64::new(0);
@@ -53,7 +53,7 @@ impl IrBuildOption {
 }
 
 /// IR builder that transforms parse trees into HIR nodes using a per-unit arena.
-struct HirBuilder<'unit, Language> {
+struct HirBuilder<'unit, L> {
     /// Per-unit arena for allocating all HIR nodes during this build
     arena: &'unit Arena<'unit>,
     /// Optional file path for the File node
@@ -61,10 +61,10 @@ struct HirBuilder<'unit, Language> {
     /// Source file content bytes for text extraction
     file_bytes: &'unit [u8],
     /// Language-specific handler (used via PhantomData for compile-time only)
-    _language: PhantomData<Language>,
+    _language: PhantomData<L>,
 }
 
-impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
+impl<'unit, L: Language> HirBuilder<'unit, L> {
     /// Create a new HIR builder for a single file using a per-unit arena.
     fn new(
         arena: &'unit Arena<'unit>,
@@ -82,8 +82,7 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
 
     /// Build HIR nodes from a parse tree root.
     fn build(self, root: &dyn ParseNode) -> HirNode<'unit> {
-        // Root node has no field_id (no parent)
-        self.build_node(root, None, u16::MAX)
+        self.build_node(root, None, NO_FIELD_ID)
     }
 
     /// Recursively build a single HIR node and all descendants, allocating directly into arena.
@@ -96,7 +95,7 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
     ) -> HirNode<'unit> {
         let id = next_hir_id();
         let kind_id = node.kind_id();
-        let kind = Language::hir_kind(kind_id);
+        let kind = L::hir_kind(kind_id);
 
         // Skip collecting children for leaf node types (Text, Identifier, Comment)
         // This provides a massive performance improvement for large array/object literals
@@ -151,7 +150,7 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
                 let allocated = self.arena.alloc(hir_ident);
                 HirNode::Ident(allocated)
             }
-            _other => panic!("unsupported HIR kind for node {}", node.debug_info()),
+            _other => panic!("unsupported HIR kind for node {}", node.debug_label()),
         };
 
         // Allocate the HirNode wrapper with its ID for O(1) lookup
@@ -170,14 +169,14 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
         let mut skip_next = false;
 
         // Use efficient cursor-based collection that provides field_id during iteration
-        let children_with_fields = node.collect_children_with_field_ids();
+        let children_with_fields = node.children_with_fields();
 
         for child_with_field in children_with_fields {
             let child = child_with_field.node;
             let field_id = child_with_field.field_id;
 
             // Check if this is a test attribute that should cause the next item to be skipped
-            if Language::is_test_attribute(child.as_ref(), self.file_bytes) {
+            if L::is_test_attribute(child.as_ref(), self.file_bytes) {
                 skip_next = true;
                 // Skip the attribute for cleaner HIR
                 continue;
@@ -245,16 +244,14 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
 /// Build IR for a single file with language-specific handling.
 /// Build IR for a single file (inner implementation).
 /// This is public for use by fused build+collect in the resolver.
-pub fn build_llmcc_ir_inner<'unit, L: LanguageTrait>(
+pub fn build_llmcc_ir_inner<'unit, L: Language>(
     file_path: Option<String>,
     file_bytes: &'unit [u8],
     parse_tree: &'unit dyn ParseTree,
     unit_arena: &'unit Arena<'unit>,
     config: IrBuildOption,
 ) -> Result<HirId> {
-    let root = parse_tree
-        .root_node()
-        .ok_or_else(|| "ParseTree does not provide a root node".to_string())?;
+    let root = parse_tree.root();
 
     let builder = HirBuilder::<L>::new(unit_arena, file_path, file_bytes, config);
     let root = builder.build(root.as_ref());
@@ -269,7 +266,7 @@ struct BuildResult {
 }
 
 /// Build IR for all files in the compile context.
-pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
+pub fn build_llmcc_ir<'tcx, L: Language>(
     cc: &'tcx CompileCtxt<'tcx>,
     config: IrBuildOption,
 ) -> Result<()> {

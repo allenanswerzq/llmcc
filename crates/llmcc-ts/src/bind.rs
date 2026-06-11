@@ -1,12 +1,13 @@
 #![allow(clippy::collapsible_if, clippy::needless_return)]
 
+use llmcc_core::ResolveOptions;
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirNode, HirScope};
 use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{
     SYM_KIND_ALL, SYM_KIND_CALLABLE, SYM_KIND_TYPES, SymKind, SymKindSet, Symbol,
 };
-use llmcc_resolver::{BinderScopes, ResolverOption};
+use llmcc_resolver::BinderScopes;
 
 use crate::token::AstVisitorTypeScript;
 use crate::token::LangTypeScript;
@@ -18,12 +19,12 @@ type ScopeEnterFn<'tcx> =
 #[derive(Debug)]
 pub struct BinderVisitor<'tcx> {
     #[allow(dead_code)]
-    config: ResolverOption,
+    config: ResolveOptions,
     phantom: std::marker::PhantomData<&'tcx ()>,
 }
 
 impl<'tcx> BinderVisitor<'tcx> {
-    fn new(config: ResolverOption) -> Self {
+    fn new(config: ResolveOptions) -> Self {
         Self {
             config,
             phantom: std::marker::PhantomData,
@@ -760,7 +761,7 @@ pub fn bind_symbols<'tcx>(
     unit: CompileUnit<'tcx>,
     node: &HirNode<'tcx>,
     namespace: &'tcx Scope<'tcx>,
-    config: &ResolverOption,
+    config: &ResolveOptions,
 ) {
     let mut scopes = BinderScopes::new(unit, namespace);
     let mut visit = BinderVisitor::new(config.clone());

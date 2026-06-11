@@ -1,11 +1,10 @@
-use llmcc_core::LanguageImpl;
+use llmcc_core::LanguageHooks;
 use llmcc_core::graph_builder::BlockKind;
 use llmcc_core::ir::{HirKind, HirNode};
-use llmcc_core::lang_def::{LanguageTrait, ParseNode, ParseTree, TreeSitterParseTree};
+use llmcc_core::lang_def::{Language, ParseNode, ParseTree, TreeSitterParseTree};
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{SymKind, Symbol};
-use llmcc_core::{CompileCtxt, CompileUnit};
-use llmcc_resolver::ResolverOption;
+use llmcc_core::{CompileCtxt, CompileUnit, Error, ResolveOptions, Result};
 
 #[allow(clippy::single_component_path_imports)]
 use tree_sitter_rust;
@@ -14,9 +13,9 @@ use tree_sitter_rust;
 // The generated file contains a define_lang! call that expands to LangRust
 include!(concat!(env!("OUT_DIR"), "/rust_tokens.rs"));
 
-impl LanguageImpl for LangRust {
+impl LanguageHooks for LangRust {
     /// Block kind with parent context - handles tuple struct fields
-    fn block_kind_with_parent_impl(kind_id: u16, field_id: u16, parent_kind_id: u16) -> BlockKind {
+    fn block_kind_for_child(kind_id: u16, field_id: u16, parent_kind_id: u16) -> BlockKind {
         // Tuple struct fields: types inside ordered_field_declaration_list with field "type"
         if parent_kind_id == LangRust::ordered_field_declaration_list
             && field_id == LangRust::field_type
@@ -29,16 +28,16 @@ impl LanguageImpl for LangRust {
             return BlockKind::Undefined;
         }
         // Default behavior: check field kind first, then node kind
-        let field_kind = <Self as LanguageTrait>::block_kind(field_id);
+        let field_kind = <Self as Language>::block_kind(field_id);
         if field_kind != BlockKind::Undefined {
             field_kind
         } else {
-            <Self as LanguageTrait>::block_kind(kind_id)
+            <Self as Language>::block_kind(kind_id)
         }
     }
 
     #[rustfmt::skip]
-    fn collect_init_impl<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> ScopeStack<'tcx> {
+    fn initial_scopes<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> ScopeStack<'tcx> {
         let stack = ScopeStack::new(cc.arena(), &cc.interner);
         let globals = cc.create_globals();
         stack.push(globals);
@@ -57,7 +56,7 @@ impl LanguageImpl for LangRust {
         stack
     }
 
-    fn parse_impl(text: impl AsRef<[u8]>) -> Option<Box<dyn ParseTree>> {
+    fn parse_source(text: impl AsRef<[u8]>) -> Result<Box<dyn ParseTree>> {
         use std::cell::RefCell;
 
         // Thread-local parser reuse to avoid contention from Parser::new()
@@ -72,26 +71,30 @@ impl LanguageImpl for LangRust {
         PARSER.with(|parser| {
             let mut parser = parser.borrow_mut();
             let bytes = text.as_ref();
-            let tree = parser.parse(bytes, None)?;
-            Some(Box::new(TreeSitterParseTree { tree }) as Box<dyn ParseTree>)
+            let tree = parser.parse(bytes, None).ok_or_else(|| {
+                Error::parse_failed("tree-sitter returned no parse tree")
+                    .with_operation("parse_source")
+                    .with_context("language", "rust")
+            })?;
+            Ok(Box::new(TreeSitterParseTree::new(tree)) as Box<dyn ParseTree>)
         })
     }
 
-    fn supported_extensions_impl() -> &'static [&'static str] {
+    fn file_extensions() -> &'static [&'static str] {
         &["rs"]
     }
 
-    fn manifest_name_impl() -> &'static str {
+    fn manifest_file() -> &'static str {
         "Cargo.toml"
     }
 
-    fn container_dirs_impl() -> &'static [&'static str] {
+    fn container_dirs() -> &'static [&'static str] {
         &["src"]
     }
 
     /// Check if the given parse node is a Rust test attribute.
     /// Detects: #[test], #[cfg(test)], #[tokio::test], #[async_std::test], etc.
-    fn is_test_attribute_impl(node: &dyn ParseNode, source: &[u8]) -> bool {
+    fn is_test_attribute(node: &dyn ParseNode, source: &[u8]) -> bool {
         // First check if this is an attribute_item or inner_attribute_item
         let kind_id = node.kind_id();
         if kind_id != LangRust::attribute_item && kind_id != LangRust::inner_attribute_item {
@@ -116,27 +119,21 @@ impl LanguageImpl for LangRust {
             || attr_text.contains("::test]") // catches #[tokio::test], #[async_std::test], etc.
     }
 
-    fn collect_symbols_impl<'tcx, C>(
+    fn collect_symbols<'tcx>(
         unit: CompileUnit<'tcx>,
         node: HirNode<'tcx>,
         scope_stack: ScopeStack<'tcx>,
-        config: &C,
+        options: &ResolveOptions,
     ) -> &'tcx Scope<'tcx> {
-        unsafe {
-            let config_ref = config as *const C as *const ResolverOption;
-            crate::collect::collect_symbols(unit, &node, scope_stack, &*config_ref)
-        }
+        crate::collect::collect_symbols(unit, &node, scope_stack, options)
     }
 
-    fn bind_symbols_impl<'tcx, C>(
+    fn bind_symbols<'tcx>(
         unit: CompileUnit<'tcx>,
         node: HirNode<'tcx>,
         globals: &'tcx Scope<'tcx>,
-        config: &C,
+        options: &ResolveOptions,
     ) {
-        unsafe {
-            let config = config as *const C as *const ResolverOption;
-            crate::bind::bind_symbols(unit, &node, globals, &*config);
-        }
+        crate::bind::bind_symbols(unit, &node, globals, options);
     }
 }
