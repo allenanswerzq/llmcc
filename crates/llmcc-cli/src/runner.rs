@@ -8,7 +8,6 @@ use tracing::info;
 use llmcc_core::context::{BuildMetrics, FileOrder};
 use llmcc_core::graph::ProjectGraph;
 use llmcc_core::graph_builder::{GraphBuildOption, build_llmcc_graph};
-use llmcc_core::ir_builder::IrBuildOption;
 use llmcc_core::lang_def::Language as CoreLanguage;
 use llmcc_core::{CompileCtxt, Error, ResolveOptions, Result, print_llmcc_graph};
 use llmcc_cpp::LangCpp;
@@ -73,8 +72,7 @@ impl Runner {
             .with_print_ir(self.options.print_ir)
             .with_sequential(false);
 
-        let globals =
-            build_and_collect_symbols::<L>(&cc, IrBuildOption::default(), &resolve_options)?;
+        let globals = build_and_collect_symbols::<L>(&cc, &resolve_options)?;
 
         info!(
             "IR build + Symbol collection: {:.2}s",

@@ -13,8 +13,8 @@ use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
 use crate::context::CompileUnit;
 use crate::declare_arena;
-use crate::hir_query::HirQuery;
 pub use crate::id::HirId;
+use crate::ir_query::HirQuery;
 use crate::scope::Scope;
 use crate::symbol::Symbol;
 
@@ -51,6 +51,18 @@ pub enum HirKind {
     Comment,
     /// Identifier leaf that may be linked to a symbol.
     Identifier,
+}
+
+impl HirKind {
+    /// True when the builder should not descend into parse children for this HIR kind.
+    pub fn is_leaf(self) -> bool {
+        matches!(self, HirKind::Text | HirKind::Comment | HirKind::Identifier)
+    }
+
+    /// True for trivia nodes that usually do not participate in semantic analysis.
+    pub fn is_trivia(self) -> bool {
+        matches!(self, HirKind::Text | HirKind::Comment)
+    }
 }
 
 /// Lightweight reference to an arena-allocated HIR node.
@@ -246,7 +258,7 @@ impl<'hir> HirNode<'hir> {
 
     /// True for trivia nodes that usually do not participate in semantic analysis.
     pub fn is_trivia(&self) -> bool {
-        matches!(self.kind(), HirKind::Text | HirKind::Comment)
+        self.kind().is_trivia()
     }
 }
 

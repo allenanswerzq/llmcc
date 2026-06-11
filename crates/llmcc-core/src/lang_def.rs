@@ -1,4 +1,4 @@
-//! Language definition framework for multi-language AST support.
+//! Language and parser abstractions used by the core pipeline.
 
 use crate::Result;
 use crate::context::{CompileCtxt, CompileUnit};
@@ -8,30 +8,38 @@ use crate::ir::HirNode;
 use crate::resolve::ResolveOptions;
 use crate::scope::{Scope, ScopeStack};
 
-/// Sentinel used when a parse node has no parent field.
+/// Field id used when a parse child has no named parent field.
 pub const NO_FIELD_ID: u16 = u16::MAX;
 
-/// A parse child paired with its parent field id.
+/// Parse child plus the field id assigned by its parent.
 pub struct ParseChild<'a> {
-    /// Child parse node.
+    /// Child node.
     pub node: Box<dyn ParseNode + 'a>,
-    /// Parent field id, or `NO_FIELD_ID` when absent.
+    /// Parent field id, or `NO_FIELD_ID`.
     pub field_id: u16,
 }
 
-/// Generic trait for parse tree representation.
-///
-/// Implementations can wrap tree-sitter trees, custom ASTs, or other parse representations.
-/// This abstraction decouples language definitions from specific parser implementations.
+/// Language-specific lowering decision for a parse node.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HirBuildAction {
+    /// Lower this node normally.
+    Build,
+    /// Omit this node.
+    Skip,
+    /// Omit this node and its next sibling.
+    SkipNextSibling,
+}
+
+/// Parser-independent source tree.
 pub trait ParseTree: Send + Sync + 'static {
-    /// Root parse node.
+    /// Root node.
     fn root(&self) -> Box<dyn ParseNode + '_>;
 
-    /// Human-readable parser/backend description.
+    /// Short diagnostic label.
     fn debug_label(&self) -> String;
 }
 
-/// Default implementation wrapping tree-sitter Tree
+/// `tree-sitter` tree wrapper.
 #[derive(Debug, Clone)]
 pub struct TreeSitterParseTree {
     tree: ::tree_sitter::Tree,
@@ -53,51 +61,40 @@ impl ParseTree for TreeSitterParseTree {
     }
 }
 
-/// Generic trait for parse tree nodes (individual AST nodes).
-///
-/// Implementations can wrap tree-sitter nodes, custom AST nodes, or other parse representations.
-/// This abstraction allows IR building to work with any parser backend.
-///
-/// Note: Unlike ParseTree, ParseNode can have lifetime parameters to match the lifetime
-/// of the underlying parser's borrowed nodes (e.g., tree-sitter::Node<'tree>).
+/// Parser-independent source node.
 pub trait ParseNode: Send + Sync {
-    /// Get the node's kind name.
+    /// Node kind name.
     fn kind_name(&self) -> &str;
 
-    /// Get the node's kind ID (language-specific token ID)
+    /// Language-specific token id.
     fn kind_id(&self) -> u16;
 
-    /// Get the start byte offset of this node in the source
+    /// Start byte in the source file.
     fn start_byte(&self) -> usize;
 
-    /// Get the end byte offset of this node in the source
+    /// End byte in the source file.
     fn end_byte(&self) -> usize;
 
-    /// Get the 1-indexed line number where this node starts
+    /// 1-indexed starting line.
     fn start_line(&self) -> usize;
 
-    /// Get the number of children this node has
+    /// Number of child nodes.
     fn child_count(&self) -> usize;
 
-    /// Get the child at the specified index
+    /// Child at `index`.
     fn child(&self, index: usize) -> Option<Box<dyn ParseNode + '_>>;
 
-    /// Get the field name of the child at the specified index (if available)
+    /// Field name for the child at `index`.
     fn child_field_name(&self, _index: usize) -> Option<&str> {
         None
     }
 
-    /// Get the field ID of this node within its parent (if available).
-    /// Returns None if the node has no parent or the field ID cannot be determined.
+    /// Field id assigned by this node's parent.
     fn field_id(&self) -> Option<u16> {
         None
     }
 
-    /// Collect all children with their field IDs in a single pass.
-    /// This is more efficient than calling child() + field_id() separately
-    /// because it uses a cursor to get field_id during iteration.
-    ///
-    /// Default implementation falls back to child() + field_id() for each child.
+    /// Children paired with parent field ids.
     fn children_with_fields(&self) -> Vec<ParseChild<'_>> {
         let mut result = Vec::with_capacity(self.child_count());
         for i in 0..self.child_count() {
@@ -112,43 +109,43 @@ pub trait ParseNode: Send + Sync {
         result
     }
 
-    /// Get a child by field name (if supported by the parser)
+    /// Child for a parser field name.
     fn child_by_field_name(&self, field_name: &str) -> Option<Box<dyn ParseNode + '_>>;
 
-    /// Get a child by field ID (if supported by the parser)
+    /// Child for a parser field id.
     fn child_by_field_id(&self, _field_id: u16) -> Option<Box<dyn ParseNode + '_>> {
         None
     }
 
-    /// Check if this node represents a parse error
+    /// True for parser error nodes.
     fn is_error(&self) -> bool {
         false
     }
 
-    /// Check if this node is "extra" (typically whitespace/comments)
+    /// True for parser extras such as comments or whitespace.
     fn is_extra(&self) -> bool {
         false
     }
 
-    /// Check if this node is missing (e.g., implicit tokens)
+    /// True for parser-inserted missing nodes.
     fn is_missing(&self) -> bool {
         false
     }
 
-    /// Check if this node is a named token (vs anonymous)
+    /// True for named parser nodes.
     fn is_named(&self) -> bool {
         true
     }
 
-    /// Get the parent node if available
+    /// Parent node, if available.
     fn parent(&self) -> Option<Box<dyn ParseNode + '_>> {
         None
     }
 
-    /// Debug representation of this node.
+    /// Short diagnostic label.
     fn debug_label(&self) -> String;
 
-    /// Format a label for this node suitable for debugging and rendering.
+    /// Label used by AST debug rendering.
     fn label(&self, field_name: Option<&str>) -> String {
         let kind_id = self.kind_id();
         let mut label = String::new();
@@ -171,13 +168,13 @@ pub trait ParseNode: Send + Sync {
     }
 }
 
-/// Wrapper implementation of ParseNode for tree-sitter nodes
+/// `tree-sitter` node wrapper.
 pub struct TreeSitterParseNode<'tree> {
     node: ::tree_sitter::Node<'tree>,
 }
 
 impl<'tree> TreeSitterParseNode<'tree> {
-    /// Create a new wrapper around a tree-sitter node
+    /// Wrap a `tree-sitter` node.
     pub fn new(node: ::tree_sitter::Node<'tree>) -> Self {
         Self { node }
     }
@@ -201,7 +198,7 @@ impl<'tree> ParseNode for TreeSitterParseNode<'tree> {
     }
 
     fn start_line(&self) -> usize {
-        // tree-sitter's start_position().row is 0-indexed, add 1 for 1-indexed line
+        // tree-sitter rows are zero-based.
         self.node.start_position().row + 1
     }
 
@@ -220,8 +217,6 @@ impl<'tree> ParseNode for TreeSitterParseNode<'tree> {
     }
 
     fn field_id(&self) -> Option<u16> {
-        // Walk up to parent and find this node's field ID
-        // NOTE: This is O(n) per call - prefer children_with_fields for bulk access.
         let parent = self.node.parent()?;
         let mut cursor = parent.walk();
 
@@ -310,33 +305,29 @@ impl<'tree> ParseNode for TreeSitterParseNode<'tree> {
     }
 }
 
-/// Static language contract used by the core pipeline.
+/// Public language contract consumed by the pipeline.
 pub trait Language {
-    /// Get the manifest file name for this language (e.g., "Cargo.toml", "package.json").
+    /// Manifest filename, such as `Cargo.toml` or `package.json`.
     fn manifest_name() -> &'static str;
 
-    /// Get the container directories that don't add semantic meaning.
-    /// These directories are skipped in module detection (e.g., "src", "lib").
+    /// Directory names ignored when deriving module paths.
     fn container_dirs() -> &'static [&'static str];
 
-    /// Check if a directory name is a container directory.
+    /// True when `name` is a container directory.
     fn is_container(name: &str) -> bool {
         Self::container_dirs().contains(&name)
     }
 
-    /// Parse source code and return a generic parse tree.
+    /// Parse source bytes.
     fn parse(_text: impl AsRef<[u8]>) -> Result<Box<dyn ParseTree>>;
 
-    /// Map a token kind ID to its corresponding HIR kind.
+    /// Map parser token id to HIR kind.
     fn hir_kind(kind_id: u16) -> HirKind;
 
-    /// Map a token kind ID to its corresponding block kind.
+    /// Map parser token id to graph block kind.
     fn block_kind(kind_id: u16) -> BlockKind;
 
-    /// Map a token kind ID to its corresponding block kind with parent context.
-    /// This allows languages to create blocks based on the parent node's kind.
-    /// For example, types inside tuple struct definitions become Field blocks.
-    /// Default implementation ignores parent and delegates to block_kind.
+    /// Map parser token id to graph block kind with parent context.
     fn block_kind_with_parent(kind_id: u16, field_id: u16, _parent_kind_id: u16) -> BlockKind {
         let field_kind = Self::block_kind(field_id);
         if field_kind != BlockKind::Undefined {
@@ -346,32 +337,28 @@ pub trait Language {
         }
     }
 
-    /// Check if a parse node is a test-related attribute that should cause the next item to be skipped.
-    /// This is used to filter out test functions and modules from the HIR at build time.
-    /// Takes the parse node and source bytes to extract and check the attribute text.
-    /// Default implementation returns false (no filtering).
-    fn is_test_attribute(node: &dyn ParseNode, source: &[u8]) -> bool {
+    /// Decide how the HIR builder handles a parse node.
+    fn hir_build_action(node: &dyn ParseNode, source: &[u8]) -> HirBuildAction {
         let _ = (node, source);
-        false
+        HirBuildAction::Build
     }
 
-    /// Get the string representation of a token ID.
+    /// Parser token text for `kind_id`.
     fn token_str(kind_id: u16) -> Option<&'static str>;
 
-    /// Validate whether a kind ID corresponds to a defined token.
+    /// True when `kind_id` is a known parser token.
     fn is_valid_token(kind_id: u16) -> bool;
 
-    /// Get the field ID that represents the "name" of a construct.
+    /// Field id for declaration names.
     fn name_field() -> u16;
 
-    /// Get the field ID that represents the "type" of a construct.
+    /// Field id for type annotations or type references.
     fn type_field() -> u16;
 
-    /// Get the field ID that represents the "trait" in impl blocks.
-    /// Used for `impl Trait for Type { }` to identify the trait being implemented.
+    /// Field id for implemented traits or interfaces.
     fn trait_field() -> u16;
 
-    /// Get the list of file extensions this language supports.
+    /// Supported source file extensions.
     fn extensions() -> &'static [&'static str];
 
     fn collect_init<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> ScopeStack<'tcx>;
@@ -391,43 +378,43 @@ pub trait Language {
     );
 }
 
-/// Implementation hooks used by `define_lang!` to build a `Language` impl.
-pub trait LanguageHooks: Language {
-    /// Parse source bytes for this language.
+/// Manual language definition consumed by `define_lang!`.
+///
+/// The macro generates token-derived `Language` methods. Language crates
+/// implement this trait for parsing, project layout, filtering, and symbol
+/// passes.
+pub trait LanguageDefinition {
+    /// Parse source bytes.
     fn parse_source(text: impl AsRef<[u8]>) -> Result<Box<dyn ParseTree>>;
 
-    /// Supported file extensions for this language.
+    /// Supported source file extensions.
     fn file_extensions() -> &'static [&'static str];
 
-    /// The manifest file name for this language (e.g., "Cargo.toml", "package.json").
+    /// Manifest filename.
     fn manifest_file() -> &'static str;
 
-    /// Container directories that don't add semantic meaning (e.g., "src", "lib").
+    /// Directory names ignored when deriving module paths.
     fn container_dirs() -> &'static [&'static str];
 
-    /// Language-specific block kind with parent context.
-    /// Override this to handle context-dependent block creation.
-    /// Default implementation delegates to the trait's default.
-    fn block_kind_for_child(kind_id: u16, field_id: u16, _parent_kind_id: u16) -> BlockKind {
-        // Default: use the trait's default implementation
-        let field_kind = Self::block_kind(field_id);
-        if field_kind != BlockKind::Undefined {
-            field_kind
-        } else {
-            Self::block_kind(kind_id)
-        }
+    /// Context-specific block override.
+    ///
+    /// Return `None` to use the generated field/node default. Return
+    /// `Some(BlockKind::Undefined)` to intentionally suppress block creation.
+    fn block_kind_for_child(
+        _kind_id: u16,
+        _field_id: u16,
+        _parent_kind_id: u16,
+    ) -> Option<BlockKind> {
+        None
     }
 
     fn initial_scopes<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> ScopeStack<'tcx> {
         ScopeStack::new(cc.arena(), &cc.interner)
     }
 
-    /// Check if a parse node is a test attribute that should cause the next item to be skipped.
-    /// Override this for language-specific test attribute detection.
-    /// Default implementation returns false.
-    fn is_test_attribute(node: &dyn ParseNode, source: &[u8]) -> bool {
+    fn hir_build_action(node: &dyn ParseNode, source: &[u8]) -> HirBuildAction {
         let _ = (node, source);
-        false
+        HirBuildAction::Build
     }
 
     fn collect_symbols<'tcx>(
@@ -469,19 +456,19 @@ macro_rules! define_lang {
 
             impl $crate::lang_def::Language for [<Lang $suffix>] {
                 fn manifest_name() -> &'static str {
-                    <Self as $crate::lang_def::LanguageHooks>::manifest_file()
+                    <Self as $crate::lang_def::LanguageDefinition>::manifest_file()
                 }
 
                 fn container_dirs() -> &'static [&'static str] {
-                    <Self as $crate::lang_def::LanguageHooks>::container_dirs()
+                    <Self as $crate::lang_def::LanguageDefinition>::container_dirs()
                 }
 
                 fn parse(text: impl AsRef<[u8]>) -> $crate::Result<Box<dyn $crate::lang_def::ParseTree>> {
-                    <Self as $crate::lang_def::LanguageHooks>::parse_source(text.as_ref())
+                    <Self as $crate::lang_def::LanguageDefinition>::parse_source(text.as_ref())
                 }
 
                 fn collect_init<'tcx>(cc: &'tcx $crate::context::CompileCtxt<'tcx>) -> $crate::scope::ScopeStack<'tcx> {
-                    <Self as $crate::lang_def::LanguageHooks>::initial_scopes(cc)
+                    <Self as $crate::lang_def::LanguageDefinition>::initial_scopes(cc)
                 }
 
                 fn collect_symbols<'tcx>(
@@ -490,7 +477,7 @@ macro_rules! define_lang {
                     scope_stack: $crate::scope::ScopeStack<'tcx>,
                     options: &$crate::resolve::ResolveOptions,
                 ) -> &'tcx $crate::scope::Scope<'tcx> {
-                    <Self as $crate::lang_def::LanguageHooks>::collect_symbols(unit, node, scope_stack, options)
+                    <Self as $crate::lang_def::LanguageDefinition>::collect_symbols(unit, node, scope_stack, options)
                 }
 
                 fn bind_symbols<'tcx>(
@@ -499,11 +486,11 @@ macro_rules! define_lang {
                     globals: &'tcx $crate::scope::Scope<'tcx>,
                     options: &$crate::resolve::ResolveOptions,
                 ) {
-                    <Self as $crate::lang_def::LanguageHooks>::bind_symbols(unit, node, globals, options);
+                    <Self as $crate::lang_def::LanguageDefinition>::bind_symbols(unit, node, globals, options);
                 }
 
                 fn extensions() -> &'static [&'static str] {
-                    <Self as $crate::lang_def::LanguageHooks>::file_extensions()
+                    <Self as $crate::lang_def::LanguageDefinition>::file_extensions()
                 }
 
                 fn hir_kind(kind_id: u16) -> $crate::ir::HirKind {
@@ -525,11 +512,20 @@ macro_rules! define_lang {
                 }
 
                 fn block_kind_with_parent(kind_id: u16, field_id: u16, parent_kind_id: u16) -> $crate::graph_builder::BlockKind {
-                    <Self as $crate::lang_def::LanguageHooks>::block_kind_for_child(kind_id, field_id, parent_kind_id)
+                    if let Some(kind) = <Self as $crate::lang_def::LanguageDefinition>::block_kind_for_child(kind_id, field_id, parent_kind_id) {
+                        kind
+                    } else {
+                        let field_kind = Self::block_kind(field_id);
+                        if field_kind != $crate::graph_builder::BlockKind::Undefined {
+                            field_kind
+                        } else {
+                            Self::block_kind(kind_id)
+                        }
+                    }
                 }
 
-                fn is_test_attribute(node: &dyn $crate::lang_def::ParseNode, source: &[u8]) -> bool {
-                    <Self as $crate::lang_def::LanguageHooks>::is_test_attribute(node, source)
+                fn hir_build_action(node: &dyn $crate::lang_def::ParseNode, source: &[u8]) -> $crate::lang_def::HirBuildAction {
+                    <Self as $crate::lang_def::LanguageDefinition>::hir_build_action(node, source)
                 }
 
                 fn token_str(kind_id: u16) -> Option<&'static str> {
@@ -559,11 +555,7 @@ macro_rules! define_lang {
             }
 
             pub trait [<AstVisitor $suffix>]<'a, T> {
-                /// Visit a node, dispatching to the appropriate method based on token ID
-                /// NOTE: scope stack is for lookup convenience, the actual namespace in
-                /// which names should be mangled and declared.
-                /// So namespace is semantic home scope for name resolution/mangling,
-                /// independent of the push stack.
+                /// Visit a node and dispatch by token id.
                 fn visit_node(
                     &mut self,
                     unit: &$crate::context::CompileUnit<'a>,
@@ -582,7 +574,7 @@ macro_rules! define_lang {
                     }
                 }
 
-                /// Visit all children of a node
+                /// Visit all children.
                 fn visit_children(
                     &mut self,
                     unit: &$crate::context::CompileUnit<'a>,
@@ -591,14 +583,13 @@ macro_rules! define_lang {
                     namespace: &'a $crate::scope::Scope<'a>,
                     parent: Option<&$crate::symbol::Symbol>,
                 ) {
-                    // Iterate directly over child IDs to avoid Vec/SmallVec allocation
                     for &child_id in node.child_ids() {
                         let child = unit.hir_node(child_id);
                         self.visit_node(unit, &child, scopes, namespace, parent);
                     }
                 }
 
-                /// Handle unknown/unrecognized token types
+                /// Default handler for unrecognized token ids.
                 fn visit_unknown(
                     &mut self,
                     unit: &$crate::context::CompileUnit<'a>,
@@ -610,7 +601,6 @@ macro_rules! define_lang {
                     self.visit_children(unit, node, scopes, namespace, parent);
                 }
 
-                // Generate visit methods for each token type with visit_ prefix
                 $(
                     $crate::paste::paste! {
                         fn [<visit_ $const>](

@@ -228,7 +228,7 @@ fn get_primitive_type<'tcx>(scopes: &BinderScopes<'tcx>, name: &str) -> Option<&
 
 /// Check if a node is syntactic noise (punctuation, keywords, etc.)
 fn is_syntactic_noise(_unit: &CompileUnit, node: &HirNode) -> bool {
-    matches!(node.kind(), HirKind::Text | HirKind::Comment)
+    node.is_trivia()
 }
 
 /// Infer block type: type of last expression in block

@@ -359,14 +359,12 @@ pub fn collect_symbols_with<'a, L: Language>(
 /// other threads can finish both IR build AND collection for their files.
 pub fn build_and_collect_symbols<'a, L: Language>(
     cc: &'a CompileCtxt<'a>,
-    ir_config: llmcc_core::ir_builder::IrBuildOption,
     resolver_config: &ResolveOptions,
 ) -> Result<&'a Scope<'a>> {
-    use llmcc_core::ir_builder::{build_llmcc_ir_inner, reset_ir_build_counters};
+    use llmcc_core::ir_builder::build_file_hir;
     use std::sync::atomic::Ordering;
 
     let total_start = Instant::now();
-    reset_ir_build_counters();
     let unit_count = cc.files.len();
     tracing::info!(unit_count, "starting fused IR build + symbol collection");
 
@@ -385,13 +383,7 @@ pub fn build_and_collect_symbols<'a, L: Language>(
         // Phase 1: IR Build
         let ir_start = Instant::now();
 
-        let file_path = cc.file_path(i).map(|p| p.to_string());
-        let file_bytes = cc.files[i].content();
-
-        let parse_tree = cc.parse_tree(i)?;
-
-        let file_root_id =
-            build_llmcc_ir_inner::<L>(file_path, file_bytes, parse_tree, &cc.arena, ir_config)?;
+        let file_root_id = build_file_hir::<L>(cc.compile_unit(i))?;
 
         // Register the file root ID immediately so collection can use it
         cc.set_file_root_id(i, file_root_id);

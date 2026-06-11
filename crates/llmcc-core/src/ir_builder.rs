@@ -1,121 +1,111 @@
-//! IR Builder: Transform parse trees into High-level Intermediate Representation (HIR).
+//! Build language-neutral HIR from parse trees.
 //!
-//! Uses per-unit arenas for parallel building, then merges results into global context.
-//! This avoids locks during parallel builds and ensures deterministic ID allocation.
+//! Each file is built into the shared arena independently, then its root HIR id
+//! is registered on the compilation context.
 use smallvec::SmallVec;
-use std::marker::PhantomData;
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;
 
 use rayon::prelude::*;
 
-use crate::Result;
-use crate::context::CompileCtxt;
-pub use crate::id::{next_hir_id, reset_hir_id_counter};
+use crate::context::{CompileCtxt, CompileUnit};
+use crate::id::next_hir_id;
 use crate::ir::{
     Arena, HirBase, HirFile, HirId, HirIdent, HirInternal, HirKind, HirNode, HirScope, HirText,
 };
-use crate::lang_def::{Language, NO_FIELD_ID, ParseNode, ParseTree};
+use crate::lang_def::{HirBuildAction, Language, NO_FIELD_ID, ParseChild, ParseNode};
+use crate::{Error, ErrorKind, Result};
 
-// Timing counters for IR building
-static IR_BUILD_CPU_TIME_NS: AtomicU64 = AtomicU64::new(0);
+type HirChildIds = SmallVec<[HirId; 4]>;
+type HirChildren<'unit> = SmallVec<[HirNode<'unit>; 8]>;
 
-pub fn reset_ir_build_counters() {
-    IR_BUILD_CPU_TIME_NS.store(0, Ordering::Relaxed);
+/// Options for building HIR from parse trees.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct HirBuildOptions {
+    sequential: bool,
 }
 
-pub fn get_ir_build_cpu_time_ms() -> f64 {
-    IR_BUILD_CPU_TIME_NS.load(Ordering::Relaxed) as f64 / 1_000_000.0
-}
-
-/// Configuration for IR building behavior.
-///
-/// This configuration controls how the IR builder processes files.
-/// By default, files are processed in parallel for better performance.
-#[derive(Debug, Clone, Copy, Default)]
-pub struct IrBuildOption {
-    /// When true, process files sequentially to ensure deterministic ordering.
-    /// When false (default), process files in parallel for better performance.
-    pub sequential: bool,
-}
-
-impl IrBuildOption {
-    /// Create a new IrBuildOption with default settings.
+impl HirBuildOptions {
+    /// Create options that build files in parallel.
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Set whether to process files sequentially.
+    /// Create options that build files sequentially.
+    pub fn sequential() -> Self {
+        Self { sequential: true }
+    }
+
+    /// Choose whether files are built sequentially.
     pub fn with_sequential(mut self, sequential: bool) -> Self {
         self.sequential = sequential;
         self
     }
+
+    /// Return true when files should be built one at a time.
+    pub fn is_sequential(self) -> bool {
+        self.sequential
+    }
 }
 
-/// IR builder that transforms parse trees into HIR nodes using a per-unit arena.
-struct HirBuilder<'unit, L> {
-    /// Per-unit arena for allocating all HIR nodes during this build
+/// Timings collected while building HIR for a compilation context.
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub struct HirBuildMetrics {
+    /// Wall time spent building files.
+    pub build_wall_ms: f64,
+    /// Sum of per-file build CPU time across worker threads.
+    pub build_cpu_ms: f64,
+    /// Time spent publishing built root ids back to the compilation context.
+    pub publish_ms: f64,
+    /// End-to-end HIR build time.
+    pub total_ms: f64,
+}
+
+/// Builds the HIR tree for one source file.
+struct FileHirBuilder<'unit> {
     arena: &'unit Arena<'unit>,
-    /// Optional file path for the File node
-    file_path: Option<String>,
-    /// Source file content bytes for text extraction
+    file_path: String,
     file_bytes: &'unit [u8],
-    /// Language-specific handler (used via PhantomData for compile-time only)
-    _language: PhantomData<L>,
 }
 
-impl<'unit, L: Language> HirBuilder<'unit, L> {
-    /// Create a new HIR builder for a single file using a per-unit arena.
-    fn new(
-        arena: &'unit Arena<'unit>,
-        file_path: Option<String>,
-        file_bytes: &'unit [u8],
-        _config: IrBuildOption,
-    ) -> Self {
+impl<'unit> FileHirBuilder<'unit> {
+    fn new(arena: &'unit Arena<'unit>, file_path: String, file_bytes: &'unit [u8]) -> Self {
         Self {
             arena,
             file_path,
             file_bytes,
-            _language: PhantomData,
         }
     }
 
-    /// Build HIR nodes from a parse tree root.
-    fn build(self, root: &dyn ParseNode) -> HirNode<'unit> {
-        self.build_node(root, None, NO_FIELD_ID)
+    fn build<L: Language>(self, root: &dyn ParseNode) -> Result<HirNode<'unit>> {
+        self.build_node::<L>(root, None, NO_FIELD_ID)
     }
 
-    /// Recursively build a single HIR node and all descendants, allocating directly into arena.
-    /// `field_id` is passed from the parent's child collection (avoids O(n) lookup per node).
-    fn build_node(
+    fn build_node<L: Language>(
         &self,
         node: &dyn ParseNode,
-        parent: Option<HirId>,
+        parent_id: Option<HirId>,
         field_id: u16,
-    ) -> HirNode<'unit> {
+    ) -> Result<HirNode<'unit>> {
         let id = next_hir_id();
         let kind_id = node.kind_id();
         let kind = L::hir_kind(kind_id);
 
-        // Skip collecting children for leaf node types (Text, Identifier, Comment)
-        // This provides a massive performance improvement for large array/object literals
-        let children = if matches!(kind, HirKind::Text | HirKind::Identifier | HirKind::Comment) {
-            SmallVec::new()
+        let children = if kind.is_leaf() {
+            HirChildren::new()
         } else {
-            self.collect_children(node, id)
+            self.build_children::<L>(node, id)?
         };
-        let child_ids: SmallVec<[HirId; 4]> = children.iter().map(|n| n.id()).collect();
-        let base = self.make_base(id, parent, node, kind, child_ids, field_id);
+        let child_ids: HirChildIds = children.iter().map(|node| node.id()).collect();
+        let base = self.make_base(id, parent_id, node, kind, child_ids, field_id);
 
         let hir_node = match kind {
             HirKind::File => {
-                let path = self.file_path.clone().unwrap_or_default();
-                let hir_file = HirFile::new(base, path);
+                let hir_file = HirFile::new(base, self.file_path.clone());
                 let allocated = self.arena.alloc(hir_file);
                 HirNode::File(allocated)
             }
             HirKind::Text | HirKind::Comment => {
-                let text = self.get_text(&base);
+                let text = self.source_text(&base)?;
                 let hir_text = HirText::new(base, text);
                 let allocated = self.arena.alloc(hir_text);
                 HirNode::Text(allocated)
@@ -126,83 +116,75 @@ impl<'unit, L: Language> HirBuilder<'unit, L> {
                 HirNode::Internal(allocated)
             }
             HirKind::Scope => {
-                // Find the first identifier child
-                let ident = children
-                    .iter()
-                    .map(|child| {
-                        if let HirNode::Ident(ident_node) = child {
-                            *ident_node
-                        } else {
-                            let text = self.get_text(&base);
-
-                            let hir_ident = HirIdent::new(base.clone(), text);
-                            self.arena.alloc(hir_ident)
-                        }
-                    })
-                    .next();
+                let ident = children.iter().find_map(|child| match child {
+                    HirNode::Ident(ident_node) => Some(*ident_node),
+                    _ => None,
+                });
                 let hir_scope = HirScope::new(base, ident);
                 let allocated = self.arena.alloc(hir_scope);
                 HirNode::Scope(allocated)
             }
             HirKind::Identifier => {
-                let text = self.get_text(&base);
+                let text = self.source_text(&base)?;
                 let hir_ident = HirIdent::new(base, text);
                 let allocated = self.arena.alloc(hir_ident);
                 HirNode::Ident(allocated)
             }
-            _other => panic!("unsupported HIR kind for node {}", node.debug_label()),
+            _ => {
+                return Err(Error::new(
+                    ErrorKind::InvariantViolation,
+                    "language mapped parse node to an unsupported HIR kind",
+                )
+                .with_operation("build_hir_node")
+                .with_context("hir_kind", kind.to_string())
+                .with_context("parse_node", node.debug_label()));
+            }
         };
 
         // Allocate the HirNode wrapper with its ID for O(1) lookup
-        *self.arena.alloc_with_id(id.0, hir_node)
+        Ok(*self.arena.alloc_with_id(id.0, hir_node))
     }
 
-    /// Collect all valid child nodes from a parse node.
-    /// Filters out test code (items with #[test] or #[cfg(test)] attributes).
-    /// Uses cursor-based iteration to get field_id during traversal (O(n) total instead of O(n²)).
-    fn collect_children(
+    fn build_children<L: Language>(
         &self,
         node: &dyn ParseNode,
         parent_id: HirId,
-    ) -> SmallVec<[HirNode<'unit>; 8]> {
-        let mut child_nodes = SmallVec::new();
+    ) -> Result<HirChildren<'unit>> {
+        let mut children = HirChildren::new();
         let mut skip_next = false;
 
-        // Use efficient cursor-based collection that provides field_id during iteration
-        let children_with_fields = node.children_with_fields();
-
-        for child_with_field in children_with_fields {
-            let child = child_with_field.node;
-            let field_id = child_with_field.field_id;
-
-            // Check if this is a test attribute that should cause the next item to be skipped
-            if L::is_test_attribute(child.as_ref(), self.file_bytes) {
-                skip_next = true;
-                // Skip the attribute for cleaner HIR
-                continue;
-            }
-
-            // Skip items that follow test attributes
+        for ParseChild {
+            node: child,
+            field_id,
+        } in node.children_with_fields()
+        {
             if skip_next {
                 skip_next = false;
                 continue;
             }
 
-            let child_node = self.build_node(child.as_ref(), Some(parent_id), field_id);
-            child_nodes.push(child_node);
+            match L::hir_build_action(child.as_ref(), self.file_bytes) {
+                HirBuildAction::Build => {}
+                HirBuildAction::Skip => continue,
+                HirBuildAction::SkipNextSibling => {
+                    skip_next = true;
+                    continue;
+                }
+            }
+
+            let child_node = self.build_node::<L>(child.as_ref(), Some(parent_id), field_id)?;
+            children.push(child_node);
         }
-        child_nodes
+        Ok(children)
     }
 
-    /// Construct the base metadata for a HIR node.
-    /// `field_id` is passed from parent's child collection (already looked up via cursor).
     fn make_base(
         &self,
         id: HirId,
-        parent: Option<HirId>,
+        parent_id: Option<HirId>,
         node: &dyn ParseNode,
         kind: HirKind,
-        children: SmallVec<[HirId; 4]>,
+        children: HirChildIds,
         field_id: u16,
     ) -> HirBase {
         let kind_id = node.kind_id();
@@ -212,7 +194,7 @@ impl<'unit, L: Language> HirBuilder<'unit, L> {
 
         HirBase {
             id,
-            parent,
+            parent: parent_id,
             kind_id,
             start_byte,
             end_byte,
@@ -223,111 +205,123 @@ impl<'unit, L: Language> HirBuilder<'unit, L> {
         }
     }
 
-    /// Extract text content from source for a text-type node.
-    /// Allocates the string in the arena to avoid heap allocation.
-    fn get_text(&self, base: &HirBase) -> &'unit str {
+    fn source_text(&self, base: &HirBase) -> Result<&'unit str> {
         let start = base.start_byte;
         let end = base.end_byte;
-        if end > start && end <= self.file_bytes.len() {
-            match std::str::from_utf8(&self.file_bytes[start..end]) {
-                Ok(text) => self.arena.alloc_str(text),
-                Err(_) => {
-                    let lossy = String::from_utf8_lossy(&self.file_bytes[start..end]);
-                    self.arena.alloc_str(&lossy)
-                }
+
+        if start > end || end > self.file_bytes.len() {
+            return Err(Error::new(
+                ErrorKind::InvariantViolation,
+                "parse node byte range is outside the source file",
+            )
+            .with_operation("source_text")
+            .with_context("path", self.file_path.clone())
+            .with_context("range", format!("{start}..{end}"))
+            .with_context("source_len", self.file_bytes.len().to_string()));
+        }
+
+        if start == end {
+            return Ok("");
+        }
+
+        let bytes = &self.file_bytes[start..end];
+        match std::str::from_utf8(bytes) {
+            Ok(text) => Ok(self.arena.alloc_str(text)),
+            Err(_) => {
+                let lossy = String::from_utf8_lossy(bytes);
+                Ok(self.arena.alloc_str(&lossy))
             }
-        } else {
-            ""
         }
     }
 }
-/// Build IR for a single file with language-specific handling.
-/// Build IR for a single file (inner implementation).
-/// This is public for use by fused build+collect in the resolver.
-pub fn build_llmcc_ir_inner<'unit, L: Language>(
-    file_path: Option<String>,
-    file_bytes: &'unit [u8],
-    parse_tree: &'unit dyn ParseTree,
-    unit_arena: &'unit Arena<'unit>,
-    config: IrBuildOption,
-) -> Result<HirId> {
-    let root = parse_tree.root();
 
-    let builder = HirBuilder::<L>::new(unit_arena, file_path, file_bytes, config);
-    let root = builder.build(root.as_ref());
+/// Build HIR for a single source file and return its root node id.
+pub fn build_file_hir<'unit, L: Language>(unit: CompileUnit<'unit>) -> Result<HirId> {
+    let root = unit.parse_tree()?.root();
+    let path = unit.file_path().unwrap_or("<memory>").to_string();
+    let bytes = unit.file().content();
+
+    let builder = FileHirBuilder::new(&unit.cc.arena, path, bytes);
+    let root = builder.build::<L>(root.as_ref())?;
     Ok(root.id())
 }
 
-struct BuildResult {
+#[derive(Debug, Clone, Copy)]
+struct BuiltFile {
     /// Index of this file in the compile context
     index: usize,
     /// HirId of the file's root node
     file_root_id: HirId,
+    build_ns: u64,
 }
 
-/// Build IR for all files in the compile context.
-pub fn build_llmcc_ir<'tcx, L: Language>(
+/// Build HIR for all files in the compile context.
+pub fn build_hir<'tcx, L: Language>(
     cc: &'tcx CompileCtxt<'tcx>,
-    config: IrBuildOption,
-) -> Result<()> {
+    options: HirBuildOptions,
+) -> Result<HirBuildMetrics> {
     let total_start = Instant::now();
-    reset_ir_build_counters();
-
-    let build_one = |index: usize| -> Result<BuildResult> {
-        let build_start = Instant::now();
-
-        let file_path = cc.file_path(index).map(|p| p.to_string());
-        let file_bytes = cc.files[index].content();
-
-        let parse_tree = cc.parse_tree(index)?;
-
-        let file_root_id =
-            build_llmcc_ir_inner::<L>(file_path, file_bytes, parse_tree, &cc.arena, config)?;
-
-        IR_BUILD_CPU_TIME_NS.fetch_add(build_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
-
-        Ok(BuildResult {
-            index,
-            file_root_id,
-        })
-    };
 
     let parallel_start = Instant::now();
-    let results: Vec<Result<BuildResult>> = if config.sequential {
-        (0..cc.files.len()).map(build_one).collect()
+    let results: Vec<Result<BuiltFile>> = if options.is_sequential() {
+        (0..cc.files.len())
+            .map(|index| build_unit_hir::<L>(cc, index))
+            .collect()
     } else {
-        (0..cc.files.len()).into_par_iter().map(build_one).collect()
+        (0..cc.files.len())
+            .into_par_iter()
+            .map(|index| build_unit_hir::<L>(cc, index))
+            .collect()
     };
     let parallel_time = parallel_start.elapsed();
 
-    let collect_start = Instant::now();
-    // Collect results (no sorting needed - DashMap provides O(1) lookup by ID)
-    let results: Vec<BuildResult> = results.into_iter().collect::<Result<Vec<_>>>()?;
+    let publish_start = Instant::now();
+    // Collect results before publishing roots to the shared context.
+    let results: Vec<BuiltFile> = results.into_iter().collect::<Result<Vec<_>>>()?;
+    let build_cpu_ns = results.iter().map(|unit| unit.build_ns).sum::<u64>();
 
-    // Register all file start IDs
-    for BuildResult {
+    for BuiltFile {
         index,
         file_root_id,
+        build_ns: _,
     } in results
     {
         cc.set_file_root_id(index, file_root_id);
     }
 
-    // No sort needed: DashMap already provides O(1) lookup by ID
-    let collect_time = collect_start.elapsed();
+    let publish_time = publish_start.elapsed();
 
-    let total_ms = total_start.elapsed().as_secs_f64() * 1000.0;
-    let parallel_ms = parallel_time.as_secs_f64() * 1000.0;
-    let build_cpu_ms = get_ir_build_cpu_time_ms();
-    let collect_ms = collect_time.as_secs_f64() * 1000.0;
+    let metrics = HirBuildMetrics {
+        build_wall_ms: parallel_time.as_secs_f64() * 1000.0,
+        build_cpu_ms: build_cpu_ns as f64 / 1_000_000.0,
+        publish_ms: publish_time.as_secs_f64() * 1000.0,
+        total_ms: total_start.elapsed().as_secs_f64() * 1000.0,
+    };
 
     tracing::info!(
-        parallel_ms,
-        build_cpu_ms,
-        collect_ms,
-        total_ms,
-        "IR build complete"
+        build_wall_ms = metrics.build_wall_ms,
+        build_cpu_ms = metrics.build_cpu_ms,
+        publish_ms = metrics.publish_ms,
+        total_ms = metrics.total_ms,
+        "HIR build complete"
     );
 
-    Ok(())
+    Ok(metrics)
+}
+
+fn build_unit_hir<'tcx, L: Language>(
+    cc: &'tcx CompileCtxt<'tcx>,
+    index: usize,
+) -> Result<BuiltFile> {
+    let build_start = Instant::now();
+
+    let file_root_id = build_file_hir::<L>(cc.compile_unit(index))?;
+
+    let build_ns = build_start.elapsed().as_nanos() as u64;
+
+    Ok(BuiltFile {
+        index,
+        file_root_id,
+        build_ns,
+    })
 }

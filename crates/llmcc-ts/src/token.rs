@@ -1,10 +1,10 @@
-use llmcc_core::LanguageHooks;
+use llmcc_core::LanguageDefinition;
 use llmcc_core::graph_builder::BlockKind;
 use llmcc_core::ir::{HirKind, HirNode};
-use llmcc_core::lang_def::{Language, ParseNode, ParseTree, TreeSitterParseTree};
+use llmcc_core::lang_def::{ParseNode, ParseTree, TreeSitterParseTree};
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{SymKind, Symbol};
-use llmcc_core::{CompileCtxt, CompileUnit, Error, ResolveOptions, Result};
+use llmcc_core::{CompileCtxt, CompileUnit, Error, HirBuildAction, ResolveOptions, Result};
 
 #[allow(clippy::single_component_path_imports)]
 use tree_sitter_typescript;
@@ -13,18 +13,7 @@ use tree_sitter_typescript;
 // The generated file contains a define_lang! call that expands to LangTypeScript
 include!(concat!(env!("OUT_DIR"), "/typescript_tokens.rs"));
 
-impl LanguageHooks for LangTypeScript {
-    /// Block kind with parent context - handles special TypeScript cases
-    fn block_kind_for_child(kind_id: u16, field_id: u16, _parent_kind_id: u16) -> BlockKind {
-        // Default behavior: check field kind first, then node kind
-        let field_kind = <Self as Language>::block_kind(field_id);
-        if field_kind != BlockKind::Undefined {
-            field_kind
-        } else {
-            <Self as Language>::block_kind(kind_id)
-        }
-    }
-
+impl LanguageDefinition for LangTypeScript {
     #[rustfmt::skip]
     fn initial_scopes<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> ScopeStack<'tcx> {
         let stack = ScopeStack::new(cc.arena(), &cc.interner);
@@ -81,9 +70,7 @@ impl LanguageHooks for LangTypeScript {
         &["src", "lib", "dist", "build", "out", "source"]
     }
 
-    /// Check if the given parse node is a TypeScript test attribute.
-    /// Detects: @test, describe(), it(), test(), etc.
-    fn is_test_attribute(node: &dyn ParseNode, source: &[u8]) -> bool {
+    fn hir_build_action(node: &dyn ParseNode, source: &[u8]) -> HirBuildAction {
         let kind_id = node.kind_id();
 
         // Check for decorator nodes (e.g., @Test)
@@ -91,22 +78,27 @@ impl LanguageHooks for LangTypeScript {
             let start = node.start_byte();
             let end = node.end_byte();
             if end <= start || end > source.len() {
-                return false;
+                return HirBuildAction::Build;
             }
 
             let attr_text = match std::str::from_utf8(&source[start..end]) {
                 Ok(text) => text,
-                Err(_) => return false,
+                Err(_) => return HirBuildAction::Build,
             };
 
             // Check for test-related decorators
-            return attr_text.contains("@Test")
+            return if attr_text.contains("@Test")
                 || attr_text.contains("@test")
                 || attr_text.contains("@it")
-                || attr_text.contains("@describe");
+                || attr_text.contains("@describe")
+            {
+                HirBuildAction::SkipNextSibling
+            } else {
+                HirBuildAction::Build
+            };
         }
 
-        false
+        HirBuildAction::Build
     }
 
     fn collect_symbols<'tcx>(

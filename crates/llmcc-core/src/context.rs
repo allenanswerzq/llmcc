@@ -25,9 +25,9 @@ pub enum FileOrder {
     /// Sort by file size descending (better parallel load balancing for large projects).
     BySizeDescending,
 }
+use crate::id::reset_hir_id_counter;
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirBase, HirId, HirIdent, HirKind, HirNode};
-use crate::ir_builder::reset_hir_id_counter;
 use crate::lang_def::{Language, ParseTree};
 use crate::scope::Scope;
 use crate::symbol::{ScopeId, SymId, Symbol, reset_scope_id_counter, reset_symbol_id_counter};

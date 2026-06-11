@@ -7,11 +7,11 @@ pub mod context;
 pub mod file;
 pub mod graph;
 pub mod graph_builder;
-pub mod hir_query;
 pub mod id;
 pub mod interner;
 pub mod ir;
 pub mod ir_builder;
+pub mod ir_query;
 #[macro_use]
 pub mod lang_def;
 pub mod lang_registry;
@@ -29,16 +29,13 @@ pub use llmcc_error::{Error, ErrorKind, ErrorStatus, Result};
 pub use context::{CompileCtxt, CompileUnit, FileOrder};
 pub use graph::{ProjectGraph, UnitGraph, UnitNode};
 pub use graph_builder::{BlockRelation, GraphBuildConfig, build_llmcc_graph};
-pub use hir_query::HirQuery;
 pub use id::{
     BlockId, HirId, ScopeId, SymId, SymbolId, next_hir_id, reset_block_id_counter,
     reset_hir_id_counter, reset_scope_id_counter, reset_symbol_id_counter,
 };
-pub use ir_builder::{
-    IrBuildOption, build_llmcc_ir, build_llmcc_ir_inner, get_ir_build_cpu_time_ms,
-    reset_ir_build_counters,
-};
-pub use lang_def::{Language, LanguageHooks, NO_FIELD_ID, ParseChild};
+pub use ir_builder::{HirBuildMetrics, HirBuildOptions, build_file_hir, build_hir};
+pub use ir_query::HirQuery;
+pub use lang_def::{HirBuildAction, Language, LanguageDefinition, NO_FIELD_ID, ParseChild};
 pub use lang_registry::{LanguageHandler, LanguageHandlerImpl, LanguageRegistry};
 pub use meta::{ArchDepth, UnitMeta, UnitMetaBuilder};
 pub use paste;

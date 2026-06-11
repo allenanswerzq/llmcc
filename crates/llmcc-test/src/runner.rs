@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use llmcc_core::block::reset_block_id_counter;
 use llmcc_core::context::{CompileCtxt, CompileUnit};
 use llmcc_core::graph_builder::{BlockId, GraphBuildOption, build_llmcc_graph};
-use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
+use llmcc_core::ir_builder::{HirBuildOptions, build_hir};
 use llmcc_core::lang_def::Language;
 use llmcc_core::symbol::reset_symbol_id_counter;
 use llmcc_core::{ProjectGraph, ResolveOptions};
@@ -1421,8 +1421,8 @@ where
 
     // Use sequential mode when not parallel to ensure stable ordering
     let sequential = !options.parallel;
-    let ir_option = IrBuildOption::new().with_sequential(sequential);
-    build_llmcc_ir::<L>(&cc, ir_option)?;
+    let ir_options = HirBuildOptions::new().with_sequential(sequential);
+    build_hir::<L>(&cc, ir_options)?;
 
     let resolve_options = ResolveOptions::default()
         .with_print_ir(options.print_ir)
