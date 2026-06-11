@@ -31,7 +31,7 @@ pub use ir_builder::{
     IrBuildOption, build_llmcc_ir, build_llmcc_ir_inner, get_ir_build_cpu_time_ms, next_hir_id,
     reset_ir_build_counters,
 };
-pub use lang_def::{ChildWithFieldId, LanguageTrait, LanguageTraitImpl};
+pub use lang_def::{ChildWithFieldId, LanguageImpl, LanguageTrait};
 pub use lang_registry::{LanguageHandler, LanguageHandlerImpl, LanguageRegistry};
 pub use meta::{ArchDepth, UnitMeta, UnitMetaBuilder};
 pub use paste;

@@ -1,21 +1,15 @@
 //! llmcc command-line interface.
 //!
-pub mod discovery;
-pub mod options;
-pub mod output;
-pub mod pipeline;
-pub mod profile;
+use clap::ValueEnum;
 
-use llmcc_core::Result;
-use llmcc_core::lang_def::LanguageTraitImpl;
+pub mod runner;
+
 use llmcc_dot::ComponentDepth;
 
-pub use options::{CommonTestOptions, GraphOptions, ProcessingOptions};
-pub use pipeline::process_files;
-pub use profile::profile_phase;
+pub use runner::Runner;
 
 /// Options for running llmcc.
-pub struct LlmccOptions {
+pub struct RunnerOptions {
     pub files: Vec<String>,
     pub dirs: Vec<String>,
     pub output: Option<String>,
@@ -28,16 +22,12 @@ pub struct LlmccOptions {
     pub short_labels: bool,
 }
 
-/// Main entry point
-pub fn run_main<L: LanguageTraitImpl>(opts: &LlmccOptions) -> Result<Option<String>> {
-    let extensions: std::collections::HashSet<&str> =
-        L::supported_extensions().iter().copied().collect();
-
-    let files = discovery::discover_files(opts, &extensions)?;
-
-    if files.is_empty() {
-        return Ok(None);
-    }
-
-    process_files::<L>(opts, &files)
+#[derive(Clone, Copy, Debug, ValueEnum)]
+#[value(rename_all = "lower")]
+pub enum Language {
+    Rust,
+    #[value(alias = "ts")]
+    Typescript,
+    #[value(alias = "c++", alias = "c")]
+    Cpp,
 }

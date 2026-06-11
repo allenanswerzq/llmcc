@@ -7,7 +7,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::lang_def::{LanguageTraitImpl, ParseTree};
+use crate::lang_def::{LanguageImpl, ParseTree};
 
 /// Object-safe language handler trait.
 /// This wraps static `LanguageTrait` methods into dynamic dispatch.
@@ -30,7 +30,7 @@ pub trait LanguageHandler: Send + Sync {
     fn parse(&self, text: &[u8]) -> Option<Box<dyn ParseTree>>;
 }
 
-/// A language handler implementation that wraps a LanguageTraitImpl.
+/// A language handler implementation that wraps a LanguageImpl.
 pub struct LanguageHandlerImpl<L> {
     _marker: std::marker::PhantomData<L>,
     name: &'static str,
@@ -38,7 +38,7 @@ pub struct LanguageHandlerImpl<L> {
 
 impl<L> LanguageHandlerImpl<L>
 where
-    L: LanguageTraitImpl,
+    L: LanguageImpl,
 {
     /// Create a new handler for the given language
     pub fn new(name: &'static str) -> Self {
@@ -51,14 +51,14 @@ where
 
 impl<L> LanguageHandler for LanguageHandlerImpl<L>
 where
-    L: LanguageTraitImpl + Send + Sync + 'static,
+    L: LanguageImpl + Send + Sync + 'static,
 {
     fn name(&self) -> &'static str {
         self.name
     }
 
     fn extensions(&self) -> &'static [&'static str] {
-        L::supported_extensions()
+        L::extensions()
     }
 
     fn manifest_name(&self) -> &'static str {
@@ -104,10 +104,10 @@ impl LanguageRegistry {
         }
     }
 
-    /// Register a language by its LanguageTraitImpl type
+    /// Register a language by its LanguageImpl type
     pub fn register_language<L>(&mut self, name: &'static str)
     where
-        L: LanguageTraitImpl + Send + Sync + 'static,
+        L: LanguageImpl + Send + Sync + 'static,
     {
         let handler = Arc::new(LanguageHandlerImpl::<L>::new(name));
         self.register(handler);

@@ -1,7 +1,4 @@
-use std::time::Instant;
-
-use clap::ArgGroup;
-use clap::Parser;
+use clap::{ArgGroup, Args, Parser};
 
 #[cfg(not(target_env = "msvc"))]
 #[global_allocator]
@@ -11,22 +8,15 @@ static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-use llmcc::LlmccOptions;
-use llmcc::run_main;
+use llmcc::Language;
+use llmcc::Runner;
+use llmcc::RunnerOptions;
 use llmcc_core::Result;
-use llmcc_cpp::LangCpp;
 use llmcc_dot::ComponentDepth;
-use llmcc_rust::LangRust;
-use llmcc_ts::LangTypeScript;
 
-#[derive(Parser, Debug)]
-#[command(
-    name = "llmcc",
-    about = "llmcc: zoom in, zoom out, understand everything",
-    version,
-    group = ArgGroup::new("inputs").required(true).args(["files", "dirs"])
-)]
-pub struct Cli {
+#[derive(Args, Debug)]
+#[command(group = ArgGroup::new("inputs").required(true).args(["files", "dirs"]))]
+struct InputArgs {
     /// Individual files to compile (repeatable)
     #[arg(
         short = 'f',
@@ -48,25 +38,24 @@ pub struct Cli {
         conflicts_with = "files"
     )]
     dirs: Vec<String>,
+}
 
-    /// Language to use: 'rust', 'typescript' (or 'ts'), 'cpp'
-    #[arg(long, value_name = "LANG", default_value = "rust")]
-    lang: String,
-
+#[derive(Args, Debug)]
+struct RenderArgs {
     /// Print intermediate representation (IR)
-    #[arg(long, default_value_t = false)]
+    #[arg(long)]
     print_ir: bool,
 
     /// Print basic block graph
-    #[arg(long, default_value_t = false)]
+    #[arg(long)]
     print_block: bool,
 
     /// Render a DOT graph for visualization
-    #[arg(long, default_value_t = false)]
+    #[arg(long)]
     graph: bool,
 
     /// Component grouping depth for graph visualization (0=flat, 1=crate, 2=module, 3=file)
-    #[arg(long = "depth", default_value = "3")]
+    #[arg(long = "depth", default_value_t = 3)]
     component_depth: usize,
 
     /// Show only top K nodes by PageRank score
@@ -80,74 +69,64 @@ pub struct Cli {
     /// Use shortened labels (module name only, without crate prefix)
     #[arg(long = "short-labels")]
     short_labels: bool,
+}
+
+#[derive(Parser, Debug)]
+#[command(
+    name = "llmcc",
+    about = "llmcc: multi-depth architecture views for code understanding and generation in extremely fast speed",
+    version
+)]
+pub struct Cli {
+    #[command(flatten)]
+    input: InputArgs,
+
+    /// Language to use: rust, typescript (ts), cpp (c++, c)
+    #[arg(long, value_name = "LANG", value_enum, default_value = "rust")]
+    lang: Language,
+
+    #[command(flatten)]
+    render: RenderArgs,
 
     /// Output file path (writes to file instead of stdout)
     #[arg(short = 'o', long = "output", value_name = "FILE")]
     output: Option<String>,
 }
 
-pub fn run(args: Cli) -> Result<()> {
-    let total_start = Instant::now();
+impl Cli {
+    fn into_runner(self) -> Runner {
+        let Cli {
+            input,
+            lang,
+            render,
+            output,
+        } = self;
 
-    // Initialize tracing subscriber for logging
-    if std::env::var("RUST_LOG").is_ok() {
-        tracing_subscriber::fmt()
-            .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-            .with_writer(std::io::stderr)
-            .init();
+        let options = RunnerOptions {
+            files: input.files,
+            dirs: input.dirs,
+            output,
+            print_ir: render.print_ir,
+            print_block: render.print_block,
+            graph: render.graph,
+            component_depth: ComponentDepth::from_number(render.component_depth),
+            pagerank_top_k: render.pagerank_top_k,
+            cluster_by_crate: render.cluster_by_crate,
+            short_labels: render.short_labels,
+        };
+
+        Runner::new(lang, options)
     }
-
-    let opts = LlmccOptions {
-        files: args.files,
-        dirs: args.dirs,
-        output: args.output.clone(),
-        print_ir: args.print_ir,
-        print_block: args.print_block,
-        graph: args.graph,
-        component_depth: ComponentDepth::from_number(args.component_depth),
-        pagerank_top_k: args.pagerank_top_k,
-        cluster_by_crate: args.cluster_by_crate,
-        short_labels: args.short_labels,
-    };
-
-    let result = match args.lang.as_str() {
-        "rust" => run_main::<LangRust>(&opts),
-        "typescript" | "ts" => run_main::<LangTypeScript>(&opts),
-        "cpp" | "c++" | "c" => run_main::<LangCpp>(&opts),
-        _ => {
-            return Err(format!(
-                "Unknown language: {}. Use 'rust', 'typescript', or 'cpp'",
-                args.lang
-            )
-            .into());
-        }
-    };
-
-    match result {
-        Ok(Some(output)) => {
-            if let Some(ref path) = args.output {
-                std::fs::write(path, &output)?;
-                tracing::info!(path, "output written");
-            } else {
-                println!("{output}");
-            }
-        }
-        Ok(None) => {
-            // No output requested (e.g., print-ir or print-block mode)
-        }
-        Err(e) => {
-            eprintln!("Error: {e}");
-            tracing::error!(error = %e, "execution failed");
-        }
-    }
-
-    let total_secs = total_start.elapsed().as_secs_f64();
-    tracing::info!(total_secs, "complete");
-    eprintln!("Total time: {total_secs:.2}s");
-    Ok(())
 }
 
 pub fn main() -> Result<()> {
-    let args = Cli::parse();
-    run(args)
+    let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"));
+
+    tracing_subscriber::fmt()
+        .with_env_filter(env_filter)
+        .with_writer(std::io::stderr)
+        .init();
+
+    Cli::parse().into_runner().execute()
 }

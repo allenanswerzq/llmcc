@@ -1,4 +1,4 @@
-use llmcc_core::LanguageTraitImpl;
+use llmcc_core::LanguageImpl;
 use llmcc_core::graph_builder::BlockKind;
 use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::lang_def::{LanguageTrait, ParseNode, ParseTree, TreeSitterParseTree};
@@ -14,7 +14,7 @@ use tree_sitter_cpp;
 // The generated file contains a define_lang! call that expands to LangCpp
 include!(concat!(env!("OUT_DIR"), "/cpp_tokens.rs"));
 
-impl LanguageTraitImpl for LangCpp {
+impl LanguageImpl for LangCpp {
     /// Block kind with parent context - handles special C++ cases
     fn block_kind_with_parent_impl(kind_id: u16, field_id: u16, _parent_kind_id: u16) -> BlockKind {
         // Default behavior: check field kind first, then node kind

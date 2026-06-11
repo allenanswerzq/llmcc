@@ -6,7 +6,7 @@ use llmcc_core::interner::InternPool;
 use llmcc_core::ir::HirScope;
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
 use llmcc_core::symbol::{ScopeId, SymKind, SymKindSet, Symbol};
-use llmcc_core::{CompileCtxt, LanguageTraitImpl};
+use llmcc_core::{CompileCtxt, LanguageImpl};
 
 use rayon::prelude::*;
 
@@ -292,7 +292,7 @@ impl<'a> BinderScopes<'a> {
 ///
 /// The binding phase resolves all symbol references and establishes relationships between symbols
 /// across compilation units. This happens after collection when all symbols have been discovered.
-pub fn bind_symbols_with<'a, L: LanguageTraitImpl>(
+pub fn bind_symbols_with<'a, L: LanguageImpl>(
     cc: &'a CompileCtxt<'a>,
     globals: &'a Scope<'a>,
     config: &ResolverOption,

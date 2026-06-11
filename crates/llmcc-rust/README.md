@@ -14,7 +14,7 @@ This crate provides Rust language support for the **llmcc** project. It implemen
 The analysis pipeline consists of three main stages, orchestrated by the `LangRust` implementation in `src/token.rs`.
 
 ### 1. Parsing (`src/token.rs`)
-The entry point for the crate. It defines the `LangRust` struct which implements the `LanguageTraitImpl`.
+The entry point for the crate. It defines the `LangRust` struct which implements the `LanguageImpl`.
 - Wraps `tree-sitter-rust` to produce a concrete syntax tree.
 - Maps Tree-sitter nodes to LLMCC's internal HIR (High-level Intermediate Representation).
 - Auto-generates token definitions via `build.rs`.

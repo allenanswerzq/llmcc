@@ -1,10 +1,10 @@
 # llmcc
 
-**multi-depth architecture view for codebases in extremely fast speed**
+**multi-depth architecture views for code understanding and generation in extremely fast speed**
 
 **problem**: grep and rag based solution don't scale well: slow searches, token cost, stale indexes, expensive cloud infra etc. they dont work too well on large codebases.
 
-llmcc tries a different approach. It builds a multi-depth architecture view that lets agents *zoom out* to see the big picture, *zoom in* to see extact symbols they need, such that agents can have a highly comprehensive understanding in very fast speed and token efficient, **no complex RAG stuff**, fully agentic method, its like grep but for architecture.
+llmcc tries a different approach. It builds multi-depth architecture views for code understanding and generation in extremely fast speed, so agents can see the big picture and precise symbols without complex RAG infrastructure.
 
 ## Supported Languages
 

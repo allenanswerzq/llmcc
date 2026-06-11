@@ -381,7 +381,7 @@ pub trait LanguageTrait {
     fn trait_field() -> u16;
 
     /// Get the list of file extensions this language supports.
-    fn supported_extensions() -> &'static [&'static str];
+    fn extensions() -> &'static [&'static str];
 
     fn collect_init<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> ScopeStack<'tcx>;
 
@@ -403,7 +403,7 @@ pub trait LanguageTrait {
 }
 
 /// Extension trait for providing custom parse implementations.
-pub trait LanguageTraitImpl: LanguageTrait {
+pub trait LanguageImpl: LanguageTrait {
     /// Custom parse implementation for this language.
     fn parse_impl(text: impl AsRef<[u8]>) -> Option<Box<dyn ParseTree>>;
 
@@ -487,23 +487,23 @@ macro_rules! define_lang {
             /// Language Trait Implementation
             impl $crate::lang_def::LanguageTrait for [<Lang $suffix>] {
                 fn manifest_name() -> &'static str {
-                    <Self as $crate::lang_def::LanguageTraitImpl>::manifest_name_impl()
+                    <Self as $crate::lang_def::LanguageImpl>::manifest_name_impl()
                 }
 
                 fn container_dirs() -> &'static [&'static str] {
-                    <Self as $crate::lang_def::LanguageTraitImpl>::container_dirs_impl()
+                    <Self as $crate::lang_def::LanguageImpl>::container_dirs_impl()
                 }
 
                 /// Parse source code and return a generic parse tree.
                 ///
-                /// First tries the custom parse_impl from LanguageTraitImpl.
+                /// First tries the custom parse_impl from LanguageImpl.
                 /// If that returns None, falls back to tree-sitter parsing if available.
                 fn parse(text: impl AsRef<[u8]>) -> Option<Box<dyn $crate::lang_def::ParseTree>> {
-                    <Self as $crate::lang_def::LanguageTraitImpl>::parse_impl(text.as_ref())
+                    <Self as $crate::lang_def::LanguageImpl>::parse_impl(text.as_ref())
                 }
 
                 fn collect_init<'tcx>(cc: &'tcx $crate::context::CompileCtxt<'tcx>) -> $crate::scope::ScopeStack<'tcx> {
-                    <Self as $crate::lang_def::LanguageTraitImpl>::collect_init_impl(cc)
+                    <Self as $crate::lang_def::LanguageImpl>::collect_init_impl(cc)
                 }
 
                 fn collect_symbols<'tcx, C>(
@@ -512,7 +512,7 @@ macro_rules! define_lang {
                     scope_stack: $crate::scope::ScopeStack<'tcx>,
                     config: &C,
                 ) -> &'tcx $crate::scope::Scope<'tcx> {
-                    <Self as $crate::lang_def::LanguageTraitImpl>::collect_symbols_impl(unit, node, scope_stack, config)
+                    <Self as $crate::lang_def::LanguageImpl>::collect_symbols_impl(unit, node, scope_stack, config)
                 }
 
                 fn bind_symbols<'tcx, C>(
@@ -521,12 +521,12 @@ macro_rules! define_lang {
                     globals: &'tcx $crate::scope::Scope<'tcx>,
                     config: &C,
                 ) {
-                    <Self as $crate::lang_def::LanguageTraitImpl>::bind_symbols_impl(unit, node, globals, config);
+                    <Self as $crate::lang_def::LanguageImpl>::bind_symbols_impl(unit, node, globals, config);
                 }
 
                 /// Return the list of supported file extensions for this language
-                fn supported_extensions() -> &'static [&'static str] {
-                    <Self as $crate::lang_def::LanguageTraitImpl>::supported_extensions_impl()
+                fn extensions() -> &'static [&'static str] {
+                    <Self as $crate::lang_def::LanguageImpl>::supported_extensions_impl()
                 }
 
                 /// Get the HIR kind for a given token ID
@@ -551,12 +551,12 @@ macro_rules! define_lang {
 
                 /// Get the Block kind for a given token ID with parent context
                 fn block_kind_with_parent(kind_id: u16, field_id: u16, parent_kind_id: u16) -> $crate::graph_builder::BlockKind {
-                    <Self as $crate::lang_def::LanguageTraitImpl>::block_kind_with_parent_impl(kind_id, field_id, parent_kind_id)
+                    <Self as $crate::lang_def::LanguageImpl>::block_kind_with_parent_impl(kind_id, field_id, parent_kind_id)
                 }
 
                 /// Check if a parse node is a test attribute that should cause the next item to be skipped
                 fn is_test_attribute(node: &dyn $crate::lang_def::ParseNode, source: &[u8]) -> bool {
-                    <Self as $crate::lang_def::LanguageTraitImpl>::is_test_attribute_impl(node, source)
+                    <Self as $crate::lang_def::LanguageImpl>::is_test_attribute_impl(node, source)
                 }
 
                 /// Get the string representation of a token ID

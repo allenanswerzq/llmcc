@@ -1,4 +1,4 @@
-use llmcc_core::LanguageTraitImpl;
+use llmcc_core::LanguageImpl;
 use llmcc_core::graph_builder::BlockKind;
 use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::lang_def::{LanguageTrait, ParseNode, ParseTree, TreeSitterParseTree};
@@ -14,7 +14,7 @@ use tree_sitter_rust;
 // The generated file contains a define_lang! call that expands to LangRust
 include!(concat!(env!("OUT_DIR"), "/rust_tokens.rs"));
 
-impl LanguageTraitImpl for LangRust {
+impl LanguageImpl for LangRust {
     /// Block kind with parent context - handles tuple struct fields
     fn block_kind_with_parent_impl(kind_id: u16, field_id: u16, parent_kind_id: u16) -> BlockKind {
         // Tuple struct fields: types inside ordered_field_declaration_list with field "type"

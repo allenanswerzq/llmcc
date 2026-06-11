@@ -1,4 +1,4 @@
-use llmcc_core::LanguageTraitImpl;
+use llmcc_core::LanguageImpl;
 use llmcc_core::graph_builder::BlockKind;
 use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::lang_def::{LanguageTrait, ParseNode, ParseTree, TreeSitterParseTree};
@@ -14,7 +14,7 @@ use tree_sitter_typescript;
 // The generated file contains a define_lang! call that expands to LangTypeScript
 include!(concat!(env!("OUT_DIR"), "/typescript_tokens.rs"));
 
-impl LanguageTraitImpl for LangTypeScript {
+impl LanguageImpl for LangTypeScript {
     /// Block kind with parent context - handles special TypeScript cases
     fn block_kind_with_parent_impl(kind_id: u16, field_id: u16, _parent_kind_id: u16) -> BlockKind {
         // Default behavior: check field kind first, then node kind

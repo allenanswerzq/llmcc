@@ -2,13 +2,12 @@ use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use llmcc::{GraphOptions, ProcessingOptions};
 use llmcc_core::ProjectGraph;
 use llmcc_core::block::reset_block_id_counter;
 use llmcc_core::context::{CompileCtxt, CompileUnit};
 use llmcc_core::graph_builder::{BlockId, GraphBuildOption, build_llmcc_graph};
 use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
-use llmcc_core::lang_def::LanguageTraitImpl;
+use llmcc_core::lang_def::LanguageImpl;
 use llmcc_core::symbol::reset_symbol_id_counter;
 use llmcc_dot::{ComponentDepth, render_graph};
 use llmcc_error::{Error, ErrorKind, Result};
@@ -22,8 +21,11 @@ use tempfile::TempDir;
 use walkdir::WalkDir;
 
 use crate::corpus::{Corpus, CorpusCase, CorpusFile};
+use crate::{GraphOptions, ProcessingOptions};
 
-pub use llmcc::{GraphOptions as SharedGraphOptions, ProcessingOptions as SharedProcessingOptions};
+pub use crate::options::{
+    GraphOptions as SharedGraphOptions, ProcessingOptions as SharedProcessingOptions,
+};
 
 #[derive(Clone)]
 #[allow(dead_code)]
@@ -1392,7 +1394,7 @@ fn materialize_case(case: &CorpusCase, keep_temps: bool) -> Result<MaterializedP
 
 fn collect_pipeline<L>(project_root: &Path, options: &PipelineOptions) -> Result<PipelineSummary>
 where
-    L: LanguageTraitImpl,
+    L: LanguageImpl,
 {
     // Use provided file paths (preserves declaration order) or discover them
     let files: Vec<(String, String)> = if options.file_paths.is_empty() {
@@ -1400,7 +1402,7 @@ where
     } else {
         // Filter to only include files with supported extensions
         // For explicitly provided paths, use the same path as both physical and logical
-        let supported = L::supported_extensions();
+        let supported = L::extensions();
         options
             .file_paths
             .iter()
@@ -1554,11 +1556,11 @@ where
     })
 }
 
-fn discover_language_files<L: LanguageTraitImpl>(
+fn discover_language_files<L: LanguageImpl>(
     root: &Path,
     _parallel: bool,
 ) -> Result<Vec<(String, String)>> {
-    let supported = L::supported_extensions();
+    let supported = L::extensions();
     let mut files = Vec::new();
 
     for entry in WalkDir::new(root) {
