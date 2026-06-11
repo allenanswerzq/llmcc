@@ -59,7 +59,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         field_id: u16,
     ) -> Option<&'tcx Symbol> {
         let ident = node
-            .ident_by_field(unit, field_id)
+            .ident_with_field(unit, field_id)
             .or_else(|| node.as_scope().and_then(|sn| sn.opt_ident()))?;
 
         let sym = scopes.lookup_or_insert(ident.name, node, kind)?;
@@ -241,7 +241,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectorScopes<'tcx>> for CollectorVisito
             return;
         };
 
-        if let Some(ident) = node.ident_by_field(unit, LangTypeScript::field_name) {
+        if let Some(ident) = node.ident_with_field(unit, LangTypeScript::field_name) {
             // Use global scope for exported classes to enable cross-file resolution
             let sym = if is_exported(unit, node) {
                 scopes.lookup_or_insert_global(ident.name, node, SymKind::Struct)
@@ -279,7 +279,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectorScopes<'tcx>> for CollectorVisito
             return;
         };
 
-        if let Some(ident) = node.ident_by_field(unit, LangTypeScript::field_name) {
+        if let Some(ident) = node.ident_with_field(unit, LangTypeScript::field_name) {
             let sym = scopes.lookup_or_insert(ident.name, node, SymKind::Namespace);
             if let Some(sym) = sym {
                 self.visit_with_scope(unit, node, scopes, sym, sn, ident);
@@ -300,7 +300,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectorScopes<'tcx>> for CollectorVisito
             return;
         };
 
-        if let Some(ident) = node.ident_by_field(unit, LangTypeScript::field_name) {
+        if let Some(ident) = node.ident_with_field(unit, LangTypeScript::field_name) {
             // Use global scope for exported interfaces to enable cross-file resolution
             let sym = if is_exported(unit, node) {
                 scopes.lookup_or_insert_global(ident.name, node, SymKind::Interface)
@@ -326,7 +326,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectorScopes<'tcx>> for CollectorVisito
             return;
         };
 
-        if let Some(ident) = node.ident_by_field(unit, LangTypeScript::field_name) {
+        if let Some(ident) = node.ident_with_field(unit, LangTypeScript::field_name) {
             // Use global scope for exported type aliases to enable cross-file resolution
             let sym = if is_exported(unit, node) {
                 scopes.lookup_or_insert_global(ident.name, node, SymKind::TypeAlias)
@@ -352,7 +352,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectorScopes<'tcx>> for CollectorVisito
             return;
         };
 
-        if let Some(ident) = node.ident_by_field(unit, LangTypeScript::field_name) {
+        if let Some(ident) = node.ident_with_field(unit, LangTypeScript::field_name) {
             // Use global scope for exported enums to enable cross-file resolution
             let sym = if is_exported(unit, node) {
                 scopes.lookup_or_insert_global(ident.name, node, SymKind::Enum)
@@ -378,7 +378,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectorScopes<'tcx>> for CollectorVisito
             return;
         };
 
-        if let Some(ident) = node.ident_by_field(unit, LangTypeScript::field_name) {
+        if let Some(ident) = node.ident_with_field(unit, LangTypeScript::field_name) {
             let kind = if is_method_context(parent) {
                 SymKind::Method
             } else {
@@ -409,7 +409,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectorScopes<'tcx>> for CollectorVisito
             return;
         };
 
-        if let Some(ident) = node.ident_by_field(unit, LangTypeScript::field_name) {
+        if let Some(ident) = node.ident_with_field(unit, LangTypeScript::field_name) {
             let kind = if is_method_context(parent) {
                 SymKind::Method
             } else {
@@ -435,7 +435,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectorScopes<'tcx>> for CollectorVisito
             return;
         };
 
-        if let Some(ident) = node.ident_by_field(unit, LangTypeScript::field_name) {
+        if let Some(ident) = node.ident_with_field(unit, LangTypeScript::field_name) {
             let kind = if is_method_context(parent) {
                 SymKind::Method
             } else {
@@ -461,7 +461,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectorScopes<'tcx>> for CollectorVisito
             return;
         };
 
-        if let Some(ident) = node.ident_by_field(unit, LangTypeScript::field_name) {
+        if let Some(ident) = node.ident_with_field(unit, LangTypeScript::field_name) {
             let sym = scopes.lookup_or_insert(ident.name, node, SymKind::Method);
             if let Some(sym) = sym {
                 self.visit_with_scope(unit, node, scopes, sym, sn, ident);
@@ -544,7 +544,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectorScopes<'tcx>> for CollectorVisito
         parent: Option<&Symbol>,
     ) {
         // Rest pattern contains an identifier directly as a child
-        if let Some(ident) = node.find_ident(unit) {
+        if let Some(ident) = node.first_ident(unit) {
             let sym = scopes.lookup_or_insert(ident.name, node, SymKind::Variable);
             if let Some(sym) = sym {
                 ident.set_symbol(sym);
@@ -586,7 +586,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectorScopes<'tcx>> for CollectorVisito
         parent: Option<&Symbol>,
     ) {
         // type_parameter has a name field with the type parameter identifier (e.g., T)
-        if let Some(ident) = node.ident_by_field(unit, LangTypeScript::field_name) {
+        if let Some(ident) = node.ident_with_field(unit, LangTypeScript::field_name) {
             let sym = scopes.lookup_or_insert(ident.name, node, SymKind::TypeParameter);
             if let Some(sym) = sym {
                 ident.set_symbol(sym);
@@ -605,7 +605,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectorScopes<'tcx>> for CollectorVisito
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(ident) = node.ident_by_field(unit, LangTypeScript::field_name) {
+        if let Some(ident) = node.ident_with_field(unit, LangTypeScript::field_name) {
             let sym = scopes.lookup_or_insert(ident.name, node, SymKind::Field);
             if let Some(sym) = sym {
                 ident.set_symbol(sym);
@@ -624,7 +624,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectorScopes<'tcx>> for CollectorVisito
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(ident) = node.ident_by_field(unit, LangTypeScript::field_name) {
+        if let Some(ident) = node.ident_with_field(unit, LangTypeScript::field_name) {
             let sym = scopes.lookup_or_insert(ident.name, node, SymKind::Field);
             if let Some(sym) = sym {
                 ident.set_symbol(sym);
@@ -651,7 +651,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectorScopes<'tcx>> for CollectorVisito
             return;
         };
 
-        if let Some(ident) = node.ident_by_field(unit, LangTypeScript::field_name) {
+        if let Some(ident) = node.ident_with_field(unit, LangTypeScript::field_name) {
             let sym = scopes.lookup_or_insert(ident.name, node, SymKind::Method);
             if let Some(sym) = sym {
                 self.visit_with_scope(unit, node, scopes, sym, sn, ident);

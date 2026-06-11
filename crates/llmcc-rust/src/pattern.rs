@@ -54,7 +54,7 @@ pub fn bind_pattern_types<'tcx>(
         }
         _ => {
             // Handle other patterns - find and assign to any identifiers
-            if let Some(ident) = pattern.find_ident(unit) {
+            if let Some(ident) = pattern.first_ident(unit) {
                 assign_type_to_ident(unit, scopes, ident, pattern_type);
             } else {
                 // Recurse into children
@@ -144,7 +144,7 @@ fn assign_type_to_struct_pattern<'tcx>(
         None => return,
     };
 
-    let struct_type_ident = match struct_type_node.find_ident(unit) {
+    let struct_type_ident = match struct_type_node.first_ident(unit) {
         Some(ident) => ident,
         None => return,
     };
@@ -157,7 +157,7 @@ fn assign_type_to_struct_pattern<'tcx>(
     for child in pattern.children(unit) {
         if child.kind_id() == LangRust::field_pattern {
             if let Some(field_name_node) = child.child_by_field(unit, LangRust::field_name) {
-                if let Some(field_name_ident) = field_name_node.find_ident(unit) {
+                if let Some(field_name_ident) = field_name_node.first_ident(unit) {
                     // Try to find matching field in struct scope
                     if let Some(field_sym) = scopes.lookup_member_symbols(
                         struct_symbol,
@@ -221,7 +221,7 @@ fn assign_type_to_tuple_struct_pattern<'tcx>(
         None => return,
     };
 
-    let type_ident = match type_node.find_ident(unit) {
+    let type_ident = match type_node.first_ident(unit) {
         Some(ident) => ident,
         None => return,
     };

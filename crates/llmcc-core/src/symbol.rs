@@ -1,18 +1,17 @@
-//! Symbol and scope management for the code graph.
+//! Symbol metadata for names discovered in source code.
 //!
-//! Core types:
-//! - `Symbol`: Named entity (function, struct, variable, etc.) with metadata
-//! - `SymId`: Unique identifier for symbols
-//! - `ScopeId`: Unique identifier for scopes
+//! A `Symbol` starts with a stable id, name, and owning HIR node. Later phases
+//! attach classification, scope, type, and graph metadata as collection,
+//! binding, inference, and graph building progress.
 //!
-//! Symbols are arena-allocated and thread-safe via atomics and RwLock.
-//! Names are interned for fast equality comparisons.
+//! Compact optional id fields use the same atomic encoding throughout this
+//! file: `0` means `None`, and `n` means `Some(Id(n - 1))`.
 
 use parking_lot::RwLock;
 use std::fmt;
-use strum_macros::EnumIter;
+use strum_macros::{EnumIter, FromRepr};
 
-use crate::graph_builder::BlockId;
+use crate::id::BlockId;
 pub use crate::id::{ScopeId, SymId, SymbolId, reset_scope_id_counter, reset_symbol_id_counter};
 use crate::interner::InternedStr;
 use crate::ir::HirId;
@@ -21,40 +20,66 @@ use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU32, AtomicU64, AtomicUsize,
 /// Sentinel value for "not set" in unit/crate index.
 pub const INDEX_NONE: u32 = u32::MAX;
 
-/// Classification of what kind of named entity a symbol represents.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, EnumIter, Default)]
+/// Coarse classification for a named program entity.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, EnumIter, FromRepr, Default)]
 #[repr(u8)]
 pub enum SymKind {
+    /// Kind has not been determined yet.
     #[default]
     Unknown = 0,
+    /// Placeholder created for a referenced type before binding resolves it.
     UnresolvedType = 1,
+    /// Package or crate-level root.
     Crate = 2,
+    /// Language module or importable namespace unit.
     Module = 3,
+    /// Source file symbol.
     File = 4,
+    /// C++ namespace or equivalent named scope.
     Namespace = 5,
+    /// Struct-like user-defined data type.
     Struct = 6,
+    /// Enum type.
     Enum = 7,
+    /// Free function or function-like declaration.
     Function = 8,
+    /// Function owned by a type or impl/interface body.
     Method = 9,
+    /// Anonymous function or closure expression.
     Closure = 10,
+    /// Macro or macro-like compile-time callable.
     Macro = 11,
+    /// Local, parameter, or binding variable.
     Variable = 12,
+    /// Member field, property, or enum payload field.
     Field = 13,
+    /// Constant item.
     Const = 14,
+    /// Static item.
     Static = 15,
+    /// Trait or protocol-like abstraction.
     Trait = 16,
+    /// Interface abstraction.
     Interface = 17,
+    /// Implementation block or equivalent extension body.
     Impl = 18,
+    /// Named enum variant.
     EnumVariant = 19,
+    /// Built-in primitive type symbol.
     Primitive = 20,
+    /// Type alias symbol.
     TypeAlias = 21,
+    /// Generic type parameter.
     TypeParameter = 22,
+    /// Generic type expression, such as `Vec<T>` or `Promise<T>`.
     GenericType = 23,
+    /// Synthetic compound type, such as tuple, array, union, or object shape.
     CompositeType = 24,
 }
 
-/// A bitset representing a set of SymKind values for efficient O(1) containment checks.
-/// Uses a u32 internally since we have < 32 SymKind variants.
+/// Small bitset for O(1) `SymKind` membership checks.
+///
+/// `SymKind` currently has fewer than 32 variants, so a single `u32` is enough.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct SymKindSet(u32);
 
@@ -68,8 +93,8 @@ impl SymKindSet {
     /// Create a set containing all kinds.
     #[inline]
     pub const fn all() -> Self {
-        // Set bits 0-24 (all current SymKind values)
-        Self(0x01FFFFFF)
+        let bits = (1 << (SymKind::CompositeType as u32 + 1)) - 1;
+        Self(bits)
     }
 
     /// Create a set from a single kind.
@@ -97,10 +122,10 @@ impl SymKindSet {
     }
 }
 
-/// Pre-computed constant for all symbol kinds (used when no filtering needed).
+/// All currently declared symbol kinds.
 pub const SYM_KIND_ALL: SymKindSet = SymKindSet::all();
 
-/// Pre-computed constant for type kinds (used in type resolution).
+/// Kinds that can be selected while resolving a type reference.
 pub const SYM_KIND_TYPES: SymKindSet = SymKindSet::empty()
     .with(SymKind::Struct)
     .with(SymKind::Enum)
@@ -116,12 +141,12 @@ pub const SYM_KIND_TYPES: SymKindSet = SymKindSet::empty()
     .with(SymKind::Namespace)
     .with(SymKind::TypeParameter);
 
-/// Pre-computed constant for impl target kinds.
+/// Kinds that can be direct targets of an `impl` block.
 pub const SYM_KIND_IMPL_TARGETS: SymKindSet = SymKindSet::empty()
     .with(SymKind::Struct)
     .with(SymKind::Enum);
 
-/// Pre-computed constant for callable kinds.
+/// Kinds that can be selected while resolving a call target.
 pub const SYM_KIND_CALLABLE: SymKindSet = SymKindSet::empty()
     .with(SymKind::Struct)
     .with(SymKind::Enum)
@@ -130,6 +155,11 @@ pub const SYM_KIND_CALLABLE: SymKindSet = SymKindSet::empty()
     .with(SymKind::Const);
 
 impl SymKind {
+    #[inline]
+    pub fn from_u8(value: u8) -> Self {
+        Self::from_repr(value).unwrap_or_default()
+    }
+
     pub fn is_resolved(&self) -> bool {
         !matches!(self, SymKind::UnresolvedType)
     }
@@ -138,8 +168,6 @@ impl SymKind {
         matches!(self, SymKind::Const | SymKind::Static)
     }
 
-    /// Checks if the symbol kind represents a user-defined type (struct, enum, trait, type alias).
-    /// These are types that are explicitly defined in user code, not primitives or generics.
     /// Checks if the symbol kind represents a user-defined type.
     /// These are types that appear in type annotations and can have impl blocks.
     pub fn is_defined_type(&self) -> bool {
@@ -152,62 +180,17 @@ impl SymKind {
                 | SymKind::Interface
         )
     }
-
-    /// Returns kinds that can be looked up as types in type annotations.
-    /// Used for resolving type references in function signatures, fields, etc.
-    #[deprecated(note = "Use SYM_KIND_TYPES constant instead")]
-    pub fn type_kinds() -> Vec<SymKind> {
-        vec![
-            SymKind::Struct,
-            SymKind::Enum,
-            SymKind::Trait,
-            SymKind::Function,
-            SymKind::Const,
-            SymKind::Static,
-            SymKind::Primitive,
-            SymKind::GenericType,
-            SymKind::CompositeType,
-            SymKind::TypeAlias,
-            SymKind::Namespace,
-            SymKind::TypeParameter,
-        ]
-    }
-
-    /// Returns kinds that can be targets of impl blocks (impl X for Target).
-    /// In Rust, you can impl traits for structs and enums.
-    #[deprecated(note = "Use SYM_KIND_IMPL_TARGETS constant instead")]
-    pub fn impl_target_kinds() -> Vec<SymKind> {
-        vec![SymKind::Struct, SymKind::Enum]
-    }
-
-    /// Returns kinds that can be called like functions.
-    #[deprecated(note = "Use SYM_KIND_CALLABLE constant instead")]
-    pub fn callable_kinds() -> Vec<SymKind> {
-        vec![
-            SymKind::Struct,
-            SymKind::Enum,
-            SymKind::Trait,
-            SymKind::Function,
-            SymKind::Const,
-        ]
-    }
 }
 
-/// Represents a named entity in source code.
+/// Metadata record for one named source-code entity.
 ///
-/// Symbols track metadata about functions, structs, variables, and other named elements.
-/// Each symbol has:
-/// - An immutable unique ID
-/// - A name (interned for fast comparison)
-/// - Metadata (kind, location, type, dependencies)
-/// - Relationships to other symbols (dependencies, scope hierarchy)
-///
-/// Symbols support shadowing and multi-definition tracking via the `previous` field,
-/// which forms a chain of symbol definitions in nested scopes.
+/// A symbol can represent declarations, references, inferred helper types, and
+/// synthetic symbols used by the graph. Most relationships are stored as ids so
+/// the arena can keep symbols stable and cheap to copy around.
 ///
 /// # Thread Safety
-/// Most fields use `RwLock` for thread-safe interior mutability.
-/// The ID and name are immutable once created.
+/// `id` and `name` are immutable after construction. Other metadata is updated
+/// by later phases through atomics or `RwLock` fields.
 ///
 /// # Example
 /// ```ignore
@@ -216,59 +199,59 @@ impl SymKind {
 /// symbol.set_is_global(true);
 /// ```
 pub struct Symbol {
-    /// Monotonic id assigned when the symbol is created.
+    /// Identity: monotonic id assigned when the symbol is created.
     pub id: SymId,
-    /// Interned key for the symbol name, used for fast lookup and comparison.
-    /// Interned names allow O(1) equality checks.
+    /// Identity: interned symbol name used for fast lookup and comparison.
     pub name: InternedStr,
-    /// Packed unit_index (low 32 bits) and crate_index (high 32 bits).
-    /// - unit_index: which compile unit (file) this symbol is defined in
-    /// - crate_index: which crate/package this symbol belongs to
+    /// Location: packed compile-unit and crate/package indexes.
     ///
-    /// Both use INDEX_NONE (u32::MAX) to indicate "not set".
+    /// Encoding: low 32 bits store `unit_index`; high 32 bits store
+    /// `crate_index`; `INDEX_NONE` means unset for either half.
     unit_crate_index: AtomicU64,
-    /// Owning HIR node that introduces the symbol (e.g. function def, struct def).
-    /// Immutable once set; represents the primary definition location.
+    /// Location: primary HIR node that introduces this symbol.
     pub owner: RwLock<HirId>,
-    /// Additional defining locations for this symbol.
-    /// For example, a struct can have multiple impl blocks in different files.
-    /// owner + defining together represent all locations where this symbol is defined.
+    /// Location: additional HIR nodes that define or extend this symbol.
+    ///
+    /// Examples: impl blocks, declaration merging, overloads, or split type
+    /// definitions. `owner` plus `defining` is the full definition set.
     pub defining: RwLock<Vec<HirId>>,
-    /// The scope that this symbol belongs to.
-    /// Used to quickly find the scope during binding and type resolution.
-    pub scope: AtomicUsize, // 0 = None, n = Some(ScopeId(n-1))
-    /// The parent scope of this symbol (for scope hierarchy).
-    /// Enables upward traversal of the scope chain.
+    /// Scope: scope that directly contains this symbol.
+    ///
+    /// Encoding: `0` means `None`, `n` means `Some(ScopeId(n - 1))`.
+    pub scope: AtomicUsize,
+    /// Scope: lexical or ownership parent used for upward traversal.
     pub parent_scope: RwLock<Option<ScopeId>>,
-    /// The kind of symbol this represents (function, struct, variable, etc.).
-    /// Initially Unknown, updated as the symbol is processed.
-    pub kind: AtomicU8,
-    /// Optional backing type for this symbol (e.g. variable type, alias target).
-    /// Set during type analysis if applicable.
-    pub type_of: AtomicUsize, // 0 = None, n = Some(SymId(n-1))
-    /// Optional block id associated with this symbol (for graph building).
-    /// Links the symbol to its corresponding block in the code graph.
-    pub block_id: AtomicU32, // 0 = None, n = Some(BlockId(n-1))
-    /// Whether the symbol is globally visible/exported.
-    /// Used to distinguish public symbols from private ones.
+    /// Classification: compact `SymKind` tag.
+    ///
+    /// Encoding: stored as `u8` and decoded through `SymKind::from_u8`.
+    kind: AtomicU8,
+    /// Type: direct type, return type, alias target, or bound target.
+    ///
+    /// Encoding: `0` means `None`, `n` means `Some(SymId(n - 1))`.
+    pub type_of: AtomicUsize,
+    /// Graph: block corresponding to this symbol when graph building creates one.
+    ///
+    /// Encoding: `0` means `None`, `n` means `Some(BlockId(n - 1))`.
+    pub block_id: AtomicU32,
+    /// Visibility: true when this symbol can be found through global/export lookup.
     pub is_global: AtomicBool,
-    /// Previous version/definition of this symbol (for shadowing and multi-definition tracking).
-    /// Used to chain multiple definitions of the same symbol in different scopes or contexts.
-    /// Example: inner definition shadows outer definition in nested scope.
-    /// Forms a linked list of definitions traversable via following `previous` pointers.
+    /// Shadowing: previous symbol hidden or superseded by this one.
+    ///
+    /// Used to build a linked list for nested-scope shadowing and repeated
+    /// definitions of the same name.
     pub previous: RwLock<Option<SymId>>,
-    /// For compound types (tuple, array, struct, enum), tracks the types of nested components.
-    /// For tuple types: element types in order.
-    /// For struct/enum: field types in declaration order.
-    /// For array types: single element type.
+    /// Type: component or related type ids owned by this symbol.
+    ///
+    /// Examples: tuple element types, array element type, struct field types,
+    /// generic arguments, implemented interfaces, or union/object members.
     pub nested_types: RwLock<Vec<SymId>>,
-    /// For field symbols, tracks which symbol owns this field (parent struct, enum, or object).
-    /// Set to the symbol that contains/defines this field.
-    /// Examples: enum variant's FieldOf is the enum; struct field's FieldOf is the struct;
-    /// tuple field (by index) FieldOf is the tuple/value being accessed.
-    pub field_of: AtomicUsize, // 0 = None, n = Some(SymId(n-1))
-    /// For classes/functions, tracks decorator function symbols applied to this symbol.
-    /// Used primarily in TypeScript/JavaScript for @decorator syntax.
+    /// Ownership: symbol that owns this field/member symbol.
+    ///
+    /// Encoding: `0` means `None`, `n` means `Some(SymId(n - 1))`.
+    pub field_of: AtomicUsize,
+    /// Metadata: decorator symbols applied to this symbol.
+    ///
+    /// Used primarily for TypeScript/JavaScript decorators.
     pub decorators: RwLock<Vec<SymId>>,
 }
 
@@ -407,8 +390,7 @@ impl Symbol {
     /// Gets the symbol kind (function, struct, variable, etc.).
     #[inline]
     pub fn kind(&self) -> SymKind {
-        // SAFETY: SymKind has repr(u8) implied by enum values 0-23
-        unsafe { std::mem::transmute(self.kind.load(Ordering::Relaxed)) }
+        SymKind::from_u8(self.kind.load(Ordering::Relaxed))
     }
 
     /// Sets the symbol kind after analysis.
@@ -618,5 +600,30 @@ impl Symbol {
     #[inline]
     pub fn add_decorator(&self, decorator: SymId) {
         self.decorators.write().push(decorator);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use strum::IntoEnumIterator;
+
+    use super::*;
+
+    #[test]
+    fn sym_kind_decode_rejects_invalid_bytes() {
+        assert_eq!(SymKind::from_u8(0), SymKind::Unknown);
+        assert_eq!(
+            SymKind::from_u8(SymKind::CompositeType as u8),
+            SymKind::CompositeType
+        );
+        assert_eq!(SymKind::from_u8(25), SymKind::Unknown);
+        assert_eq!(SymKind::from_u8(u8::MAX), SymKind::Unknown);
+    }
+
+    #[test]
+    fn sym_kind_all_contains_every_declared_kind() {
+        for kind in SymKind::iter() {
+            assert!(SYM_KIND_ALL.contains(kind), "SYM_KIND_ALL missing {kind:?}");
+        }
     }
 }

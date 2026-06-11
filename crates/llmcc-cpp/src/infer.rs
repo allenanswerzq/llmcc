@@ -61,7 +61,7 @@ fn infer_type_impl<'tcx>(
 
         // Type identifiers
         LangCpp::type_identifier => {
-            let ident = node.find_ident(unit)?;
+            let ident = node.first_ident(unit)?;
             // First try existing symbol on the identifier
             if let Some(sym) = ident.opt_symbol() {
                 if sym.kind().is_defined_type() {
@@ -84,7 +84,7 @@ fn infer_type_impl<'tcx>(
 
         // Identifier
         LangCpp::identifier => {
-            let ident = node.find_ident(unit)?;
+            let ident = node.first_ident(unit)?;
             let symbol = ident.opt_symbol()?;
 
             if let Some(type_id) = symbol.type_of() {
@@ -210,7 +210,7 @@ fn infer_type_impl<'tcx>(
         }
 
         _ => {
-            if let Some(ident) = node.find_ident(unit) {
+            if let Some(ident) = node.first_ident(unit) {
                 return ident.opt_symbol();
             }
             None
@@ -303,7 +303,7 @@ fn infer_template_type<'tcx>(
     }
 
     // Fall back to first identifier
-    if let Some(ident) = node.find_ident(unit) {
+    if let Some(ident) = node.first_ident(unit) {
         if let Some(sym) = ident.opt_symbol() {
             return Some(sym);
         }
@@ -323,7 +323,7 @@ fn infer_qualified_identifier<'tcx>(
 ) -> Option<&'tcx Symbol> {
     // Get the name field (the final identifier in the chain)
     if let Some(name_node) = node.child_by_field(unit, LangCpp::field_name)
-        && let Some(ident) = name_node.find_ident(unit)
+        && let Some(ident) = name_node.first_ident(unit)
         && let Some(sym) = ident.opt_symbol()
     {
         return Some(sym);
@@ -340,7 +340,7 @@ fn infer_qualified_identifier<'tcx>(
     }
 
     if let Some(name_node) = node.child_by_field(unit, LangCpp::field_name)
-        && let Some(ident) = name_node.find_ident(unit)
+        && let Some(ident) = name_node.first_ident(unit)
     {
         if let Some(sym) = scopes.lookup_symbol(ident.name, SYM_KIND_TYPES) {
             return Some(sym);
@@ -361,7 +361,7 @@ fn infer_field_expression<'tcx>(
 ) -> Option<&'tcx Symbol> {
     // Try to get the field's symbol directly
     if let Some(field_node) = node.child_by_field(unit, LangCpp::field_field)
-        && let Some(field_ident) = field_node.find_ident(unit)
+        && let Some(field_ident) = field_node.first_ident(unit)
         && let Some(field_sym) = field_ident.opt_symbol()
     {
         // Return the field's type if known

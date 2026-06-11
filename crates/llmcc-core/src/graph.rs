@@ -247,7 +247,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         // Check for Call blocks (explicit call blocks in Rust)
         if let BasicBlock::Call(call) = &block {
             // Get the callee symbol to check its kind
-            if let Some(callee_sym) = call.base.node.ident_symbol(unit) {
+            if let Some(callee_sym) = call.base.node.resolved_symbol(unit) {
                 self.process_callee_symbol(unit, caller_func_id, caller_func, callee_sym);
             }
         }
@@ -259,7 +259,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         if let Some(base) = block.base() {
             let node = &base.node;
             // Check if this node has a resolved symbol that's a function or struct
-            if let Some(callee_sym) = node.ident_symbol(unit) {
+            if let Some(callee_sym) = node.resolved_symbol(unit) {
                 let kind = callee_sym.kind();
                 // Only process if it's not already a Call block and is callable
                 if !matches!(&block, BasicBlock::Call(_))
