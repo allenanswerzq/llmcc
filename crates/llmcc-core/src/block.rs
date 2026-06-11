@@ -878,7 +878,7 @@ impl<'blk> BlockClass<'blk> {
                     .base()
                     .and_then(|b| b.opt_get_name())
                     .unwrap_or("");
-                deps.push(format!("@tdep:{} {}", dep_id, dep_name));
+                deps.push(format!("@tdep:{dep_id} {dep_name}"));
             }
         }
 
@@ -1006,9 +1006,9 @@ impl<'blk> BlockInterface<'blk> {
                 .iter()
                 .map(|(name, id)| {
                     if let Some(block_id) = id {
-                        format!("@extends:{} {}", block_id, name)
+                        format!("@extends:{block_id} {name}")
                     } else {
-                        format!("@extends {}", name)
+                        format!("@extends {name}")
                     }
                 })
                 .collect();

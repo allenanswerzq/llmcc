@@ -133,7 +133,7 @@ impl fmt::Display for Error {
                 if i > 0 {
                     write!(f, ", ")?;
                 }
-                write!(f, "{}: {}", key, value)?;
+                write!(f, "{key}: {value}")?;
             }
             write!(f, " }}")?;
         }
@@ -159,13 +159,13 @@ impl fmt::Debug for Error {
             writeln!(f)?;
             writeln!(f, "    Context:")?;
             for (key, value) in &self.context {
-                writeln!(f, "        {}: {}", key, value)?;
+                writeln!(f, "        {key}: {value}")?;
             }
         }
 
         if let Some(source) = &self.source {
             writeln!(f)?;
-            writeln!(f, "    Source: {:?}", source)?;
+            writeln!(f, "    Source: {source:?}")?;
         }
 
         Ok(())
@@ -231,7 +231,7 @@ impl Error {
         let symbol = symbol.into();
         Self::new(
             ErrorKind::SymbolNotFound,
-            format!("symbol '{}' not found", symbol),
+            format!("symbol '{symbol}' not found"),
         )
         .with_context("symbol", symbol)
     }
@@ -239,11 +239,8 @@ impl Error {
     /// Create a FileNotFound error
     pub fn file_not_found(path: impl Into<String>) -> Self {
         let path = path.into();
-        Self::new(
-            ErrorKind::FileNotFound,
-            format!("file '{}' not found", path),
-        )
-        .with_context("path", path)
+        Self::new(ErrorKind::FileNotFound, format!("file '{path}' not found"))
+            .with_context("path", path)
     }
 
     /// Create a BlockNotFound error
@@ -251,7 +248,7 @@ impl Error {
         let block_id = block_id.into();
         Self::new(
             ErrorKind::BlockNotFound,
-            format!("block '{}' not found", block_id),
+            format!("block '{block_id}' not found"),
         )
         .with_context("block_id", block_id)
     }
@@ -261,7 +258,7 @@ impl Error {
         let lang = lang.into();
         Self::new(
             ErrorKind::UnsupportedLanguage,
-            format!("language '{}' is not supported", lang),
+            format!("language '{lang}' is not supported"),
         )
         .with_context("language", lang)
     }
@@ -291,7 +288,7 @@ impl Error {
         let feature = feature.into();
         Self::new(
             ErrorKind::NotImplemented,
-            format!("'{}' is not implemented", feature),
+            format!("'{feature}' is not implemented"),
         )
         .with_context("feature", feature)
     }
@@ -361,7 +358,7 @@ mod tests {
             .with_context("file", "main.rs")
             .with_context("line", "42");
 
-        let display = format!("{}", err);
+        let display = format!("{err}");
         assert!(display.contains("ParseFailed"));
         assert!(display.contains("permanent"));
         assert!(display.contains("rust::parse"));

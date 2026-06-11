@@ -86,7 +86,7 @@ pub fn merge_dot_outputs(outputs: &[String]) -> String {
             }
 
             if in_content {
-                let _ = writeln!(merged, "{}", line);
+                let _ = writeln!(merged, "{line}");
             }
         }
         let _ = writeln!(merged);

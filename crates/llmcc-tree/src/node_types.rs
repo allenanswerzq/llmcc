@@ -31,7 +31,7 @@ impl NodeTypes {
         let entries: Vec<NodeTypeEntry> = serde_json::from_str(contents).map_err(|e| {
             Error::new(
                 ErrorKind::DeserializationFailed,
-                format!("invalid node-types JSON: {}", e),
+                format!("invalid node-types JSON: {e}"),
             )
         })?;
         let mut named = HashMap::new();

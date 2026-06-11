@@ -1329,7 +1329,7 @@ fn materialize_case(case: &CorpusCase, keep_temps: bool) -> Result<MaterializedP
     let temp_dir = tempfile::tempdir().map_err(|e| {
         Error::new(
             ErrorKind::IoFailed,
-            format!("failed to create temp dir for llmcc-test: {}", e),
+            format!("failed to create temp dir for llmcc-test: {e}"),
         )
     })?;
     let root_path = temp_dir.path().to_path_buf();
@@ -1779,7 +1779,7 @@ fn merge_dot_graphs(graphs: &[String]) -> String {
                 continue;
             }
             if in_content {
-                let _ = writeln!(merged, "{}", line);
+                let _ = writeln!(merged, "{line}");
             }
         }
         let _ = writeln!(merged);

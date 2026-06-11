@@ -31,24 +31,24 @@ People (and coding agents) need to understand systems from different dimensions.
 
 ## Walkthrough: Codex (midterm size multi-crate rust project)
 
-This repo includes many examples under [sample](sample). Download and open them in browser for the best viewing experience.
+Rendered examples now live in [llmcc-samples](https://github.com/allenanswerzq/llmcc-samples). Download and open them in a browser for the best viewing experience.
 
 ### Depth 1: crate graph
 
 <p style="height: 200px; text-align: center;">
-	<img src="sample/rust/codex-pagerank/depth_1_crate.svg" alt="Codex crate graph (depth 1)" style="max-width: 100%; height: 100%;" />
+	<img src="https://raw.githubusercontent.com/allenanswerzq/llmcc-samples/main/rust/codex-pagerank/depth_1_crate.svg" alt="Codex crate graph (depth 1)" style="max-width: 100%; height: 100%;" />
 </p>
 
 ### Depth 2: module graph
 
 <p align="center">
-	<img src="sample/rust/codex-pagerank/depth_2_module.svg" alt="Codex module graph (depth 2)" style="max-width: 70%; height: auto;" />
+	<img src="https://raw.githubusercontent.com/allenanswerzq/llmcc-samples/main/rust/codex-pagerank/depth_2_module.svg" alt="Codex module graph (depth 2)" style="max-width: 70%; height: auto;" />
 </p>
 
 ### Depth 3: file + symbol graph
 
 <p align="center">
-	<img src="sample/rust/codex-pagerank/depth_3_file.svg" alt="Codex file and symbol graph (depth 3)" style="max-width: 100%; height: auto;" />
+	<img src="https://raw.githubusercontent.com/allenanswerzq/llmcc-samples/main/rust/codex-pagerank/depth_3_file.svg" alt="Codex file and symbol graph (depth 3)" style="max-width: 100%; height: auto;" />
 </p>
 
 <!-- Here's a small portion of the graph at depth 3, showing the core abstraction layer for prompt handling in Codex. Developers and AI agents can quickly grasp the architecture by examining this view.
@@ -75,7 +75,7 @@ By feeding the architectual view into the model, model can very quickly understa
 
 llmcc is designed to be very fast, and we will try to make it faster.
 
-The repo contains benchmark for many famous project output here: [sample/benchmark_results_16.md](sample/benchmark_results_8_linux_rust.md).
+Benchmark output for larger projects lives in [llmcc-samples](https://github.com/allenanswerzq/llmcc-samples/blob/main/benchmark_results_8_linux_rust.md), and the benchmark harness lives in [llmcc-bench](https://github.com/allenanswerzq/llmcc-bench).
 
 Excerpt (PageRank timing, depth=3, top-200):
 
@@ -117,7 +117,7 @@ Generate a crate-level graph for Codex (DOT to stdout):
 
 ```bash
 llmcc \
-	-d sample/repos/codex/codex-rs \
+	-d /path/to/codex-rs \
 	--graph \
 	--lang rust \
 	--depth 1
@@ -127,7 +127,7 @@ Generate a PageRank-filtered file+symbol graph (write to a file):
 
 ```bash
 llmcc \
-	-d sample/repos/codex/codex-rs \
+	-d /path/to/codex-rs \
 	--graph \
 	--depth 3 \
 	--pagerank-top-k 200 \
@@ -141,8 +141,10 @@ Render DOT to SVG (requires Graphviz):
 dot -Tsvg /tmp/codex_depth3_pagerank.dot -o /tmp/codex_depth3_pagerank.svg
 ```
 
-For generating sample graphs:
+For generating sample graphs, use [llmcc-bench](https://github.com/allenanswerzq/llmcc-bench). The generated graph outputs are published in [llmcc-samples](https://github.com/allenanswerzq/llmcc-samples).
 
-```bash
-just gen rust
-```
+## Related repositories
+
+- Agent tooling: [llmcc-agent](https://github.com/allenanswerzq/llmcc-agent)
+- Benchmark harness: [llmcc-bench](https://github.com/allenanswerzq/llmcc-bench)
+- Sample outputs: [llmcc-samples](https://github.com/allenanswerzq/llmcc-samples)
