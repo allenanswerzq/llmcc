@@ -1874,7 +1874,7 @@ fn snapshot_block_relations(project: &ProjectGraph) -> Vec<BlockRelationSnapshot
     let mut block_map: BTreeMap<BlockId, BlockRelationSnapshot> = BTreeMap::new();
 
     // First, collect all blocks that have relations
-    for block_id in related_map.get_connected_blocks() {
+    for block_id in related_map.blocks() {
         let Some(desc) = describe_block(block_id, cc) else {
             continue;
         };
@@ -1882,14 +1882,14 @@ fn snapshot_block_relations(project: &ProjectGraph) -> Vec<BlockRelationSnapshot
         let label = format!("u{}:{}", desc.unit, block_id.as_u32());
 
         // Get all relations for this block
-        let relations = related_map.get_all_relations(block_id);
+        let relations = related_map.relations_from(block_id);
 
         // Convert relations to grouped format
         let mut grouped: BTreeMap<String, Vec<String>> = BTreeMap::new();
-        for (relation, target_ids) in relations.iter() {
-            let rel_name = relation.to_string();
+        for relation in relations.iter() {
+            let rel_name = relation.relation.to_string();
 
-            for target_id in target_ids {
+            for target_id in &relation.targets {
                 // Get target label
                 let target_label = if let Some(target_desc) = describe_block(*target_id, cc) {
                     format!("u{}:{}", target_desc.unit, target_id.as_u32())
@@ -1937,11 +1937,11 @@ fn render_block_reports(
         let unit_index = unit_graph.unit_index();
         let mut entries = Vec::new();
 
-        for (_name_opt, kind, block_id) in project.cc.find_blocks_in_unit(unit_index) {
-            let Some(mut desc) = describe_block(block_id, project.cc) else {
+        for entry in project.cc.find_blocks_in_unit(unit_index) {
+            let Some(mut desc) = describe_block(entry.block_id, project.cc) else {
                 continue;
             };
-            desc.kind = kind.to_string();
+            desc.kind = entry.kind.to_string();
             entries.push(desc);
         }
 
@@ -1982,11 +1982,12 @@ fn describe_block<'a>(
     block_id: llmcc_core::graph_builder::BlockId,
     cc: &'a llmcc_core::context::CompileCtxt<'a>,
 ) -> Option<BlockDescriptor> {
-    let (unit, name, kind) = cc.block_info(block_id)?;
+    let entry = cc.block_info(block_id)?;
 
     // Try to get a stable name from the block index, then the block itself,
     // then HIR/symbol fallbacks for legacy or unnamed blocks.
-    let name = name
+    let name = entry
+        .name
         .or_else(|| {
             cc.try_block(block_id)
                 .and_then(|block| block.try_name().map(|name| name.to_string()))
@@ -2008,8 +2009,8 @@ fn describe_block<'a>(
 
     Some(BlockDescriptor {
         name,
-        kind: kind.to_string(),
-        unit,
+        kind: entry.kind.to_string(),
+        unit: entry.unit_index,
         id: block_id,
     })
 }

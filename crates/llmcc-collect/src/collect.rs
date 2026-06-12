@@ -25,7 +25,11 @@ pub fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
 
     let mut nodes: Vec<RenderNode> = all_blocks
         .into_par_iter()
-        .filter_map(|(block_id, unit_index, name_opt, kind)| {
+        .filter_map(|entry| {
+            let block_id = entry.block_id;
+            let unit_index = entry.unit_index;
+            let kind = entry.kind;
+
             // Skip kinds not in architecture view
             if !ARCHITECTURE_KINDS.contains(&kind) {
                 return None;
@@ -34,8 +38,8 @@ pub fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
             let unit = project.cc.compile_unit(unit_index);
             let block = unit.block(block_id);
 
-            let display_name = name_opt
-                .clone()
+            let display_name = entry
+                .name
                 .or_else(|| block.try_name().map(|name| name.to_string()))
                 .unwrap_or_else(|| format!("{}:{}", kind, block_id.as_u32()));
 
@@ -179,13 +183,13 @@ fn collect_field_types(project: &ProjectGraph, field_id: BlockId, types: &mut Ve
     let field_types = project
         .cc
         .block_relations()
-        .get_related(field_id, BlockRelation::TypeOf);
+        .related(field_id, BlockRelation::TypeOf);
     types.extend(field_types);
 
     let nested_fields = project
         .cc
         .block_relations()
-        .get_related(field_id, BlockRelation::HasField);
+        .related(field_id, BlockRelation::HasField);
     for nested_field_id in nested_fields {
         collect_field_types(project, nested_field_id, types);
     }
@@ -204,7 +208,7 @@ fn collect_field_edges<F>(
     let fields = project
         .cc
         .block_relations()
-        .get_related(block_id, BlockRelation::HasField);
+        .related(block_id, BlockRelation::HasField);
 
     for field_id in fields {
         let mut field_types = Vec::new();
@@ -341,7 +345,7 @@ fn collect_call_edges(
     let callees = project
         .cc
         .block_relations()
-        .get_related(block_id, BlockRelation::Calls);
+        .related(block_id, BlockRelation::Calls);
     for callee_id in callees {
         if node_set.contains(&callee_id) && block_id != callee_id {
             edges.insert(RenderEdge {
@@ -363,12 +367,12 @@ fn collect_param_edges(
     let params = project
         .cc
         .block_relations()
-        .get_related(block_id, BlockRelation::HasParameters);
+        .related(block_id, BlockRelation::HasParameters);
     for param_id in params {
         let param_types = project
             .cc
             .block_relations()
-            .get_related(param_id, BlockRelation::TypeOf);
+            .related(param_id, BlockRelation::TypeOf);
         for type_id in param_types {
             if node_set.contains(&type_id) && block_id != type_id {
                 edges.insert(RenderEdge {
@@ -391,12 +395,12 @@ fn collect_return_edges(
     let returns = project
         .cc
         .block_relations()
-        .get_related(block_id, BlockRelation::HasReturn);
+        .related(block_id, BlockRelation::HasReturn);
     for ret_id in returns {
         let ret_types = project
             .cc
             .block_relations()
-            .get_related(ret_id, BlockRelation::TypeOf);
+            .related(ret_id, BlockRelation::TypeOf);
         for type_id in ret_types {
             if node_set.contains(&type_id) && block_id != type_id {
                 edges.insert(RenderEdge {
@@ -423,12 +427,12 @@ fn collect_impl_edges<F>(
     let impl_blocks = project
         .cc
         .block_relations()
-        .get_related(block_id, BlockRelation::HasImpl);
+        .related(block_id, BlockRelation::HasImpl);
     for impl_id in impl_blocks {
         let implements = project
             .cc
             .block_relations()
-            .get_related(impl_id, BlockRelation::Implements);
+            .related(impl_id, BlockRelation::Implements);
         for trait_id in implements {
             if node_set.contains(&trait_id) && block_id != trait_id {
                 edges.insert(RenderEdge {
@@ -446,7 +450,7 @@ fn collect_impl_edges<F>(
     let direct_implements = project
         .cc
         .block_relations()
-        .get_related(block_id, BlockRelation::Implements);
+        .related(block_id, BlockRelation::Implements);
     for interface_id in direct_implements {
         // Only TypeScript interfaces should get the "interface -> implements" label
         // Rust traits are handled above via impl blocks
@@ -476,7 +480,7 @@ fn collect_extends_edges(
     let extends = project
         .cc
         .block_relations()
-        .get_related(block_id, BlockRelation::Extends);
+        .related(block_id, BlockRelation::Extends);
     for parent_id in extends {
         if node_set.contains(&parent_id) && block_id != parent_id {
             edges.insert(RenderEdge {
@@ -501,7 +505,7 @@ fn collect_type_dep_edges<F>(
     let uses = project
         .cc
         .block_relations()
-        .get_related(block_id, BlockRelation::Uses);
+        .related(block_id, BlockRelation::Uses);
     for type_id in uses {
         if node_set.contains(&type_id) && block_id != type_id {
             let type_kind = get_kind(type_id);
@@ -515,7 +519,7 @@ fn collect_type_dep_edges<F>(
                     let used_by = project
                         .cc
                         .block_relations()
-                        .get_related(type_id, BlockRelation::UsedBy);
+                        .related(type_id, BlockRelation::UsedBy);
                     if used_by.contains(&block_id) {
                         continue;
                     }
@@ -594,7 +598,7 @@ fn collect_decorator_edges<F>(
     let uses = project
         .cc
         .block_relations()
-        .get_related(block_id, BlockRelation::Uses);
+        .related(block_id, BlockRelation::Uses);
     for decorator_id in uses {
         if node_set.contains(&decorator_id) && block_id != decorator_id {
             let decorator_kind = get_kind(decorator_id);

@@ -135,7 +135,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     /// Add a relationship to the related_map.
     #[inline]
     fn add_relation(&self, from: BlockId, relation: BlockRelation, to: BlockId) {
-        self.cc.related_map.add_relation_impl(from, relation, to);
+        self.cc.related_map.insert(from, relation, to);
     }
 
     /// Link function/method relationships.

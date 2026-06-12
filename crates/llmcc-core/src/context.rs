@@ -10,7 +10,7 @@ use std::time::Instant;
 use tree_sitter::Node;
 
 use crate::block::{BasicBlock, BlockArena, BlockId, reset_block_id_counter};
-use crate::block_rel::{BlockIndexMaps, BlockRelationMap};
+use crate::block_rel::{BlockIndexEntry, BlockIndexMaps, BlockRelationMap};
 use crate::file::File;
 use crate::id::reset_hir_id_counter;
 use crate::interner::{InternPool, InternedStr};
@@ -555,7 +555,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// Return a scope by id, following merge redirects when present.
     pub fn try_scope(&'tcx self, scope_id: ScopeId) -> Option<&'tcx Scope<'tcx>> {
         self.arena.get_scope(scope_id.0).and_then(|scope| {
-            if let Some(target_id) = scope.get_redirect() {
+            if let Some(target_id) = scope.try_redirect() {
                 self.try_scope(target_id)
             } else {
                 Some(scope)
@@ -704,27 +704,18 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     /// Return blocks indexed by display name.
-    pub fn find_blocks_by_name(
-        &self,
-        name: &'tcx str,
-    ) -> Vec<(usize, crate::block::BlockKind, BlockId)> {
-        self.block_indexes.find_by_name(name)
+    pub fn find_blocks_by_name(&self, name: &'tcx str) -> Vec<BlockIndexEntry> {
+        self.block_indexes.by_name(name)
     }
 
     /// Return blocks indexed by kind.
-    pub fn find_blocks_by_kind(
-        &self,
-        kind: crate::block::BlockKind,
-    ) -> Vec<(usize, Option<String>, BlockId)> {
-        self.block_indexes.find_by_kind(kind)
+    pub fn find_blocks_by_kind(&self, kind: crate::block::BlockKind) -> Vec<BlockIndexEntry> {
+        self.block_indexes.by_kind(kind)
     }
 
     /// Return blocks in a specific unit.
-    pub fn find_blocks_in_unit(
-        &self,
-        unit_index: usize,
-    ) -> Vec<(Option<String>, crate::block::BlockKind, BlockId)> {
-        self.block_indexes.find_by_unit(unit_index)
+    pub fn find_blocks_in_unit(&self, unit_index: usize) -> Vec<BlockIndexEntry> {
+        self.block_indexes.by_unit(unit_index)
     }
 
     /// Return block ids for a specific kind in a specific unit.
@@ -733,20 +724,17 @@ impl<'tcx> CompileCtxt<'tcx> {
         kind: crate::block::BlockKind,
         unit_index: usize,
     ) -> Vec<BlockId> {
-        self.block_indexes.find_by_kind_and_unit(kind, unit_index)
+        self.block_indexes.by_kind_in_unit(kind, unit_index)
     }
 
     /// Return block metadata by id.
-    pub fn block_info(
-        &self,
-        block_id: BlockId,
-    ) -> Option<(usize, Option<String>, crate::block::BlockKind)> {
-        self.block_indexes.get_block_info(block_id)
+    pub fn block_info(&self, block_id: BlockId) -> Option<BlockIndexEntry> {
+        self.block_indexes.block_info(block_id)
     }
 
     /// Return all blocks with their metadata.
-    pub fn blocks(&self) -> Vec<(BlockId, usize, Option<String>, crate::block::BlockKind)> {
-        self.block_indexes.iter_all_blocks()
+    pub fn blocks(&self) -> Vec<BlockIndexEntry> {
+        self.block_indexes.blocks()
     }
 
     /// Return all registered symbols.

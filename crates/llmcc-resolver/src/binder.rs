@@ -28,7 +28,7 @@ impl<'a> BinderScopes<'a> {
 
     #[inline]
     pub fn top(&self) -> &'a Scope<'a> {
-        self.scopes.top().unwrap()
+        self.scopes.try_current().unwrap()
     }
 
     #[inline]
@@ -109,7 +109,7 @@ impl<'a> BinderScopes<'a> {
     pub fn lookup_globals(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
         let options = SymbolFilter::kinds(kind_filters);
         let name_key = self.unit.interner().intern(name);
-        self.scopes.globals().lookup_symbols(name_key, options)
+        self.scopes.globals().try_lookup_symbols(name_key, options)
     }
 
     #[inline]
@@ -129,7 +129,7 @@ impl<'a> BinderScopes<'a> {
     #[inline]
     pub fn lookup_symbols(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
         let options = SymbolFilter::kinds(kind_filters);
-        self.scopes.lookup_symbols(name, options)
+        self.scopes.try_lookup_symbols(name, options)
     }
 
     #[inline]
@@ -229,7 +229,7 @@ impl<'a> BinderScopes<'a> {
         };
 
         scopes
-            .lookup_symbols(member_name, options)?
+            .try_lookup_symbols(member_name, options)?
             .into_iter()
             .last()
     }
@@ -244,7 +244,7 @@ impl<'a> BinderScopes<'a> {
         if !kind_filters.is_empty() {
             options = options.with_result_kinds(kind_filters)
         }
-        let symbols = self.scopes.lookup_qualified(qualified_name, options)?;
+        let symbols = self.scopes.try_lookup_qualified(qualified_name, options)?;
         Some(symbols)
     }
 

@@ -355,26 +355,25 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
     }
 
     fn collect_entries(&self) -> Vec<BlockEntry> {
-        let mut raw_entries: Vec<(BlockId, usize, Option<String>, BlockKind)> =
-            self.graph.cc.blocks();
+        let mut raw_entries = self.graph.cc.blocks();
 
-        raw_entries.sort_by_key(|(block_id, ..)| block_id.as_u32());
+        raw_entries.sort_by_key(|entry| entry.block_id.as_u32());
 
         raw_entries
             .into_iter()
-            .map(|(block_id, unit_index, name, kind)| {
+            .map(|entry| {
                 let file_path = self
                     .graph
                     .cc
                     .files
-                    .get(unit_index)
+                    .get(entry.unit_index)
                     .and_then(|file| file.path().map(|path| path.to_string()));
 
                 BlockEntry {
-                    block_id,
-                    unit_index,
-                    name,
-                    kind,
+                    block_id: entry.block_id,
+                    unit_index: entry.unit_index,
+                    name: entry.name,
+                    kind: entry.kind,
                     file_path,
                 }
             })
@@ -402,11 +401,7 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
                     continue;
                 }
 
-                let targets = self
-                    .graph
-                    .cc
-                    .related_map
-                    .get_related(entry.block_id, relation);
+                let targets = self.graph.cc.related_map.related(entry.block_id, relation);
 
                 for dep_id in targets {
                     if let Some(&target_idx) = index_by_block.get(&dep_id) {

@@ -10,6 +10,10 @@ use crate::ir::{Arena, HirId};
 use crate::symbol::{ScopeId, SymId, SymKindSet, Symbol};
 
 /// Symbol table owned by one semantic scope.
+///
+/// A `Scope` stores symbols declared by one HIR owner and optional semantic
+/// parent scopes used for member and hierarchy traversal. Lexical visibility is
+/// handled by [`ScopeStack`], not by `Scope` itself.
 pub struct Scope<'tcx> {
     id: ScopeId,
     symbols: DashMap<InternedStr, Vec<&'tcx Symbol>>,
@@ -22,12 +26,12 @@ pub struct Scope<'tcx> {
 }
 
 impl<'tcx> Scope<'tcx> {
-    /// Creates a new scope owned by the given HIR node.
+    /// Create an empty scope owned by the given HIR node.
     pub fn new(owner: HirId) -> Self {
         Self::new_with(owner, None, None)
     }
 
-    /// Creates a new scope owned by the given HIR node and associated with a symbol.
+    /// Create a scope owned by the given HIR node and optional defining symbol.
     pub fn new_with(
         owner: HirId,
         symbol: Option<&'tcx Symbol>,
@@ -36,7 +40,8 @@ impl<'tcx> Scope<'tcx> {
         Self::from_symbols(owner, symbol, interner, DashMap::new())
     }
 
-    /// Creates a new scope with specified shard count for the DashMap.
+    /// Create a scope with a specific symbol-map shard count.
+    ///
     /// Use this for high-contention scopes like globals.
     pub fn new_with_shards(
         owner: HirId,
@@ -100,13 +105,14 @@ impl<'tcx> Scope<'tcx> {
         *self.symbol.write() = Some(symbol);
     }
 
+    /// Return this scope's defining symbol, if one has been attached.
     #[inline]
     pub fn try_symbol(&self) -> Option<&'tcx Symbol> {
         *self.symbol.read()
     }
 
     /// Find a semantic parent scope introduced by a symbol of the given kind.
-    pub fn find_parent_by_kind(&self, kind: crate::symbol::SymKind) -> Option<&'tcx Symbol> {
+    pub fn try_parent_symbol_by_kind(&self, kind: crate::symbol::SymKind) -> Option<&'tcx Symbol> {
         let mut queue = VecDeque::new();
         let mut visited = HashSet::new();
         queue.extend(self.parents());
@@ -130,16 +136,17 @@ impl<'tcx> Scope<'tcx> {
         self.id
     }
 
-    /// If this scope was redirected (merged into another), get the target scope ID.
-    pub fn get_redirect(&self) -> Option<ScopeId> {
+    /// Return this scope's redirect target, if it was merged into another scope.
+    pub fn try_redirect(&self) -> Option<ScopeId> {
         *self.redirect.read()
     }
 
-    /// Set the redirect for this scope (used when merging scopes).
+    /// Set this scope's redirect target after merging scopes.
     pub fn set_redirect(&self, target: ScopeId) {
         *self.redirect.write() = Some(target);
     }
 
+    /// Return semantic parent scopes used for hierarchy traversal.
     #[inline]
     pub fn parents(&self) -> Vec<&'tcx Scope<'tcx>> {
         self.parents.read().clone()
@@ -161,13 +168,14 @@ impl<'tcx> Scope<'tcx> {
         }
     }
 
-    /// Inserts a symbol into this scope.
+    /// Insert a symbol into this scope and return its id.
     pub fn insert(&self, symbol: &'tcx Symbol) -> SymId {
         self.symbols.entry(symbol.name).or_default().push(symbol);
         symbol.id
     }
 
-    pub fn lookup_symbols(
+    /// Look up symbols by interned name within this scope only.
+    pub fn try_lookup_symbols(
         &self,
         name: InternedStr,
         filter: SymbolFilter,
@@ -236,7 +244,11 @@ impl<'tcx> fmt::Debug for Scope<'tcx> {
     }
 }
 
-/// Stack used for lexical lookup and scoped symbol insertion.
+/// Lexical scope stack used for lookup and scoped symbol insertion.
+///
+/// The stack itself models lexical visibility from globals to the current
+/// scope. Individual scopes may also carry semantic parents; [`push_recursive`]
+/// exposes those parents beneath the requested scope for member-like lookup.
 pub struct ScopeStack<'tcx> {
     arena: &'tcx Arena<'tcx>,
     interner: &'tcx InternPool,
@@ -255,6 +267,7 @@ impl<'tcx> Clone for ScopeStack<'tcx> {
 }
 
 impl<'tcx> ScopeStack<'tcx> {
+    /// Create an empty scope stack backed by the shared HIR arena and interner.
     pub fn new(arena: &'tcx Arena<'tcx>, interner: &'tcx InternPool) -> Self {
         Self {
             arena,
@@ -263,16 +276,21 @@ impl<'tcx> ScopeStack<'tcx> {
         }
     }
 
+    /// Number of scopes currently on the stack.
     #[inline]
     pub fn depth(&self) -> usize {
         self.stack.read().len()
     }
 
+    /// Push one scope onto the top of the stack.
     #[inline]
     pub fn push(&self, scope: &'tcx Scope<'tcx>) {
         self.stack.write().push(scope);
     }
 
+    /// Return the global scope at stack index 0.
+    ///
+    /// Panics if called before a global scope has been pushed.
     #[inline]
     pub fn globals(&self) -> &'tcx Scope<'tcx> {
         self.stack
@@ -282,8 +300,9 @@ impl<'tcx> ScopeStack<'tcx> {
             .expect("scope stack must contain a global scope")
     }
 
+    /// Return the current lexical scope, if the stack is not empty.
     #[inline]
-    pub fn top(&self) -> Option<&'tcx Scope<'tcx>> {
+    pub fn try_current(&self) -> Option<&'tcx Scope<'tcx>> {
         self.stack.read().last().copied()
     }
 
@@ -312,11 +331,13 @@ impl<'tcx> ScopeStack<'tcx> {
         }
     }
 
+    /// Pop the current scope from the stack.
     #[inline]
     pub fn pop(&self) -> Option<&'tcx Scope<'tcx>> {
         self.stack.write().pop()
     }
 
+    /// Pop scopes until the stack reaches `depth`.
     pub fn pop_until(&self, depth: usize) {
         let mut stack = self.stack.write();
         while stack.len() > depth {
@@ -325,7 +346,11 @@ impl<'tcx> ScopeStack<'tcx> {
     }
 
     /// Looks up a name from innermost lexical scope to outermost scope.
-    pub fn lookup_symbols(&self, name: &str, filter: SymbolFilter) -> Option<Vec<&'tcx Symbol>> {
+    pub fn try_lookup_symbols(
+        &self,
+        name: &str,
+        filter: SymbolFilter,
+    ) -> Option<Vec<&'tcx Symbol>> {
         if name.is_empty() {
             return None;
         }
@@ -335,11 +360,14 @@ impl<'tcx> ScopeStack<'tcx> {
         stack
             .iter()
             .rev()
-            .find_map(|scope| scope.lookup_symbols(name_key, filter))
+            .find_map(|scope| scope.try_lookup_symbols(name_key, filter))
     }
 
-    /// Finds an existing symbol in the target scope or creates one there.
-    pub fn lookup_or_insert(
+    /// Find existing symbols in the target scope or create one there.
+    ///
+    /// Returns `None` when `name` is empty or when the target scope does not
+    /// exist, such as inserting into the current scope on an empty stack.
+    pub fn try_lookup_or_insert(
         &self,
         name: &str,
         node: HirId,
@@ -353,7 +381,7 @@ impl<'tcx> ScopeStack<'tcx> {
         let stack = self.stack.read();
         let scope = options.insert_scope.select(&stack)?;
 
-        let symbols = scope.lookup_symbols(name_key, options.existing_filter());
+        let symbols = scope.try_lookup_symbols(name_key, options.existing_filter());
         if let Some(symbols) = symbols {
             debug_assert!(!symbols.is_empty());
             Some(symbols)
@@ -371,7 +399,7 @@ impl<'tcx> ScopeStack<'tcx> {
     /// By default the first part is resolved from the global scope. With lexical
     /// start enabled, visible scopes are tried from innermost to outermost. Kind
     /// filters apply only to the final path component.
-    pub fn lookup_qualified(
+    pub fn try_lookup_qualified(
         &self,
         qualified_name: &[&str],
         query: QualifiedLookup,
@@ -381,7 +409,8 @@ impl<'tcx> ScopeStack<'tcx> {
         }
 
         for scope in self.qualified_start_scopes(qualified_name[0], query) {
-            if let Some(result) = self.lookup_qualified_recursive(scope, qualified_name, 0, &query)
+            if let Some(result) =
+                self.try_lookup_qualified_recursive(scope, qualified_name, 0, &query)
             {
                 return Some(result);
             }
@@ -413,13 +442,13 @@ impl<'tcx> ScopeStack<'tcx> {
             .filter(|scope| {
                 visited.insert(scope.id())
                     && scope
-                        .lookup_symbols(name_key, SymbolFilter::any())
+                        .try_lookup_symbols(name_key, SymbolFilter::any())
                         .is_some()
             })
             .collect()
     }
 
-    fn lookup_qualified_recursive(
+    fn try_lookup_qualified_recursive(
         &self,
         scope: &'tcx Scope<'tcx>,
         qualified_name: &[&str],
@@ -437,7 +466,7 @@ impl<'tcx> ScopeStack<'tcx> {
         } else {
             SymbolFilter::any()
         };
-        let symbols = scope.lookup_symbols(name_key, filter)?;
+        let symbols = scope.try_lookup_symbols(name_key, filter)?;
 
         if index == qualified_name.len() - 1 {
             return Some(symbols);
@@ -449,9 +478,12 @@ impl<'tcx> ScopeStack<'tcx> {
                 && let Some(next_scope) = self.arena.get_scope(symbol_scope_id.0)
             {
                 debug_assert!(next_scope.id() == symbol_scope_id);
-                if let Some(result) =
-                    self.lookup_qualified_recursive(next_scope, qualified_name, index + 1, query)
-                {
+                if let Some(result) = self.try_lookup_qualified_recursive(
+                    next_scope,
+                    qualified_name,
+                    index + 1,
+                    query,
+                ) {
                     results.extend(result);
                 }
             }
@@ -482,15 +514,18 @@ impl InsertTarget {
 }
 
 #[derive(Debug, Clone, Copy, Default)]
+/// Predicate used by scope lookup to filter candidate symbols.
 pub struct SymbolFilter {
     kinds: SymKindSet,
 }
 
 impl SymbolFilter {
+    /// Match symbols of any kind.
     pub fn any() -> Self {
         Self::default()
     }
 
+    /// Match symbols whose kind appears in `kinds`.
     pub fn kinds(kinds: SymKindSet) -> Self {
         Self { kinds }
     }
@@ -505,16 +540,19 @@ impl SymbolFilter {
 }
 
 #[derive(Debug, Clone, Copy, Default)]
+/// Options controlling where lookup-or-insert writes and which existing symbols it reuses.
 pub struct InsertOptions {
     insert_scope: InsertTarget,
     existing_filter: SymbolFilter,
 }
 
 impl InsertOptions {
+    /// Insert into the current stack scope and reuse any existing symbol kind.
     pub fn current() -> Self {
         Self::default()
     }
 
+    /// Insert into the global stack scope and reuse any existing symbol kind.
     pub fn global() -> Self {
         Self {
             insert_scope: InsertTarget::Global,
@@ -522,6 +560,7 @@ impl InsertOptions {
         }
     }
 
+    /// Restrict existing-symbol reuse to the provided kinds.
     pub fn with_existing_kinds(mut self, kinds: SymKindSet) -> Self {
         self.existing_filter = SymbolFilter::kinds(kinds);
         self
@@ -540,16 +579,19 @@ enum QualifiedStart {
 }
 
 #[derive(Debug, Clone, Copy, Default)]
+/// Options for qualified path lookup.
 pub struct QualifiedLookup {
     start: QualifiedStart,
     result_filter: SymbolFilter,
 }
 
 impl QualifiedLookup {
+    /// Start qualified lookup from the global scope.
     pub fn global() -> Self {
         Self::default()
     }
 
+    /// Start qualified lookup from visible lexical scopes, innermost first.
     pub fn lexical() -> Self {
         Self {
             start: QualifiedStart::Lexical,
@@ -557,6 +599,7 @@ impl QualifiedLookup {
         }
     }
 
+    /// Restrict the final path component to the provided symbol kinds.
     pub fn with_result_kinds(mut self, kinds: SymKindSet) -> Self {
         self.result_filter = SymbolFilter::kinds(kinds);
         self
@@ -622,12 +665,12 @@ mod tests {
         stack.push(local);
 
         let symbols = stack
-            .lookup_symbols("value", SymbolFilter::any())
+            .try_lookup_symbols("value", SymbolFilter::any())
             .expect("unfiltered lookup should find local symbol");
         assert_eq!(symbol_ids(symbols), vec![local_symbol.id()]);
 
         let symbols = stack
-            .lookup_symbols(
+            .try_lookup_symbols(
                 "value",
                 SymbolFilter::kinds(SymKindSet::from_kind(SymKind::Variable)),
             )
@@ -644,7 +687,7 @@ mod tests {
         stack.push(globals);
 
         let crate_symbol = stack
-            .lookup_or_insert(
+            .try_lookup_or_insert(
                 "auth",
                 HirId(1),
                 InsertOptions::current().with_existing_kinds(SymKindSet::from_kind(SymKind::Crate)),
@@ -655,7 +698,7 @@ mod tests {
         crate_symbol.set_kind(SymKind::Crate);
 
         let file_symbol = stack
-            .lookup_or_insert(
+            .try_lookup_or_insert(
                 "auth",
                 HirId(2),
                 InsertOptions::current().with_existing_kinds(SymKindSet::from_kind(SymKind::File)),
@@ -667,7 +710,7 @@ mod tests {
 
         assert_ne!(crate_symbol.id(), file_symbol.id());
         let all_symbols = globals
-            .lookup_symbols(interner.intern("auth"), SymbolFilter::any())
+            .try_lookup_symbols(interner.intern("auth"), SymbolFilter::any())
             .expect("scope should contain both symbols");
         assert_eq!(all_symbols.len(), 2);
     }
@@ -692,7 +735,7 @@ mod tests {
         assert_eq!(parent_ids, vec![module_scope.id()]);
         assert_eq!(
             file_scope
-                .find_parent_by_kind(SymKind::Crate)
+                .try_parent_symbol_by_kind(SymKind::Crate)
                 .map(Symbol::id),
             Some(crate_symbol.id())
         );
@@ -713,9 +756,9 @@ mod tests {
         stack.push_recursive(file_scope);
 
         assert_eq!(stack.depth(), 3);
-        assert_eq!(stack.top().map(Scope::id), Some(file_scope.id()));
+        assert_eq!(stack.try_current().map(Scope::id), Some(file_scope.id()));
         let symbols = stack
-            .lookup_symbols("app", SymbolFilter::any())
+            .try_lookup_symbols("app", SymbolFilter::any())
             .expect("recursive stack should expose semantic parents");
         assert_eq!(symbol_ids(symbols), vec![crate_symbol.id()]);
     }
@@ -737,7 +780,7 @@ mod tests {
 
         stack.push(globals);
         let symbols = stack
-            .lookup_qualified(
+            .try_lookup_qualified(
                 &["models", "v1", "User"],
                 QualifiedLookup::global().with_result_kinds(SymKindSet::from_kind(SymKind::Struct)),
             )
@@ -768,7 +811,7 @@ mod tests {
         stack.push(globals);
         stack.push(local);
         let symbols = stack
-            .lookup_qualified(
+            .try_lookup_qualified(
                 &["local_ns", "Item"],
                 QualifiedLookup::lexical()
                     .with_result_kinds(SymKindSet::from_kind(SymKind::Struct)),
@@ -812,7 +855,7 @@ mod tests {
         stack.push(globals);
         stack.push(local);
         let symbols = stack
-            .lookup_qualified(
+            .try_lookup_qualified(
                 &["ns", "Item"],
                 QualifiedLookup::lexical()
                     .with_result_kinds(SymKindSet::from_kind(SymKind::Struct)),
@@ -845,7 +888,7 @@ mod tests {
         stack.push(globals);
         stack.push(local);
         let symbols = stack
-            .lookup_qualified(
+            .try_lookup_qualified(
                 &["ns", "Item"],
                 QualifiedLookup::lexical()
                     .with_result_kinds(SymKindSet::from_kind(SymKind::Struct)),

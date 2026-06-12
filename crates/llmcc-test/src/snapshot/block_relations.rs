@@ -35,21 +35,22 @@ impl Snapshot for BlockRelationsSnapshot {
 
         for unit_index in 0..ctx.cc.unit_count() {
             // Get all blocks in this unit
-            for (_name_opt, kind, block_id) in ctx.cc.find_blocks_in_unit(unit_index) {
+            for entry in ctx.cc.find_blocks_in_unit(unit_index) {
+                let block_id = entry.block_id;
                 let label = format!("u{}:{}", unit_index, block_id.as_u32());
 
                 // Get block name
                 let name = ctx
                     .cc
                     .block_info(block_id)
-                    .and_then(|(_, n, _)| n)
+                    .and_then(|entry| entry.name)
                     .unwrap_or_default();
 
                 // Collect all relation types
                 let mut relations = Vec::new();
 
                 // Check for ImplFor relation (impl -> type it implements for)
-                let impl_for = related_map.get_related(block_id, BlockRelation::ImplFor);
+                let impl_for = related_map.related(block_id, BlockRelation::ImplFor);
                 if !impl_for.is_empty() {
                     let labels: Vec<String> = impl_for
                         .iter()
@@ -59,7 +60,7 @@ impl Snapshot for BlockRelationsSnapshot {
                 }
 
                 // Check for HasImpl relation (type <- impl blocks)
-                let has_impl = related_map.get_related(block_id, BlockRelation::HasImpl);
+                let has_impl = related_map.related(block_id, BlockRelation::HasImpl);
                 if !has_impl.is_empty() {
                     let labels: Vec<String> = has_impl
                         .iter()
@@ -69,7 +70,7 @@ impl Snapshot for BlockRelationsSnapshot {
                 }
 
                 // Check for HasMethod relation (impl/trait/class -> methods)
-                let has_method = related_map.get_related(block_id, BlockRelation::HasMethod);
+                let has_method = related_map.related(block_id, BlockRelation::HasMethod);
                 if !has_method.is_empty() {
                     let labels: Vec<String> = has_method
                         .iter()
@@ -79,7 +80,7 @@ impl Snapshot for BlockRelationsSnapshot {
                 }
 
                 // Check for MethodOf relation (method <- impl/trait/class)
-                let method_of = related_map.get_related(block_id, BlockRelation::MethodOf);
+                let method_of = related_map.related(block_id, BlockRelation::MethodOf);
                 if !method_of.is_empty() {
                     let labels: Vec<String> = method_of
                         .iter()
@@ -89,7 +90,7 @@ impl Snapshot for BlockRelationsSnapshot {
                 }
 
                 // Check for Contains relation (structural parent -> child)
-                let contains = related_map.get_related(block_id, BlockRelation::Contains);
+                let contains = related_map.related(block_id, BlockRelation::Contains);
                 if !contains.is_empty() {
                     let labels: Vec<String> = contains
                         .iter()
@@ -99,7 +100,7 @@ impl Snapshot for BlockRelationsSnapshot {
                 }
 
                 // Check for ContainedBy relation (child <- parent)
-                let contained_by = related_map.get_related(block_id, BlockRelation::ContainedBy);
+                let contained_by = related_map.related(block_id, BlockRelation::ContainedBy);
                 if !contained_by.is_empty() {
                     let labels: Vec<String> = contained_by
                         .iter()
@@ -109,7 +110,7 @@ impl Snapshot for BlockRelationsSnapshot {
                 }
 
                 // Check for Calls relation (func -> called funcs)
-                let calls = related_map.get_related(block_id, BlockRelation::Calls);
+                let calls = related_map.related(block_id, BlockRelation::Calls);
                 if !calls.is_empty() {
                     let labels: Vec<String> = calls
                         .iter()
@@ -119,7 +120,7 @@ impl Snapshot for BlockRelationsSnapshot {
                 }
 
                 // Check for CalledBy relation (func <- calling funcs)
-                let called_by = related_map.get_related(block_id, BlockRelation::CalledBy);
+                let called_by = related_map.related(block_id, BlockRelation::CalledBy);
                 if !called_by.is_empty() {
                     let labels: Vec<String> = called_by
                         .iter()
@@ -132,7 +133,7 @@ impl Snapshot for BlockRelationsSnapshot {
                 if !relations.is_empty() {
                     entries.push(RelationEntry {
                         label,
-                        kind: kind.to_string(),
+                        kind: entry.kind.to_string(),
                         name,
                         relations,
                     });

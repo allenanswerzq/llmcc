@@ -371,12 +371,13 @@ impl<'tcx> ProjectQuery<'tcx> {
 
     /// Helper: convert a UnitNode to block info
     fn node_to_block_info(&self, node: UnitNode) -> Option<GraphBlockInfo> {
-        let (unit_index, name, kind) = self.graph.block_info(node.block_id)?;
+        let entry = self.graph.block_info(node.block_id)?;
 
         // Try to get the fully qualified name from the symbol if available
         let (display_name, qualified_name) =
             if let Some(symbol) = self.graph.cc.find_symbol_by_block_id(node.block_id) {
-                let fallback = name
+                let fallback = entry
+                    .name
                     .clone()
                     .unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0));
                 let base_name = self
@@ -389,7 +390,10 @@ impl<'tcx> ProjectQuery<'tcx> {
                 (base_name, None)
             } else {
                 (
-                    name.unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0)),
+                    entry
+                        .name
+                        .clone()
+                        .unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0)),
                     None,
                 )
             };
@@ -399,23 +403,23 @@ impl<'tcx> ProjectQuery<'tcx> {
             .graph
             .cc
             .files
-            .get(unit_index)
+            .get(entry.unit_index)
             .and_then(|file| file.path().map(|s| s.to_string()));
 
         // Extract source code for this block
-        let source_code = self.get_block_source_code(node, unit_index);
+        let source_code = self.get_block_source_code(node, entry.unit_index);
 
         // Calculate line numbers
-        let (start_line, end_line) = self.get_line_numbers(node, unit_index);
+        let (start_line, end_line) = self.get_line_numbers(node, entry.unit_index);
 
         Some(GraphBlockInfo {
             name: display_name,
             qualified_name,
-            kind: format!("{:?}", kind),
+            kind: format!("{:?}", entry.kind),
             file_path,
             source_code,
             node,
-            unit_index,
+            unit_index: entry.unit_index,
             start_line,
             end_line,
         })

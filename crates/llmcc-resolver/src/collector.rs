@@ -132,7 +132,7 @@ impl<'a> CollectorScopes<'a> {
     /// Get the current (top) scope on the stack
     #[inline]
     pub fn top(&self) -> Option<&'a Scope<'a>> {
-        self.scopes.top()
+        self.scopes.try_current()
     }
 
     /// Initialize a symbol with common properties
@@ -154,9 +154,9 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let symbols = self
-            .scopes
-            .lookup_or_insert(name, node.id(), InsertOptions::current())?;
+        let symbols =
+            self.scopes
+                .try_lookup_or_insert(name, node.id(), InsertOptions::current())?;
         let symbol = symbols.last().copied()?;
         self.init_symbol(symbol, name, node, kind);
         Some(symbol)
@@ -173,7 +173,7 @@ impl<'a> CollectorScopes<'a> {
         // Use kind filter to avoid collisions between symbols of different kinds
         // e.g., crate "auth" and file "auth" should be separate symbols
         let options = InsertOptions::global().with_existing_kinds(SymKindSet::from_kind(kind));
-        let symbols = self.scopes.lookup_or_insert(name, node.id(), options)?;
+        let symbols = self.scopes.try_lookup_or_insert(name, node.id(), options)?;
         let symbol = symbols.last().copied()?;
         self.init_symbol(symbol, name, node, kind);
         symbol.set_is_global(true);
@@ -224,7 +224,7 @@ impl<'a> CollectorScopes<'a> {
     #[inline]
     pub fn lookup_symbols(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
         let options = SymbolFilter::kinds(kind_filters);
-        self.scopes.lookup_symbols(name, options)
+        self.scopes.try_lookup_symbols(name, options)
     }
 
     #[inline]

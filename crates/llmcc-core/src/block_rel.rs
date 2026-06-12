@@ -1,50 +1,64 @@
-//! Block relations for dependency tracking.
+//! Directed block relations and block metadata indexes.
 
 use dashmap::DashMap;
 use std::collections::{HashMap, HashSet};
 
 use crate::block::{BlockId, BlockKind, BlockRelation};
 
-/// Manages relationships between blocks in a clean, type-safe way
+/// Concurrent map of directed, de-duplicated relations between blocks.
 #[derive(Debug, Default, Clone)]
 pub struct BlockRelationMap {
-    /// BlockId -> (Relation -> Vec<BlockId>)
-    relations: DashMap<BlockId, HashMap<BlockRelation, Vec<BlockId>>>,
+    /// Source block -> relation kind -> target blocks.
+    relations: DashMap<BlockId, HashMap<BlockRelation, HashSet<BlockId>>>,
+}
+
+/// Outgoing targets for one relation type.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BlockRelationEntry {
+    pub relation: BlockRelation,
+    pub targets: Vec<BlockId>,
+}
+
+impl BlockRelationEntry {
+    fn new(relation: BlockRelation, targets: impl IntoIterator<Item = BlockId>) -> Self {
+        Self {
+            relation,
+            targets: sorted_block_ids(targets),
+        }
+    }
+}
+
+fn sorted_block_ids(ids: impl IntoIterator<Item = BlockId>) -> Vec<BlockId> {
+    let mut ids: Vec<_> = ids.into_iter().collect();
+    ids.sort();
+    ids
 }
 
 impl BlockRelationMap {
-    /// Add a relationship between two blocks
-    pub fn add_relation_impl(&self, from: BlockId, relation: BlockRelation, to: BlockId) {
-        self.relations
-            .entry(from)
-            .or_default()
-            .entry(relation)
-            .or_default()
-            .push(to);
-    }
-
-    /// Add multiple relationships of the same type from one block
-    pub fn add_relation_impls(&self, from: BlockId, relation: BlockRelation, targets: &[BlockId]) {
+    /// Insert a directed relation. Returns `true` when it was newly inserted.
+    pub fn insert(&self, from: BlockId, relation: BlockRelation, to: BlockId) -> bool {
         let mut entry = self.relations.entry(from).or_default();
-        let relation_vec = entry.entry(relation).or_default();
-        relation_vec.extend_from_slice(targets);
+        let targets = entry.entry(relation).or_default();
+        targets.insert(to)
     }
 
-    /// Remove a specific relationship
-    pub fn remove_relation_impl(
-        &self,
-        from: BlockId,
-        relation: BlockRelation,
-        to: BlockId,
-    ) -> bool {
+    /// Insert multiple directed relations of the same type.
+    pub fn extend(&self, from: BlockId, relation: BlockRelation, targets: &[BlockId]) -> usize {
+        targets
+            .iter()
+            .filter(|&&target| self.insert(from, relation, target))
+            .count()
+    }
+
+    /// Remove one directed relation.
+    pub fn remove(&self, from: BlockId, relation: BlockRelation, to: BlockId) -> bool {
         let mut removed = false;
         if let Some(mut block_relations) = self.relations.get_mut(&from) {
             if let Some(targets) = block_relations.get_mut(&relation)
-                && let Some(pos) = targets.iter().position(|&x| x == to)
+                && targets.remove(&to)
             {
-                targets.remove(pos);
                 removed = true;
-                // Clean up empty vectors
+                // Clean up empty target sets
                 if targets.is_empty() {
                     block_relations.remove(&relation);
                 }
@@ -58,12 +72,12 @@ impl BlockRelationMap {
         removed
     }
 
-    /// Remove all relationships of a specific type from a block
-    pub fn remove_all_relations(&self, from: BlockId, relation: BlockRelation) -> Vec<BlockId> {
+    /// Remove all outgoing relations of one type from a block.
+    pub fn remove_relation_kind(&self, from: BlockId, relation: BlockRelation) -> Vec<BlockId> {
         let mut result = Vec::new();
         if let Some(mut block_relations) = self.relations.get_mut(&from) {
             if let Some(targets) = block_relations.remove(&relation) {
-                result = targets;
+                result = sorted_block_ids(targets);
             }
             // Clean up empty maps
             if block_relations.is_empty() {
@@ -74,91 +88,75 @@ impl BlockRelationMap {
         result
     }
 
-    /// Remove all relationships for a block (useful when deleting a block)
-    pub fn remove_block_relations(&self, block_id: BlockId) {
+    /// Remove all outgoing relations for a block.
+    pub fn remove_block(&self, block_id: BlockId) {
         self.relations.remove(&block_id);
     }
 
-    /// Get all blocks related to a given block with a specific relationship
-    pub fn get_related(&self, from: BlockId, relation: BlockRelation) -> Vec<BlockId> {
+    /// Return outgoing targets for one relation type.
+    pub fn related(&self, from: BlockId, relation: BlockRelation) -> Vec<BlockId> {
         self.relations
             .get(&from)
-            .and_then(|block_relations| block_relations.get(&relation).cloned())
+            .and_then(|block_relations| {
+                block_relations
+                    .get(&relation)
+                    .map(|targets| sorted_block_ids(targets.iter().copied()))
+            })
             .unwrap_or_default()
     }
 
-    /// Get all relationships for a specific block
-    pub fn get_all_relations(&self, from: BlockId) -> HashMap<BlockRelation, Vec<BlockId>> {
-        self.relations
+    /// Return all outgoing relations from a block.
+    pub fn relations_from(&self, from: BlockId) -> Vec<BlockRelationEntry> {
+        let mut entries: Vec<_> = self
+            .relations
             .get(&from)
-            .map(|r| r.clone())
-            .unwrap_or_default()
+            .map(|relations| {
+                relations
+                    .iter()
+                    .map(|(&relation, targets)| {
+                        BlockRelationEntry::new(relation, targets.iter().copied())
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+        entries.sort_by_key(|entry: &BlockRelationEntry| entry.relation as usize);
+        entries
     }
 
-    /// Check if a specific relationship exists
-    pub fn has_relation(&self, from: BlockId, relation: BlockRelation, to: BlockId) -> bool {
+    /// Return whether a specific relation exists.
+    pub fn contains(&self, from: BlockId, relation: BlockRelation, to: BlockId) -> bool {
         self.relations
             .get(&from)
             .and_then(|block_relations| block_relations.get(&relation).map(|t| t.contains(&to)))
             .unwrap_or(false)
     }
 
-    /// Add a relation if it doesn't already exist (optimized: single borrow)
-    pub fn add_relation_if_not_exists(&self, from: BlockId, relation: BlockRelation, to: BlockId) {
-        let mut entry = self.relations.entry(from).or_default();
-        let targets = entry.entry(relation).or_default();
-        if !targets.contains(&to) {
-            targets.push(to);
-        }
-    }
-
-    /// Add bidirectional relation if it doesn't already exist (optimized: single borrow)
-    pub fn add_bidirectional_if_not_exists(&self, caller: BlockId, callee: BlockId) {
-        // Add caller -> callee (Calls)
-        {
-            let mut caller_entry = self.relations.entry(caller).or_default();
-            let caller_targets = caller_entry.entry(BlockRelation::Calls).or_default();
-            if !caller_targets.contains(&callee) {
-                caller_targets.push(callee);
-            }
-        }
-
-        // Add callee -> caller (CalledBy)
-        {
-            let mut callee_entry = self.relations.entry(callee).or_default();
-            let callee_targets = callee_entry.entry(BlockRelation::CalledBy).or_default();
-            if !callee_targets.contains(&caller) {
-                callee_targets.push(caller);
-            }
-        }
-    }
-
-    /// Check if any relationship of a type exists
-    pub fn has_relation_type(&self, from: BlockId, relation: BlockRelation) -> bool {
+    /// Return whether any outgoing relation of this type exists.
+    pub fn contains_relation(&self, from: BlockId, relation: BlockRelation) -> bool {
         self.relations
             .get(&from)
             .and_then(|block_relations| block_relations.get(&relation).map(|t| !t.is_empty()))
             .unwrap_or(false)
     }
 
-    /// Get all blocks that have any relationships
-    pub fn get_connected_blocks(&self) -> Vec<BlockId> {
-        self.relations.iter().map(|r| *r.key()).collect()
+    /// Return all blocks that have outgoing relations.
+    pub fn blocks(&self) -> Vec<BlockId> {
+        sorted_block_ids(self.relations.iter().map(|r| *r.key()))
     }
 
-    /// Get all blocks related to a given block (regardless of relationship type)
-    pub fn get_all_related_blocks(&self, from: BlockId) -> HashSet<BlockId> {
+    /// Return all outgoing targets regardless of relation type.
+    pub fn related_blocks(&self, from: BlockId) -> Vec<BlockId> {
         let mut result = HashSet::new();
         if let Some(block_relations) = self.relations.get(&from) {
             for targets in block_relations.values() {
                 result.extend(targets.iter().copied());
             }
         }
-        result
+        sorted_block_ids(result)
     }
 
-    /// Find all blocks that point to a given block with a specific relationship
-    pub fn find_reverse_relations(&self, to: BlockId, relation: BlockRelation) -> Vec<BlockId> {
+    /// Return all sources that point to `to` with `relation`.
+    pub fn reverse_related(&self, to: BlockId, relation: BlockRelation) -> Vec<BlockId> {
         let mut result = Vec::new();
         for entry in self.relations.iter() {
             let from_block = *entry.key();
@@ -169,10 +167,10 @@ impl BlockRelationMap {
                 result.push(from_block);
             }
         }
-        result
+        sorted_block_ids(result)
     }
 
-    /// Get statistics about relationships
+    /// Return aggregate relation statistics.
     pub fn stats(&self) -> RelationStats {
         let mut total_relations = 0;
         let mut by_relation: HashMap<BlockRelation, usize> = HashMap::new();
@@ -195,78 +193,19 @@ impl BlockRelationMap {
         }
     }
 
-    /// Clear all relationships
+    /// Remove all relations.
     pub fn clear(&self) {
         self.relations.clear();
     }
 
-    /// Check if the map is empty
+    /// Return whether the map has no relations.
     pub fn is_empty(&self) -> bool {
         self.relations.is_empty()
     }
 
-    /// Get the number of blocks with relationships
+    /// Return the number of blocks with outgoing relations.
     pub fn len(&self) -> usize {
         self.relations.len()
-    }
-}
-
-/// Helper struct for building relationships fluently
-pub struct RelationBuilder<'a> {
-    map: &'a BlockRelationMap,
-    from: BlockId,
-}
-
-impl<'a> RelationBuilder<'a> {
-    fn new(map: &'a BlockRelationMap, from: BlockId) -> Self {
-        Self { map, from }
-    }
-
-    /// Add a "calls" relationship
-    pub fn calls(self, to: BlockId) -> Self {
-        self.map
-            .add_relation_impl(self.from, BlockRelation::Calls, to);
-        self
-    }
-
-    /// Add a "called by" relationship
-    pub fn called_by(self, to: BlockId) -> Self {
-        self.map
-            .add_relation_impl(self.from, BlockRelation::CalledBy, to);
-        self
-    }
-
-    /// Add a "contains" relationship
-    pub fn contains(self, to: BlockId) -> Self {
-        self.map
-            .add_relation_impl(self.from, BlockRelation::Contains, to);
-        self
-    }
-
-    /// Add a "contained by" relationship
-    pub fn contained_by(self, to: BlockId) -> Self {
-        self.map
-            .add_relation_impl(self.from, BlockRelation::ContainedBy, to);
-        self
-    }
-
-    /// Add a custom relationship
-    pub fn relation(self, relation: BlockRelation, to: BlockId) -> Self {
-        self.map.add_relation_impl(self.from, relation, to);
-        self
-    }
-
-    /// Add multiple relationships of the same type
-    pub fn relations(self, relation: BlockRelation, targets: &[BlockId]) -> Self {
-        self.map.add_relation_impls(self.from, relation, targets);
-        self
-    }
-}
-
-impl BlockRelationMap {
-    /// Create a fluent builder for adding relationships from a block
-    pub fn from_block(&self, from: BlockId) -> RelationBuilder<'_> {
-        RelationBuilder::new(self, from)
     }
 }
 
@@ -284,115 +223,84 @@ impl std::fmt::Display for RelationStats {
         writeln!(f, "  Total blocks with relations: {}", self.total_blocks)?;
         writeln!(f, "  Total relationships: {}", self.total_relations)?;
         writeln!(f, "  By type:")?;
-        for (&relation, &count) in &self.by_relation {
+        let mut by_relation: Vec<_> = self.by_relation.iter().collect();
+        by_relation.sort_by_key(|(relation, _)| relation.to_string());
+        for (&relation, &count) in by_relation {
             writeln!(f, "    {relation}: {count}")?;
         }
         Ok(())
     }
 }
 
-// Convenience functions for common relationship patterns
 impl BlockRelationMap {
-    /// Create a bidirectional call relationship
-    pub fn add_call_relation(&self, caller: BlockId, callee: BlockId) {
-        self.add_relation_impl(caller, BlockRelation::Calls, callee);
-        self.add_relation_impl(callee, BlockRelation::CalledBy, caller);
+    /// Insert bidirectional call/called-by relations.
+    pub fn insert_call(&self, caller: BlockId, callee: BlockId) {
+        self.insert(caller, BlockRelation::Calls, callee);
+        self.insert(callee, BlockRelation::CalledBy, caller);
     }
 
-    /// Remove a bidirectional call relationship
-    pub fn remove_call_relation(&self, caller: BlockId, callee: BlockId) {
-        self.remove_relation_impl(caller, BlockRelation::Calls, callee);
-        self.remove_relation_impl(callee, BlockRelation::CalledBy, caller);
-    }
-
-    pub fn get_callers(&self, block: BlockId) -> Vec<BlockId> {
-        self.get_related(block, BlockRelation::CalledBy)
-    }
-
-    pub fn get_callees(&self, block: BlockId) -> Vec<BlockId> {
-        self.get_related(block, BlockRelation::Calls)
-    }
-
-    /// Get all children of a block
-    pub fn get_children(&self, block: BlockId) -> Vec<BlockId> {
-        self.get_related(block, BlockRelation::Unknown)
-    }
-
-    /// Get the parent of a block (assumes single parent)
-    pub fn get_parent(&self, block: BlockId) -> Option<BlockId> {
-        self.find_reverse_relations(block, BlockRelation::Unknown)
-            .into_iter()
-            .next()
-    }
-
-    /// Get all ancestors of a block (walking up the containment hierarchy)
-    pub fn get_ancestors(&self, mut block: BlockId) -> Vec<BlockId> {
-        let mut ancestors = Vec::new();
-        let mut visited = HashSet::new();
-
-        while let Some(parent) = self.get_parent(block) {
-            if visited.contains(&parent) {
-                // Cycle detection
-                break;
-            }
-            visited.insert(parent);
-            ancestors.push(parent);
-            block = parent;
-        }
-
-        ancestors
-    }
-
-    /// Get all descendants of a block (walking down the containment hierarchy)
-    pub fn get_descendants(&self, block: BlockId) -> Vec<BlockId> {
-        let mut descendants = Vec::new();
-        let mut visited = HashSet::new();
-        let mut queue = vec![block];
-
-        while let Some(current) = queue.pop() {
-            if visited.contains(&current) {
-                continue;
-            }
-            visited.insert(current);
-
-            let children = self.get_children(current);
-            descendants.extend(&children);
-            queue.extend(children);
-        }
-
-        descendants
+    /// Remove bidirectional call/called-by relations.
+    pub fn remove_call(&self, caller: BlockId, callee: BlockId) {
+        self.remove(caller, BlockRelation::Calls, callee);
+        self.remove(callee, BlockRelation::CalledBy, caller);
     }
 }
 
-/// BlockIndexMaps provides efficient lookup of blocks by various indices.
+/// Metadata stored for each indexed block.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BlockIndexEntry {
+    pub block_id: BlockId,
+    pub unit_index: usize,
+    pub name: Option<String>,
+    pub kind: BlockKind,
+}
+
+impl BlockIndexEntry {
+    pub fn new(
+        block_id: BlockId,
+        unit_index: usize,
+        name: Option<String>,
+        kind: BlockKind,
+    ) -> Self {
+        Self {
+            block_id,
+            unit_index,
+            name,
+            kind,
+        }
+    }
+
+    fn sort_key(&self) -> (usize, u32) {
+        (self.unit_index, self.block_id.as_u32())
+    }
+}
+
+fn sorted_entries(mut entries: Vec<BlockIndexEntry>) -> Vec<BlockIndexEntry> {
+    entries.sort_by_key(BlockIndexEntry::sort_key);
+    entries
+}
+
+/// Concurrent indexes for block metadata.
 ///
-/// Best practices for usage:
-/// - block_name_index: Use when you want to find blocks by name (multiple blocks can share the same name)
-/// - unit_index_map: Use when you want all blocks in a specific unit
-/// - block_kind_index: Use when you want all blocks of a specific kind (e.g., all functions)
-/// - block_id_index: Use for O(1) lookup of block metadata by BlockId
-///
-/// Important: The "name" field is optional since Root blocks and some other blocks may not have names.
-///
-/// Rationale for data structure choices:
-/// - DashMap is used for all indexes to allow concurrent access during parallel graph building
-/// - Vec is used for values to handle multiple blocks with the same index (same name/kind/unit)
+/// Names are optional because root and synthetic blocks may not have a stable
+/// source name. Query methods return deterministic vectors sorted by unit and
+/// block id.
 pub struct BlockIndexMaps {
-    /// block_name -> Vec<(unit_index, block_kind, block_id)>
+    /// block_name -> entries
     /// Multiple blocks can share the same name across units or within the same unit
-    block_name_index: DashMap<String, Vec<(usize, BlockKind, BlockId)>>,
+    block_name_index: DashMap<String, Vec<BlockIndexEntry>>,
 
-    /// unit_index -> Vec<(block_name, block_kind, block_id)>
+    /// unit_index -> entries
     /// Allows retrieval of all blocks in a specific compilation unit
-    unit_index_map: DashMap<usize, Vec<(Option<String>, BlockKind, BlockId)>>,
+    unit_index_map: DashMap<usize, Vec<BlockIndexEntry>>,
 
-    /// block_kind -> Vec<(unit_index, block_name, block_id)>
+    /// block_kind -> entries
     /// Allows retrieval of all blocks of a specific kind across all units
-    block_kind_index: DashMap<BlockKind, Vec<(usize, Option<String>, BlockId)>>,
+    block_kind_index: DashMap<BlockKind, Vec<BlockIndexEntry>>,
 
-    /// block_id -> (unit_index, block_name, block_kind)
+    /// block_id -> entry
     /// Direct O(1) lookup of block metadata by ID
-    block_id_index: DashMap<BlockId, (usize, Option<String>, BlockKind)>,
+    block_id_index: DashMap<BlockId, BlockIndexEntry>,
 }
 
 impl Default for BlockIndexMaps {
@@ -412,13 +320,7 @@ impl BlockIndexMaps {
         }
     }
 
-    /// Register a new block in all indexes
-    ///
-    /// # Arguments
-    /// - `block_id`: The unique block identifier
-    /// - `block_name`: Optional name of the block (None for unnamed blocks)
-    /// - `block_kind`: The kind of block (Func, Class, Stmt, etc.)
-    /// - `unit_index`: The compilation unit index this block belongs to
+    /// Register a block in all indexes.
     pub fn insert_block(
         &self,
         block_id: BlockId,
@@ -426,114 +328,203 @@ impl BlockIndexMaps {
         block_kind: BlockKind,
         unit_index: usize,
     ) {
-        // Insert into block_id_index for O(1) lookups
-        self.block_id_index
-            .insert(block_id, (unit_index, block_name.clone(), block_kind));
+        let entry = BlockIndexEntry::new(block_id, unit_index, block_name, block_kind);
+
+        self.block_id_index.insert(block_id, entry.clone());
 
         // Insert into block_name_index (if name exists)
-        if let Some(ref name) = block_name {
+        if let Some(ref name) = entry.name {
             self.block_name_index
                 .entry(name.clone())
                 .or_default()
-                .push((unit_index, block_kind, block_id));
+                .push(entry.clone());
         }
 
         // Insert into unit_index_map
-        self.unit_index_map.entry(unit_index).or_default().push((
-            block_name.clone(),
-            block_kind,
-            block_id,
-        ));
+        self.unit_index_map
+            .entry(unit_index)
+            .or_default()
+            .push(entry.clone());
 
         // Insert into block_kind_index
         self.block_kind_index
             .entry(block_kind)
             .or_default()
-            .push((unit_index, block_name, block_id));
+            .push(entry);
     }
 
-    /// Find all blocks with a given name (may return multiple blocks)
-    ///
-    /// Returns a vector of (unit_index, block_kind, block_id) tuples
-    pub fn find_by_name(&self, name: &str) -> Vec<(usize, BlockKind, BlockId)> {
-        self.block_name_index
-            .get(name)
-            .map(|v| v.clone())
-            .unwrap_or_default()
+    /// Return blocks with the given name.
+    pub fn by_name(&self, name: &str) -> Vec<BlockIndexEntry> {
+        sorted_entries(
+            self.block_name_index
+                .get(name)
+                .map(|v| v.clone())
+                .unwrap_or_default(),
+        )
     }
 
-    /// Find all blocks in a specific unit
-    ///
-    /// Returns a vector of (block_name, block_kind, block_id) tuples
-    pub fn find_by_unit(&self, unit_index: usize) -> Vec<(Option<String>, BlockKind, BlockId)> {
-        self.unit_index_map
-            .get(&unit_index)
-            .map(|v| v.clone())
-            .unwrap_or_default()
+    /// Return blocks in one compilation unit.
+    pub fn by_unit(&self, unit_index: usize) -> Vec<BlockIndexEntry> {
+        sorted_entries(
+            self.unit_index_map
+                .get(&unit_index)
+                .map(|v| v.clone())
+                .unwrap_or_default(),
+        )
     }
 
-    /// Find all blocks of a specific kind across all units
-    ///
-    /// Returns a vector of (unit_index, block_name, block_id) tuples
-    pub fn find_by_kind(&self, block_kind: BlockKind) -> Vec<(usize, Option<String>, BlockId)> {
-        self.block_kind_index
-            .get(&block_kind)
-            .map(|v| v.clone())
-            .unwrap_or_default()
+    /// Return blocks with the given kind.
+    pub fn by_kind(&self, block_kind: BlockKind) -> Vec<BlockIndexEntry> {
+        sorted_entries(
+            self.block_kind_index
+                .get(&block_kind)
+                .map(|v| v.clone())
+                .unwrap_or_default(),
+        )
     }
 
-    /// Find all blocks of a specific kind in a specific unit
-    ///
-    /// Returns a vector of block_ids
-    pub fn find_by_kind_and_unit(&self, block_kind: BlockKind, unit_index: usize) -> Vec<BlockId> {
-        let by_kind = self.find_by_kind(block_kind);
+    /// Return block ids for one kind in one compilation unit.
+    pub fn by_kind_in_unit(&self, block_kind: BlockKind, unit_index: usize) -> Vec<BlockId> {
+        let by_kind = self.by_kind(block_kind);
         by_kind
             .into_iter()
-            .filter(|(unit, _, _)| *unit == unit_index)
-            .map(|(_, _, block_id)| block_id)
+            .filter(|entry| entry.unit_index == unit_index)
+            .map(|entry| entry.block_id)
             .collect()
     }
 
-    /// Look up block metadata by BlockId for O(1) access
-    ///
-    /// Returns (unit_index, block_name, block_kind) if found
-    pub fn get_block_info(&self, block_id: BlockId) -> Option<(usize, Option<String>, BlockKind)> {
+    /// Return metadata for one block id.
+    pub fn block_info(&self, block_id: BlockId) -> Option<BlockIndexEntry> {
         self.block_id_index.get(&block_id).map(|v| v.clone())
     }
 
-    /// Get total number of blocks indexed
+    /// Return the total number of indexed blocks.
     pub fn block_count(&self) -> usize {
         self.block_id_index.len()
     }
 
-    /// Get the number of unique block names
+    /// Return the number of unique indexed block names.
     pub fn unique_names_count(&self) -> usize {
         self.block_name_index.len()
     }
 
-    /// Check if a block with the given ID exists
+    /// Return whether a block id is indexed.
     pub fn contains_block(&self, block_id: BlockId) -> bool {
         self.block_id_index.contains_key(&block_id)
     }
 
-    /// Get an iterator over all blocks with their metadata
-    /// Returns (block_id, unit_index, block_name, block_kind)
-    pub fn iter_all_blocks(&self) -> Vec<(BlockId, usize, Option<String>, BlockKind)> {
-        self.block_id_index
-            .iter()
-            .map(|entry| {
-                let block_id = *entry.key();
-                let (unit_index, name, kind) = entry.value();
-                (block_id, *unit_index, name.clone(), *kind)
-            })
-            .collect()
+    /// Return all blocks with their indexed metadata.
+    pub fn blocks(&self) -> Vec<BlockIndexEntry> {
+        sorted_entries(
+            self.block_id_index
+                .iter()
+                .map(|entry| entry.value().clone())
+                .collect(),
+        )
     }
 
-    /// Clear all indexes
+    /// Clear all indexes.
     pub fn clear(&self) {
         self.block_name_index.clear();
         self.unit_index_map.clear();
         self.block_kind_index.clear();
         self.block_id_index.clear();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn relation_insert_is_unique_and_removal_cleans_empty_entries() {
+        let relations = BlockRelationMap::default();
+        let caller = BlockId::new(1);
+        let callee = BlockId::new(2);
+
+        assert!(relations.insert(caller, BlockRelation::Calls, callee));
+        assert!(!relations.insert(caller, BlockRelation::Calls, callee));
+        assert_eq!(
+            relations.related(caller, BlockRelation::Calls),
+            vec![callee]
+        );
+        assert!(relations.contains(caller, BlockRelation::Calls, callee));
+
+        assert!(relations.remove(caller, BlockRelation::Calls, callee));
+        assert!(!relations.remove(caller, BlockRelation::Calls, callee));
+        assert!(relations.is_empty());
+    }
+
+    #[test]
+    fn relation_extend_counts_new_targets_only() {
+        let relations = BlockRelationMap::default();
+        let from = BlockId::new(1);
+        let target_a = BlockId::new(2);
+        let target_b = BlockId::new(3);
+
+        assert_eq!(
+            relations.extend(from, BlockRelation::Uses, &[target_a, target_a, target_b]),
+            2
+        );
+        assert_eq!(
+            relations.related(from, BlockRelation::Uses),
+            vec![target_a, target_b]
+        );
+    }
+
+    #[test]
+    fn relation_queries_are_sorted() {
+        let relations = BlockRelationMap::default();
+        let from = BlockId::new(1);
+        let target_a = BlockId::new(2);
+        let target_b = BlockId::new(3);
+
+        relations.insert(from, BlockRelation::Uses, target_b);
+        relations.insert(from, BlockRelation::Calls, target_a);
+        relations.insert(from, BlockRelation::Uses, target_a);
+
+        assert_eq!(
+            relations.related(from, BlockRelation::Uses),
+            vec![target_a, target_b]
+        );
+        assert_eq!(
+            relations.relations_from(from),
+            vec![
+                BlockRelationEntry::new(BlockRelation::Calls, [target_a]),
+                BlockRelationEntry::new(BlockRelation::Uses, [target_a, target_b]),
+            ]
+        );
+    }
+
+    #[test]
+    fn block_indexes_query_registered_blocks() {
+        let indexes = BlockIndexMaps::new();
+        let func = BlockId::new(1);
+        let class = BlockId::new(2);
+
+        indexes.insert_block(func, Some("run".to_string()), BlockKind::Func, 0);
+        indexes.insert_block(class, Some("User".to_string()), BlockKind::Class, 1);
+
+        assert_eq!(
+            indexes.by_name("run"),
+            vec![BlockIndexEntry::new(
+                func,
+                0,
+                Some("run".to_string()),
+                BlockKind::Func
+            )]
+        );
+        assert_eq!(indexes.by_kind_in_unit(BlockKind::Class, 1), vec![class]);
+        assert_eq!(
+            indexes.block_info(class),
+            Some(BlockIndexEntry::new(
+                class,
+                1,
+                Some("User".to_string()),
+                BlockKind::Class
+            ))
+        );
+        assert!(indexes.contains_block(func));
+        assert_eq!(indexes.block_count(), 2);
     }
 }

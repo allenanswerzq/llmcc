@@ -262,14 +262,14 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
 
                     // Fall back to scope chain if unit_meta is not populated
                     if meta.package_name.is_none()
-                        && let Some(crate_sym) = scope.find_parent_by_kind(SymKind::Crate)
+                        && let Some(crate_sym) = scope.try_parent_symbol_by_kind(SymKind::Crate)
                         && let Some(name) =
                             self.unit.context().interner().resolve_owned(crate_sym.name)
                     {
                         block.set_crate_name(name);
                     }
                     if meta.module_name.is_none()
-                        && let Some(module_sym) = scope.find_parent_by_kind(SymKind::Module)
+                        && let Some(module_sym) = scope.try_parent_symbol_by_kind(SymKind::Module)
                         && let Some(name) = self
                             .unit
                             .context()
@@ -718,7 +718,6 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
             L::block_kind(node.kind_id())
         }
     }
-
     /// Check if a block kind should trigger block creation.
     fn is_block_kind(kind: BlockKind) -> bool {
         matches!(
