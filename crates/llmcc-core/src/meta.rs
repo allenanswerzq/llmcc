@@ -1,67 +1,39 @@
-//! Module detection using a Patricia trie to compress file paths into 4 architecture levels.
+//! Source-file metadata for project, package, module, and file architecture levels.
 //!
-//! # The 4-Level Architecture
-//!
-//! Every source file is mapped to exactly 4 semantic levels:
-//! - **Level 0 (Project)**: The entire repository/workspace
-//! - **Level 1 (Package)**: A distributable unit (npm package, Rust crate) - DEVELOPER DEFINED
-//! - **Level 2 (Module)**: A major subsystem within a package - INFERRED
-//! - **Level 3 (File)**: The individual source file
-//!
-//! # Philosophy
-//!
-//! Packages (Cargo.toml, package.json) are the **real semantic boundaries** - developers
-//! explicitly created them. We respect these as-is.
-//!
-//! For modules, we use a per-file bottom-up approach: walk up from each file toward the
-//! package root, finding the first directory that represents a meaningful grouping.
-//!
-//! # Algorithm: Per-File Bottom-Up Module Detection
-//!
-//! For each file:
-//! 1. Get path components from package root (excluding containers like `src/`)
-//! 2. Walk UP from deepest to shallowest
-//! 3. Find the first ancestor where going "deeper" provides meaningful subdivision
-//!
-//! A directory is a good module boundary if:
-//! - It has siblings (alternatives at the same level)
-//! - Its siblings collectively represent >20% of the package's files
-//!
-//! This naturally handles variable depths - different subtrees can have different module levels.
+//! Packages come from language manifests. Modules are inferred from package-relative
+//! directory structure after ignoring container directories such as `src`.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
-// Public Types
+use strum::IntoEnumIterator;
+use strum_macros::{EnumIter, FromRepr};
 
-/// The four fixed architecture levels.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ArchDepth {
+const MIN_MODULE_SIBLING_RATIO: f64 = 0.05;
+const MIN_MODULE_SIBLING_FILES: usize = 1;
+const MAX_MODULE_DOMINANCE_RATIO: f64 = 0.80;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, FromRepr)]
+#[repr(u8)]
+pub enum ArchitectureLevel {
     Project = 0,
     Package = 1,
     Module = 2,
     File = 3,
 }
 
-impl ArchDepth {
+impl ArchitectureLevel {
     pub fn as_u8(self) -> u8 {
         self as u8
     }
 
-    pub fn from_u8(depth: u8) -> Option<Self> {
-        match depth {
-            0 => Some(Self::Project),
-            1 => Some(Self::Package),
-            2 => Some(Self::Module),
-            3 => Some(Self::File),
-            _ => None,
-        }
+    pub fn from_u8(level: u8) -> Option<Self> {
+        Self::from_repr(level)
     }
 }
 
-/// Complete location info for a source file at all 4 depths.
 #[derive(Debug, Clone, Default)]
-pub struct UnitMeta {
+pub struct SourceFileMetadata {
     pub project_name: Option<String>,
     pub project_root: Option<PathBuf>,
     pub package_name: Option<String>,
@@ -70,450 +42,429 @@ pub struct UnitMeta {
     pub module_root: Option<PathBuf>,
     pub file_name: Option<String>,
     pub file_path: Option<PathBuf>,
-    /// Unique index for the crate/package this file belongs to.
-    /// All files in the same crate share the same crate_index.
-    /// Used for efficient same-crate preference during symbol lookup.
     pub crate_index: usize,
 }
 
-impl UnitMeta {
-    pub fn name_at_depth(&self, depth: ArchDepth) -> Option<&str> {
-        match depth {
-            ArchDepth::Project => self.project_name.as_deref(),
-            ArchDepth::Package => self.package_name.as_deref(),
-            ArchDepth::Module => self.module_name.as_deref(),
-            ArchDepth::File => self.file_name.as_deref(),
+impl SourceFileMetadata {
+    fn for_file(project_name: &str, project_root: &Path, file: &Path) -> Self {
+        Self {
+            project_name: Some(project_name.to_owned()),
+            project_root: Some(project_root.to_path_buf()),
+            file_path: Some(file.to_path_buf()),
+            file_name: file
+                .file_stem()
+                .and_then(|name| name.to_str())
+                .map(String::from),
+            ..Default::default()
         }
     }
 
-    pub fn root_at_depth(&self, depth: ArchDepth) -> Option<&Path> {
-        match depth {
-            ArchDepth::Project => self.project_root.as_deref(),
-            ArchDepth::Package => self.package_root.as_deref(),
-            ArchDepth::Module => self.module_root.as_deref(),
-            ArchDepth::File => self.file_path.as_deref(),
+    fn with_package(mut self, package: &IndexedPackage) -> Self {
+        if package.has_manifest() {
+            self.package_name = Some(package.name.clone());
+            self.package_root = Some(package.root.clone());
+        }
+        self
+    }
+
+    fn with_module(mut self, module: ModuleSelection<'_>, root: Option<PathBuf>) -> Self {
+        self.module_name = Some(module.name.to_owned());
+        self.module_root = root;
+        self
+    }
+
+    pub fn name_at_level(&self, level: ArchitectureLevel) -> Option<&str> {
+        match level {
+            ArchitectureLevel::Project => self.project_name.as_deref(),
+            ArchitectureLevel::Package => self.package_name.as_deref(),
+            ArchitectureLevel::Module => self.module_name.as_deref(),
+            ArchitectureLevel::File => self.file_name.as_deref(),
         }
     }
 
-    pub fn qualified_name(&self, depth: ArchDepth) -> String {
-        let mut parts = Vec::new();
-        for d in 0..=depth.as_u8() {
-            if let Some(arch_depth) = ArchDepth::from_u8(d)
-                && let Some(name) = self.name_at_depth(arch_depth)
-            {
-                parts.push(name);
-            }
+    pub fn root_at_level(&self, level: ArchitectureLevel) -> Option<&Path> {
+        match level {
+            ArchitectureLevel::Project => self.project_root.as_deref(),
+            ArchitectureLevel::Package => self.package_root.as_deref(),
+            ArchitectureLevel::Module => self.module_root.as_deref(),
+            ArchitectureLevel::File => self.file_path.as_deref(),
         }
-        parts.join(".")
+    }
+
+    pub fn qualified_name(&self, level: ArchitectureLevel) -> String {
+        ArchitectureLevel::iter()
+            .take_while(|current| current.as_u8() <= level.as_u8())
+            .filter_map(|current| self.name_at_level(current))
+            .collect::<Vec<_>>()
+            .join(".")
     }
 }
 
-// Trie Node
-
-/// A node in the Patricia trie.
-///
-/// Each node represents a semantic directory (containers are skipped).
-/// file_count tracks files directly at this node's level.
 #[derive(Debug, Clone, Default)]
-struct TrieNode {
-    file_count: usize,
-    children: HashMap<String, TrieNode>,
+struct ModuleDirectoryTree {
+    direct_files: usize,
+    children: HashMap<String, ModuleDirectoryTree>,
 }
 
-impl TrieNode {
-    fn new() -> Self {
-        Self::default()
+impl ModuleDirectoryTree {
+    fn add_file(&mut self, relative_file: &Path, ignored_dirs: &[&str]) {
+        let mut node = self;
+        for component in semantic_components(relative_file.parent(), ignored_dirs) {
+            node = node.children.entry(component.to_owned()).or_default();
+        }
+        node.direct_files += 1;
     }
 
-    /// Total files in this subtree (recursive).
     fn total_files(&self) -> usize {
-        self.file_count
-            + self
-                .children
-                .values()
-                .map(|c| c.total_files())
-                .sum::<usize>()
+        self.direct_files + self.children.values().map(Self::total_files).sum::<usize>()
+    }
+
+    fn sibling_files_excluding(&self, child_name: &str) -> usize {
+        self.children
+            .iter()
+            .filter(|(name, _)| name.as_str() != child_name)
+            .map(|(_, child)| child.total_files())
+            .sum()
     }
 }
 
-// Package Info
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum PackageOrigin {
+    Manifest,
+    Fallback,
+}
 
 #[derive(Debug, Clone)]
-struct PackageInfo {
+struct IndexedPackage {
     name: String,
     root: PathBuf,
-    trie: TrieNode,
-    total_files: usize,
-    /// True if this package was detected from an actual manifest file,
-    /// false if it's a synthetic fallback package.
-    has_manifest: bool,
+    modules: ModuleDirectoryTree,
+    file_count: usize,
+    origin: PackageOrigin,
 }
 
-// Module Detector
+impl IndexedPackage {
+    fn manifest(root: PathBuf, name: String) -> Self {
+        Self::new(root, name, PackageOrigin::Manifest)
+    }
 
-/// Detects and caches module structure for a project.
-pub struct UnitMetaBuilder {
-    manifest_name: &'static str,
-    container_dirs: &'static [&'static str],
-    project_root: PathBuf,
-    project_name: String,
-    packages: Vec<PackageInfo>,
+    fn fallback(root: PathBuf, name: String) -> Self {
+        Self::new(root, name, PackageOrigin::Fallback)
+    }
+
+    fn new(root: PathBuf, name: String, origin: PackageOrigin) -> Self {
+        Self {
+            name,
+            root,
+            modules: ModuleDirectoryTree::default(),
+            file_count: 0,
+            origin,
+        }
+    }
+
+    fn has_manifest(&self) -> bool {
+        self.origin == PackageOrigin::Manifest
+    }
+
+    fn add_file(&mut self, file: &Path, ignored_dirs: &[&str]) -> bool {
+        let Ok(relative_file) = file.strip_prefix(&self.root) else {
+            return false;
+        };
+        self.modules.add_file(relative_file, ignored_dirs);
+        self.file_count += 1;
+        true
+    }
 }
 
-impl UnitMetaBuilder {
-    /// Create a detector using Language configuration.
-    /// This is the preferred way to create a UnitMetaBuilder from a language type.
-    /// Automatically computes the project root from file paths.
-    pub fn from_language<L: crate::lang_def::Language>(files: &[PathBuf]) -> Self {
-        Self::with_lang_config(files, L::manifest_name(), L::container_dirs())
-    }
+#[derive(Debug, Clone, Copy)]
+struct ModuleSelection<'a> {
+    name: &'a str,
+    depth: usize,
+}
 
-    /// Create a detector with explicit language configuration.
-    /// Automatically computes the project root from file paths.
-    pub fn with_lang_config(
-        files: &[PathBuf],
-        manifest_name: &'static str,
-        container_dirs: &'static [&'static str],
-    ) -> Self {
-        let project_root = Self::compute_project_root(files);
-        let project_name = project_root
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("project")
-            .to_string();
+#[derive(Debug, Clone, Copy)]
+struct ModulePathStep<'a> {
+    name: &'a str,
+    tree: &'a ModuleDirectoryTree,
+    sibling_files: usize,
+}
 
-        let mut detector = Self {
-            manifest_name,
-            container_dirs,
-            project_root,
-            project_name,
-            packages: Vec::new(),
-        };
-
-        detector.detect_packages(files);
-
-        // If no packages were detected, use the project root as a fallback "package"
-        // This ensures module detection works even without manifest files
-        if detector.packages.is_empty() {
-            detector.packages.push(PackageInfo {
-                name: detector.project_name.clone(),
-                root: detector.project_root.clone(),
-                trie: TrieNode::new(),
-                total_files: 0,
-                has_manifest: false, // Synthetic fallback, no actual manifest
-            });
-        }
-
-        detector.build_tries(files);
-
-        detector
-    }
-
-    /// Compute the project root as the common ancestor directory of all file paths.
-    /// Optimized O(n) implementation with early termination.
-    fn compute_project_root(paths: &[PathBuf]) -> PathBuf {
-        if paths.is_empty() {
-            return PathBuf::new();
-        }
-
-        // Start with first file's parent
-        let first = match paths[0].parent() {
-            Some(p) => p,
-            None => return PathBuf::new(),
-        };
-        let mut common: Vec<_> = first.components().collect();
-
-        // Shrink common prefix with each file - early exit if empty
-        for path in &paths[1..] {
-            if common.is_empty() {
-                break;
-            }
-            let parent = path.parent().unwrap_or(path);
-            let mut match_len = 0;
-            for (a, b) in common.iter().zip(parent.components()) {
-                if *a == b {
-                    match_len += 1;
-                } else {
-                    break;
-                }
-            }
-            common.truncate(match_len);
-        }
-
-        common.iter().collect()
-    }
-
-    fn is_container(&self, name: &str) -> bool {
-        self.container_dirs.contains(&name)
-    }
-
-    /// Get module info for a file path.
-    pub fn get_module_info(&self, file: &Path) -> UnitMeta {
-        self.compute_module_info(file)
-    }
-
-    // Step 1: Detect Packages
-
-    fn detect_packages(&mut self, files: &[PathBuf]) {
-        let mut seen = std::collections::HashSet::new();
-
-        for file in files {
-            let mut dir = file.parent();
-            while let Some(current) = dir {
-                let manifest = current.join(self.manifest_name);
-                if manifest.exists() && !seen.contains(current) {
-                    seen.insert(current.to_path_buf());
-
-                    if let Some(name) = self.parse_manifest_name(current) {
-                        self.packages.push(PackageInfo {
-                            name,
-                            root: current.to_path_buf(),
-                            trie: TrieNode::new(),
-                            total_files: 0,
-                            has_manifest: true, // Real package from manifest file
-                        });
-                    }
-                    break;
-                }
-                dir = current.parent();
-            }
-        }
-
-        // Sort by depth (deepest first) for nested package detection
-        self.packages.sort_by(|a, b| {
-            b.root
-                .components()
-                .count()
-                .cmp(&a.root.components().count())
-        });
-    }
-
-    fn parse_manifest_name(&self, dir: &Path) -> Option<String> {
-        let content = std::fs::read_to_string(dir.join(self.manifest_name)).ok()?;
-
-        // Try JSON format first (package.json)
-        if self.manifest_name == "package.json" {
-            // Parse "name": "value" from JSON
-            let name_pos = content.find("\"name\"")?;
-            let after_name = &content[name_pos + 6..];
-            let colon_pos = after_name.find(':')?;
-            let after_colon = &after_name[colon_pos + 1..];
-            let start_quote = after_colon.find('"')?;
-            let value_start = &after_colon[start_quote + 1..];
-            let end_quote = value_start.find('"')?;
-            let value = &value_start[..end_quote];
-            Some(value.replace('@', "").replace('/', "_"))
-        } else if self.manifest_name == "Cargo.toml" {
-            // Parse TOML format (Cargo.toml)
-            let mut in_package = false;
-            for line in content.lines() {
-                let line = line.trim();
-                if line == "[package]" {
-                    in_package = true;
-                } else if line.starts_with('[') {
-                    in_package = false;
-                } else if in_package && line.starts_with("name") {
-                    return line
-                        .find('=')
-                        .map(|pos| line[pos + 1..].trim().trim_matches('"').to_string());
-                }
-            }
-            None
-        } else {
-            // Unknown manifest format - use directory name
-            dir.file_name()
-                .and_then(|n| n.to_str())
-                .map(|s| s.to_string())
-        }
-    }
-
-    // Step 2: Build Tries
-
-    fn build_tries(&mut self, files: &[PathBuf]) {
-        let all_roots: Vec<PathBuf> = self.packages.iter().map(|p| p.root.clone()).collect();
-
-        for pkg in &mut self.packages {
-            for file in files {
-                // Skip files not in this package
-                if !file.starts_with(&pkg.root) {
-                    continue;
-                }
-
-                // Skip files belonging to nested packages
-                let in_nested = all_roots.iter().any(|other| {
-                    *other != pkg.root && other.starts_with(&pkg.root) && file.starts_with(other)
-                });
-                if in_nested {
-                    continue;
-                }
-
-                Self::insert_file(&mut pkg.trie, file, &pkg.root, self.container_dirs);
-                pkg.total_files += 1;
-            }
-        }
-    }
-
-    fn insert_file(trie: &mut TrieNode, file: &Path, pkg_root: &Path, container_dirs: &[&str]) {
-        let rel_path = match file.strip_prefix(pkg_root) {
-            Ok(p) => p,
-            Err(_) => return,
-        };
-
-        // Get directory components, skipping containers
-        let mut current = trie;
-        for comp in rel_path
-            .parent()
-            .into_iter()
-            .flat_map(|p| p.components())
-            .filter_map(|c| c.as_os_str().to_str())
-        {
-            if container_dirs.contains(&comp) {
-                continue; // Skip container directories
-            }
-            current = current.children.entry(comp.to_string()).or_default();
-        }
-
-        current.file_count += 1;
-    }
-
-    // Per-File Module Detection
-
-    /// Find the module for a file by walking up from the file to the package root.
-    ///
-    /// Strategy: Find the first ancestor directory that represents a meaningful grouping.
-    /// A directory is "meaningful" if:
-    /// 1. It has siblings (alternatives at the same level), AND
-    /// 2. Those siblings collectively have significant file counts
-    ///
-    /// This naturally handles variable depths for different subtrees.
-    fn find_module_for_file<'a>(
-        &self,
-        components: &[&'a str],
-        pkg: &PackageInfo,
-    ) -> Option<(usize, &'a str)> {
-        if components.is_empty() {
+impl<'a> ModulePathStep<'a> {
+    fn as_boundary(self, depth: usize, min_sibling_files: usize) -> Option<ModuleSelection<'a>> {
+        if self.sibling_files < min_sibling_files {
             return None;
         }
 
-        // Walk the trie along the file's path, collecting nodes and checking siblings
-        let mut current = &pkg.trie;
-        let mut path_nodes: Vec<(&str, &TrieNode, usize)> = Vec::new(); // (name, node, sibling_files)
+        let files_here = self.tree.total_files();
+        let total_files = files_here + self.sibling_files;
+        let dominance = files_here as f64 / total_files as f64;
 
-        for comp in components.iter() {
-            if let Some(child) = current.children.get(*comp) {
-                // Calculate sibling file count (files in siblings, not in this subtree)
-                let sibling_files: usize = current
-                    .children
-                    .iter()
-                    .filter(|(name, _)| *name != *comp)
-                    .map(|(_, node)| node.total_files())
-                    .sum();
-
-                path_nodes.push((*comp, child, sibling_files));
-                current = child;
-            } else {
-                // Component not in trie (shouldn't happen normally)
-                break;
-            }
-        }
-
-        // Walk from ROOT to LEAF looking for the best module boundary
-        // A good boundary has:
-        // 1. Significant siblings (not alone)
-        // 2. Balanced distribution (no sibling dominates >80%)
-        //
-        // If we find a significant but imbalanced level, keep looking deeper
-        let significance_threshold = (pkg.total_files as f64 * 0.05).max(1.0) as usize;
-        const DOMINANCE_THRESHOLD: f64 = 0.80;
-
-        for (i, (name, node, sibling_files)) in path_nodes.iter().enumerate() {
-            if *sibling_files >= significance_threshold {
-                // Significant siblings - check balance
-                let my_files = node.total_files();
-                let total = my_files + sibling_files;
-                let dominance = my_files as f64 / total as f64;
-
-                if dominance <= DOMINANCE_THRESHOLD {
-                    // Balanced - use this level
-                    return Some((i, *name));
-                }
-                // Imbalanced - we dominate, keep looking for a better split deeper
-            }
-        }
-
-        // No balanced split found - use the first component
-        path_nodes.first().map(|(name, _, _)| (0, *name))
+        (dominance <= MAX_MODULE_DOMINANCE_RATIO).then_some(ModuleSelection {
+            name: self.name,
+            depth,
+        })
     }
 
-    // Module Info Lookup
+    fn fallback_boundary(self) -> ModuleSelection<'a> {
+        ModuleSelection {
+            name: self.name,
+            depth: 0,
+        }
+    }
+}
 
-    fn compute_module_info(&self, file: &Path) -> UnitMeta {
-        let mut info = UnitMeta {
-            project_name: Some(self.project_name.clone()),
-            project_root: Some(self.project_root.clone()),
-            file_path: Some(file.to_path_buf()),
-            file_name: file.file_stem().and_then(|s| s.to_str()).map(String::from),
-            ..Default::default()
+pub struct SourceLayoutIndex {
+    ignored_dirs: &'static [&'static str],
+    project_root: PathBuf,
+    project_name: String,
+    packages: Vec<IndexedPackage>,
+}
+
+impl SourceLayoutIndex {
+    pub fn from_language<L: crate::lang_def::Language>(files: &[PathBuf]) -> Self {
+        Self::from_language_config(files, L::manifest_name(), L::container_dirs())
+    }
+
+    pub fn from_language_config(
+        files: &[PathBuf],
+        manifest_name: &'static str,
+        ignored_dirs: &'static [&'static str],
+    ) -> Self {
+        let project_root = common_parent_dir(files);
+        let project_name = path_name(&project_root).unwrap_or_else(|| "project".to_string());
+        let mut packages = discover_packages(files, manifest_name);
+
+        if packages.is_empty() {
+            packages.push(IndexedPackage::fallback(
+                project_root.clone(),
+                project_name.clone(),
+            ));
+        }
+
+        index_files(&mut packages, files, ignored_dirs);
+
+        Self {
+            ignored_dirs,
+            project_root,
+            project_name,
+            packages,
+        }
+    }
+
+    pub fn metadata_for(&self, file: &Path) -> SourceFileMetadata {
+        let meta = SourceFileMetadata::for_file(&self.project_name, &self.project_root, file);
+        let Some(package) = self.package_for(file) else {
+            return meta;
         };
 
-        // Find package
-        let pkg = self
-            .packages
+        let meta = meta.with_package(package);
+        let Ok(relative_file) = file.strip_prefix(&package.root) else {
+            return meta;
+        };
+        let Some(parent) = relative_file.parent() else {
+            return meta;
+        };
+
+        let components: Vec<_> = semantic_components(Some(parent), self.ignored_dirs).collect();
+        match choose_module(&components, package) {
+            Some(module) => meta.with_module(
+                module,
+                module_root_for(parent, &package.root, self.ignored_dirs, module.depth),
+            ),
+            None => meta,
+        }
+    }
+
+    fn package_for(&self, file: &Path) -> Option<&IndexedPackage> {
+        self.packages
             .iter()
-            .filter(|p| file.starts_with(&p.root))
-            .max_by_key(|p| p.root.components().count());
+            .filter(|package| file.starts_with(&package.root))
+            .max_by_key(|package| package.root.components().count())
+    }
+}
 
-        let Some(pkg) = pkg else {
-            return info;
-        };
+fn discover_packages(files: &[PathBuf], manifest_name: &'static str) -> Vec<IndexedPackage> {
+    let mut roots = HashSet::new();
+    let mut packages = Vec::new();
 
-        // Only set package_name if this is a real package with a manifest file
-        // Synthetic fallback packages should not create a package cluster
-        if pkg.has_manifest {
-            info.package_name = Some(pkg.name.clone());
-            info.package_root = Some(pkg.root.clone());
+    for file in files {
+        for dir in file.ancestors().skip(1) {
+            if !dir.join(manifest_name).exists() {
+                continue;
+            }
+            if roots.insert(dir.to_path_buf()) {
+                packages.push(IndexedPackage::manifest(
+                    dir.to_path_buf(),
+                    manifest_package_name(dir, manifest_name),
+                ));
+            }
+            break;
         }
+    }
 
-        // Get path components (excluding containers)
-        let rel_path = match file.strip_prefix(&pkg.root) {
-            Ok(p) => p,
-            Err(_) => return info,
-        };
+    packages.sort_by_key(|package| std::cmp::Reverse(package.root.components().count()));
+    packages
+}
 
-        let components: Vec<&str> = rel_path
-            .parent()
-            .into_iter()
-            .flat_map(|p| p.components())
-            .filter_map(|c| c.as_os_str().to_str())
-            .filter(|c| !self.is_container(c))
-            .collect();
+fn index_files(packages: &mut [IndexedPackage], files: &[PathBuf], ignored_dirs: &[&str]) {
+    let roots: Vec<_> = packages
+        .iter()
+        .map(|package| package.root.clone())
+        .collect();
 
-        // Find module using per-file bottom-up detection
-        if let Some((depth, module_name)) = self.find_module_for_file(&components, pkg) {
-            info.module_name = Some(module_name.to_string());
-
-            // Reconstruct module root path
-            let mut root = pkg.root.clone();
-            let mut non_container_count = 0;
-            for comp in rel_path
-                .parent()
-                .into_iter()
-                .flat_map(|p| p.components())
-                .filter_map(|c| c.as_os_str().to_str())
-            {
-                root = root.join(comp);
-                if !self.is_container(comp) {
-                    if non_container_count == depth {
-                        info.module_root = Some(root);
-                        break;
-                    }
-                    non_container_count += 1;
-                }
+    for package in packages {
+        for file in files {
+            if package_owns_file(file, package, &roots) {
+                package.add_file(file, ignored_dirs);
             }
         }
-        // If no module found (file at package root), module_name stays None
-        // and the graph generator will use the file name
-
-        info
     }
+}
+
+fn package_owns_file(file: &Path, package: &IndexedPackage, package_roots: &[PathBuf]) -> bool {
+    if !file.starts_with(&package.root) {
+        return false;
+    }
+
+    !package_roots.iter().any(|other| {
+        *other != package.root && other.starts_with(&package.root) && file.starts_with(other)
+    })
+}
+
+fn choose_module<'a>(
+    components: &[&'a str],
+    package: &'a IndexedPackage,
+) -> Option<ModuleSelection<'a>> {
+    let steps = module_steps(components, &package.modules);
+    let min_sibling_files = (package.file_count as f64 * MIN_MODULE_SIBLING_RATIO)
+        .max(MIN_MODULE_SIBLING_FILES as f64) as usize;
+
+    steps
+        .iter()
+        .enumerate()
+        .find_map(|(depth, step)| step.as_boundary(depth, min_sibling_files))
+        .or_else(|| steps.first().map(|step| step.fallback_boundary()))
+}
+
+fn module_steps<'a>(
+    components: &[&'a str],
+    modules: &'a ModuleDirectoryTree,
+) -> Vec<ModulePathStep<'a>> {
+    let mut node = modules;
+    let mut steps = Vec::new();
+
+    for component in components {
+        let Some(child) = node.children.get(*component) else {
+            break;
+        };
+
+        steps.push(ModulePathStep {
+            name: component,
+            tree: child,
+            sibling_files: node.sibling_files_excluding(component),
+        });
+        node = child;
+    }
+
+    steps
+}
+
+fn manifest_package_name(dir: &Path, manifest_name: &'static str) -> String {
+    std::fs::read_to_string(dir.join(manifest_name))
+        .ok()
+        .and_then(|content| parse_manifest_name(&content, manifest_name))
+        .unwrap_or_else(|| path_name(dir).unwrap_or_else(|| "package".to_string()))
+}
+
+fn parse_manifest_name(content: &str, manifest_name: &str) -> Option<String> {
+    match manifest_name {
+        "package.json" => parse_package_json_name(content),
+        "Cargo.toml" => parse_cargo_toml_name(content),
+        _ => None,
+    }
+}
+
+fn parse_package_json_name(content: &str) -> Option<String> {
+    let manifest: serde_json::Value = serde_json::from_str(content).ok()?;
+    manifest
+        .get("name")
+        .and_then(|name| name.as_str())
+        .map(sanitize_package_name)
+}
+
+fn parse_cargo_toml_name(content: &str) -> Option<String> {
+    let manifest: toml::Value = toml::from_str(content).ok()?;
+    manifest
+        .get("package")
+        .and_then(|package| package.get("name"))
+        .and_then(|name| name.as_str())
+        .map(ToOwned::to_owned)
+}
+
+fn sanitize_package_name(name: &str) -> String {
+    name.trim_start_matches('@').replace('/', "_")
+}
+
+fn common_parent_dir(paths: &[PathBuf]) -> PathBuf {
+    let Some(first_parent) = paths.first().and_then(|path| path.parent()) else {
+        return PathBuf::new();
+    };
+
+    let mut common: Vec<_> = first_parent.components().collect();
+    for path in &paths[1..] {
+        let parent = path.parent().unwrap_or(path);
+        let common_len = common
+            .iter()
+            .zip(parent.components())
+            .take_while(|(left, right)| **left == *right)
+            .count();
+        common.truncate(common_len);
+        if common.is_empty() {
+            break;
+        }
+    }
+
+    common.iter().collect()
+}
+
+fn path_name(path: &Path) -> Option<String> {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .map(ToOwned::to_owned)
+}
+
+fn semantic_components<'a>(
+    path: Option<&'a Path>,
+    ignored_dirs: &'a [&str],
+) -> impl Iterator<Item = &'a str> {
+    path.into_iter()
+        .flat_map(|path| path.components())
+        .filter_map(|component| component.as_os_str().to_str())
+        .filter(move |component| !ignored_dirs.contains(component))
+}
+
+fn module_root_for(
+    relative_parent: &Path,
+    package_root: &Path,
+    ignored_dirs: &[&str],
+    depth: usize,
+) -> Option<PathBuf> {
+    let mut root = package_root.to_path_buf();
+    let mut semantic_depth = 0;
+
+    for component in relative_parent
+        .components()
+        .filter_map(|component| component.as_os_str().to_str())
+    {
+        root = root.join(component);
+        if ignored_dirs.contains(&component) {
+            continue;
+        }
+        if semantic_depth == depth {
+            return Some(root);
+        }
+        semantic_depth += 1;
+    }
+
+    None
 }

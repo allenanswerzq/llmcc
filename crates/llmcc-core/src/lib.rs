@@ -37,7 +37,7 @@ pub use ir_builder::{HirBuildMetrics, HirBuildOptions, build_file_hir, build_hir
 pub use ir_query::HirQuery;
 pub use lang_def::{HirBuildAction, Language, LanguageDefinition, NO_FIELD_ID, ParseChild};
 pub use lang_registry::{LanguageHandler, LanguageHandlerImpl, LanguageRegistry};
-pub use meta::{ArchDepth, UnitMeta, UnitMetaBuilder};
+pub use meta::{ArchitectureLevel, SourceFileMetadata, SourceLayoutIndex};
 pub use paste;
 pub use printer::{PrintConfig, PrintFormat, print_llmcc_graph, print_llmcc_ir, render_llmcc_ir};
 pub use resolve::ResolveOptions;

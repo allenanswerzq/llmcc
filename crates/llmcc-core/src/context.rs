@@ -14,7 +14,7 @@ use uuid::Uuid;
 use crate::block::{BasicBlock, BlockArena, BlockId, reset_block_id_counter};
 use crate::block_rel::{BlockIndexMaps, BlockRelationMap};
 use crate::file::File;
-use crate::meta::{UnitMeta, UnitMetaBuilder};
+use crate::meta::{SourceFileMetadata, SourceLayoutIndex};
 
 /// Controls how files are ordered after parallel reading.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -182,7 +182,7 @@ impl<'tcx> CompileUnit<'tcx> {
 
     /// Get the module metadata for this compilation unit.
     /// Contains package/module/file names and roots.
-    pub fn unit_meta(&self) -> &UnitMeta {
+    pub fn unit_meta(&self) -> &SourceFileMetadata {
         &self.cc.unit_metas[self.index]
     }
 
@@ -329,7 +329,7 @@ pub struct CompileCtxt<'tcx> {
     pub interner: InternPool,
     pub files: Vec<File>,
     /// Per-file metadata: package/module/file names and roots.
-    pub unit_metas: Vec<UnitMeta>,
+    pub unit_metas: Vec<SourceFileMetadata>,
     /// Generic parse trees from language-specific parsers
     pub parse_trees: Vec<Box<dyn ParseTree>>,
     pub hir_root_ids: RwLock<Vec<Option<HirId>>>,
@@ -417,7 +417,7 @@ impl<'tcx> CompileCtxt<'tcx> {
         let (parse_trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files)?;
         metrics.file_read_seconds = file_read_seconds;
 
-        // Build unit metadata using UnitMetaBuilder
+        // Build unit metadata using SourceLayoutIndex
         let unit_metas = Self::build_unit_metas::<L>(&files);
         let count = unit_metas.len();
 
@@ -477,7 +477,7 @@ impl<'tcx> CompileCtxt<'tcx> {
         let (parse_trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files)?;
         metrics.file_read_seconds = file_read_seconds;
 
-        // Build unit metadata using UnitMetaBuilder
+        // Build unit metadata using SourceLayoutIndex
         let unit_metas = Self::build_unit_metas::<L>(&files);
         let count = unit_metas.len();
 
@@ -495,8 +495,8 @@ impl<'tcx> CompileCtxt<'tcx> {
         })
     }
 
-    /// Build unit metadata for all files using UnitMetaBuilder.
-    fn build_unit_metas<L: Language>(files: &[File]) -> Vec<UnitMeta> {
+    /// Build unit metadata for all files using SourceLayoutIndex.
+    fn build_unit_metas<L: Language>(files: &[File]) -> Vec<SourceFileMetadata> {
         if files.is_empty() {
             return Vec::new();
         }
@@ -508,20 +508,20 @@ impl<'tcx> CompileCtxt<'tcx> {
             .collect();
 
         if file_paths.is_empty() {
-            return vec![UnitMeta::default(); files.len()];
+            return vec![SourceFileMetadata::default(); files.len()];
         }
 
         // Build the detector (computes project root internally)
-        let builder = UnitMetaBuilder::from_language::<L>(&file_paths);
+        let meta_index = SourceLayoutIndex::from_language::<L>(&file_paths);
 
         // Generate metadata for each file
-        let mut metas: Vec<UnitMeta> = files
+        let mut metas: Vec<SourceFileMetadata> = files
             .iter()
             .map(|f| {
                 if let Some(path) = f.path() {
-                    builder.get_module_info(std::path::Path::new(path))
+                    meta_index.metadata_for(std::path::Path::new(path))
                 } else {
-                    UnitMeta::default()
+                    SourceFileMetadata::default()
                 }
             })
             .collect();
