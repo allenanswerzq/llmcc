@@ -75,7 +75,7 @@ fn assign_type_to_ident<'tcx>(
 ) {
     let default_type = ident_type;
 
-    let symbol = match ident.opt_symbol() {
+    let symbol = match ident.try_symbol() {
         Some(sym) => sym,
         None => {
             let resolved =
@@ -149,7 +149,7 @@ fn assign_type_to_struct_pattern<'tcx>(
         None => return,
     };
 
-    let struct_symbol = match struct_type_ident.opt_symbol() {
+    let struct_symbol = match struct_type_ident.try_symbol() {
         Some(sym) => sym,
         None => return,
     };
@@ -177,7 +177,7 @@ fn assign_type_to_struct_pattern<'tcx>(
                         }
                         // Shorthand: { field } - bind the identifier directly
                         else if let Some(field_type) = field_type {
-                            if let Some(binding_sym) = field_name_ident.opt_symbol() {
+                            if let Some(binding_sym) = field_name_ident.try_symbol() {
                                 if binding_sym.kind() == SymKind::Variable {
                                     binding_sym.set_type_of(field_type.id());
                                 } else if let Some(var_sym) = scopes.lookup_symbol(
@@ -226,7 +226,7 @@ fn assign_type_to_tuple_struct_pattern<'tcx>(
         None => return,
     };
 
-    let type_symbol = match type_ident.opt_symbol() {
+    let type_symbol = match type_ident.try_symbol() {
         Some(sym) => sym,
         None => return,
     };

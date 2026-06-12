@@ -47,10 +47,10 @@ impl<'tcx> BinderVisitor<'tcx> {
     ) {
         let depth = scopes.scope_depth();
 
-        let child_parent = sn.opt_symbol().or(parent);
+        let child_parent = sn.try_symbol().or(parent);
 
         // Skip if scope wasn't set
-        if sn.opt_scope().is_none() {
+        if sn.try_scope().is_none() {
             self.visit_children(unit, node, scopes, scopes.top(), child_parent);
             return;
         }
@@ -79,10 +79,10 @@ impl<'tcx> BinderVisitor<'tcx> {
             if let Some(field_sym) = decl_node
                 .query(unit)
                 .first_ident()
-                .and_then(|i| i.opt_symbol())
+                .and_then(|i| i.try_symbol())
             {
                 // Set field_of to parent struct/class
-                if let Some(parent_sym) = namespace.opt_symbol() {
+                if let Some(parent_sym) = namespace.try_symbol() {
                     field_sym.set_field_of(parent_sym.id());
                 }
 
@@ -107,7 +107,7 @@ impl<'tcx> BinderVisitor<'tcx> {
             if let Some(param_sym) = decl_node
                 .query(unit)
                 .first_ident()
-                .and_then(|i| i.opt_symbol())
+                .and_then(|i| i.try_symbol())
             {
                 // Get the type and resolve it
                 if let Some(type_node) = node.child_by_field(unit, LangCpp::field_type)
@@ -144,7 +144,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         kinds: SymKindSet,
     ) {
         let ident = node.as_ident().unwrap();
-        if let Some(existing) = ident.opt_symbol()
+        if let Some(existing) = ident.try_symbol()
             && existing.kind().is_resolved()
         {
             return;
@@ -309,7 +309,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             parent,
             Some(Box::new(|_unit, sn, scopes| {
                 // Set up 'this' pointer alias
-                if let Some(class_sym) = sn.opt_symbol() {
+                if let Some(class_sym) = sn.try_symbol() {
                     if let Some(this_sym) =
                         scopes.lookup_symbol("this", SymKindSet::from_kind(SymKind::Variable))
                     {
@@ -320,7 +320,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         );
 
         // Process base class clause for inheritance
-        if let Some(class_sym) = sn.opt_symbol() {
+        if let Some(class_sym) = sn.try_symbol() {
             for child_id in node.child_ids() {
                 let child = unit.hir_node(*child_id);
                 if child.kind_id() == LangCpp::base_class_clause {
@@ -393,7 +393,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         self.visit_scoped_named(unit, node, sn, scopes, namespace, parent, None);
 
         // Bind return type
-        if let Some(fn_sym) = sn.opt_symbol() {
+        if let Some(fn_sym) = sn.try_symbol() {
             if let Some(type_node) = node.child_by_field(unit, LangCpp::field_type)
                 && let Some(return_type) = infer_type(unit, scopes, &type_node)
             {
@@ -460,7 +460,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
             // Try to get the scope's symbol and push it
             if let Some(scope_ident) = scope_node.query(unit).first_ident()
-                && let Some(scope_sym) = scope_ident.opt_symbol()
+                && let Some(scope_sym) = scope_ident.try_symbol()
                 && let Some(scope_id) = scope_sym.opt_owned_scope()
             {
                 let depth = scopes.scope_depth();

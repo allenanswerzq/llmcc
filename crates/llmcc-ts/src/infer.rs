@@ -49,7 +49,7 @@ fn infer_type_impl<'tcx>(
         LangTypeScript::type_identifier => {
             let ident = node.query(unit).first_ident()?;
             // First try existing symbol on the identifier
-            if let Some(sym) = ident.opt_symbol() {
+            if let Some(sym) = ident.try_symbol() {
                 // If it's a concrete type (Struct/Trait/Enum), use it directly
                 if sym.kind().is_defined_type() {
                     return Some(sym);
@@ -68,7 +68,7 @@ fn infer_type_impl<'tcx>(
                 return Some(sym);
             }
             // Fall back to original symbol if lookup failed
-            ident.opt_symbol()
+            ident.try_symbol()
         }
 
         // Nested type identifier: Models.User, Namespace.Type
@@ -77,7 +77,7 @@ fn infer_type_impl<'tcx>(
         // Identifier
         LangTypeScript::identifier => {
             let ident = node.query(unit).first_ident()?;
-            let symbol = ident.opt_symbol()?;
+            let symbol = ident.try_symbol()?;
 
             if let Some(type_id) = symbol.type_of() {
                 unit.try_symbol(type_id)
@@ -89,7 +89,7 @@ fn infer_type_impl<'tcx>(
         // Property identifier
         LangTypeScript::property_identifier => {
             let ident = node.query(unit).first_ident()?;
-            ident.opt_symbol()
+            ident.try_symbol()
         }
 
         // Statement block
@@ -225,7 +225,7 @@ fn infer_type_impl<'tcx>(
 
         _ => {
             if let Some(ident) = node.query(unit).first_ident() {
-                return ident.opt_symbol();
+                return ident.try_symbol();
             }
             None
         }
@@ -395,7 +395,7 @@ fn infer_array_type<'tcx>(
 ) -> Option<&'tcx Symbol> {
     // Try to get the CompositeType symbol that was created for this array type
     if let Some(sn) = node.as_scope()
-        && let Some(array_ident) = sn.opt_ident()
+        && let Some(array_ident) = sn.try_ident()
         && let Some(array_symbol) = scopes.lookup_symbol(
             array_ident.name,
             SymKindSet::from_kind(SymKind::CompositeType),
@@ -425,7 +425,7 @@ fn infer_tuple_type<'tcx>(
 ) -> Option<&'tcx Symbol> {
     // Try to get the CompositeType symbol that was created for this tuple type
     if let Some(sn) = node.as_scope()
-        && let Some(tuple_ident) = sn.opt_ident()
+        && let Some(tuple_ident) = sn.try_ident()
         && let Some(tuple_symbol) = scopes.lookup_symbol(
             tuple_ident.name,
             SymKindSet::from_kind(SymKind::CompositeType),
@@ -496,7 +496,7 @@ fn infer_object_type<'tcx>(
 ) -> Option<&'tcx Symbol> {
     // Try to get the anonymous type symbol
     if let Some(sn) = node.as_scope()
-        && let Some(obj_ident) = sn.opt_ident()
+        && let Some(obj_ident) = sn.try_ident()
         && let Some(obj_symbol) = scopes.lookup_symbol(
             obj_ident.name,
             SymKindSet::from_kind(SymKind::CompositeType),

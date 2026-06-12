@@ -40,7 +40,7 @@ fn infer_type_impl<'tcx>(
         LangRust::primitive_type | LangRust::type_identifier => {
             let ident = node.query(unit).first_ident()?;
             // First try existing symbol on the identifier
-            if let Some(sym) = ident.opt_symbol() {
+            if let Some(sym) = ident.try_symbol() {
                 // If it's a concrete type (Struct/Enum/Trait), use it directly
                 if sym.kind().is_defined_type() {
                     return Some(sym);
@@ -55,7 +55,7 @@ fn infer_type_impl<'tcx>(
                 return Some(sym);
             }
             // Fall back to original symbol if lookup failed
-            ident.opt_symbol()
+            ident.try_symbol()
         }
 
         // Block expressions
@@ -91,7 +91,7 @@ fn infer_type_impl<'tcx>(
         // Identifier
         LangRust::identifier => {
             let ident = node.query(unit).first_ident()?;
-            let symbol = ident.opt_symbol()?;
+            let symbol = ident.try_symbol()?;
 
             if let Some(type_id) = symbol.type_of() {
                 unit.try_symbol(type_id)
@@ -161,7 +161,7 @@ fn infer_type_impl<'tcx>(
 
         _ => {
             if let Some(ident) = node.query(unit).first_ident() {
-                return ident.opt_symbol();
+                return ident.try_symbol();
             }
             None
         }
@@ -417,7 +417,7 @@ fn infer_array_type<'tcx>(
 ) -> Option<&'tcx Symbol> {
     // Try to get the CompositeType symbol that was created for this array type
     if let Some(sn) = node.as_scope()
-        && let Some(array_ident) = sn.opt_ident()
+        && let Some(array_ident) = sn.try_ident()
         && let Some(array_symbol) = scopes.lookup_symbol(
             array_ident.name,
             SymKindSet::from_kind(SymKind::CompositeType),
@@ -440,7 +440,7 @@ fn infer_tuple_type<'tcx>(
 ) -> Option<&'tcx Symbol> {
     // Try to get the CompositeType symbol that was created for this tuple type
     if let Some(sn) = node.as_scope()
-        && let Some(tuple_ident) = sn.opt_ident()
+        && let Some(tuple_ident) = sn.try_ident()
         && let Some(tuple_symbol) = scopes.lookup_symbol(
             tuple_ident.name,
             SymKindSet::from_kind(SymKind::CompositeType),

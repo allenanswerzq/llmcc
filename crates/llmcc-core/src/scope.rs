@@ -101,7 +101,7 @@ impl<'tcx> Scope<'tcx> {
     }
 
     #[inline]
-    pub fn opt_symbol(&self) -> Option<&'tcx Symbol> {
+    pub fn try_symbol(&self) -> Option<&'tcx Symbol> {
         *self.symbol.read()
     }
 
@@ -115,7 +115,7 @@ impl<'tcx> Scope<'tcx> {
             if !visited.insert(parent.id()) {
                 continue;
             }
-            if let Some(sym) = parent.opt_symbol()
+            if let Some(sym) = parent.try_symbol()
                 && sym.kind() == kind
             {
                 return Some(sym);
@@ -220,7 +220,7 @@ impl<'tcx> fmt::Debug for ScopeStack<'tcx> {
 
 impl<'tcx> fmt::Debug for Scope<'tcx> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let symbol_desc = self.opt_symbol().cloned();
+        let symbol_desc = self.try_symbol().cloned();
         let mut symbol_entries: Vec<String> = Vec::new();
 
         self.for_each_symbol(|s| {

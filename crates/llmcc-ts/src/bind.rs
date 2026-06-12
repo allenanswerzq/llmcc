@@ -48,10 +48,10 @@ impl<'tcx> BinderVisitor<'tcx> {
         // Any export modifier makes the symbol global
         // TODO: Check for export keyword in parent
 
-        let child_parent = sn.opt_symbol().or(parent);
+        let child_parent = sn.try_symbol().or(parent);
 
         // Skip if scope wasn't set (incomplete TypeScript parsing)
-        if sn.opt_scope().is_none() {
+        if sn.try_scope().is_none() {
             self.visit_children(unit, node, scopes, scopes.top(), child_parent);
             return;
         }
@@ -86,7 +86,7 @@ impl<'tcx> BinderVisitor<'tcx> {
             .resolved_symbol_by_field(LangTypeScript::field_name)
         {
             // Set field_of to parent struct/trait
-            if let Some(parent_sym) = namespace.opt_symbol() {
+            if let Some(parent_sym) = namespace.try_symbol() {
                 field_sym.set_field_of(parent_sym.id());
             }
 
@@ -130,7 +130,7 @@ impl<'tcx> BinderVisitor<'tcx> {
     ) {
         // Get the identifier from the rest_pattern (could be direct child or find_ident)
         if let Some(ident) = node.query(unit).first_ident()
-            && let Some(param_sym) = ident.opt_symbol()
+            && let Some(param_sym) = ident.try_symbol()
         {
             // The type annotation is on the parent required_parameter
             if let Some(parent_id) = node.parent()
@@ -162,7 +162,7 @@ impl<'tcx> BinderVisitor<'tcx> {
                 // Find the first identifier in the return type and set it to the unwrapped type
                 if let Some(ident) = ret_type_node.query(unit).first_ident() {
                     // Only update if the unwrapped type is different from current
-                    if let Some(current_sym) = ident.opt_symbol() {
+                    if let Some(current_sym) = ident.try_symbol() {
                         if unwrapped_type.id() != current_sym.id() {
                             // Set the identifier NODE to point to the unwrapped type symbol
                             ident.set_symbol(unwrapped_type);
@@ -235,7 +235,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
         _parent: Option<&Symbol>,
     ) {
         let ident = node.as_ident().unwrap();
-        if let Some(existing) = ident.opt_symbol()
+        if let Some(existing) = ident.try_symbol()
             && existing.kind().is_resolved()
         {
             return;
@@ -256,7 +256,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
         _parent: Option<&Symbol>,
     ) {
         let ident = node.as_ident().unwrap();
-        if let Some(existing) = ident.opt_symbol()
+        if let Some(existing) = ident.try_symbol()
             && existing.kind().is_resolved()
         {
             return;
@@ -297,7 +297,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
             self.visit_scoped_named(unit, node, sn, scopes, namespace, parent, None, false);
 
             // After visiting, process class_heritage to find extends and implements clauses
-            if let Some(class_sym) = sn.opt_symbol() {
+            if let Some(class_sym) = sn.try_symbol() {
                 for child_id in node.child_ids() {
                     let child = unit.hir_node(*child_id);
 
@@ -378,7 +378,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
             self.visit_scoped_named(unit, node, sn, scopes, namespace, parent, None, false);
 
             // After visiting, process extends_clause to add inheritance relationships
-            if let Some(iface_sym) = sn.opt_symbol() {
+            if let Some(iface_sym) = sn.try_symbol() {
                 // Find extends_type_clause children and resolve extended types
                 for child_id in node.child_ids() {
                     let child = unit.hir_node(*child_id);

@@ -26,10 +26,10 @@ impl<'hir, 'unit> HirQuery<'hir, 'unit> {
     /// Symbol attached directly to this node.
     pub fn symbol(self) -> Option<&'hir Symbol> {
         if let Some(scope) = self.node.as_scope() {
-            return scope.opt_symbol();
+            return scope.try_symbol();
         }
         if let Some(ident) = self.node.as_ident() {
-            return ident.opt_symbol();
+            return ident.try_symbol();
         }
         None
     }
@@ -37,7 +37,7 @@ impl<'hir, 'unit> HirQuery<'hir, 'unit> {
     /// Symbol referenced by the identifier under a specific child field.
     pub fn resolved_symbol_by_field(self, field_id: u16) -> Option<&'hir Symbol> {
         let child = self.node.child_by_field(self.unit, field_id)?;
-        child.query(self.unit).first_ident()?.opt_symbol()
+        child.query(self.unit).first_ident()?.try_symbol()
     }
 
     /// Best symbol associated with this subtree.
@@ -46,10 +46,10 @@ impl<'hir, 'unit> HirQuery<'hir, 'unit> {
     /// handles scoped paths where the resolved target is not the first token.
     pub fn resolved_symbol(self) -> Option<&'hir Symbol> {
         if let Some(ident) = self.resolved_ident() {
-            return ident.opt_symbol();
+            return ident.try_symbol();
         }
 
-        self.first_ident()?.opt_symbol()
+        self.first_ident()?.try_symbol()
     }
 
     /// First descendant with the given tree-sitter field id.
@@ -101,7 +101,7 @@ impl<'hir, 'unit> HirQuery<'hir, 'unit> {
     fn find_resolved_ident(self, result: &mut Option<&'hir HirIdent<'hir>>) {
         if self.node.is_kind(HirKind::Identifier) {
             if let Some(ident) = self.node.as_ident()
-                && ident.opt_symbol().is_some()
+                && ident.try_symbol().is_some()
             {
                 *result = Some(ident);
             }
@@ -110,7 +110,7 @@ impl<'hir, 'unit> HirQuery<'hir, 'unit> {
         for child in self.node.children(self.unit) {
             if child.is_kind(HirKind::Identifier) {
                 if let Some(ident) = child.as_ident()
-                    && ident.opt_symbol().is_some()
+                    && ident.try_symbol().is_some()
                 {
                     *result = Some(ident);
                 }
@@ -140,7 +140,10 @@ impl<'hir, 'unit> HirQuery<'hir, 'unit> {
     pub fn ident_with_field(self, field_id: u16) -> Option<&'hir HirIdent<'hir>> {
         debug_assert!(!self.node.is_kind(HirKind::Identifier));
         for child in self.node.children(self.unit) {
-            if child.base().is_some_and(|base| base.field_id == field_id) {
+            if child
+                .try_base()
+                .is_some_and(|base| base.field_id == field_id)
+            {
                 return Self::type_ident(child, self.unit);
             }
         }
@@ -186,7 +189,7 @@ impl<'hir, 'unit> HirQuery<'hir, 'unit> {
     fn collect_idents_with_field(self, field_id: u16, idents: &mut Vec<&'hir HirIdent<'hir>>) {
         if self
             .node
-            .base()
+            .try_base()
             .is_some_and(|base| base.field_id == field_id)
             && let Some(ident) = self.node.as_ident()
         {
@@ -220,15 +223,15 @@ impl<'hir, 'unit> HirQuery<'hir, 'unit> {
     /// Attach a block id to any non-primitive symbol associated with this node.
     pub fn attach_block_id(self, block_id: BlockId) {
         if let Some(scope) = self.node.as_scope() {
-            if let Some(symbol) = scope.opt_symbol() {
+            if let Some(symbol) = scope.try_symbol() {
                 if symbol.kind() != SymKind::Primitive {
                     symbol.set_block_id(block_id);
                 }
                 return;
             }
 
-            if let Some(ident) = scope.opt_ident()
-                && let Some(symbol) = ident.opt_symbol()
+            if let Some(ident) = scope.try_ident()
+                && let Some(symbol) = ident.try_symbol()
             {
                 if symbol.kind() != SymKind::Primitive {
                     symbol.set_block_id(block_id);
@@ -238,7 +241,7 @@ impl<'hir, 'unit> HirQuery<'hir, 'unit> {
         }
 
         if let Some(ident) = self.node.as_ident()
-            && let Some(symbol) = ident.opt_symbol()
+            && let Some(symbol) = ident.try_symbol()
             && symbol.kind() != SymKind::Primitive
         {
             symbol.set_block_id(block_id);

@@ -90,7 +90,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         let ident = node
             .query(unit)
             .ident_with_field(field_id)
-            .or_else(|| node.as_scope().and_then(|sn| sn.opt_ident()))?;
+            .or_else(|| node.as_scope().and_then(|sn| sn.try_ident()))?;
 
         let sym = scopes.lookup_or_insert(ident.name, node, kind)?;
         ident.set_symbol(sym);

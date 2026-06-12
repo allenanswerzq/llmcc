@@ -3,7 +3,6 @@
 use parking_lot::RwLock;
 use std::collections::HashSet;
 use std::fmt;
-use std::sync::atomic::{AtomicBool, Ordering};
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
 use crate::context::CompileUnit;
@@ -592,13 +591,8 @@ pub struct BlockFunc<'blk> {
     name: String,
     pub parameters: RwLock<Vec<BlockId>>,
     pub returns: RwLock<Option<BlockId>>,
-    /// Types used inside function body (excludes parameter/return types)
-    /// Examples: local variable types, static method receivers (Foo::method)
-    pub type_deps: RwLock<HashSet<BlockId>>,
     /// Functions/methods called by this function
     pub func_deps: RwLock<HashSet<BlockId>>,
-    /// Whether this is a method (inside impl block) vs a free function
-    pub is_method: AtomicBool,
 }
 
 impl<'blk> BlockFunc<'blk> {
@@ -627,9 +621,7 @@ impl<'blk> BlockFunc<'blk> {
             name,
             parameters: RwLock::new(Vec::new()),
             returns: RwLock::new(None),
-            type_deps: RwLock::new(HashSet::new()),
             func_deps: RwLock::new(HashSet::new()),
-            is_method: AtomicBool::new(false),
         }
     }
 
@@ -637,12 +629,8 @@ impl<'blk> BlockFunc<'blk> {
         (!self.name.is_empty()).then_some(&self.name)
     }
 
-    pub fn set_is_method(&self, is_method: bool) {
-        self.is_method.store(is_method, Ordering::Relaxed);
-    }
-
     pub fn is_method(&self) -> bool {
-        self.is_method.load(Ordering::Relaxed)
+        self.base.kind == BlockKind::Method
     }
 
     pub fn add_parameter(&self, param: BlockId) {
@@ -662,11 +650,11 @@ impl<'blk> BlockFunc<'blk> {
     }
 
     pub fn add_type_dep(&self, type_id: BlockId) {
-        self.type_deps.write().insert(type_id);
+        self.base.add_type_dep(type_id);
     }
 
     pub fn type_deps(&self) -> HashSet<BlockId> {
-        self.type_deps.read().clone()
+        self.base.type_deps()
     }
 
     pub fn add_func_dep(&self, func_id: BlockId) {

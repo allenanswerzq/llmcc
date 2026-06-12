@@ -50,13 +50,13 @@ impl<'tcx> BinderVisitor<'tcx> {
 
         // Any visibility modifier (pub, pub(crate), pub(super), etc.) makes the symbol global
         if let Some(_vis_modifier) = node.child_by_kind(unit, LangRust::visibility_modifier)
-            && let Some(sym) = sn.opt_symbol()
+            && let Some(sym) = sn.try_symbol()
         {
             sym.set_is_global(true);
             scopes.globals().insert(sym);
         }
 
-        let child_parent = sn.opt_symbol().or(parent);
+        let child_parent = sn.try_symbol().or(parent);
 
         // Push scope (always succeeds for Rust since collector sets all scopes)
         scopes.push_scope_node(sn);
@@ -121,7 +121,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         _parent: Option<&Symbol>,
     ) {
         let ident = node.as_ident().unwrap();
-        if let Some(existing) = ident.opt_symbol()
+        if let Some(existing) = ident.try_symbol()
             && existing.kind().is_resolved()
         {
             return;
@@ -142,7 +142,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         _parent: Option<&Symbol>,
     ) {
         let ident = node.as_ident().unwrap();
-        if let Some(existing) = ident.opt_symbol()
+        if let Some(existing) = ident.try_symbol()
             && existing.kind().is_resolved()
         {
             return;
@@ -259,7 +259,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         let sn = node.as_scope().unwrap();
         self.visit_scoped_named(unit, node, sn, scopes, namespace, parent, None);
 
-        let Some(fn_sym) = sn.opt_symbol() else {
+        let Some(fn_sym) = sn.try_symbol() else {
             return;
         };
 
@@ -314,7 +314,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 for key in ["Self", "self"] {
                     if let Some(self_sym) =
                         scopes.lookup_symbol(key, SymKindSet::from_kind(SymKind::TypeAlias))
-                        && let Some(struct_sym) = sn.opt_symbol()
+                        && let Some(struct_sym) = sn.try_symbol()
                     {
                         self_sym.set_type_of(struct_sym.id());
                         if let Some(struct_scope) = struct_sym.opt_owned_scope() {
@@ -348,7 +348,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 for key in ["Self", "self"] {
                     if let Some(self_sym) =
                         scopes.lookup_symbol(key, SymKindSet::from_kind(SymKind::TypeAlias))
-                        && let Some(trait_sym) = sn.opt_symbol()
+                        && let Some(trait_sym) = sn.try_symbol()
                     {
                         self_sym.set_type_of(trait_sym.id());
                         if let Some(trait_scope) = trait_sym.opt_owned_scope() {
@@ -375,7 +375,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             .query(unit)
             .resolved_symbol_by_field(LangRust::field_name)
         {
-            if let Some(struct_sym) = namespace.opt_symbol() {
+            if let Some(struct_sym) = namespace.try_symbol() {
                 field_sym.set_field_of(struct_sym.id());
             }
 
@@ -383,7 +383,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 && let Some(field_type) = infer_type(unit, scopes, &type_node)
             {
                 field_sym.set_type_of(field_type.id());
-                if let Some(struct_sym) = namespace.opt_symbol() {
+                if let Some(struct_sym) = namespace.try_symbol() {
                     struct_sym.add_nested_type(field_type.id());
                 }
                 // Extract nested types from generic field types to the FIELD symbol
@@ -405,7 +405,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     ) {
         let target_ident = node.query(unit).ident_with_field(LangRust::field_type);
         if let Some(target_ident) = target_ident
-            && let Some(target_sym) = target_ident.opt_symbol()
+            && let Some(target_sym) = target_ident.try_symbol()
         {
             // Look up the impl target type (struct or enum that the trait is implemented for)
             let target_resolved = scopes.lookup_symbol(target_ident.name, SYM_KIND_IMPL_TARGETS);
@@ -498,7 +498,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(func_node) = node.child_by_field(unit, LangRust::field_function)
             && func_node.kind_id() == LangRust::identifier
             && let Some(ident) = func_node.as_ident()
-            && ident.opt_symbol().is_none()
+            && ident.try_symbol().is_none()
             && let Some(symbol) = scopes.lookup_symbol(ident.name, SYM_KIND_CALLABLE)
         {
             ident.set_symbol(symbol);
@@ -619,7 +619,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         let sn = node.as_scope().unwrap();
         self.visit_children(unit, node, scopes, namespace, parent);
 
-        if let Some(ident) = sn.opt_ident()
+        if let Some(ident) = sn.try_ident()
             && let Some(symbol) =
                 scopes.lookup_symbol(ident.name, SymKindSet::from_kind(SymKind::CompositeType))
             && symbol.nested_types().is_none()
@@ -645,7 +645,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         let sn = node.as_scope().unwrap();
         self.visit_children(unit, node, scopes, namespace, parent);
 
-        if let Some(tuple_ident) = sn.opt_ident()
+        if let Some(tuple_ident) = sn.try_ident()
             && let Some(tuple_symbol) = scopes.lookup_symbol(
                 tuple_ident.name,
                 SymKindSet::from_kind(SymKind::CompositeType),
@@ -653,7 +653,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && tuple_symbol.nested_types().is_none()
         {
             for type_ident in node.query(unit).identifiers() {
-                if let Some(type_sym) = type_ident.opt_symbol() {
+                if let Some(type_sym) = type_ident.try_symbol() {
                     tuple_symbol.add_nested_type(type_sym.id());
                 }
             }
@@ -721,7 +721,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             }
             // named field access (struct.field)
             else if let Some(field_ident) = field_node.query(unit).first_ident() {
-                if let Some(field_sym) = field_ident.opt_symbol() {
+                if let Some(field_sym) = field_ident.try_symbol() {
                     field_sym.set_field_of(value_sym.id());
                 }
             }
@@ -756,12 +756,12 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 path_node
                     .query(unit)
                     .ident_with_field(LangRust::field_name)
-                    .and_then(|i| i.opt_symbol())
+                    .and_then(|i| i.try_symbol())
             } else if path_node.kind_id() == LangRust::identifier {
                 // For simple identifier path, get or resolve it
                 let path_ident = path_node.as_ident();
                 if let Some(ident) = path_ident {
-                    if let Some(sym) = ident.opt_symbol() {
+                    if let Some(sym) = ident.try_symbol() {
                         Some(sym)
                     } else {
                         // Path doesn't have a symbol yet - look it up
@@ -906,11 +906,11 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(type_node) = type_node
             && let Some(type_ident) = type_node.query(unit).first_ident()
             // type_sym is the struct type
-            && let Some(type_sym) = type_ident.opt_symbol()
+            && let Some(type_sym) = type_ident.try_symbol()
         {
             if type_sym.nested_types().is_some() {
                 for (i, child) in node.query(unit).identifiers().into_iter().enumerate() {
-                    if let Some(child_sym) = child.opt_symbol()
+                    if let Some(child_sym) = child.try_symbol()
                         && let Some(nested_types) = type_sym.nested_types()
                         && i >= 2
                         && i < nested_types.len()

@@ -71,7 +71,7 @@ fn assign_type_to_ident<'tcx>(
     ident: &'tcx llmcc_core::ir::HirIdent<'tcx>,
     ident_type: &'tcx Symbol,
 ) {
-    let symbol = match ident.opt_symbol() {
+    let symbol = match ident.try_symbol() {
         Some(sym) => sym,
         None => {
             // Try to look up the variable in scope

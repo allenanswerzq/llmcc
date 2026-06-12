@@ -50,7 +50,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         let ident = node
             .query(unit)
             .ident_with_field(field_id)
-            .or_else(|| node.as_scope().and_then(|sn| sn.opt_ident()))?;
+            .or_else(|| node.as_scope().and_then(|sn| sn.try_ident()))?;
 
         let sym = scopes.lookup_or_insert(ident.name, node, kind)?;
         ident.set_symbol(sym);
@@ -795,7 +795,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         parent: Option<&Symbol>,
     ) {
         // Get the parent enum symbol before creating the variant
-        let parent_enum = parent.or_else(|| namespace.opt_symbol());
+        let parent_enum = parent.or_else(|| namespace.try_symbol());
 
         self.visit_scoped_named(
             unit,

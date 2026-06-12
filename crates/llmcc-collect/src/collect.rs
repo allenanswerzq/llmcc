@@ -50,8 +50,8 @@ pub fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
             let symbol_opt = block
                 .node()
                 .as_scope()
-                .and_then(|scope_node| scope_node.opt_scope())
-                .and_then(|scope| scope.opt_symbol());
+                .and_then(|scope_node| scope_node.try_scope())
+                .and_then(|scope| scope.try_symbol());
 
             let sym_kind = symbol_opt.map(|s| s.kind());
 

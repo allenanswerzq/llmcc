@@ -76,10 +76,10 @@ impl<'a> BinderScopes<'a> {
     /// Pushes the scope represented by a HirScope node.
     /// Returns true if scope was pushed, false if the scope wasn't set (e.g., unparsed macro).
     pub fn push_scope_node(&mut self, sn: &'a HirScope<'a>) -> bool {
-        let Some(scope) = sn.opt_scope() else {
+        let Some(scope) = sn.try_scope() else {
             return false;
         };
-        if sn.opt_ident().is_some() {
+        if sn.try_ident().is_some() {
             self.push_scope_recursive(scope.id());
         } else {
             self.push_scope(scope.id());

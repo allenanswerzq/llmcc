@@ -63,7 +63,7 @@ fn infer_type_impl<'tcx>(
         LangCpp::type_identifier => {
             let ident = node.query(unit).first_ident()?;
             // First try existing symbol on the identifier
-            if let Some(sym) = ident.opt_symbol() {
+            if let Some(sym) = ident.try_symbol() {
                 if sym.kind().is_defined_type() {
                     return Some(sym);
                 }
@@ -79,13 +79,13 @@ fn infer_type_impl<'tcx>(
             if let Some(sym) = scopes.lookup_global(ident.name, SYM_KIND_TYPES) {
                 return Some(sym);
             }
-            ident.opt_symbol()
+            ident.try_symbol()
         }
 
         // Identifier
         LangCpp::identifier => {
             let ident = node.query(unit).first_ident()?;
-            let symbol = ident.opt_symbol()?;
+            let symbol = ident.try_symbol()?;
 
             if let Some(type_id) = symbol.type_of() {
                 unit.try_symbol(type_id)
@@ -211,7 +211,7 @@ fn infer_type_impl<'tcx>(
 
         _ => {
             if let Some(ident) = node.query(unit).first_ident() {
-                return ident.opt_symbol();
+                return ident.try_symbol();
             }
             None
         }
@@ -304,7 +304,7 @@ fn infer_template_type<'tcx>(
 
     // Fall back to first identifier
     if let Some(ident) = node.query(unit).first_ident() {
-        if let Some(sym) = ident.opt_symbol() {
+        if let Some(sym) = ident.try_symbol() {
             return Some(sym);
         }
         if let Some(sym) = scopes.lookup_symbol(ident.name, SYM_KIND_TYPES) {
@@ -324,7 +324,7 @@ fn infer_qualified_identifier<'tcx>(
     // Get the name field (the final identifier in the chain)
     if let Some(name_node) = node.child_by_field(unit, LangCpp::field_name)
         && let Some(ident) = name_node.query(unit).first_ident()
-        && let Some(sym) = ident.opt_symbol()
+        && let Some(sym) = ident.try_symbol()
     {
         return Some(sym);
     }
@@ -362,7 +362,7 @@ fn infer_field_expression<'tcx>(
     // Try to get the field's symbol directly
     if let Some(field_node) = node.child_by_field(unit, LangCpp::field_field)
         && let Some(field_ident) = field_node.query(unit).first_ident()
-        && let Some(field_sym) = field_ident.opt_symbol()
+        && let Some(field_sym) = field_ident.try_symbol()
     {
         // Return the field's type if known
         if let Some(type_id) = field_sym.type_of() {

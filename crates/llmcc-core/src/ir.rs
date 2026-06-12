@@ -91,12 +91,12 @@ pub enum HirNode<'hir> {
 impl<'hir> HirNode<'hir> {
     #[inline]
     fn expect_base(&self, method: &'static str) -> &HirBase {
-        self.base()
+        self.try_base()
             .unwrap_or_else(|| panic!("HirNode::{method} called on Undefined"))
     }
 
     pub fn label(&self) -> String {
-        self.base()
+        self.try_base()
             .map(|base| format!("{}:{}", base.kind, base.id))
             .unwrap_or_else(|| "undefined".to_string())
     }
@@ -107,7 +107,7 @@ impl<'hir> HirNode<'hir> {
     }
 
     /// Shared metadata for this node, if it is not `Undefined`.
-    pub fn base(&self) -> Option<&HirBase> {
+    pub fn try_base(&self) -> Option<&HirBase> {
         match self {
             HirNode::Undefined => None,
             HirNode::Root(node) => Some(&node.base),
@@ -119,9 +119,14 @@ impl<'hir> HirNode<'hir> {
         }
     }
 
+    /// Shared metadata for this node, panicking if it is `Undefined`.
+    pub fn base(&self) -> &HirBase {
+        self.expect_base("base")
+    }
+
     /// Coarse HIR kind used by llmcc visitors and builders.
     pub fn kind(&self) -> HirKind {
-        self.base().map_or(HirKind::Undefined, |base| base.kind)
+        self.try_base().map_or(HirKind::Undefined, |base| base.kind)
     }
 
     /// Returns true when this node has the given coarse HIR kind.
@@ -131,17 +136,17 @@ impl<'hir> HirNode<'hir> {
 
     /// HIR id if this node is not `Undefined`.
     pub fn try_id(&self) -> Option<HirId> {
-        self.base().map(|base| base.id)
+        self.try_base().map(|base| base.id)
     }
 
     /// Tree-sitter field id if this node is not `Undefined`.
     pub fn try_field_id(&self) -> Option<u16> {
-        self.base().map(|base| base.field_id)
+        self.try_base().map(|base| base.field_id)
     }
 
     /// Tree-sitter kind id if this node is not `Undefined`.
     pub fn try_kind_id(&self) -> Option<u16> {
-        self.base().map(|base| base.kind_id)
+        self.try_base().map(|base| base.kind_id)
     }
 
     /// Tree-sitter field id assigned by the parent cursor.
@@ -151,12 +156,12 @@ impl<'hir> HirNode<'hir> {
 
     /// Child node ids in source order.
     pub fn child_ids(&self) -> &[HirId] {
-        self.base().map_or(&[], |base| &base.children)
+        self.try_base().map_or(&[], |base| &base.children)
     }
 
     /// Child nodes in source order.
     pub fn children(&self, unit: &CompileUnit<'hir>) -> SmallVec<[HirNode<'hir>; 8]> {
-        self.base().map_or(SmallVec::new(), |base| {
+        self.try_base().map_or(SmallVec::new(), |base| {
             base.children.iter().map(|id| unit.hir_node(*id)).collect()
         })
     }
@@ -193,19 +198,19 @@ impl<'hir> HirNode<'hir> {
 
     /// Parent node id, if this is not the root.
     pub fn parent(&self) -> Option<HirId> {
-        self.base().and_then(|base| base.parent)
+        self.try_base().and_then(|base| base.parent)
     }
 
     /// Direct child with the given tree-sitter field id.
     pub fn child_by_field(&self, unit: &CompileUnit<'hir>, field_id: u16) -> Option<HirNode<'hir>> {
-        self.base()?.child_by_field(unit, field_id)
+        self.try_base()?.child_by_field(unit, field_id)
     }
 
     /// Direct child with the given tree-sitter kind id.
     pub fn child_by_kind(&self, unit: &CompileUnit<'hir>, kind_id: u16) -> Option<HirNode<'hir>> {
         self.children(unit)
             .into_iter()
-            .find(|child| child.base().is_some_and(|base| base.kind_id == kind_id))
+            .find(|child| child.try_base().is_some_and(|base| base.kind_id == kind_id))
     }
 
     #[inline]
@@ -298,7 +303,11 @@ impl HirBase {
         self.children
             .iter()
             .map(|id| unit.hir_node(*id))
-            .find(|child| child.base().is_some_and(|base| base.field_id == field_id))
+            .find(|child| {
+                child
+                    .try_base()
+                    .is_some_and(|base| base.field_id == field_id)
+            })
     }
 }
 
@@ -399,7 +408,7 @@ impl<'hir> HirScope<'hir> {
     }
 
     /// Semantic scope if it has been attached.
-    pub fn opt_scope(&self) -> Option<&'hir Scope<'hir>> {
+    pub fn try_scope(&self) -> Option<&'hir Scope<'hir>> {
         *self.scope.read()
     }
 
@@ -409,7 +418,7 @@ impl<'hir> HirScope<'hir> {
     }
 
     /// Identifier that names this scope, if present.
-    pub fn opt_ident(&self) -> Option<&'hir HirIdent<'hir>> {
+    pub fn try_ident(&self) -> Option<&'hir HirIdent<'hir>> {
         *self.ident.read()
     }
 
@@ -421,8 +430,8 @@ impl<'hir> HirScope<'hir> {
     }
 
     /// Symbol associated with this scope through its semantic `Scope`.
-    pub fn opt_symbol(&self) -> Option<&'hir Symbol> {
-        self.opt_scope().and_then(|scope| scope.opt_symbol())
+    pub fn try_symbol(&self) -> Option<&'hir Symbol> {
+        self.try_scope().and_then(|scope| scope.try_symbol())
     }
 }
 
@@ -476,7 +485,7 @@ impl<'hir> HirIdent<'hir> {
 
     /// Resolved symbol if one has been attached.
     #[inline]
-    pub fn opt_symbol(&self) -> Option<&'hir Symbol> {
+    pub fn try_symbol(&self) -> Option<&'hir Symbol> {
         let ptr = self.symbol.load(Ordering::Acquire);
         if ptr.is_null() {
             None

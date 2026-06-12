@@ -128,7 +128,7 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
             .into_iter()
             .find(|ident| {
                 ident
-                    .opt_symbol()
+                    .try_symbol()
                     .is_some_and(|sym| matches!(sym.kind(), crate::symbol::SymKind::Variable))
             })
             .map(|ident| ident.name.to_string())
@@ -157,7 +157,7 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
         // The scope's symbol is authoritative - if a scope is set, it means
         // the collector intentionally created this as a defining scope
         if let Some(scope) = node.as_scope()
-            && let Some(sym) = scope.opt_symbol()
+            && let Some(sym) = scope.try_symbol()
         {
             return Some(sym);
         }
@@ -172,7 +172,7 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
         // For fields, use the language's name_field to avoid finding decorator identifiers
         if kind == BlockKind::Field
             && let Some(ident) = node.query(&self.unit).ident_with_field(L::name_field())
-            && let Some(sym) = ident.opt_symbol()
+            && let Some(sym) = ident.try_symbol()
         {
             return Some(sym);
         }
@@ -181,7 +181,7 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
         // This avoids cases like `handle(@inject req: string)` where `find_ident` returns `inject`.
         if kind == BlockKind::Parameter {
             for ident in node.query(&self.unit).identifiers() {
-                if let Some(sym) = ident.opt_symbol()
+                if let Some(sym) = ident.try_symbol()
                     && matches!(sym.kind(), SymKind::Variable)
                 {
                     return Some(sym);
@@ -191,7 +191,7 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
 
         // Try identifier (for parameters, etc.)
         if let Some(ident) = node.query(&self.unit).first_ident()
-            && let Some(sym) = ident.opt_symbol()
+            && let Some(sym) = ident.try_symbol()
         {
             return Some(sym);
         }
@@ -199,7 +199,7 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
         // Try children's identifiers (for self_parameter where the identifier is a child)
         for child in node.children(&self.unit) {
             if let Some(ident) = child.as_ident()
-                && let Some(sym) = ident.opt_symbol()
+                && let Some(sym) = ident.try_symbol()
             {
                 return Some(sym);
             }
@@ -241,7 +241,7 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                 // Populate crate_name and module_path from scope chain.
                 // The binding phase sets up proper parent scopes with Module/Crate symbols.
                 if let Some(scope_node) = node.as_scope()
-                    && let Some(scope) = scope_node.opt_scope()
+                    && let Some(scope) = scope_node.try_scope()
                 {
                     use crate::symbol::SymKind;
 
@@ -289,9 +289,6 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
             }
             BlockKind::Func | BlockKind::Method => {
                 let block = BlockFunc::new_with_symbol(id, node, kind, parent, children, symbol);
-                if kind == BlockKind::Method {
-                    block.set_is_method(true);
-                }
                 let block_ref = self
                     .unit
                     .context()
@@ -375,7 +372,7 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
 
                 // Get target type from the "type" field (e.g., `impl Foo` or `impl Trait for Foo`)
                 if let Some(target_ident) = node.query(&self.unit).ident_with_field(L::type_field())
-                    && let Some(sym) = target_ident.opt_symbol()
+                    && let Some(sym) = target_ident.try_symbol()
                 {
                     // Follow type_of chain to get the actual type symbol for block_id
                     let resolved = sym
@@ -388,7 +385,7 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
 
                 // Get trait from the "trait" field (e.g., `impl Trait for Foo`)
                 if let Some(trait_ident) = node.query(&self.unit).ident_with_field(L::trait_field())
-                    && let Some(sym) = trait_ident.opt_symbol()
+                    && let Some(sym) = trait_ident.try_symbol()
                 {
                     // Follow type_of chain to get the actual trait symbol
                     let resolved = sym
@@ -608,7 +605,7 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
         let mut type_symbol = node
             .query(&self.unit)
             .first_ident()
-            .and_then(|ident| ident.opt_symbol());
+            .and_then(|ident| ident.try_symbol());
 
         // Strategy 2: Look at children for symbol
         if type_symbol.is_none() {
@@ -624,7 +621,7 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
             && let Some(scope) = node.as_scope()
             && let Some(ident) = *scope.ident.read()
         {
-            type_symbol = ident.opt_symbol();
+            type_symbol = ident.try_symbol();
         }
         // Strategy 4: Node's own symbol
         if type_symbol.is_none() {
@@ -804,8 +801,8 @@ impl<'tcx, L: Language> HirVisitor<'tcx> for GraphBuilder<'tcx, L> {
             if matches!(kind, BlockKind::Func | BlockKind::Method) {
                 let has_symbol = node
                     .as_scope()
-                    .and_then(|scope| scope.opt_scope())
-                    .and_then(|scope| scope.opt_symbol())
+                    .and_then(|scope| scope.try_scope())
+                    .and_then(|scope| scope.try_symbol())
                     .is_some();
                 if !has_symbol {
                     // No symbol means this is a function pointer variable, not a function declaration
