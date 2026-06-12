@@ -301,8 +301,6 @@ struct RenderNode {
     snippet: Option<String>,
     children: Vec<RenderNode>,
     node_id: Option<String>,
-    /// Suffix to add after the closing parenthesis (e.g., "@type i32")
-    suffix: Option<String>,
 }
 
 impl RenderNode {
@@ -319,13 +317,7 @@ impl RenderNode {
             snippet,
             children,
             node_id,
-            suffix: None,
         }
-    }
-
-    fn with_suffix(mut self, suffix: Option<String>) -> Self {
-        self.suffix = suffix;
-        self
     }
 }
 
@@ -527,25 +519,22 @@ fn build_block_render<'tcx>(
         return Err(RenderError::max_depth_exceeded(depth, config.max_depth));
     }
 
-    let label = block.format_block(unit);
-    let suffix = block.format_suffix();
+    let label = block.to_string();
 
     let line_info = if config.include_line_info {
-        block.opt_node().map(|node| {
-            format!(
-                "[{}-{}]",
-                get_line_from_byte(&unit, node.start_byte()),
-                get_line_from_byte(&unit, node.end_byte())
-            )
-        })
+        let node = block.node();
+        Some(format!(
+            "[{}-{}]",
+            get_line_from_byte(&unit, node.start_byte()),
+            get_line_from_byte(&unit, node.end_byte())
+        ))
     } else {
         None
     };
 
     let snippet = if config.include_snippets {
-        block
-            .opt_node()
-            .and_then(|n| snippet_from_ctx(&unit, n.start_byte(), n.end_byte(), config))
+        let node = block.node();
+        snippet_from_ctx(&unit, node.start_byte(), node.end_byte(), config)
     } else {
         None
     };
@@ -559,7 +548,7 @@ fn build_block_render<'tcx>(
         })
         .collect::<RenderResult<Vec<_>>>()?;
 
-    Ok(RenderNode::new(label, line_info, snippet, children, None).with_suffix(suffix))
+    Ok(RenderNode::new(label, line_info, snippet, children, None))
 }
 
 /// Render node tree to string based on configuration
@@ -611,10 +600,6 @@ fn render_node_tree(
     // Handle children
     if node.children.is_empty() {
         line.push(')');
-        // Add suffix after closing paren (e.g., "@type i32")
-        if let Some(suffix) = &node.suffix {
-            line.push_str(&format!(" {suffix}"));
-        }
         // Align snippet to column and add inline with pipes
         if let Some(snippet) = &node.snippet {
             // Pad to column width for alignment

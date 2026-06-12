@@ -436,13 +436,7 @@ impl<'tcx> ProjectQuery<'tcx> {
             None => return (0, 0),
         };
 
-        // Get the base which contains the HirNode
-        let base = match bb.base() {
-            Some(b) => b,
-            None => return (0, 0),
-        };
-
-        let hir_node = base.node;
+        let hir_node = bb.base().node;
         let start_byte = hir_node.start_byte();
         let end_byte = hir_node.end_byte();
 
@@ -469,9 +463,7 @@ impl<'tcx> ProjectQuery<'tcx> {
         // Get the BasicBlock to access its HIR node
         let bb = unit.try_block(node.block_id)?;
 
-        // Get the base which contains the HirNode
-        let base = bb.base()?;
-        let hir_node = base.node;
+        let hir_node = bb.base().node;
 
         // Get the span information from the HirNode
         let start_byte = hir_node.start_byte();
@@ -505,10 +497,8 @@ impl<'tcx> ProjectQuery<'tcx> {
             let child_bb = unit.try_block(*child_id)?;
             let child_kind = child_bb.kind();
 
-            if matches!(child_kind, BlockKind::Method | BlockKind::Func)
-                && let Some(child_base) = child_bb.base()
-            {
-                let child_node = child_base.node;
+            if matches!(child_kind, BlockKind::Method | BlockKind::Func) {
+                let child_node = child_bb.base().node;
                 let child_start = child_node.start_byte();
                 if child_start > class_start_byte {
                     method_start_bytes.push(child_start);

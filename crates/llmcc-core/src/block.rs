@@ -2,6 +2,7 @@
 
 use parking_lot::RwLock;
 use std::collections::HashSet;
+use std::fmt;
 use std::sync::atomic::{AtomicBool, Ordering};
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
@@ -55,9 +56,12 @@ pub enum BlockKind {
     Alias,
 }
 
+/// Concrete block stored in the block graph.
+///
+/// Each variant wraps a block-specific payload, but every variant has a
+/// [`BlockBase`] for common identity, source, hierarchy, and symbol metadata.
 #[derive(Debug, Clone)]
 pub enum BasicBlock<'blk> {
-    Undefined,
     Root(&'blk BlockRoot<'blk>),
     Module(&'blk BlockModule<'blk>),
     Func(&'blk BlockFunc<'blk>),
@@ -72,102 +76,108 @@ pub enum BasicBlock<'blk> {
     Parameter(&'blk BlockParameter<'blk>),
     Return(&'blk BlockReturn<'blk>),
     Alias(&'blk BlockAlias<'blk>),
-    Block,
 }
 
 impl<'blk> BasicBlock<'blk> {
-    /// Format the block label (content inside the parentheses)
-    /// Delegates to each block type's format method
-    pub fn format_block(&self, unit: CompileUnit<'blk>) -> String {
+    /// Dependency labels rendered as pseudo-children.
+    pub fn dependency_labels(&self, unit: CompileUnit<'blk>) -> Vec<String> {
         match self {
-            BasicBlock::Root(root) => root.format(),
-            BasicBlock::Module(module) => module.format(),
-            BasicBlock::Func(func) => func.format(unit),
-            BasicBlock::Class(class) => class.format(),
-            BasicBlock::Trait(trait_blk) => trait_blk.format(),
-            BasicBlock::Interface(iface) => iface.format(),
-            BasicBlock::Impl(impl_blk) => impl_blk.format(),
-            BasicBlock::Call(call) => call.format(),
-            BasicBlock::Enum(enum_blk) => enum_blk.format(),
-            BasicBlock::Const(const_blk) => const_blk.format(),
-            BasicBlock::Field(field) => field.format(),
-            BasicBlock::Parameter(param) => param.format(),
-            BasicBlock::Return(ret) => ret.format(),
-            BasicBlock::Alias(alias) => alias.format(),
-            BasicBlock::Undefined | BasicBlock::Block => "undefined".to_string(),
-        }
-    }
-
-    /// Format extra entries for dependencies (rendered as pseudo-children)
-    /// Only applicable to Func and Class blocks, returns empty for others
-    pub fn format_deps(&self, unit: CompileUnit<'blk>) -> Vec<String> {
-        match self {
-            BasicBlock::Func(func) => func.format_deps(unit),
-            BasicBlock::Class(class) => class.format_deps(unit),
+            BasicBlock::Func(func) => func.dependency_labels(unit),
+            BasicBlock::Class(class) => class.dependency_labels(unit),
             _ => Vec::new(),
         }
     }
+}
 
-    /// Format the suffix to appear after the closing parenthesis
-    /// (Currently unused - type info is now inline in format_block)
-    pub fn format_suffix(&self) -> Option<String> {
-        None
+impl<'blk> fmt::Display for BasicBlock<'blk> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            BasicBlock::Root(block) => block.fmt(f),
+            BasicBlock::Module(block) => block.fmt(f),
+            BasicBlock::Func(block) => block.fmt(f),
+            BasicBlock::Call(block) => block.fmt(f),
+            BasicBlock::Enum(block) => block.fmt(f),
+            BasicBlock::Class(block) => block.fmt(f),
+            BasicBlock::Trait(block) => block.fmt(f),
+            BasicBlock::Interface(block) => block.fmt(f),
+            BasicBlock::Impl(block) => block.fmt(f),
+            BasicBlock::Const(block) => block.fmt(f),
+            BasicBlock::Field(block) => block.fmt(f),
+            BasicBlock::Parameter(block) => block.fmt(f),
+            BasicBlock::Return(block) => block.fmt(f),
+            BasicBlock::Alias(block) => block.fmt(f),
+        }
     }
+}
 
+impl<'blk> BasicBlock<'blk> {
     pub fn id(&self) -> BlockId {
         self.block_id()
     }
 
     /// Get the base block information regardless of variant
-    pub fn base(&self) -> Option<&BlockBase<'blk>> {
+    pub fn base(&self) -> &BlockBase<'blk> {
         match self {
-            BasicBlock::Undefined | BasicBlock::Block => None,
-            BasicBlock::Root(block) => Some(&block.base),
-            BasicBlock::Module(block) => Some(&block.base),
-            BasicBlock::Func(block) => Some(&block.base),
-            BasicBlock::Class(block) => Some(&block.base),
-            BasicBlock::Trait(block) => Some(&block.base),
-            BasicBlock::Interface(block) => Some(&block.base),
-            BasicBlock::Impl(block) => Some(&block.base),
-            BasicBlock::Call(block) => Some(&block.base),
-            BasicBlock::Enum(block) => Some(&block.base),
-            BasicBlock::Const(block) => Some(&block.base),
-            BasicBlock::Field(block) => Some(&block.base),
-            BasicBlock::Parameter(block) => Some(&block.base),
-            BasicBlock::Return(block) => Some(&block.base),
-            BasicBlock::Alias(block) => Some(&block.base),
+            BasicBlock::Root(block) => &block.base,
+            BasicBlock::Module(block) => &block.base,
+            BasicBlock::Func(block) => &block.base,
+            BasicBlock::Class(block) => &block.base,
+            BasicBlock::Trait(block) => &block.base,
+            BasicBlock::Interface(block) => &block.base,
+            BasicBlock::Impl(block) => &block.base,
+            BasicBlock::Call(block) => &block.base,
+            BasicBlock::Enum(block) => &block.base,
+            BasicBlock::Const(block) => &block.base,
+            BasicBlock::Field(block) => &block.base,
+            BasicBlock::Parameter(block) => &block.base,
+            BasicBlock::Return(block) => &block.base,
+            BasicBlock::Alias(block) => &block.base,
         }
     }
 
     /// Get the block ID
     pub fn block_id(&self) -> BlockId {
-        self.base().unwrap().id
+        self.base().id
     }
 
     /// Get the block kind
     pub fn kind(&self) -> BlockKind {
-        self.base().map(|base| base.kind).unwrap_or_default()
+        self.base().kind
     }
 
     /// Get the HIR node
     pub fn node(&self) -> &HirNode<'blk> {
-        self.base().map(|base| &base.node).unwrap()
-    }
-
-    pub fn opt_node(&self) -> Option<&HirNode<'blk>> {
-        self.base().map(|base| &base.node)
+        &self.base().node
     }
 
     /// Get the symbol that defines this block (if any)
     pub fn symbol(&self) -> Option<&'blk Symbol> {
-        self.base().and_then(|base| base.symbol())
+        self.base().symbol()
+    }
+
+    /// Return the block's semantic name, if it has one.
+    pub fn try_name(&self) -> Option<&str> {
+        match self {
+            BasicBlock::Root(block) => block.base.try_name(),
+            BasicBlock::Module(block) => block.name(),
+            BasicBlock::Func(block) => block.name(),
+            BasicBlock::Call(block) => block.base.try_name(),
+            BasicBlock::Enum(block) => block.name(),
+            BasicBlock::Class(block) => block.name(),
+            BasicBlock::Trait(block) => block.name(),
+            BasicBlock::Interface(block) => block.name(),
+            BasicBlock::Impl(block) => block.name(),
+            BasicBlock::Const(block) => block.name(),
+            BasicBlock::Field(block) => block.name(),
+            BasicBlock::Parameter(block) => block.name(),
+            BasicBlock::Return(block) => block.base.try_name(),
+            BasicBlock::Alias(block) => block.name(),
+        }
     }
 
     /// Get the children block IDs
     pub fn children(&self) -> Vec<BlockId> {
-        self.base()
-            .map(|base| base.get_children())
-            .unwrap_or_default()
+        self.base().children()
     }
 
     pub fn child_count(&self) -> usize {
@@ -314,6 +324,7 @@ pub enum BlockRelation {
     ExtendedBy,
 }
 
+/// Shared metadata and graph relationships for every concrete block.
 #[derive(Debug)]
 pub struct BlockBase<'blk> {
     pub id: BlockId,
@@ -337,25 +348,6 @@ impl<'blk> BlockBase<'blk> {
         kind: BlockKind,
         parent: Option<BlockId>,
         children: Vec<BlockId>,
-    ) -> Self {
-        Self {
-            id,
-            node,
-            kind,
-            parent: RwLock::new(parent),
-            children: RwLock::new(children),
-            symbol: None,
-            type_deps: RwLock::new(HashSet::new()),
-        }
-    }
-
-    /// Create a new BlockBase with symbol reference
-    pub fn with_symbol(
-        id: BlockId,
-        node: HirNode<'blk>,
-        kind: BlockKind,
-        parent: Option<BlockId>,
-        children: Vec<BlockId>,
         symbol: Option<&'blk Symbol>,
     ) -> Self {
         Self {
@@ -374,11 +366,20 @@ impl<'blk> BlockBase<'blk> {
         self.symbol
     }
 
-    pub fn opt_get_name(&self) -> Option<&str> {
+    pub fn try_name(&self) -> Option<&str> {
         self.node
             .as_scope()
             .and_then(|scope| *scope.ident.read())
             .map(|ident| ident.name)
+    }
+
+    fn inferred_name(&self) -> String {
+        self.try_name().unwrap_or_default().to_string()
+    }
+
+    fn name_or_inferred(&self, name: Option<String>) -> String {
+        name.filter(|name| !name.is_empty())
+            .unwrap_or_else(|| self.inferred_name())
     }
 
     pub fn add_child(&self, child_id: BlockId) {
@@ -392,7 +393,7 @@ impl<'blk> BlockBase<'blk> {
         self.children.write().retain(|&id| id != child_id);
     }
 
-    pub fn get_children(&self) -> Vec<BlockId> {
+    pub fn children(&self) -> Vec<BlockId> {
         self.children.read().clone()
     }
 
@@ -400,7 +401,7 @@ impl<'blk> BlockBase<'blk> {
         *self.parent.write() = Some(parent_id);
     }
 
-    pub fn get_parent(&self) -> Option<BlockId> {
+    pub fn parent(&self) -> Option<BlockId> {
         *self.parent.read()
     }
 
@@ -410,8 +411,31 @@ impl<'blk> BlockBase<'blk> {
     }
 
     /// Get all type dependencies for this block
-    pub fn get_type_deps(&self) -> HashSet<BlockId> {
+    pub fn type_deps(&self) -> HashSet<BlockId> {
         self.type_deps.read().clone()
+    }
+}
+
+fn fmt_typed_block(
+    f: &mut fmt::Formatter<'_>,
+    kind: BlockKind,
+    id: BlockId,
+    name: Option<&str>,
+    type_name: &str,
+    type_ref: Option<BlockId>,
+) -> fmt::Result {
+    match name.filter(|name| !name.is_empty()) {
+        Some(name) => write!(f, "{kind}:{id} {name}")?,
+        None => write!(f, "{kind}:{id}")?,
+    }
+
+    if type_name.is_empty() {
+        return Ok(());
+    }
+
+    match type_ref {
+        Some(type_id) => write!(f, " @type:{type_id} {type_name}"),
+        None => write!(f, " @type {type_name}"),
     }
 }
 
@@ -448,7 +472,7 @@ impl<'blk> BlockRoot<'blk> {
         file_name: Option<String>,
         symbol: Option<&'blk Symbol>,
     ) -> Self {
-        let base = BlockBase::with_symbol(id, node, BlockKind::Root, parent, children, symbol);
+        let base = BlockBase::new(id, node, BlockKind::Root, parent, children, symbol);
         Self {
             base,
             file_name,
@@ -463,7 +487,7 @@ impl<'blk> BlockRoot<'blk> {
         *self.crate_name.write() = Some(name);
     }
 
-    pub fn get_crate_name(&self) -> Option<String> {
+    pub fn crate_name(&self) -> Option<String> {
         self.crate_name.read().clone()
     }
 
@@ -471,7 +495,7 @@ impl<'blk> BlockRoot<'blk> {
         *self.crate_root.write() = Some(root);
     }
 
-    pub fn get_crate_root(&self) -> Option<String> {
+    pub fn crate_root(&self) -> Option<String> {
         self.crate_root.read().clone()
     }
 
@@ -479,7 +503,7 @@ impl<'blk> BlockRoot<'blk> {
         *self.module_path.write() = Some(path);
     }
 
-    pub fn get_module_path(&self) -> Option<String> {
+    pub fn module_path(&self) -> Option<String> {
         self.module_path.read().clone()
     }
 
@@ -487,19 +511,22 @@ impl<'blk> BlockRoot<'blk> {
         *self.module_root.write() = Some(root);
     }
 
-    pub fn get_module_root(&self) -> Option<String> {
+    pub fn module_root(&self) -> Option<String> {
         self.module_root.read().clone()
     }
+}
 
-    pub fn format(&self) -> String {
-        let name = self.base.opt_get_name().unwrap_or("");
+impl<'blk> fmt::Display for BlockRoot<'blk> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let name = self.base.try_name().unwrap_or("");
         if let Some(file_name) = &self.file_name {
-            format!(
+            write!(
+                f,
                 "{}:{} {} ({})",
                 self.base.kind, self.base.id, name, file_name
             )
         } else {
-            format!("{}:{} {}", self.base.kind, self.base.id, name)
+            write!(f, "{}:{} {}", self.base.kind, self.base.id, name)
         }
     }
 }
@@ -509,7 +536,7 @@ impl<'blk> BlockRoot<'blk> {
 pub struct BlockModule<'blk> {
     pub base: BlockBase<'blk>,
     /// Module name (e.g., "utils" for `mod utils;`)
-    pub name: String,
+    name: String,
     /// Whether this is an inline module (`mod foo { ... }`) vs file module (`mod foo;`)
     pub is_inline: bool,
 }
@@ -535,7 +562,7 @@ impl<'blk> BlockModule<'blk> {
         is_inline: bool,
         symbol: Option<&'blk Symbol>,
     ) -> Self {
-        let base = BlockBase::with_symbol(id, node, BlockKind::Module, parent, children, symbol);
+        let base = BlockBase::new(id, node, BlockKind::Module, parent, children, symbol);
         Self {
             base,
             name,
@@ -543,9 +570,16 @@ impl<'blk> BlockModule<'blk> {
         }
     }
 
-    pub fn format(&self) -> String {
+    pub fn name(&self) -> Option<&str> {
+        (!self.name.is_empty()).then_some(&self.name)
+    }
+}
+
+impl<'blk> fmt::Display for BlockModule<'blk> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let inline_marker = if self.is_inline { " (inline)" } else { "" };
-        format!(
+        write!(
+            f,
             "{}:{} {}{}",
             self.base.kind, self.base.id, self.name, inline_marker
         )
@@ -555,7 +589,7 @@ impl<'blk> BlockModule<'blk> {
 #[derive(Debug)]
 pub struct BlockFunc<'blk> {
     pub base: BlockBase<'blk>,
-    pub name: String,
+    name: String,
     pub parameters: RwLock<Vec<BlockId>>,
     pub returns: RwLock<Option<BlockId>>,
     /// Types used inside function body (excludes parameter/return types)
@@ -586,8 +620,8 @@ impl<'blk> BlockFunc<'blk> {
         children: Vec<BlockId>,
         symbol: Option<&'blk Symbol>,
     ) -> Self {
-        let base = BlockBase::with_symbol(id, node, kind, parent, children, symbol);
-        let name = base.opt_get_name().unwrap_or("").to_string();
+        let base = BlockBase::new(id, node, kind, parent, children, symbol);
+        let name = base.inferred_name();
         Self {
             base,
             name,
@@ -597,6 +631,10 @@ impl<'blk> BlockFunc<'blk> {
             func_deps: RwLock::new(HashSet::new()),
             is_method: AtomicBool::new(false),
         }
+    }
+
+    pub fn name(&self) -> Option<&str> {
+        (!self.name.is_empty()).then_some(&self.name)
     }
 
     pub fn set_is_method(&self, is_method: bool) {
@@ -611,15 +649,15 @@ impl<'blk> BlockFunc<'blk> {
         self.parameters.write().push(param);
     }
 
-    pub fn get_parameters(&self) -> Vec<BlockId> {
+    pub fn parameters(&self) -> Vec<BlockId> {
         self.parameters.read().clone()
     }
 
-    pub fn set_returns(&self, ret: BlockId) {
+    pub fn set_return(&self, ret: BlockId) {
         *self.returns.write() = Some(ret);
     }
 
-    pub fn get_returns(&self) -> Option<BlockId> {
+    pub fn return_block(&self) -> Option<BlockId> {
         *self.returns.read()
     }
 
@@ -627,7 +665,7 @@ impl<'blk> BlockFunc<'blk> {
         self.type_deps.write().insert(type_id);
     }
 
-    pub fn get_type_deps(&self) -> HashSet<BlockId> {
+    pub fn type_deps(&self) -> HashSet<BlockId> {
         self.type_deps.read().clone()
     }
 
@@ -635,50 +673,46 @@ impl<'blk> BlockFunc<'blk> {
         self.func_deps.write().insert(func_id);
     }
 
-    pub fn get_func_deps(&self) -> HashSet<BlockId> {
+    pub fn func_deps(&self) -> HashSet<BlockId> {
         self.func_deps.read().clone()
-    }
-
-    pub fn format(&self, _unit: CompileUnit<'blk>) -> String {
-        format!("{}:{} {}", self.base.kind, self.base.id, self.name)
     }
 
     /// Format dependency entries as pseudo-children (to be rendered after real children)
     /// Returns lines like "@tdep:3 Bar" and "@fdep:5 process"
-    pub fn format_deps(&self, unit: CompileUnit<'blk>) -> Vec<String> {
+    pub fn dependency_labels(&self, unit: CompileUnit<'blk>) -> Vec<String> {
         let mut deps = Vec::new();
 
         // Add type_deps
-        let type_deps = self.get_type_deps();
+        let type_deps = self.type_deps();
         if !type_deps.is_empty() {
             let mut sorted: Vec<_> = type_deps.iter().collect();
             sorted.sort();
             for dep_id in sorted {
                 let dep_block = unit.block(*dep_id);
-                let dep_name = dep_block
-                    .base()
-                    .and_then(|b| b.opt_get_name())
-                    .unwrap_or("");
+                let dep_name = dep_block.try_name().unwrap_or("");
                 deps.push(format!("@tdep:{dep_id} {dep_name}"));
             }
         }
 
         // Add func_deps
-        let func_deps = self.get_func_deps();
+        let func_deps = self.func_deps();
         if !func_deps.is_empty() {
             let mut sorted: Vec<_> = func_deps.iter().collect();
             sorted.sort();
             for dep_id in sorted {
                 let dep_block = unit.block(*dep_id);
-                let dep_name = dep_block
-                    .base()
-                    .and_then(|b| b.opt_get_name())
-                    .unwrap_or("");
+                let dep_name = dep_block.try_name().unwrap_or("");
                 deps.push(format!("@fdep:{dep_id} {dep_name}"));
             }
         }
 
         deps
+    }
+}
+
+impl<'blk> fmt::Display for BlockFunc<'blk> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}:{} {}", self.base.kind, self.base.id, self.name)
     }
 }
 
@@ -706,7 +740,7 @@ impl<'blk> BlockCall<'blk> {
         children: Vec<BlockId>,
         symbol: Option<&'blk Symbol>,
     ) -> Self {
-        let base = BlockBase::with_symbol(id, node, BlockKind::Call, parent, children, symbol);
+        let base = BlockBase::new(id, node, BlockKind::Call, parent, children, symbol);
         Self {
             base,
             callee: RwLock::new(None),
@@ -722,23 +756,25 @@ impl<'blk> BlockCall<'blk> {
         self.args.write().push(arg_id);
     }
 
-    pub fn get_callee(&self) -> Option<BlockId> {
+    pub fn callee(&self) -> Option<BlockId> {
         *self.callee.read()
     }
 
-    pub fn get_args(&self) -> Vec<BlockId> {
+    pub fn args(&self) -> Vec<BlockId> {
         self.args.read().clone()
     }
+}
 
-    pub fn format(&self) -> String {
-        format!("{}:{}", self.base.kind, self.base.id)
+impl<'blk> fmt::Display for BlockCall<'blk> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}:{}", self.base.kind, self.base.id)
     }
 }
 
 #[derive(Debug)]
 pub struct BlockClass<'blk> {
     pub base: BlockBase<'blk>,
-    pub name: String,
+    name: String,
     pub fields: RwLock<Vec<BlockId>>,
     pub methods: RwLock<Vec<BlockId>>,
     /// Extended class (for TypeScript/JavaScript class inheritance)
@@ -763,8 +799,8 @@ impl<'blk> BlockClass<'blk> {
         children: Vec<BlockId>,
         symbol: Option<&'blk Symbol>,
     ) -> Self {
-        let base = BlockBase::with_symbol(id, node, BlockKind::Class, parent, children, symbol);
-        let name = base.opt_get_name().unwrap_or("").to_string();
+        let base = BlockBase::new(id, node, BlockKind::Class, parent, children, symbol);
+        let name = base.inferred_name();
         Self {
             base,
             name,
@@ -772,6 +808,10 @@ impl<'blk> BlockClass<'blk> {
             methods: RwLock::new(Vec::new()),
             extends: RwLock::new(None),
         }
+    }
+
+    pub fn name(&self) -> Option<&str> {
+        (!self.name.is_empty()).then_some(&self.name)
     }
 
     pub fn add_field(&self, field_id: BlockId) {
@@ -782,11 +822,11 @@ impl<'blk> BlockClass<'blk> {
         self.methods.write().push(method_id);
     }
 
-    pub fn get_fields(&self) -> Vec<BlockId> {
+    pub fn fields(&self) -> Vec<BlockId> {
         self.fields.read().clone()
     }
 
-    pub fn get_methods(&self) -> Vec<BlockId> {
+    pub fn methods(&self) -> Vec<BlockId> {
         self.methods.read().clone()
     }
 
@@ -796,45 +836,48 @@ impl<'blk> BlockClass<'blk> {
     }
 
     /// Get the extended class
-    pub fn get_extends(&self) -> Option<(String, Option<BlockId>)> {
+    pub fn extends(&self) -> Option<(String, Option<BlockId>)> {
         self.extends.read().clone()
     }
+}
 
-    pub fn format(&self) -> String {
+impl<'blk> fmt::Display for BlockClass<'blk> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let extends = self.extends.read();
         if let Some((name, id)) = extends.as_ref() {
             if let Some(block_id) = id {
-                format!(
+                write!(
+                    f,
                     "{}:{} {} @extends:{} {}",
                     self.base.kind, self.base.id, self.name, block_id, name
                 )
             } else {
-                format!(
+                write!(
+                    f,
                     "{}:{} {} @extends {}",
                     self.base.kind, self.base.id, self.name, name
                 )
             }
         } else {
-            format!("{}:{} {}", self.base.kind, self.base.id, self.name)
+            write!(f, "{}:{} {}", self.base.kind, self.base.id, self.name)
         }
     }
+}
 
+impl<'blk> BlockClass<'blk> {
     /// Format dependency entries as pseudo-children (to be rendered after real children)
     /// Returns lines like "@tdep:3 Bar" for implemented interfaces
-    pub fn format_deps(&self, unit: CompileUnit<'blk>) -> Vec<String> {
+    pub fn dependency_labels(&self, unit: CompileUnit<'blk>) -> Vec<String> {
         let mut deps = Vec::new();
 
         // Add type_deps (includes implemented interfaces)
-        let type_deps = self.base.get_type_deps();
+        let type_deps = self.base.type_deps();
         if !type_deps.is_empty() {
             let mut sorted: Vec<_> = type_deps.iter().collect();
             sorted.sort();
             for dep_id in sorted {
                 let dep_block = unit.block(*dep_id);
-                let dep_name = dep_block
-                    .base()
-                    .and_then(|b| b.opt_get_name())
-                    .unwrap_or("");
+                let dep_name = dep_block.try_name().unwrap_or("");
                 deps.push(format!("@tdep:{dep_id} {dep_name}"));
             }
         }
@@ -846,7 +889,7 @@ impl<'blk> BlockClass<'blk> {
 #[derive(Debug)]
 pub struct BlockTrait<'blk> {
     pub base: BlockBase<'blk>,
-    pub name: String,
+    name: String,
     pub methods: RwLock<Vec<BlockId>>,
 }
 
@@ -867,8 +910,8 @@ impl<'blk> BlockTrait<'blk> {
         children: Vec<BlockId>,
         symbol: Option<&'blk Symbol>,
     ) -> Self {
-        let base = BlockBase::with_symbol(id, node, BlockKind::Trait, parent, children, symbol);
-        let name = base.opt_get_name().unwrap_or("").to_string();
+        let base = BlockBase::new(id, node, BlockKind::Trait, parent, children, symbol);
+        let name = base.inferred_name();
         Self {
             base,
             name,
@@ -876,16 +919,22 @@ impl<'blk> BlockTrait<'blk> {
         }
     }
 
+    pub fn name(&self) -> Option<&str> {
+        (!self.name.is_empty()).then_some(&self.name)
+    }
+
     pub fn add_method(&self, method_id: BlockId) {
         self.methods.write().push(method_id);
     }
 
-    pub fn get_methods(&self) -> Vec<BlockId> {
+    pub fn methods(&self) -> Vec<BlockId> {
         self.methods.read().clone()
     }
+}
 
-    pub fn format(&self) -> String {
-        format!("{}:{} {}", self.base.kind, self.base.id, self.name)
+impl<'blk> fmt::Display for BlockTrait<'blk> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}:{} {}", self.base.kind, self.base.id, self.name)
     }
 }
 
@@ -893,7 +942,7 @@ impl<'blk> BlockTrait<'blk> {
 #[derive(Debug)]
 pub struct BlockInterface<'blk> {
     pub base: BlockBase<'blk>,
-    pub name: String,
+    name: String,
     pub methods: RwLock<Vec<BlockId>>,
     pub fields: RwLock<Vec<BlockId>>,
     /// Extended interfaces (for TypeScript extends)
@@ -917,8 +966,8 @@ impl<'blk> BlockInterface<'blk> {
         children: Vec<BlockId>,
         symbol: Option<&'blk Symbol>,
     ) -> Self {
-        let base = BlockBase::with_symbol(id, node, BlockKind::Interface, parent, children, symbol);
-        let name = base.opt_get_name().unwrap_or("").to_string();
+        let base = BlockBase::new(id, node, BlockKind::Interface, parent, children, symbol);
+        let name = base.inferred_name();
         Self {
             base,
             name,
@@ -928,11 +977,15 @@ impl<'blk> BlockInterface<'blk> {
         }
     }
 
+    pub fn name(&self) -> Option<&str> {
+        (!self.name.is_empty()).then_some(&self.name)
+    }
+
     pub fn add_method(&self, method_id: BlockId) {
         self.methods.write().push(method_id);
     }
 
-    pub fn get_methods(&self) -> Vec<BlockId> {
+    pub fn methods(&self) -> Vec<BlockId> {
         self.methods.read().clone()
     }
 
@@ -940,7 +993,7 @@ impl<'blk> BlockInterface<'blk> {
         self.fields.write().push(field_id);
     }
 
-    pub fn get_fields(&self) -> Vec<BlockId> {
+    pub fn fields(&self) -> Vec<BlockId> {
         self.fields.read().clone()
     }
 
@@ -950,14 +1003,16 @@ impl<'blk> BlockInterface<'blk> {
     }
 
     /// Get extended interfaces
-    pub fn get_extends(&self) -> Vec<(String, Option<BlockId>)> {
+    pub fn extends(&self) -> Vec<(String, Option<BlockId>)> {
         self.extends.read().clone()
     }
+}
 
-    pub fn format(&self) -> String {
+impl<'blk> fmt::Display for BlockInterface<'blk> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let extends = self.extends.read();
         if extends.is_empty() {
-            format!("{}:{} {}", self.base.kind, self.base.id, self.name)
+            write!(f, "{}:{} {}", self.base.kind, self.base.id, self.name)
         } else {
             let extends_list: Vec<_> = extends
                 .iter()
@@ -969,7 +1024,8 @@ impl<'blk> BlockInterface<'blk> {
                     }
                 })
                 .collect();
-            format!(
+            write!(
+                f,
                 "{}:{} {} {}",
                 self.base.kind,
                 self.base.id,
@@ -983,7 +1039,7 @@ impl<'blk> BlockInterface<'blk> {
 #[derive(Debug)]
 pub struct BlockImpl<'blk> {
     pub base: BlockBase<'blk>,
-    pub name: String,
+    name: String,
     /// Target type block ID (resolved during connect_blocks if needed)
     pub target: RwLock<Option<BlockId>>,
     /// Target type symbol (for deferred block_id resolution)
@@ -1012,8 +1068,8 @@ impl<'blk> BlockImpl<'blk> {
         children: Vec<BlockId>,
         symbol: Option<&'blk Symbol>,
     ) -> Self {
-        let base = BlockBase::with_symbol(id, node, BlockKind::Impl, parent, children, symbol);
-        let name = base.opt_get_name().unwrap_or("").to_string();
+        let base = BlockBase::new(id, node, BlockKind::Impl, parent, children, symbol);
+        let name = base.inferred_name();
         Self {
             base,
             name,
@@ -1023,6 +1079,10 @@ impl<'blk> BlockImpl<'blk> {
             trait_sym: None,
             methods: RwLock::new(Vec::new()),
         }
+    }
+
+    pub fn name(&self) -> Option<&str> {
+        (!self.name.is_empty()).then_some(&self.name)
     }
 
     /// Set target with both block_id (if available) and symbol (for deferred resolution)
@@ -1049,34 +1109,36 @@ impl<'blk> BlockImpl<'blk> {
         self.methods.write().push(method_id);
     }
 
-    pub fn get_target(&self) -> Option<BlockId> {
+    pub fn target(&self) -> Option<BlockId> {
         *self.target.read()
     }
 
-    pub fn get_trait_ref(&self) -> Option<BlockId> {
+    pub fn trait_ref(&self) -> Option<BlockId> {
         *self.trait_ref.read()
     }
 
-    pub fn get_methods(&self) -> Vec<BlockId> {
+    pub fn methods(&self) -> Vec<BlockId> {
         self.methods.read().clone()
     }
+}
 
-    pub fn format(&self) -> String {
+impl<'blk> fmt::Display for BlockImpl<'blk> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut parts = vec![format!("{}:{} {}", self.base.kind, self.base.id, self.name)];
-        if let Some(target_id) = self.get_target() {
+        if let Some(target_id) = self.target() {
             parts.push(format!("@type:{target_id}"));
         }
-        if let Some(trait_id) = self.get_trait_ref() {
+        if let Some(trait_id) = self.trait_ref() {
             parts.push(format!("@trait:{trait_id}"));
         }
-        parts.join(" ")
+        write!(f, "{}", parts.join(" "))
     }
 }
 
 #[derive(Debug)]
 pub struct BlockEnum<'blk> {
     pub base: BlockBase<'blk>,
-    pub name: String,
+    name: String,
     pub variants: RwLock<Vec<BlockId>>,
 }
 
@@ -1097,8 +1159,8 @@ impl<'blk> BlockEnum<'blk> {
         children: Vec<BlockId>,
         symbol: Option<&'blk Symbol>,
     ) -> Self {
-        let base = BlockBase::with_symbol(id, node, BlockKind::Enum, parent, children, symbol);
-        let name = base.opt_get_name().unwrap_or("").to_string();
+        let base = BlockBase::new(id, node, BlockKind::Enum, parent, children, symbol);
+        let name = base.inferred_name();
         Self {
             base,
             name,
@@ -1106,23 +1168,29 @@ impl<'blk> BlockEnum<'blk> {
         }
     }
 
+    pub fn name(&self) -> Option<&str> {
+        (!self.name.is_empty()).then_some(&self.name)
+    }
+
     pub fn add_variant(&self, variant_id: BlockId) {
         self.variants.write().push(variant_id);
     }
 
-    pub fn get_variants(&self) -> Vec<BlockId> {
+    pub fn variants(&self) -> Vec<BlockId> {
         self.variants.read().clone()
     }
+}
 
-    pub fn format(&self) -> String {
-        format!("{}:{} {}", self.base.kind, self.base.id, self.name)
+impl<'blk> fmt::Display for BlockEnum<'blk> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}:{} {}", self.base.kind, self.base.id, self.name)
     }
 }
 
 #[derive(Debug)]
 pub struct BlockConst<'blk> {
     pub base: BlockBase<'blk>,
-    pub name: String,
+    name: String,
     /// Type name for display (e.g., "i32", "String")
     pub type_name: String,
     /// Block ID of the type definition (for user-defined types)
@@ -1146,14 +1214,29 @@ impl<'blk> BlockConst<'blk> {
         children: Vec<BlockId>,
         symbol: Option<&'blk Symbol>,
     ) -> Self {
-        let base = BlockBase::with_symbol(id, node, BlockKind::Const, parent, children, symbol);
-        let name = base.opt_get_name().unwrap_or("").to_string();
+        Self::new_with_name_and_symbol(id, node, parent, children, None, symbol)
+    }
+
+    pub(crate) fn new_with_name_and_symbol(
+        id: BlockId,
+        node: HirNode<'blk>,
+        parent: Option<BlockId>,
+        children: Vec<BlockId>,
+        name: Option<String>,
+        symbol: Option<&'blk Symbol>,
+    ) -> Self {
+        let base = BlockBase::new(id, node, BlockKind::Const, parent, children, symbol);
+        let name = base.name_or_inferred(name);
         Self {
             base,
             name,
             type_name: String::new(),
             type_ref: RwLock::new(None),
         }
+    }
+
+    pub fn name(&self) -> Option<&str> {
+        (!self.name.is_empty()).then_some(&self.name)
     }
 
     /// Set type info for this const block (used during block building)
@@ -1168,32 +1251,28 @@ impl<'blk> BlockConst<'blk> {
     }
 
     /// Get the type reference
-    pub fn get_type_ref(&self) -> Option<BlockId> {
+    pub fn type_ref(&self) -> Option<BlockId> {
         *self.type_ref.read()
     }
+}
 
-    pub fn format(&self) -> String {
-        if !self.type_name.is_empty() {
-            if let Some(type_id) = *self.type_ref.read() {
-                return format!(
-                    "{}:{} {} @type:{} {}",
-                    self.base.kind, self.base.id, self.name, type_id, self.type_name
-                );
-            } else {
-                return format!(
-                    "{}:{} {} @type {}",
-                    self.base.kind, self.base.id, self.name, self.type_name
-                );
-            }
-        }
-        format!("{}:{} {}", self.base.kind, self.base.id, self.name)
+impl<'blk> fmt::Display for BlockConst<'blk> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt_typed_block(
+            f,
+            self.base.kind,
+            self.base.id,
+            Some(&self.name),
+            &self.type_name,
+            *self.type_ref.read(),
+        )
     }
 }
 
 #[derive(Debug)]
 pub struct BlockField<'blk> {
     pub base: BlockBase<'blk>,
-    pub name: String,
+    name: String,
     /// Type name for display (e.g., "i32", "String")
     pub type_name: String,
     /// Block ID of the type definition (for user-defined types)
@@ -1217,24 +1296,29 @@ impl<'blk> BlockField<'blk> {
         children: Vec<BlockId>,
         symbol: Option<&'blk Symbol>,
     ) -> Self {
-        let base = BlockBase::with_symbol(id, node, BlockKind::Field, parent, children, symbol);
-        // Try to get name from the node's scope first, then from ident
-        let name = base
-            .opt_get_name()
-            .map(|s| s.to_string())
-            .or_else(|| {
-                // For field nodes, the identifier child has the name
-                node.as_scope()
-                    .and_then(|scope| scope.opt_ident())
-                    .map(|ident| ident.name.to_string())
-            })
-            .unwrap_or_default();
+        Self::new_with_name_and_symbol(id, node, parent, children, None, symbol)
+    }
+
+    pub(crate) fn new_with_name_and_symbol(
+        id: BlockId,
+        node: HirNode<'blk>,
+        parent: Option<BlockId>,
+        children: Vec<BlockId>,
+        name: Option<String>,
+        symbol: Option<&'blk Symbol>,
+    ) -> Self {
+        let base = BlockBase::new(id, node, BlockKind::Field, parent, children, symbol);
+        let name = base.name_or_inferred(name);
         Self {
             base,
             name,
             type_name: String::new(),
             type_ref: RwLock::new(None),
         }
+    }
+
+    pub fn name(&self) -> Option<&str> {
+        (!self.name.is_empty()).then_some(&self.name)
     }
 
     /// Set type info for this field block (used during block building)
@@ -1249,25 +1333,21 @@ impl<'blk> BlockField<'blk> {
     }
 
     /// Get the type reference
-    pub fn get_type_ref(&self) -> Option<BlockId> {
+    pub fn type_ref(&self) -> Option<BlockId> {
         *self.type_ref.read()
     }
+}
 
-    pub fn format(&self) -> String {
-        if !self.type_name.is_empty() {
-            if let Some(type_id) = *self.type_ref.read() {
-                return format!(
-                    "{}:{} {} @type:{} {}",
-                    self.base.kind, self.base.id, self.name, type_id, self.type_name
-                );
-            } else {
-                return format!(
-                    "{}:{} {} @type {}",
-                    self.base.kind, self.base.id, self.name, self.type_name
-                );
-            }
-        }
-        format!("{}:{} {}", self.base.kind, self.base.id, self.name)
+impl<'blk> fmt::Display for BlockField<'blk> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt_typed_block(
+            f,
+            self.base.kind,
+            self.base.id,
+            Some(&self.name),
+            &self.type_name,
+            *self.type_ref.read(),
+        )
     }
 }
 
@@ -1276,7 +1356,7 @@ impl<'blk> BlockField<'blk> {
 pub struct BlockParameter<'blk> {
     pub base: BlockBase<'blk>,
     /// Parameter name (e.g., "x", "self")
-    pub name: String,
+    name: String,
     /// Type name for display (e.g., "i32", "String")
     pub type_name: String,
     /// Block ID of the type definition (for user-defined types)
@@ -1301,24 +1381,29 @@ impl<'blk> BlockParameter<'blk> {
         children: Vec<BlockId>,
         symbol: Option<&'blk Symbol>,
     ) -> Self {
-        let base = BlockBase::with_symbol(id, node, BlockKind::Parameter, parent, children, symbol);
-        // Try to get name from the node's scope first, then from ident
-        let name = base
-            .opt_get_name()
-            .map(|s| s.to_string())
-            .or_else(|| {
-                // For parameter nodes, the identifier child has the name
-                node.as_scope()
-                    .and_then(|scope| scope.opt_ident())
-                    .map(|ident| ident.name.to_string())
-            })
-            .unwrap_or_default();
+        Self::new_with_name_and_symbol(id, node, parent, children, None, symbol)
+    }
+
+    pub(crate) fn new_with_name_and_symbol(
+        id: BlockId,
+        node: HirNode<'blk>,
+        parent: Option<BlockId>,
+        children: Vec<BlockId>,
+        name: Option<String>,
+        symbol: Option<&'blk Symbol>,
+    ) -> Self {
+        let base = BlockBase::new(id, node, BlockKind::Parameter, parent, children, symbol);
+        let name = base.name_or_inferred(name);
         Self {
             base,
             name,
             type_name: String::new(),
             type_ref: RwLock::new(None),
         }
+    }
+
+    pub fn name(&self) -> Option<&str> {
+        (!self.name.is_empty()).then_some(&self.name)
     }
 
     /// Set type info for this parameter block (used during block building)
@@ -1333,25 +1418,21 @@ impl<'blk> BlockParameter<'blk> {
     }
 
     /// Get the type reference
-    pub fn get_type_ref(&self) -> Option<BlockId> {
+    pub fn type_ref(&self) -> Option<BlockId> {
         *self.type_ref.read()
     }
+}
 
-    pub fn format(&self) -> String {
-        if !self.type_name.is_empty() {
-            if let Some(type_id) = *self.type_ref.read() {
-                return format!(
-                    "{}:{} {} @type:{} {}",
-                    self.base.kind, self.base.id, self.name, type_id, self.type_name
-                );
-            } else {
-                return format!(
-                    "{}:{} {} @type {}",
-                    self.base.kind, self.base.id, self.name, self.type_name
-                );
-            }
-        }
-        format!("{}:{} {}", self.base.kind, self.base.id, self.name)
+impl<'blk> fmt::Display for BlockParameter<'blk> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt_typed_block(
+            f,
+            self.base.kind,
+            self.base.id,
+            Some(&self.name),
+            &self.type_name,
+            *self.type_ref.read(),
+        )
     }
 }
 
@@ -1382,7 +1463,7 @@ impl<'blk> BlockReturn<'blk> {
         children: Vec<BlockId>,
         symbol: Option<&'blk Symbol>,
     ) -> Self {
-        let base = BlockBase::with_symbol(id, node, BlockKind::Return, parent, children, symbol);
+        let base = BlockBase::new(id, node, BlockKind::Return, parent, children, symbol);
         Self {
             base,
             type_name: String::new(),
@@ -1402,32 +1483,28 @@ impl<'blk> BlockReturn<'blk> {
     }
 
     /// Get the type reference
-    pub fn get_type_ref(&self) -> Option<BlockId> {
+    pub fn type_ref(&self) -> Option<BlockId> {
         *self.type_ref.read()
     }
+}
 
-    pub fn format(&self) -> String {
-        if !self.type_name.is_empty() {
-            if let Some(type_id) = *self.type_ref.read() {
-                return format!(
-                    "{}:{} @type:{} {}",
-                    self.base.kind, self.base.id, type_id, self.type_name
-                );
-            } else {
-                return format!(
-                    "{}:{} @type {}",
-                    self.base.kind, self.base.id, self.type_name
-                );
-            }
-        }
-        format!("{}:{}", self.base.kind, self.base.id)
+impl<'blk> fmt::Display for BlockReturn<'blk> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt_typed_block(
+            f,
+            self.base.kind,
+            self.base.id,
+            None,
+            &self.type_name,
+            *self.type_ref.read(),
+        )
     }
 }
 
 #[derive(Debug)]
 pub struct BlockAlias<'blk> {
     pub base: BlockBase<'blk>,
-    pub name: String,
+    name: String,
 }
 
 impl<'blk> BlockAlias<'blk> {
@@ -1447,12 +1524,29 @@ impl<'blk> BlockAlias<'blk> {
         children: Vec<BlockId>,
         symbol: Option<&'blk Symbol>,
     ) -> Self {
-        let base = BlockBase::with_symbol(id, node, BlockKind::Alias, parent, children, symbol);
-        let name = base.opt_get_name().unwrap_or("").to_string();
+        Self::new_with_name_and_symbol(id, node, parent, children, None, symbol)
+    }
+
+    pub(crate) fn new_with_name_and_symbol(
+        id: BlockId,
+        node: HirNode<'blk>,
+        parent: Option<BlockId>,
+        children: Vec<BlockId>,
+        name: Option<String>,
+        symbol: Option<&'blk Symbol>,
+    ) -> Self {
+        let base = BlockBase::new(id, node, BlockKind::Alias, parent, children, symbol);
+        let name = base.name_or_inferred(name);
         Self { base, name }
     }
 
-    pub fn format(&self) -> String {
-        format!("{}:{} {}", self.base.kind, self.base.id, self.name)
+    pub fn name(&self) -> Option<&str> {
+        (!self.name.is_empty()).then_some(&self.name)
+    }
+}
+
+impl<'blk> fmt::Display for BlockAlias<'blk> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}:{} {}", self.base.kind, self.base.id, self.name)
     }
 }

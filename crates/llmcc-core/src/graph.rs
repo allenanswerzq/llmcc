@@ -146,12 +146,12 @@ impl<'tcx> ProjectGraph<'tcx> {
         func: &crate::block::BlockFunc<'tcx>,
     ) {
         // Parameters - now individual BlockParameter blocks
-        for param_id in func.get_parameters() {
+        for param_id in func.parameters() {
             self.add_relation(block_id, BlockRelation::HasParameters, param_id);
         }
 
         // Return type
-        if let Some(ret_id) = func.get_returns() {
+        if let Some(ret_id) = func.return_block() {
             self.add_relation(block_id, BlockRelation::HasReturn, ret_id);
         }
 
@@ -213,18 +213,18 @@ impl<'tcx> ProjectGraph<'tcx> {
 
         // Find calls within this function's children and link to callees
         // Also populate type_deps and func_deps
-        for child_id in func.base.get_children() {
+        for child_id in func.base.children() {
             self.find_calls_recursive(unit, block_id, func, child_id);
         }
 
         // Add Uses/UsedBy edges for type dependencies
-        for type_id in func.get_type_deps() {
+        for type_id in func.type_deps() {
             self.add_relation(block_id, BlockRelation::Uses, type_id);
             self.add_relation(type_id, BlockRelation::UsedBy, block_id);
         }
 
         // Add Calls/CalledBy edges for type dependencies
-        for type_id in func.get_func_deps() {
+        for type_id in func.func_deps() {
             self.add_relation(block_id, BlockRelation::Calls, type_id);
             self.add_relation(type_id, BlockRelation::CalledBy, block_id);
         }
@@ -253,22 +253,20 @@ impl<'tcx> ProjectGraph<'tcx> {
         // check if the node's symbol is a callable or constructable type.
         // This handles cases where we visit call_expression/new_expression nodes
         // that weren't converted to Call blocks.
-        if let Some(base) = block.base() {
-            let node = &base.node;
-            // Check if this node has a resolved symbol that's a function or struct
-            if let Some(callee_sym) = node.query(unit).resolved_symbol() {
-                let kind = callee_sym.kind();
-                // Only process if it's not already a Call block and is callable
-                if !matches!(&block, BasicBlock::Call(_))
-                    && matches!(
-                        kind,
-                        crate::symbol::SymKind::Function
-                            | crate::symbol::SymKind::Struct
-                            | crate::symbol::SymKind::Enum
-                    )
-                {
-                    self.process_callee_symbol(unit, caller_func_id, caller_func, callee_sym);
-                }
+        let node = &block.base().node;
+        // Check if this node has a resolved symbol that's a function or struct
+        if let Some(callee_sym) = node.query(unit).resolved_symbol() {
+            let kind = callee_sym.kind();
+            // Only process if it's not already a Call block and is callable
+            if !matches!(&block, BasicBlock::Call(_))
+                && matches!(
+                    kind,
+                    crate::symbol::SymKind::Function
+                        | crate::symbol::SymKind::Struct
+                        | crate::symbol::SymKind::Enum
+                )
+            {
+                self.process_callee_symbol(unit, caller_func_id, caller_func, callee_sym);
             }
         }
 
@@ -338,13 +336,13 @@ impl<'tcx> ProjectGraph<'tcx> {
         class: &crate::block::BlockClass<'tcx>,
     ) {
         // Fields
-        for field_id in class.get_fields() {
+        for field_id in class.fields() {
             self.add_relation(block_id, BlockRelation::HasField, field_id);
             self.add_relation(field_id, BlockRelation::FieldOf, block_id);
         }
 
         // Methods
-        for method_id in class.get_methods() {
+        for method_id in class.methods() {
             self.add_relation(block_id, BlockRelation::HasMethod, method_id);
             self.add_relation(method_id, BlockRelation::MethodOf, block_id);
         }
@@ -424,14 +422,14 @@ impl<'tcx> ProjectGraph<'tcx> {
         impl_block: &crate::block::BlockImpl<'tcx>,
     ) {
         // Methods
-        for method_id in impl_block.get_methods() {
+        for method_id in impl_block.methods() {
             self.add_relation(block_id, BlockRelation::HasMethod, method_id);
             self.add_relation(method_id, BlockRelation::MethodOf, block_id);
         }
 
         // Target type - resolve from symbol if block_id wasn't available during building
         let target_id = impl_block
-            .get_target()
+            .target()
             .or_else(|| impl_block.target_sym.and_then(|sym| sym.block_id()));
         if let Some(target_id) = target_id {
             impl_block.set_target(target_id);
@@ -446,19 +444,18 @@ impl<'tcx> ProjectGraph<'tcx> {
                 && let Some(nested_types) = target_sym.nested_types()
             {
                 let target_block = unit.block(target_id);
-                if let Some(base) = target_block.base() {
-                    for type_id in nested_types {
-                        // Follow type_of chain to get actual type symbol
-                        let type_sym = unit.try_symbol(type_id).and_then(|sym| {
-                            sym.type_of()
-                                .and_then(|id| unit.try_symbol(id))
-                                .or(Some(sym))
-                        });
-                        if let Some(type_sym) = type_sym
-                            && let Some(type_block_id) = type_sym.block_id()
-                        {
-                            base.type_deps.write().insert(type_block_id);
-                        }
+                let base = target_block.base();
+                for type_id in nested_types {
+                    // Follow type_of chain to get actual type symbol
+                    let type_sym = unit.try_symbol(type_id).and_then(|sym| {
+                        sym.type_of()
+                            .and_then(|id| unit.try_symbol(id))
+                            .or(Some(sym))
+                    });
+                    if let Some(type_sym) = type_sym
+                        && let Some(type_block_id) = type_sym.block_id()
+                    {
+                        base.type_deps.write().insert(type_block_id);
                     }
                 }
             }
@@ -466,7 +463,7 @@ impl<'tcx> ProjectGraph<'tcx> {
 
         // Trait reference - resolve from symbol if block_id wasn't available during building
         let trait_id = impl_block
-            .get_trait_ref()
+            .trait_ref()
             .or_else(|| impl_block.trait_sym.and_then(|sym| sym.block_id()));
         if let Some(trait_id) = trait_id {
             impl_block.set_trait_ref(trait_id);
@@ -483,7 +480,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         trait_block: &crate::block::BlockTrait<'tcx>,
     ) {
         // Methods
-        for method_id in trait_block.get_methods() {
+        for method_id in trait_block.methods() {
             self.add_relation(block_id, BlockRelation::HasMethod, method_id);
             self.add_relation(method_id, BlockRelation::MethodOf, block_id);
         }
@@ -520,13 +517,13 @@ impl<'tcx> ProjectGraph<'tcx> {
         iface_block: &crate::block::BlockInterface<'tcx>,
     ) {
         // Methods
-        for method_id in iface_block.get_methods() {
+        for method_id in iface_block.methods() {
             self.add_relation(block_id, BlockRelation::HasMethod, method_id);
             self.add_relation(method_id, BlockRelation::MethodOf, block_id);
         }
 
         // Fields
-        for field_id in iface_block.get_fields() {
+        for field_id in iface_block.fields() {
             self.add_relation(block_id, BlockRelation::HasField, field_id);
             self.add_relation(field_id, BlockRelation::FieldOf, block_id);
         }
@@ -581,7 +578,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         enum_block: &crate::block::BlockEnum<'tcx>,
     ) {
         // Variants are like fields
-        for variant_id in enum_block.get_variants() {
+        for variant_id in enum_block.variants() {
             self.add_relation(block_id, BlockRelation::HasField, variant_id);
             self.add_relation(variant_id, BlockRelation::FieldOf, block_id);
         }
@@ -597,7 +594,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     ) {
         // Link call site to callee
         // Already set by graph_builder when creating BlockCall
-        if let Some(callee_id) = call.get_callee() {
+        if let Some(callee_id) = call.callee() {
             self.add_relation(block_id, BlockRelation::Calls, callee_id);
             self.add_relation(callee_id, BlockRelation::CalledBy, block_id);
         }
@@ -612,7 +609,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         ret: &crate::block::BlockReturn<'tcx>,
     ) {
         // First try the block's type_ref directly (set during block building)
-        if let Some(type_id) = ret.get_type_ref() {
+        if let Some(type_id) = ret.type_ref() {
             self.add_relation(block_id, BlockRelation::TypeOf, type_id);
             self.add_relation(type_id, BlockRelation::TypeFor, block_id);
             return;
@@ -638,7 +635,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         param: &crate::block::BlockParameter<'tcx>,
     ) {
         // First try the block's type_ref directly (set during block building)
-        if let Some(type_id) = param.get_type_ref() {
+        if let Some(type_id) = param.type_ref() {
             self.add_relation(block_id, BlockRelation::TypeOf, type_id);
             self.add_relation(type_id, BlockRelation::TypeFor, block_id);
             return;
@@ -665,7 +662,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     ) {
         // Link type reference
         // First try the block's type_ref directly (set during block building)
-        if let Some(type_id) = field.get_type_ref() {
+        if let Some(type_id) = field.type_ref() {
             self.add_relation(block_id, BlockRelation::TypeOf, type_id);
             self.add_relation(type_id, BlockRelation::TypeFor, block_id);
         } else {
@@ -681,7 +678,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         }
 
         // Link nested fields (for enum variants with struct-like fields)
-        for child_id in field.base.get_children() {
+        for child_id in field.base.children() {
             self.add_relation(block_id, BlockRelation::HasField, child_id);
             self.add_relation(child_id, BlockRelation::FieldOf, block_id);
         }
@@ -696,7 +693,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         const_block: &crate::block::BlockConst<'tcx>,
     ) {
         // First try the block's type_ref directly (set during block building)
-        if let Some(type_id) = const_block.get_type_ref() {
+        if let Some(type_id) = const_block.type_ref() {
             self.add_relation(block_id, BlockRelation::TypeOf, type_id);
             self.add_relation(type_id, BlockRelation::TypeFor, block_id);
             return;

@@ -75,11 +75,7 @@ fn render_node(block_id: BlockId, unit: CompileUnit<'_>, depth: usize, buf: &mut
     let kind = block.kind().to_string();
     let _ = write!(buf, "{}({}:{}", indent, kind, block_id.as_u32());
 
-    if let Some(name) = block
-        .base()
-        .and_then(|base| base.opt_get_name())
-        .filter(|name| !name.is_empty())
-    {
+    if let Some(name) = block.try_name() {
         let _ = write!(buf, " {name}");
     }
 

@@ -109,6 +109,33 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
         (type_name, type_block_id)
     }
 
+    fn first_ident_name(&self, node: HirNode<'tcx>) -> Option<String> {
+        node.query(&self.unit)
+            .first_ident()
+            .map(|ident| ident.name.to_string())
+    }
+
+    fn field_name(&self, node: HirNode<'tcx>) -> Option<String> {
+        node.query(&self.unit)
+            .ident_with_field(L::name_field())
+            .map(|ident| ident.name.to_string())
+            .or_else(|| self.first_ident_name(node))
+    }
+
+    fn parameter_name(&self, node: HirNode<'tcx>) -> Option<String> {
+        node.query(&self.unit)
+            .identifiers()
+            .into_iter()
+            .find(|ident| {
+                ident
+                    .opt_symbol()
+                    .is_some_and(|sym| matches!(sym.kind(), crate::symbol::SymKind::Variable))
+            })
+            .map(|ident| ident.name.to_string())
+            .or_else(|| self.first_ident_name(node))
+            .or_else(|| node.query(&self.unit).text().map(|text| text.to_string()))
+    }
+
     /// Extract the defining symbol from a HIR node.
     /// For scoped nodes (class, func, etc.): gets symbol from scope
     /// For identifier nodes: gets the resolved symbol
@@ -325,12 +352,14 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                 BasicBlock::Enum(block_ref)
             }
             BlockKind::Const => {
-                let mut stmt = BlockConst::new_with_symbol(id, node, parent, children, symbol);
-                // Find identifier name from children
-                if let Some(ident) = node.query(&self.unit).first_ident() {
-                    stmt.name = ident.name.to_string();
-                }
-                // Resolve and set type info
+                let mut stmt = BlockConst::new_with_name_and_symbol(
+                    id,
+                    node,
+                    parent,
+                    children,
+                    self.first_ident_name(node),
+                    symbol,
+                );
                 let (type_name, type_ref) = self.resolve_type_info(symbol);
                 stmt.set_type_info(type_name, type_ref);
                 let block_ref = self
@@ -377,16 +406,14 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                 BasicBlock::Impl(block_ref)
             }
             BlockKind::Field => {
-                let mut block = BlockField::new_with_symbol(id, node, parent, children, symbol);
-                // Find identifier name from children using ident_by_field with the language's name field
-                // This avoids finding decorator identifiers before the actual field name
-                if let Some(ident) = node.query(&self.unit).ident_with_field(L::name_field()) {
-                    block.name = ident.name.to_string();
-                } else if let Some(ident) = node.query(&self.unit).first_ident() {
-                    // Fallback to find_ident for languages that don't use name field
-                    block.name = ident.name.to_string();
-                }
-                // Resolve and set type info
+                let mut block = BlockField::new_with_name_and_symbol(
+                    id,
+                    node,
+                    parent,
+                    children,
+                    self.field_name(node),
+                    symbol,
+                );
                 let (type_name, type_ref) = self.resolve_type_info(symbol);
                 block.set_type_info(type_name, type_ref);
                 let block_ref = self
@@ -397,25 +424,14 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                 BasicBlock::Field(block_ref)
             }
             BlockKind::Parameter => {
-                let mut block = BlockParameter::new_with_symbol(id, node, parent, children, symbol);
-                // Prefer variable identifier for parameter name to avoid decorator identifiers.
-                if let Some(ident) =
-                    node.query(&self.unit)
-                        .identifiers()
-                        .into_iter()
-                        .find(|ident| {
-                            ident.opt_symbol().is_some_and(|sym| {
-                                matches!(sym.kind(), crate::symbol::SymKind::Variable)
-                            })
-                        })
-                {
-                    block.name = ident.name.to_string();
-                } else if let Some(ident) = node.query(&self.unit).first_ident() {
-                    block.name = ident.name.to_string();
-                } else if let Some(text) = node.query(&self.unit).text() {
-                    // Fallback: look for text nodes like "self" keyword
-                    block.name = text.to_string();
-                }
+                let mut block = BlockParameter::new_with_name_and_symbol(
+                    id,
+                    node,
+                    parent,
+                    children,
+                    self.parameter_name(node),
+                    symbol,
+                );
                 let (type_name, type_ref) = self.resolve_type_info(symbol);
                 block.set_type_info(type_name, type_ref);
                 let block_ref = self
@@ -438,11 +454,14 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                 BasicBlock::Return(block_ref)
             }
             BlockKind::Alias => {
-                let mut block = BlockAlias::new_with_symbol(id, node, parent, children, symbol);
-                // Find identifier name from children
-                if let Some(ident) = node.query(&self.unit).first_ident() {
-                    block.name = ident.name.to_string();
-                }
+                let block = BlockAlias::new_with_name_and_symbol(
+                    id,
+                    node,
+                    parent,
+                    children,
+                    self.first_ident_name(node),
+                    symbol,
+                );
                 let block_ref = self
                     .unit
                     .context()
@@ -451,12 +470,7 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                 BasicBlock::Alias(block_ref)
             }
             BlockKind::Module => {
-                // Get module name from identifier
-                let name = node
-                    .query(&self.unit)
-                    .first_ident()
-                    .map(|ident| ident.name.to_string())
-                    .unwrap_or_default();
+                let name = self.first_ident_name(node).unwrap_or_default();
                 // Inline modules have children (the module body), file modules don't
                 let is_inline = !children.is_empty();
                 let block = BlockModule::new_with_symbol(
@@ -617,9 +631,14 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
             type_symbol = node.query(&self.unit).symbol();
         }
 
-        let mut block = BlockField::new_with_symbol(id, node, parent, children, type_symbol);
-        block.name = index.to_string();
-        // Resolve and set type info
+        let mut block = BlockField::new_with_name_and_symbol(
+            id,
+            node,
+            parent,
+            children,
+            Some(index.to_string()),
+            type_symbol,
+        );
         let (type_name, type_ref) = self.resolve_type_info(type_symbol);
         block.set_type_info(type_name, type_ref);
         let block_ref = self
@@ -642,7 +661,7 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                 for &(child_id, child_kind) in children {
                     match child_kind {
                         BlockKind::Parameter => func.add_parameter(child_id),
-                        BlockKind::Return => func.set_returns(child_id),
+                        BlockKind::Return => func.set_return(child_id),
                         _ => {}
                     }
                 }

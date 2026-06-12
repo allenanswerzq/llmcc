@@ -192,10 +192,7 @@ impl<'tcx> CompileUnit<'tcx> {
     /// Insert a block and update the block indexes for this unit.
     pub fn insert_block(&self, id: BlockId, block: BasicBlock<'tcx>, _parent: BlockId) {
         let block_kind = block.kind();
-        let block_name = block
-            .base()
-            .and_then(|base| base.opt_get_name())
-            .map(|s| s.to_string());
+        let block_name = block.try_name().map(|name| name.to_string());
         self.cc.block_arena.alloc_with_id(id.0 as usize, block);
         self.cc
             .block_indexes

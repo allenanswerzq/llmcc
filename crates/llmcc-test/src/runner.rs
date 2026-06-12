@@ -1785,21 +1785,14 @@ fn render_block_graph_node(
     let block = unit.block(block_id);
     let indent = "  ".repeat(depth);
 
-    // Use the block's format methods for consistent output
-    let label = block.format_block(unit);
-    let suffix = block.format_suffix();
-    let deps = block.format_deps(unit);
+    let label = block.to_string();
+    let deps = block.dependency_labels(unit);
 
     let _ = write!(buf, "{indent}({label}");
 
     let children = block.children();
     if children.is_empty() && deps.is_empty() {
         buf.push(')');
-        // Add suffix after closing paren (e.g., "@type i32")
-        if let Some(suffix) = suffix {
-            buf.push(' ');
-            buf.push_str(&suffix);
-        }
         buf.push('\n');
         return;
     }
@@ -1991,34 +1984,17 @@ fn describe_block<'a>(
 ) -> Option<BlockDescriptor> {
     let (unit, name, kind) = cc.block_info(block_id)?;
 
-    // Try to get a proper name from multiple sources:
-    // 1. From block info (indexed name)
-    // 2. From the block's specific type (e.g., BlockField.name)
-    // 3. From the block's base (HIR node)
-    // 4. From first identifier child node
-    // 5. From associated symbol
-    // 6. Fall back to block#N
+    // Try to get a stable name from the block index, then the block itself,
+    // then HIR/symbol fallbacks for legacy or unnamed blocks.
     let name = name
         .or_else(|| {
-            // Try to get name from specific block types using DashMap lookup
-            cc.try_block(block_id).and_then(|bb| {
-                // Try field name
-                if let Some(field) = bb.as_field()
-                    && !field.name.is_empty()
-                {
-                    return Some(field.name.clone());
-                }
-                // Try base name
-                bb.base()
-                    .and_then(|base| base.opt_get_name())
-                    .filter(|n| !n.is_empty())
-                    .map(|s| s.to_string())
-            })
+            cc.try_block(block_id)
+                .and_then(|block| block.try_name().map(|name| name.to_string()))
         })
         .or_else(|| {
             // Try to find first identifier child of the node
             cc.try_block(block_id).and_then(|bb| {
-                let node = bb.base()?.node;
+                let node = bb.base().node;
                 // Recursively search for first identifier in children
                 find_first_ident_name(cc, &node)
             })

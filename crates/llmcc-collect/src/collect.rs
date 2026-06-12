@@ -36,11 +36,7 @@ pub fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
 
             let display_name = name_opt
                 .clone()
-                .or_else(|| {
-                    block
-                        .base()
-                        .and_then(|base| base.opt_get_name().map(|s| s.to_string()))
-                })
+                .or_else(|| block.try_name().map(|name| name.to_string()))
                 .unwrap_or_else(|| format!("{}:{}", kind, block_id.as_u32()));
 
             // Skip methods - they are implementation details, not architectural
@@ -52,8 +48,8 @@ pub fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
 
             // Get symbol info for visibility check
             let symbol_opt = block
-                .opt_node()
-                .and_then(|node| node.as_scope())
+                .node()
+                .as_scope()
                 .and_then(|scope_node| scope_node.opt_scope())
                 .and_then(|scope| scope.opt_symbol());
 
@@ -64,23 +60,17 @@ pub fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
                 .or_else(|| unit.file().path())
                 .unwrap_or("<unknown>");
 
-            let location = block
-                .opt_node()
-                .map(|node| {
-                    let line = node.start_line();
-                    format!("{raw_path}:{line}")
-                })
-                .or(Some(raw_path.to_string()));
+            let location = Some(format!("{}:{}", raw_path, block.node().start_line()));
 
             // Get crate_name and module_path from BlockRoot of this unit
             let (crate_name, crate_root, module_path, module_root, file_name) = unit
                 .root_block()
                 .and_then(|root| root.as_root())
                 .map(|root| {
-                    let crate_name = root.get_crate_name();
-                    let crate_root = root.get_crate_root();
-                    let module_path = root.get_module_path();
-                    let module_root = root.get_module_root();
+                    let crate_name = root.crate_name();
+                    let crate_root = root.crate_root();
+                    let module_path = root.module_path();
+                    let module_root = root.module_root();
                     let file_name = root.file_name.clone();
                     (crate_name, crate_root, module_path, module_root, file_name)
                 })
@@ -242,7 +232,7 @@ fn collect_field_edges<F>(
         let Some(field) = field_block.as_field() else {
             continue;
         };
-        let Some(field_type_id) = field.get_type_ref() else {
+        let Some(field_type_id) = field.type_ref() else {
             continue;
         };
         if field_type_id == block_id || !node_set.contains(&field_type_id) {
@@ -564,9 +554,7 @@ fn collect_impl_type_arg_edges<F>(
     let Some(block) = project.cc.try_block(block_id) else {
         return;
     };
-    let Some(base) = block.base() else {
-        return;
-    };
+    let base = block.base();
 
     let type_deps = base.type_deps.read();
     for &type_arg_id in type_deps.iter() {
