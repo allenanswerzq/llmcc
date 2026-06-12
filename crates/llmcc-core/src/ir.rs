@@ -261,6 +261,31 @@ impl<'hir> HirNode<'hir> {
         }
     }
 
+    /// Symbol attached to this node, if this is an identifier node and binding has run.
+    pub fn try_ident_symbol(&self) -> Option<&'hir Symbol> {
+        self.as_ident().and_then(|ident| ident.try_symbol())
+    }
+
+    /// Semantic scope attached to this node, if this is a scope node and collection has run.
+    pub fn try_scope(&self) -> Option<&'hir Scope<'hir>> {
+        self.as_scope().and_then(|scope| scope.try_scope())
+    }
+
+    /// Identifier that names this scope node, if present.
+    pub fn try_scope_ident(&self) -> Option<&'hir HirIdent<'hir>> {
+        self.as_scope().and_then(|scope| scope.try_ident())
+    }
+
+    /// Symbol attached to this scope node's naming identifier, if present.
+    pub fn try_scope_ident_symbol(&self) -> Option<&'hir Symbol> {
+        self.try_scope_ident().and_then(|ident| ident.try_symbol())
+    }
+
+    /// Symbol associated with this node's semantic scope, if present.
+    pub fn try_scope_symbol(&self) -> Option<&'hir Symbol> {
+        self.try_scope().and_then(|scope| scope.try_symbol())
+    }
+
     /// True for trivia nodes that usually do not participate in semantic analysis.
     pub fn is_trivia(&self) -> bool {
         self.kind().is_trivia()

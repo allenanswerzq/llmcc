@@ -1,6 +1,7 @@
 //! HIR and block graph printing utilities.
+use crate::block::BasicBlock;
 use crate::context::CompileUnit;
-use crate::graph_builder::{BasicBlock, BlockId};
+use crate::id::BlockId;
 use crate::ir::{HirId, HirNode};
 use std::fmt;
 

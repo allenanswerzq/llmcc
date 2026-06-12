@@ -26,9 +26,10 @@ pub mod visit;
 
 pub use llmcc_error::{Error, ErrorKind, ErrorStatus, Result};
 
+pub use block::{BasicBlock, BlockKind, BlockRelation};
 pub use context::{CompileCtxt, CompileUnit, FileOrder};
 pub use graph::{ProjectGraph, UnitGraph, UnitNode};
-pub use graph_builder::{BlockRelation, GraphBuildConfig, build_llmcc_graph};
+pub use graph_builder::{GraphBuildOptions, build_graphs};
 pub use id::{
     BlockId, HirId, ScopeId, SymId, SymbolId, next_hir_id, reset_block_id_counter,
     reset_hir_id_counter, reset_scope_id_counter, reset_symbol_id_counter,

@@ -1,8 +1,8 @@
 //! Block graph snapshot capture and rendering.
 
 use super::{Snapshot, SnapshotContext};
+use llmcc_core::BlockId;
 use llmcc_core::context::CompileUnit;
-use llmcc_core::graph_builder::BlockId;
 use std::fmt::Write as _;
 
 /// Snapshot of the block graph structure.

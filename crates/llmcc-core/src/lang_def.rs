@@ -1,8 +1,8 @@
 //! Language and parser abstractions used by the core pipeline.
 
 use crate::Result;
+use crate::block::BlockKind;
 use crate::context::{CompileCtxt, CompileUnit};
-use crate::graph_builder::BlockKind;
 use crate::ir::HirKind;
 use crate::ir::HirNode;
 use crate::resolve::ResolveOptions;
@@ -502,21 +502,21 @@ macro_rules! define_lang {
                     }
                 }
 
-                fn block_kind(kind_id: u16) -> $crate::graph_builder::BlockKind {
+                fn block_kind(kind_id: u16) -> $crate::block::BlockKind {
                     match kind_id {
                         $(
                             Self::$const => define_lang!(@unwrap_block $($block)?),
                         )*
-                        _ => $crate::graph_builder::BlockKind::Undefined,
+                        _ => $crate::block::BlockKind::Undefined,
                     }
                 }
 
-                fn block_kind_with_parent(kind_id: u16, field_id: u16, parent_kind_id: u16) -> $crate::graph_builder::BlockKind {
+                fn block_kind_with_parent(kind_id: u16, field_id: u16, parent_kind_id: u16) -> $crate::block::BlockKind {
                     if let Some(kind) = <Self as $crate::lang_def::LanguageDefinition>::block_kind_for_child(kind_id, field_id, parent_kind_id) {
                         kind
                     } else {
                         let field_kind = Self::block_kind(field_id);
-                        if field_kind != $crate::graph_builder::BlockKind::Undefined {
+                        if field_kind != $crate::block::BlockKind::Undefined {
                             field_kind
                         } else {
                             Self::block_kind(kind_id)
@@ -620,5 +620,5 @@ macro_rules! define_lang {
     };
 
     (@unwrap_block $block:expr) => { $block };
-    (@unwrap_block) => { $crate::graph_builder::BlockKind::Undefined };
+    (@unwrap_block) => { $crate::block::BlockKind::Undefined };
 }

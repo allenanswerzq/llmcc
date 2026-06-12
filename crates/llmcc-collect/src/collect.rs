@@ -51,11 +51,7 @@ pub fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
             }
 
             // Get symbol info for visibility check
-            let symbol_opt = block
-                .node()
-                .as_scope()
-                .and_then(|scope_node| scope_node.try_scope())
-                .and_then(|scope| scope.try_symbol());
+            let symbol_opt = block.node().try_scope_symbol();
 
             let sym_kind = symbol_opt.map(|s| s.kind());
 

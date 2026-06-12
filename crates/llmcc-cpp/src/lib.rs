@@ -54,5 +54,5 @@ pub const CPP_PRIMITIVES: &[&str] = &[
 pub use crate::bind::BinderVisitor;
 pub use crate::collect::CollectorVisitor;
 
-pub use llmcc_core::{CompileCtxt, ProjectGraph, build_hir, build_llmcc_graph, print_llmcc_ir};
+pub use llmcc_core::{CompileCtxt, ProjectGraph, build_graphs, build_hir, print_llmcc_ir};
 pub use token::LangCpp;

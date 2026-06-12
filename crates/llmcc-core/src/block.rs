@@ -55,6 +55,30 @@ pub enum BlockKind {
     Alias,
 }
 
+impl BlockKind {
+    /// Return true when this kind has a concrete [`BasicBlock`] representation.
+    pub fn is_graph_block(self) -> bool {
+        matches!(
+            self,
+            BlockKind::Root
+                | BlockKind::Module
+                | BlockKind::Func
+                | BlockKind::Method
+                | BlockKind::Call
+                | BlockKind::Class
+                | BlockKind::Trait
+                | BlockKind::Interface
+                | BlockKind::Enum
+                | BlockKind::Const
+                | BlockKind::Impl
+                | BlockKind::Field
+                | BlockKind::Parameter
+                | BlockKind::Return
+                | BlockKind::Alias
+        )
+    }
+}
+
 /// Concrete block stored in the block graph.
 ///
 /// Each variant wraps a block-specific payload, but every variant has a
@@ -460,10 +484,10 @@ impl<'blk> BlockRoot<'blk> {
         children: Vec<BlockId>,
         file_name: Option<String>,
     ) -> Self {
-        Self::new_with_symbol(id, node, parent, children, file_name, None)
+        Self::new_with(id, node, parent, children, file_name, None)
     }
 
-    pub fn new_with_symbol(
+    pub fn new_with(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -549,10 +573,10 @@ impl<'blk> BlockModule<'blk> {
         name: String,
         is_inline: bool,
     ) -> Self {
-        Self::new_with_symbol(id, node, parent, children, name, is_inline, None)
+        Self::new_with(id, node, parent, children, name, is_inline, None)
     }
 
-    pub fn new_with_symbol(
+    pub fn new_with(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -603,10 +627,10 @@ impl<'blk> BlockFunc<'blk> {
         parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> Self {
-        Self::new_with_symbol(id, node, kind, parent, children, None)
+        Self::new_with(id, node, kind, parent, children, None)
     }
 
-    pub fn new_with_symbol(
+    pub fn new_with(
         id: BlockId,
         node: HirNode<'blk>,
         kind: BlockKind,
@@ -718,10 +742,10 @@ impl<'blk> BlockCall<'blk> {
         parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> Self {
-        Self::new_with_symbol(id, node, parent, children, None)
+        Self::new_with(id, node, parent, children, None)
     }
 
-    pub fn new_with_symbol(
+    pub fn new_with(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -777,10 +801,10 @@ impl<'blk> BlockClass<'blk> {
         parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> Self {
-        Self::new_with_symbol(id, node, parent, children, None)
+        Self::new_with(id, node, parent, children, None)
     }
 
-    pub fn new_with_symbol(
+    pub fn new_with(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -888,10 +912,10 @@ impl<'blk> BlockTrait<'blk> {
         parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> Self {
-        Self::new_with_symbol(id, node, parent, children, None)
+        Self::new_with(id, node, parent, children, None)
     }
 
-    pub fn new_with_symbol(
+    pub fn new_with(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -944,10 +968,10 @@ impl<'blk> BlockInterface<'blk> {
         parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> Self {
-        Self::new_with_symbol(id, node, parent, children, None)
+        Self::new_with(id, node, parent, children, None)
     }
 
-    pub fn new_with_symbol(
+    pub fn new_with(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -1046,10 +1070,10 @@ impl<'blk> BlockImpl<'blk> {
         parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> Self {
-        Self::new_with_symbol(id, node, parent, children, None)
+        Self::new_with(id, node, parent, children, None)
     }
 
-    pub fn new_with_symbol(
+    pub fn new_with(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -1137,10 +1161,10 @@ impl<'blk> BlockEnum<'blk> {
         parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> Self {
-        Self::new_with_symbol(id, node, parent, children, None)
+        Self::new_with(id, node, parent, children, None)
     }
 
-    pub fn new_with_symbol(
+    pub fn new_with(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -1192,20 +1216,20 @@ impl<'blk> BlockConst<'blk> {
         parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> Self {
-        Self::new_with_symbol(id, node, parent, children, None)
+        Self::new_with(id, node, parent, children, None)
     }
 
-    pub fn new_with_symbol(
+    pub fn new_with(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
         children: Vec<BlockId>,
         symbol: Option<&'blk Symbol>,
     ) -> Self {
-        Self::new_with_name_and_symbol(id, node, parent, children, None, symbol)
+        Self::new_with_name(id, node, parent, children, None, symbol)
     }
 
-    pub(crate) fn new_with_name_and_symbol(
+    pub(crate) fn new_with_name(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -1274,20 +1298,20 @@ impl<'blk> BlockField<'blk> {
         parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> Self {
-        Self::new_with_symbol(id, node, parent, children, None)
+        Self::new_with(id, node, parent, children, None)
     }
 
-    pub fn new_with_symbol(
+    pub fn new_with(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
         children: Vec<BlockId>,
         symbol: Option<&'blk Symbol>,
     ) -> Self {
-        Self::new_with_name_and_symbol(id, node, parent, children, None, symbol)
+        Self::new_with_name(id, node, parent, children, None, symbol)
     }
 
-    pub(crate) fn new_with_name_and_symbol(
+    pub(crate) fn new_with_name(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -1359,20 +1383,20 @@ impl<'blk> BlockParameter<'blk> {
         parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> Self {
-        Self::new_with_symbol(id, node, parent, children, None)
+        Self::new_with(id, node, parent, children, None)
     }
 
-    pub fn new_with_symbol(
+    pub fn new_with(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
         children: Vec<BlockId>,
         symbol: Option<&'blk Symbol>,
     ) -> Self {
-        Self::new_with_name_and_symbol(id, node, parent, children, None, symbol)
+        Self::new_with_name(id, node, parent, children, None, symbol)
     }
 
-    pub(crate) fn new_with_name_and_symbol(
+    pub(crate) fn new_with_name(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -1441,10 +1465,10 @@ impl<'blk> BlockReturn<'blk> {
         parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> Self {
-        Self::new_with_symbol(id, node, parent, children, None)
+        Self::new_with(id, node, parent, children, None)
     }
 
-    pub fn new_with_symbol(
+    pub fn new_with(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -1502,20 +1526,20 @@ impl<'blk> BlockAlias<'blk> {
         parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> Self {
-        Self::new_with_symbol(id, node, parent, children, None)
+        Self::new_with(id, node, parent, children, None)
     }
 
-    pub fn new_with_symbol(
+    pub fn new_with(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
         children: Vec<BlockId>,
         symbol: Option<&'blk Symbol>,
     ) -> Self {
-        Self::new_with_name_and_symbol(id, node, parent, children, None, symbol)
+        Self::new_with_name(id, node, parent, children, None, symbol)
     }
 
-    pub(crate) fn new_with_name_and_symbol(
+    pub(crate) fn new_with_name(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,

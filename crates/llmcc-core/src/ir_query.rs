@@ -25,13 +25,10 @@ impl<'hir, 'unit> HirQuery<'hir, 'unit> {
 
     /// Symbol attached directly to this node.
     pub fn symbol(self) -> Option<&'hir Symbol> {
-        if let Some(scope) = self.node.as_scope() {
-            return scope.try_symbol();
+        if let Some(symbol) = self.node.try_scope_symbol() {
+            return Some(symbol);
         }
-        if let Some(ident) = self.node.as_ident() {
-            return ident.try_symbol();
-        }
-        None
+        self.node.try_ident_symbol()
     }
 
     /// Symbol referenced by the identifier under a specific child field.
@@ -222,26 +219,21 @@ impl<'hir, 'unit> HirQuery<'hir, 'unit> {
 
     /// Attach a block id to any non-primitive symbol associated with this node.
     pub fn attach_block_id(self, block_id: BlockId) {
-        if let Some(scope) = self.node.as_scope() {
-            if let Some(symbol) = scope.try_symbol() {
-                if symbol.kind() != SymKind::Primitive {
-                    symbol.set_block_id(block_id);
-                }
-                return;
+        if let Some(symbol) = self.node.try_scope_symbol() {
+            if symbol.kind() != SymKind::Primitive {
+                symbol.set_block_id(block_id);
             }
-
-            if let Some(ident) = scope.try_ident()
-                && let Some(symbol) = ident.try_symbol()
-            {
-                if symbol.kind() != SymKind::Primitive {
-                    symbol.set_block_id(block_id);
-                }
-                return;
-            }
+            return;
         }
 
-        if let Some(ident) = self.node.as_ident()
-            && let Some(symbol) = ident.try_symbol()
+        if let Some(symbol) = self.node.try_scope_ident_symbol() {
+            if symbol.kind() != SymKind::Primitive {
+                symbol.set_block_id(block_id);
+            }
+            return;
+        }
+
+        if let Some(symbol) = self.node.try_ident_symbol()
             && symbol.kind() != SymKind::Primitive
         {
             symbol.set_block_id(block_id);

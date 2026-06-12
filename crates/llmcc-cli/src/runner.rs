@@ -7,9 +7,9 @@ use tracing::info;
 
 use llmcc_core::context::{BuildMetrics, FileOrder};
 use llmcc_core::graph::ProjectGraph;
-use llmcc_core::graph_builder::{GraphBuildOption, build_llmcc_graph};
 use llmcc_core::lang_def::Language as CoreLanguage;
 use llmcc_core::{CompileCtxt, Error, ResolveOptions, Result, print_llmcc_graph};
+use llmcc_core::{GraphBuildOptions, build_graphs};
 use llmcc_cpp::LangCpp;
 use llmcc_dot::{RenderOptions, render_graph_with_options};
 use llmcc_resolver::{bind_symbols_with, build_and_collect_symbols};
@@ -85,7 +85,7 @@ impl Runner {
 
         let graph_start = Instant::now();
         let mut project_graph = ProjectGraph::new(&cc);
-        let unit_graphs = build_llmcc_graph::<L>(&cc, GraphBuildOption::new())?;
+        let unit_graphs = build_graphs::<L>(&cc, GraphBuildOptions::new())?;
         project_graph.add_children(unit_graphs);
         info!(
             "Graph building: {:.2}s",

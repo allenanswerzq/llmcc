@@ -112,7 +112,7 @@ impl<'tcx> Scope<'tcx> {
     }
 
     /// Find a semantic parent scope introduced by a symbol of the given kind.
-    pub fn try_parent_symbol_by_kind(&self, kind: crate::symbol::SymKind) -> Option<&'tcx Symbol> {
+    pub fn try_parent_symbol(&self, kind: crate::symbol::SymKind) -> Option<&'tcx Symbol> {
         let mut queue = VecDeque::new();
         let mut visited = HashSet::new();
         queue.extend(self.parents());
@@ -734,9 +734,7 @@ mod tests {
         let parent_ids: Vec<_> = file_scope.parents().into_iter().map(Scope::id).collect();
         assert_eq!(parent_ids, vec![module_scope.id()]);
         assert_eq!(
-            file_scope
-                .try_parent_symbol_by_kind(SymKind::Crate)
-                .map(Symbol::id),
+            file_scope.try_parent_symbol(SymKind::Crate).map(Symbol::id),
             Some(crate_symbol.id())
         );
     }

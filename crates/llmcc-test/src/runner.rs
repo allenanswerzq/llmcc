@@ -4,10 +4,10 @@ use std::path::{Path, PathBuf};
 
 use llmcc_core::block::reset_block_id_counter;
 use llmcc_core::context::{CompileCtxt, CompileUnit};
-use llmcc_core::graph_builder::{BlockId, GraphBuildOption, build_llmcc_graph};
 use llmcc_core::ir_builder::{HirBuildOptions, build_hir};
 use llmcc_core::lang_def::Language;
 use llmcc_core::symbol::reset_symbol_id_counter;
+use llmcc_core::{BlockId, GraphBuildOptions, build_graphs};
 use llmcc_core::{ProjectGraph, ResolveOptions};
 use llmcc_dot::{ComponentDepth, render_graph};
 use llmcc_error::{Error, ErrorKind, Result};
@@ -1439,8 +1439,7 @@ where
     };
     if let Some(project) = project_graph.as_mut() {
         let unit_graphs =
-            build_llmcc_graph::<L>(&cc, GraphBuildOption::new().with_sequential(sequential))
-                .unwrap();
+            build_graphs::<L>(&cc, GraphBuildOptions::new().with_sequential(sequential)).unwrap();
         project.add_children(unit_graphs);
     }
     let (
@@ -1975,11 +1974,11 @@ struct BlockDescriptor {
     name: String,
     kind: String,
     unit: usize,
-    id: llmcc_core::graph_builder::BlockId,
+    id: llmcc_core::BlockId,
 }
 
 fn describe_block<'a>(
-    block_id: llmcc_core::graph_builder::BlockId,
+    block_id: llmcc_core::BlockId,
     cc: &'a llmcc_core::context::CompileCtxt<'a>,
 ) -> Option<BlockDescriptor> {
     let entry = cc.block_info(block_id)?;

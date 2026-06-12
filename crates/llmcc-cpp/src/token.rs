@@ -1,5 +1,5 @@
+use llmcc_core::BlockKind;
 use llmcc_core::LanguageDefinition;
-use llmcc_core::graph_builder::BlockKind;
 use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::lang_def::{ParseNode, ParseTree, TreeSitterParseTree};
 use llmcc_core::scope::{Scope, ScopeStack};

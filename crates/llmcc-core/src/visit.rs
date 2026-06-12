@@ -1,6 +1,6 @@
 //! Visitor pattern implementation for HIR (High-level Intermediate Representation) traversal.
 use crate::CompileUnit;
-use crate::graph_builder::BlockId;
+use crate::id::BlockId;
 use crate::ir::{HirKind, HirNode};
 
 pub trait HirVisitor<'v> {
