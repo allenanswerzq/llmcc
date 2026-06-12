@@ -16,13 +16,13 @@ include!(concat!(env!("OUT_DIR"), "/typescript_tokens.rs"));
 impl LanguageDefinition for LangTypeScript {
     #[rustfmt::skip]
     fn initial_scopes<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> ScopeStack<'tcx> {
-        let stack = ScopeStack::new(cc.arena(), &cc.interner);
+        let stack = ScopeStack::new(cc.arena(), cc.interner());
         let globals = cc.create_globals();
         stack.push(globals);
         debug_assert!(stack.depth() == 1);
 
         for prim in crate::TYPESCRIPT_PRIMITIVES {
-            let name = cc.interner.intern(prim);
+            let name = cc.interner().intern(prim);
             let symbol_val = Symbol::new(CompileCtxt::GLOBAL_SCOPE_OWNER, name);
             let sym_id = symbol_val.id().0;
             let symbol = cc.arena().alloc_with_id(sym_id, symbol_val);

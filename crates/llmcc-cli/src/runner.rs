@@ -65,7 +65,7 @@ impl Runner {
             "Parsing & tree-sitter: {:.2}s",
             parse_start.elapsed().as_secs_f64()
         );
-        Self::log_parse_metrics(&cc.build_metrics);
+        Self::log_parse_metrics(cc.build_metrics());
 
         let build_start = Instant::now();
         let resolve_options = ResolveOptions::default()

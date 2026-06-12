@@ -86,11 +86,8 @@ impl<'tcx> ProjectGraph<'tcx> {
     pub fn connect_blocks(&self) {
         // Process each unit in parallel - they are independent
         self.units.par_iter().for_each(|unit_graph| {
-            let unit = CompileUnit {
-                cc: self.cc,
-                index: unit_graph.unit_index(),
-            };
-            let root_block = unit.bb(unit_graph.root());
+            let unit = self.cc.compile_unit(unit_graph.unit_index());
+            let root_block = unit.block(unit_graph.root());
             self.dfs_connect(&unit, &root_block, None);
         });
     }
@@ -130,7 +127,7 @@ impl<'tcx> ProjectGraph<'tcx> {
 
         // 3. Recurse into children (pre-order: process this node before children)
         for child_id in block.children() {
-            let child = unit.bb(child_id);
+            let child = unit.block(child_id);
             self.dfs_connect(unit, &child, Some(block_id));
         }
     }
@@ -163,13 +160,13 @@ impl<'tcx> ProjectGraph<'tcx> {
         if let Some(func_sym) = func.base.symbol
             && let Some(scope_id) = func_sym.opt_owned_scope()
         {
-            let scope = unit.get_scope(scope_id);
+            let scope = unit.scope(scope_id);
             // Look for type parameters in the function's scope
             scope.for_each_symbol(|sym| {
                 if sym.kind() == crate::symbol::SymKind::TypeParameter {
                     // Get the bound type from type_of
                     if let Some(bound_id) = sym.type_of()
-                        && let Some(bound_sym) = unit.opt_get_symbol(bound_id)
+                        && let Some(bound_sym) = unit.try_symbol(bound_id)
                         && let Some(bound_block_id) = bound_sym.block_id()
                     {
                         // Create edge: bound --UsedBy--> this_func
@@ -188,9 +185,9 @@ impl<'tcx> ProjectGraph<'tcx> {
         {
             for type_id in nested_types {
                 // Follow type_of chain to get actual type symbol
-                let type_sym = unit.opt_get_symbol(type_id).and_then(|sym| {
+                let type_sym = unit.try_symbol(type_id).and_then(|sym| {
                     sym.type_of()
-                        .and_then(|id| unit.opt_get_symbol(id))
+                        .and_then(|id| unit.try_symbol(id))
                         .or(Some(sym))
                 });
                 if let Some(type_sym) = type_sym
@@ -206,7 +203,7 @@ impl<'tcx> ProjectGraph<'tcx> {
             && let Some(decorators) = func_sym.decorators()
         {
             for decorator_id in decorators {
-                if let Some(decorator_sym) = unit.opt_get_symbol(decorator_id)
+                if let Some(decorator_sym) = unit.try_symbol(decorator_id)
                     && let Some(decorator_block_id) = decorator_sym.block_id()
                 {
                     func.add_type_dep(decorator_block_id);
@@ -242,7 +239,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         caller_func: &crate::block::BlockFunc<'tcx>,
         block_id: BlockId,
     ) {
-        let block = unit.bb(block_id);
+        let block = unit.block(block_id);
 
         // Check for Call blocks (explicit call blocks in Rust)
         if let BasicBlock::Call(call) = &block {
@@ -306,7 +303,7 @@ impl<'tcx> ProjectGraph<'tcx> {
                 // Method call → check if it has a type receiver (Foo::method)
                 // The type is tracked via type_of on the callee symbol
                 if let Some(type_sym_id) = callee_sym.type_of()
-                    && let Some(type_sym) = self.cc.opt_get_symbol(type_sym_id)
+                    && let Some(type_sym) = self.cc.try_symbol(type_sym_id)
                     && let Some(type_block_id) = type_sym.block_id()
                 {
                     caller_func.add_type_dep(type_block_id);
@@ -355,7 +352,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         if let Some(class_sym) = class.base.symbol {
             // Extended class (from extends_clause) - stored in type_of
             if let Some(extends_id) = class_sym.type_of()
-                && let Some(extends_sym) = unit.opt_get_symbol(extends_id)
+                && let Some(extends_sym) = unit.try_symbol(extends_id)
                 && let Some(extends_block_id) = extends_sym.block_id()
             {
                 // Set extends relation (don't add to type_dep since @extends already shows the edge)
@@ -372,7 +369,7 @@ impl<'tcx> ProjectGraph<'tcx> {
             // For Rust: nested_types = field types (traits from dyn Trait)
             if let Some(nested) = class_sym.nested_types() {
                 for type_id in nested {
-                    if let Some(type_sym) = unit.opt_get_symbol(type_id)
+                    if let Some(type_sym) = unit.try_symbol(type_id)
                         && let Some(type_block_id) = type_sym.block_id()
                     {
                         // Add as type_dep
@@ -404,7 +401,7 @@ impl<'tcx> ProjectGraph<'tcx> {
             // Decorators (from @decorator syntax in TypeScript/JavaScript)
             if let Some(decorators) = class_sym.decorators() {
                 for decorator_id in decorators {
-                    if let Some(decorator_sym) = unit.opt_get_symbol(decorator_id)
+                    if let Some(decorator_sym) = unit.try_symbol(decorator_id)
                         && let Some(decorator_block_id) = decorator_sym.block_id()
                     {
                         // Add as type_dep for decorators
@@ -448,13 +445,13 @@ impl<'tcx> ProjectGraph<'tcx> {
             if let Some(target_sym) = impl_block.target_sym
                 && let Some(nested_types) = target_sym.nested_types()
             {
-                let target_block = unit.bb(target_id);
+                let target_block = unit.block(target_id);
                 if let Some(base) = target_block.base() {
                     for type_id in nested_types {
                         // Follow type_of chain to get actual type symbol
-                        let type_sym = unit.opt_get_symbol(type_id).and_then(|sym| {
+                        let type_sym = unit.try_symbol(type_id).and_then(|sym| {
                             sym.type_of()
-                                .and_then(|id| unit.opt_get_symbol(id))
+                                .and_then(|id| unit.try_symbol(id))
                                 .or(Some(sym))
                         });
                         if let Some(type_sym) = type_sym
@@ -496,13 +493,13 @@ impl<'tcx> ProjectGraph<'tcx> {
         if let Some(trait_sym) = trait_block.base.symbol
             && let Some(scope_id) = trait_sym.opt_owned_scope()
         {
-            let scope = unit.get_scope(scope_id);
+            let scope = unit.scope(scope_id);
             // Look for type parameters in the trait's scope
             scope.for_each_symbol(|sym| {
                 if sym.kind() == crate::symbol::SymKind::TypeParameter {
                     // Get the bound trait from type_of
                     if let Some(bound_id) = sym.type_of()
-                        && let Some(bound_sym) = unit.opt_get_symbol(bound_id)
+                        && let Some(bound_sym) = unit.try_symbol(bound_id)
                         && let Some(bound_block_id) = bound_sym.block_id()
                     {
                         // Create edge: bound --UsedBy--> this_trait
@@ -539,7 +536,7 @@ impl<'tcx> ProjectGraph<'tcx> {
             && let Some(nested) = iface_sym.nested_types()
         {
             for base_type_id in nested {
-                if let Some(base_sym) = unit.opt_get_symbol(base_type_id)
+                if let Some(base_sym) = unit.try_symbol(base_type_id)
                     && let Some(base_block_id) = base_sym.block_id()
                 {
                     // Create edge: this_interface --Extends--> base_interface
@@ -557,13 +554,13 @@ impl<'tcx> ProjectGraph<'tcx> {
         if let Some(iface_sym) = iface_block.base.symbol
             && let Some(scope_id) = iface_sym.opt_owned_scope()
         {
-            let scope = unit.get_scope(scope_id);
+            let scope = unit.scope(scope_id);
             // Look for type parameters in the interface's scope
             scope.for_each_symbol(|sym| {
                 if sym.kind() == crate::symbol::SymKind::TypeParameter {
                     // Get the bound type from type_of
                     if let Some(bound_id) = sym.type_of()
-                        && let Some(bound_sym) = unit.opt_get_symbol(bound_id)
+                        && let Some(bound_sym) = unit.try_symbol(bound_id)
                         && let Some(bound_block_id) = bound_sym.block_id()
                     {
                         // Create edge: bound --UsedBy--> this_interface
@@ -743,7 +740,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         // Use symbol.type_of() chain (cross-file safe)
         if let Some(sym) = base.symbol() {
             if let Some(type_of_id) = sym.type_of()
-                && let Some(type_sym) = self.cc.opt_get_symbol(type_of_id)
+                && let Some(type_sym) = self.cc.try_symbol(type_of_id)
             {
                 return type_sym.block_id();
             }

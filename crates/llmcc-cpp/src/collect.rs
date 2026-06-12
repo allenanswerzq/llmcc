@@ -103,7 +103,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
     }
 
     fn alloc_scope(&mut self, unit: &CompileUnit<'tcx>, symbol: &'tcx Symbol) -> &'tcx Scope<'tcx> {
-        let scope = unit.cc.alloc_scope(symbol.owner());
+        let scope = unit.context().alloc_scope(symbol.owner());
         scope.set_symbol(symbol);
         self.scope_map.insert(scope.id(), scope);
         scope
@@ -187,7 +187,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         on_enter: impl FnOnce(&mut Self, &CompileUnit<'tcx>, &HirNode<'tcx>, &mut CollectorScopes<'tcx>),
     ) {
         if let Some(sn) = node.as_scope() {
-            let scope = unit.cc.alloc_scope(node.id());
+            let scope = unit.context().alloc_scope(node.id());
             sn.set_scope(scope);
             on_enter(self, unit, node, scopes);
 
@@ -514,7 +514,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
                 // Create a synthetic ident for the operator
                 let text = unit.hir_text(&child);
                 // Allocate the string in the arena to get a &'tcx str
-                let name: &'tcx str = unit.cc.arena().alloc_str(&text);
+                let name: &'tcx str = unit.context().arena().alloc_str(&text);
 
                 // Create a HirBase for the synthetic identifier
                 let base = HirBase {
@@ -528,7 +528,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
                     field_id: u16::MAX,
                     children: SmallVec::new(),
                 };
-                let ident = unit.cc.arena().alloc(HirIdent::new(base, name));
+                let ident = unit.context().arena().alloc(HirIdent::new(base, name));
                 return Some(ident);
             }
             // Recursively search in nested declarators
@@ -588,9 +588,9 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
             file_sym.set_is_global(true);
 
             // Allocate file ident to set the proper name on the root block
-            let arena_name = unit.cc.arena().alloc_str(file_name);
+            let arena_name = unit.context().arena().alloc_str(file_name);
             let ident = unit
-                .cc
+                .context()
                 .alloc_file_ident(next_hir_id(), arena_name, file_sym);
             ident.set_symbol(file_sym);
 
@@ -849,7 +849,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
             Some(s) => s,
             None => {
                 // Still need to set up scope even if symbol creation failed
-                let scope = unit.cc.alloc_scope(node.id());
+                let scope = unit.context().alloc_scope(node.id());
                 sn.set_scope(scope);
                 scopes.push_scope(scope);
                 self.visit_children(unit, node, scopes, scope, parent);
@@ -1349,12 +1349,12 @@ pub fn collect_symbols<'tcx>(
 ) -> &'tcx Scope<'tcx> {
     use llmcc_core::ir::HirId;
 
-    let cc = unit.cc;
+    let cc = unit.context();
     let arena = cc.arena();
-    let unit_globals_val = Scope::new(HirId(unit.index));
+    let unit_globals_val = Scope::new(HirId(unit.index()));
     let scope_id = unit_globals_val.id().0;
     let unit_globals = arena.alloc_with_id(scope_id, unit_globals_val);
-    let mut scopes = CollectorScopes::new(cc, unit.index, scope_stack, unit_globals);
+    let mut scopes = CollectorScopes::new(cc, unit.index(), scope_stack, unit_globals);
 
     let mut visitor = CollectorVisitor::new();
     visitor.visit_node(&unit, node, &mut scopes, unit_globals, None);

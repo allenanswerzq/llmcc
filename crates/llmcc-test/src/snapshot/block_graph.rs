@@ -70,7 +70,7 @@ impl Snapshot for BlockGraphSnapshot {
 }
 
 fn render_node(block_id: BlockId, unit: CompileUnit<'_>, depth: usize, buf: &mut String) {
-    let block = unit.bb(block_id);
+    let block = unit.block(block_id);
     let indent = "    ".repeat(depth);
     let kind = block.kind().to_string();
     let _ = write!(buf, "{}({}:{}", indent, kind, block_id.as_u32());

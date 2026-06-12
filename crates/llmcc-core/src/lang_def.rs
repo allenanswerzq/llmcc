@@ -409,7 +409,7 @@ pub trait LanguageDefinition {
     }
 
     fn initial_scopes<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> ScopeStack<'tcx> {
-        ScopeStack::new(cc.arena(), &cc.interner)
+        ScopeStack::new(cc.arena(), cc.interner())
     }
 
     fn hir_build_action(node: &dyn ParseNode, source: &[u8]) -> HirBuildAction {

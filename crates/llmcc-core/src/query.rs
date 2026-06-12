@@ -431,7 +431,7 @@ impl<'tcx> ProjectQuery<'tcx> {
         let unit = self.graph.cc.compile_unit(unit_index);
 
         // Get the BasicBlock to access its HIR node
-        let bb = match unit.opt_bb(node.block_id) {
+        let bb = match unit.try_block(node.block_id) {
             Some(b) => b,
             None => return (0, 0),
         };
@@ -467,7 +467,7 @@ impl<'tcx> ProjectQuery<'tcx> {
         let unit = self.graph.cc.compile_unit(unit_index);
 
         // Get the BasicBlock to access its HIR node
-        let bb = unit.opt_bb(node.block_id)?;
+        let bb = unit.try_block(node.block_id)?;
 
         // Get the base which contains the HirNode
         let base = bb.base()?;
@@ -502,7 +502,7 @@ impl<'tcx> ProjectQuery<'tcx> {
         let mut method_start_bytes = Vec::new();
 
         for child_id in &class_block.base.children {
-            let child_bb = unit.opt_bb(*child_id)?;
+            let child_bb = unit.try_block(*child_id)?;
             let child_kind = child_bb.kind();
 
             if matches!(child_kind, BlockKind::Method | BlockKind::Func)

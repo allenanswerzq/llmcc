@@ -31,9 +31,9 @@ impl Snapshot for BlockRelationsSnapshot {
         let mut entries = Vec::new();
 
         // Access related_map directly from CompileCtxt
-        let related_map = &ctx.cc.related_map;
+        let related_map = ctx.cc.block_relations();
 
-        for unit_index in 0..ctx.cc.files.len() {
+        for unit_index in 0..ctx.cc.unit_count() {
             // Get all blocks in this unit
             for (_name_opt, kind, block_id) in ctx.cc.find_blocks_in_unit(unit_index) {
                 let label = format!("u{}:{}", unit_index, block_id.as_u32());
@@ -41,7 +41,7 @@ impl Snapshot for BlockRelationsSnapshot {
                 // Get block name
                 let name = ctx
                     .cc
-                    .get_block_info(block_id)
+                    .block_info(block_id)
                     .and_then(|(_, n, _)| n)
                     .unwrap_or_default();
 

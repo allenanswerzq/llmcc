@@ -241,7 +241,7 @@ pub fn build_file_hir<'unit, L: Language>(unit: CompileUnit<'unit>) -> Result<Hi
     let path = unit.file_path().unwrap_or("<memory>").to_string();
     let bytes = unit.file().content();
 
-    let builder = FileHirBuilder::new(&unit.cc.arena, path, bytes);
+    let builder = FileHirBuilder::new(unit.context().arena(), path, bytes);
     let root = builder.build::<L>(root.as_ref())?;
     Ok(root.id())
 }
@@ -264,11 +264,11 @@ pub fn build_hir<'tcx, L: Language>(
 
     let parallel_start = Instant::now();
     let results: Vec<Result<BuiltFile>> = if options.is_sequential() {
-        (0..cc.files.len())
+        (0..cc.unit_count())
             .map(|index| build_unit_hir::<L>(cc, index))
             .collect()
     } else {
-        (0..cc.files.len())
+        (0..cc.unit_count())
             .into_par_iter()
             .map(|index| build_unit_hir::<L>(cc, index))
             .collect()

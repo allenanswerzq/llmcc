@@ -134,7 +134,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         {
             // The type annotation is on the parent required_parameter
             if let Some(parent_id) = node.parent()
-                && let Some(parent_node) = unit.opt_hir_node(parent_id)
+                && let Some(parent_node) = unit.try_hir_node(parent_id)
                 && parent_node.kind_id() == LangTypeScript::required_parameter
                 && let Some(type_node) =
                     parent_node.child_by_field(unit, LangTypeScript::field_type)
@@ -216,7 +216,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
         {
             scopes.push_scope(scope_id);
 
-            let file_scope = unit.get_scope(scope_id);
+            let file_scope = unit.scope(scope_id);
             self.visit_children(unit, node, scopes, file_scope, Some(file_sym));
             scopes.pop_until(depth);
             return;

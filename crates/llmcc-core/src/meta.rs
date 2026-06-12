@@ -33,7 +33,7 @@ impl ArchitectureLevel {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct SourceFileMetadata {
+pub struct UnitMeta {
     pub project_name: Option<String>,
     pub project_root: Option<PathBuf>,
     pub package_name: Option<String>,
@@ -45,7 +45,7 @@ pub struct SourceFileMetadata {
     pub crate_index: usize,
 }
 
-impl SourceFileMetadata {
+impl UnitMeta {
     fn for_file(project_name: &str, project_root: &Path, file: &Path) -> Self {
         Self {
             project_name: Some(project_name.to_owned()),
@@ -59,7 +59,7 @@ impl SourceFileMetadata {
         }
     }
 
-    fn with_package(mut self, package: &IndexedPackage) -> Self {
+    fn with_package(mut self, package: &PackageLayout) -> Self {
         if package.has_manifest() {
             self.package_name = Some(package.name.clone());
             self.package_root = Some(package.root.clone());
@@ -128,6 +128,20 @@ impl ModuleDirectoryTree {
     }
 }
 
+#[derive(Debug, Clone)]
+struct ProjectLayout {
+    name: String,
+    root: PathBuf,
+}
+
+impl ProjectLayout {
+    fn from_files(files: &[PathBuf]) -> Self {
+        let root = common_parent_dir(files);
+        let name = path_name(&root).unwrap_or_else(|| "project".to_string());
+        Self { name, root }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum PackageOrigin {
     Manifest,
@@ -135,7 +149,7 @@ enum PackageOrigin {
 }
 
 #[derive(Debug, Clone)]
-struct IndexedPackage {
+struct PackageLayout {
     name: String,
     root: PathBuf,
     modules: ModuleDirectoryTree,
@@ -143,7 +157,51 @@ struct IndexedPackage {
     origin: PackageOrigin,
 }
 
-impl IndexedPackage {
+impl PackageLayout {
+    fn discover(files: &[PathBuf], manifest_name: &'static str) -> Vec<Self> {
+        let mut roots = HashSet::new();
+        let mut packages = Vec::new();
+
+        for file in files {
+            for dir in file.ancestors().skip(1) {
+                if !dir.join(manifest_name).exists() {
+                    continue;
+                }
+                if roots.insert(dir.to_path_buf()) {
+                    packages.push(Self::manifest(
+                        dir.to_path_buf(),
+                        manifest_package_name(dir, manifest_name),
+                    ));
+                }
+                break;
+            }
+        }
+
+        packages.sort_by_key(|package| std::cmp::Reverse(package.root.components().count()));
+        packages
+    }
+
+    fn with_indexed_modules(
+        mut packages: Vec<Self>,
+        files: &[PathBuf],
+        ignored_dirs: &[&str],
+    ) -> Vec<Self> {
+        let roots: Vec<_> = packages
+            .iter()
+            .map(|package| package.root.clone())
+            .collect();
+
+        for package in &mut packages {
+            for file in files {
+                if package_owns_file(file, package, &roots) {
+                    package.add_file(file, ignored_dirs);
+                }
+            }
+        }
+
+        packages
+    }
+
     fn manifest(root: PathBuf, name: String) -> Self {
         Self::new(root, name, PackageOrigin::Manifest)
     }
@@ -213,14 +271,13 @@ impl<'a> ModulePathStep<'a> {
     }
 }
 
-pub struct SourceLayoutIndex {
+pub struct UnitMetaIndex {
     ignored_dirs: &'static [&'static str],
-    project_root: PathBuf,
-    project_name: String,
-    packages: Vec<IndexedPackage>,
+    project: ProjectLayout,
+    packages: Vec<PackageLayout>,
 }
 
-impl SourceLayoutIndex {
+impl UnitMetaIndex {
     pub fn from_language<L: crate::lang_def::Language>(files: &[PathBuf]) -> Self {
         Self::from_language_config(files, L::manifest_name(), L::container_dirs())
     }
@@ -230,29 +287,27 @@ impl SourceLayoutIndex {
         manifest_name: &'static str,
         ignored_dirs: &'static [&'static str],
     ) -> Self {
-        let project_root = common_parent_dir(files);
-        let project_name = path_name(&project_root).unwrap_or_else(|| "project".to_string());
-        let mut packages = discover_packages(files, manifest_name);
+        let project = ProjectLayout::from_files(files);
+        let mut packages = PackageLayout::discover(files, manifest_name);
 
         if packages.is_empty() {
-            packages.push(IndexedPackage::fallback(
-                project_root.clone(),
-                project_name.clone(),
+            packages.push(PackageLayout::fallback(
+                project.root.clone(),
+                project.name.clone(),
             ));
         }
 
-        index_files(&mut packages, files, ignored_dirs);
+        let packages = PackageLayout::with_indexed_modules(packages, files, ignored_dirs);
 
         Self {
             ignored_dirs,
-            project_root,
-            project_name,
+            project,
             packages,
         }
     }
 
-    pub fn metadata_for(&self, file: &Path) -> SourceFileMetadata {
-        let meta = SourceFileMetadata::for_file(&self.project_name, &self.project_root, file);
+    pub fn metadata_for(&self, file: &Path) -> UnitMeta {
+        let meta = UnitMeta::for_file(&self.project.name, &self.project.root, file);
         let Some(package) = self.package_for(file) else {
             return meta;
         };
@@ -275,7 +330,7 @@ impl SourceLayoutIndex {
         }
     }
 
-    fn package_for(&self, file: &Path) -> Option<&IndexedPackage> {
+    fn package_for(&self, file: &Path) -> Option<&PackageLayout> {
         self.packages
             .iter()
             .filter(|package| file.starts_with(&package.root))
@@ -283,45 +338,7 @@ impl SourceLayoutIndex {
     }
 }
 
-fn discover_packages(files: &[PathBuf], manifest_name: &'static str) -> Vec<IndexedPackage> {
-    let mut roots = HashSet::new();
-    let mut packages = Vec::new();
-
-    for file in files {
-        for dir in file.ancestors().skip(1) {
-            if !dir.join(manifest_name).exists() {
-                continue;
-            }
-            if roots.insert(dir.to_path_buf()) {
-                packages.push(IndexedPackage::manifest(
-                    dir.to_path_buf(),
-                    manifest_package_name(dir, manifest_name),
-                ));
-            }
-            break;
-        }
-    }
-
-    packages.sort_by_key(|package| std::cmp::Reverse(package.root.components().count()));
-    packages
-}
-
-fn index_files(packages: &mut [IndexedPackage], files: &[PathBuf], ignored_dirs: &[&str]) {
-    let roots: Vec<_> = packages
-        .iter()
-        .map(|package| package.root.clone())
-        .collect();
-
-    for package in packages {
-        for file in files {
-            if package_owns_file(file, package, &roots) {
-                package.add_file(file, ignored_dirs);
-            }
-        }
-    }
-}
-
-fn package_owns_file(file: &Path, package: &IndexedPackage, package_roots: &[PathBuf]) -> bool {
+fn package_owns_file(file: &Path, package: &PackageLayout, package_roots: &[PathBuf]) -> bool {
     if !file.starts_with(&package.root) {
         return false;
     }
@@ -333,7 +350,7 @@ fn package_owns_file(file: &Path, package: &IndexedPackage, package_roots: &[Pat
 
 fn choose_module<'a>(
     components: &[&'a str],
-    package: &'a IndexedPackage,
+    package: &'a PackageLayout,
 ) -> Option<ModuleSelection<'a>> {
     let steps = module_steps(components, &package.modules);
     let min_sibling_files = (package.file_count as f64 * MIN_MODULE_SIBLING_RATIO)

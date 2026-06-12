@@ -121,7 +121,7 @@ fn assign_type_to_tuple_pattern<'tcx>(
 
         if let Some(ref types) = nested_types {
             if let Some(type_id) = types.get(element_index) {
-                if let Some(element_type) = unit.opt_get_symbol(*type_id) {
+                if let Some(element_type) = unit.try_symbol(*type_id) {
                     bind_pattern_types(unit, scopes, &child, element_type);
                 }
             }
@@ -166,7 +166,7 @@ fn assign_type_to_struct_pattern<'tcx>(
                     ) {
                         let field_type = field_sym
                             .type_of()
-                            .and_then(|type_id| unit.opt_get_symbol(type_id));
+                            .and_then(|type_id| unit.try_symbol(type_id));
 
                         if let Some(inner_pattern) =
                             child.child_by_field(unit, LangRust::field_pattern)
@@ -242,7 +242,7 @@ fn assign_type_to_tuple_struct_pattern<'tcx>(
 
         if let Some(ref types) = nested_types {
             if let Some(type_id) = types.get(element_index) {
-                if let Some(element_type) = unit.opt_get_symbol(*type_id) {
+                if let Some(element_type) = unit.try_symbol(*type_id) {
                     bind_pattern_types(unit, scopes, &child, element_type);
                 }
             }
@@ -277,10 +277,7 @@ fn assign_type_to_slice_pattern<'tcx>(
 ) {
     // Extract the element type from the slice/array type
     let element_type = match pattern_type.nested_types() {
-        Some(types) => match types
-            .first()
-            .and_then(|type_id| unit.opt_get_symbol(*type_id))
-        {
+        Some(types) => match types.first().and_then(|type_id| unit.try_symbol(*type_id)) {
             Some(ty) => ty,
             None => return,
         },
@@ -307,15 +304,10 @@ fn assign_type_to_reference_pattern<'tcx>(
 ) {
     // For reference patterns, try to get the referenced type
     let inner_type = match pattern_type.nested_types() {
-        Some(types) => {
-            match types
-                .first()
-                .and_then(|type_id| unit.opt_get_symbol(*type_id))
-            {
-                Some(ty) => ty,
-                None => pattern_type,
-            }
-        }
+        Some(types) => match types.first().and_then(|type_id| unit.try_symbol(*type_id)) {
+            Some(ty) => ty,
+            None => pattern_type,
+        },
         None => pattern_type,
     };
 

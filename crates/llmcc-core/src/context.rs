@@ -4,19 +4,24 @@ use parking_lot::RwLock;
 use rayon::prelude::*;
 use smallvec::SmallVec;
 use std::cmp::Ordering as CmpOrdering;
-use std::fs;
-use std::io::Write;
-use std::ops::Deref;
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 use std::time::Instant;
 use tree_sitter::Node;
-use uuid::Uuid;
 
 use crate::block::{BasicBlock, BlockArena, BlockId, reset_block_id_counter};
 use crate::block_rel::{BlockIndexMaps, BlockRelationMap};
 use crate::file::File;
-use crate::meta::{SourceFileMetadata, SourceLayoutIndex};
+use crate::id::reset_hir_id_counter;
+use crate::interner::{InternPool, InternedStr};
+use crate::ir::{Arena, HirBase, HirId, HirIdent, HirKind, HirNode};
+use crate::lang_def::{Language, ParseTree};
+use crate::meta::{UnitMeta, UnitMetaIndex};
+use crate::scope::Scope;
+use crate::symbol::{ScopeId, SymId, Symbol, reset_scope_id_counter, reset_symbol_id_counter};
+use crate::{Error, ErrorKind, Result};
 
-/// Controls how files are ordered after parallel reading.
+/// Controls how source files are ordered after parallel reading.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum FileOrder {
     /// Preserve the original input order (deterministic, good for tests).
@@ -25,114 +30,46 @@ pub enum FileOrder {
     /// Sort by file size descending (better parallel load balancing for large projects).
     BySizeDescending,
 }
-use crate::id::reset_hir_id_counter;
-use crate::interner::{InternPool, InternedStr};
-use crate::ir::{Arena, HirBase, HirId, HirIdent, HirKind, HirNode};
-use crate::lang_def::{Language, ParseTree};
-use crate::scope::Scope;
-use crate::symbol::{ScopeId, SymId, Symbol, reset_scope_id_counter, reset_symbol_id_counter};
-use crate::{Error, ErrorKind, Result};
 
-/// Thread-safe wrapper for raw Symbol pointer.
-/// SAFETY: The Symbol is allocated in a bump arena that outlives all usage,
-/// and Symbols are immutable after creation (interior mutability via atomics).
-#[derive(Clone, Copy)]
-pub struct SymbolPtr(*const Symbol);
-
-// SAFETY: Symbol is allocated in a thread-local bump arena, but the backing memory
-// is stable for the lifetime of the arena. Symbol fields use AtomicCell/AtomicUsize
-// for interior mutability, making them safe to access from multiple threads.
-unsafe impl Send for SymbolPtr {}
-unsafe impl Sync for SymbolPtr {}
-
-impl SymbolPtr {
-    pub fn new(ptr: *const Symbol) -> Self {
-        Self(ptr)
-    }
-
-    pub fn as_ptr(&self) -> *const Symbol {
-        self.0
-    }
-}
-
-/// Thread-safe wrapper for raw Scope pointer.
-#[derive(Clone, Copy)]
-pub struct ScopePtr(*const Scope<'static>);
-
-// SAFETY: Scope is allocated in a thread-local bump arena, but the backing memory
-// is stable for the lifetime of the arena. Scope fields use RwLock/DashMap
-// for interior mutability, making them safe to access from multiple threads.
-unsafe impl Send for ScopePtr {}
-unsafe impl Sync for ScopePtr {}
-
-impl ScopePtr {
-    pub fn new<'a>(ptr: *const Scope<'a>) -> Self {
-        // Erase lifetime - the pointer is valid for the arena's lifetime
-        // SAFETY: We're casting to erase the lifetime, which is intentional
-        Self(ptr.cast())
-    }
-
-    /// Get the raw pointer with the original lifetime
-    pub fn as_ptr<'a>(&self) -> *const Scope<'a> {
-        // SAFETY: Restoring the original lifetime
-        self.0.cast()
-    }
-}
-
-/// Thread-safe wrapper for raw HirNode pointer.
-#[derive(Clone, Copy)]
-pub struct HirNodePtr(*const HirNode<'static>);
-
-unsafe impl Send for HirNodePtr {}
-unsafe impl Sync for HirNodePtr {}
-
-impl HirNodePtr {
-    pub fn new<'a>(ptr: *const HirNode<'a>) -> Self {
-        // SAFETY: We're casting to erase the lifetime, which is intentional
-        Self(ptr.cast())
-    }
-
-    pub fn as_ptr<'a>(&self) -> *const HirNode<'a> {
-        // SAFETY: Restoring the original lifetime
-        self.0.cast()
-    }
-}
-
+/// File-scoped view into a [`CompileCtxt`].
+///
+/// A compile unit is cheap to copy and carries the file index needed by language
+/// collectors, binders, graph builders, and renderers.
 #[derive(Debug, Copy, Clone)]
 pub struct CompileUnit<'tcx> {
-    pub cc: &'tcx CompileCtxt<'tcx>,
-    pub index: usize,
+    cc: &'tcx CompileCtxt<'tcx>,
+    index: usize,
 }
 
 impl<'tcx> CompileUnit<'tcx> {
+    /// Return the parent compilation context.
+    pub fn context(&self) -> &'tcx CompileCtxt<'tcx> {
+        self.cc
+    }
+
+    /// Return this unit's zero-based file index in the context.
+    pub fn index(&self) -> usize {
+        self.index
+    }
+
+    /// Return this unit's source file.
     pub fn file(&self) -> &'tcx File {
         &self.cc.files[self.index]
     }
 
-    /// Get the generic parse tree for this compilation unit if it is available.
+    /// Return this unit's parse tree, if it has been loaded.
     pub fn try_parse_tree(&self) -> Option<&dyn ParseTree> {
-        self.cc
-            .parse_trees
-            .get(self.index)
-            .map(|tree| tree.as_ref())
+        self.cc.try_parse_tree(self.index)
     }
 
-    /// Get the generic parse tree for this compilation unit.
+    /// Return this unit's parse tree or an invariant error when it is missing.
     pub fn parse_tree(&self) -> Result<&dyn ParseTree> {
-        self.try_parse_tree().ok_or_else(|| {
-            Error::new(
-                ErrorKind::InvariantViolation,
-                "parse tree is not available for compilation unit",
-            )
-            .with_operation("parse_tree")
-            .with_context("unit_index", self.index.to_string())
-            .with_context("path", self.file_path().unwrap_or("<memory>"))
-        })
+        self.cc.parse_tree(self.index)
     }
 
-    /// Access the shared string interner.
+    /// Return the shared string interner.
     pub fn interner(&self) -> &InternPool {
-        &self.cc.interner
+        self.cc.interner()
     }
 
     /// Intern a string and return its symbol.
@@ -140,179 +77,140 @@ impl<'tcx> CompileUnit<'tcx> {
     where
         S: AsRef<str>,
     {
-        self.cc.interner.intern(value)
+        self.cc.interner().intern(value)
     }
 
     /// Resolve an interned symbol into an owned string.
     pub fn resolve_interned_owned(&self, symbol: InternedStr) -> Option<String> {
-        self.cc.interner.resolve_owned(symbol)
+        self.cc.interner().resolve_owned(symbol)
     }
 
-    /// Resolve an interned symbol to string reference with "<unnamed>" as default.
-    /// Useful for display purposes where you need a string that lives for 'static or is owned.
+    /// Resolve an interned symbol to an owned string, using `default` when missing.
     pub fn resolve_name_or(&self, symbol: InternedStr, default: &str) -> String {
         self.resolve_interned_owned(symbol)
             .unwrap_or_else(|| default.to_string())
     }
 
-    /// Resolve an interned symbol to string, using "<unnamed>" as default if not found.
+    /// Resolve an interned symbol to an owned string, using `<unnamed>` when missing.
     pub fn resolve_name(&self, symbol: InternedStr) -> String {
         self.resolve_name_or(symbol, "<unnamed>")
     }
 
+    /// Return this unit's HIR root id, if HIR has been built.
     pub fn try_file_root_id(&self) -> Option<HirId> {
         self.cc.try_file_root_id(self.index)
     }
 
+    /// Return this unit's HIR root id or an invariant error when it is missing.
     pub fn file_root_id(&self) -> Result<HirId> {
-        self.try_file_root_id().ok_or_else(|| {
-            Error::new(
-                ErrorKind::InvariantViolation,
-                "HIR root is not available for compilation unit",
-            )
-            .with_operation("file_root_id")
-            .with_context("unit_index", self.index.to_string())
-            .with_context("path", self.file_path().unwrap_or("<memory>"))
-        })
+        self.cc.file_root_id(self.index)
     }
 
+    /// Return this unit's file path, if the unit is file-backed.
     pub fn file_path(&self) -> Option<&str> {
         self.cc.file_path(self.index)
     }
 
-    /// Get the module metadata for this compilation unit.
-    /// Contains package/module/file names and roots.
-    pub fn unit_meta(&self) -> &SourceFileMetadata {
-        &self.cc.unit_metas[self.index]
+    /// Return this unit's project/package/module/file metadata.
+    pub fn unit_meta(&self) -> &UnitMeta {
+        self.cc
+            .unit_meta(self.index)
+            .expect("CompileUnit index not mapped to UnitMeta")
     }
 
-    /// Reserve a new block ID
+    /// Reserve a new block id.
     pub fn reserve_block_id(&self) -> BlockId {
         BlockId::allocate()
     }
 
-    /// Get text from the file between start and end byte positions
-    pub fn get_text(&self, start: usize, end: usize) -> String {
+    /// Return source text between byte offsets.
+    pub fn source_text(&self, start: usize, end: usize) -> String {
         self.file().get_text(start, end)
     }
 
     /// Convenience: extract text for a Tree-sitter node.
     pub fn ts_text(&self, node: Node<'tcx>) -> String {
-        self.get_text(node.start_byte(), node.end_byte())
+        self.source_text(node.start_byte(), node.end_byte())
     }
 
     /// Convenience: extract text for a HIR node.
     pub fn hir_text(&self, node: &HirNode<'tcx>) -> String {
-        self.get_text(node.start_byte(), node.end_byte())
+        self.source_text(node.start_byte(), node.end_byte())
     }
 
-    /// Get a HIR node by ID, returning None if not found
-    pub fn opt_hir_node(self, id: HirId) -> Option<HirNode<'tcx>> {
-        self.cc.get_hir_node(id)
+    /// Return a HIR node by id, if it exists.
+    pub fn try_hir_node(self, id: HirId) -> Option<HirNode<'tcx>> {
+        self.cc.try_hir_node(id)
     }
 
-    /// Get a HIR node by ID, panicking if not found
+    /// Return a HIR node by id, panicking when it is missing.
     pub fn hir_node(self, id: HirId) -> HirNode<'tcx> {
-        self.opt_hir_node(id)
+        self.try_hir_node(id)
             .unwrap_or_else(|| panic!("hir node not found {id}"))
     }
 
-    /// Get a HIR node by ID, returning None if not found
-    pub fn opt_bb(self, id: BlockId) -> Option<BasicBlock<'tcx>> {
-        // Use DashMap-based lookup by ID
-        self.cc.block_arena.get_bb(id.0 as usize).cloned()
+    /// Return a basic block by id, if it exists.
+    pub fn try_block(self, id: BlockId) -> Option<BasicBlock<'tcx>> {
+        self.cc.try_block(id)
     }
 
-    /// Get a HIR node by ID, panicking if not found
-    pub fn bb(self, id: BlockId) -> BasicBlock<'tcx> {
-        self.opt_bb(id)
+    /// Return a basic block by id, panicking when it is missing.
+    pub fn block(self, id: BlockId) -> BasicBlock<'tcx> {
+        self.try_block(id)
             .unwrap_or_else(|| panic!("basic block not found: {id}"))
     }
 
-    /// Get the Root block for this compile unit (file).
-    /// Returns the first BlockKind::Root block belonging to this unit.
+    /// Return this unit's root block, if graph building has produced one.
     pub fn root_block(self) -> Option<BasicBlock<'tcx>> {
         let root_blocks = self
             .cc
             .find_blocks_by_kind_in_unit(crate::block::BlockKind::Root, self.index);
-        root_blocks.first().and_then(|&id| self.opt_bb(id))
+        root_blocks.first().and_then(|&id| self.try_block(id))
     }
 
-    /// Get the parent of a HIR node
+    /// Return a HIR node's parent id, if the node exists and has a parent.
     pub fn parent_node(self, id: HirId) -> Option<HirId> {
-        self.opt_hir_node(id).and_then(|node| node.parent())
+        self.try_hir_node(id).and_then(|node| node.parent())
     }
 
-    /// Get an existing scope or None if it doesn't exist
-    pub fn opt_get_scope(self, scope_id: ScopeId) -> Option<&'tcx Scope<'tcx>> {
-        self.cc.opt_get_scope(scope_id)
+    /// Return a scope by id, if it exists.
+    pub fn try_scope(self, scope_id: ScopeId) -> Option<&'tcx Scope<'tcx>> {
+        self.cc.try_scope(scope_id)
     }
 
-    /// Get a symbol by ID, delegating to CompileCtxt
-    pub fn opt_get_symbol(self, owner: SymId) -> Option<&'tcx Symbol> {
-        self.cc.opt_get_symbol(owner)
+    /// Return a symbol by id, if it exists.
+    pub fn try_symbol(self, owner: SymId) -> Option<&'tcx Symbol> {
+        self.cc.try_symbol(owner)
     }
 
-    /// Get an existing scope or panics if it doesn't exist
-    pub fn get_scope(self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
-        self.opt_get_scope(scope_id)
+    /// Return a scope by id, panicking when it is missing.
+    pub fn scope(self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
+        self.try_scope(scope_id)
             .expect("ScopeId not mapped to Scope in CompileCtxt")
     }
 
+    /// Insert a block and update the block indexes for this unit.
     pub fn insert_block(&self, id: BlockId, block: BasicBlock<'tcx>, _parent: BlockId) {
-        // Get block info before allocation
         let block_kind = block.kind();
         let block_name = block
             .base()
             .and_then(|base| base.opt_get_name())
             .map(|s| s.to_string());
-
-        // Allocate block into the Arena's DashMap using BlockId as key
         self.cc.block_arena.alloc_with_id(id.0 as usize, block);
-
-        // Register the block in the index maps (now concurrent-safe)
         self.cc
             .block_indexes
             .insert_block(id, block_name, block_kind, self.index);
     }
 }
 
-impl<'tcx> Deref for CompileUnit<'tcx> {
-    type Target = CompileCtxt<'tcx>;
-
-    #[inline(always)]
-    fn deref(&self) -> &Self::Target {
-        self.cc
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct ParentedNode<'tcx> {
-    pub node: HirNode<'tcx>,
-}
-
-impl<'tcx> ParentedNode<'tcx> {
-    pub fn new(node: HirNode<'tcx>) -> Self {
-        Self { node }
-    }
-
-    /// Get a reference to the wrapped node
-    pub fn node(&self) -> &HirNode<'tcx> {
-        &self.node
-    }
-
-    /// Get the parent ID
-    pub fn parent(&self) -> Option<HirId> {
-        self.node.parent()
-    }
-}
-
+/// Parse timing for a single source file.
 #[derive(Debug, Clone, Default)]
 pub struct FileParseMetric {
     pub path: String,
     pub seconds: f64,
 }
 
+/// Metrics collected while loading and parsing a compilation context.
 #[derive(Debug, Clone, Default)]
 pub struct BuildMetrics {
     pub file_read_seconds: f64,
@@ -323,26 +221,31 @@ pub struct BuildMetrics {
     pub parse_slowest: Vec<FileParseMetric>,
 }
 
+struct LoadedFiles {
+    files: Vec<File>,
+    read_seconds: f64,
+}
+
 #[derive(Default)]
 pub struct CompileCtxt<'tcx> {
-    pub arena: Arena<'tcx>,
-    pub interner: InternPool,
-    pub files: Vec<File>,
+    pub(crate) arena: Arena<'tcx>,
+    pub(crate) interner: InternPool,
+    pub(crate) files: Vec<File>,
     /// Per-file metadata: package/module/file names and roots.
-    pub unit_metas: Vec<SourceFileMetadata>,
+    pub(crate) unit_metas: Vec<UnitMeta>,
     /// Generic parse trees from language-specific parsers
-    pub parse_trees: Vec<Box<dyn ParseTree>>,
-    pub hir_root_ids: RwLock<Vec<Option<HirId>>>,
+    pub(crate) parse_trees: Vec<Box<dyn ParseTree>>,
+    pub(crate) hir_root_ids: RwLock<Vec<Option<HirId>>>,
 
-    pub block_arena: BlockArena<'tcx>,
-    pub related_map: BlockRelationMap,
+    pub(crate) block_arena: BlockArena<'tcx>,
+    pub(crate) related_map: BlockRelationMap,
 
     /// Index maps for efficient block lookups by name, kind, unit, and id
     /// Uses DashMap internally for concurrent access
-    pub block_indexes: BlockIndexMaps,
+    pub(crate) block_indexes: BlockIndexMaps,
 
     /// Metrics collected while building the compilation context
-    pub build_metrics: BuildMetrics,
+    pub(crate) build_metrics: BuildMetrics,
 }
 
 impl<'tcx> std::fmt::Debug for CompileCtxt<'tcx> {
@@ -356,196 +259,136 @@ impl<'tcx> std::fmt::Debug for CompileCtxt<'tcx> {
 }
 
 impl<'tcx> CompileCtxt<'tcx> {
-    /// Create a new CompileCtxt from source code
-    pub fn from_sources<L: Language>(sources: &[Vec<u8>]) -> Result<Self> {
-        // Write sources to a unique temporary directory using UUID
-        let temp_dir = std::env::temp_dir()
-            .join("llmcc")
-            .join(Uuid::new_v4().to_string());
-        fs::create_dir_all(&temp_dir)?;
-
-        let extension = L::extensions().first().copied().unwrap_or("txt");
-
-        let paths: Result<Vec<String>> = sources
-            .iter()
-            .enumerate()
-            .map(|(index, src)| {
-                let path = temp_dir.join(format!("source_{index}.{extension}"));
-                let mut file = fs::File::create(&path)?;
-                file.write_all(src)?;
-                Ok(path.to_string_lossy().to_string())
-            })
-            .collect();
-
-        Self::from_files::<L>(&paths?)
-    }
-
-    /// Create a new CompileCtxt from files with default (original) ordering.
+    /// Build a context from source file paths, preserving input order.
     pub fn from_files<L: Language>(paths: &[String]) -> Result<Self> {
         Self::from_files_with_order::<L>(paths, FileOrder::Original)
     }
 
-    /// Create a new CompileCtxt from files with specified ordering.
+    /// Build a context from source file paths with a selected read order.
     pub fn from_files_with_order<L: Language>(paths: &[String], order: FileOrder) -> Result<Self> {
+        Self::reset_context_counters();
+        let LoadedFiles {
+            files,
+            read_seconds,
+        } = Self::read_files(paths, order)?;
+
+        let (parse_trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files)?;
+        metrics.file_read_seconds = read_seconds;
+
+        let unit_metas = Self::build_unit_metas::<L>(&files);
+        Ok(Self::from_parts(files, unit_metas, parse_trees, metrics))
+    }
+
+    fn reset_context_counters() {
         reset_hir_id_counter();
         reset_symbol_id_counter();
         reset_scope_id_counter();
         reset_block_id_counter();
+    }
 
+    fn read_files(paths: &[String], order: FileOrder) -> Result<LoadedFiles> {
         let read_start = Instant::now();
-
-        let mut files_with_index: Vec<(usize, File)> = paths
+        let mut indexed_files: Vec<(usize, File)> = paths
             .par_iter()
             .enumerate()
             .map(|(index, path)| -> Result<(usize, File)> {
-                let file = File::new_file(path.clone())?;
-                Ok((index, file))
+                Ok((index, File::new_file(path.clone())?))
             })
             .collect::<Result<Vec<_>>>()?;
 
-        // Sort files based on ordering strategy
+        Self::order_loaded_files(&mut indexed_files, order);
+        let files = indexed_files.into_iter().map(|(_, file)| file).collect();
+
+        Ok(LoadedFiles {
+            files,
+            read_seconds: read_start.elapsed().as_secs_f64(),
+        })
+    }
+
+    fn order_loaded_files(indexed_files: &mut [(usize, File)], order: FileOrder) {
         match order {
-            FileOrder::Original => files_with_index.sort_by_key(|(index, _)| *index),
+            FileOrder::Original => indexed_files.sort_by_key(|(index, _)| *index),
             FileOrder::BySizeDescending => {
-                files_with_index.sort_by_key(|(_, file)| std::cmp::Reverse(file.content().len()))
+                indexed_files.sort_by_key(|(_, file)| std::cmp::Reverse(file.content().len()))
             }
         }
-        let files: Vec<File> = files_with_index.into_iter().map(|(_, file)| file).collect();
+    }
 
-        let file_read_seconds = read_start.elapsed().as_secs_f64();
+    fn from_parts(
+        files: Vec<File>,
+        unit_metas: Vec<UnitMeta>,
+        parse_trees: Vec<Box<dyn ParseTree>>,
+        build_metrics: BuildMetrics,
+    ) -> Self {
+        let unit_count = files.len();
+        debug_assert_eq!(unit_metas.len(), unit_count);
+        debug_assert_eq!(parse_trees.len(), unit_count);
 
-        let (parse_trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files)?;
-        metrics.file_read_seconds = file_read_seconds;
-
-        // Build unit metadata using SourceLayoutIndex
-        let unit_metas = Self::build_unit_metas::<L>(&files);
-        let count = unit_metas.len();
-
-        Ok(Self {
+        Self {
             arena: Arena::default(),
             interner: InternPool::default(),
             files,
             unit_metas,
             parse_trees,
-            hir_root_ids: RwLock::new(vec![None; count]),
+            hir_root_ids: RwLock::new(vec![None; unit_count]),
             block_arena: BlockArena::default(),
             related_map: BlockRelationMap::default(),
             block_indexes: BlockIndexMaps::new(),
-            build_metrics: metrics,
-        })
-    }
-
-    /// Create a new CompileCtxt from files with separate physical and logical paths.
-    /// Physical paths are used to read files from disk; logical paths are stored for display.
-    /// Each element is (physical_path, logical_path).
-    pub fn from_files_with_logical<L: Language>(paths: &[(String, String)]) -> Result<Self> {
-        Self::from_files_with_logical_and_order::<L>(paths, FileOrder::Original)
-    }
-
-    /// Create a new CompileCtxt from files with separate physical and logical paths and specified ordering.
-    pub fn from_files_with_logical_and_order<L: Language>(
-        paths: &[(String, String)],
-        order: FileOrder,
-    ) -> Result<Self> {
-        reset_hir_id_counter();
-        reset_symbol_id_counter();
-        reset_scope_id_counter();
-        reset_block_id_counter();
-
-        let read_start = Instant::now();
-
-        let mut files_with_index: Vec<(usize, File)> = paths
-            .par_iter()
-            .enumerate()
-            .map(|(index, (physical, logical))| -> Result<(usize, File)> {
-                let file = File::new_file_with_logical(physical, logical.clone())?;
-                Ok((index, file))
-            })
-            .collect::<Result<Vec<_>>>()?;
-
-        // Sort files based on ordering strategy
-        match order {
-            FileOrder::Original => files_with_index.sort_by_key(|(index, _)| *index),
-            FileOrder::BySizeDescending => {
-                files_with_index.sort_by_key(|(_, file)| std::cmp::Reverse(file.content().len()))
-            }
+            build_metrics,
         }
-        let files: Vec<File> = files_with_index.into_iter().map(|(_, file)| file).collect();
-
-        let file_read_seconds = read_start.elapsed().as_secs_f64();
-
-        let (parse_trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files)?;
-        metrics.file_read_seconds = file_read_seconds;
-
-        // Build unit metadata using SourceLayoutIndex
-        let unit_metas = Self::build_unit_metas::<L>(&files);
-        let count = unit_metas.len();
-
-        Ok(Self {
-            arena: Arena::default(),
-            interner: InternPool::default(),
-            files,
-            unit_metas,
-            parse_trees,
-            hir_root_ids: RwLock::new(vec![None; count]),
-            block_arena: BlockArena::default(),
-            related_map: BlockRelationMap::default(),
-            block_indexes: BlockIndexMaps::new(),
-            build_metrics: metrics,
-        })
     }
 
-    /// Build unit metadata for all files using SourceLayoutIndex.
-    fn build_unit_metas<L: Language>(files: &[File]) -> Vec<SourceFileMetadata> {
+    /// Build unit metadata for all files using UnitMetaIndex.
+    fn build_unit_metas<L: Language>(files: &[File]) -> Vec<UnitMeta> {
         if files.is_empty() {
             return Vec::new();
         }
 
-        // Collect file paths
-        let file_paths: Vec<std::path::PathBuf> = files
-            .iter()
-            .filter_map(|f| f.path().map(std::path::PathBuf::from))
-            .collect();
-
+        let file_paths = Self::metadata_paths(files);
         if file_paths.is_empty() {
-            return vec![SourceFileMetadata::default(); files.len()];
+            return vec![UnitMeta::default(); files.len()];
         }
 
-        // Build the detector (computes project root internally)
-        let meta_index = SourceLayoutIndex::from_language::<L>(&file_paths);
-
-        // Generate metadata for each file
-        let mut metas: Vec<SourceFileMetadata> = files
+        let meta_index = UnitMetaIndex::from_language::<L>(&file_paths);
+        let mut metas: Vec<UnitMeta> = files
             .iter()
-            .map(|f| {
-                if let Some(path) = f.path() {
-                    meta_index.metadata_for(std::path::Path::new(path))
-                } else {
-                    SourceFileMetadata::default()
-                }
-            })
+            .map(|file| Self::metadata_for_file(&meta_index, file))
             .collect();
 
-        // Assign unique crate_index to each distinct package_root
-        // This enables O(1) same-crate checks during symbol lookup
-        let mut package_root_to_crate_index: std::collections::HashMap<std::path::PathBuf, usize> =
-            std::collections::HashMap::new();
+        Self::assign_crate_indexes(&mut metas);
+        metas
+    }
+
+    fn metadata_paths(files: &[File]) -> Vec<PathBuf> {
+        files
+            .iter()
+            .filter_map(|file| file.path().map(PathBuf::from))
+            .collect()
+    }
+
+    fn metadata_for_file(meta_index: &UnitMetaIndex, file: &File) -> UnitMeta {
+        file.path()
+            .map(|path| meta_index.metadata_for(Path::new(path)))
+            .unwrap_or_default()
+    }
+
+    fn assign_crate_indexes(metas: &mut [UnitMeta]) {
+        let mut package_crates: HashMap<PathBuf, usize> = HashMap::new();
         let mut next_crate_index = 0usize;
 
-        for meta in &mut metas {
+        for meta in metas {
             if let Some(ref package_root) = meta.package_root {
-                let crate_idx = *package_root_to_crate_index
-                    .entry(package_root.clone())
-                    .or_insert_with(|| {
-                        let idx = next_crate_index;
-                        next_crate_index += 1;
-                        idx
-                    });
-                meta.crate_index = crate_idx;
+                let crate_index =
+                    *package_crates
+                        .entry(package_root.clone())
+                        .or_insert_with(|| {
+                            let crate_index = next_crate_index;
+                            next_crate_index += 1;
+                            crate_index
+                        });
+                meta.crate_index = crate_index;
             }
         }
-
-        metas
     }
 
     fn parse_files_with_metrics<L: Language>(
@@ -620,66 +463,128 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// (whose HIR id often defaults to 0) do not reuse the same `Scope` instance.
     pub const GLOBAL_SCOPE_OWNER: HirId = HirId(usize::MAX);
 
-    /// Create a context that references this CompileCtxt for a specific file index
-    pub fn compile_unit(&'tcx self, index: usize) -> CompileUnit<'tcx> {
-        CompileUnit { cc: self, index }
+    /// Return all loaded source files.
+    pub fn files(&self) -> &[File] {
+        &self.files
     }
 
+    /// Return the source file for `index`, if it exists.
+    pub fn file(&self, index: usize) -> Option<&File> {
+        self.files.get(index)
+    }
+
+    /// Return the shared arena used for HIR, symbol, and scope allocation.
+    pub fn arena(&'tcx self) -> &'tcx Arena<'tcx> {
+        &self.arena
+    }
+
+    /// Return the shared string interner.
+    pub fn interner(&self) -> &InternPool {
+        &self.interner
+    }
+
+    /// Return parse/build metrics collected during context construction.
+    pub fn build_metrics(&self) -> &BuildMetrics {
+        &self.build_metrics
+    }
+
+    /// Return read-only metadata for all units.
+    pub fn unit_metas(&self) -> &[UnitMeta] {
+        &self.unit_metas
+    }
+
+    /// Return metadata for a single unit.
+    pub fn unit_meta(&self, index: usize) -> Option<&UnitMeta> {
+        self.unit_metas.get(index)
+    }
+
+    /// Return the block-relation map built for this context.
+    pub fn block_relations(&self) -> &BlockRelationMap {
+        &self.related_map
+    }
+
+    /// Return file paths for all file-backed units.
+    pub fn file_paths(&self) -> Vec<String> {
+        self.files
+            .iter()
+            .filter_map(|file| file.path().map(ToOwned::to_owned))
+            .collect()
+    }
+
+    /// Return the number of compilation units in this context.
+    pub fn unit_count(&self) -> usize {
+        self.files.len()
+    }
+
+    /// Return a compile unit for `index`, if it exists.
+    pub fn try_compile_unit(&'tcx self, index: usize) -> Option<CompileUnit<'tcx>> {
+        (index < self.unit_count()).then_some(CompileUnit { cc: self, index })
+    }
+
+    /// Return a compile unit for `index`, panicking when the index is invalid.
+    pub fn compile_unit(&'tcx self, index: usize) -> CompileUnit<'tcx> {
+        if let Some(unit) = self.try_compile_unit(index) {
+            return unit;
+        }
+
+        panic!(
+            "compile unit index {index} out of bounds for {} files",
+            self.unit_count()
+        );
+    }
+
+    /// Allocate a global scope for a single unit owner.
     pub fn create_unit_globals(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
-        // Create scope (it generates its own ID) then alloc with that ID
         let scope = Scope::new_with(owner, None, Some(&self.interner));
         let id = scope.id().0;
         self.arena.alloc_with_id(id, scope)
     }
 
+    /// Allocate the process-wide global scope used during resolution.
     pub fn create_globals(&'tcx self) -> &'tcx Scope<'tcx> {
-        // Use 256 shards for globals scope - heavily contended during parallel binding
         let scope =
             Scope::new_with_shards(Self::GLOBAL_SCOPE_OWNER, None, Some(&self.interner), 256);
         let id = scope.id().0;
         self.arena.alloc_with_id(id, scope)
     }
 
-    pub fn get_scope(&'tcx self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
+    /// Return a scope by id, panicking when it is missing.
+    pub fn scope(&'tcx self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
         self.arena
             .get_scope(scope_id.0)
             .expect("ScopeId not mapped to Scope in CompileCtxt")
     }
 
-    pub fn opt_get_scope(&'tcx self, scope_id: ScopeId) -> Option<&'tcx Scope<'tcx>> {
-        // Direct lookup from Arena's DashMap using ID, following redirects if scope was merged
+    /// Return a scope by id, following merge redirects when present.
+    pub fn try_scope(&'tcx self, scope_id: ScopeId) -> Option<&'tcx Scope<'tcx>> {
         self.arena.get_scope(scope_id.0).and_then(|scope| {
             if let Some(target_id) = scope.get_redirect() {
-                // Follow redirect chain
-                self.opt_get_scope(target_id)
+                self.try_scope(target_id)
             } else {
                 Some(scope)
             }
         })
     }
 
-    pub fn opt_get_symbol(&'tcx self, owner: SymId) -> Option<&'tcx Symbol> {
+    /// Return a symbol by id, if it exists.
+    pub fn try_symbol(&'tcx self, owner: SymId) -> Option<&'tcx Symbol> {
         self.arena.get_symbol(owner.0)
     }
 
-    pub fn get_symbol(&'tcx self, owner: SymId) -> &'tcx Symbol {
-        self.opt_get_symbol(owner)
+    /// Return a symbol by id, panicking when it is missing.
+    pub fn symbol(&'tcx self, owner: SymId) -> &'tcx Symbol {
+        self.try_symbol(owner)
             .expect("SymId not mapped to Symbol in CompileCtxt")
     }
 
-    /// Find the primary symbol associated with a block ID
+    /// Return the primary symbol associated with a block id.
     pub fn find_symbol_by_block_id(&'tcx self, block_id: BlockId) -> Option<&'tcx Symbol> {
         self.arena
             .iter_symbol()
             .find(|symbol| symbol.block_id() == Some(block_id))
     }
 
-    /// Access the arena for allocations
-    pub fn arena(&'tcx self) -> &'tcx Arena<'tcx> {
-        &self.arena
-    }
-
-    /// Allocate a new file identifier node with the given ID, name and symbol
+    /// Allocate a synthetic file identifier node with the given id, name, and symbol.
     pub fn alloc_file_ident(
         &'tcx self,
         id: HirId,
@@ -702,23 +607,20 @@ impl<'tcx> CompileCtxt<'tcx> {
         ident
     }
 
+    /// Allocate a scope owned by `owner`.
     pub fn alloc_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
         let scope = Scope::new_with(owner, None, Some(&self.interner));
         let id = scope.id().0;
         self.arena.alloc_with_id(id, scope)
     }
 
-    /// Merge the second scope into the first.
-    ///
-    /// This combines all symbols from the second scope into the first scope.
-    /// Any future lookup of second's scope ID will redirect to first.
+    /// Merge `second` into `first` and redirect future lookups to `first`.
     pub fn merge_two_scopes(&'tcx self, first: &'tcx Scope<'tcx>, second: &'tcx Scope<'tcx>) {
-        // Merge symbols from second into first
         first.merge_with(second);
-        // Redirect second's scope ID to first's scope ID so lookups redirect
         second.set_redirect(first.id());
     }
 
+    /// Publish a unit's HIR root id if it has not already been set.
     pub fn set_file_root_id(&self, index: usize, start: HirId) {
         let mut starts = self.hir_root_ids.write();
         if index < starts.len() && starts[index].is_none() {
@@ -726,10 +628,12 @@ impl<'tcx> CompileCtxt<'tcx> {
         }
     }
 
+    /// Return a unit's HIR root id, if HIR has been built.
     pub fn try_file_root_id(&self, index: usize) -> Option<HirId> {
         self.hir_root_ids.read().get(index).and_then(|opt| *opt)
     }
 
+    /// Return a unit's HIR root id or an invariant error when it is missing.
     pub fn file_root_id(&self, index: usize) -> Result<HirId> {
         self.try_file_root_id(index).ok_or_else(|| {
             Error::new(
@@ -742,16 +646,17 @@ impl<'tcx> CompileCtxt<'tcx> {
         })
     }
 
+    /// Return a unit's file path, if the unit is file-backed.
     pub fn file_path(&self, index: usize) -> Option<&str> {
         self.files.get(index).and_then(|file| file.path())
     }
 
-    /// Get the generic parse tree for a specific file if it is available.
+    /// Return a unit's parse tree, if it has been loaded.
     pub fn try_parse_tree(&self, index: usize) -> Option<&dyn ParseTree> {
         self.parse_trees.get(index).map(|tree| tree.as_ref())
     }
 
-    /// Get the generic parse tree for a specific file.
+    /// Return a unit's parse tree or an invariant error when it is missing.
     pub fn parse_tree(&self, index: usize) -> Result<&dyn ParseTree> {
         self.try_parse_tree(index).ok_or_else(|| {
             Error::new(
@@ -764,35 +669,44 @@ impl<'tcx> CompileCtxt<'tcx> {
         })
     }
 
-    /// Get all file paths from the compilation context
-    pub fn get_files(&self) -> Vec<String> {
-        self.files
-            .iter()
-            .filter_map(|f| f.path().map(|p| p.to_string()))
-            .collect()
-    }
-
-    /// Get a HIR node by ID from the Arena's DashMap (O(1) concurrent lookup)
-    pub fn get_hir_node(&'tcx self, id: HirId) -> Option<HirNode<'tcx>> {
+    /// Return a HIR node by id.
+    pub fn try_hir_node(&'tcx self, id: HirId) -> Option<HirNode<'tcx>> {
         self.arena.get_hir_node(id.0).copied()
     }
 
-    /// Check if a HIR node exists in the Arena (O(1) check)
+    /// Return a HIR node by id, panicking when it is missing.
+    pub fn hir_node(&'tcx self, id: HirId) -> HirNode<'tcx> {
+        self.try_hir_node(id)
+            .unwrap_or_else(|| panic!("hir node not found {id}"))
+    }
+
+    /// Return a basic block by id.
+    pub fn try_block(&'tcx self, id: BlockId) -> Option<BasicBlock<'tcx>> {
+        self.block_arena.get_bb(id.0 as usize).cloned()
+    }
+
+    /// Return a basic block by id, panicking when it is missing.
+    pub fn block(&'tcx self, id: BlockId) -> BasicBlock<'tcx> {
+        self.try_block(id)
+            .unwrap_or_else(|| panic!("basic block not found: {id}"))
+    }
+
+    /// Return whether a HIR node id is registered.
     pub fn hir_node_exists(&self, id: HirId) -> bool {
         self.arena.hir_node.contains_key(&id.0)
     }
 
-    /// Get the total count of HIR nodes in the Arena
+    /// Return the number of registered HIR nodes.
     pub fn hir_node_count(&self) -> usize {
         self.arena.len_hir_node()
     }
 
-    /// Get all HIR node IDs from the Arena
+    /// Return all registered HIR node ids.
     pub fn all_hir_node_ids(&'tcx self) -> Vec<HirId> {
         self.arena.iter_hir_node().map(|node| node.id()).collect()
     }
 
-    /// Get all blocks by name
+    /// Return blocks indexed by display name.
     pub fn find_blocks_by_name(
         &self,
         name: &'tcx str,
@@ -800,7 +714,7 @@ impl<'tcx> CompileCtxt<'tcx> {
         self.block_indexes.find_by_name(name)
     }
 
-    /// Get all blocks by kind
+    /// Return blocks indexed by kind.
     pub fn find_blocks_by_kind(
         &self,
         kind: crate::block::BlockKind,
@@ -808,7 +722,7 @@ impl<'tcx> CompileCtxt<'tcx> {
         self.block_indexes.find_by_kind(kind)
     }
 
-    /// Get blocks in a specific unit
+    /// Return blocks in a specific unit.
     pub fn find_blocks_in_unit(
         &self,
         unit_index: usize,
@@ -816,7 +730,7 @@ impl<'tcx> CompileCtxt<'tcx> {
         self.block_indexes.find_by_unit(unit_index)
     }
 
-    /// Get blocks of a specific kind in a specific unit
+    /// Return block ids for a specific kind in a specific unit.
     pub fn find_blocks_by_kind_in_unit(
         &self,
         kind: crate::block::BlockKind,
@@ -825,30 +739,30 @@ impl<'tcx> CompileCtxt<'tcx> {
         self.block_indexes.find_by_kind_and_unit(kind, unit_index)
     }
 
-    /// Get block info by ID
-    pub fn get_block_info(
+    /// Return block metadata by id.
+    pub fn block_info(
         &self,
         block_id: BlockId,
     ) -> Option<(usize, Option<String>, crate::block::BlockKind)> {
         self.block_indexes.get_block_info(block_id)
     }
 
-    /// Get all blocks with their metadata
-    pub fn get_all_blocks(&self) -> Vec<(BlockId, usize, Option<String>, crate::block::BlockKind)> {
+    /// Return all blocks with their metadata.
+    pub fn blocks(&self) -> Vec<(BlockId, usize, Option<String>, crate::block::BlockKind)> {
         self.block_indexes.iter_all_blocks()
     }
 
-    /// Get all symbols from the symbol map
-    pub fn get_all_symbols(&'tcx self) -> Vec<&'tcx Symbol> {
+    /// Return all registered symbols.
+    pub fn symbols(&'tcx self) -> Vec<&'tcx Symbol> {
         self.arena.iter_symbol().collect()
     }
 
-    /// Get the count of registered symbols (excluding unresolved)
+    /// Return the number of registered symbols.
     pub fn symbol_count(&self) -> usize {
         self.arena.len_symbol()
     }
 
-    /// Iterate over all symbols and their IDs (excluding unresolved)
+    /// Visit every registered symbol with its id.
     pub fn for_each_symbol<F>(&'tcx self, mut f: F)
     where
         F: FnMut(SymId, &'tcx Symbol),

@@ -654,7 +654,7 @@ impl<'blk> BlockFunc<'blk> {
             let mut sorted: Vec<_> = type_deps.iter().collect();
             sorted.sort();
             for dep_id in sorted {
-                let dep_block = unit.bb(*dep_id);
+                let dep_block = unit.block(*dep_id);
                 let dep_name = dep_block
                     .base()
                     .and_then(|b| b.opt_get_name())
@@ -669,7 +669,7 @@ impl<'blk> BlockFunc<'blk> {
             let mut sorted: Vec<_> = func_deps.iter().collect();
             sorted.sort();
             for dep_id in sorted {
-                let dep_block = unit.bb(*dep_id);
+                let dep_block = unit.block(*dep_id);
                 let dep_name = dep_block
                     .base()
                     .and_then(|b| b.opt_get_name())
@@ -830,7 +830,7 @@ impl<'blk> BlockClass<'blk> {
             let mut sorted: Vec<_> = type_deps.iter().collect();
             sorted.sort();
             for dep_id in sorted {
-                let dep_block = unit.bb(*dep_id);
+                let dep_block = unit.block(*dep_id);
                 let dep_name = dep_block
                     .base()
                     .and_then(|b| b.opt_get_name())

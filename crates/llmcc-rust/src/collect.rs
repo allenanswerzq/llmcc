@@ -113,7 +113,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
     }
 
     fn alloc_scope(&mut self, unit: &CompileUnit<'tcx>, symbol: &'tcx Symbol) -> &'tcx Scope<'tcx> {
-        let scope = unit.cc.alloc_scope(symbol.owner());
+        let scope = unit.context().alloc_scope(symbol.owner());
         scope.set_symbol(symbol);
         self.scope_map.insert(scope.id(), scope);
         scope
@@ -221,7 +221,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         parent: Option<&Symbol>,
     ) {
         if let Some(sn) = node.as_scope() {
-            let scope = unit.cc.alloc_scope(node.id());
+            let scope = unit.context().alloc_scope(node.id());
             sn.set_scope(scope);
 
             scopes.push_scope(scope);
@@ -285,8 +285,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         if let Some(ref file_name) = meta.file_name
             && let Some(file_sym) = scopes.lookup_or_insert(file_name, node, SymKind::File)
         {
-            let arena_name = unit.cc.arena().alloc_str(file_name);
-            let ident = unit.cc.alloc_file_ident(next_hir_id(), arena_name, file_sym);
+            let arena_name = unit.context().arena().alloc_str(file_name);
+            let ident = unit.context().alloc_file_ident(next_hir_id(), arena_name, file_sym);
             ident.set_symbol(file_sym);
             sn.set_ident(ident);
 
@@ -888,7 +888,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
     ) {
         // Create a scope for the closure
         if let Some(sn) = node.as_scope() {
-            let scope = unit.cc.alloc_scope(node.id());
+            let scope = unit.context().alloc_scope(node.id());
             sn.set_scope(scope);
 
             // Link scope to parent namespace
@@ -951,12 +951,12 @@ pub fn collect_symbols<'tcx>(
     scope_stack: ScopeStack<'tcx>,
     _config: &ResolveOptions,
 ) -> &'tcx Scope<'tcx> {
-    let cc = unit.cc;
+    let cc = unit.context();
     let arena = cc.arena();
-    let unit_globals_val = Scope::new(HirId(unit.index));
+    let unit_globals_val = Scope::new(HirId(unit.index()));
     let scope_id = unit_globals_val.id().0;
     let unit_globals = arena.alloc_with_id(scope_id, unit_globals_val);
-    let mut scopes = CollectorScopes::new(cc, unit.index, scope_stack, unit_globals);
+    let mut scopes = CollectorScopes::new(cc, unit.index(), scope_stack, unit_globals);
 
     let mut visit = CollectorVisitor::new();
     visit.visit_node(&unit, node, &mut scopes, unit_globals, None);

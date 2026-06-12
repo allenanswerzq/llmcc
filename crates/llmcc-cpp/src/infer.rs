@@ -88,7 +88,7 @@ fn infer_type_impl<'tcx>(
             let symbol = ident.opt_symbol()?;
 
             if let Some(type_id) = symbol.type_of() {
-                unit.opt_get_symbol(type_id)
+                unit.try_symbol(type_id)
             } else {
                 Some(symbol)
             }
@@ -108,7 +108,7 @@ fn infer_type_impl<'tcx>(
                 if matches!(sym.kind(), SymKind::Function | SymKind::Method)
                     && let Some(ret_id) = sym.type_of()
                 {
-                    return unit.opt_get_symbol(ret_id);
+                    return unit.try_symbol(ret_id);
                 }
                 Some(sym)
             }),
@@ -366,7 +366,7 @@ fn infer_field_expression<'tcx>(
     {
         // Return the field's type if known
         if let Some(type_id) = field_sym.type_of() {
-            return unit.opt_get_symbol(type_id);
+            return unit.try_symbol(type_id);
         }
         return Some(field_sym);
     }

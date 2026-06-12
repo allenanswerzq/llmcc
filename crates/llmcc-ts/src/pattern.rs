@@ -115,7 +115,7 @@ fn assign_type_to_array_pattern<'tcx>(
             // For tuple types [T1, T2, T3], get specific element type
             types
                 .get(element_index)
-                .and_then(|type_id| unit.opt_get_symbol(*type_id))
+                .and_then(|type_id| unit.try_symbol(*type_id))
                 .unwrap_or(pattern_type)
         } else {
             // For array types T[], all elements have the same type
@@ -148,7 +148,7 @@ fn assign_type_to_object_pattern<'tcx>(
                     SymKindSet::from_kind(SymKind::Field),
                 ) {
                     if let Some(field_type_id) = field_sym.type_of() {
-                        if let Some(field_type) = unit.opt_get_symbol(field_type_id) {
+                        if let Some(field_type) = unit.try_symbol(field_type_id) {
                             assign_type_to_ident(unit, scopes, ident, field_type);
                         }
                     }
@@ -169,7 +169,7 @@ fn assign_type_to_object_pattern<'tcx>(
                         SymKindSet::from_kind(SymKind::Field),
                     ) {
                         if let Some(field_type_id) = field_sym.type_of() {
-                            if let Some(field_type) = unit.opt_get_symbol(field_type_id) {
+                            if let Some(field_type) = unit.try_symbol(field_type_id) {
                                 // Recursively bind the value pattern
                                 bind_pattern_types(unit, scopes, &value_node, field_type);
                             }
@@ -196,7 +196,7 @@ fn assign_type_to_object_pattern<'tcx>(
                         SymKindSet::from_kind(SymKind::Field),
                     ) {
                         if let Some(field_type_id) = field_sym.type_of() {
-                            if let Some(field_type) = unit.opt_get_symbol(field_type_id) {
+                            if let Some(field_type) = unit.try_symbol(field_type_id) {
                                 assign_type_to_ident(unit, scopes, ident, field_type);
                             }
                         }

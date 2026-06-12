@@ -48,8 +48,7 @@ impl<'a> CollectorScopes<'a> {
     #[inline]
     pub fn crate_index(&self) -> usize {
         self.cc
-            .unit_metas
-            .get(self.unit_index)
+            .unit_meta(self.unit_index)
             .map(|m| m.crate_index)
             .unwrap_or(usize::MAX)
     }
@@ -57,7 +56,7 @@ impl<'a> CollectorScopes<'a> {
     /// Get the arena
     #[inline]
     pub fn arena(&self) -> &'a Arena<'a> {
-        &self.cc.arena
+        self.cc.arena()
     }
 
     /// Get current scope stack depth
@@ -84,7 +83,7 @@ impl<'a> CollectorScopes<'a> {
     pub fn push_scope_with(&mut self, node: &HirNode<'a>, symbol: Option<&'a Symbol>) {
         if let Some(symbol) = symbol
             && let Some(existing_scope_id) = symbol.opt_owned_scope()
-            && let Some(existing_scope) = self.cc.opt_get_scope(existing_scope_id)
+            && let Some(existing_scope) = self.cc.try_scope(existing_scope_id)
         {
             self.push_scope(existing_scope);
             return;
@@ -115,7 +114,7 @@ impl<'a> CollectorScopes<'a> {
     /// Get shared string interner
     #[inline]
     pub fn interner(&self) -> &'a InternPool {
-        &self.cc.interner
+        self.cc.interner()
     }
 
     /// Get global (module-level) scope
@@ -243,13 +242,12 @@ impl<'a> CollectorScopes<'a> {
             // 2. Prefer symbols from the same crate (same package root)
             let current_crate_root = self
                 .cc
-                .unit_metas
-                .get(self.unit_index)
+                .unit_meta(self.unit_index)
                 .and_then(|m| m.package_root.as_ref());
             if let Some(current_root) = current_crate_root
                 && let Some(same_crate_sym) = symbols.iter().find(|s| {
                     s.unit_index()
-                        .and_then(|idx| self.cc.unit_metas.get(idx))
+                        .and_then(|idx| self.cc.unit_meta(idx))
                         .and_then(|meta| meta.package_root.as_ref())
                         .is_some_and(|r| r == current_root)
                 })
@@ -273,7 +271,7 @@ pub fn collect_symbols_with<'a, L: Language>(
     config: &ResolveOptions,
 ) -> Result<&'a Scope<'a>> {
     let total_start = Instant::now();
-    let unit_count = cc.files.len();
+    let unit_count = cc.unit_count();
     tracing::info!(unit_count, "starting symbol collection");
 
     let init_start = Instant::now();
@@ -307,9 +305,9 @@ pub fn collect_symbols_with<'a, L: Language>(
 
     let parallel_start = Instant::now();
     let unit_globals_vec = if config.sequential {
-        (0..cc.files.len()).map(collect_unit).collect::<Vec<_>>()
+        (0..unit_count).map(collect_unit).collect::<Vec<_>>()
     } else {
-        (0..cc.files.len())
+        (0..unit_count)
             .into_par_iter()
             .map(collect_unit)
             .collect::<Vec<_>>()
@@ -359,7 +357,7 @@ pub fn build_and_collect_symbols<'a, L: Language>(
     use std::sync::atomic::Ordering;
 
     let total_start = Instant::now();
-    let unit_count = cc.files.len();
+    let unit_count = cc.unit_count();
     tracing::info!(unit_count, "starting fused IR build + symbol collection");
 
     // Initialize scope stack for collection
@@ -406,11 +404,11 @@ pub fn build_and_collect_symbols<'a, L: Language>(
     // Run fused operation in parallel
     let parallel_start = Instant::now();
     let unit_globals_vec = if resolver_config.sequential {
-        (0..cc.files.len())
+        (0..unit_count)
             .map(build_and_collect_unit)
             .collect::<Vec<_>>()
     } else {
-        (0..cc.files.len())
+        (0..unit_count)
             .into_par_iter()
             .map(build_and_collect_unit)
             .collect::<Vec<_>>()

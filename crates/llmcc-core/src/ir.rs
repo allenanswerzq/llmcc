@@ -307,7 +307,7 @@ impl HirBase {
 pub struct HirRoot {
     /// Shared node metadata.
     pub base: HirBase,
-    /// Display file name or logical file path, if available.
+    /// Display file name or stored source path, if available.
     pub file_name: Option<String>,
 }
 
@@ -494,7 +494,7 @@ impl<'hir> HirIdent<'hir> {
 pub struct HirFile {
     /// Shared node metadata.
     pub base: HirBase,
-    /// Physical or logical file path used for display and metadata.
+    /// Stored source path used for display and metadata.
     pub file_path: String,
 }
 

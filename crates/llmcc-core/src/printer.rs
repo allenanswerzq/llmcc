@@ -391,7 +391,7 @@ pub fn render_llmcc_graph_with_config(
 ) -> RenderResult<String> {
     config.validate()?;
 
-    let block = unit.bb(root);
+    let block = unit.block(root);
     let render = build_block_render(&block, unit, config, 0)?;
     render_lines(&render, config)
 }
@@ -554,7 +554,7 @@ fn build_block_render<'tcx>(
         .children()
         .iter()
         .map(|id| {
-            let child = unit.bb(*id);
+            let child = unit.block(*id);
             build_block_render(&child, unit, config, depth + 1)
         })
         .collect::<RenderResult<Vec<_>>>()?;

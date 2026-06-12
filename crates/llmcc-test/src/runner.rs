@@ -56,7 +56,7 @@ struct BlockSnapshot {
     name: String,
 }
 
-/// Snapshot of block relations from cc.related_map
+/// Snapshot of block relations from the compile context.
 #[derive(Clone)]
 struct BlockRelationSnapshot {
     /// Block label like "u0:5"
@@ -1396,12 +1396,9 @@ fn collect_pipeline<L>(project_root: &Path, options: &PipelineOptions) -> Result
 where
     L: Language,
 {
-    // Use provided file paths (preserves declaration order) or discover them
-    let files: Vec<(String, String)> = if options.file_paths.is_empty() {
+    let files = if options.file_paths.is_empty() {
         discover_language_files::<L>(project_root, options.parallel)?
     } else {
-        // Filter to only include files with supported extensions
-        // For explicitly provided paths, use the same path as both physical and logical
         let supported = L::extensions();
         options
             .file_paths
@@ -1410,14 +1407,13 @@ where
                 Path::new(path)
                     .extension()
                     .and_then(|ext| ext.to_str())
-                    .map(|ext| supported.iter().any(|s| s.eq_ignore_ascii_case(ext)))
-                    .unwrap_or(false)
+                    .is_some_and(|ext| supported.iter().any(|s| s.eq_ignore_ascii_case(ext)))
             })
-            .map(|path| (path.clone(), path.clone()))
-            .collect()
+            .cloned()
+            .collect::<Vec<_>>()
     };
 
-    let cc = CompileCtxt::from_files_with_logical::<L>(&files)?;
+    let cc = CompileCtxt::from_files::<L>(&files)?;
 
     // Use sequential mode when not parallel to ensure stable ordering
     let sequential = !options.parallel;
@@ -1556,10 +1552,7 @@ where
     })
 }
 
-fn discover_language_files<L: Language>(
-    root: &Path,
-    _parallel: bool,
-) -> Result<Vec<(String, String)>> {
+fn discover_language_files<L: Language>(root: &Path, _parallel: bool) -> Result<Vec<String>> {
     let supported = L::extensions();
     let mut files = Vec::new();
 
@@ -1599,40 +1592,7 @@ fn discover_language_files<L: Language>(
         get_prefix(a).cmp(&get_prefix(b))
     });
 
-    // Return both physical path (with prefix) and logical path (without prefix)
-    let files: Vec<(String, String)> = files
-        .into_iter()
-        .map(|physical_path| {
-            let logical_path = strip_numeric_prefix_from_path(&physical_path);
-            (physical_path, logical_path)
-        })
-        .collect();
-
     Ok(files)
-}
-
-/// Strips numeric prefix like "000_" from the filename component of a path.
-/// For example: "/tmp/src/000_main.rs" -> "/tmp/src/main.rs"
-fn strip_numeric_prefix_from_path(path: &str) -> String {
-    let path = Path::new(path);
-    let Some(filename) = path.file_name().and_then(|f| f.to_str()) else {
-        return path.to_string_lossy().to_string();
-    };
-
-    // Check for pattern: 3 digits followed by underscore
-    if filename.len() > 4
-        && filename[..3].chars().all(|c| c.is_ascii_digit())
-        && &filename[3..4] == "_"
-    {
-        let stripped_filename = &filename[4..];
-        if let Some(parent) = path.parent() {
-            return parent.join(stripped_filename).to_string_lossy().to_string();
-        } else {
-            return stripped_filename.to_string();
-        }
-    }
-
-    path.to_string_lossy().to_string()
 }
 
 /// Auto-mode pipeline that processes both Rust and TypeScript files
@@ -1641,8 +1601,8 @@ fn collect_pipeline_auto(
     project_root: &Path,
     options: &PipelineOptions,
 ) -> Result<PipelineSummary> {
-    // Check if we have files for each language (don't pass file_paths,
-    // let each pipeline discover its own files to preserve logical path handling)
+    // Check if we have files for each language. Each pipeline discovers files
+    // separately so per-language declaration order stays stable.
     let rust_files = discover_language_files::<LangRust>(project_root, options.parallel)?;
     let ts_files = discover_language_files::<LangTypeScript>(project_root, options.parallel)?;
 
@@ -1653,7 +1613,7 @@ fn collect_pipeline_auto(
     let mut arch_graphs_d2: Vec<String> = Vec::new();
     let mut arch_graphs_d3: Vec<String> = Vec::new();
 
-    // Process Rust files if any exist (don't set file_paths to preserve logical paths)
+    // Process Rust files if any exist.
     if !rust_files.is_empty() {
         let summary = collect_pipeline::<LangRust>(project_root, options)?;
         if let Some(graph) = summary.arch_graph_dot {
@@ -1822,7 +1782,7 @@ fn render_block_graph_node(
     depth: usize,
     buf: &mut String,
 ) {
-    let block = unit.bb(block_id);
+    let block = unit.block(block_id);
     let indent = "  ".repeat(depth);
 
     // Use the block's format methods for consistent output
@@ -1847,7 +1807,7 @@ fn render_block_graph_node(
     buf.push('\n');
     for child_id in children {
         // Skip Call blocks - they are now represented by @fdep/@tdep entries
-        if unit.bb(child_id).kind() == llmcc_core::block::BlockKind::Call {
+        if unit.block(child_id).kind() == llmcc_core::block::BlockKind::Call {
             continue;
         }
         render_block_graph_node(child_id, unit, depth + 1, buf);
@@ -1862,8 +1822,8 @@ fn render_block_graph_node(
 }
 
 fn snapshot_symbols<'a>(cc: &'a CompileCtxt<'a>) -> Vec<SymbolSnapshot> {
-    let symbols = cc.get_all_symbols();
-    let interner = &cc.interner;
+    let symbols = cc.symbols();
+    let interner = cc.interner();
     let mut rows = Vec::with_capacity(symbols.len());
     for symbol in symbols {
         let name_str = interner
@@ -1872,7 +1832,7 @@ fn snapshot_symbols<'a>(cc: &'a CompileCtxt<'a>) -> Vec<SymbolSnapshot> {
 
         // Get type_of info
         let type_of = symbol.type_of().and_then(|sym_id| {
-            cc.opt_get_symbol(sym_id).map(|type_sym| {
+            cc.try_symbol(sym_id).map(|type_sym| {
                 let type_name = interner
                     .resolve_owned(type_sym.name)
                     .unwrap_or_else(|| "?".to_string());
@@ -1915,7 +1875,7 @@ fn snapshot_block_relations(project: &ProjectGraph) -> Vec<BlockRelationSnapshot
     use std::collections::BTreeMap;
 
     let cc = project.cc;
-    let related_map = &cc.related_map;
+    let related_map = cc.block_relations();
 
     // Group relations by block
     let mut block_map: BTreeMap<BlockId, BlockRelationSnapshot> = BTreeMap::new();
@@ -2029,7 +1989,7 @@ fn describe_block<'a>(
     block_id: llmcc_core::graph_builder::BlockId,
     cc: &'a llmcc_core::context::CompileCtxt<'a>,
 ) -> Option<BlockDescriptor> {
-    let (unit, name, kind) = cc.get_block_info(block_id)?;
+    let (unit, name, kind) = cc.block_info(block_id)?;
 
     // Try to get a proper name from multiple sources:
     // 1. From block info (indexed name)
@@ -2041,7 +2001,7 @@ fn describe_block<'a>(
     let name = name
         .or_else(|| {
             // Try to get name from specific block types using DashMap lookup
-            cc.block_arena.get_bb(block_id.0 as usize).and_then(|bb| {
+            cc.try_block(block_id).and_then(|bb| {
                 // Try field name
                 if let Some(field) = bb.as_field()
                     && !field.name.is_empty()
@@ -2057,7 +2017,7 @@ fn describe_block<'a>(
         })
         .or_else(|| {
             // Try to find first identifier child of the node
-            cc.block_arena.get_bb(block_id.0 as usize).and_then(|bb| {
+            cc.try_block(block_id).and_then(|bb| {
                 let node = bb.base()?.node;
                 // Recursively search for first identifier in children
                 find_first_ident_name(cc, &node)
@@ -2066,7 +2026,7 @@ fn describe_block<'a>(
         .or_else(|| {
             // Try to get name from associated symbol
             cc.find_symbol_by_block_id(block_id)
-                .and_then(|sym| cc.interner.resolve_owned(sym.name))
+                .and_then(|sym| cc.interner().resolve_owned(sym.name))
         })
         .unwrap_or_else(|| format!("block#{block_id}"));
 
@@ -2094,7 +2054,7 @@ fn find_first_ident_name<'a>(
 
     // Search through children
     for child_id in node.child_ids() {
-        if let Some(child_node) = cc.get_hir_node(*child_id) {
+        if let Some(child_node) = cc.try_hir_node(*child_id) {
             if child_node.is_kind(HirKind::Identifier)
                 && let Some(ident) = child_node.as_ident()
             {

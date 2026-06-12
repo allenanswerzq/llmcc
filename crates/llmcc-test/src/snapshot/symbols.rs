@@ -20,8 +20,8 @@ struct SymbolEntry {
 
 impl Snapshot for SymbolsSnapshot {
     fn capture(ctx: SnapshotContext<'_>) -> Self {
-        let symbols = ctx.cc.get_all_symbols();
-        let interner = &ctx.cc.interner;
+        let symbols = ctx.cc.symbols();
+        let interner = ctx.cc.interner();
 
         let mut entries = Vec::with_capacity(symbols.len());
         for symbol in symbols {

@@ -94,7 +94,7 @@ fn infer_type_impl<'tcx>(
             let symbol = ident.opt_symbol()?;
 
             if let Some(type_id) = symbol.type_of() {
-                unit.opt_get_symbol(type_id)
+                unit.try_symbol(type_id)
             } else {
                 Some(symbol)
             }
@@ -108,7 +108,7 @@ fn infer_type_impl<'tcx>(
                 if sym.kind() == SymKind::Function
                     && let Some(ret_id) = sym.type_of()
                 {
-                    return unit.opt_get_symbol(ret_id);
+                    return unit.try_symbol(ret_id);
                 }
                 Some(sym)
             }),
@@ -123,7 +123,7 @@ fn infer_type_impl<'tcx>(
         LangRust::reference_expression => infer_from_children(unit, scopes, node, &[], depth + 1)
             .and_then(|sym| {
                 if let Some(type_id) = sym.type_of() {
-                    unit.opt_get_symbol(type_id)
+                    unit.try_symbol(type_id)
                 } else {
                     Some(sym)
                 }
@@ -292,7 +292,7 @@ fn infer_field_expression<'tcx>(
             if let Some(nested) = obj_type.nested_types()
                 && let Some(elem_id) = nested.get(index)
             {
-                return unit.opt_get_symbol(*elem_id);
+                return unit.try_symbol(*elem_id);
             }
             return None;
         }
@@ -303,7 +303,7 @@ fn infer_field_expression<'tcx>(
         .lookup_member_symbol(obj_type, field_ident.name, Some(SymKind::Field))
         .and_then(|field_sym| {
             if let Some(type_id) = field_sym.type_of() {
-                unit.opt_get_symbol(type_id)
+                unit.try_symbol(type_id)
             } else {
                 Some(field_sym)
             }
@@ -359,7 +359,7 @@ fn infer_index_expression<'tcx>(
     if let Some(nested) = obj_type.nested_types()
         && let Some(elem_id) = nested.first()
     {
-        return unit.opt_get_symbol(*elem_id);
+        return unit.try_symbol(*elem_id);
     }
 
     None

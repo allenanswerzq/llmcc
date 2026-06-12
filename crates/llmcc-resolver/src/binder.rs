@@ -20,7 +20,7 @@ pub struct BinderScopes<'a> {
 
 impl<'a> BinderScopes<'a> {
     pub fn new(unit: CompileUnit<'a>, globals: &'a Scope<'a>) -> Self {
-        let scopes = ScopeStack::new(&unit.cc.arena, &unit.cc.interner);
+        let scopes = ScopeStack::new(unit.context().arena(), unit.context().interner());
         scopes.push(globals);
 
         Self { unit, scopes }
@@ -63,13 +63,13 @@ impl<'a> BinderScopes<'a> {
 
     /// Pushes a scope onto the stack by looking it up from the compilation unit.
     pub fn push_scope(&mut self, id: ScopeId) {
-        let scope = self.unit.get_scope(id);
+        let scope = self.unit.scope(id);
         self.scopes.push(scope);
     }
 
     /// Pushes a scope recursively with all its parent scopes.
     pub fn push_scope_recursive(&mut self, id: ScopeId) {
-        let scope = self.unit.get_scope(id);
+        let scope = self.unit.scope(id);
         self.scopes.push_recursive(scope);
     }
 
@@ -108,7 +108,7 @@ impl<'a> BinderScopes<'a> {
     #[inline]
     pub fn lookup_globals(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
         let options = SymbolFilter::kinds(kind_filters);
-        let name_key = self.unit.cc.interner.intern(name);
+        let name_key = self.unit.interner().intern(name);
         self.scopes.globals().lookup_symbols(name_key, options)
     }
 
@@ -136,7 +136,7 @@ impl<'a> BinderScopes<'a> {
     pub fn lookup_symbol(&self, name: &str, kind_filters: SymKindSet) -> Option<&'a Symbol> {
         let symbols = self.lookup_symbols(name, kind_filters)?;
         if symbols.len() > 1 {
-            let current_unit = self.unit.index;
+            let current_unit = self.unit.index();
             let current_crate_index = self.unit.unit_meta().crate_index;
 
             // 1. Prefer symbols from the current unit (same file)
@@ -207,10 +207,7 @@ impl<'a> BinderScopes<'a> {
         // For TypeAlias (like Self), follow type_of to get the actual type
         let effective_symbol = if obj_type_symbol.kind() == SymKind::TypeAlias {
             if let Some(type_of_id) = obj_type_symbol.type_of() {
-                self.unit
-                    .cc
-                    .opt_get_symbol(type_of_id)
-                    .unwrap_or(obj_type_symbol)
+                self.unit.try_symbol(type_of_id).unwrap_or(obj_type_symbol)
             } else {
                 obj_type_symbol
             }
@@ -219,10 +216,10 @@ impl<'a> BinderScopes<'a> {
         };
 
         let scope_id = effective_symbol.opt_owned_scope()?;
-        let scope = self.unit.get_scope(scope_id);
+        let scope = self.unit.scope(scope_id);
 
         // Create isolated scope stack for member lookup to avoid falling back to lexical scopes
-        let scopes = ScopeStack::new(&self.unit.cc.arena, &self.unit.cc.interner);
+        let scopes = ScopeStack::new(self.unit.context().arena(), self.unit.context().interner());
         scopes.push_recursive(scope);
 
         let options = if let Some(filter) = kind_filter {
@@ -258,7 +255,7 @@ impl<'a> BinderScopes<'a> {
         kind_filters: SymKindSet,
     ) -> Option<&'a Symbol> {
         let symbols = self.lookup_qualified(qualified_name, kind_filters)?;
-        let current_unit = self.unit.index;
+        let current_unit = self.unit.index();
 
         if symbols.len() > 1 {
             // 1. Prefer symbols from the current unit (same file)
@@ -298,7 +295,7 @@ pub fn bind_symbols_with<'a, L: Language>(
     config: &ResolveOptions,
 ) -> Result<()> {
     let total_start = Instant::now();
-    let unit_count = cc.files.len();
+    let unit_count = cc.unit_count();
     tracing::info!(unit_count, "starting symbol binding");
 
     let bind_cpu_time_ns = AtomicU64::new(0);

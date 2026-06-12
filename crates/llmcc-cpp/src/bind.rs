@@ -196,7 +196,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         {
             scopes.push_scope(scope_id);
 
-            let file_scope = unit.get_scope(scope_id);
+            let file_scope = unit.scope(scope_id);
             self.visit_children(unit, node, scopes, file_scope, Some(file_sym));
             scopes.pop_until(depth);
             return;

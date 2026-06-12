@@ -81,13 +81,13 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
 
         // First try type_of (for symbols that point to a type)
         if let Some(type_sym_id) = sym.type_of()
-            && let Some(type_sym) = self.unit.opt_get_symbol(type_sym_id)
+            && let Some(type_sym) = self.unit.try_symbol(type_sym_id)
         {
             // Check if type_sym is a TypeParameter with a bound - use the bound type
             let effective_type = if type_sym.kind() == crate::symbol::SymKind::TypeParameter
                 && let Some(bound_id) = type_sym.type_of()
             {
-                self.unit.opt_get_symbol(bound_id).unwrap_or(type_sym)
+                self.unit.try_symbol(bound_id).unwrap_or(type_sym)
             } else {
                 type_sym
             };
@@ -236,19 +236,28 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                     // Fall back to scope chain if unit_meta is not populated
                     if meta.package_name.is_none()
                         && let Some(crate_sym) = scope.find_parent_by_kind(SymKind::Crate)
-                        && let Some(name) = self.unit.cc.interner.resolve_owned(crate_sym.name)
+                        && let Some(name) =
+                            self.unit.context().interner().resolve_owned(crate_sym.name)
                     {
                         block.set_crate_name(name);
                     }
                     if meta.module_name.is_none()
                         && let Some(module_sym) = scope.find_parent_by_kind(SymKind::Module)
-                        && let Some(name) = self.unit.cc.interner.resolve_owned(module_sym.name)
+                        && let Some(name) = self
+                            .unit
+                            .context()
+                            .interner()
+                            .resolve_owned(module_sym.name)
                     {
                         block.set_module_path(name);
                     }
                 }
 
-                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
+                let block_ref = self
+                    .unit
+                    .context()
+                    .block_arena
+                    .alloc_with_id(id.0 as usize, block);
                 BasicBlock::Root(block_ref)
             }
             BlockKind::Func | BlockKind::Method => {
@@ -256,22 +265,38 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                 if kind == BlockKind::Method {
                     block.set_is_method(true);
                 }
-                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
+                let block_ref = self
+                    .unit
+                    .context()
+                    .block_arena
+                    .alloc_with_id(id.0 as usize, block);
                 BasicBlock::Func(block_ref)
             }
             BlockKind::Class => {
                 let block = BlockClass::new_with_symbol(id, node, parent, children, symbol);
-                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
+                let block_ref = self
+                    .unit
+                    .context()
+                    .block_arena
+                    .alloc_with_id(id.0 as usize, block);
                 BasicBlock::Class(block_ref)
             }
             BlockKind::Trait => {
                 let block = BlockTrait::new_with_symbol(id, node, parent, children, symbol);
-                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
+                let block_ref = self
+                    .unit
+                    .context()
+                    .block_arena
+                    .alloc_with_id(id.0 as usize, block);
                 BasicBlock::Trait(block_ref)
             }
             BlockKind::Interface => {
                 let block = BlockInterface::new_with_symbol(id, node, parent, children, symbol);
-                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
+                let block_ref = self
+                    .unit
+                    .context()
+                    .block_arena
+                    .alloc_with_id(id.0 as usize, block);
                 BasicBlock::Interface(block_ref)
             }
             BlockKind::Call => {
@@ -283,14 +308,18 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                 {
                     stmt.set_callee(callee_block_id);
                 }
-                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, stmt);
+                let block_ref = self
+                    .unit
+                    .context()
+                    .block_arena
+                    .alloc_with_id(id.0 as usize, stmt);
                 BasicBlock::Call(block_ref)
             }
             BlockKind::Enum => {
                 let enum_ty = BlockEnum::new_with_symbol(id, node, parent, children, symbol);
                 let block_ref = self
                     .unit
-                    .cc
+                    .context()
                     .block_arena
                     .alloc_with_id(id.0 as usize, enum_ty);
                 BasicBlock::Enum(block_ref)
@@ -304,7 +333,11 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                 // Resolve and set type info
                 let (type_name, type_ref) = self.resolve_type_info(symbol);
                 stmt.set_type_info(type_name, type_ref);
-                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, stmt);
+                let block_ref = self
+                    .unit
+                    .context()
+                    .block_arena
+                    .alloc_with_id(id.0 as usize, stmt);
                 BasicBlock::Const(block_ref)
             }
             BlockKind::Impl => {
@@ -318,7 +351,7 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                     // Follow type_of chain to get the actual type symbol for block_id
                     let resolved = sym
                         .type_of()
-                        .and_then(|id| self.unit.opt_get_symbol(id))
+                        .and_then(|id| self.unit.try_symbol(id))
                         .unwrap_or(sym);
                     // Store original sym (which has nested_types from impl type args) not resolved
                     block.set_target_info(resolved.block_id(), Some(sym));
@@ -331,12 +364,16 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                     // Follow type_of chain to get the actual trait symbol
                     let resolved = sym
                         .type_of()
-                        .and_then(|id| self.unit.opt_get_symbol(id))
+                        .and_then(|id| self.unit.try_symbol(id))
                         .unwrap_or(sym);
                     block.set_trait_info(resolved.block_id(), Some(resolved));
                 }
 
-                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
+                let block_ref = self
+                    .unit
+                    .context()
+                    .block_arena
+                    .alloc_with_id(id.0 as usize, block);
                 BasicBlock::Impl(block_ref)
             }
             BlockKind::Field => {
@@ -352,7 +389,11 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                 // Resolve and set type info
                 let (type_name, type_ref) = self.resolve_type_info(symbol);
                 block.set_type_info(type_name, type_ref);
-                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
+                let block_ref = self
+                    .unit
+                    .context()
+                    .block_arena
+                    .alloc_with_id(id.0 as usize, block);
                 BasicBlock::Field(block_ref)
             }
             BlockKind::Parameter => {
@@ -377,7 +418,11 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                 }
                 let (type_name, type_ref) = self.resolve_type_info(symbol);
                 block.set_type_info(type_name, type_ref);
-                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
+                let block_ref = self
+                    .unit
+                    .context()
+                    .block_arena
+                    .alloc_with_id(id.0 as usize, block);
                 BasicBlock::Parameter(block_ref)
             }
             BlockKind::Return => {
@@ -385,7 +430,11 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                 let mut block = BlockReturn::new_with_symbol(id, node, parent, children, symbol);
                 let (type_name, type_ref) = self.resolve_type_info(symbol);
                 block.set_type_info(type_name, type_ref);
-                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
+                let block_ref = self
+                    .unit
+                    .context()
+                    .block_arena
+                    .alloc_with_id(id.0 as usize, block);
                 BasicBlock::Return(block_ref)
             }
             BlockKind::Alias => {
@@ -394,7 +443,11 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                 if let Some(ident) = node.query(&self.unit).first_ident() {
                     block.name = ident.name.to_string();
                 }
-                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
+                let block_ref = self
+                    .unit
+                    .context()
+                    .block_arena
+                    .alloc_with_id(id.0 as usize, block);
                 BasicBlock::Alias(block_ref)
             }
             BlockKind::Module => {
@@ -409,7 +462,11 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                 let block = BlockModule::new_with_symbol(
                     id, node, parent, children, name, is_inline, symbol,
                 );
-                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
+                let block_ref = self
+                    .unit
+                    .context()
+                    .block_arena
+                    .alloc_with_id(id.0 as usize, block);
                 BasicBlock::Module(block_ref)
             }
             _ => {
@@ -565,7 +622,11 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
         // Resolve and set type info
         let (type_name, type_ref) = self.resolve_type_info(type_symbol);
         block.set_type_info(type_name, type_ref);
-        let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
+        let block_ref = self
+            .unit
+            .context()
+            .block_arena
+            .alloc_with_id(id.0 as usize, block);
         BasicBlock::Field(block_ref)
     }
 
@@ -772,7 +833,7 @@ pub fn build_llmcc_graph<'tcx, L: Language>(
     config: GraphBuildOption,
 ) -> Result<Vec<UnitGraph>> {
     let unit_graphs: Vec<UnitGraph> = if config.sequential {
-        (0..cc.get_files().len())
+        (0..cc.unit_count())
             .map(|index| {
                 let unit = cc.compile_unit(index);
                 build_unit_graph::<L>(unit, index, GraphBuildConfig)
@@ -780,7 +841,7 @@ pub fn build_llmcc_graph<'tcx, L: Language>(
             .filter_map(|r| r.transpose())
             .collect::<Result<Vec<_>>>()?
     } else {
-        (0..cc.get_files().len())
+        (0..cc.unit_count())
             .into_par_iter()
             .map(|index| {
                 let unit = cc.compile_unit(index);
