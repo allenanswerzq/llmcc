@@ -3,12 +3,13 @@
 use rayon::prelude::*;
 use std::collections::BTreeMap;
 
-use crate::block::{
-    BasicBlock, BlockAlias, BlockBase, BlockCall, BlockClass, BlockConst, BlockEnum, BlockField,
-    BlockFunc, BlockId, BlockImpl, BlockInterface, BlockParameter, BlockRelation, BlockReturn,
-    BlockTrait,
-};
+use crate::block::{BasicBlock, BlockBase, BlockId, BlockRelation};
 use crate::context::{CompileCtxt, CompileUnit};
+use crate::graph_semantics::{
+    CallSiteBlock, CallableBlock, ContractBlock, GraphLinkBlock, ImplementationBlock,
+    MemberFieldBlock, NominalTypeBlock, StructuralContractBlock, TypeAliasBlock, TypeRefBlock,
+    VariantContainerBlock,
+};
 use crate::symbol::{SymId, Symbol};
 
 #[derive(Debug, Clone)]
@@ -122,28 +123,7 @@ impl<'tcx> ProjectGraph<'tcx> {
             self.add_contains(parent_id, block_id);
         }
 
-        // Concrete block variants are optional normalized categories. Languages
-        // emit only the variants that match their semantics; graph linking below
-        // uses semantic predicates where behavior should apply across variants.
-        match block {
-            BasicBlock::Func(func) => self.link_func(unit, block_id, func),
-            BasicBlock::Class(class) => self.link_nominal_type(unit, block_id, class),
-            BasicBlock::Impl(implementation) => {
-                self.link_implementation(unit, block_id, implementation)
-            }
-            BasicBlock::Trait(contract) => self.link_contract(unit, block_id, *contract),
-            BasicBlock::Interface(contract) => {
-                self.link_structural_contract(unit, block_id, *contract)
-            }
-            BasicBlock::Enum(enum_block) => self.link_enum(unit, block_id, enum_block),
-            BasicBlock::Call(call) => self.link_call(unit, block_id, call),
-            BasicBlock::Field(field) => self.link_field(unit, block_id, field),
-            BasicBlock::Return(ret) => self.link_return(unit, block_id, ret),
-            BasicBlock::Parameter(param) => self.link_parameter(unit, block_id, param),
-            BasicBlock::Const(const_block) => self.link_const(unit, block_id, const_block),
-            BasicBlock::Alias(alias) => self.link_alias(unit, block_id, alias),
-            _ => {}
-        }
+        block.link_into_graph(self, unit, block_id);
 
         for child_id in block.children() {
             let child = unit.block(child_id);
@@ -171,61 +151,61 @@ impl<'tcx> ProjectGraph<'tcx> {
 
     /// Insert bidirectional caller-callee relations.
     #[inline]
-    fn add_call(&self, caller: BlockId, callee: BlockId) {
+    pub(crate) fn add_call(&self, caller: BlockId, callee: BlockId) {
         self.insert_relation_pair(caller, BlockRelation::Calls, callee);
     }
 
     /// Insert bidirectional type/value usage relations.
     #[inline]
-    fn add_use(&self, user: BlockId, used: BlockId) {
+    pub(crate) fn add_use(&self, user: BlockId, used: BlockId) {
         self.insert_relation_pair(user, BlockRelation::Uses, used);
     }
 
     /// Insert bidirectional typed-block/type-definition relations.
     #[inline]
-    fn add_type_relation(&self, owner: BlockId, type_id: BlockId) {
+    pub(crate) fn add_type_relation(&self, owner: BlockId, type_id: BlockId) {
         self.insert_relation_pair(owner, BlockRelation::TypeOf, type_id);
     }
 
     /// Insert one-way function/method parameter ownership relation.
     #[inline]
-    fn add_parameter(&self, owner: BlockId, parameter: BlockId) {
+    pub(crate) fn add_parameter(&self, owner: BlockId, parameter: BlockId) {
         self.insert_relation(owner, BlockRelation::HasParameters, parameter);
     }
 
     /// Insert one-way function/method return ownership relation.
     #[inline]
-    fn add_return(&self, owner: BlockId, return_block: BlockId) {
+    pub(crate) fn add_return(&self, owner: BlockId, return_block: BlockId) {
         self.insert_relation(owner, BlockRelation::HasReturn, return_block);
     }
 
     /// Insert bidirectional aggregate/member field ownership relations.
     #[inline]
-    fn add_field(&self, owner: BlockId, field: BlockId) {
+    pub(crate) fn add_field(&self, owner: BlockId, field: BlockId) {
         self.insert_relation_pair(owner, BlockRelation::HasField, field);
     }
 
     /// Insert bidirectional member callable ownership relations.
     #[inline]
-    fn add_method(&self, owner: BlockId, method: BlockId) {
+    pub(crate) fn add_method(&self, owner: BlockId, method: BlockId) {
         self.insert_relation_pair(owner, BlockRelation::HasMethod, method);
     }
 
     /// Insert bidirectional implementation/extension target relations.
     #[inline]
-    fn add_implementation_target(&self, implementation: BlockId, target: BlockId) {
+    pub(crate) fn add_implementation_target(&self, implementation: BlockId, target: BlockId) {
         self.insert_relation_pair(implementation, BlockRelation::ImplFor, target);
     }
 
     /// Insert bidirectional implementation-contract relations.
     #[inline]
-    fn add_conformance(&self, implementer: BlockId, contract: BlockId) {
+    pub(crate) fn add_conformance(&self, implementer: BlockId, contract: BlockId) {
         self.insert_relation_pair(implementer, BlockRelation::Implements, contract);
     }
 
     /// Insert bidirectional type/contract specialization relations.
     #[inline]
-    fn add_specialization(&self, derived: BlockId, base: BlockId) {
+    pub(crate) fn add_specialization(&self, derived: BlockId, base: BlockId) {
         self.insert_relation_pair(derived, BlockRelation::Extends, base);
     }
 
@@ -270,7 +250,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     /// Link a typed block to its resolved type definition.
-    fn link_type_ref(
+    pub(crate) fn link_type_ref(
         &self,
         unit: &CompileUnit<'tcx>,
         block_id: BlockId,
@@ -287,42 +267,45 @@ impl<'tcx> ProjectGraph<'tcx> {
         }
     }
 
-    /// Link a function or method block.
-    fn link_func(&self, unit: &CompileUnit<'tcx>, block_id: BlockId, func: &BlockFunc<'tcx>) {
+    /// Link a callable block.
+    pub(crate) fn link_callable<C>(&self, unit: &CompileUnit<'tcx>, block_id: BlockId, callable: &C)
+    where
+        C: CallableBlock<'tcx> + ?Sized,
+    {
         // Structural edges.
-        for param_id in func.parameters() {
+        for param_id in callable.parameters() {
             self.add_parameter(block_id, param_id);
         }
-        if let Some(ret_id) = func.return_block() {
+        if let Some(ret_id) = callable.return_block() {
             self.add_return(block_id, ret_id);
         }
 
         // Generic bounds and type annotations recorded on the function symbol.
-        self.link_type_parameter_bounds(unit, block_id, func.symbol());
-        if let Some(nested_types) = func.nested_types() {
-            self.record_type_deps_from_symbols(unit, func.base(), nested_types);
+        self.link_type_parameter_bounds(unit, block_id, callable.symbol());
+        if let Some(nested_types) = callable.nested_type_ids() {
+            self.record_type_deps_from_symbols(unit, callable.base(), nested_types);
         }
 
         // Decorator dependencies.
-        if let Some(decorators) = func.decorators() {
+        if let Some(decorators) = callable.decorator_ids() {
             for decorator_id in decorators {
                 if let Some(decorator_block_id) = unit.try_symbol_block_id(decorator_id) {
-                    func.add_type_dep(decorator_block_id);
+                    callable.add_type_dep(decorator_block_id);
                 }
             }
         }
 
         // Call dependencies discovered from descendant blocks.
-        for child_id in func.children() {
-            self.collect_call_dependencies(unit, func, child_id);
+        for child_id in callable.children() {
+            self.collect_call_dependencies(unit, callable, child_id);
         }
 
         // Emit dependency edges after collection so relation writes have one owner.
-        for type_id in func.type_deps() {
+        for type_id in callable.type_deps() {
             self.add_use(block_id, type_id);
         }
-        for type_id in func.func_deps() {
-            self.add_call(block_id, type_id);
+        for func_id in callable.func_deps() {
+            self.add_call(block_id, func_id);
         }
     }
 
@@ -330,7 +313,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     fn collect_call_dependencies(
         &self,
         unit: &CompileUnit<'tcx>,
-        caller_func: &BlockFunc<'tcx>,
+        caller: &(impl CallableBlock<'tcx> + ?Sized),
         block_id: BlockId,
     ) {
         let block = unit.block(block_id);
@@ -344,12 +327,12 @@ impl<'tcx> ProjectGraph<'tcx> {
             let is_call_target = callee_sym.kind().is_call_dependency_target();
 
             if is_call_block || is_call_target {
-                self.record_callee_dependency(unit, caller_func, callee_sym);
+                self.record_callee_dependency(unit, caller, callee_sym);
             }
         }
 
         for child_id in block.children() {
-            self.collect_call_dependencies(unit, caller_func, child_id);
+            self.collect_call_dependencies(unit, caller, child_id);
         }
     }
 
@@ -357,7 +340,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     fn record_callee_dependency(
         &self,
         unit: &CompileUnit<'tcx>,
-        caller_func: &BlockFunc<'tcx>,
+        caller: &(impl CallableBlock<'tcx> + ?Sized),
         callee_sym: &Symbol,
     ) {
         let callee_kind = callee_sym.kind();
@@ -367,25 +350,25 @@ impl<'tcx> ProjectGraph<'tcx> {
             if callee_kind.has_call_receiver_type()
                 && let Some(type_block_id) = unit.try_type_of_block_id(callee_sym)
             {
-                caller_func.add_type_dep(type_block_id);
+                caller.add_type_dep(type_block_id);
             }
 
             if let Some(callee_block_id) = callee_block_id {
-                caller_func.add_func_dep(callee_block_id);
+                caller.add_func_dep(callee_block_id);
             }
         } else if callee_kind.is_constructable_type()
             && let Some(callee_block_id) = callee_block_id
         {
-            caller_func.add_type_dep(callee_block_id);
+            caller.add_type_dep(callee_block_id);
         }
     }
 
     /// Link a nominal or aggregate type block.
-    fn link_nominal_type(
+    pub(crate) fn link_nominal_type(
         &self,
         unit: &CompileUnit<'tcx>,
         block_id: BlockId,
-        nominal: &BlockClass<'tcx>,
+        nominal: &impl NominalTypeBlock<'tcx>,
     ) {
         // Structural edges.
         for field_id in nominal.fields() {
@@ -400,13 +383,13 @@ impl<'tcx> ProjectGraph<'tcx> {
             if let Some((base_symbol, base_block_id)) = unit.try_type_of_with_block_id(symbol) {
                 self.add_specialization(block_id, base_block_id);
                 let base_name = unit.resolve_name(base_symbol.name);
-                nominal.set_extends(base_name, Some(base_block_id));
+                nominal.set_base_type(base_name, Some(base_block_id));
             }
         }
 
         // Nested type metadata can represent implemented contracts, constraints,
         // decorator targets, generic arguments, or other type-shaped dependencies.
-        if let Some(nested) = nominal.nested_types() {
+        if let Some(nested) = nominal.nested_type_ids() {
             for type_id in nested {
                 if let Some((type_sym, type_block_id)) = unit.try_symbol_with_block_id(type_id) {
                     nominal.add_type_dep(type_block_id);
@@ -423,7 +406,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         }
 
         // Decorator dependencies.
-        if let Some(decorators) = nominal.decorators() {
+        if let Some(decorators) = nominal.decorator_ids() {
             for decorator_id in decorators {
                 if let Some(decorator_block_id) = unit.try_symbol_block_id(decorator_id) {
                     nominal.add_type_dep(decorator_block_id);
@@ -434,12 +417,14 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     /// Link an implementation, extension, or conformance block.
-    fn link_implementation(
+    pub(crate) fn link_implementation<I>(
         &self,
         unit: &CompileUnit<'tcx>,
         block_id: BlockId,
-        implementation: &BlockImpl<'tcx>,
-    ) {
+        implementation: &I,
+    ) where
+        I: ImplementationBlock + ?Sized,
+    {
         // Structural edges.
         for method_id in implementation.methods() {
             self.add_method(block_id, method_id);
@@ -450,21 +435,21 @@ impl<'tcx> ProjectGraph<'tcx> {
             implementation.set_target_ref(target_id);
             self.add_implementation_target(block_id, target_id);
 
-            if let Some(nested_types) = implementation.target_nested_types() {
+            if let Some(nested_types) = implementation.target_nested_type_ids() {
                 let target_block = unit.block(target_id);
                 self.record_type_deps_from_symbols(unit, target_block.base(), nested_types);
             }
         }
 
         // Implemented contract edge.
-        if let Some(contract_id) = implementation.resolved_trait() {
-            implementation.set_trait_ref(contract_id);
+        if let Some(contract_id) = implementation.resolved_contract() {
+            implementation.set_contract_ref(contract_id);
             self.add_conformance(block_id, contract_id);
         }
     }
 
     /// Link a contract block.
-    fn link_contract<C>(&self, unit: &CompileUnit<'tcx>, block_id: BlockId, contract: &C)
+    pub(crate) fn link_contract<C>(&self, unit: &CompileUnit<'tcx>, block_id: BlockId, contract: &C)
     where
         C: ContractBlock<'tcx> + ?Sized,
     {
@@ -478,8 +463,12 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     /// Link a structural contract block.
-    fn link_structural_contract<C>(&self, unit: &CompileUnit<'tcx>, block_id: BlockId, contract: &C)
-    where
+    pub(crate) fn link_structural_contract<C>(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        block_id: BlockId,
+        contract: &C,
+    ) where
         C: StructuralContractBlock<'tcx> + ?Sized,
     {
         self.link_contract(unit, block_id, contract);
@@ -503,180 +492,47 @@ impl<'tcx> ProjectGraph<'tcx> {
         }
     }
 
-    /// Link an enum block.
-    fn link_enum(
+    /// Link a block that owns variant-like member fields.
+    pub(crate) fn link_variant_container(
         &self,
-        _unit: &CompileUnit<'tcx>,
         block_id: BlockId,
-        enum_block: &BlockEnum<'tcx>,
+        block: &impl VariantContainerBlock,
     ) {
-        // Structural edges.
-        for variant_id in enum_block.variants() {
+        for variant_id in block.variant_fields() {
             self.add_field(block_id, variant_id);
         }
     }
 
     /// Link a call-site block.
-    fn link_call(&self, _unit: &CompileUnit<'tcx>, block_id: BlockId, call: &BlockCall<'tcx>) {
+    pub(crate) fn link_call_site(&self, block_id: BlockId, call: &impl CallSiteBlock) {
         if let Some(callee_id) = call.callee() {
             self.add_call(block_id, callee_id);
         }
     }
 
-    /// Link a return block to its type definition.
-    fn link_return(&self, unit: &CompileUnit<'tcx>, block_id: BlockId, ret: &BlockReturn<'tcx>) {
-        self.link_type_ref(unit, block_id, ret);
-    }
-
-    /// Link a parameter block to its type definition.
-    fn link_parameter(
+    /// Link a field block to its type definition and nested fields.
+    pub(crate) fn link_member_field(
         &self,
         unit: &CompileUnit<'tcx>,
         block_id: BlockId,
-        param: &BlockParameter<'tcx>,
+        field: &impl MemberFieldBlock<'tcx>,
     ) {
-        self.link_type_ref(unit, block_id, param);
-    }
-
-    /// Link a field block to its type definition and nested fields.
-    fn link_field(&self, unit: &CompileUnit<'tcx>, block_id: BlockId, field: &BlockField<'tcx>) {
         self.link_type_ref(unit, block_id, field);
 
-        // Structural edges for enum variants with aggregate-style fields.
         for child_id in field.children() {
             self.add_field(block_id, child_id);
         }
     }
 
-    /// Link a const block to its type definition.
-    fn link_const(
+    /// Link a type alias block to its target type definition.
+    pub(crate) fn link_alias(
         &self,
         unit: &CompileUnit<'tcx>,
         block_id: BlockId,
-        const_block: &BlockConst<'tcx>,
+        alias: &impl TypeAliasBlock<'tcx>,
     ) {
-        self.link_type_ref(unit, block_id, const_block);
-    }
-
-    /// Link a type alias block to its target type definition.
-    fn link_alias(&self, unit: &CompileUnit<'tcx>, block_id: BlockId, alias: &BlockAlias<'tcx>) {
         if let Some(type_id) = unit.try_type_ref_block_id(alias.base().symbol()) {
             self.add_type_relation(block_id, type_id);
         }
-    }
-}
-
-/// Semantic capability for blocks that represent contracts or constraints.
-///
-/// Concrete block variants are just today's storage categories. Future
-/// contract-like block kinds can implement this trait and reuse graph linking
-/// without changing [`ProjectGraph`]'s semantic logic.
-trait ContractBlock<'blk> {
-    fn methods(&self) -> Vec<BlockId>;
-    fn symbol(&self) -> Option<&'blk Symbol>;
-}
-
-impl<'blk> ContractBlock<'blk> for BlockTrait<'blk> {
-    fn methods(&self) -> Vec<BlockId> {
-        BlockTrait::methods(self)
-    }
-
-    fn symbol(&self) -> Option<&'blk Symbol> {
-        BlockTrait::symbol(self)
-    }
-}
-
-impl<'blk> ContractBlock<'blk> for BlockInterface<'blk> {
-    fn methods(&self) -> Vec<BlockId> {
-        BlockInterface::methods(self)
-    }
-
-    fn symbol(&self) -> Option<&'blk Symbol> {
-        BlockInterface::symbol(self)
-    }
-}
-
-/// Semantic capability for contracts that also expose structural members and
-/// can specialize other contracts.
-trait StructuralContractBlock<'blk>: ContractBlock<'blk> {
-    fn fields(&self) -> Vec<BlockId>;
-    fn base_contract_ids(&self) -> Option<Vec<SymId>>;
-    fn add_base_contract(&self, name: String, block_id: Option<BlockId>);
-}
-
-impl<'blk> StructuralContractBlock<'blk> for BlockInterface<'blk> {
-    fn fields(&self) -> Vec<BlockId> {
-        BlockInterface::fields(self)
-    }
-
-    fn base_contract_ids(&self) -> Option<Vec<SymId>> {
-        BlockInterface::nested_types(self)
-    }
-
-    fn add_base_contract(&self, name: String, block_id: Option<BlockId>) {
-        BlockInterface::add_extends(self, name, block_id);
-    }
-}
-
-/// Typed blocks that can cache a resolved type-definition block id.
-trait TypeRefBlock<'blk> {
-    fn base(&self) -> &BlockBase<'blk>;
-    fn type_ref(&self) -> Option<BlockId>;
-    fn set_resolved_type_ref(&self, type_id: BlockId);
-}
-
-impl<'blk> TypeRefBlock<'blk> for BlockReturn<'blk> {
-    fn base(&self) -> &BlockBase<'blk> {
-        self.base()
-    }
-
-    fn type_ref(&self) -> Option<BlockId> {
-        self.type_ref()
-    }
-
-    fn set_resolved_type_ref(&self, type_id: BlockId) {
-        BlockReturn::set_type_ref(self, type_id);
-    }
-}
-
-impl<'blk> TypeRefBlock<'blk> for BlockParameter<'blk> {
-    fn base(&self) -> &BlockBase<'blk> {
-        self.base()
-    }
-
-    fn type_ref(&self) -> Option<BlockId> {
-        self.type_ref()
-    }
-
-    fn set_resolved_type_ref(&self, type_id: BlockId) {
-        BlockParameter::set_type_ref(self, type_id);
-    }
-}
-
-impl<'blk> TypeRefBlock<'blk> for BlockField<'blk> {
-    fn base(&self) -> &BlockBase<'blk> {
-        self.base()
-    }
-
-    fn type_ref(&self) -> Option<BlockId> {
-        self.type_ref()
-    }
-
-    fn set_resolved_type_ref(&self, type_id: BlockId) {
-        BlockField::set_type_ref(self, type_id);
-    }
-}
-
-impl<'blk> TypeRefBlock<'blk> for BlockConst<'blk> {
-    fn base(&self) -> &BlockBase<'blk> {
-        self.base()
-    }
-
-    fn type_ref(&self) -> Option<BlockId> {
-        self.type_ref()
-    }
-
-    fn set_resolved_type_ref(&self, type_id: BlockId) {
-        BlockConst::set_type_ref(self, type_id);
     }
 }
