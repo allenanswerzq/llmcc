@@ -37,13 +37,13 @@ pub enum SymKind {
     File = 4,
     /// C++ namespace or equivalent named scope.
     Namespace = 5,
-    /// Struct-like user-defined data type.
+    /// Nominal or aggregate data type, such as a class, struct, record, or object type.
     Struct = 6,
     /// Enum type.
     Enum = 7,
     /// Free function or function-like declaration.
     Function = 8,
-    /// Function owned by a type or impl/interface body.
+    /// Function owned by a type, extension, contract, or interface-like body.
     Method = 9,
     /// Anonymous function or closure expression.
     Closure = 10,
@@ -57,11 +57,11 @@ pub enum SymKind {
     Const = 14,
     /// Static item.
     Static = 15,
-    /// Trait or protocol-like abstraction.
+    /// Contract or constraint abstraction, such as a trait, protocol, or typeclass.
     Trait = 16,
-    /// Interface abstraction.
+    /// Interface-like contract abstraction for languages that distinguish it.
     Interface = 17,
-    /// Implementation block or equivalent extension body.
+    /// Implementation, extension, or conformance body.
     Impl = 18,
     /// Named enum variant.
     EnumVariant = 19,
@@ -196,11 +196,18 @@ impl SymKind {
     }
 
     /// Return true when this kind represents a contract implemented by a concrete type.
+    ///
+    /// This is graph policy rather than language syntax: more symbol kinds can
+    /// be added here when a future language has another explicit conformance
+    /// contract kind.
     pub fn is_implementation_contract(self) -> bool {
         matches!(self, SymKind::Interface)
     }
 
     /// Return true when this kind represents a type constraint used by another type.
+    ///
+    /// This captures contract-like types that should be modeled as dependency
+    /// constraints rather than direct implementation relations.
     pub fn is_type_constraint(self) -> bool {
         matches!(self, SymKind::Trait)
     }
@@ -272,8 +279,9 @@ pub struct Symbol {
     pub is_global: AtomicBool,
     /// Type: component or related type ids owned by this symbol.
     ///
-    /// Examples: tuple element types, array element type, struct field types,
-    /// generic arguments, implemented interfaces, or union/object members.
+    /// Examples: tuple/array element types, aggregate member types, generic
+    /// arguments, implemented contracts, type constraints, or union/object
+    /// members.
     pub nested_types: RwLock<Vec<SymId>>,
     /// Ownership: symbol that owns this field/member symbol.
     ///
@@ -547,7 +555,7 @@ impl Symbol {
         self.block_id.store(block_id.0 + 1, Ordering::Relaxed);
     }
 
-    /// Gets the nested types for compound types (tuples, arrays, structs, enums).
+    /// Gets related type ids recorded on this symbol.
     /// Returns None if no nested types have been set, Some(vec) otherwise.
     #[inline]
     pub fn nested_types(&self) -> Option<Vec<SymId>> {
@@ -559,8 +567,7 @@ impl Symbol {
         }
     }
 
-    /// Adds a type to the nested types list for compound types.
-    /// For tuples/arrays, this is in element order. For structs/enums, in field order.
+    /// Adds a related type id while preserving the producer's semantic order.
     #[inline]
     pub fn add_nested_type(&self, ty: SymId) {
         self.nested_types.write().push(ty);

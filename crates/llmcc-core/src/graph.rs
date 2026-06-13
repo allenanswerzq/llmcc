@@ -122,12 +122,19 @@ impl<'tcx> ProjectGraph<'tcx> {
             self.add_contains(parent_id, block_id);
         }
 
+        // Concrete block variants are optional normalized categories. Languages
+        // emit only the variants that match their semantics; graph linking below
+        // uses semantic predicates where behavior should apply across variants.
         match block {
             BasicBlock::Func(func) => self.link_func(unit, block_id, func),
-            BasicBlock::Class(class) => self.link_class(unit, block_id, class),
-            BasicBlock::Impl(impl_block) => self.link_impl(unit, block_id, impl_block),
-            BasicBlock::Trait(trait_block) => self.link_trait(unit, block_id, trait_block),
-            BasicBlock::Interface(iface_block) => self.link_interface(unit, block_id, iface_block),
+            BasicBlock::Class(class) => self.link_nominal_type(unit, block_id, class),
+            BasicBlock::Impl(implementation) => {
+                self.link_implementation(unit, block_id, implementation)
+            }
+            BasicBlock::Trait(contract) => self.link_contract(unit, block_id, *contract),
+            BasicBlock::Interface(contract) => {
+                self.link_structural_contract(unit, block_id, *contract)
+            }
             BasicBlock::Enum(enum_block) => self.link_enum(unit, block_id, enum_block),
             BasicBlock::Call(call) => self.link_call(unit, block_id, call),
             BasicBlock::Field(field) => self.link_field(unit, block_id, field),
@@ -204,21 +211,21 @@ impl<'tcx> ProjectGraph<'tcx> {
         self.insert_relation_pair(owner, BlockRelation::HasMethod, method);
     }
 
-    /// Insert bidirectional implementation-target relations.
+    /// Insert bidirectional implementation/extension target relations.
     #[inline]
-    fn add_impl_for(&self, impl_block: BlockId, target: BlockId) {
-        self.insert_relation_pair(impl_block, BlockRelation::ImplFor, target);
+    fn add_implementation_target(&self, implementation: BlockId, target: BlockId) {
+        self.insert_relation_pair(implementation, BlockRelation::ImplFor, target);
     }
 
     /// Insert bidirectional implementation-contract relations.
     #[inline]
-    fn add_implements(&self, implementer: BlockId, contract: BlockId) {
+    fn add_conformance(&self, implementer: BlockId, contract: BlockId) {
         self.insert_relation_pair(implementer, BlockRelation::Implements, contract);
     }
 
-    /// Insert bidirectional type generalization relations.
+    /// Insert bidirectional type/contract specialization relations.
     #[inline]
-    fn add_extends(&self, derived: BlockId, base: BlockId) {
+    fn add_specialization(&self, derived: BlockId, base: BlockId) {
         self.insert_relation_pair(derived, BlockRelation::Extends, base);
     }
 
@@ -373,125 +380,127 @@ impl<'tcx> ProjectGraph<'tcx> {
         }
     }
 
-    /// Link a nominal type block.
-    fn link_class(&self, unit: &CompileUnit<'tcx>, block_id: BlockId, class: &BlockClass<'tcx>) {
+    /// Link a nominal or aggregate type block.
+    fn link_nominal_type(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        block_id: BlockId,
+        nominal: &BlockClass<'tcx>,
+    ) {
         // Structural edges.
-        for field_id in class.fields() {
+        for field_id in nominal.fields() {
             self.add_field(block_id, field_id);
         }
-        for method_id in class.methods() {
+        for method_id in nominal.methods() {
             self.add_method(block_id, method_id);
         }
 
         // Base-type edge and display metadata.
-        if let Some(class_sym) = class.symbol() {
-            if let Some((extends_sym, extends_block_id)) = unit.try_type_of_with_block_id(class_sym)
-            {
-                self.add_extends(block_id, extends_block_id);
-                let extends_name = unit.resolve_name(extends_sym.name);
-                class.set_extends(extends_name, Some(extends_block_id));
+        if let Some(symbol) = nominal.symbol() {
+            if let Some((base_symbol, base_block_id)) = unit.try_type_of_with_block_id(symbol) {
+                self.add_specialization(block_id, base_block_id);
+                let base_name = unit.resolve_name(base_symbol.name);
+                nominal.set_extends(base_name, Some(base_block_id));
             }
         }
 
-        // Nested type metadata can represent implemented contracts or type constraints.
-        if let Some(nested) = class.nested_types() {
+        // Nested type metadata can represent implemented contracts, constraints,
+        // decorator targets, generic arguments, or other type-shaped dependencies.
+        if let Some(nested) = nominal.nested_types() {
             for type_id in nested {
                 if let Some((type_sym, type_block_id)) = unit.try_symbol_with_block_id(type_id) {
-                    class.add_type_dep(type_block_id);
+                    nominal.add_type_dep(type_block_id);
 
                     let type_kind = type_sym.kind();
                     if type_kind.is_type_constraint() {
                         self.add_use(block_id, type_block_id);
                     } else if type_kind.is_implementation_contract() {
                         self.add_use(block_id, type_block_id);
-                        self.add_implements(block_id, type_block_id);
+                        self.add_conformance(block_id, type_block_id);
                     }
                 }
             }
         }
 
         // Decorator dependencies.
-        if let Some(decorators) = class.decorators() {
+        if let Some(decorators) = nominal.decorators() {
             for decorator_id in decorators {
                 if let Some(decorator_block_id) = unit.try_symbol_block_id(decorator_id) {
-                    class.add_type_dep(decorator_block_id);
+                    nominal.add_type_dep(decorator_block_id);
                     self.add_use(block_id, decorator_block_id);
                 }
             }
         }
     }
 
-    /// Link an implementation block.
-    fn link_impl(&self, unit: &CompileUnit<'tcx>, block_id: BlockId, impl_block: &BlockImpl<'tcx>) {
+    /// Link an implementation, extension, or conformance block.
+    fn link_implementation(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        block_id: BlockId,
+        implementation: &BlockImpl<'tcx>,
+    ) {
         // Structural edges.
-        for method_id in impl_block.methods() {
+        for method_id in implementation.methods() {
             self.add_method(block_id, method_id);
         }
 
         // Target type edge and target generic arguments.
-        if let Some(target_id) = impl_block.resolved_target() {
-            impl_block.set_target_ref(target_id);
-            self.add_impl_for(block_id, target_id);
+        if let Some(target_id) = implementation.resolved_target() {
+            implementation.set_target_ref(target_id);
+            self.add_implementation_target(block_id, target_id);
 
-            if let Some(nested_types) = impl_block.target_nested_types() {
+            if let Some(nested_types) = implementation.target_nested_types() {
                 let target_block = unit.block(target_id);
                 self.record_type_deps_from_symbols(unit, target_block.base(), nested_types);
             }
         }
 
         // Implemented contract edge.
-        if let Some(contract_id) = impl_block.resolved_trait() {
-            impl_block.set_trait_ref(contract_id);
-            self.add_implements(block_id, contract_id);
+        if let Some(contract_id) = implementation.resolved_trait() {
+            implementation.set_trait_ref(contract_id);
+            self.add_conformance(block_id, contract_id);
         }
     }
 
-    /// Link a contract/trait block.
-    fn link_trait(
-        &self,
-        unit: &CompileUnit<'tcx>,
-        block_id: BlockId,
-        trait_block: &BlockTrait<'tcx>,
-    ) {
+    /// Link a contract block.
+    fn link_contract<C>(&self, unit: &CompileUnit<'tcx>, block_id: BlockId, contract: &C)
+    where
+        C: ContractBlock<'tcx> + ?Sized,
+    {
         // Structural edges.
-        for method_id in trait_block.methods() {
+        for method_id in contract.methods() {
             self.add_method(block_id, method_id);
         }
 
         // Generic bounds.
-        self.link_type_parameter_bounds(unit, block_id, trait_block.symbol());
+        self.link_type_parameter_bounds(unit, block_id, contract.symbol());
     }
 
-    /// Link an interface-like contract block.
-    fn link_interface(
-        &self,
-        unit: &CompileUnit<'tcx>,
-        block_id: BlockId,
-        iface_block: &BlockInterface<'tcx>,
-    ) {
-        // Structural edges.
-        for method_id in iface_block.methods() {
-            self.add_method(block_id, method_id);
-        }
-        for field_id in iface_block.fields() {
+    /// Link a structural contract block.
+    fn link_structural_contract<C>(&self, unit: &CompileUnit<'tcx>, block_id: BlockId, contract: &C)
+    where
+        C: StructuralContractBlock<'tcx> + ?Sized,
+    {
+        self.link_contract(unit, block_id, contract);
+
+        // Field ownership is an additional structural-contract capability.
+        for field_id in contract.fields() {
             self.add_field(block_id, field_id);
         }
 
         // Extended contract edges and display metadata.
-        if let Some(nested) = iface_block.nested_types() {
+        if let Some(nested) = contract.base_contract_ids() {
             for base_type_id in nested {
                 if let Some((base_sym, base_block_id)) = unit.try_symbol_with_block_id(base_type_id)
                 {
-                    self.add_extends(block_id, base_block_id);
+                    self.add_specialization(block_id, base_block_id);
 
                     let base_name = unit.resolve_name(base_sym.name);
-                    iface_block.add_extends(base_name, Some(base_block_id));
+                    contract.add_base_contract(base_name, Some(base_block_id));
                 }
             }
         }
-
-        // Generic bounds.
-        self.link_type_parameter_bounds(unit, block_id, iface_block.symbol());
     }
 
     /// Link an enum block.
@@ -554,6 +563,58 @@ impl<'tcx> ProjectGraph<'tcx> {
         if let Some(type_id) = unit.try_type_ref_block_id(alias.base().symbol()) {
             self.add_type_relation(block_id, type_id);
         }
+    }
+}
+
+/// Semantic capability for blocks that represent contracts or constraints.
+///
+/// Concrete block variants are just today's storage categories. Future
+/// contract-like block kinds can implement this trait and reuse graph linking
+/// without changing [`ProjectGraph`]'s semantic logic.
+trait ContractBlock<'blk> {
+    fn methods(&self) -> Vec<BlockId>;
+    fn symbol(&self) -> Option<&'blk Symbol>;
+}
+
+impl<'blk> ContractBlock<'blk> for BlockTrait<'blk> {
+    fn methods(&self) -> Vec<BlockId> {
+        BlockTrait::methods(self)
+    }
+
+    fn symbol(&self) -> Option<&'blk Symbol> {
+        BlockTrait::symbol(self)
+    }
+}
+
+impl<'blk> ContractBlock<'blk> for BlockInterface<'blk> {
+    fn methods(&self) -> Vec<BlockId> {
+        BlockInterface::methods(self)
+    }
+
+    fn symbol(&self) -> Option<&'blk Symbol> {
+        BlockInterface::symbol(self)
+    }
+}
+
+/// Semantic capability for contracts that also expose structural members and
+/// can specialize other contracts.
+trait StructuralContractBlock<'blk>: ContractBlock<'blk> {
+    fn fields(&self) -> Vec<BlockId>;
+    fn base_contract_ids(&self) -> Option<Vec<SymId>>;
+    fn add_base_contract(&self, name: String, block_id: Option<BlockId>);
+}
+
+impl<'blk> StructuralContractBlock<'blk> for BlockInterface<'blk> {
+    fn fields(&self) -> Vec<BlockId> {
+        BlockInterface::fields(self)
+    }
+
+    fn base_contract_ids(&self) -> Option<Vec<SymId>> {
+        BlockInterface::nested_types(self)
+    }
+
+    fn add_base_contract(&self, name: String, block_id: Option<BlockId>) {
+        BlockInterface::add_extends(self, name, block_id);
     }
 }
 

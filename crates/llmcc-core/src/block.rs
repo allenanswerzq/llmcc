@@ -34,6 +34,15 @@ declare_arena!(BlockArena {
     Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, EnumString, FromRepr, Display, Default,
 )]
 #[strum(serialize_all = "snake_case")]
+/// Normalized block categories used by the language-agnostic graph.
+///
+/// These names are shared graph vocabulary, not a checklist every language must
+/// emit. A language should materialize only the kinds that fit its syntax and
+/// semantics, and can add a new kind when an existing category would be
+/// misleading. For example, `Class` is the current nominal/aggregate type bucket
+/// used by classes, structs, and records; `Trait` and `Interface` are two
+/// contract-like categories for languages that distinguish those concepts; and
+/// `Impl` models an implementation/extension/conformance block.
 pub enum BlockKind {
     #[default]
     Undefined,
@@ -354,49 +363,49 @@ pub enum BlockRelation {
     #[default]
     Unknown,
 
-    /// Parent contains child (Root→Func, Class→Method, etc.)
+    /// Parent block contains a child block.
     Contains,
-    /// Child is contained by parent
+    /// Child block is contained by a parent block.
     ContainedBy,
 
-    /// Func/Method → Parameters block
+    /// Callable block owns a parameter block.
     HasParameters,
-    /// Func/Method → Return block
+    /// Callable block owns a return block.
     HasReturn,
-    /// Func/Method → Func/Method it calls
+    /// Callable block calls another callable block.
     Calls,
-    /// Func/Method is called by another Func/Method
+    /// Callable block is called by another callable block.
     CalledBy,
 
-    /// Class/Enum → Field blocks
+    /// Aggregate or nominal type owns a member field block.
     HasField,
-    /// Field → Class/Enum that owns it
+    /// Member field block belongs to an aggregate or nominal type.
     FieldOf,
-    /// Field/Parameter/Return → Type definition (the type of this element)
+    /// Typed block refers to the block that defines its type.
     TypeOf,
-    /// Type definition → Field/Parameter/Return that uses this type
+    /// Type-definition block is used as the type for another block.
     TypeFor,
-    /// Impl → Type it implements for
+    /// Implementation/extension block targets a type block.
     ImplFor,
-    /// Type → Impl blocks for this type
+    /// Type block has an implementation/extension block.
     HasImpl,
-    /// Impl/Trait → Method blocks
+    /// Container block owns a member callable block.
     HasMethod,
-    /// Method → Impl/Trait/Class that owns it
+    /// Member callable block belongs to a container block.
     MethodOf,
-    /// Type → Trait it implements
+    /// Type or implementation block conforms to a contract block.
     Implements,
-    /// Trait → Types that implement it
+    /// Contract block is implemented by a type or implementation block.
     ImplementedBy,
 
-    /// Uses a type/const/function
+    /// Block uses another type, constant, callable, or contract block.
     Uses,
-    /// Is used by
+    /// Block is used by another block.
     UsedBy,
 
-    /// Trait/Interface extends another (TypeScript extends, Rust supertraits)
+    /// Type or contract block specializes another type or contract block.
     Extends,
-    /// Trait/Interface is extended by another
+    /// Type or contract block is specialized by another block.
     ExtendedBy,
 }
 
@@ -440,9 +449,12 @@ pub struct BlockBase<'blk> {
     /// Direct reference to the symbol that defines this block.
     /// Set during block building. Enables: block.symbol().type_of().block_id()
     pub symbol: Option<&'blk Symbol>,
-    /// Types this block depends on (used for arch graph edges)
-    /// For impl blocks: type arguments from trait reference (e.g., User in `impl Repository<User>`)
-    /// For structs/enums: could include generic bounds or trait objects
+    /// Type-like blocks this block depends on for architecture graph edges.
+    ///
+    /// The collection is intentionally broad: languages use it for generic
+    /// arguments, contract constraints, decorator/annotation symbols, and other
+    /// type-shaped dependencies that should be rendered as graph edges but do
+    /// not require their own dedicated relation variant.
     pub type_deps: RwLock<HashSet<BlockId>>,
 }
 
@@ -946,8 +958,11 @@ pub struct BlockClass<'blk> {
     name: String,
     pub fields: RwLock<Vec<BlockId>>,
     pub methods: RwLock<Vec<BlockId>>,
-    /// Extended class (for TypeScript/JavaScript class inheritance)
-    /// A class can only extend one other class (single inheritance)
+    /// Optional base type for languages with single primary inheritance.
+    ///
+    /// Languages without this concept leave it empty. Languages with multiple
+    /// base types should store additional generalization edges in graph
+    /// relations rather than overloading this display field.
     pub extends: RwLock<Option<(String, Option<BlockId>)>>,
 }
 
@@ -1019,12 +1034,12 @@ impl<'blk> BlockClass<'blk> {
         self.methods.read().clone()
     }
 
-    /// Set the extended class
+    /// Set the displayed base type for this nominal type block.
     pub fn set_extends(&self, name: String, block_id: Option<BlockId>) {
         *self.extends.write() = Some((name, block_id));
     }
 
-    /// Get the extended class
+    /// Return the displayed base type for this nominal type block.
     pub fn extends(&self) -> Option<(String, Option<BlockId>)> {
         self.extends.read().clone()
     }
@@ -1054,12 +1069,11 @@ impl<'blk> fmt::Display for BlockClass<'blk> {
 }
 
 impl<'blk> BlockClass<'blk> {
-    /// Format dependency entries as pseudo-children (to be rendered after real children)
-    /// Returns lines like "@tdep:3 Bar" for implemented interfaces
+    /// Format dependency entries as pseudo-children after real children.
     pub fn dependency_labels(&self, unit: CompileUnit<'blk>) -> Vec<String> {
         let mut deps = Vec::new();
 
-        // Add type_deps (includes implemented interfaces)
+        // Includes generic arguments, constraints, decorators, and contracts.
         let type_deps = self.type_deps();
         if !type_deps.is_empty() {
             let mut sorted: Vec<_> = type_deps.iter().collect();
@@ -1131,14 +1145,14 @@ impl<'blk> fmt::Display for BlockTrait<'blk> {
     }
 }
 
-/// Block representing a TypeScript interface declaration
+/// Block representing a structural or declared contract body.
 #[derive(Debug)]
 pub struct BlockInterface<'blk> {
     pub base: BlockBase<'blk>,
     name: String,
     pub methods: RwLock<Vec<BlockId>>,
     pub fields: RwLock<Vec<BlockId>>,
-    /// Extended interfaces (for TypeScript extends)
+    /// Base contracts for languages with contract inheritance/refinement.
     pub extends: RwLock<Vec<(String, Option<BlockId>)>>,
 }
 
@@ -1198,7 +1212,7 @@ impl<'blk> BlockInterface<'blk> {
         self.base.nested_types()
     }
 
-    /// Add an extended interface
+    /// Add a displayed base contract.
     pub fn add_extends(&self, name: String, block_id: Option<BlockId>) {
         let mut extends = self.extends.write();
         if !extends
@@ -1209,7 +1223,7 @@ impl<'blk> BlockInterface<'blk> {
         }
     }
 
-    /// Get extended interfaces
+    /// Return displayed base contracts.
     pub fn extends(&self) -> Vec<(String, Option<BlockId>)> {
         self.extends.read().clone()
     }
@@ -1251,9 +1265,9 @@ pub struct BlockImpl<'blk> {
     target: RwLock<Option<BlockId>>,
     /// Target type symbol (for deferred block_id resolution)
     target_sym: Option<&'blk Symbol>,
-    /// Trait block ID (resolved during link_blocks if needed)
+    /// Contract block ID (resolved during link_blocks if needed).
     trait_ref: RwLock<Option<BlockId>>,
-    /// Trait symbol (for deferred block_id resolution)
+    /// Contract symbol (for deferred block_id resolution).
     trait_sym: Option<&'blk Symbol>,
     methods: RwLock<Vec<BlockId>>,
 }
@@ -1299,7 +1313,7 @@ impl<'blk> BlockImpl<'blk> {
         self.target_sym = Some(symbol);
     }
 
-    /// Set the implemented trait from its bound symbol.
+    /// Set the implemented contract from its bound symbol.
     pub fn set_trait(&mut self, unit: CompileUnit<'blk>, symbol: &'blk Symbol) {
         let resolved = unit.try_type(symbol).unwrap_or(symbol);
         *self.trait_ref.write() = resolved.block_id();
