@@ -49,7 +49,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         // try to find identifier by field first, if not found try scope's identifier
         let ident = node
             .query(unit)
-            .ident_with_field(field_id)
+            .try_ident_with_field(field_id)
             .or_else(|| node.as_scope().and_then(|sn| sn.try_ident()))?;
 
         let sym = scopes.lookup_or_insert(ident.name, node, kind)?;
@@ -201,7 +201,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         field_id: u16,
         on_scope_enter: Option<ScopeEntryCallback<'tcx>>,
     ) {
-        if let Some((sn, ident)) = node.query(unit).scope_and_ident_with_field(field_id)
+        if let Some((sn, ident)) = node.query(unit).try_scope_and_ident_with_field(field_id)
             && let Some(sym) = self.lookup_or_convert(unit, scopes, ident.name, node, kind)
         {
             self.visit_with_scope(unit, node, scopes, sym, sn, ident, on_scope_enter);
@@ -402,7 +402,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         if !is_method
             && let Some((_, ident)) = node
                 .query(unit)
-                .scope_and_ident_with_field(LangRust::field_name)
+                .try_scope_and_ident_with_field(LangRust::field_name)
             && let Some(sym) = scopes.lookup_symbol(ident.name, SymKindSet::from_kind(kind))
         {
             scopes.globals().insert(sym);
@@ -464,7 +464,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         // Also add struct to unit_globals for cross-crate type resolution
         if let Some((_, ident)) = node
             .query(unit)
-            .scope_and_ident_with_field(LangRust::field_name)
+            .try_scope_and_ident_with_field(LangRust::field_name)
             && let Some(sym) =
                 scopes.lookup_symbol(ident.name, SymKindSet::from_kind(SymKind::Struct))
         {
@@ -496,7 +496,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         // Also add enum to unit_globals for cross-crate type resolution
         if let Some((_, ident)) = node
             .query(unit)
-            .scope_and_ident_with_field(LangRust::field_name)
+            .try_scope_and_ident_with_field(LangRust::field_name)
             && let Some(sym) =
                 scopes.lookup_symbol(ident.name, SymKindSet::from_kind(SymKind::Enum))
         {
@@ -531,7 +531,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         // Also add trait to unit_globals for cross-crate type resolution
         if let Some((_, ident)) = node
             .query(unit)
-            .scope_and_ident_with_field(LangRust::field_name)
+            .try_scope_and_ident_with_field(LangRust::field_name)
             && let Some(sym) =
                 scopes.lookup_symbol(ident.name, SymKindSet::from_kind(SymKind::Trait))
         {
@@ -550,7 +550,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         _parent: Option<&Symbol>,
     ) {
         // For impl trait references, first try Trait, then UnresolvedType for cross-file resolution
-        if let Some(ti) = node.query(unit).ident_with_field(LangRust::field_trait) {
+        if let Some(ti) = node.query(unit).try_ident_with_field(LangRust::field_trait) {
             // First try looking up as Trait (in-file case)
             let symbol = scopes
                 .lookup_symbol(ti.name, SymKindSet::from_kind(SymKind::Trait))
@@ -567,7 +567,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
         if let Some((sn, ti)) = node
             .query(unit)
-            .scope_and_ident_with_field(LangRust::field_type)
+            .try_scope_and_ident_with_field(LangRust::field_type)
             && let Some(symbol) =
                 self.lookup_or_convert(unit, scopes, ti.name, node, SymKind::UnresolvedType)
         {
@@ -810,7 +810,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
         // Set type_of on the variant to point to the parent enum
         if let Some(enum_sym) = parent_enum
-            && let Some(ident) = node.query(unit).ident_with_field(LangRust::field_name)
+            && let Some(ident) = node.query(unit).try_ident_with_field(LangRust::field_name)
             && let Some(variant_sym) =
                 scopes.lookup_symbol(ident.name, SymKindSet::from_kind(SymKind::EnumVariant))
         {
@@ -829,7 +829,9 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         _parent: Option<&Symbol>,
     ) {
         // Check if this is a 'self' parameter
-        if let Some(ident) = node.query(unit).ident_with_field(LangRust::field_pattern)
+        if let Some(ident) = node
+            .query(unit)
+            .try_ident_with_field(LangRust::field_pattern)
             && ident.name == "self"
             && let Some(symbol) =
                 scopes.lookup_symbol(ident.name, SymKindSet::from_kind(SymKind::Field))

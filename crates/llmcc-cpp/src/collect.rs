@@ -89,7 +89,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
     ) -> Option<&'tcx Symbol> {
         let ident = node
             .query(unit)
-            .ident_with_field(field_id)
+            .try_ident_with_field(field_id)
             .or_else(|| node.as_scope().and_then(|sn| sn.try_ident()))?;
 
         let sym = scopes.lookup_or_insert(ident.name, node, kind)?;
@@ -225,7 +225,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         }
 
         // Try direct identifier last
-        if let Some(ident) = node.query(unit).first_ident() {
+        if let Some(ident) = node.query(unit).try_first_ident() {
             return Some(ident);
         }
 
@@ -255,7 +255,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         }
 
         // Fall back to find_ident for simple cases
-        node.query(unit).first_ident()
+        node.query(unit).try_first_ident()
     }
 
     /// Check if a top-level declarator represents a function declaration.
@@ -633,7 +633,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
         };
 
         // Get namespace name from the 'name' field
-        let Some(name_ident) = node.query(unit).ident_with_field(LangCpp::field_name) else {
+        let Some(name_ident) = node.query(unit).try_ident_with_field(LangCpp::field_name) else {
             // Anonymous namespace - still need to set up scope
             self.visit_with_fresh_scope(unit, node, scopes, _namespace, None, |_s, _u, _n, _sc| {});
             return;
@@ -740,7 +740,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
     ) {
         let Some(sn) = node.as_scope() else { return };
 
-        let Some(name_ident) = node.query(unit).ident_with_field(LangCpp::field_name) else {
+        let Some(name_ident) = node.query(unit).try_ident_with_field(LangCpp::field_name) else {
             // Anonymous enum - still need to set up scope for nested enumerators
             self.visit_with_fresh_scope(unit, node, scopes, _namespace, None, |_s, _u, _n, _sc| {});
             return;
@@ -778,7 +778,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(name_ident) = node.query(unit).ident_with_field(LangCpp::field_name)
+        if let Some(name_ident) = node.query(unit).try_ident_with_field(LangCpp::field_name)
             && let Some(sym) = scopes.lookup_or_insert(name_ident.name, node, SymKind::Const)
         {
             name_ident.set_symbol(sym);
@@ -1076,7 +1076,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
             return;
         };
 
-        if let Some(name_ident) = node.query(unit).ident_with_field(LangCpp::field_name)
+        if let Some(name_ident) = node.query(unit).try_ident_with_field(LangCpp::field_name)
             && let Some(sym) = scopes.lookup_or_insert(name_ident.name, node, SymKind::TypeAlias)
         {
             name_ident.set_symbol(sym);
@@ -1102,7 +1102,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
             return;
         };
 
-        if let Some(name_ident) = node.query(unit).ident_with_field(LangCpp::field_name)
+        if let Some(name_ident) = node.query(unit).try_ident_with_field(LangCpp::field_name)
             && let Some(sym) = scopes.lookup_or_insert(name_ident.name, node, SymKind::Trait)
         {
             self.visit_with_scope(unit, node, scopes, sym, sn, name_ident);
@@ -1173,7 +1173,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
             namespace,
             parent,
             |_, unit, node, scopes| {
-                if let Some(ident) = node.query(unit).first_ident()
+                if let Some(ident) = node.query(unit).try_first_ident()
                     && let Some(sym) =
                         scopes.lookup_or_insert(ident.name, node, SymKind::TypeParameter)
                 {
@@ -1199,7 +1199,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
             namespace,
             parent,
             |_, unit, node, scopes| {
-                if let Some(ident) = node.query(unit).first_ident()
+                if let Some(ident) = node.query(unit).try_first_ident()
                     && let Some(sym) =
                         scopes.lookup_or_insert(ident.name, node, SymKind::TypeParameter)
                 {
@@ -1225,7 +1225,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
             namespace,
             parent,
             |_, unit, node, scopes| {
-                if let Some(ident) = node.query(unit).first_ident()
+                if let Some(ident) = node.query(unit).try_first_ident()
                     && let Some(sym) =
                         scopes.lookup_or_insert(ident.name, node, SymKind::TypeParameter)
                 {
@@ -1251,7 +1251,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
             namespace,
             parent,
             |_, unit, node, scopes| {
-                if let Some(ident) = node.query(unit).first_ident()
+                if let Some(ident) = node.query(unit).try_first_ident()
                     && let Some(sym) =
                         scopes.lookup_or_insert(ident.name, node, SymKind::TypeParameter)
                 {
@@ -1332,7 +1332,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx>
     ) {
         let Some(sn) = node.as_scope() else { return };
 
-        if let Some(name_ident) = node.query(unit).first_ident()
+        if let Some(name_ident) = node.query(unit).try_first_ident()
             && let Some(sym) = scopes.lookup_or_insert(name_ident.name, node, SymKind::Module)
         {
             self.visit_with_scope(unit, node, scopes, sym, sn, name_ident);

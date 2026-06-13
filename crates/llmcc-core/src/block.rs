@@ -9,7 +9,8 @@ use crate::context::CompileUnit;
 use crate::declare_arena;
 pub use crate::id::{BlockId, reset_block_id_counter};
 use crate::ir::HirNode;
-use crate::symbol::Symbol;
+use crate::scope::Scope;
+use crate::symbol::{SymKind, Symbol};
 
 declare_arena!(BlockArena {
     bb: BasicBlock<'a>,
@@ -77,6 +78,16 @@ impl BlockKind {
                 | BlockKind::Alias
         )
     }
+
+    /// Return true when this block kind owns the primary symbol's block id.
+    pub fn owns_symbol_block_id(self) -> bool {
+        self.is_graph_block() && !matches!(self, BlockKind::Impl | BlockKind::Return)
+    }
+
+    /// Return true when graph building should require a scope symbol for this kind.
+    pub fn requires_scope_symbol(self) -> bool {
+        matches!(self, BlockKind::Func | BlockKind::Method)
+    }
 }
 
 /// Concrete block stored in the block graph.
@@ -108,6 +119,48 @@ impl<'blk> BasicBlock<'blk> {
             BasicBlock::Func(func) => func.dependency_labels(unit),
             BasicBlock::Class(class) => class.dependency_labels(unit),
             _ => Vec::new(),
+        }
+    }
+
+    pub(crate) fn attach_child_blocks(&self, children: &[(BlockId, BlockKind)]) {
+        for &(child_id, child_kind) in children {
+            self.attach_child_block(child_id, child_kind);
+        }
+    }
+
+    fn attach_child_block(&self, child_id: BlockId, child_kind: BlockKind) {
+        match self {
+            BasicBlock::Func(func) => match child_kind {
+                BlockKind::Parameter => func.add_parameter(child_id),
+                BlockKind::Return => func.set_return(child_id),
+                _ => {}
+            },
+            BasicBlock::Class(class) => match child_kind {
+                BlockKind::Field => class.add_field(child_id),
+                BlockKind::Func | BlockKind::Method => class.add_method(child_id),
+                _ => {}
+            },
+            BasicBlock::Enum(enum_block) => {
+                if child_kind == BlockKind::Field {
+                    enum_block.add_variant(child_id);
+                }
+            }
+            BasicBlock::Trait(trait_block) => {
+                if matches!(child_kind, BlockKind::Func | BlockKind::Method) {
+                    trait_block.add_method(child_id);
+                }
+            }
+            BasicBlock::Interface(iface_block) => match child_kind {
+                BlockKind::Field => iface_block.add_field(child_id),
+                BlockKind::Func | BlockKind::Method => iface_block.add_method(child_id),
+                _ => {}
+            },
+            BasicBlock::Impl(impl_block) => {
+                if matches!(child_kind, BlockKind::Func | BlockKind::Method) {
+                    impl_block.add_method(child_id);
+                }
+            }
+            _ => {}
         }
     }
 }
@@ -462,6 +515,18 @@ fn fmt_typed_block(
     }
 }
 
+fn set_type_fields<'blk>(
+    unit: CompileUnit<'blk>,
+    type_symbol: &'blk Symbol,
+    type_name: &mut String,
+    type_ref: &RwLock<Option<BlockId>>,
+) {
+    *type_name = unit
+        .resolve_interned_owned(type_symbol.name)
+        .unwrap_or_default();
+    *type_ref.write() = type_symbol.block_id();
+}
+
 #[derive(Debug)]
 pub struct BlockRoot<'blk> {
     pub base: BlockBase<'blk>,
@@ -508,6 +573,39 @@ impl<'blk> BlockRoot<'blk> {
 
     pub fn set_crate_name(&self, name: String) {
         *self.crate_name.write() = Some(name);
+    }
+
+    pub fn set_meta(&self, unit: CompileUnit<'blk>, scope: Option<&Scope<'blk>>) {
+        let meta = unit.unit_meta();
+        let interner = unit.interner();
+
+        if let Some(ref package_name) = meta.package_name {
+            self.set_crate_name(package_name.clone());
+        }
+        if let Some(ref package_root) = meta.package_root {
+            self.set_crate_root(package_root.display().to_string());
+        }
+        if let Some(ref module_name) = meta.module_name {
+            self.set_module_path(module_name.clone());
+        }
+        if let Some(ref module_root) = meta.module_root {
+            self.set_module_root(module_root.display().to_string());
+        }
+
+        if let Some(scope) = scope {
+            if meta.package_name.is_none()
+                && let Some(crate_sym) = scope.try_parent_symbol(SymKind::Crate)
+                && let Some(name) = interner.resolve_owned(crate_sym.name)
+            {
+                self.set_crate_name(name);
+            }
+            if meta.module_name.is_none()
+                && let Some(module_sym) = scope.try_parent_symbol(SymKind::Module)
+                && let Some(name) = interner.resolve_owned(module_sym.name)
+            {
+                self.set_module_path(name);
+            }
+        }
     }
 
     pub fn crate_name(&self) -> Option<String> {
@@ -1097,19 +1195,21 @@ impl<'blk> BlockImpl<'blk> {
         (!self.name.is_empty()).then_some(&self.name)
     }
 
-    /// Set target with both block_id (if available) and symbol (for deferred resolution)
-    pub fn set_target_info(&mut self, block_id: Option<BlockId>, sym: Option<&'blk Symbol>) {
-        *self.target.write() = block_id;
-        self.target_sym = sym;
+    /// Set the impl target type from its bound symbol.
+    pub fn set_target(&mut self, unit: CompileUnit<'blk>, symbol: &'blk Symbol) {
+        let resolved = unit.try_type(symbol).unwrap_or(symbol);
+        *self.target.write() = resolved.block_id();
+        self.target_sym = Some(symbol);
     }
 
-    /// Set trait with both block_id (if available) and symbol (for deferred resolution)
-    pub fn set_trait_info(&mut self, block_id: Option<BlockId>, sym: Option<&'blk Symbol>) {
-        *self.trait_ref.write() = block_id;
-        self.trait_sym = sym;
+    /// Set the implemented trait from its bound symbol.
+    pub fn set_trait(&mut self, unit: CompileUnit<'blk>, symbol: &'blk Symbol) {
+        let resolved = unit.try_type(symbol).unwrap_or(symbol);
+        *self.trait_ref.write() = resolved.block_id();
+        self.trait_sym = Some(resolved);
     }
 
-    pub fn set_target(&self, target_id: BlockId) {
+    pub fn set_target_ref(&self, target_id: BlockId) {
         *self.target.write() = Some(target_id);
     }
 
@@ -1251,10 +1351,9 @@ impl<'blk> BlockConst<'blk> {
         (!self.name.is_empty()).then_some(&self.name)
     }
 
-    /// Set type info for this const block (used during block building)
-    pub fn set_type_info(&mut self, type_name: String, type_ref: Option<BlockId>) {
-        self.type_name = type_name;
-        *self.type_ref.write() = type_ref;
+    /// Set the displayed type for this const block.
+    pub fn set_type(&mut self, unit: CompileUnit<'blk>, type_symbol: &'blk Symbol) {
+        set_type_fields(unit, type_symbol, &mut self.type_name, &self.type_ref);
     }
 
     /// Set type reference (used during connect_blocks for cross-file resolution)
@@ -1333,10 +1432,9 @@ impl<'blk> BlockField<'blk> {
         (!self.name.is_empty()).then_some(&self.name)
     }
 
-    /// Set type info for this field block (used during block building)
-    pub fn set_type_info(&mut self, type_name: String, type_ref: Option<BlockId>) {
-        self.type_name = type_name;
-        *self.type_ref.write() = type_ref;
+    /// Set the displayed type for this field block.
+    pub fn set_type(&mut self, unit: CompileUnit<'blk>, type_symbol: &'blk Symbol) {
+        set_type_fields(unit, type_symbol, &mut self.type_name, &self.type_ref);
     }
 
     /// Set type reference (used during connect_blocks for cross-file resolution)
@@ -1418,10 +1516,9 @@ impl<'blk> BlockParameter<'blk> {
         (!self.name.is_empty()).then_some(&self.name)
     }
 
-    /// Set type info for this parameter block (used during block building)
-    pub fn set_type_info(&mut self, type_name: String, type_ref: Option<BlockId>) {
-        self.type_name = type_name;
-        *self.type_ref.write() = type_ref;
+    /// Set the displayed type for this parameter block.
+    pub fn set_type(&mut self, unit: CompileUnit<'blk>, type_symbol: &'blk Symbol) {
+        set_type_fields(unit, type_symbol, &mut self.type_name, &self.type_ref);
     }
 
     /// Set type reference (used during connect_blocks for cross-file resolution)
@@ -1483,10 +1580,9 @@ impl<'blk> BlockReturn<'blk> {
         }
     }
 
-    /// Set type info for this return block (used during block building)
-    pub fn set_type_info(&mut self, type_name: String, type_ref: Option<BlockId>) {
-        self.type_name = type_name;
-        *self.type_ref.write() = type_ref;
+    /// Set the displayed type for this return block.
+    pub fn set_type(&mut self, unit: CompileUnit<'blk>, type_symbol: &'blk Symbol) {
+        set_type_fields(unit, type_symbol, &mut self.type_name, &self.type_ref);
     }
 
     /// Set type reference (used during connect_blocks for cross-file resolution)

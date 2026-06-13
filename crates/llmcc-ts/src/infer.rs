@@ -47,7 +47,7 @@ fn infer_type_impl<'tcx>(
 
         // Type identifiers
         LangTypeScript::type_identifier => {
-            let ident = node.query(unit).first_ident()?;
+            let ident = node.query(unit).try_first_ident()?;
             // First try existing symbol on the identifier
             if let Some(sym) = ident.try_symbol() {
                 // If it's a concrete type (Struct/Trait/Enum), use it directly
@@ -76,7 +76,7 @@ fn infer_type_impl<'tcx>(
 
         // Identifier
         LangTypeScript::identifier => {
-            let ident = node.query(unit).first_ident()?;
+            let ident = node.query(unit).try_first_ident()?;
             let symbol = ident.try_symbol()?;
 
             if let Some(type_id) = symbol.type_of() {
@@ -88,7 +88,7 @@ fn infer_type_impl<'tcx>(
 
         // Property identifier
         LangTypeScript::property_identifier => {
-            let ident = node.query(unit).first_ident()?;
+            let ident = node.query(unit).try_first_ident()?;
             ident.try_symbol()
         }
 
@@ -224,7 +224,7 @@ fn infer_type_impl<'tcx>(
             }),
 
         _ => {
-            if let Some(ident) = node.query(unit).first_ident() {
+            if let Some(ident) = node.query(unit).try_first_ident() {
                 return ident.try_symbol();
             }
             None
@@ -530,7 +530,7 @@ fn infer_member_expression<'tcx>(
     let obj_type = infer_type_impl(unit, scopes, &obj_node, depth + 1)?;
 
     let prop_node = node.child_by_field(unit, LangTypeScript::field_property)?;
-    let prop_ident = prop_node.query(unit).first_ident()?;
+    let prop_ident = prop_node.query(unit).try_first_ident()?;
 
     // Look up property in object's scope
     scopes

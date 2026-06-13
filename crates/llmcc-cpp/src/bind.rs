@@ -78,7 +78,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         if let Some(decl_node) = node.child_by_field(unit, LangCpp::field_declarator) {
             if let Some(field_sym) = decl_node
                 .query(unit)
-                .first_ident()
+                .try_first_ident()
                 .and_then(|i| i.try_symbol())
             {
                 // Set field_of to parent struct/class
@@ -106,7 +106,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         if let Some(decl_node) = node.child_by_field(unit, LangCpp::field_declarator) {
             if let Some(param_sym) = decl_node
                 .query(unit)
-                .first_ident()
+                .try_first_ident()
                 .and_then(|i| i.try_symbol())
             {
                 // Get the type and resolve it
@@ -126,7 +126,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         unit: &CompileUnit<'tcx>,
         node: &'a HirNode<'tcx>,
     ) -> Option<&'tcx llmcc_core::ir::HirIdent<'tcx>> {
-        if let Some(ident) = node.query(unit).first_ident() {
+        if let Some(ident) = node.query(unit).try_first_ident() {
             return Some(ident);
         }
 
@@ -325,7 +325,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 let child = unit.hir_node(*child_id);
                 if child.kind_id() == LangCpp::base_class_clause {
                     // Find the base class type identifier
-                    if let Some(type_ident) = child.query(unit).first_ident()
+                    if let Some(type_ident) = child.query(unit).try_first_ident()
                         && let Some(base_sym) =
                             scopes.lookup_symbol(type_ident.name, SYM_KIND_TYPES)
                     {
@@ -459,7 +459,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             self.visit_auto(unit, &scope_node, scopes, namespace, parent);
 
             // Try to get the scope's symbol and push it
-            if let Some(scope_ident) = scope_node.query(unit).first_ident()
+            if let Some(scope_ident) = scope_node.query(unit).try_first_ident()
                 && let Some(scope_sym) = scope_ident.try_symbol()
                 && let Some(scope_id) = scope_sym.opt_owned_scope()
             {
@@ -467,7 +467,8 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 scopes.push_scope(scope_id);
 
                 // Now resolve the name part in the scope context
-                if let Some(name_ident) = node.query(unit).ident_with_field(LangCpp::field_name) {
+                if let Some(name_ident) = node.query(unit).try_ident_with_field(LangCpp::field_name)
+                {
                     if let Some(sym) = scopes.lookup_symbol(name_ident.name, SYM_KIND_ALL) {
                         name_ident.set_symbol(sym);
                     }
@@ -523,7 +524,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 scopes.push_scope(type_scope);
 
                 if let Some(field_node) = node.child_by_field(unit, LangCpp::field_field) {
-                    if let Some(field_ident) = field_node.query(unit).first_ident() {
+                    if let Some(field_ident) = field_node.query(unit).try_first_ident() {
                         if let Some(sym) = scopes.lookup_symbol(field_ident.name, SYM_KIND_ALL) {
                             field_ident.set_symbol(sym);
                         }

@@ -244,7 +244,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         // Check for Call blocks (explicit call blocks in Rust)
         if let BasicBlock::Call(call) = &block {
             // Get the callee symbol to check its kind
-            if let Some(callee_sym) = call.base.node.query(unit).resolved_symbol() {
+            if let Some(callee_sym) = call.base.node.query(unit).try_resolved() {
                 self.process_callee_symbol(unit, caller_func_id, caller_func, callee_sym);
             }
         }
@@ -255,7 +255,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         // that weren't converted to Call blocks.
         let node = &block.base().node;
         // Check if this node has a resolved symbol that's a function or struct
-        if let Some(callee_sym) = node.query(unit).resolved_symbol() {
+        if let Some(callee_sym) = node.query(unit).try_resolved() {
             let kind = callee_sym.kind();
             // Only process if it's not already a Call block and is callable
             if !matches!(&block, BasicBlock::Call(_))
@@ -432,7 +432,7 @@ impl<'tcx> ProjectGraph<'tcx> {
             .target()
             .or_else(|| impl_block.target_sym.and_then(|sym| sym.block_id()));
         if let Some(target_id) = target_id {
-            impl_block.set_target(target_id);
+            impl_block.set_target_ref(target_id);
             self.add_relation(block_id, BlockRelation::ImplFor, target_id);
             self.add_relation(target_id, BlockRelation::HasImpl, block_id);
 

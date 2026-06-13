@@ -9,7 +9,10 @@ use std::path::{Path, PathBuf};
 use std::time::Instant;
 use tree_sitter::Node;
 
-use crate::block::{BasicBlock, BlockArena, BlockId, reset_block_id_counter};
+use crate::block::{
+    ArenaInsertWithId as BlockArenaInsertWithId, BasicBlock, BlockArena, BlockId,
+    reset_block_id_counter,
+};
 use crate::block_rel::{BlockIndexEntry, BlockIndexMaps, BlockRelationMap};
 use crate::file::File;
 use crate::id::reset_hir_id_counter;
@@ -123,6 +126,14 @@ impl<'tcx> CompileUnit<'tcx> {
         BlockId::allocate()
     }
 
+    /// Allocate a value in the block arena using a block id.
+    pub(crate) fn alloc_block<T>(&self, id: BlockId, block: T) -> &'tcx T
+    where
+        T: BlockArenaInsertWithId<'tcx>,
+    {
+        self.cc.block_arena.alloc_with_id(id.0 as usize, block)
+    }
+
     /// Return source text between byte offsets.
     pub fn source_text(&self, start: usize, end: usize) -> String {
         self.file().get_text(start, end)
@@ -183,6 +194,26 @@ impl<'tcx> CompileUnit<'tcx> {
         self.cc.try_symbol(owner)
     }
 
+    /// Return the symbol referenced by `symbol.type_of()`, if both links exist.
+    pub fn try_type(self, symbol: &Symbol) -> Option<&'tcx Symbol> {
+        symbol.type_of().and_then(|id| self.try_symbol(id))
+    }
+
+    /// Return the graph-display type symbol for an already-bound symbol.
+    pub fn try_effective_type(self, symbol: Option<&'tcx Symbol>) -> Option<&'tcx Symbol> {
+        let symbol = symbol?;
+        if symbol.kind() == crate::symbol::SymKind::EnumVariant {
+            return None;
+        }
+
+        let type_symbol = self.try_type(symbol).unwrap_or(symbol);
+        if type_symbol.kind() == crate::symbol::SymKind::TypeParameter {
+            return self.try_type(type_symbol).or(Some(type_symbol));
+        }
+
+        Some(type_symbol)
+    }
+
     /// Return a scope by id, panicking when it is missing.
     pub fn scope(self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
         self.try_scope(scope_id)
@@ -190,10 +221,10 @@ impl<'tcx> CompileUnit<'tcx> {
     }
 
     /// Insert a block and update the block indexes for this unit.
-    pub fn insert_block(&self, id: BlockId, block: BasicBlock<'tcx>, _parent: BlockId) {
+    pub fn insert_block(&self, id: BlockId, block: BasicBlock<'tcx>) {
         let block_kind = block.kind();
         let block_name = block.try_name().map(|name| name.to_string());
-        self.cc.block_arena.alloc_with_id(id.0 as usize, block);
+        self.alloc_block(id, block);
         self.cc
             .block_indexes
             .insert_block(id, block_name, block_kind, self.index);

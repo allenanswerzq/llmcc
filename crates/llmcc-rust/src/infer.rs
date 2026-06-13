@@ -38,7 +38,7 @@ fn infer_type_impl<'tcx>(
 
         // Type identifiers
         LangRust::primitive_type | LangRust::type_identifier => {
-            let ident = node.query(unit).first_ident()?;
+            let ident = node.query(unit).try_first_ident()?;
             // First try existing symbol on the identifier
             if let Some(sym) = ident.try_symbol() {
                 // If it's a concrete type (Struct/Enum/Trait), use it directly
@@ -90,7 +90,7 @@ fn infer_type_impl<'tcx>(
 
         // Identifier
         LangRust::identifier => {
-            let ident = node.query(unit).first_ident()?;
+            let ident = node.query(unit).try_first_ident()?;
             let symbol = ident.try_symbol()?;
 
             if let Some(type_id) = symbol.type_of() {
@@ -160,7 +160,7 @@ fn infer_type_impl<'tcx>(
         LangRust::trait_bounds => infer_trait_bounds(unit, scopes, node, depth + 1),
 
         _ => {
-            if let Some(ident) = node.query(unit).first_ident() {
+            if let Some(ident) = node.query(unit).try_first_ident() {
                 return ident.try_symbol();
             }
             None
@@ -282,7 +282,7 @@ fn infer_field_expression<'tcx>(
     let obj_type = infer_type_impl(unit, scopes, &value_node, depth + 1)?;
 
     let field_node = node.child_by_field(unit, LangRust::field_field)?;
-    let field_ident = field_node.query(unit).first_ident()?;
+    let field_ident = field_node.query(unit).try_first_ident()?;
 
     // Check if field is a numeric literal (tuple indexing)
     if field_node.kind() == HirKind::Text {
