@@ -21,7 +21,7 @@ use crate::types::{ARCHITECTURE_KINDS, RenderEdge, RenderNode};
 /// - Fields (we only show type composition edges)
 /// - Private/internal functions
 pub fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
-    let all_blocks = project.cc.blocks();
+    let all_blocks = project.context().blocks();
 
     let mut nodes: Vec<RenderNode> = all_blocks
         .into_par_iter()
@@ -35,7 +35,7 @@ pub fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
                 return None;
             }
 
-            let unit = project.cc.compile_unit(unit_index);
+            let unit = project.context().compile_unit(unit_index);
             let block = unit.block(block_id);
 
             let display_name = entry
@@ -106,8 +106,9 @@ pub fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
 /// - type_arg → generic: Generic type arguments
 /// - type_dep → type: Type dependencies from impl blocks
 pub fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSet<RenderEdge> {
-    let get_kind =
-        |id: BlockId| -> Option<BlockKind> { project.cc.try_block(id).map(|block| block.kind()) };
+    let get_kind = |id: BlockId| -> Option<BlockKind> {
+        project.context().try_block(id).map(|block| block.kind())
+    };
 
     // Collect edges in parallel for each block
     let node_vec: Vec<_> = node_set.iter().copied().collect();
@@ -177,13 +178,13 @@ pub fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTr
 
 fn collect_field_types(project: &ProjectGraph, field_id: BlockId, types: &mut Vec<BlockId>) {
     let field_types = project
-        .cc
+        .context()
         .block_relations()
         .related(field_id, BlockRelation::TypeOf);
     types.extend(field_types);
 
     let nested_fields = project
-        .cc
+        .context()
         .block_relations()
         .related(field_id, BlockRelation::HasField);
     for nested_field_id in nested_fields {
@@ -202,7 +203,7 @@ fn collect_field_edges<F>(
     F: Fn(BlockId) -> Option<BlockKind>,
 {
     let fields = project
-        .cc
+        .context()
         .block_relations()
         .related(block_id, BlockRelation::HasField);
 
@@ -226,7 +227,7 @@ fn collect_field_edges<F>(
         }
 
         // Handle field type arguments
-        let Some(field_block) = project.cc.try_block(field_id) else {
+        let Some(field_block) = project.context().try_block(field_id) else {
             continue;
         };
         let Some(field) = field_block.as_field() else {
@@ -253,11 +254,11 @@ fn collect_field_edges<F>(
 
         let field_type_is_nested = nested_types.iter().any(|&nested_id| {
             project
-                .cc
+                .context()
                 .try_symbol(nested_id)
                 .and_then(|sym| {
                     sym.type_of()
-                        .and_then(|id| project.cc.try_symbol(id))
+                        .and_then(|id| project.context().try_symbol(id))
                         .or(Some(sym))
                 })
                 .and_then(|sym| sym.block_id())
@@ -278,12 +279,12 @@ fn collect_field_edges<F>(
             });
 
             for nested_type_id in nested_types {
-                let Some(nested_sym) = project.cc.try_symbol(nested_type_id) else {
+                let Some(nested_sym) = project.context().try_symbol(nested_type_id) else {
                     continue;
                 };
                 let actual_sym = nested_sym
                     .type_of()
-                    .and_then(|id| project.cc.try_symbol(id))
+                    .and_then(|id| project.context().try_symbol(id))
                     .unwrap_or(nested_sym);
                 let Some(nested_block_id) = actual_sym.block_id() else {
                     continue;
@@ -306,12 +307,12 @@ fn collect_field_edges<F>(
         }
 
         for nested_type_id in nested_types {
-            let Some(nested_sym) = project.cc.try_symbol(nested_type_id) else {
+            let Some(nested_sym) = project.context().try_symbol(nested_type_id) else {
                 continue;
             };
             let actual_sym = nested_sym
                 .type_of()
-                .and_then(|id| project.cc.try_symbol(id))
+                .and_then(|id| project.context().try_symbol(id))
                 .unwrap_or(nested_sym);
             let Some(nested_block_id) = actual_sym.block_id() else {
                 continue;
@@ -339,7 +340,7 @@ fn collect_call_edges(
     edges: &mut BTreeSet<RenderEdge>,
 ) {
     let callees = project
-        .cc
+        .context()
         .block_relations()
         .related(block_id, BlockRelation::Calls);
     for callee_id in callees {
@@ -361,12 +362,12 @@ fn collect_param_edges(
     edges: &mut BTreeSet<RenderEdge>,
 ) {
     let params = project
-        .cc
+        .context()
         .block_relations()
         .related(block_id, BlockRelation::HasParameters);
     for param_id in params {
         let param_types = project
-            .cc
+            .context()
             .block_relations()
             .related(param_id, BlockRelation::TypeOf);
         for type_id in param_types {
@@ -389,12 +390,12 @@ fn collect_return_edges(
     edges: &mut BTreeSet<RenderEdge>,
 ) {
     let returns = project
-        .cc
+        .context()
         .block_relations()
         .related(block_id, BlockRelation::HasReturn);
     for ret_id in returns {
         let ret_types = project
-            .cc
+            .context()
             .block_relations()
             .related(ret_id, BlockRelation::TypeOf);
         for type_id in ret_types {
@@ -421,12 +422,12 @@ fn collect_impl_edges<F>(
 {
     // Rust-style: struct -> impl block -> trait
     let impl_blocks = project
-        .cc
+        .context()
         .block_relations()
         .related(block_id, BlockRelation::HasImpl);
     for impl_id in impl_blocks {
         let implements = project
-            .cc
+            .context()
             .block_relations()
             .related(impl_id, BlockRelation::Implements);
         for trait_id in implements {
@@ -444,7 +445,7 @@ fn collect_impl_edges<F>(
     // TypeScript-style: class directly implements interface
     // Only create interface -> implements edge for TypeScript Interfaces, not Rust Traits
     let direct_implements = project
-        .cc
+        .context()
         .block_relations()
         .related(block_id, BlockRelation::Implements);
     for interface_id in direct_implements {
@@ -474,7 +475,7 @@ fn collect_extends_edges(
 ) {
     // Extends relation points from child (Admin) to parent (User)
     let extends = project
-        .cc
+        .context()
         .block_relations()
         .related(block_id, BlockRelation::Extends);
     for parent_id in extends {
@@ -499,7 +500,7 @@ fn collect_type_dep_edges<F>(
     F: Fn(BlockId) -> Option<BlockKind>,
 {
     let uses = project
-        .cc
+        .context()
         .block_relations()
         .related(block_id, BlockRelation::Uses);
     for type_id in uses {
@@ -513,7 +514,7 @@ fn collect_type_dep_edges<F>(
                 // (a bound -> generic edge will be created from collect_bound_edges)
                 if type_kind == Some(BlockKind::Trait) {
                     let used_by = project
-                        .cc
+                        .context()
                         .block_relations()
                         .related(type_id, BlockRelation::UsedBy);
                     if used_by.contains(&block_id) {
@@ -551,7 +552,7 @@ fn collect_impl_type_arg_edges<F>(
 ) where
     F: Fn(BlockId) -> Option<BlockKind>,
 {
-    let Some(block) = project.cc.try_block(block_id) else {
+    let Some(block) = project.context().try_block(block_id) else {
         return;
     };
     let base = block.base();
@@ -592,7 +593,7 @@ fn collect_decorator_edges<F>(
     // Decorators are stored in type_deps for the class
     // and have Uses/UsedBy relations
     let uses = project
-        .cc
+        .context()
         .block_relations()
         .related(block_id, BlockRelation::Uses);
     for decorator_id in uses {

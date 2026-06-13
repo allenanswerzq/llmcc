@@ -1440,7 +1440,7 @@ where
     if let Some(project) = project_graph.as_mut() {
         let unit_graphs =
             build_graphs::<L>(&cc, GraphBuildOptions::new().with_sequential(sequential)).unwrap();
-        project.add_children(unit_graphs);
+        project.add_units(unit_graphs);
     }
     let (
         dep_graph_dot,
@@ -1454,7 +1454,7 @@ where
         block_graph,
         block_relations,
     ) = if let Some(project) = project_graph {
-        project.connect_blocks();
+        project.link_blocks();
         // Graph visualization
         let dep_graph: Option<String> = None; // TODO: implement dep_graph rendering
         let arch_graph: Option<String> = if options.build_arch_graph {
@@ -1760,7 +1760,7 @@ fn render_block_graph(project: &ProjectGraph) -> String {
 
     let mut sections = Vec::new();
     for unit_graph in units {
-        let unit = project.cc.compile_unit(unit_graph.unit_index());
+        let unit = project.context().compile_unit(unit_graph.unit_index());
         let mut buf = String::new();
         render_block_graph_node(unit_graph.root(), unit, 0, &mut buf);
         sections.push(buf.trim_end().to_string());
@@ -1866,7 +1866,7 @@ fn snapshot_symbol_dependencies<'a>(_cc: &'a CompileCtxt<'a>) -> Vec<SymbolDepen
 fn snapshot_block_relations(project: &ProjectGraph) -> Vec<BlockRelationSnapshot> {
     use std::collections::BTreeMap;
 
-    let cc = project.cc;
+    let cc = project.context();
     let related_map = cc.block_relations();
 
     // Group relations by block
@@ -1936,8 +1936,8 @@ fn render_block_reports(
         let unit_index = unit_graph.unit_index();
         let mut entries = Vec::new();
 
-        for entry in project.cc.find_blocks_in_unit(unit_index) {
-            let Some(mut desc) = describe_block(entry.block_id, project.cc) else {
+        for entry in project.context().find_blocks_in_unit(unit_index) {
+            let Some(mut desc) = describe_block(entry.block_id, project.context()) else {
                 continue;
             };
             desc.kind = entry.kind.to_string();

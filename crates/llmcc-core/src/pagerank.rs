@@ -355,7 +355,7 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
     }
 
     fn collect_entries(&self) -> Vec<BlockEntry> {
-        let mut raw_entries = self.graph.cc.blocks();
+        let mut raw_entries = self.graph.context().blocks();
 
         raw_entries.sort_by_key(|entry| entry.block_id.as_u32());
 
@@ -364,9 +364,8 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
             .map(|entry| {
                 let file_path = self
                     .graph
-                    .cc
-                    .files
-                    .get(entry.unit_index)
+                    .context()
+                    .file(entry.unit_index)
                     .and_then(|file| file.path().map(|path| path.to_string()));
 
                 BlockEntry {
@@ -401,7 +400,11 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
                     continue;
                 }
 
-                let targets = self.graph.cc.related_map.related(entry.block_id, relation);
+                let targets = self
+                    .graph
+                    .context()
+                    .block_relations()
+                    .related(entry.block_id, relation);
 
                 for dep_id in targets {
                     if let Some(&target_idx) = index_by_block.get(&dep_id) {

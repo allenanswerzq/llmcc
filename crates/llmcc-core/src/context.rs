@@ -22,7 +22,8 @@ use crate::lang_def::{Language, ParseTree};
 use crate::meta::{UnitMeta, UnitMetaIndex};
 use crate::scope::Scope;
 use crate::symbol::{
-    ScopeId, SymId, SymKind, Symbol, reset_scope_id_counter, reset_symbol_id_counter,
+    SYM_KIND_TYPES, ScopeId, SymId, SymKind, Symbol, reset_scope_id_counter,
+    reset_symbol_id_counter,
 };
 use crate::{Error, ErrorKind, Result};
 
@@ -196,9 +197,55 @@ impl<'tcx> CompileUnit<'tcx> {
         self.cc.try_symbol(owner)
     }
 
+    /// Return a symbol and its graph block id by symbol id, if both exist.
+    pub fn try_symbol_with_block_id(self, symbol_id: SymId) -> Option<(&'tcx Symbol, BlockId)> {
+        let symbol = self.try_symbol(symbol_id)?;
+        let block_id = symbol.block_id()?;
+        Some((symbol, block_id))
+    }
+
+    /// Return a symbol's graph block id by symbol id, if both exist.
+    pub fn try_symbol_block_id(self, symbol_id: SymId) -> Option<BlockId> {
+        self.try_symbol_with_block_id(symbol_id)
+            .map(|(_, block_id)| block_id)
+    }
+
     /// Return the symbol referenced by `symbol.type_of()`, if both links exist.
     pub fn try_type(self, symbol: &Symbol) -> Option<&'tcx Symbol> {
         symbol.type_of().and_then(|id| self.try_symbol(id))
+    }
+
+    /// Return the symbol referenced by `symbol.type_of()` and its graph block id.
+    pub fn try_type_of_with_block_id(self, symbol: &Symbol) -> Option<(&'tcx Symbol, BlockId)> {
+        let type_id = symbol.type_of()?;
+        self.try_symbol_with_block_id(type_id)
+    }
+
+    /// Resolve `symbol.type_of()` through type links and return its graph block id.
+    pub fn try_type_of_block_id(self, symbol: &Symbol) -> Option<BlockId> {
+        let type_id = symbol.type_of()?;
+        self.try_type_block_id(type_id)
+    }
+
+    /// Resolve a symbol id through its type link, falling back to the symbol's own block.
+    pub fn try_type_block_id(self, symbol_id: SymId) -> Option<BlockId> {
+        let symbol = self.try_symbol(symbol_id)?;
+        self.try_type(symbol).unwrap_or(symbol).block_id()
+    }
+
+    /// Resolve the graph type block for a block-owned symbol.
+    pub fn try_type_ref_block_id(self, symbol: Option<&Symbol>) -> Option<BlockId> {
+        let symbol = symbol?;
+
+        if let Some(type_symbol) = self.try_type(symbol) {
+            return type_symbol.block_id();
+        }
+
+        if SYM_KIND_TYPES.contains(symbol.kind()) {
+            return symbol.block_id();
+        }
+
+        None
     }
 
     /// Return the graph-display type symbol for an already-bound symbol.

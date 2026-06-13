@@ -53,14 +53,14 @@ impl GraphBlockInfo {
         let location = self.resolved_location();
 
         output.push_str(&format!(
-            "┌─ {} [{}] at {}\n",
+            "G��G�� {} [{}] at {}\n",
             self.name, self.kind, location
         ));
 
         if let Some(fqn) = &self.qualified_name
             && fqn != &self.name
         {
-            output.push_str(&format!("│    aka {}\n", fqn));
+            output.push_str(&format!("G��    aka {}\n", fqn));
         }
 
         // Source code with line numbers
@@ -72,7 +72,7 @@ impl GraphBlockInfo {
             for (idx, line) in lines.iter().enumerate() {
                 let line_num = self.start_line + idx;
                 output.push_str(&format!(
-                    "│ [{:width$}] {}\n",
+                    "G�� [{:width$}] {}\n",
                     line_num,
                     line,
                     width = line_num_width
@@ -80,7 +80,7 @@ impl GraphBlockInfo {
             }
         }
 
-        output.push_str("└─\n");
+        output.push_str("G��G��\n");
         output
     }
 
@@ -375,15 +375,15 @@ impl<'tcx> ProjectQuery<'tcx> {
 
         // Try to get the fully qualified name from the symbol if available
         let (display_name, qualified_name) =
-            if let Some(symbol) = self.graph.cc.find_symbol_by_block_id(node.block_id) {
+            if let Some(symbol) = self.graph.context().find_symbol_by_block_id(node.block_id) {
                 let fallback = entry
                     .name
                     .clone()
                     .unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0));
                 let base_name = self
                     .graph
-                    .cc
-                    .interner
+                    .context()
+                    .interner()
                     .resolve_owned(symbol.name)
                     .unwrap_or(fallback);
 
@@ -401,9 +401,8 @@ impl<'tcx> ProjectQuery<'tcx> {
         // Get file path from compile context
         let file_path = self
             .graph
-            .cc
-            .files
-            .get(entry.unit_index)
+            .context()
+            .file(entry.unit_index)
             .and_then(|file| file.path().map(|s| s.to_string()));
 
         // Extract source code for this block
@@ -427,12 +426,12 @@ impl<'tcx> ProjectQuery<'tcx> {
 
     /// Calculate line numbers from byte offsets
     fn get_line_numbers(&self, node: UnitNode, unit_index: usize) -> (usize, usize) {
-        let file = match self.graph.cc.files.get(unit_index) {
+        let file = match self.graph.context().file(unit_index) {
             Some(f) => f,
             None => return (0, 0),
         };
 
-        let unit = self.graph.cc.compile_unit(unit_index);
+        let unit = self.graph.context().compile_unit(unit_index);
 
         // Get the BasicBlock to access its HIR node
         let bb = match unit.try_block(node.block_id) {
@@ -461,8 +460,8 @@ impl<'tcx> ProjectQuery<'tcx> {
 
     /// Extract the source code for a given block
     fn get_block_source_code(&self, node: UnitNode, unit_index: usize) -> Option<String> {
-        let file = self.graph.cc.files.get(unit_index)?;
-        let unit = self.graph.cc.compile_unit(unit_index);
+        let file = self.graph.context().file(unit_index)?;
+        let unit = self.graph.context().compile_unit(unit_index);
 
         // Get the BasicBlock to access its HIR node
         let bb = unit.try_block(node.block_id)?;

@@ -10,7 +10,7 @@ use crate::declare_arena;
 pub use crate::id::{BlockId, reset_block_id_counter};
 use crate::ir::HirNode;
 use crate::scope::Scope;
-use crate::symbol::{SymKind, Symbol};
+use crate::symbol::{SymId, SymKind, Symbol};
 
 declare_arena!(BlockArena {
     bb: BasicBlock<'a>,
@@ -400,6 +400,35 @@ pub enum BlockRelation {
     ExtendedBy,
 }
 
+impl BlockRelation {
+    /// Return the reverse relation, when this relation has one.
+    pub fn inverse(self) -> Option<Self> {
+        match self {
+            BlockRelation::Contains => Some(BlockRelation::ContainedBy),
+            BlockRelation::ContainedBy => Some(BlockRelation::Contains),
+            BlockRelation::Calls => Some(BlockRelation::CalledBy),
+            BlockRelation::CalledBy => Some(BlockRelation::Calls),
+            BlockRelation::HasField => Some(BlockRelation::FieldOf),
+            BlockRelation::FieldOf => Some(BlockRelation::HasField),
+            BlockRelation::TypeOf => Some(BlockRelation::TypeFor),
+            BlockRelation::TypeFor => Some(BlockRelation::TypeOf),
+            BlockRelation::ImplFor => Some(BlockRelation::HasImpl),
+            BlockRelation::HasImpl => Some(BlockRelation::ImplFor),
+            BlockRelation::HasMethod => Some(BlockRelation::MethodOf),
+            BlockRelation::MethodOf => Some(BlockRelation::HasMethod),
+            BlockRelation::Implements => Some(BlockRelation::ImplementedBy),
+            BlockRelation::ImplementedBy => Some(BlockRelation::Implements),
+            BlockRelation::Uses => Some(BlockRelation::UsedBy),
+            BlockRelation::UsedBy => Some(BlockRelation::Uses),
+            BlockRelation::Extends => Some(BlockRelation::ExtendedBy),
+            BlockRelation::ExtendedBy => Some(BlockRelation::Extends),
+            BlockRelation::Unknown | BlockRelation::HasParameters | BlockRelation::HasReturn => {
+                None
+            }
+        }
+    }
+}
+
 /// Shared metadata and graph relationships for every concrete block.
 #[derive(Debug)]
 pub struct BlockBase<'blk> {
@@ -440,6 +469,16 @@ impl<'blk> BlockBase<'blk> {
     /// Get the symbol that defines this block (if any)
     pub fn symbol(&self) -> Option<&'blk Symbol> {
         self.symbol
+    }
+
+    /// Return nested type ids recorded on this block's symbol.
+    pub fn nested_types(&self) -> Option<Vec<SymId>> {
+        self.symbol().and_then(Symbol::nested_types)
+    }
+
+    /// Return decorator symbol ids recorded on this block's symbol.
+    pub fn decorators(&self) -> Option<Vec<SymId>> {
+        self.symbol().and_then(Symbol::decorators)
     }
 
     pub fn try_name(&self) -> Option<&str> {
@@ -755,6 +794,22 @@ impl<'blk> BlockFunc<'blk> {
         self.base.kind == BlockKind::Method
     }
 
+    pub fn base(&self) -> &BlockBase<'blk> {
+        &self.base
+    }
+
+    pub fn symbol(&self) -> Option<&'blk Symbol> {
+        self.base.symbol()
+    }
+
+    pub fn nested_types(&self) -> Option<Vec<SymId>> {
+        self.base.nested_types()
+    }
+
+    pub fn decorators(&self) -> Option<Vec<SymId>> {
+        self.base.decorators()
+    }
+
     pub fn add_parameter(&self, param: BlockId) {
         self.parameters.write().push(param);
     }
@@ -769,6 +824,10 @@ impl<'blk> BlockFunc<'blk> {
 
     pub fn return_block(&self) -> Option<BlockId> {
         *self.returns.read()
+    }
+
+    pub fn children(&self) -> Vec<BlockId> {
+        self.base.children()
     }
 
     pub fn add_type_dep(&self, type_id: BlockId) {
@@ -924,6 +983,26 @@ impl<'blk> BlockClass<'blk> {
         (!self.name.is_empty()).then_some(&self.name)
     }
 
+    pub fn symbol(&self) -> Option<&'blk Symbol> {
+        self.base.symbol()
+    }
+
+    pub fn nested_types(&self) -> Option<Vec<SymId>> {
+        self.base.nested_types()
+    }
+
+    pub fn decorators(&self) -> Option<Vec<SymId>> {
+        self.base.decorators()
+    }
+
+    pub fn add_type_dep(&self, type_id: BlockId) {
+        self.base.add_type_dep(type_id);
+    }
+
+    pub fn type_deps(&self) -> HashSet<BlockId> {
+        self.base.type_deps()
+    }
+
     pub fn add_field(&self, field_id: BlockId) {
         self.fields.write().push(field_id);
     }
@@ -981,7 +1060,7 @@ impl<'blk> BlockClass<'blk> {
         let mut deps = Vec::new();
 
         // Add type_deps (includes implemented interfaces)
-        let type_deps = self.base.type_deps();
+        let type_deps = self.type_deps();
         if !type_deps.is_empty() {
             let mut sorted: Vec<_> = type_deps.iter().collect();
             sorted.sort();
@@ -1031,6 +1110,10 @@ impl<'blk> BlockTrait<'blk> {
 
     pub fn name(&self) -> Option<&str> {
         (!self.name.is_empty()).then_some(&self.name)
+    }
+
+    pub fn symbol(&self) -> Option<&'blk Symbol> {
+        self.base.symbol()
     }
 
     pub fn add_method(&self, method_id: BlockId) {
@@ -1107,9 +1190,23 @@ impl<'blk> BlockInterface<'blk> {
         self.fields.read().clone()
     }
 
+    pub fn symbol(&self) -> Option<&'blk Symbol> {
+        self.base.symbol()
+    }
+
+    pub fn nested_types(&self) -> Option<Vec<SymId>> {
+        self.base.nested_types()
+    }
+
     /// Add an extended interface
     pub fn add_extends(&self, name: String, block_id: Option<BlockId>) {
-        self.extends.write().push((name, block_id));
+        let mut extends = self.extends.write();
+        if !extends
+            .iter()
+            .any(|(existing_name, existing_id)| existing_name == &name && *existing_id == block_id)
+        {
+            extends.push((name, block_id));
+        }
     }
 
     /// Get extended interfaces
@@ -1150,15 +1247,15 @@ impl<'blk> fmt::Display for BlockInterface<'blk> {
 pub struct BlockImpl<'blk> {
     pub base: BlockBase<'blk>,
     name: String,
-    /// Target type block ID (resolved during connect_blocks if needed)
-    pub target: RwLock<Option<BlockId>>,
+    /// Target type block ID (resolved during link_blocks if needed)
+    target: RwLock<Option<BlockId>>,
     /// Target type symbol (for deferred block_id resolution)
-    pub target_sym: Option<&'blk Symbol>,
-    /// Trait block ID (resolved during connect_blocks if needed)
-    pub trait_ref: RwLock<Option<BlockId>>,
+    target_sym: Option<&'blk Symbol>,
+    /// Trait block ID (resolved during link_blocks if needed)
+    trait_ref: RwLock<Option<BlockId>>,
     /// Trait symbol (for deferred block_id resolution)
-    pub trait_sym: Option<&'blk Symbol>,
-    pub methods: RwLock<Vec<BlockId>>,
+    trait_sym: Option<&'blk Symbol>,
+    methods: RwLock<Vec<BlockId>>,
 }
 
 impl<'blk> BlockImpl<'blk> {
@@ -1215,6 +1312,28 @@ impl<'blk> BlockImpl<'blk> {
 
     pub fn set_trait_ref(&self, trait_id: BlockId) {
         *self.trait_ref.write() = Some(trait_id);
+    }
+
+    pub fn target_symbol(&self) -> Option<&'blk Symbol> {
+        self.target_sym
+    }
+
+    pub fn trait_symbol(&self) -> Option<&'blk Symbol> {
+        self.trait_sym
+    }
+
+    pub fn resolved_target(&self) -> Option<BlockId> {
+        self.target()
+            .or_else(|| self.target_symbol().and_then(Symbol::block_id))
+    }
+
+    pub fn resolved_trait(&self) -> Option<BlockId> {
+        self.trait_ref()
+            .or_else(|| self.trait_symbol().and_then(Symbol::block_id))
+    }
+
+    pub fn target_nested_types(&self) -> Option<Vec<SymId>> {
+        self.target_symbol().and_then(Symbol::nested_types)
     }
 
     pub fn add_method(&self, method_id: BlockId) {
@@ -1351,12 +1470,16 @@ impl<'blk> BlockConst<'blk> {
         (!self.name.is_empty()).then_some(&self.name)
     }
 
+    pub fn base(&self) -> &BlockBase<'blk> {
+        &self.base
+    }
+
     /// Set the displayed type for this const block.
     pub fn set_type(&mut self, unit: CompileUnit<'blk>, type_symbol: &'blk Symbol) {
         set_type_fields(unit, type_symbol, &mut self.type_name, &self.type_ref);
     }
 
-    /// Set type reference (used during connect_blocks for cross-file resolution)
+    /// Set type reference (used during link_blocks for cross-file resolution)
     pub fn set_type_ref(&self, type_ref: BlockId) {
         *self.type_ref.write() = Some(type_ref);
     }
@@ -1432,12 +1555,20 @@ impl<'blk> BlockField<'blk> {
         (!self.name.is_empty()).then_some(&self.name)
     }
 
+    pub fn base(&self) -> &BlockBase<'blk> {
+        &self.base
+    }
+
+    pub fn children(&self) -> Vec<BlockId> {
+        self.base.children()
+    }
+
     /// Set the displayed type for this field block.
     pub fn set_type(&mut self, unit: CompileUnit<'blk>, type_symbol: &'blk Symbol) {
         set_type_fields(unit, type_symbol, &mut self.type_name, &self.type_ref);
     }
 
-    /// Set type reference (used during connect_blocks for cross-file resolution)
+    /// Set type reference (used during link_blocks for cross-file resolution)
     pub fn set_type_ref(&self, type_ref: BlockId) {
         *self.type_ref.write() = Some(type_ref);
     }
@@ -1516,12 +1647,16 @@ impl<'blk> BlockParameter<'blk> {
         (!self.name.is_empty()).then_some(&self.name)
     }
 
+    pub fn base(&self) -> &BlockBase<'blk> {
+        &self.base
+    }
+
     /// Set the displayed type for this parameter block.
     pub fn set_type(&mut self, unit: CompileUnit<'blk>, type_symbol: &'blk Symbol) {
         set_type_fields(unit, type_symbol, &mut self.type_name, &self.type_ref);
     }
 
-    /// Set type reference (used during connect_blocks for cross-file resolution)
+    /// Set type reference (used during link_blocks for cross-file resolution)
     pub fn set_type_ref(&self, type_ref: BlockId) {
         *self.type_ref.write() = Some(type_ref);
     }
@@ -1585,7 +1720,11 @@ impl<'blk> BlockReturn<'blk> {
         set_type_fields(unit, type_symbol, &mut self.type_name, &self.type_ref);
     }
 
-    /// Set type reference (used during connect_blocks for cross-file resolution)
+    pub fn base(&self) -> &BlockBase<'blk> {
+        &self.base
+    }
+
+    /// Set type reference (used during link_blocks for cross-file resolution)
     pub fn set_type_ref(&self, type_ref: BlockId) {
         *self.type_ref.write() = Some(type_ref);
     }
@@ -1650,6 +1789,10 @@ impl<'blk> BlockAlias<'blk> {
 
     pub fn name(&self) -> Option<&str> {
         (!self.name.is_empty()).then_some(&self.name)
+    }
+
+    pub fn base(&self) -> &BlockBase<'blk> {
+        &self.base
     }
 }
 

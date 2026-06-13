@@ -215,7 +215,7 @@ impl<'a> BinderScopes<'a> {
             obj_type_symbol
         };
 
-        let scope_id = effective_symbol.opt_owned_scope()?;
+        let scope_id = effective_symbol.try_owned_scope()?;
         let scope = self.unit.scope(scope_id);
 
         // Create isolated scope stack for member lookup to avoid falling back to lexical scopes

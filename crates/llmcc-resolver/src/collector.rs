@@ -82,7 +82,7 @@ impl<'a> CollectorScopes<'a> {
     #[inline]
     pub fn push_scope_with(&mut self, node: &HirNode<'a>, symbol: Option<&'a Symbol>) {
         if let Some(symbol) = symbol
-            && let Some(existing_scope_id) = symbol.opt_owned_scope()
+            && let Some(existing_scope_id) = symbol.try_owned_scope()
             && let Some(existing_scope) = self.cc.try_scope(existing_scope_id)
         {
             self.push_scope(existing_scope);

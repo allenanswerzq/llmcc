@@ -42,6 +42,15 @@ impl BlockRelationMap {
         targets.insert(to)
     }
 
+    /// Insert a relation and its inverse, when the relation has one.
+    pub fn insert_pair(&self, from: BlockId, relation: BlockRelation, to: BlockId) -> bool {
+        let inserted = self.insert(from, relation, to);
+        if let Some(inverse) = relation.inverse() {
+            self.insert(to, inverse, from);
+        }
+        inserted
+    }
+
     /// Insert multiple directed relations of the same type.
     pub fn extend(&self, from: BlockId, relation: BlockRelation, targets: &[BlockId]) -> usize {
         targets
@@ -235,8 +244,7 @@ impl std::fmt::Display for RelationStats {
 impl BlockRelationMap {
     /// Insert bidirectional call/called-by relations.
     pub fn insert_call(&self, caller: BlockId, callee: BlockId) {
-        self.insert(caller, BlockRelation::Calls, callee);
-        self.insert(callee, BlockRelation::CalledBy, caller);
+        self.insert_pair(caller, BlockRelation::Calls, callee);
     }
 
     /// Remove bidirectional call/called-by relations.

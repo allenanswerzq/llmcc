@@ -474,7 +474,7 @@ impl<'tcx> ScopeStack<'tcx> {
 
         let mut results = Vec::new();
         for symbol in symbols {
-            if let Some(symbol_scope_id) = symbol.opt_owned_scope()
+            if let Some(symbol_scope_id) = symbol.try_owned_scope()
                 && let Some(next_scope) = self.arena.get_scope(symbol_scope_id.0)
             {
                 debug_assert!(next_scope.id() == symbol_scope_id);

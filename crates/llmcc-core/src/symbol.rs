@@ -160,12 +160,49 @@ impl SymKind {
         Self::from_repr(value).unwrap_or_default()
     }
 
+    pub fn is_type_parameter(self) -> bool {
+        matches!(self, SymKind::TypeParameter)
+    }
+
     pub fn is_resolved(&self) -> bool {
         !matches!(self, SymKind::UnresolvedType)
     }
 
     pub fn is_const(&self) -> bool {
         matches!(self, SymKind::Const | SymKind::Static)
+    }
+
+    /// Return true for symbols that own callable executable bodies.
+    pub fn is_callable_body(self) -> bool {
+        matches!(
+            self,
+            SymKind::Function | SymKind::Method | SymKind::Closure | SymKind::Macro
+        )
+    }
+
+    /// Return true for type symbols that can appear as constructor-like call targets.
+    pub fn is_constructable_type(self) -> bool {
+        matches!(self, SymKind::Struct | SymKind::Enum)
+    }
+
+    /// Return true when this kind can create call-derived graph dependencies.
+    pub fn is_call_dependency_target(self) -> bool {
+        self.is_callable_body() || self.is_constructable_type()
+    }
+
+    /// Return true when this kind contributes a receiver/owner type dependency for a call.
+    pub fn has_call_receiver_type(self) -> bool {
+        matches!(self, SymKind::Method)
+    }
+
+    /// Return true when this kind represents a contract implemented by a concrete type.
+    pub fn is_implementation_contract(self) -> bool {
+        matches!(self, SymKind::Interface)
+    }
+
+    /// Return true when this kind represents a type constraint used by another type.
+    pub fn is_type_constraint(self) -> bool {
+        matches!(self, SymKind::Trait)
     }
 
     /// Checks if the symbol kind represents a user-defined type.
@@ -348,14 +385,14 @@ impl Symbol {
 
     /// Scope introduced by this symbol, if it owns one.
     #[inline]
-    pub fn opt_owned_scope(&self) -> Option<ScopeId> {
+    pub fn try_owned_scope(&self) -> Option<ScopeId> {
         let v = self.owned_scope.load(Ordering::Relaxed);
         if v == 0 { None } else { Some(ScopeId(v - 1)) }
     }
 
     #[inline]
     pub fn owned_scope(&self) -> ScopeId {
-        self.opt_owned_scope().unwrap()
+        self.try_owned_scope().unwrap()
     }
 
     /// Attach the semantic scope introduced by this symbol.

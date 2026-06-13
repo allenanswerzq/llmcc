@@ -86,14 +86,14 @@ impl Runner {
         let graph_start = Instant::now();
         let mut project_graph = ProjectGraph::new(&cc);
         let unit_graphs = build_graphs::<L>(&cc, GraphBuildOptions::new())?;
-        project_graph.add_children(unit_graphs);
+        project_graph.add_units(unit_graphs);
         info!(
             "Graph building: {:.2}s",
             graph_start.elapsed().as_secs_f64()
         );
 
         let link_start = Instant::now();
-        project_graph.connect_blocks();
+        project_graph.link_blocks();
         info!("Linking units: {:.2}s", link_start.elapsed().as_secs_f64());
 
         if self.options.print_block {

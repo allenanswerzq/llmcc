@@ -174,7 +174,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(ref package_name) = meta.package_name
             && let Some(symbol) =
                 scopes.lookup_symbol(package_name, SymKindSet::from_kind(SymKind::Crate))
-            && let Some(scope_id) = symbol.opt_owned_scope()
+            && let Some(scope_id) = symbol.try_owned_scope()
         {
             scopes.push_scope(scope_id);
         }
@@ -183,7 +183,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(ref module_name) = meta.module_name
             && let Some(symbol) =
                 scopes.lookup_symbol(module_name, SymKindSet::from_kind(SymKind::Module))
-            && let Some(scope_id) = symbol.opt_owned_scope()
+            && let Some(scope_id) = symbol.try_owned_scope()
         {
             scopes.push_scope(scope_id);
         }
@@ -192,7 +192,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(ref file_name) = meta.file_name
             && let Some(file_sym) =
                 scopes.lookup_symbol(file_name, SymKindSet::from_kind(SymKind::File))
-            && let Some(scope_id) = file_sym.opt_owned_scope()
+            && let Some(scope_id) = file_sym.try_owned_scope()
         {
             scopes.push_scope(scope_id);
 
@@ -461,7 +461,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             // Try to get the scope's symbol and push it
             if let Some(scope_ident) = scope_node.query(unit).try_first_ident()
                 && let Some(scope_sym) = scope_ident.try_symbol()
-                && let Some(scope_id) = scope_sym.opt_owned_scope()
+                && let Some(scope_id) = scope_sym.try_owned_scope()
             {
                 let depth = scopes.scope_depth();
                 scopes.push_scope(scope_id);
@@ -518,7 +518,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
             // Try to get the type of the object and look up the field in that type's scope
             if let Some(arg_type) = infer_type(unit, scopes, &arg_node)
-                && let Some(type_scope) = arg_type.opt_owned_scope()
+                && let Some(type_scope) = arg_type.try_owned_scope()
             {
                 let depth = scopes.scope_depth();
                 scopes.push_scope(type_scope);

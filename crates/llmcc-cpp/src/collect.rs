@@ -135,7 +135,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         }
 
         if let Some(symbol) = scopes.lookup_or_insert(name, node, kind) {
-            if symbol.opt_owned_scope().is_none() {
+            if symbol.try_owned_scope().is_none() {
                 let scope = self.alloc_scope(unit, symbol);
                 symbol.set_owned_scope(scope.id());
             }
@@ -159,7 +159,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         sn.set_ident(ident);
 
         let depth = scopes.scope_depth();
-        if let Some(scope_id) = sym.opt_owned_scope()
+        if let Some(scope_id) = sym.try_owned_scope()
             && let Some(scope) = self.get_scope(scope_id)
         {
             sn.set_scope(scope);

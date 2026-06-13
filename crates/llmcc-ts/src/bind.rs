@@ -194,7 +194,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
         if let Some(ref package_name) = meta.package_name
             && let Some(symbol) =
                 scopes.lookup_symbol(package_name, SymKindSet::from_kind(SymKind::Crate))
-            && let Some(scope_id) = symbol.opt_owned_scope()
+            && let Some(scope_id) = symbol.try_owned_scope()
         {
             scopes.push_scope(scope_id);
         }
@@ -203,7 +203,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
         if let Some(ref module_name) = meta.module_name
             && let Some(symbol) =
                 scopes.lookup_symbol(module_name, SymKindSet::from_kind(SymKind::Module))
-            && let Some(scope_id) = symbol.opt_owned_scope()
+            && let Some(scope_id) = symbol.try_owned_scope()
         {
             scopes.push_scope(scope_id);
         }
@@ -212,7 +212,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx
         if let Some(ref file_name) = meta.file_name
             && let Some(file_sym) =
                 scopes.lookup_symbol(file_name, SymKindSet::from_kind(SymKind::File))
-            && let Some(scope_id) = file_sym.opt_owned_scope()
+            && let Some(scope_id) = file_sym.try_owned_scope()
         {
             scopes.push_scope(scope_id);
 

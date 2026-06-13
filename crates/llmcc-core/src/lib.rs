@@ -1,8 +1,8 @@
 //! Core IR and graph building infrastructure for llmcc.
 
+pub mod arena;
 pub mod block;
 pub mod block_rel;
-pub mod bump;
 pub mod context;
 pub mod file;
 pub mod graph;
@@ -42,6 +42,4 @@ pub use meta::{ArchitectureLevel, UnitMeta, UnitMetaIndex};
 pub use paste;
 pub use printer::{PrintConfig, PrintFormat, print_llmcc_graph, print_llmcc_ir, render_llmcc_ir};
 pub use resolve::ResolveOptions;
-// TODO: Re-enable after ProjectGraph query methods are implemented
-// pub use query::{GraphBlockInfo, ProjectQuery, QueryResult};
 pub use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};
