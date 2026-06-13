@@ -14,7 +14,6 @@ use crate::graph::UnitGraph;
 use crate::id::BlockId;
 use crate::ir::HirNode;
 use crate::lang_def::Language;
-use crate::symbol::SymKind;
 use crate::visit::HirVisitor;
 
 /// Options for building block graphs from HIR.
@@ -47,31 +46,31 @@ impl GraphBuildOptions {
 }
 
 type ParentBlockKind = BlockKind;
+type ChildBlock = (BlockId, BlockKind);
+type ChildBlocks = Vec<ChildBlock>;
+type BlockStackFrame = (Option<ParentBlockKind>, ChildBlocks);
 
 #[derive(Debug)]
 struct BlockStack {
-    frames: Vec<(ParentBlockKind, Vec<(BlockId, BlockKind)>)>,
+    frames: Vec<BlockStackFrame>,
 }
 
 impl BlockStack {
     fn new() -> Self {
         Self {
-            frames: vec![(BlockKind::Undefined, Vec::new())],
+            frames: vec![(None, Vec::new())],
         }
     }
 
-    fn current_parent_kind(&self) -> ParentBlockKind {
-        self.frames
-            .last()
-            .map(|(kind, _)| *kind)
-            .unwrap_or(BlockKind::Undefined)
+    fn current_parent_kind(&self) -> Option<ParentBlockKind> {
+        self.frames.last().and_then(|(parent_kind, _)| *parent_kind)
     }
 
     fn push_parent_frame(&mut self, kind: ParentBlockKind) {
-        self.frames.push((kind, Vec::new()));
+        self.frames.push((Some(kind), Vec::new()));
     }
 
-    fn pop_child_blocks(&mut self) -> Vec<(BlockId, BlockKind)> {
+    fn pop_child_blocks(&mut self) -> ChildBlocks {
         if self.frames.len() <= 1 {
             return Vec::new();
         }
@@ -84,7 +83,7 @@ impl BlockStack {
 
     fn push_child_block(&mut self, id: BlockId, kind: BlockKind) {
         if self.frames.is_empty() {
-            self.frames.push((BlockKind::Undefined, Vec::new()));
+            self.frames.push((None, Vec::new()));
         }
 
         if let Some((_, children)) = self.frames.last_mut() {
@@ -97,7 +96,7 @@ impl BlockStack {
 struct GraphBuilder<'tcx, L> {
     unit: CompileUnit<'tcx>,
     root: Option<BlockId>,
-    block_stack: BlockStack,
+    stack: BlockStack,
     _marker: PhantomData<L>,
 }
 
@@ -106,15 +105,9 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
         Self {
             unit,
             root: None,
-            block_stack: BlockStack::new(),
+            stack: BlockStack::new(),
             _marker: PhantomData,
         }
-    }
-
-    fn reserve_block_id(&mut self) -> BlockId {
-        let id = self.unit.reserve_block_id();
-        self.root.get_or_insert(id);
-        id
     }
 
     fn create_block(
@@ -199,7 +192,7 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                     node,
                     parent,
                     children,
-                    query.try_name_with_field_or_first(L::name_field()),
+                    query.try_field_name(L::name_field(), L::type_field()),
                     symbol,
                 );
                 if let Some(type_sym) = self.unit.try_effective_type(symbol) {
@@ -261,12 +254,17 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
         block_kind: BlockKind,
         recursive: bool,
     ) {
-        let id = self.reserve_block_id();
-        let block_kind = self.refine_block_kind(node, block_kind);
+        let id = self.unit.reserve_block_id();
+        let query = node.query(&self.unit);
+
+        let block_kind = query.resolve_block_kind(block_kind, self.stack.current_parent_kind());
+        if block_kind == BlockKind::Root {
+            self.root.get_or_insert(id);
+        }
 
         // Attach before visiting children so nested symbols can resolve the parent block.
         if block_kind.owns_symbol_block_id() {
-            node.query(&self.unit).attach_block_id(id);
+            query.attach_block_id(id, block_kind, L::type_field());
         }
 
         let children = if recursive {
@@ -279,23 +277,7 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
         let block = self.create_block(id, node, block_kind, Some(parent), child_ids);
         block.attach_child_blocks(&children);
         self.unit.insert_block(id, block);
-
-        self.block_stack.push_child_block(id, block_kind);
-    }
-
-    fn refine_block_kind(&self, node: HirNode<'tcx>, kind: BlockKind) -> BlockKind {
-        if kind != BlockKind::Func {
-            return kind;
-        }
-
-        let is_method = node.query(&self.unit).is_symbol_kind(SymKind::Method);
-        let is_in_impl = self.block_stack.current_parent_kind() == BlockKind::Impl;
-
-        if is_method || is_in_impl {
-            BlockKind::Method
-        } else {
-            BlockKind::Func
-        }
+        self.stack.push_child_block(id, block_kind);
     }
 
     fn collect_child_blocks(
@@ -303,106 +285,37 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
         node: HirNode<'tcx>,
         parent: BlockId,
         parent_kind: ParentBlockKind,
-    ) -> Vec<(BlockId, BlockKind)> {
-        self.block_stack.push_parent_frame(parent_kind);
+    ) -> ChildBlocks {
+        self.stack.push_parent_frame(parent_kind);
         self.visit_children(self.unit, node, parent);
-        self.block_stack.pop_child_blocks()
-    }
-
-    /// Build a block whose kind is determined by parent context.
-    fn build_context_block(
-        &mut self,
-        node: HirNode<'tcx>,
-        parent: BlockId,
-        block_kind: BlockKind,
-        index: usize,
-    ) {
-        let id = self.reserve_block_id();
-        let block_kind = self.refine_block_kind(node, block_kind);
-
-        // For context-dependent blocks (like tuple struct fields), don't recurse
-        let child_ids = Vec::new();
-
-        // Create the block - for tuple struct fields, use index as name
-        let block = if block_kind == BlockKind::Field {
-            self.create_tuple_field_block(id, node, Some(parent), child_ids, index)
-        } else {
-            self.create_block(id, node, block_kind, Some(parent), child_ids)
-        };
-
-        self.unit.insert_block(id, block);
-
-        self.block_stack.push_child_block(id, block_kind);
-    }
-
-    /// Create a field block for tuple struct with index as name
-    fn create_tuple_field_block(
-        &self,
-        id: BlockId,
-        node: HirNode<'tcx>,
-        parent: Option<BlockId>,
-        children: Vec<BlockId>,
-        index: usize,
-    ) -> BasicBlock<'tcx> {
-        // NOTE: Don't call set_block_id here - the node is a type_identifier that's
-        // bound to the struct symbol, and we don't want to overwrite the struct's block_id
-        let field_type_symbol = node.query(&self.unit).try_type_expression();
-
-        let mut block = BlockField::new_with_name(
-            id,
-            node,
-            parent,
-            children,
-            Some(index.to_string()),
-            field_type_symbol,
-        );
-        if let Some(type_sym) = self.unit.try_effective_type(field_type_symbol) {
-            block.set_type(self.unit, type_sym);
-        }
-        BasicBlock::Field(self.unit.alloc_block(id, block))
-    }
-
-    /// Get the effective block kind for a node, checking field first then node type.
-    fn effective_block_kind(node: HirNode<'tcx>) -> BlockKind {
-        let field_kind = L::block_kind(node.field_id());
-        if field_kind != BlockKind::Undefined {
-            field_kind
-        } else {
-            L::block_kind(node.kind_id())
-        }
-    }
-
-    fn try_graph_block_kind(node: HirNode<'tcx>) -> Option<BlockKind> {
-        let kind = Self::effective_block_kind(node);
-        kind.is_graph_block().then_some(kind)
+        self.stack.pop_child_blocks()
     }
 }
 
 impl<'tcx, L: Language> HirVisitor<'tcx> for GraphBuilder<'tcx, L> {
     fn visit_children(&mut self, unit: CompileUnit<'tcx>, node: HirNode<'tcx>, parent: BlockId) {
-        let parent_kind_id = node.kind_id();
-        let children = node.child_ids();
-        let children_vec: Vec<_> = children.iter().map(|id| unit.hir_node(*id)).collect();
-        let mut tuple_field_index = 0usize;
+        for child in node.children(&unit) {
+            let default_kind = L::try_block_kind_for_node(child);
+            let contextual_kind = L::try_block_kind_in_parent(child, node);
 
-        for child in children_vec.iter() {
-            let base_kind = Self::effective_block_kind(*child);
-            let context_kind =
-                L::block_kind_with_parent(child.kind_id(), child.field_id(), parent_kind_id);
-
-            if context_kind != base_kind && context_kind.is_graph_block() {
-                self.build_context_block(*child, parent, context_kind, tuple_field_index);
-                tuple_field_index += 1;
-            } else if context_kind == BlockKind::Undefined && base_kind.is_graph_block() {
-                self.visit_children(unit, *child, parent);
+            if let Some(contextual_kind) =
+                contextual_kind.filter(|kind| Some(*kind) != default_kind)
+            {
+                // Parent context reclassifies this child as a block.
+                self.build_block(child, parent, contextual_kind, false);
+            } else if contextual_kind.is_none() && default_kind.is_some() {
+                // Parent context suppresses the child's default block, but descendants may
+                // still contain materialized blocks that belong under the current parent.
+                self.visit_children(unit, child, parent);
             } else {
-                self.visit_node(unit, *child, parent);
+                // No parent-context override; let the normal visitor dispatch handle the child.
+                self.visit_node(unit, child, parent);
             }
         }
     }
 
     fn visit_file(&mut self, unit: CompileUnit<'tcx>, node: HirNode<'tcx>, parent: BlockId) {
-        if let Some(kind) = Self::try_graph_block_kind(node) {
+        if let Some(kind) = L::try_block_kind_for_node(node) {
             self.build_block(node, parent, kind, true);
         } else {
             self.visit_children(unit, node, parent);
@@ -410,7 +323,7 @@ impl<'tcx, L: Language> HirVisitor<'tcx> for GraphBuilder<'tcx, L> {
     }
 
     fn visit_internal(&mut self, unit: CompileUnit<'tcx>, node: HirNode<'tcx>, parent: BlockId) {
-        if let Some(kind) = Self::try_graph_block_kind(node).filter(|kind| *kind != BlockKind::Root)
+        if let Some(kind) = L::try_block_kind_for_node(node).filter(|kind| *kind != BlockKind::Root)
         {
             self.build_block(node, parent, kind, false);
         } else {
@@ -419,22 +332,19 @@ impl<'tcx, L: Language> HirVisitor<'tcx> for GraphBuilder<'tcx, L> {
     }
 
     fn visit_scope(&mut self, unit: CompileUnit<'tcx>, node: HirNode<'tcx>, parent: BlockId) {
-        if let Some(kind) = Self::try_graph_block_kind(node) {
-            // For function/method blocks, only create a block if the scope has a symbol.
-            // This filters out function pointer variable declarations in C/C++ where the
-            // function_declarator node is a Scope but doesn't represent an actual function.
-            if kind.requires_scope_symbol() && node.try_scope_symbol().is_none() {
+        if let Some(kind) = L::try_block_kind_for_node(node) {
+            if !node.query(&unit).can_materialize_scope(kind) {
                 self.visit_children(unit, node, parent);
-                return;
+            } else {
+                self.build_block(node, parent, kind, true);
             }
-            self.build_block(node, parent, kind, true);
         } else {
             self.visit_children(unit, node, parent);
         }
     }
 
     fn visit_ident(&mut self, unit: CompileUnit<'tcx>, node: HirNode<'tcx>, parent: BlockId) {
-        if let Some(kind) = Self::try_graph_block_kind(node) {
+        if let Some(kind) = L::try_block_kind_for_node(node) {
             self.build_block(node, parent, kind, false);
         } else {
             self.visit_children(unit, node, parent);

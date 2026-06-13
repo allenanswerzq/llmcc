@@ -58,7 +58,7 @@ pub enum BlockKind {
 
 impl BlockKind {
     /// Return true when this kind has a concrete [`BasicBlock`] representation.
-    pub fn is_graph_block(self) -> bool {
+    pub fn is_materialized(self) -> bool {
         matches!(
             self,
             BlockKind::Root
@@ -81,7 +81,7 @@ impl BlockKind {
 
     /// Return true when this block kind owns the primary symbol's block id.
     pub fn owns_symbol_block_id(self) -> bool {
-        self.is_graph_block() && !matches!(self, BlockKind::Impl | BlockKind::Return)
+        self.is_materialized() && !matches!(self, BlockKind::Impl | BlockKind::Return)
     }
 
     /// Return true when graph building should require a scope symbol for this kind.

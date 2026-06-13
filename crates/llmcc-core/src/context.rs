@@ -21,7 +21,9 @@ use crate::ir::{Arena, HirBase, HirId, HirIdent, HirKind, HirNode};
 use crate::lang_def::{Language, ParseTree};
 use crate::meta::{UnitMeta, UnitMetaIndex};
 use crate::scope::Scope;
-use crate::symbol::{ScopeId, SymId, Symbol, reset_scope_id_counter, reset_symbol_id_counter};
+use crate::symbol::{
+    ScopeId, SymId, SymKind, Symbol, reset_scope_id_counter, reset_symbol_id_counter,
+};
 use crate::{Error, ErrorKind, Result};
 
 /// Controls how source files are ordered after parallel reading.
@@ -202,12 +204,12 @@ impl<'tcx> CompileUnit<'tcx> {
     /// Return the graph-display type symbol for an already-bound symbol.
     pub fn try_effective_type(self, symbol: Option<&'tcx Symbol>) -> Option<&'tcx Symbol> {
         let symbol = symbol?;
-        if symbol.kind() == crate::symbol::SymKind::EnumVariant {
+        if symbol.kind() == SymKind::EnumVariant {
             return None;
         }
 
         let type_symbol = self.try_type(symbol).unwrap_or(symbol);
-        if type_symbol.kind() == crate::symbol::SymKind::TypeParameter {
+        if type_symbol.kind() == SymKind::TypeParameter {
             return self.try_type(type_symbol).or(Some(type_symbol));
         }
 

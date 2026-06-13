@@ -337,6 +337,29 @@ pub trait Language {
         }
     }
 
+    /// Graph block kind for a HIR node, preferring field-id mappings over node-kind mappings.
+    fn block_kind_for_node(node: HirNode<'_>) -> BlockKind {
+        let field_kind = Self::block_kind(node.field_id());
+        if field_kind != BlockKind::Undefined {
+            field_kind
+        } else {
+            Self::block_kind(node.kind_id())
+        }
+    }
+
+    /// Materialized graph block kind for a HIR node.
+    fn try_block_kind_for_node(node: HirNode<'_>) -> Option<BlockKind> {
+        let kind = Self::block_kind_for_node(node);
+        kind.is_materialized().then_some(kind)
+    }
+
+    /// Materialized graph block kind for a HIR child with parent context.
+    fn try_block_kind_in_parent(child: HirNode<'_>, parent: HirNode<'_>) -> Option<BlockKind> {
+        let kind =
+            Self::block_kind_with_parent(child.kind_id(), child.field_id(), parent.kind_id());
+        kind.is_materialized().then_some(kind)
+    }
+
     /// Decide how the HIR builder handles a parse node.
     fn hir_build_action(node: &dyn ParseNode, source: &[u8]) -> HirBuildAction {
         let _ = (node, source);

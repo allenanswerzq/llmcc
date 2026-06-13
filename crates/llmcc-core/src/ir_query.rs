@@ -1,4 +1,4 @@
-//! Query helpers for HIR subtrees.
+//! Query for HIR subtrees.
 //!
 //! `HirNode` owns the compact data-model API. `HirQuery` owns traversal and
 //! semantic lookup policy that needs a `CompileUnit` to resolve child ids.
@@ -24,6 +24,11 @@ impl<'hir, 'unit> HirQuery<'hir, 'unit> {
         self.node
     }
 
+    /// Parent HIR node, if this node has one in the current compile unit.
+    pub fn try_parent(self) -> Option<HirNode<'hir>> {
+        self.node.parent().and_then(|id| self.unit.try_hir_node(id))
+    }
+
     /// Symbol attached directly to this node.
     pub fn try_symbol(self) -> Option<&'hir Symbol> {
         if let Some(symbol) = self.node.try_scope_symbol() {
@@ -32,10 +37,49 @@ impl<'hir, 'unit> HirQuery<'hir, 'unit> {
         self.node.try_ident_symbol()
     }
 
+    /// Symbol that should receive this node's materialized block id.
+    pub fn try_block_owner_symbol(
+        self,
+        block_kind: BlockKind,
+        positional_field: u16,
+    ) -> Option<&'hir Symbol> {
+        if block_kind == BlockKind::Field
+            && self
+                .try_position_in_parent_field(positional_field)
+                .is_some()
+        {
+            return None;
+        }
+
+        self.node
+            .try_scope_symbol()
+            .or_else(|| self.node.try_scope_ident_symbol())
+            .or_else(|| self.node.try_ident_symbol())
+            .filter(|symbol| symbol.kind() != SymKind::Primitive)
+    }
+
     /// Return true when this node's direct symbol has `kind`.
     pub fn is_symbol_kind(self, kind: SymKind) -> bool {
         self.try_symbol()
             .is_some_and(|symbol| symbol.kind() == kind)
+    }
+
+    /// Return the block kind after applying bound-symbol and parent-block semantics.
+    pub fn resolve_block_kind(self, kind: BlockKind, parent_kind: Option<BlockKind>) -> BlockKind {
+        if kind != BlockKind::Func {
+            return kind;
+        }
+
+        if self.is_symbol_kind(SymKind::Method) || parent_kind == Some(BlockKind::Impl) {
+            BlockKind::Method
+        } else {
+            BlockKind::Func
+        }
+    }
+
+    /// Return true when `kind` can be materialized for this scope node.
+    pub fn can_materialize_scope(self, kind: BlockKind) -> bool {
+        !kind.requires_scope_symbol() || self.node.try_scope_symbol().is_some()
     }
 
     /// Symbol referenced by the identifier under a specific child field.
@@ -107,6 +151,34 @@ impl<'hir, 'unit> HirQuery<'hir, 'unit> {
             .or_else(|| self.unit.file_path().map(ToOwned::to_owned))
     }
 
+    /// Position among siblings that share this node's parent field id.
+    pub fn try_position_in_parent_field(self, field_id: u16) -> Option<usize> {
+        if self.node.try_field_id()? != field_id {
+            return None;
+        }
+
+        let node_id = self.node.try_id()?;
+        let parent = self.try_parent()?;
+        let mut index = 0usize;
+
+        for child in parent.children(self.unit) {
+            if child.try_field_id() == Some(field_id) {
+                if child.try_id() == Some(node_id) {
+                    return Some(index);
+                }
+                index += 1;
+            }
+        }
+
+        None
+    }
+
+    /// Positional field display name, such as `0` or `1` for tuple fields.
+    pub fn try_positional_field_name(self, field_id: u16) -> Option<String> {
+        self.try_position_in_parent_field(field_id)
+            .map(|index| index.to_string())
+    }
+
     /// Symbol attached to the first identifier in this subtree.
     pub fn try_first_ident_symbol(self) -> Option<&'hir Symbol> {
         self.try_first_ident().and_then(|ident| ident.try_symbol())
@@ -130,6 +202,12 @@ impl<'hir, 'unit> HirQuery<'hir, 'unit> {
     pub fn try_name_with_field_or_first(self, field_id: u16) -> Option<String> {
         self.try_ident_name_with_field(field_id)
             .or_else(|| self.try_first_ident_name())
+    }
+
+    /// Field display name from a declaration name or positional parent-field index.
+    pub fn try_field_name(self, name_field: u16, positional_field: u16) -> Option<String> {
+        self.try_positional_field_name(positional_field)
+            .or_else(|| self.try_name_with_field_or_first(name_field))
     }
 
     /// Symbol attached to the identifier under `field_id`.
@@ -334,25 +412,9 @@ impl<'hir, 'unit> HirQuery<'hir, 'unit> {
         }
     }
 
-    /// Attach a block id to any non-primitive symbol associated with this node.
-    pub fn attach_block_id(self, block_id: BlockId) {
-        if let Some(symbol) = self.node.try_scope_symbol() {
-            if symbol.kind() != SymKind::Primitive {
-                symbol.set_block_id(block_id);
-            }
-            return;
-        }
-
-        if let Some(symbol) = self.node.try_scope_ident_symbol() {
-            if symbol.kind() != SymKind::Primitive {
-                symbol.set_block_id(block_id);
-            }
-            return;
-        }
-
-        if let Some(symbol) = self.node.try_ident_symbol()
-            && symbol.kind() != SymKind::Primitive
-        {
+    /// Attach a block id to this node's non-primitive block-owning symbol.
+    pub fn attach_block_id(self, block_id: BlockId, block_kind: BlockKind, positional_field: u16) {
+        if let Some(symbol) = self.try_block_owner_symbol(block_kind, positional_field) {
             symbol.set_block_id(block_id);
         }
     }
