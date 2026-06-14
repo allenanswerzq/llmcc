@@ -101,6 +101,11 @@ impl<'tcx> ProjectGraph<'tcx> {
             .map(|position| &self.units[position])
     }
 
+    /// Return blocks related to `from` by `relation`.
+    pub fn related_blocks(&self, from: BlockId, relation: BlockRelation) -> Vec<BlockId> {
+        self.cc.block_relations().related(from, relation)
+    }
+
     /// Link all unit graphs by discovering and recording block relationships.
     pub fn link_blocks(&self) {
         self.units.par_iter().for_each(|unit_graph| {

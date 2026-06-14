@@ -4,9 +4,14 @@
 //! dependency/influence edges for foundational code and reverse/orchestration
 //! edges for entry points or coordinators. The final score is a normalized
 //! blend of those two passes.
+//!
+//! Cycles are expected in real dependency graphs. The damping factor keeps the
+//! iteration convergent, and callers can inspect [`RankingResult::converged`]
+//! to detect runs that hit the configured iteration limit.
 
 use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::fmt;
 
 use strum_macros::{Display, EnumString};
 
@@ -22,34 +27,35 @@ const DEFAULT_ORCHESTRATION_WEIGHT: f64 = 0.75;
 const DEFAULT_CROSS_FILE_PENALTY: f64 = 0.8;
 const DEFAULT_MAX_OUT_DEGREE: usize = 150;
 const DEFAULT_TELEPORT_PRIOR_STRENGTH: f64 = 0.12;
-const FALLBACK_KIND_PRIOR: f64 = 0.1;
 
-/// Configuration options for the weighted PageRank algorithm.
+/// Options for weighted PageRank.
 #[derive(Debug, Clone)]
-pub struct PageRankConfig {
+pub struct PageRankOptions {
     /// Damping factor (typically 0.85).
-    pub damping_factor: f64,
+    damping_factor: f64,
     /// Maximum number of iterations.
-    pub max_iterations: usize,
+    max_iterations: usize,
     /// Convergence tolerance.
-    pub tolerance: f64,
-    /// Weight assigned to PageRank computed over `DependsOn` edges (foundational influence).
-    pub influence_weight: f64,
-    /// Weight assigned to PageRank computed over `DependedBy` edges (orchestration influence).
-    pub orchestration_weight: f64,
+    tolerance: f64,
+    /// Weight assigned to dependency-following influence scores.
+    influence_weight: f64,
+    /// Weight assigned to reverse-dependency orchestration scores.
+    orchestration_weight: f64,
     /// Penalty applied when an edge crosses file boundaries. 1.0 means no penalty.
-    pub cross_file_penalty: f64,
+    cross_file_penalty: f64,
     /// Optional cap on outgoing edges per node (keeps top weights only).
-    pub max_out_degree: Option<usize>,
+    max_out_degree: Option<usize>,
     /// Blend between uniform teleport (0.0) and kind-prior teleport (1.0).
-    pub teleport_prior_strength: f64,
-    /// Edge weights per relation category.
-    pub edge_weights: EdgeWeights,
-    /// Per-kind priors used for teleport biasing.
-    pub kind_priors: Vec<(BlockKind, f64)>,
+    teleport_prior_strength: f64,
+    /// Relation weights used to build the influence and orchestration graphs.
+    relation_weights: RelationWeights,
+    /// Per-kind teleport prior overrides.
+    ///
+    /// Missing kinds fall back to [`BlockKind::pagerank_prior`].
+    kind_priors: HashMap<BlockKind, f64>,
 }
 
-impl Default for PageRankConfig {
+impl Default for PageRankOptions {
     fn default() -> Self {
         Self {
             damping_factor: DEFAULT_DAMPING_FACTOR,
@@ -60,13 +66,13 @@ impl Default for PageRankConfig {
             cross_file_penalty: DEFAULT_CROSS_FILE_PENALTY,
             max_out_degree: Some(DEFAULT_MAX_OUT_DEGREE),
             teleport_prior_strength: DEFAULT_TELEPORT_PRIOR_STRENGTH,
-            edge_weights: EdgeWeights::default(),
-            kind_priors: BlockKind::pagerank_priors(),
+            relation_weights: RelationWeights::default(),
+            kind_priors: HashMap::new(),
         }
     }
 }
 
-impl PageRankConfig {
+impl PageRankOptions {
     /// Return the default PageRank configuration.
     pub fn new() -> Self {
         Self::default()
@@ -115,20 +121,38 @@ impl PageRankConfig {
         self
     }
 
+    /// Replace relation weights used for PageRank graph construction.
+    pub fn with_relation_weights(mut self, weights: RelationWeights) -> Self {
+        self.relation_weights = weights;
+        self
+    }
+
+    /// Replace all per-kind teleport prior overrides.
+    pub fn with_kind_priors(mut self, priors: impl IntoIterator<Item = (BlockKind, f64)>) -> Self {
+        self.kind_priors = priors.into_iter().collect();
+        self
+    }
+
+    /// Set or replace one per-kind teleport prior override.
+    pub fn with_kind_prior(mut self, kind: BlockKind, prior: f64) -> Self {
+        self.kind_priors.insert(kind, prior);
+        self
+    }
+
+    /// Return the configured teleport prior for `kind`.
+    pub fn kind_prior(&self, kind: BlockKind) -> f64 {
+        self.kind_priors
+            .get(&kind)
+            .copied()
+            .unwrap_or_else(|| kind.pagerank_prior())
+    }
+
     /// Validate all numeric invariants before ranking.
     pub fn validate(&self) -> Result<()> {
         validate_open_probability("damping_factor", self.damping_factor)?;
         validate_positive_usize("max_iterations", self.max_iterations)?;
         validate_positive_finite("tolerance", self.tolerance)?;
-        validate_non_negative_finite("influence_weight", self.influence_weight)?;
-        validate_non_negative_finite("orchestration_weight", self.orchestration_weight)?;
-
-        if self.influence_weight + self.orchestration_weight <= f64::EPSILON {
-            return Err(invalid_config(
-                "score_weights",
-                "at least one score weight must be positive",
-            ));
-        }
+        self.score_weights()?;
 
         validate_closed_probability("cross_file_penalty", self.cross_file_penalty)?;
         validate_closed_probability("teleport_prior_strength", self.teleport_prior_strength)?;
@@ -137,59 +161,160 @@ impl PageRankConfig {
             validate_positive_usize("max_out_degree", max_out_degree)?;
         }
 
-        validate_relation_weights("edge_weights.influence", &self.edge_weights.influence)?;
-        validate_relation_weights(
-            "edge_weights.orchestration",
-            &self.edge_weights.orchestration,
-        )?;
+        self.relation_weights.validate()?;
         validate_kind_priors(&self.kind_priors)?;
 
         Ok(())
+    }
+
+    fn score_weights(&self) -> Result<ScoreWeights> {
+        ScoreWeights::normalize(self.influence_weight, self.orchestration_weight)
+    }
+}
+
+/// Normalized final-score blend weights.
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct ScoreWeights {
+    /// Weight applied to dependency-following PageRank scores.
+    influence: f64,
+    /// Weight applied to reverse-dependency PageRank scores.
+    orchestration: f64,
+}
+
+impl ScoreWeights {
+    /// Normalize raw influence/orchestration weights.
+    fn normalize(influence: f64, orchestration: f64) -> Result<Self> {
+        validate_non_negative_finite("influence_weight", influence)?;
+        validate_non_negative_finite("orchestration_weight", orchestration)?;
+
+        let total = influence + orchestration;
+        if total <= f64::EPSILON {
+            return Err(invalid_config(
+                "score_weights",
+                "at least one score weight must be positive",
+            ));
+        }
+
+        Ok(Self {
+            influence: influence / total,
+            orchestration: orchestration / total,
+        })
     }
 }
 
 /// Relation weights for influence/orchestration graphs.
 #[derive(Debug, Clone)]
-pub struct EdgeWeights {
-    pub influence: Vec<(BlockRelation, f64)>,
-    pub orchestration: Vec<(BlockRelation, f64)>,
+pub struct RelationWeights {
+    influence: HashMap<BlockRelation, f64>,
+    orchestration: HashMap<BlockRelation, f64>,
 }
 
-impl Default for EdgeWeights {
+impl Default for RelationWeights {
     fn default() -> Self {
         Self {
-            influence: vec![
-                (BlockRelation::Calls, 1.0),
-                (BlockRelation::TypeOf, 1.0),
-                (BlockRelation::Implements, 0.8),
-                (BlockRelation::Uses, 0.35),
-            ],
-            orchestration: vec![
-                (BlockRelation::CalledBy, 1.0),
-                (BlockRelation::TypeFor, 1.0),
-                (BlockRelation::ImplementedBy, 0.8),
-                (BlockRelation::UsedBy, 0.35),
-            ],
+            influence: BlockRelation::pagerank_influence_weights()
+                .into_iter()
+                .collect(),
+            orchestration: BlockRelation::pagerank_orchestration_weights()
+                .into_iter()
+                .collect(),
         }
+    }
+}
+
+impl RelationWeights {
+    /// Create relation weights for the two PageRank passes.
+    pub fn new(
+        influence: impl IntoIterator<Item = (BlockRelation, f64)>,
+        orchestration: impl IntoIterator<Item = (BlockRelation, f64)>,
+    ) -> Self {
+        Self {
+            influence: influence.into_iter().collect(),
+            orchestration: orchestration.into_iter().collect(),
+        }
+    }
+
+    /// Replace weights for dependency-following influence edges.
+    pub fn with_influence(
+        mut self,
+        weights: impl IntoIterator<Item = (BlockRelation, f64)>,
+    ) -> Self {
+        self.influence = weights.into_iter().collect();
+        self
+    }
+
+    /// Replace weights for reverse-dependency orchestration edges.
+    pub fn with_orchestration(
+        mut self,
+        weights: impl IntoIterator<Item = (BlockRelation, f64)>,
+    ) -> Self {
+        self.orchestration = weights.into_iter().collect();
+        self
+    }
+
+    /// Return dependency-following influence relation weights.
+    pub fn influence(&self) -> impl Iterator<Item = (BlockRelation, f64)> + '_ {
+        self.influence
+            .iter()
+            .map(|(relation, weight)| (*relation, *weight))
+    }
+
+    /// Return reverse-dependency orchestration relation weights.
+    pub fn orchestration(&self) -> impl Iterator<Item = (BlockRelation, f64)> + '_ {
+        self.orchestration
+            .iter()
+            .map(|(relation, weight)| (*relation, *weight))
+    }
+
+    fn validate(&self) -> Result<()> {
+        for weight in self.influence.values() {
+            validate_non_negative_finite("relation_weights.influence", *weight)?;
+        }
+        for weight in self.orchestration.values() {
+            validate_non_negative_finite("relation_weights.orchestration", *weight)?;
+        }
+        Ok(())
     }
 }
 
 /// Result from a weighted PageRank computation.
 #[derive(Debug, Clone)]
 pub struct RankedBlock {
-    pub node: UnitNode,
+    node: UnitNode,
     /// Blended score based on the configured influence/orchestration weights.
-    pub score: f64,
-    /// PageRank following `DependsOn` edges – highlights foundational building blocks.
-    pub influence_score: f64,
-    /// PageRank following `DependedBy` edges – highlights orchestrators/entry points.
-    pub orchestration_score: f64,
-    pub name: String,
-    pub kind: BlockKind,
-    pub file_path: Option<String>,
+    score: f64,
+    /// Dependency-following PageRank score for foundational building blocks.
+    influence_score: f64,
+    /// Reverse-dependency PageRank score for orchestrators and entry points.
+    orchestration_score: f64,
+    label: String,
+    kind: BlockKind,
+    file_path: Option<String>,
 }
 
 impl RankedBlock {
+    fn from_entry(
+        entry: BlockEntry,
+        score: f64,
+        influence_score: f64,
+        orchestration_score: f64,
+    ) -> Self {
+        let label = entry.to_string();
+
+        Self {
+            node: UnitNode {
+                unit_index: entry.unit_index,
+                block_id: entry.block_id,
+            },
+            score,
+            influence_score,
+            orchestration_score,
+            label,
+            kind: entry.kind,
+            file_path: entry.file_path,
+        }
+    }
+
     /// Return this block's score for `metric`.
     pub fn score_for(&self, metric: RankMetric) -> f64 {
         match metric {
@@ -197,6 +322,46 @@ impl RankedBlock {
             RankMetric::Influence => self.influence_score,
             RankMetric::Orchestration => self.orchestration_score,
         }
+    }
+
+    /// Return this block's id.
+    pub fn block_id(&self) -> BlockId {
+        self.node.block_id
+    }
+
+    /// Return this block's unit index.
+    pub fn unit_index(&self) -> usize {
+        self.node.unit_index
+    }
+
+    /// Return this block's display label.
+    pub fn label(&self) -> &str {
+        &self.label
+    }
+
+    /// Return this block's kind.
+    pub fn kind(&self) -> BlockKind {
+        self.kind
+    }
+
+    /// Return this block's source file path, if known.
+    pub fn file_path(&self) -> Option<&str> {
+        self.file_path.as_deref()
+    }
+
+    /// Return this block's combined score.
+    pub fn score(&self) -> f64 {
+        self.score
+    }
+
+    /// Return this block's influence score.
+    pub fn influence_score(&self) -> f64 {
+        self.influence_score
+    }
+
+    /// Return this block's orchestration score.
+    pub fn orchestration_score(&self) -> f64 {
+        self.orchestration_score
     }
 }
 
@@ -213,19 +378,88 @@ pub enum RankMetric {
     Orchestration,
 }
 
+#[derive(Debug, Clone)]
+struct RankedBlocks {
+    blocks: Vec<RankedBlock>,
+}
+
+impl RankedBlocks {
+    fn new() -> Self {
+        Self { blocks: Vec::new() }
+    }
+
+    fn sort_by(&mut self, metric: RankMetric) {
+        self.blocks
+            .sort_by(|left, right| Self::compare(left, right, metric));
+    }
+
+    fn compare(left: &RankedBlock, right: &RankedBlock, metric: RankMetric) -> Ordering {
+        right
+            .score_for(metric)
+            .total_cmp(&left.score_for(metric))
+            .then_with(|| left.node.unit_index.cmp(&right.node.unit_index))
+            .then_with(|| left.node.block_id.cmp(&right.node.block_id))
+    }
+
+    fn as_slice(&self) -> &[RankedBlock] {
+        &self.blocks
+    }
+
+    fn len(&self) -> usize {
+        self.blocks.len()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.blocks.is_empty()
+    }
+
+    fn top(&self, k: usize) -> Vec<RankedBlock> {
+        self.blocks.iter().take(k).cloned().collect()
+    }
+
+    fn top_by(&self, metric: RankMetric, k: usize) -> Vec<RankedBlock> {
+        if metric == RankMetric::Combined {
+            return self.top(k);
+        }
+
+        let mut blocks: Vec<_> = self.blocks.iter().collect();
+        blocks.sort_by(|left, right| Self::compare(left, right, metric));
+        blocks.into_iter().take(k).cloned().collect()
+    }
+
+    fn scores_by_block(&self, metric: RankMetric) -> HashMap<BlockId, f64> {
+        self.blocks
+            .iter()
+            .map(|block| (block.block_id(), block.score_for(metric)))
+            .collect()
+    }
+
+    fn into_vec(self) -> Vec<RankedBlock> {
+        self.blocks
+    }
+}
+
+impl FromIterator<RankedBlock> for RankedBlocks {
+    fn from_iter<T: IntoIterator<Item = RankedBlock>>(iter: T) -> Self {
+        Self {
+            blocks: iter.into_iter().collect(),
+        }
+    }
+}
+
 /// Result from ranking computation.
 #[derive(Debug)]
 pub struct RankingResult {
-    pub blocks: Vec<RankedBlock>,
-    pub iterations: usize,
-    pub converged: bool,
+    blocks: RankedBlocks,
+    iterations: usize,
+    converged: bool,
 }
 
 impl RankingResult {
     /// Return an empty converged ranking result.
     pub fn empty() -> Self {
         Self {
-            blocks: Vec::new(),
+            blocks: RankedBlocks::new(),
             iterations: 0,
             converged: true,
         }
@@ -233,7 +467,7 @@ impl RankingResult {
 
     /// Return ranked blocks as a slice.
     pub fn blocks(&self) -> &[RankedBlock] {
-        &self.blocks
+        self.blocks.as_slice()
     }
 
     /// Return the number of ranked blocks.
@@ -246,24 +480,34 @@ impl RankingResult {
         self.blocks.is_empty()
     }
 
+    /// Return the maximum iterations used by the two PageRank passes.
+    pub fn iterations(&self) -> usize {
+        self.iterations
+    }
+
+    /// Return whether both PageRank passes converged.
+    pub fn converged(&self) -> bool {
+        self.converged
+    }
+
     /// Return the top `k` blocks by combined score.
     pub fn top(&self, k: usize) -> Vec<RankedBlock> {
-        self.top_by(RankMetric::Combined, k)
+        self.blocks.top(k)
     }
 
     /// Return the top `k` blocks for a specific score metric.
     pub fn top_by(&self, metric: RankMetric, k: usize) -> Vec<RankedBlock> {
-        let mut blocks = self.blocks.clone();
-        sort_ranked_blocks_by(&mut blocks, metric);
-        blocks.into_iter().take(k).collect()
+        self.blocks.top_by(metric, k)
     }
 
-    /// Return combined scores by block id.
-    pub fn scores(&self) -> HashMap<BlockId, f64> {
-        self.blocks
-            .iter()
-            .map(|block| (block.node.block_id, block.score))
-            .collect()
+    /// Return scores by block id for `metric`.
+    pub fn scores_by_block(&self, metric: RankMetric) -> HashMap<BlockId, f64> {
+        self.blocks.scores_by_block(metric)
+    }
+
+    /// Consume this result and return all ranked blocks.
+    pub fn into_blocks(self) -> Vec<RankedBlock> {
+        self.blocks.into_vec()
     }
 }
 
@@ -272,7 +516,7 @@ impl IntoIterator for RankingResult {
     type IntoIter = std::vec::IntoIter<RankedBlock>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.blocks.into_iter()
+        self.blocks.into_vec().into_iter()
     }
 }
 
@@ -280,7 +524,7 @@ impl IntoIterator for RankingResult {
 #[derive(Debug)]
 pub struct PageRanker<'graph, 'tcx> {
     graph: &'graph ProjectGraph<'tcx>,
-    config: PageRankConfig,
+    options: PageRankOptions,
 }
 
 impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
@@ -288,74 +532,59 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
     pub fn new(graph: &'graph ProjectGraph<'tcx>) -> Self {
         Self {
             graph,
-            config: PageRankConfig::default(),
+            options: PageRankOptions::default(),
         }
     }
 
-    /// Create a new PageRanker with custom configuration.
-    pub fn with(graph: &'graph ProjectGraph<'tcx>, config: PageRankConfig) -> Self {
-        Self { graph, config }
+    /// Create a new PageRanker with custom options.
+    pub fn with_options(graph: &'graph ProjectGraph<'tcx>, options: PageRankOptions) -> Self {
+        Self { graph, options }
+    }
+
+    /// Return this ranker's options.
+    pub fn options(&self) -> &PageRankOptions {
+        &self.options
     }
 
     /// Compute weighted PageRank and return results sorted by score (highest first).
     pub fn rank(&self) -> Result<RankingResult> {
-        self.config.validate()?;
+        self.options.validate()?;
 
         let entries = self.collect_entries();
-
         if entries.is_empty() {
             return Ok(RankingResult::empty());
         }
 
         let adjacency_influence =
-            self.build_weighted_adjacency(&entries, &self.config.edge_weights.influence);
+            self.build_adjacency(&entries, self.options.relation_weights.influence());
         let adjacency_orchestration =
-            self.build_weighted_adjacency(&entries, &self.config.edge_weights.orchestration);
+            self.build_adjacency(&entries, self.options.relation_weights.orchestration());
 
         let teleport = self.build_teleport_vector(&entries);
 
-        let influence = self.compute_pagerank_weighted(&adjacency_influence, &teleport);
-        let orchestration = self.compute_pagerank_weighted(&adjacency_orchestration, &teleport);
+        let influence = PageRankRun::compute(&adjacency_influence, &teleport, &self.options);
+        let orchestration =
+            PageRankRun::compute(&adjacency_orchestration, &teleport, &self.options);
 
-        let (influence_weight, orchestration_weight) = self.normalized_score_weights();
-
-        let blended_scores: Vec<f64> = influence
-            .scores
-            .iter()
-            .zip(&orchestration.scores)
-            .map(|(influence, orchestration)| {
-                influence * influence_weight + orchestration * orchestration_weight
-            })
-            .collect();
+        let blended_scores =
+            PageRankRun::blend(&influence, &orchestration, self.options.score_weights()?);
 
         let iterations = influence.iterations.max(orchestration.iterations);
         let converged = influence.converged && orchestration.converged;
 
-        let mut ranked: Vec<RankedBlock> = entries
+        let mut ranked: RankedBlocks = entries
             .into_iter()
             .enumerate()
             .map(|(idx, entry)| {
-                let display_name = entry
-                    .name
-                    .filter(|name| !name.is_empty())
-                    .unwrap_or_else(|| format!("{}:{}", entry.kind, entry.block_id.as_u32()));
-
-                RankedBlock {
-                    node: UnitNode {
-                        unit_index: entry.unit_index,
-                        block_id: entry.block_id,
-                    },
-                    score: blended_scores[idx],
-                    influence_score: influence.scores[idx],
-                    orchestration_score: orchestration.scores[idx],
-                    name: display_name,
-                    kind: entry.kind,
-                    file_path: entry.file_path,
-                }
+                RankedBlock::from_entry(
+                    entry,
+                    blended_scores[idx],
+                    influence.scores[idx],
+                    orchestration.scores[idx],
+                )
             })
             .collect();
-
-        sort_ranked_blocks_by(&mut ranked, RankMetric::Combined);
+        ranked.sort_by(RankMetric::Combined);
 
         Ok(RankingResult {
             blocks: ranked,
@@ -364,58 +593,15 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
         })
     }
 
-    /// Get top k blocks by weighted PageRank score.
-    pub fn top(&self, k: usize) -> Result<Vec<RankedBlock>> {
-        self.rank().map(|ranking| ranking.top(k))
-    }
-
-    /// Get top k blocks by influence score (foundational dependencies).
-    pub fn top_influence(&self, k: usize) -> Result<Vec<RankedBlock>> {
-        self.rank()
-            .map(|ranking| ranking.top_by(RankMetric::Influence, k))
-    }
-
-    /// Get top k blocks by orchestration score (entry points / coordinators).
-    pub fn top_orchestration(&self, k: usize) -> Result<Vec<RankedBlock>> {
-        self.rank()
-            .map(|ranking| ranking.top_by(RankMetric::Orchestration, k))
-    }
-
-    /// Get all weighted PageRank scores as a HashMap from BlockId to score.
-    pub fn scores(&self) -> Result<HashMap<BlockId, f64>> {
-        self.rank().map(|ranking| ranking.scores())
-    }
-
-    fn compute_pagerank_weighted(
-        &self,
-        adjacency: &WeightedAdjacency,
-        teleport: &[f64],
-    ) -> PageRankRun {
-        compute_weighted_pagerank(
-            adjacency,
-            teleport,
-            self.config.damping_factor,
-            self.config.max_iterations,
-            self.config.tolerance,
-        )
-    }
-
     fn build_teleport_vector(&self, entries: &[BlockEntry]) -> Vec<f64> {
         let mut priors = Vec::with_capacity(entries.len());
         for entry in entries {
-            let prior = self
-                .config
-                .kind_priors
-                .iter()
-                .find(|(kind, _)| *kind == entry.kind)
-                .map(|(_, weight)| *weight)
-                .unwrap_or(FALLBACK_KIND_PRIOR);
-            priors.push(prior);
+            priors.push(self.options.kind_prior(entry.kind));
         }
 
         let sum_priors: f64 = priors.iter().sum();
         let uniform = 1.0 / entries.len() as f64;
-        let strength = self.config.teleport_prior_strength.clamp(0.0, 1.0);
+        let strength = self.options.teleport_prior_strength;
 
         let mut teleport = Vec::with_capacity(entries.len());
         for prior in priors {
@@ -429,14 +615,6 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
         }
 
         teleport
-    }
-
-    fn normalized_score_weights(&self) -> (f64, f64) {
-        let total_weight = self.config.influence_weight + self.config.orchestration_weight;
-        (
-            self.config.influence_weight / total_weight,
-            self.config.orchestration_weight / total_weight,
-        )
     }
 
     fn collect_entries(&self) -> Vec<BlockEntry> {
@@ -463,12 +641,13 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
     }
 
     /// Build weighted adjacency from relation types.
-    fn build_weighted_adjacency(
+    fn build_adjacency(
         &self,
         entries: &[BlockEntry],
-        relations: &[(BlockRelation, f64)],
+        relations: impl IntoIterator<Item = (BlockRelation, f64)>,
     ) -> WeightedAdjacency {
-        let mut adjacency: WeightedAdjacency = vec![Vec::new(); entries.len()];
+        let relations: Vec<_> = relations.into_iter().collect();
+        let mut adjacency = Vec::with_capacity(entries.len());
         let mut index_by_block: HashMap<BlockId, usize> = HashMap::new();
 
         for (idx, entry) in entries.iter().enumerate() {
@@ -476,52 +655,32 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
         }
 
         for (idx, entry) in entries.iter().enumerate() {
-            let mut weighted_targets: HashMap<usize, f64> = HashMap::new();
-
-            for &(relation, weight) in relations {
+            let mut weighted = WeightedEdges::new();
+            for &(relation, weight) in &relations {
                 if weight <= 0.0 {
                     continue;
                 }
 
-                let targets = self
-                    .graph
-                    .context()
-                    .block_relations()
-                    .related(entry.block_id, relation);
-
+                let targets = self.graph.related_blocks(entry.block_id, relation);
                 for dep_id in targets {
                     if let Some(&target_idx) = index_by_block.get(&dep_id) {
                         if target_idx == idx {
                             continue;
                         }
 
-                        let mut edge_weight = weight;
-                        if self.config.cross_file_penalty < 1.0
-                            && entry.file_path.is_some()
-                            && entries[target_idx].file_path.is_some()
-                            && entry.file_path != entries[target_idx].file_path
-                        {
-                            edge_weight *= self.config.cross_file_penalty;
-                        }
+                        let edge_weight = entry.weight_to(
+                            &entries[target_idx],
+                            weight,
+                            self.options.cross_file_penalty,
+                        );
 
-                        *weighted_targets.entry(target_idx).or_insert(0.0) += edge_weight;
+                        weighted.insert(target_idx, edge_weight);
                     }
                 }
             }
 
-            let mut weighted: Vec<WeightedEdge> = weighted_targets
-                .into_iter()
-                .map(|(target, weight)| WeightedEdge { target, weight })
-                .collect();
-            sort_weighted_edges(&mut weighted);
-
-            if let Some(max_out) = self.config.max_out_degree
-                && weighted.len() > max_out
-            {
-                weighted.truncate(max_out);
-            }
-
-            adjacency[idx] = weighted;
+            weighted.keep_top(self.options.max_out_degree);
+            adjacency.push(weighted);
         }
 
         adjacency
@@ -537,7 +696,87 @@ struct BlockEntry {
     file_path: Option<String>,
 }
 
-type WeightedAdjacency = Vec<Vec<WeightedEdge>>;
+impl BlockEntry {
+    fn weight_to(&self, target: &Self, base_weight: f64, cross_file_penalty: f64) -> f64 {
+        if cross_file_penalty < 1.0
+            && self.file_path.is_some()
+            && target.file_path.is_some()
+            && self.file_path != target.file_path
+        {
+            base_weight * cross_file_penalty
+        } else {
+            base_weight
+        }
+    }
+}
+
+impl fmt::Display for BlockEntry {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(name) = self.name.as_deref().filter(|name| !name.is_empty()) {
+            formatter.write_str(name)
+        } else {
+            write!(formatter, "{}:{}", self.kind, self.block_id.as_u32())
+        }
+    }
+}
+
+type WeightedAdjacency = Vec<WeightedEdges>;
+
+#[derive(Debug, Clone, PartialEq)]
+struct WeightedEdges {
+    weights_by_target: HashMap<usize, f64>,
+    edges_by_weight: Vec<WeightedEdge>,
+    total_weight: f64,
+}
+
+impl WeightedEdges {
+    fn new() -> Self {
+        Self {
+            weights_by_target: HashMap::new(),
+            edges_by_weight: Vec::new(),
+            total_weight: 0.0,
+        }
+    }
+
+    fn insert(&mut self, target: usize, weight: f64) {
+        *self.weights_by_target.entry(target).or_insert(0.0) += weight;
+    }
+
+    fn keep_top(&mut self, max_len: Option<usize>) {
+        self.edges_by_weight = self
+            .weights_by_target
+            .iter()
+            .map(|(target, weight)| WeightedEdge {
+                target: *target,
+                weight: *weight,
+            })
+            .collect();
+
+        self.edges_by_weight.sort_by(|left, right| {
+            right
+                .weight
+                .total_cmp(&left.weight)
+                .then_with(|| left.target.cmp(&right.target))
+        });
+
+        if let Some(max_len) = max_len {
+            self.edges_by_weight.truncate(max_len);
+        }
+        self.total_weight = self.edges_by_weight.iter().map(|edge| edge.weight).sum();
+    }
+
+    fn is_empty(&self) -> bool {
+        self.edges_by_weight.is_empty()
+    }
+
+    fn total_weight(&self) -> f64 {
+        self.total_weight
+    }
+
+    fn iter(&self) -> impl Iterator<Item = &WeightedEdge> {
+        self.edges_by_weight.iter()
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct WeightedEdge {
@@ -552,91 +791,83 @@ struct PageRankRun {
     converged: bool,
 }
 
-fn compute_weighted_pagerank(
-    adjacency: &WeightedAdjacency,
-    teleport: &[f64],
-    damping_factor: f64,
-    max_iterations: usize,
-    tolerance: f64,
-) -> PageRankRun {
-    let node_count = adjacency.len();
-    let mut ranks = teleport.to_vec();
-    let mut next_ranks = vec![0.0; node_count];
+impl PageRankRun {
+    fn compute(adjacency: &WeightedAdjacency, teleport: &[f64], options: &PageRankOptions) -> Self {
+        let node_count = adjacency.len();
+        let mut ranks = teleport.to_vec();
+        let mut next_ranks = vec![0.0; node_count];
 
-    let mut iterations = 0;
-    let mut converged = false;
+        let mut iterations = 0;
+        let mut converged = false;
 
-    for iter in 0..max_iterations {
-        iterations = iter + 1;
-        for (idx, value) in teleport.iter().enumerate() {
-            next_ranks[idx] = (1.0 - damping_factor) * value;
-        }
-
-        let mut sink_mass = 0.0;
-        for (idx, neighbors) in adjacency.iter().enumerate() {
-            if neighbors.is_empty() {
-                sink_mass += ranks[idx];
-                continue;
-            }
-
-            let total_weight: f64 = neighbors.iter().map(|edge| edge.weight).sum();
-            if total_weight <= f64::EPSILON {
-                sink_mass += ranks[idx];
-                continue;
-            }
-
-            for edge in neighbors {
-                let share = ranks[idx] * damping_factor * (edge.weight / total_weight);
-                next_ranks[edge.target] += share;
-            }
-        }
-
-        if sink_mass > 0.0 {
+        for iter in 0..options.max_iterations {
+            iterations = iter + 1;
             for (idx, value) in teleport.iter().enumerate() {
-                next_ranks[idx] += sink_mass * damping_factor * value;
+                next_ranks[idx] = (1.0 - options.damping_factor) * value;
+            }
+
+            let mut sink_mass = 0.0;
+            for (idx, neighbors) in adjacency.iter().enumerate() {
+                if neighbors.is_empty() {
+                    sink_mass += ranks[idx];
+                    continue;
+                }
+
+                let total_weight = neighbors.total_weight();
+                if total_weight <= f64::EPSILON {
+                    sink_mass += ranks[idx];
+                    continue;
+                }
+
+                for edge in neighbors.iter() {
+                    let share = ranks[idx] * options.damping_factor * (edge.weight / total_weight);
+                    next_ranks[edge.target] += share;
+                }
+            }
+
+            if sink_mass > 0.0 {
+                for (idx, value) in teleport.iter().enumerate() {
+                    next_ranks[idx] += sink_mass * options.damping_factor * value;
+                }
+            }
+
+            let delta: f64 = next_ranks
+                .iter()
+                .zip(&ranks)
+                .map(|(new, old)| (new - old).abs())
+                .sum();
+
+            ranks.copy_from_slice(&next_ranks);
+
+            if delta < options.tolerance {
+                converged = true;
+                break;
             }
         }
 
-        let delta: f64 = next_ranks
-            .iter()
-            .zip(&ranks)
-            .map(|(new, old)| (new - old).abs())
-            .sum();
-
-        ranks.copy_from_slice(&next_ranks);
-
-        if delta < tolerance {
-            converged = true;
-            break;
+        Self {
+            scores: ranks,
+            iterations,
+            converged,
         }
     }
 
-    PageRankRun {
-        scores: ranks,
-        iterations,
-        converged,
+    fn blend(influence: &Self, orchestration: &Self, weights: ScoreWeights) -> Vec<f64> {
+        debug_assert_eq!(
+            influence.scores.len(),
+            orchestration.scores.len(),
+            "PageRank runs must cover the same node set"
+        );
+
+        influence
+            .scores
+            .iter()
+            .zip(&orchestration.scores)
+            .map(|(influence, orchestration)| {
+                influence * weights.influence + orchestration * weights.orchestration
+            })
+            .collect()
     }
-}
-
-fn sort_weighted_edges(edges: &mut [WeightedEdge]) {
-    edges.sort_by(|left, right| {
-        right
-            .weight
-            .total_cmp(&left.weight)
-            .then_with(|| left.target.cmp(&right.target))
-    });
-}
-
-fn sort_ranked_blocks_by(blocks: &mut [RankedBlock], metric: RankMetric) {
-    blocks.sort_by(|left, right| compare_ranked_blocks(left, right, metric));
-}
-
-fn compare_ranked_blocks(left: &RankedBlock, right: &RankedBlock, metric: RankMetric) -> Ordering {
-    right
-        .score_for(metric)
-        .total_cmp(&left.score_for(metric))
-        .then_with(|| left.node.unit_index.cmp(&right.node.unit_index))
-        .then_with(|| left.node.block_id.cmp(&right.node.block_id))
 }
 
 fn validate_open_probability(field: &'static str, value: f64) -> Result<()> {
@@ -683,15 +914,8 @@ fn validate_positive_usize(field: &'static str, value: usize) -> Result<()> {
     Err(invalid_config(field, "must be greater than 0"))
 }
 
-fn validate_relation_weights(field: &'static str, weights: &[(BlockRelation, f64)]) -> Result<()> {
-    for (_, weight) in weights {
-        validate_non_negative_finite(field, *weight)?;
-    }
-    Ok(())
-}
-
-fn validate_kind_priors(priors: &[(BlockKind, f64)]) -> Result<()> {
-    for (_, prior) in priors {
+fn validate_kind_priors(priors: &HashMap<BlockKind, f64>) -> Result<()> {
+    for prior in priors.values() {
         validate_non_negative_finite("kind_priors", *prior)?;
     }
     Ok(())

@@ -31,9 +31,7 @@ declare_arena!(BlockArena {
     blk_alias: BlockAlias<'a>,
 });
 
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, EnumString, FromRepr, Display, Default,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumString, FromRepr, Display, Default)]
 #[strum(serialize_all = "snake_case")]
 /// Normalized block categories used by the language-agnostic graph.
 ///
@@ -83,13 +81,6 @@ impl BlockKind {
             BlockKind::Undefined => 0.05,
             BlockKind::Closure => 1.0,
         }
-    }
-
-    /// Return all default PageRank teleport priors.
-    pub fn pagerank_priors() -> Vec<(BlockKind, f64)> {
-        Self::iter()
-            .map(|kind| (kind, kind.pagerank_prior()))
-            .collect()
     }
 
     /// Return true when this kind has a concrete [`BasicBlock`] representation.
@@ -436,6 +427,54 @@ pub enum BlockRelation {
 }
 
 impl BlockRelation {
+    /// Return this relation's default PageRank influence weight.
+    ///
+    /// Influence edges follow dependency direction and highlight foundational
+    /// blocks that are called, used, implemented, or referenced as types.
+    pub const fn pagerank_influence_weight(self) -> Option<f64> {
+        match self {
+            BlockRelation::Calls | BlockRelation::TypeOf => Some(1.0),
+            BlockRelation::Implements => Some(0.8),
+            BlockRelation::Uses => Some(0.35),
+            _ => None,
+        }
+    }
+
+    /// Return this relation's default PageRank orchestration weight.
+    ///
+    /// Orchestration edges follow reverse dependency direction and highlight
+    /// blocks that coordinate calls, uses, implementations, or type references.
+    pub const fn pagerank_orchestration_weight(self) -> Option<f64> {
+        match self {
+            BlockRelation::CalledBy | BlockRelation::TypeFor => Some(1.0),
+            BlockRelation::ImplementedBy => Some(0.8),
+            BlockRelation::UsedBy => Some(0.35),
+            _ => None,
+        }
+    }
+
+    /// Return all default PageRank influence relation weights.
+    pub fn pagerank_influence_weights() -> Vec<(BlockRelation, f64)> {
+        Self::iter()
+            .filter_map(|relation| {
+                relation
+                    .pagerank_influence_weight()
+                    .map(|weight| (relation, weight))
+            })
+            .collect()
+    }
+
+    /// Return all default PageRank orchestration relation weights.
+    pub fn pagerank_orchestration_weights() -> Vec<(BlockRelation, f64)> {
+        Self::iter()
+            .filter_map(|relation| {
+                relation
+                    .pagerank_orchestration_weight()
+                    .map(|weight| (relation, weight))
+            })
+            .collect()
+    }
+
     /// Return the reverse relation, when this relation has one.
     pub fn inverse(self) -> Option<Self> {
         match self {

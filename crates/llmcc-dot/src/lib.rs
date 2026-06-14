@@ -81,16 +81,16 @@ fn render_file_level(
         let node_ids: HashSet<BlockId> = filtered_nodes.iter().map(|n| n.block_id).collect();
 
         let ranked_in_graph: Vec<_> = all_ranked
-            .blocks
+            .into_blocks()
             .into_iter()
-            .filter(|r| node_ids.contains(&r.node.block_id))
+            .filter(|ranked| node_ids.contains(&ranked.block_id()))
             .collect();
 
         let (top_ids, coverage_ids): (HashSet<BlockId>, HashSet<BlockId>) =
             if ranked_in_graph.len() <= top_k {
                 let ids: HashSet<BlockId> = ranked_in_graph
                     .into_iter()
-                    .map(|r| r.node.block_id)
+                    .map(|ranked| ranked.block_id())
                     .collect();
                 (ids, HashSet::new())
             } else {
@@ -106,14 +106,14 @@ fn render_file_level(
 
                 for ranked in &ranked_in_graph {
                     let module_key = module_by_block
-                        .get(&ranked.node.block_id)
+                        .get(&ranked.block_id())
                         .cloned()
                         .unwrap_or_else(|| "unknown-crate::<root>".to_string());
-                    *module_scores.entry(module_key.clone()).or_insert(0.0) += ranked.score;
+                    *module_scores.entry(module_key.clone()).or_insert(0.0) += ranked.score();
                     module_blocks
                         .entry(module_key)
                         .or_default()
-                        .push(ranked.node.block_id);
+                        .push(ranked.block_id());
                 }
 
                 let mut sorted_modules: Vec<_> = module_scores.into_iter().collect();
@@ -143,7 +143,7 @@ fn render_file_level(
                     if selected_ids.len() >= top_k {
                         break;
                     }
-                    selected_ids.insert(ranked.node.block_id);
+                    selected_ids.insert(ranked.block_id());
                 }
 
                 (selected_ids, coverage_ids)

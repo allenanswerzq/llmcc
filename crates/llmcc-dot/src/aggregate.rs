@@ -6,7 +6,7 @@ use std::fmt::Write;
 use llmcc_collect::{AggregatedNode, ComponentDepth, RenderEdge, RenderNode, RenderOptions};
 use llmcc_core::BlockId;
 use llmcc_core::graph::ProjectGraph;
-use llmcc_core::pagerank::PageRanker;
+use llmcc_core::pagerank::{PageRanker, RankMetric};
 
 use crate::dot::sanitize_id;
 
@@ -203,7 +203,7 @@ fn compute_pagerank_components(
 ) -> Option<HashSet<String>> {
     let top_k = pagerank_top_k?;
     let ranker = PageRanker::new(project);
-    let scores = ranker.scores().ok()?;
+    let scores = ranker.rank().ok()?.scores_by_block(RankMetric::Combined);
 
     // Aggregate scores by component
     let mut component_scores: std::collections::HashMap<String, f64> =

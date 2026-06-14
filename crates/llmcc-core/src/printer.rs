@@ -4,7 +4,7 @@
 //! formats that tree. Keeping collection separate from formatting makes the
 //! output modes consistent and keeps config behavior in one place.
 
-use std::fmt::Write as _;
+use std::fmt::{self, Write as _};
 use std::io::{self, Write as IoWrite};
 
 use strum_macros::{Display, EnumString};
@@ -40,9 +40,9 @@ pub enum PrintFormat {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IrRender {
     /// Rendered parse tree, or a diagnostic placeholder when no parse tree exists.
-    pub ast: String,
+    ast: String,
     /// Rendered HIR tree.
-    pub hir: String,
+    hir: String,
 }
 
 impl IrRender {
@@ -59,6 +59,16 @@ impl IrRender {
         (&self.ast, &self.hir)
     }
 
+    /// Return rendered parse tree output.
+    pub fn ast(&self) -> &str {
+        &self.ast
+    }
+
+    /// Return rendered HIR tree output.
+    pub fn hir(&self) -> &str {
+        &self.hir
+    }
+
     /// Return owned rendered sections.
     pub fn into_parts(self) -> (String, String) {
         (self.ast, self.hir)
@@ -66,38 +76,39 @@ impl IrRender {
 
     /// Write the rendered sections to `writer`.
     pub fn write_to(&self, mut writer: impl IoWrite) -> Result<()> {
-        writeln!(writer, "AST:\n{}\n\nHIR:\n{}\n", self.ast, self.hir).map_err(write_failed)
+        writeln!(writer, "{self}").map_err(write_failed)
+    }
+}
+
+impl fmt::Display for IrRender {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "AST:\n{}\n\nHIR:\n{}", self.ast, self.hir)
     }
 }
 
 /// Options controlling debug rendering.
-///
-/// Fields remain public for compatibility, but builder methods are preferred in
-/// new code because they keep call sites self-documenting. Call
-/// [`validate`](Self::validate) before rendering when constructing a config by
-/// literal struct update.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PrintConfig {
     /// Output format.
-    pub format: PrintFormat,
+    format: PrintFormat,
     /// Include compact source snippets next to rendered nodes.
-    pub include_snippets: bool,
+    include_snippets: bool,
     /// Include one-indexed source line ranges.
-    pub include_line_info: bool,
+    include_line_info: bool,
     /// Minimum column used to align snippets in tree format.
-    pub snippet_col_width: usize,
+    snippet_col_width: usize,
     /// Maximum snippet length before truncation.
-    pub snippet_max_length: usize,
-    /// Maximum recursion depth from the root node.
-    pub max_depth: usize,
+    snippet_max_length: usize,
+    /// Maximum recursion depth from the root node. The root is depth 0.
+    max_depth: usize,
     /// Spaces per indentation level in tree format.
-    pub indent_width: usize,
+    indent_width: usize,
     /// Include node ids when the source structure exposes them.
-    pub include_node_ids: bool,
+    include_node_ids: bool,
     /// Include parser field names in AST labels.
-    pub include_field_names: bool,
+    include_field_names: bool,
     /// Maximum output line length; `0` means unlimited.
-    pub line_width_limit: usize,
+    line_width_limit: usize,
 }
 
 impl Default for PrintConfig {
@@ -153,7 +164,7 @@ impl PrintConfig {
         self
     }
 
-    /// Set the maximum recursion depth from the root node.
+    /// Set the maximum recursion depth from the root node. The root is depth 0.
     pub fn with_max_depth(mut self, depth: usize) -> Self {
         self.max_depth = depth;
         self
@@ -221,6 +232,9 @@ impl PrintConfig {
     }
 
     /// Validate configuration invariants before rendering.
+    ///
+    /// Public rendering functions call this automatically; call it directly
+    /// when checking a config before passing it elsewhere.
     pub fn validate(&self) -> Result<()> {
         if self.max_depth == 0 {
             return Err(invalid_config("max_depth must be greater than 0"));
@@ -278,12 +292,14 @@ impl SourceSpan {
             end_line: end_line.max(start_line),
         }
     }
+}
 
-    fn label(self) -> String {
+impl fmt::Display for SourceSpan {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.start_line == self.end_line {
-            format!("[{}]", self.start_line)
+            write!(formatter, "[{}]", self.start_line)
         } else {
-            format!("[{}-{}]", self.start_line, self.end_line)
+            write!(formatter, "[{}-{}]", self.start_line, self.end_line)
         }
     }
 }
@@ -329,20 +345,6 @@ impl RenderNode {
     }
 }
 
-struct RenderTree {
-    root: RenderNode,
-}
-
-impl RenderTree {
-    fn new(root: RenderNode) -> Self {
-        Self { root }
-    }
-
-    fn render(&self, config: &PrintConfig) -> String {
-        TreeWriter::new(config).render(&self.root)
-    }
-}
-
 struct TreeBuilder<'cfg> {
     config: &'cfg PrintConfig,
 }
@@ -352,15 +354,15 @@ impl<'cfg> TreeBuilder<'cfg> {
         Self { config }
     }
 
-    fn ast_tree(&self, unit: CompileUnit<'_>) -> Result<RenderTree> {
+    fn ast_tree(&self, unit: CompileUnit<'_>) -> Result<RenderNode> {
         let Some(parse_tree) = unit.try_parse_tree() else {
-            return Ok(RenderTree::new(RenderNode::new(
+            return Ok(RenderNode::new(
                 "parse tree not available for this compilation unit",
-            )));
+            ));
         };
 
         let root = parse_tree.root();
-        Ok(RenderTree::new(self.ast_node(&*root, None, 0, unit, 0)?))
+        self.ast_node(&*root, None, 0, unit, 0)
     }
 
     fn ast_node(
@@ -402,9 +404,9 @@ impl<'cfg> TreeBuilder<'cfg> {
             .with_children(children))
     }
 
-    fn hir_tree(&self, root: HirId, unit: CompileUnit<'_>) -> Result<RenderTree> {
+    fn hir_tree(&self, root: HirId, unit: CompileUnit<'_>) -> Result<RenderNode> {
         let root = unit.hir_node(root);
-        Ok(RenderTree::new(self.hir_node(&root, unit, 0)?))
+        self.hir_node(&root, unit, 0)
     }
 
     fn hir_node(
@@ -438,9 +440,9 @@ impl<'cfg> TreeBuilder<'cfg> {
         Ok(render)
     }
 
-    fn block_tree(&self, root: BlockId, unit: CompileUnit<'_>) -> Result<RenderTree> {
+    fn block_tree(&self, root: BlockId, unit: CompileUnit<'_>) -> Result<RenderNode> {
         let block = unit.block(root);
-        Ok(RenderTree::new(self.block_node(&block, unit, 0)?))
+        self.block_node(&block, unit, 0)
     }
 
     fn block_node(
@@ -568,7 +570,7 @@ impl<'cfg> TreeWriter<'cfg> {
         if self.config.include_line_info
             && let Some(span) = node.span
         {
-            let _ = write!(label, " {}", span.label());
+            let _ = write!(label, " {span}");
         }
 
         label
@@ -608,8 +610,9 @@ pub fn render_ir_with(
     config.validate()?;
 
     let builder = TreeBuilder::new(config);
-    let ast = builder.ast_tree(unit)?.render(config);
-    let hir = builder.hir_tree(root, unit)?.render(config);
+    let writer = TreeWriter::new(config);
+    let ast = writer.render(&builder.ast_tree(unit)?);
+    let hir = writer.render(&builder.hir_tree(root, unit)?);
 
     Ok(IrRender::new(ast, hir))
 }
@@ -653,9 +656,8 @@ pub fn render_block_tree_with(
 ) -> Result<String> {
     config.validate()?;
 
-    TreeBuilder::new(config)
-        .block_tree(root, unit)
-        .map(|tree| tree.render(config))
+    let tree = TreeBuilder::new(config).block_tree(root, unit)?;
+    Ok(TreeWriter::new(config).render(&tree))
 }
 
 /// Write a block tree to `writer`.
@@ -671,7 +673,7 @@ pub fn write_block_tree_with(
     mut writer: impl IoWrite,
 ) -> Result<()> {
     let graph = render_block_tree_with(root, unit, config)?;
-    writeln!(writer, "{graph}\n").map_err(write_failed)
+    writeln!(writer, "{graph}").map_err(write_failed)
 }
 
 /// Print a block tree to stdout.
