@@ -8,10 +8,10 @@ use std::path::Path;
 
 use rayon::prelude::*;
 
-use llmcc_core::block_rel::BlockIndexEntry;
-use llmcc_core::graph::ProjectGraph;
-use llmcc_core::symbol::SymKind;
-use llmcc_core::{BlockId, GraphQuery, UnitMeta};
+use crate::block_rel::BlockIndexEntry;
+use crate::graph::ProjectGraph;
+use crate::symbol::SymKind;
+use crate::{BlockId, GraphQuery, UnitMeta};
 use strum_macros::{Display, EnumString, IntoStaticStr};
 
 /// Collected graph facts for downstream renderers and analysis.

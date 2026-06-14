@@ -3,7 +3,7 @@
 use std::collections::BTreeSet;
 use std::fmt::Write;
 
-use llmcc_collect::{CollectedEdge, CollectedEdgeKind, CollectedNode};
+use llmcc_core::{CollectedEdge, CollectedEdgeKind, CollectedNode};
 
 use crate::dot::{escape_label, sanitize_id, shape_for_kind, write_indent};
 use crate::types::{ComponentDepth, ComponentTree};

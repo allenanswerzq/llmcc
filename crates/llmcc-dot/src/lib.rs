@@ -7,10 +7,9 @@ mod types;
 
 use std::collections::{BTreeSet, HashMap, HashSet};
 
-use llmcc_collect::{CollectedEdge, CollectedGraph, CollectedNode};
-use llmcc_core::BlockId;
 use llmcc_core::graph::ProjectGraph;
 use llmcc_core::pagerank::PageRanker;
+use llmcc_core::{BlockId, CollectedEdge, CollectedGraph, CollectedNode};
 
 pub use dot::DotBuilder;
 pub use types::{ComponentDepth, RenderOptions};

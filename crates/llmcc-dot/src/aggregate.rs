@@ -3,10 +3,10 @@
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::fmt::Write;
 
-use llmcc_collect::{CollectedEdge, CollectedEdgeKind, CollectedNode};
 use llmcc_core::BlockId;
 use llmcc_core::graph::ProjectGraph;
 use llmcc_core::pagerank::{PageRanker, RankMetric};
+use llmcc_core::{CollectedEdge, CollectedEdgeKind, CollectedNode};
 
 use crate::dot::sanitize_id;
 use crate::types::{AggregatedNode, ComponentDepth, RenderOptions};
