@@ -4,7 +4,7 @@ use llmcc_core::ir::{HirId, HirIdent, HirNode, HirScope};
 use llmcc_core::next_hir_id;
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{ScopeId, SymKind, SymKindSet, Symbol};
-use llmcc_resolver::CollectorScopes;
+use llmcc_resolver::CollectCtxt;
 
 use std::collections::HashMap;
 
@@ -23,7 +23,7 @@ fn is_method_context(parent: Option<&Symbol>) -> bool {
 }
 
 /// Callback type for scope entry actions
-type ScopeEntryCallback<'tcx> = Box<dyn FnOnce(&HirNode<'tcx>, &mut CollectorScopes<'tcx>) + 'tcx>;
+type ScopeEntryCallback<'tcx> = Box<dyn FnOnce(&HirNode<'tcx>, &mut CollectCtxt<'tcx>) + 'tcx>;
 
 #[derive(Debug)]
 pub struct CollectorVisitor<'tcx> {
@@ -42,7 +42,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         &self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &CollectorScopes<'tcx>,
+        scopes: &CollectCtxt<'tcx>,
         kind: SymKind,
         field_id: u16,
     ) -> Option<&'tcx Symbol> {
@@ -52,7 +52,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
             .try_ident_with_field(field_id)
             .or_else(|| node.as_scope().and_then(|sn| sn.try_ident()))?;
 
-        let sym = scopes.lookup_or_insert(ident.name, node, kind)?;
+        let sym = scopes.declare(ident.name, node, kind)?;
         ident.set_symbol(sym);
 
         // Also set the ident on the scope so set_block_id can find it
@@ -67,7 +67,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
     fn collect_pattern_identifiers(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &CollectorScopes<'tcx>,
+        scopes: &CollectCtxt<'tcx>,
         kind: SymKind,
     ) -> Vec<&'tcx Symbol> {
         let mut symbols = Vec::new();
@@ -83,7 +83,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
     fn collect_pattern_identifiers_impl(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &CollectorScopes<'tcx>,
+        scopes: &CollectCtxt<'tcx>,
         kind: SymKind,
         symbols: &mut Vec<&'tcx Symbol>,
     ) {
@@ -99,7 +99,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
 
         if let Some(ident) = node.as_ident() {
             let name = ident.name.to_string();
-            let sym = scopes.lookup_or_insert(&name, node, kind);
+            let sym = scopes.declare(&name, node, kind);
 
             if let Some(sym) = sym {
                 ident.set_symbol(sym);
@@ -127,7 +127,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
     fn lookup_or_convert(
         &mut self,
         unit: &CompileUnit<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         name: &str,
         node: &HirNode<'tcx>,
         kind: SymKind,
@@ -143,7 +143,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
             return Some(symbol);
         }
 
-        if let Some(symbol) = scopes.lookup_or_insert(name, node, kind) {
+        if let Some(symbol) = scopes.declare(name, node, kind) {
             if symbol.try_owned_scope().is_none() {
                 let scope = self.alloc_scope(unit, symbol);
                 symbol.set_owned_scope(scope.id());
@@ -161,7 +161,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         sym: &'tcx Symbol,
         sn: &'tcx HirScope<'tcx>,
         ident: &'tcx HirIdent<'tcx>,
@@ -194,7 +194,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
         kind: SymKind,
@@ -209,14 +209,14 @@ impl<'tcx> CollectorVisitor<'tcx> {
     }
 }
 
-impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx> {
+impl<'tcx> AstVisitorRust<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'tcx> {
     /// AST: block { ... }
     /// Purpose: Create a new lexical scope for block-scoped variables and statements
     fn visit_block(
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -234,7 +234,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -248,11 +248,11 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        let start_depth = scopes.scope_depth();
+        let start_depth = scopes.depth();
         let meta = unit.unit_meta();
 
         // Track crate scope for parent relationships
@@ -260,17 +260,16 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
         // Set up crate scope from unit metadata
         if let Some(ref crate_name) = meta.package_name
-            && let Some(symbol) = scopes.lookup_or_insert_global(crate_name, node, SymKind::Crate)
+            && let Some(symbol) = scopes.declare_global(crate_name, node, SymKind::Crate)
         {
-            scopes.push_scope_with(node, Some(symbol));
-            crate_scope = scopes.top();
+            crate_scope = Some(scopes.push_symbol_scope(node, Some(symbol)));
         }
 
         // For files in subdirectories (like utils/helper.rs), create a module scope
         // for proper hierarchy traversal. The module scope has a Module symbol.
         let mut module_wrapper_scope: Option<&'tcx Scope<'tcx>> = None;
         if let Some(ref module_name) = meta.module_name
-            && let Some(module_sym) = scopes.lookup_or_insert_global(module_name, node, SymKind::Module)
+            && let Some(module_sym) = scopes.declare_global(module_name, node, SymKind::Module)
         {
             let mod_scope = self.alloc_scope(unit, module_sym);
             if let Some(crate_s) = crate_scope {
@@ -283,7 +282,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
         let sn = node.as_scope().unwrap();
         if let Some(ref file_name) = meta.file_name
-            && let Some(file_sym) = scopes.lookup_or_insert(file_name, node, SymKind::File)
+            && let Some(file_sym) = scopes.declare(file_name, node, SymKind::File)
         {
             let arena_name = unit.context().arena().alloc_str(file_name);
             let ident = unit.context().alloc_file_ident(next_hir_id(), arena_name, file_sym);
@@ -304,8 +303,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
             scopes.push_scope(scope);
 
-            if let Some(crate_sym) = scopes.lookup_or_insert_global("crate", node, SymKind::Module) {
-                crate_sym.set_owned_scope(scopes.scopes().globals().id());
+            if let Some(crate_sym) = scopes.declare_global("crate", node, SymKind::Module) {
+                crate_sym.set_owned_scope(scopes.globals().id());
             }
 
             // For top-level files (not lib.rs or main.rs), create a module symbol
@@ -314,12 +313,12 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             // Also insert into the crate scope for cross-crate qualified path resolution
             // (e.g., `crate_b::utils::helper` needs `utils` in `crate_b`'s scope).
             if file_name != "lib" && file_name != "main" && module_wrapper_scope.is_none() {
-                if let Some(mod_sym) = scopes.insert_in_global(file_name, node, SymKind::Module) {
+                if let Some(mod_sym) = scopes.declare_fresh_global(file_name, node, SymKind::Module) {
                     mod_sym.set_owned_scope(scope.id());
                 }
                 if let Some(crate_s) = crate_scope
                     && let Some(mod_sym) =
-                        scopes.insert_in_scope(crate_s, file_name, node, SymKind::Module)
+                        scopes.declare_in(crate_s, file_name, node, SymKind::Module)
                 {
                     mod_sym.set_owned_scope(scope.id());
                 }
@@ -329,7 +328,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         // Use visit_children which handles test filtering automatically
         self.visit_children(unit, node, scopes, namespace, parent);
 
-        scopes.pop_until(start_depth);
+        scopes.pop_to(start_depth);
     }
 
     /// AST: mod name { ... } or mod name;
@@ -338,7 +337,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -347,11 +346,11 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         }
 
         // Use the current top of the stack (actual parent scope for super::)
-        let parent_scope_id = scopes.top().map(|s| s.id()).unwrap_or(namespace.id());
+        let parent_scope_id = scopes.current().id();
 
         // Callback to insert `super` symbol pointing to parent module scope
         let on_scope_enter: ScopeEntryCallback<'tcx> = Box::new(move |node, scopes| {
-            if let Some(super_sym) = scopes.lookup_or_insert("super", node, SymKind::Module) {
+            if let Some(super_sym) = scopes.declare("super", node, SymKind::Module) {
                 super_sym.set_owned_scope(parent_scope_id);
             }
         });
@@ -374,7 +373,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -415,7 +414,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -443,7 +442,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -456,8 +455,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             SymKind::Struct,
             LangRust::field_name,
             Some(Box::new(|node, scopes| {
-                let _ = scopes.lookup_or_insert("self", node, SymKind::TypeAlias);
-                let _ = scopes.lookup_or_insert("Self", node, SymKind::TypeAlias);
+                let _ = scopes.declare("self", node, SymKind::TypeAlias);
+                let _ = scopes.declare("Self", node, SymKind::TypeAlias);
             })),
         );
 
@@ -478,7 +477,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -510,7 +509,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -523,8 +522,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             SymKind::Trait,
             LangRust::field_name,
             Some(Box::new(|node, scopes| {
-                let _ = scopes.lookup_or_insert("self", node, SymKind::TypeAlias);
-                let _ = scopes.lookup_or_insert("Self", node, SymKind::TypeAlias);
+                let _ = scopes.declare("self", node, SymKind::TypeAlias);
+                let _ = scopes.declare("Self", node, SymKind::TypeAlias);
             })),
         );
 
@@ -545,7 +544,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
@@ -559,7 +558,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
                     scopes.lookup_symbol(ti.name, SymKindSet::from_kind(SymKind::UnresolvedType))
                 })
                 // Finally create UnresolvedType placeholder for cross-file resolution during binding
-                .or_else(|| scopes.lookup_or_insert(ti.name, node, SymKind::UnresolvedType));
+                .or_else(|| scopes.declare(ti.name, node, SymKind::UnresolvedType));
             if let Some(symbol) = symbol {
                 ti.set_symbol(symbol);
             }
@@ -582,7 +581,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -604,7 +603,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
@@ -621,7 +620,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
@@ -638,7 +637,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
@@ -655,7 +654,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -675,7 +674,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -689,7 +688,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -703,7 +702,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -717,7 +716,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -737,7 +736,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -750,7 +749,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -763,7 +762,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -776,7 +775,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -790,7 +789,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -824,7 +823,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
@@ -884,7 +883,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -914,7 +913,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
+        scopes: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -958,7 +957,7 @@ pub fn collect_symbols<'tcx>(
     let unit_globals_val = Scope::new(HirId(unit.index()));
     let scope_id = unit_globals_val.id().0;
     let unit_globals = arena.alloc_with_id(scope_id, unit_globals_val);
-    let mut scopes = CollectorScopes::new(cc, unit.index(), scope_stack, unit_globals);
+    let mut scopes = CollectCtxt::new(cc, unit.index(), scope_stack, unit_globals);
 
     let mut visit = CollectorVisitor::new();
     visit.visit_node(&unit, node, &mut scopes, unit_globals, None);

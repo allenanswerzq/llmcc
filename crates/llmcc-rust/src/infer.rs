@@ -1,7 +1,7 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::symbol::{SYM_KIND_TYPES, SymKind, SymKindSet, Symbol};
-use llmcc_resolver::BinderScopes;
+use llmcc_resolver::BindCtxt;
 
 use crate::token::LangRust;
 
@@ -11,7 +11,7 @@ const MAX_INFER_DEPTH: u32 = 16;
 /// Infer the type of any AST node
 pub fn infer_type<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
     infer_type_impl(unit, scopes, node, 0)
@@ -20,7 +20,7 @@ pub fn infer_type<'tcx>(
 /// Internal implementation with explicit depth tracking.
 fn infer_type_impl<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -169,7 +169,7 @@ fn infer_type_impl<'tcx>(
 }
 
 /// Get primitive type by name
-fn get_primitive_type<'tcx>(scopes: &BinderScopes<'tcx>, name: &str) -> Option<&'tcx Symbol> {
+fn get_primitive_type<'tcx>(scopes: &BindCtxt<'tcx>, name: &str) -> Option<&'tcx Symbol> {
     scopes
         .lookup_globals(name, SymKindSet::from_kind(SymKind::Primitive))?
         .last()
@@ -179,7 +179,7 @@ fn get_primitive_type<'tcx>(scopes: &BinderScopes<'tcx>, name: &str) -> Option<&
 /// Infer block type: type of last expression in block
 fn infer_block<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -212,7 +212,7 @@ fn infer_block<'tcx>(
 /// Infer array expression type: [elem; count] or [elem1, elem2, ...]
 fn infer_array_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -222,7 +222,7 @@ fn infer_array_expression<'tcx>(
 /// Infer range expression type: 1..5 -> Range<i32>
 fn infer_range_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -233,7 +233,7 @@ fn infer_range_expression<'tcx>(
 /// Infer tuple expression type: (a, b, c) -> (TypeA, TypeB, TypeC)
 fn infer_tuple_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -257,7 +257,7 @@ fn infer_tuple_expression<'tcx>(
 /// Infer struct expression type: Struct { ... } -> Struct
 fn infer_struct_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -274,7 +274,7 @@ fn infer_struct_expression<'tcx>(
 /// Infer field expression type: obj.field -> FieldType
 fn infer_field_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -300,7 +300,7 @@ fn infer_field_expression<'tcx>(
 
     // Look up field in object's scope
     scopes
-        .lookup_member_symbol(obj_type, field_ident.name, Some(SymKind::Field))
+        .lookup_member_kind(obj_type, field_ident.name, SymKind::Field)
         .and_then(|field_sym| {
             if let Some(type_id) = field_sym.type_of() {
                 unit.try_symbol(type_id)
@@ -313,7 +313,7 @@ fn infer_field_expression<'tcx>(
 /// Infer scoped identifier type: module::Type or foo::bar::baz
 fn infer_scoped_identifier<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     _depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -341,14 +341,14 @@ fn infer_scoped_identifier<'tcx>(
         &qualified_names[..]
     };
 
-    // Use lookup_qualified_symbol to apply same-crate preference for multi-crate scenarios
-    scopes.lookup_qualified_symbol(lookup_path, SymKindSet::empty())
+    // Use path lookup to apply same-crate preference for multi-crate scenarios.
+    scopes.lookup_path_symbol(lookup_path, SymKindSet::empty())
 }
 
 /// Infer index expression type: arr[i] -> ElementType
 fn infer_index_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -368,7 +368,7 @@ fn infer_index_expression<'tcx>(
 /// Infer binary expression type: a + b or a == b
 fn infer_binary_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -398,7 +398,7 @@ fn infer_binary_expression<'tcx>(
 /// Infer if expression type: type of consequence block
 fn infer_if_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -411,7 +411,7 @@ fn infer_if_expression<'tcx>(
 /// Infer array type annotation: [T; N]
 fn infer_array_type<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -434,7 +434,7 @@ fn infer_array_type<'tcx>(
 /// Infer tuple type annotation: (T1, T2, T3)
 fn infer_tuple_type<'tcx>(
     _unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     _depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -457,7 +457,7 @@ fn infer_tuple_type<'tcx>(
 /// Infer function type annotation: fn(T1, T2) -> RetType or FnOnce() -> RetType
 fn infer_function_type<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -499,7 +499,7 @@ fn infer_function_type<'tcx>(
 /// - For `Into<Text>` where Into is defined (trait) → returns Into
 fn infer_generic_type<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -538,7 +538,7 @@ fn infer_generic_type<'tcx>(
 /// Infer reference type annotation: &T or &mut T
 fn infer_reference_type<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -551,7 +551,7 @@ fn infer_reference_type<'tcx>(
 /// Infer pointer type annotation: *const T or *mut T
 fn infer_pointer_type<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -564,7 +564,7 @@ fn infer_pointer_type<'tcx>(
 /// Infer abstract type (impl Trait): impl Trait or impl for<'a> Trait
 fn infer_abstract_type<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -578,7 +578,7 @@ fn infer_abstract_type<'tcx>(
 /// Returns the first non-lifetime type found
 fn infer_bounded_type<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -603,7 +603,7 @@ fn infer_bounded_type<'tcx>(
 /// Infer trait bounds: Into<T> + Clone - returns first non-lifetime type
 fn infer_trait_bounds<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -640,7 +640,7 @@ fn is_syntactic_noise<'tcx>(unit: &CompileUnit<'tcx>, node: &HirNode<'tcx>) -> b
 /// and returns the first successfully inferred type.
 fn infer_from_children<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     skip_fields: &[u16],
     depth: u32,

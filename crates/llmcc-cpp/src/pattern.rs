@@ -9,7 +9,7 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{SymKind, SymKindSet, Symbol};
-use llmcc_resolver::BinderScopes;
+use llmcc_resolver::BindCtxt;
 
 use crate::token::LangCpp;
 
@@ -19,7 +19,7 @@ use crate::token::LangCpp;
 /// assigns types to bound variables.
 pub fn bind_pattern_types<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &mut BinderScopes<'tcx>,
+    scopes: &mut BindCtxt<'tcx>,
     pattern: &HirNode<'tcx>,
     pattern_type: &'tcx Symbol,
 ) {
@@ -47,7 +47,7 @@ pub fn bind_pattern_types<'tcx>(
 /// Assign type to a single identifier binding.
 fn assign_type_to_ident<'tcx>(
     _unit: &CompileUnit<'tcx>,
-    scopes: &mut BinderScopes<'tcx>,
+    scopes: &mut BindCtxt<'tcx>,
     ident: &'tcx llmcc_core::ir::HirIdent<'tcx>,
     ident_type: &'tcx Symbol,
 ) {
@@ -77,7 +77,7 @@ fn assign_type_to_ident<'tcx>(
 /// Assign types to structured binding: auto [a, b, c] = tuple;
 fn assign_type_to_structured_binding<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &mut BinderScopes<'tcx>,
+    scopes: &mut BindCtxt<'tcx>,
     pattern: &HirNode<'tcx>,
     pattern_type: &'tcx Symbol,
 ) {

@@ -1,7 +1,7 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::symbol::{SYM_KIND_TYPES, SymKind, SymKindSet, Symbol};
-use llmcc_resolver::BinderScopes;
+use llmcc_resolver::BindCtxt;
 
 use crate::token::LangTypeScript;
 
@@ -13,7 +13,7 @@ const MAX_INFER_DEPTH: u32 = 16;
 /// Public entry point that starts recursion at depth 0.
 pub fn infer_type<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
     infer_type_impl(unit, scopes, node, 0)
@@ -23,7 +23,7 @@ pub fn infer_type<'tcx>(
 /// This is panic-safe: if the function panics, no state needs cleanup.
 fn infer_type_impl<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -233,7 +233,7 @@ fn infer_type_impl<'tcx>(
 }
 
 /// Get primitive type by name
-fn get_primitive_type<'tcx>(scopes: &BinderScopes<'tcx>, name: &str) -> Option<&'tcx Symbol> {
+fn get_primitive_type<'tcx>(scopes: &BindCtxt<'tcx>, name: &str) -> Option<&'tcx Symbol> {
     scopes
         .lookup_globals(name, SymKindSet::from_kind(SymKind::Primitive))?
         .last()
@@ -241,11 +241,11 @@ fn get_primitive_type<'tcx>(scopes: &BinderScopes<'tcx>, name: &str) -> Option<&
 }
 
 /// Infer nested type identifier: Models.User, A.B.C.MyClass, etc.
-/// Resolves qualified type paths using lookup_qualified.
+/// Resolves qualified type paths using path lookup.
 /// Handles arbitrary nesting depth (e.g., A.B.C.D.MyClass).
 fn infer_nested_type_identifier<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
     // Collect all identifiers in the path (e.g., ["Api", "V1", "Models", "User"])
@@ -256,9 +256,9 @@ fn infer_nested_type_identifier<'tcx>(
 
     let qualified_names: Vec<&str> = idents.iter().map(|i| i.name).collect();
 
-    // Use lookup_qualified to resolve the full path
+    // Use path lookup to resolve the full path.
     scopes
-        .lookup_qualified(&qualified_names, SYM_KIND_TYPES)?
+        .lookup_path(&qualified_names, SYM_KIND_TYPES)?
         .last()
         .copied()
 }
@@ -266,7 +266,7 @@ fn infer_nested_type_identifier<'tcx>(
 /// Infer block type: type of last expression in block
 fn infer_block<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -303,7 +303,7 @@ fn infer_block<'tcx>(
 /// Infer generic type: Array<T>, Promise<R>, Map<K, V>, etc.
 fn infer_generic_type<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -389,7 +389,7 @@ fn infer_generic_type<'tcx>(
 /// Infer array type: T[] or Array<T>
 fn infer_array_type<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -420,7 +420,7 @@ fn infer_array_type<'tcx>(
 /// Infer tuple type: [T1, T2, T3]
 fn infer_tuple_type<'tcx>(
     _unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
     // Try to get the CompositeType symbol that was created for this tuple type
@@ -440,7 +440,7 @@ fn infer_tuple_type<'tcx>(
 /// Infer union type: T | U - returns first non-primitive type if possible
 fn infer_union_type<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -463,7 +463,7 @@ fn infer_union_type<'tcx>(
 /// Infer intersection type: T & U
 fn infer_intersection_type<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -474,7 +474,7 @@ fn infer_intersection_type<'tcx>(
 /// Infer function type: (a: T) => R
 fn infer_function_type<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -491,7 +491,7 @@ fn infer_function_type<'tcx>(
 /// Infer object type: { name: string; age: number }
 fn infer_object_type<'tcx>(
     _unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
     // Try to get the anonymous type symbol
@@ -511,7 +511,7 @@ fn infer_object_type<'tcx>(
 /// Infer literal type: "hello" | 42 | true
 fn infer_literal_type<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -522,7 +522,7 @@ fn infer_literal_type<'tcx>(
 /// Infer member expression: obj.prop
 fn infer_member_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -534,7 +534,7 @@ fn infer_member_expression<'tcx>(
 
     // Look up property in object's scope
     scopes
-        .lookup_member_symbol(obj_type, prop_ident.name, Some(SymKind::Field))
+        .lookup_member_kind(obj_type, prop_ident.name, SymKind::Field)
         .and_then(|field_sym| {
             if let Some(type_id) = field_sym.type_of() {
                 unit.try_symbol(type_id)
@@ -547,7 +547,7 @@ fn infer_member_expression<'tcx>(
 /// Infer subscript expression: arr[i]
 fn infer_subscript_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -567,7 +567,7 @@ fn infer_subscript_expression<'tcx>(
 /// Infer binary expression type
 fn infer_binary_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -601,7 +601,7 @@ fn infer_binary_expression<'tcx>(
 /// Infer await expression: get the resolved type from Promise<T>
 fn infer_await_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -621,7 +621,7 @@ fn infer_await_expression<'tcx>(
 /// Infer arrow function return type
 fn infer_arrow_function<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -643,7 +643,7 @@ fn infer_arrow_function<'tcx>(
 /// Infer function expression return type
 fn infer_function_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -665,7 +665,7 @@ fn infer_function_expression<'tcx>(
 /// Infer array expression type: [elem1, elem2, ...]
 fn infer_array_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -684,7 +684,7 @@ fn infer_array_expression<'tcx>(
 /// Infer conditional type: T extends U ? X : Y
 fn infer_conditional_type<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -714,7 +714,7 @@ fn is_syntactic_noise<'tcx>(unit: &CompileUnit<'tcx>, node: &HirNode<'tcx>) -> b
 /// and returns the first successfully inferred type.
 fn infer_from_children<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     skip_fields: &[u16],
     depth: u32,

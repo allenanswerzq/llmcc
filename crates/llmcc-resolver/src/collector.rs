@@ -2,7 +2,7 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;
 
-use llmcc_core::context::CompileCtxt;
+use llmcc_core::context::{CompileCtxt, CompileUnit};
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::{Arena, HirNode};
 use llmcc_core::scope::{InsertOptions, Scope, ScopeStack, SymbolFilter};
@@ -11,22 +11,21 @@ use llmcc_core::{Language, Result};
 
 use rayon::prelude::*;
 
-use crate::{ResolveOptions, elapsed_ms, select_preferred_symbol};
+use crate::{ResolveOptions, elapsed_ms, try_resolve_ambiguous};
 
-/// Core symbol collector for a single compilation unit.
+/// Symbol collection context for one compilation unit.
 ///
-/// A collector stack always keeps the global scope available. Pop operations never
-/// remove it, which keeps per-language collectors from accidentally losing their
-/// merge target during traversal.
-pub struct CollectorScopes<'a> {
+/// The global scope stays at stack depth 1. Pop operations never remove it, so
+/// language collectors cannot lose their merge target during traversal.
+pub struct CollectCtxt<'a> {
     cc: &'a CompileCtxt<'a>,
     unit_index: usize,
     scopes: ScopeStack<'a>,
     globals: &'a Scope<'a>,
 }
 
-impl<'a> CollectorScopes<'a> {
-    /// Create new collector with arena, interner, and global scope
+impl<'a> CollectCtxt<'a> {
+    /// Create a collection context from a unit-local scope stack and globals.
     pub fn new(
         cc: &'a CompileCtxt<'a>,
         unit_index: usize,
@@ -42,58 +41,60 @@ impl<'a> CollectorScopes<'a> {
         }
     }
 
-    /// Get compilation unit index
+    /// Compilation unit index.
     #[inline]
-    pub fn unit_index(&self) -> usize {
+    fn unit_index(&self) -> usize {
         self.unit_index
     }
 
-    /// Get the crate index for the current unit
+    /// Crate index for the current unit.
     #[inline]
-    pub fn crate_index(&self) -> usize {
+    fn crate_index(&self) -> usize {
         self.cc
             .unit_meta(self.unit_index)
             .map(|m| m.crate_index)
             .unwrap_or(usize::MAX)
     }
 
-    /// Get the arena
+    /// Shared arena.
     #[inline]
-    pub fn arena(&self) -> &'a Arena<'a> {
+    fn arena(&self) -> &'a Arena<'a> {
         self.cc.arena()
     }
 
-    /// Get current scope stack depth. A live collector starts at depth 1 for globals.
+    /// Current scope stack depth. Depth 1 is globals only.
     #[inline]
-    pub fn scope_depth(&self) -> usize {
+    pub fn depth(&self) -> usize {
         self.scopes.depth()
     }
 
-    /// Push scope onto stack
+    /// Push a scope.
     #[inline]
     pub fn push_scope(&mut self, scope: &'a Scope<'a>) {
         self.scopes.push(scope);
     }
 
-    /// Push scope recursively with all parent scopes
+    /// Push a symbol-owned scope, creating one when needed.
     #[inline]
-    pub fn push_scope_recursive(&mut self, scope: &'a Scope<'a>) {
-        self.scopes.push_recursive(scope);
-    }
-
-    /// Create and push a new scope with optional associated symbol.
-    /// If the symbol already has a scope, use that scope instead of creating a new one.
-    #[inline]
-    pub fn push_scope_with(&mut self, node: &HirNode<'a>, symbol: Option<&'a Symbol>) {
+    pub fn push_symbol_scope(
+        &mut self,
+        node: &HirNode<'a>,
+        symbol: Option<&'a Symbol>,
+    ) -> &'a Scope<'a> {
         if let Some(symbol) = symbol
             && let Some(existing_scope_id) = symbol.try_owned_scope()
-            && let Some(existing_scope) = self.cc.try_scope(existing_scope_id)
         {
-            self.push_scope(existing_scope);
-            return;
+            if let Some(existing_scope) = self.cc.try_scope(existing_scope_id) {
+                self.push_scope(existing_scope);
+                return existing_scope;
+            }
+            tracing::warn!(
+                unit_index = self.unit_index,
+                scope_id = existing_scope_id.0,
+                "symbol-owned scope missing during collection"
+            );
         }
 
-        // Create new scope with its own ID, then alloc with that ID
         let scope_val = Scope::new_with(node.id(), symbol, Some(self.interner()));
         let scope_id = scope_val.id().0;
         let scope = self.arena().alloc_with_id(scope_id, scope_val);
@@ -101,9 +102,10 @@ impl<'a> CollectorScopes<'a> {
             symbol.set_owned_scope(scope.id());
         }
         self.push_scope(scope);
+        scope
     }
 
-    /// Pop current scope from stack without removing the global scope.
+    /// Pop the current scope, keeping globals.
     #[inline]
     pub fn pop_scope(&mut self) {
         if self.scopes.depth() <= 1 {
@@ -116,37 +118,39 @@ impl<'a> CollectorScopes<'a> {
         self.scopes.pop();
     }
 
-    /// Pop scopes until reaching target depth without removing globals.
+    /// Pop to `depth`, keeping globals.
     #[inline]
-    pub fn pop_until(&mut self, depth: usize) {
+    pub fn pop_to(&mut self, depth: usize) {
         self.scopes.pop_until(depth.max(1));
     }
 
-    /// Get shared string interner
+    /// Shared string interner.
     #[inline]
-    pub fn interner(&self) -> &'a InternPool {
+    fn interner(&self) -> &'a InternPool {
         self.cc.interner()
     }
 
-    /// Get global (module-level) scope
+    /// Shared global scope.
     #[inline]
     pub fn globals(&self) -> &'a Scope<'a> {
         self.globals
     }
 
-    /// Get the scope stack
+    /// Current scope, or globals if the stack invariant is broken.
     #[inline]
-    pub fn scopes(&self) -> &ScopeStack<'a> {
-        &self.scopes
+    pub fn current(&self) -> &'a Scope<'a> {
+        match self.scopes.try_current() {
+            Some(scope) => scope,
+            None => {
+                tracing::error!(
+                    unit_index = self.unit_index,
+                    "scope stack was empty during collection, falling back to globals"
+                );
+                self.globals
+            }
+        }
     }
 
-    /// Get the current (top) scope on the stack
-    #[inline]
-    pub fn top(&self) -> Option<&'a Scope<'a>> {
-        self.scopes.try_current()
-    }
-
-    /// Initialize a symbol with common properties
     fn init_symbol(&self, symbol: &'a Symbol, node: &HirNode<'a>, kind: SymKind) {
         if symbol.kind() == SymKind::Unknown {
             symbol.set_owner(node.id());
@@ -157,14 +161,13 @@ impl<'a> CollectorScopes<'a> {
         }
     }
 
-    /// Find or insert symbol in current
+    fn choose(&self, symbols: &[&'a Symbol]) -> Option<&'a Symbol> {
+        try_resolve_ambiguous(symbols, self.unit_index(), self.crate_index())
+    }
+
+    /// Declare or reuse a symbol in the current scope.
     #[inline]
-    pub fn lookup_or_insert(
-        &self,
-        name: &str,
-        node: &HirNode<'a>,
-        kind: SymKind,
-    ) -> Option<&'a Symbol> {
+    pub fn declare(&self, name: &str, node: &HirNode<'a>, kind: SymKind) -> Option<&'a Symbol> {
         let symbols =
             self.scopes
                 .try_lookup_or_insert(name, node.id(), InsertOptions::current())?;
@@ -173,16 +176,14 @@ impl<'a> CollectorScopes<'a> {
         Some(symbol)
     }
 
-    /// Find or insert symbol in global scope
+    /// Declare or reuse a symbol in globals, separated by kind.
     #[inline]
-    pub fn lookup_or_insert_global(
+    pub fn declare_global(
         &self,
         name: &str,
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        // Use kind filter to avoid collisions between symbols of different kinds
-        // e.g., crate "auth" and file "auth" should be separate symbols
         let options = InsertOptions::global().with_existing_kinds(SymKindSet::from_kind(kind));
         let symbols = self.scopes.try_lookup_or_insert(name, node.id(), options)?;
         let symbol = symbols.last().copied()?;
@@ -191,16 +192,17 @@ impl<'a> CollectorScopes<'a> {
         Some(symbol)
     }
 
-    /// Always insert a new symbol in global scope, even if one with the same name exists.
-    /// This is needed for per-crate module symbols (e.g., each crate's `tui` module
-    /// should be a separate symbol, not shared).
+    /// Declare a fresh global symbol, even when the name already exists.
     #[inline]
-    pub fn insert_in_global(
+    pub fn declare_fresh_global(
         &self,
         name: &str,
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
+        if name.is_empty() {
+            return None;
+        }
         let name_key = self.interner().intern(name);
         let new_symbol = Symbol::new(node.id(), name_key);
         let sym_id = new_symbol.id().0;
@@ -211,17 +213,18 @@ impl<'a> CollectorScopes<'a> {
         Some(allocated)
     }
 
-    /// Insert a new symbol into a specific scope.
-    /// This is used for inserting module symbols into the crate scope for qualified path resolution
-    /// (e.g., `crate_b::utils::helper` needs `utils` to be in `crate_b`'s scope).
+    /// Declare a fresh symbol in a specific scope.
     #[inline]
-    pub fn insert_in_scope(
+    pub fn declare_in(
         &self,
         scope: &'a Scope<'a>,
         name: &str,
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
+        if name.is_empty() {
+            return None;
+        }
         let name_key = self.interner().intern(name);
         let new_symbol = Symbol::new(node.id(), name_key);
         let sym_id = new_symbol.id().0;
@@ -231,14 +234,14 @@ impl<'a> CollectorScopes<'a> {
         Some(allocated)
     }
 
-    /// Lookup symbols by name with options.
+    /// All matching lexical symbols.
     #[inline]
-    pub fn lookup_symbols(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
+    fn lookup_symbols(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
         let options = SymbolFilter::kinds(kind_filters);
         self.scopes.try_lookup_symbols(name, options)
     }
 
-    /// Look up one symbol by name, preferring current-unit then current-crate matches.
+    /// Preferred lexical symbol.
     #[inline]
     pub fn lookup_symbol(&self, name: &str, kind_filters: SymKindSet) -> Option<&'a Symbol> {
         let symbols = self.lookup_symbols(name, kind_filters)?;
@@ -249,65 +252,60 @@ impl<'a> CollectorScopes<'a> {
                 "multiple symbols found, using preferred symbol"
             );
         }
-        select_preferred_symbol(&symbols, self.unit_index(), self.crate_index())
+        self.choose(&symbols)
     }
 }
 
-/// Collect symbols from all compilation units by invoking language-specific visitor.
-///
-/// At the collect pass, we can only know all the stuff in a single compilation unit due to
-/// random order of collection. For symbols we can't resolve at the unit level, we create
-/// placeholder symbols and resolve them in the later binding phase.
-pub fn collect_symbols_with<'a, L: Language>(
+fn print_ir_if_enabled(unit: CompileUnit<'_>, config: &ResolveOptions) {
+    if !config.print_ir {
+        return;
+    }
+
+    if let Err(error) = llmcc_core::printer::print_ir(unit) {
+        tracing::warn!(
+            ?error,
+            unit_index = unit.index(),
+            "failed to print IR during collection"
+        );
+    }
+}
+
+struct CollectRun<'a> {
+    globals: &'a Scope<'a>,
+    init_ms: f64,
+    parallel_ms: f64,
+    merge_ms: f64,
+    total_ms: f64,
+}
+
+fn run_collect_pass<'a, L, F>(
     cc: &'a CompileCtxt<'a>,
     config: &ResolveOptions,
-) -> Result<&'a Scope<'a>> {
+    pass: &'static str,
+    unit_pass: F,
+) -> Result<CollectRun<'a>>
+where
+    L: Language,
+    F: Fn(usize, &ScopeStack<'a>) -> Result<&'a Scope<'a>> + Send + Sync,
+{
     let total_start = Instant::now();
     let unit_count = cc.unit_count();
-    tracing::info!(unit_count, "starting symbol collection");
+    tracing::info!(unit_count, pass, "starting symbol collection pass");
 
     let init_start = Instant::now();
     let scope_stack = L::collect_init(cc);
     let scope_stack_clone = scope_stack.clone();
     let init_time = init_start.elapsed();
 
-    // Atomic counters for parallel timing
-    let clone_time_ns = AtomicU64::new(0);
-    let visit_time_ns = AtomicU64::new(0);
-
-    let collect_unit = |i: usize| -> Result<&'a Scope<'a>> {
-        let clone_start = Instant::now();
-        let unit_scope_stack = scope_stack_clone.clone();
-        clone_time_ns.fetch_add(clone_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
-
-        let unit = cc.compile_unit(i);
-
-        let visit_start = Instant::now();
-        let node = unit.hir_node(unit.file_root_id()?);
-        let unit_globals = L::collect_symbols(unit, node, unit_scope_stack, config);
-        visit_time_ns.fetch_add(visit_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
-
-        if config.print_ir {
-            use llmcc_core::printer::print_ir;
-            if let Err(error) = print_ir(unit) {
-                tracing::warn!(
-                    ?error,
-                    unit_index = i,
-                    "failed to print IR during collection"
-                );
-            }
-        }
-
-        Ok(unit_globals)
-    };
-
     let parallel_start = Instant::now();
     let unit_globals_vec = if config.sequential {
-        (0..unit_count).map(collect_unit).collect::<Vec<_>>()
+        (0..unit_count)
+            .map(|unit_index| unit_pass(unit_index, &scope_stack_clone))
+            .collect::<Vec<_>>()
     } else {
         (0..unit_count)
             .into_par_iter()
-            .map(collect_unit)
+            .map(|unit_index| unit_pass(unit_index, &scope_stack_clone))
             .collect::<Vec<_>>()
     };
     let unit_globals_vec = unit_globals_vec.into_iter().collect::<Result<Vec<_>>>()?;
@@ -321,130 +319,141 @@ pub fn collect_symbols_with<'a, L: Language>(
     }
     let merge_time = merge_start.elapsed();
 
+    Ok(CollectRun {
+        globals,
+        init_ms: init_time.as_secs_f64() * 1000.0,
+        parallel_ms,
+        merge_ms: merge_time.as_secs_f64() * 1000.0,
+        total_ms: elapsed_ms(total_start),
+    })
+}
+
+fn collect_unit<'a, L: Language>(
+    cc: &'a CompileCtxt<'a>,
+    unit_index: usize,
+    scope_stack: &ScopeStack<'a>,
+    config: &ResolveOptions,
+    clone_time_ns: &AtomicU64,
+    visit_time_ns: &AtomicU64,
+) -> Result<&'a Scope<'a>> {
+    let clone_start = Instant::now();
+    let unit_scope_stack = scope_stack.clone();
+    clone_time_ns.fetch_add(clone_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
+
+    let unit = cc.compile_unit(unit_index);
+
+    let visit_start = Instant::now();
+    let node = unit.hir_node(unit.file_root_id()?);
+    let unit_globals = L::collect_symbols(unit, node, unit_scope_stack, config);
+    visit_time_ns.fetch_add(visit_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
+
+    print_ir_if_enabled(unit, config);
+
+    Ok(unit_globals)
+}
+
+fn build_and_collect_unit<'a, L: Language>(
+    cc: &'a CompileCtxt<'a>,
+    unit_index: usize,
+    scope_stack: &ScopeStack<'a>,
+    config: &ResolveOptions,
+    ir_build_ns: &AtomicU64,
+    collect_ns: &AtomicU64,
+) -> Result<&'a Scope<'a>> {
+    let ir_start = Instant::now();
+
+    let unit = cc.compile_unit(unit_index);
+    let file_root_id = llmcc_core::ir_builder::build_file_hir::<L>(unit)?;
+
+    cc.set_file_root_id(unit_index, file_root_id);
+    ir_build_ns.fetch_add(ir_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
+
+    let collect_start = Instant::now();
+
+    let unit_scope_stack = scope_stack.clone();
+    let node = unit.hir_node(file_root_id);
+    let unit_globals = L::collect_symbols(unit, node, unit_scope_stack, config);
+
+    collect_ns.fetch_add(collect_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
+    print_ir_if_enabled(unit, config);
+
+    Ok(unit_globals)
+}
+
+/// Collect symbols from all compilation units.
+///
+/// Collection is intentionally per-unit. Cross-unit references are represented
+/// by placeholders and resolved by the later binding pass.
+pub fn collect_symbols<'a, L: Language>(
+    cc: &'a CompileCtxt<'a>,
+    config: &ResolveOptions,
+) -> Result<&'a Scope<'a>> {
+    let clone_time_ns = AtomicU64::new(0);
+    let visit_time_ns = AtomicU64::new(0);
+
+    let run = run_collect_pass::<L, _>(cc, config, "collect", |unit_index, scope_stack| {
+        collect_unit::<L>(
+            cc,
+            unit_index,
+            scope_stack,
+            config,
+            &clone_time_ns,
+            &visit_time_ns,
+        )
+    })?;
+
     let clone_ms = clone_time_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
     let visit_ms = visit_time_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
 
-    let total_ms = elapsed_ms(total_start);
-    let init_ms = init_time.as_secs_f64() * 1000.0;
-    let merge_ms = merge_time.as_secs_f64() * 1000.0;
-
     tracing::info!(
-        init_ms,
-        parallel_ms,
+        init_ms = run.init_ms,
+        parallel_ms = run.parallel_ms,
         clone_ms,
         visit_ms,
-        merge_ms,
-        total_ms,
+        merge_ms = run.merge_ms,
+        total_ms = run.total_ms,
         "symbol collection complete"
     );
-    Ok(globals)
+    Ok(run.globals)
 }
 
-/// Fused IR build + symbol collection for better parallel efficiency.
+/// Build HIR and collect symbols in one parallel pass.
 ///
-/// This eliminates the gap between IR build and collection phases by doing both
-/// in a single parallel pass. While the straggler file is still doing IR build,
-/// other threads can finish both IR build AND collection for their files.
-pub fn build_and_collect_symbols<'a, L: Language>(
+/// This avoids a separate synchronization point between IR build and collection.
+pub fn build_and_collect<'a, L: Language>(
     cc: &'a CompileCtxt<'a>,
-    resolver_config: &ResolveOptions,
+    config: &ResolveOptions,
 ) -> Result<&'a Scope<'a>> {
-    use llmcc_core::ir_builder::build_file_hir;
-    use std::sync::atomic::Ordering;
-
-    let total_start = Instant::now();
-    let unit_count = cc.unit_count();
-    tracing::info!(unit_count, "starting fused IR build + symbol collection");
-
-    // Initialize scope stack for collection
-    let init_start = Instant::now();
-    let scope_stack = L::collect_init(cc);
-    let scope_stack_clone = scope_stack.clone();
-    let init_time = init_start.elapsed();
-
-    // Atomic counters for timing
     let ir_build_ns = AtomicU64::new(0);
     let collect_ns = AtomicU64::new(0);
 
-    // Fused per-file operation: IR build then collect
-    let build_and_collect_unit = |i: usize| -> Result<&'a Scope<'a>> {
-        // Phase 1: IR Build
-        let ir_start = Instant::now();
-
-        let file_root_id = build_file_hir::<L>(cc.compile_unit(i))?;
-
-        // Register the file root ID immediately so collection can use it
-        cc.set_file_root_id(i, file_root_id);
-
-        ir_build_ns.fetch_add(ir_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
-
-        // Phase 2: Collection (immediately after IR build for this file)
-        let collect_start = Instant::now();
-
-        let unit_scope_stack = scope_stack_clone.clone();
-        let unit = cc.compile_unit(i);
-
-        let node = unit.hir_node(file_root_id);
-        let unit_globals = L::collect_symbols(unit, node, unit_scope_stack, resolver_config);
-
-        collect_ns.fetch_add(collect_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
-
-        if resolver_config.print_ir {
-            use llmcc_core::printer::print_ir;
-            if let Err(error) = print_ir(unit) {
-                tracing::warn!(
-                    ?error,
-                    unit_index = i,
-                    "failed to print IR during collection"
-                );
-            }
-        }
-
-        Ok(unit_globals)
-    };
-
-    // Run fused operation in parallel
-    let parallel_start = Instant::now();
-    let unit_globals_vec = if resolver_config.sequential {
-        (0..unit_count)
-            .map(build_and_collect_unit)
-            .collect::<Vec<_>>()
-    } else {
-        (0..unit_count)
-            .into_par_iter()
-            .map(build_and_collect_unit)
-            .collect::<Vec<_>>()
-    };
-    let parallel_ms = elapsed_ms(parallel_start);
-
-    // Propagate any per-unit build or collection failure after the parallel pass.
-    let unit_globals_vec: Vec<&'a Scope<'a>> =
-        unit_globals_vec.into_iter().collect::<Result<Vec<_>>>()?;
-
-    let globals = scope_stack.globals();
-
-    // Merge scopes (sequential, ~10-15ms)
-    let merge_start = Instant::now();
-    for unit_globals in unit_globals_vec.iter() {
-        cc.merge_two_scopes(globals, unit_globals);
-    }
-    let merge_time = merge_start.elapsed();
+    let run = run_collect_pass::<L, _>(
+        cc,
+        config,
+        "build_and_collect",
+        |unit_index, scope_stack| {
+            build_and_collect_unit::<L>(
+                cc,
+                unit_index,
+                scope_stack,
+                config,
+                &ir_build_ns,
+                &collect_ns,
+            )
+        },
+    )?;
 
     let ir_ms = ir_build_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
     let collect_ms = collect_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
 
-    let total_ms = elapsed_ms(total_start);
-    let init_ms = init_time.as_secs_f64() * 1000.0;
-    let merge_ms = merge_time.as_secs_f64() * 1000.0;
-
     tracing::info!(
-        init_ms,
-        parallel_ms,
+        init_ms = run.init_ms,
+        parallel_ms = run.parallel_ms,
         ir_ms,
         collect_ms,
-        merge_ms,
-        total_ms,
+        merge_ms = run.merge_ms,
+        total_ms = run.total_ms,
         "fused build+collect complete"
     );
-    Ok(globals)
+    Ok(run.globals)
 }

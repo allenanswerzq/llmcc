@@ -155,6 +155,18 @@ pub const SYM_KIND_CALLABLE: SymKindSet = SymKindSet::empty()
     .with(SymKind::Const);
 
 impl SymKind {
+    /// Kinds to try first when resolving a member name without one exact kind.
+    pub const fn member_lookup_order() -> [Self; 6] {
+        [
+            Self::Method,
+            Self::Function,
+            Self::Field,
+            Self::Variable,
+            Self::Const,
+            Self::Static,
+        ]
+    }
+
     #[inline]
     pub fn from_u8(value: u8) -> Self {
         Self::from_repr(value).unwrap_or_default()

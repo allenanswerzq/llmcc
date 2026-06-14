@@ -11,7 +11,7 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{SymKind, SymKindSet, Symbol};
-use llmcc_resolver::BinderScopes;
+use llmcc_resolver::BindCtxt;
 
 use crate::token::LangTypeScript;
 
@@ -21,7 +21,7 @@ use crate::token::LangTypeScript;
 /// recursively assigns types to bound variables.
 pub fn bind_pattern_types<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &mut BinderScopes<'tcx>,
+    scopes: &mut BindCtxt<'tcx>,
     pattern: &HirNode<'tcx>,
     pattern_type: &'tcx Symbol,
 ) {
@@ -67,7 +67,7 @@ pub fn bind_pattern_types<'tcx>(
 /// Assign type to a single identifier binding.
 fn assign_type_to_ident<'tcx>(
     _unit: &CompileUnit<'tcx>,
-    scopes: &mut BinderScopes<'tcx>,
+    scopes: &mut BindCtxt<'tcx>,
     ident: &'tcx llmcc_core::ir::HirIdent<'tcx>,
     ident_type: &'tcx Symbol,
 ) {
@@ -98,7 +98,7 @@ fn assign_type_to_ident<'tcx>(
 /// Assign tuple/array element types to each pattern.
 fn assign_type_to_array_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &mut BinderScopes<'tcx>,
+    scopes: &mut BindCtxt<'tcx>,
     pattern: &HirNode<'tcx>,
     pattern_type: &'tcx Symbol,
 ) {
@@ -131,7 +131,7 @@ fn assign_type_to_array_pattern<'tcx>(
 /// Bind each property pattern to the corresponding field type.
 fn assign_type_to_object_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &mut BinderScopes<'tcx>,
+    scopes: &mut BindCtxt<'tcx>,
     pattern: &HirNode<'tcx>,
     pattern_type: &'tcx Symbol,
 ) {
@@ -142,7 +142,7 @@ fn assign_type_to_object_pattern<'tcx>(
         if kind_id == LangTypeScript::shorthand_property_identifier_pattern {
             if let Some(ident) = child.as_ident() {
                 // Look up the field type from the pattern type
-                if let Some(field_sym) = scopes.lookup_member_symbols(
+                if let Some(field_sym) = scopes.lookup_member(
                     pattern_type,
                     ident.name,
                     SymKindSet::from_kind(SymKind::Field),
@@ -163,7 +163,7 @@ fn assign_type_to_object_pattern<'tcx>(
             {
                 // Get the key name to look up field type
                 if let Some(key_ident) = key_node.query(unit).try_first_ident() {
-                    if let Some(field_sym) = scopes.lookup_member_symbols(
+                    if let Some(field_sym) = scopes.lookup_member(
                         pattern_type,
                         key_ident.name,
                         SymKindSet::from_kind(SymKind::Field),
@@ -190,7 +190,7 @@ fn assign_type_to_object_pattern<'tcx>(
             // Get the left side (the binding) and look up its field type
             if let Some(left) = child.child_by_field(unit, LangTypeScript::field_left) {
                 if let Some(ident) = left.query(unit).try_first_ident() {
-                    if let Some(field_sym) = scopes.lookup_member_symbols(
+                    if let Some(field_sym) = scopes.lookup_member(
                         pattern_type,
                         ident.name,
                         SymKindSet::from_kind(SymKind::Field),

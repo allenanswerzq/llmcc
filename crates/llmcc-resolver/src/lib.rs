@@ -6,15 +6,15 @@ use llmcc_core::symbol::Symbol;
 pub mod binder;
 pub mod collector;
 
-pub use binder::{BinderScopes, bind_symbols_with};
-pub use collector::{CollectorScopes, build_and_collect_symbols, collect_symbols_with};
+pub use binder::{BindCtxt, bind_symbols};
+pub use collector::{CollectCtxt, build_and_collect, collect_symbols};
 pub use llmcc_core::ResolveOptions;
 
 /// Select one symbol from ambiguous matches using resolver-wide precedence.
 ///
 /// Current-unit symbols win first, then current-crate symbols, then the last
 /// match returned by the underlying scope lookup.
-pub(crate) fn select_preferred_symbol<'a>(
+pub(crate) fn try_resolve_ambiguous<'a>(
     symbols: &[&'a Symbol],
     unit_index: usize,
     crate_index: usize,

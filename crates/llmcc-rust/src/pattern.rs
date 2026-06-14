@@ -3,13 +3,13 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{SymKind, SymKindSet, Symbol};
-use llmcc_resolver::BinderScopes;
+use llmcc_resolver::BindCtxt;
 
 use crate::token::LangRust;
 
 pub fn bind_pattern_types<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &mut BinderScopes<'tcx>,
+    scopes: &mut BindCtxt<'tcx>,
     pattern: &HirNode<'tcx>,
     pattern_type: &'tcx Symbol,
 ) {
@@ -69,7 +69,7 @@ pub fn bind_pattern_types<'tcx>(
 /// Assign type to a single identifier binding
 fn assign_type_to_ident<'tcx>(
     _unit: &CompileUnit<'tcx>,
-    scopes: &mut BinderScopes<'tcx>,
+    scopes: &mut BindCtxt<'tcx>,
     ident: &'tcx llmcc_core::ir::HirIdent<'tcx>,
     ident_type: &'tcx Symbol,
 ) {
@@ -106,7 +106,7 @@ fn assign_type_to_ident<'tcx>(
 /// Assign tuple element types to each pattern
 fn assign_type_to_tuple_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &mut BinderScopes<'tcx>,
+    scopes: &mut BindCtxt<'tcx>,
     pattern: &HirNode<'tcx>,
     pattern_type: &'tcx Symbol,
 ) {
@@ -134,7 +134,7 @@ fn assign_type_to_tuple_pattern<'tcx>(
 /// Bind each field pattern to the struct field's type
 fn assign_type_to_struct_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &mut BinderScopes<'tcx>,
+    scopes: &mut BindCtxt<'tcx>,
     pattern: &HirNode<'tcx>,
     _pattern_type: &'tcx Symbol,
 ) {
@@ -159,7 +159,7 @@ fn assign_type_to_struct_pattern<'tcx>(
             if let Some(field_name_node) = child.child_by_field(unit, LangRust::field_name) {
                 if let Some(field_name_ident) = field_name_node.query(unit).try_first_ident() {
                     // Try to find matching field in struct scope
-                    if let Some(field_sym) = scopes.lookup_member_symbols(
+                    if let Some(field_sym) = scopes.lookup_member(
                         struct_symbol,
                         field_name_ident.name,
                         SymKindSet::from_kind(SymKind::Field),
@@ -211,7 +211,7 @@ fn assign_type_to_struct_pattern<'tcx>(
 /// Assign nested types to each pattern element
 fn assign_type_to_tuple_struct_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &mut BinderScopes<'tcx>,
+    scopes: &mut BindCtxt<'tcx>,
     pattern: &HirNode<'tcx>,
     _pattern_type: &'tcx Symbol,
 ) {
@@ -256,7 +256,7 @@ fn assign_type_to_tuple_struct_pattern<'tcx>(
 /// Each alternative gets the same type
 fn assign_type_to_or_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &mut BinderScopes<'tcx>,
+    scopes: &mut BindCtxt<'tcx>,
     pattern: &HirNode<'tcx>,
     pattern_type: &'tcx Symbol,
 ) {
@@ -271,7 +271,7 @@ fn assign_type_to_or_pattern<'tcx>(
 /// All elements get the same element type from the array/slice
 fn assign_type_to_slice_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &mut BinderScopes<'tcx>,
+    scopes: &mut BindCtxt<'tcx>,
     pattern: &HirNode<'tcx>,
     pattern_type: &'tcx Symbol,
 ) {
@@ -298,7 +298,7 @@ fn assign_type_to_slice_pattern<'tcx>(
 /// Get the dereferenced type
 fn assign_type_to_reference_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &mut BinderScopes<'tcx>,
+    scopes: &mut BindCtxt<'tcx>,
     pattern: &HirNode<'tcx>,
     pattern_type: &'tcx Symbol,
 ) {

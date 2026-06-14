@@ -2,7 +2,6 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;
 
 use llmcc_core::context::CompileUnit;
-use llmcc_core::interner::InternPool;
 use llmcc_core::ir::HirScope;
 use llmcc_core::scope::{QualifiedLookup, Scope, ScopeStack, SymbolFilter};
 use llmcc_core::symbol::{ScopeId, SymKind, SymKindSet, Symbol};
@@ -10,21 +9,20 @@ use llmcc_core::{CompileCtxt, Language, Result};
 
 use rayon::prelude::*;
 
-use crate::{ResolveOptions, elapsed_ms, select_preferred_symbol};
+use crate::{ResolveOptions, elapsed_ms, try_resolve_ambiguous};
 
-/// Binding scope stack for one compilation unit.
+/// Binding context for one compilation unit.
 ///
-/// A binder stack always keeps the global scope available. Pop operations never
-/// remove it, so language visitors can pass [`BinderScopes::top`] to child
-/// traversal without risking a process abort if a malformed tree over-pops.
+/// The global scope stays at stack depth 1. Pop operations never remove it, so
+/// malformed traversal cannot abort binding by emptying the stack.
 #[derive(Debug)]
-pub struct BinderScopes<'a> {
+pub struct BindCtxt<'a> {
     unit: CompileUnit<'a>,
     scopes: ScopeStack<'a>,
     globals: &'a Scope<'a>,
 }
 
-impl<'a> BinderScopes<'a> {
+impl<'a> BindCtxt<'a> {
     pub fn new(unit: CompileUnit<'a>, globals: &'a Scope<'a>) -> Self {
         let scopes = ScopeStack::new(unit.context().arena(), unit.context().interner());
         scopes.push(globals);
@@ -36,9 +34,9 @@ impl<'a> BinderScopes<'a> {
         }
     }
 
-    /// Return the current lexical scope, falling back to globals if the stack invariant is broken.
+    /// Current lexical scope, or globals if the stack invariant is broken.
     #[inline]
-    pub fn top(&self) -> &'a Scope<'a> {
+    pub fn current(&self) -> &'a Scope<'a> {
         match self.scopes.try_current() {
             Some(scope) => scope,
             None => {
@@ -51,62 +49,42 @@ impl<'a> BinderScopes<'a> {
         }
     }
 
+    /// Current scope stack depth. Depth 1 is globals only.
     #[inline]
-    pub fn unit(&self) -> CompileUnit<'a> {
-        self.unit
-    }
-
-    #[inline]
-    pub fn interner(&self) -> &InternPool {
-        self.unit.interner()
-    }
-
-    #[inline]
-    pub fn scopes(&self) -> &ScopeStack<'a> {
-        &self.scopes
-    }
-
-    #[inline]
-    pub fn scopes_mut(&mut self) -> &mut ScopeStack<'a> {
-        &mut self.scopes
-    }
-
-    /// Gets the current depth of the scope stack.
-    ///
-    /// - 1 means global scope is active
-    /// - 2+ means nested scopes are active
-    #[inline]
-    pub fn scope_depth(&self) -> usize {
+    pub fn depth(&self) -> usize {
         self.scopes.depth()
     }
 
-    /// Pushes a scope onto the stack by looking it up from the compilation unit.
-    pub fn push_scope(&mut self, id: ScopeId) {
-        let scope = self.unit.scope(id);
+    /// Push a scope by id.
+    pub fn push_scope(&mut self, id: ScopeId) -> bool {
+        let Some(scope) = self.try_scope(id) else {
+            return false;
+        };
         self.scopes.push(scope);
+        true
     }
 
-    /// Pushes a scope recursively with all its parent scopes.
-    pub fn push_scope_recursive(&mut self, id: ScopeId) {
-        let scope = self.unit.scope(id);
+    fn push_scope_recursive(&mut self, id: ScopeId) -> bool {
+        let Some(scope) = self.try_scope(id) else {
+            return false;
+        };
         self.scopes.push_recursive(scope);
+        true
     }
 
-    /// Pushes the scope represented by a HirScope node.
-    /// Returns true if scope was pushed, false if the scope wasn't set (e.g., unparsed macro).
-    pub fn push_scope_node(&mut self, sn: &'a HirScope<'a>) -> bool {
+    /// Push a HIR scope node's semantic scope.
+    pub fn push_node_scope(&mut self, sn: &'a HirScope<'a>) -> bool {
         let Some(scope) = sn.try_scope() else {
             return false;
         };
         if sn.try_ident().is_some() {
-            self.push_scope_recursive(scope.id());
+            self.push_scope_recursive(scope.id())
         } else {
-            self.push_scope(scope.id());
+            self.push_scope(scope.id())
         }
-        true
     }
 
-    /// Pops the current scope from the stack without removing the global scope.
+    /// Pop the current scope, keeping globals.
     #[inline]
     pub fn pop_scope(&mut self) {
         if self.scopes.depth() <= 1 {
@@ -119,25 +97,50 @@ impl<'a> BinderScopes<'a> {
         self.scopes.pop();
     }
 
-    /// Pops scopes until reaching the specified depth without removing globals.
+    /// Pop to `depth`, keeping globals.
     #[inline]
-    pub fn pop_until(&mut self, depth: usize) {
+    pub fn pop_to(&mut self, depth: usize) {
         self.scopes.pop_until(depth.max(1));
     }
 
-    /// Gets the global scope (always at index 0).
+    /// Shared global scope.
     #[inline]
     pub fn globals(&self) -> &'a Scope<'a> {
         self.globals
     }
 
+    fn try_scope(&self, id: ScopeId) -> Option<&'a Scope<'a>> {
+        let scope = self.unit.try_scope(id);
+        if scope.is_none() {
+            tracing::warn!(
+                unit_index = self.unit.index(),
+                scope_id = id.0,
+                "scope id not found during binding"
+            );
+        }
+        scope
+    }
+
+    fn choose(&self, symbols: &[&'a Symbol]) -> Option<&'a Symbol> {
+        try_resolve_ambiguous(
+            symbols,
+            self.unit.index(),
+            self.unit.unit_meta().crate_index,
+        )
+    }
+
+    /// All matching global symbols.
     #[inline]
     pub fn lookup_globals(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
+        if name.is_empty() {
+            return None;
+        }
         let options = SymbolFilter::kinds(kind_filters);
         let name_key = self.unit.interner().intern(name);
         self.globals.try_lookup_symbols(name_key, options)
     }
 
+    /// Preferred global symbol.
     #[inline]
     pub fn lookup_global(&self, name: &str, kind_filters: SymKindSet) -> Option<&'a Symbol> {
         let symbols = self.lookup_globals(name, kind_filters)?;
@@ -148,26 +151,20 @@ impl<'a> BinderScopes<'a> {
                 "multiple global symbols found, using preferred symbol"
             );
         }
-        select_preferred_symbol(
-            &symbols,
-            self.unit.index(),
-            self.unit.unit_meta().crate_index,
-        )
+        self.choose(&symbols)
     }
 
-    /// Lookup symbols by name with options.
+    /// All matching lexical symbols.
     #[inline]
     pub fn lookup_symbols(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
         let options = SymbolFilter::kinds(kind_filters);
         self.scopes.try_lookup_symbols(name, options)
     }
 
-    /// Look up one symbol by name, preferring current-unit then current-crate matches.
+    /// Preferred lexical symbol.
     #[inline]
     pub fn lookup_symbol(&self, name: &str, kind_filters: SymKindSet) -> Option<&'a Symbol> {
         let symbols = self.lookup_symbols(name, kind_filters)?;
-        let current_unit = self.unit.index();
-        let current_crate_index = self.unit.unit_meta().crate_index;
         if symbols.len() > 1 {
             tracing::warn!(
                 name,
@@ -175,28 +172,20 @@ impl<'a> BinderScopes<'a> {
                 "multiple symbols found, using preferred symbol"
             );
         }
-        select_preferred_symbol(&symbols, current_unit, current_crate_index)
+        self.choose(&symbols)
     }
 
-    /// Look up a member symbol in a type's scope using common member-kind priority first.
-    pub fn lookup_member_symbols(
+    /// Preferred member symbol.
+    pub fn lookup_member(
         &self,
         obj_type_symbol: &'a Symbol,
         member_name: &str,
         kind_filters: SymKindSet,
     ) -> Option<&'a Symbol> {
         if !kind_filters.is_empty() {
-            // Try each kind individually for priority ordering
-            for kind in [
-                SymKind::Method,
-                SymKind::Function,
-                SymKind::Field,
-                SymKind::Variable,
-                SymKind::Const,
-                SymKind::Static,
-            ] {
+            for kind in SymKind::member_lookup_order() {
                 if kind_filters.contains(kind) {
-                    let sym = self.lookup_member_symbol(obj_type_symbol, member_name, Some(kind));
+                    let sym = self.lookup_member_kind(obj_type_symbol, member_name, kind);
                     if sym.is_some() {
                         return sym;
                     }
@@ -209,33 +198,28 @@ impl<'a> BinderScopes<'a> {
         } else {
             SymbolFilter::kinds(kind_filters)
         };
-        self.lookup_member_symbol_with_filter(obj_type_symbol, member_name, filter)
+        self.lookup_member_with_filter(obj_type_symbol, member_name, filter)
     }
 
-    /// Look up a member symbol in a type's scope.
-    pub fn lookup_member_symbol(
+    /// Member symbol of one kind.
+    pub fn lookup_member_kind(
         &self,
         obj_type_symbol: &'a Symbol,
         member_name: &str,
-        kind_filter: Option<SymKind>,
+        kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let options = if let Some(filter) = kind_filter {
-            SymbolFilter::kinds(SymKindSet::from_kind(filter))
-        } else {
-            SymbolFilter::any()
-        };
-
-        self.lookup_member_symbol_with_filter(obj_type_symbol, member_name, options)
+        let options = SymbolFilter::kinds(SymKindSet::from_kind(kind));
+        self.lookup_member_with_filter(obj_type_symbol, member_name, options)
     }
 
-    fn lookup_member_symbol_with_filter(
+    fn lookup_member_with_filter(
         &self,
         obj_type_symbol: &'a Symbol,
         member_name: &str,
         options: SymbolFilter,
     ) -> Option<&'a Symbol> {
-        // For TypeAlias (like Self), follow type_of to get the actual type.
-        let effective_symbol = if obj_type_symbol.kind() == SymKind::TypeAlias {
+        // Type aliases such as `Self` delegate lookup to their target type.
+        let actual_sym = if obj_type_symbol.kind() == SymKind::TypeAlias {
             if let Some(type_of_id) = obj_type_symbol.type_of() {
                 self.unit.try_symbol(type_of_id).unwrap_or_else(|| {
                     tracing::warn!(
@@ -251,10 +235,10 @@ impl<'a> BinderScopes<'a> {
             obj_type_symbol
         };
 
-        let scope_id = effective_symbol.try_owned_scope()?;
-        let scope = self.unit.scope(scope_id);
+        let scope_id = actual_sym.try_owned_scope()?;
+        let scope = self.try_scope(scope_id)?;
 
-        // Create isolated scope stack for member lookup to avoid falling back to lexical scopes
+        // Isolate member lookup from lexical scopes.
         let scopes = ScopeStack::new(self.unit.context().arena(), self.unit.context().interner());
         scopes.push_recursive(scope);
 
@@ -264,49 +248,39 @@ impl<'a> BinderScopes<'a> {
             .last()
     }
 
-    /// Look up a qualified path (e.g., foo::Bar::baz) with optional kind filters.
-    pub fn lookup_qualified(
-        &self,
-        qualified_name: &[&str],
-        kind_filters: SymKindSet,
-    ) -> Option<Vec<&'a Symbol>> {
+    /// All matches for a qualified path, such as `foo::Bar::baz`.
+    pub fn lookup_path(&self, path: &[&str], kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
         let mut options = QualifiedLookup::lexical();
         if !kind_filters.is_empty() {
             options = options.with_result_kinds(kind_filters)
         }
-        let symbols = self.scopes.try_lookup_qualified(qualified_name, options)?;
+        let symbols = self.scopes.try_lookup_qualified(path, options)?;
         Some(symbols)
     }
 
-    /// Look up a qualified path and apply same-crate preference for multi-crate scenarios.
-    pub fn lookup_qualified_symbol(
+    /// Preferred match for a qualified path.
+    pub fn lookup_path_symbol(
         &self,
-        qualified_name: &[&str],
+        path: &[&str],
         kind_filters: SymKindSet,
     ) -> Option<&'a Symbol> {
-        let symbols = self.lookup_qualified(qualified_name, kind_filters)?;
-        let current_unit = self.unit.index();
-
+        let symbols = self.lookup_path(path, kind_filters)?;
         if symbols.len() > 1 {
-            let current_crate_index = self.unit.unit_meta().crate_index;
             tracing::warn!(
-                path = ?qualified_name,
+                path = ?path,
                 count = symbols.len(),
                 "multiple symbols found for qualified path, using preferred symbol"
             );
-            return select_preferred_symbol(&symbols, current_unit, current_crate_index);
         }
-        symbols.last().copied()
+        self.choose(&symbols)
     }
 }
 
-/// Bind symbols from all compilation units, optionally in parallel.
+/// Bind all compilation units.
 ///
-/// The binding phase resolves all symbol references and establishes relationships between symbols
-/// across compilation units. This happens after collection when all symbols have been discovered.
-/// Language-specific bind visitors report recoverable resolution misses through symbol state and
-/// tracing rather than this function's [`Result`].
-pub fn bind_symbols_with<'a, L: Language>(
+/// Binding resolves references after collection has discovered every symbol.
+/// Recoverable misses are recorded on symbols and logged by language visitors.
+pub fn bind_symbols<'a, L: Language>(
     cc: &'a CompileCtxt<'a>,
     globals: &'a Scope<'a>,
     config: &ResolveOptions,

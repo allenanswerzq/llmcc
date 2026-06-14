@@ -13,7 +13,7 @@ use llmcc_dot::{ComponentDepth, render_graph};
 use llmcc_error::{Error, ErrorKind, Result};
 
 use llmcc_cpp::LangCpp;
-use llmcc_resolver::{bind_symbols_with, collect_symbols_with};
+use llmcc_resolver::{bind_symbols, collect_symbols};
 use llmcc_rust::LangRust;
 use llmcc_ts::LangTypeScript;
 use similar::TextDiff;
@@ -1423,10 +1423,10 @@ where
     let resolve_options = ResolveOptions::default()
         .with_print_ir(options.print_ir)
         .with_sequential(sequential);
-    let globals = collect_symbols_with::<L>(&cc, &resolve_options)?;
+    let globals = collect_symbols::<L>(&cc, &resolve_options)?;
 
     // Bind symbols using new unified API
-    bind_symbols_with::<L>(&cc, globals, &resolve_options)?;
+    bind_symbols::<L>(&cc, globals, &resolve_options)?;
     let mut project_graph = if options.build_block_reports
         || options.build_block_graph
         || options.keep_block_relations

@@ -1,7 +1,7 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::symbol::{SYM_KIND_TYPES, SymKind, SymKindSet, Symbol};
-use llmcc_resolver::BinderScopes;
+use llmcc_resolver::BindCtxt;
 
 use crate::token::LangCpp;
 
@@ -12,7 +12,7 @@ const MAX_INFER_DEPTH: u32 = 16;
 /// Public entry point that starts recursion at depth 0.
 pub fn infer_type<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
     infer_type_impl(unit, scopes, node, 0)
@@ -22,7 +22,7 @@ pub fn infer_type<'tcx>(
 /// This is panic-safe: if the function panics, no state needs cleanup.
 fn infer_type_impl<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -219,7 +219,7 @@ fn infer_type_impl<'tcx>(
 }
 
 /// Get primitive type by name
-fn get_primitive_type<'tcx>(scopes: &BinderScopes<'tcx>, name: &str) -> Option<&'tcx Symbol> {
+fn get_primitive_type<'tcx>(scopes: &BindCtxt<'tcx>, name: &str) -> Option<&'tcx Symbol> {
     scopes
         .lookup_globals(name, SymKindSet::from_kind(SymKind::Primitive))?
         .last()
@@ -234,7 +234,7 @@ fn is_syntactic_noise(_unit: &CompileUnit, node: &HirNode) -> bool {
 /// Infer block type: type of last expression in block
 fn infer_block<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -271,7 +271,7 @@ fn infer_block<'tcx>(
 /// Infer type from child nodes, skipping specified kinds
 fn infer_from_children<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     skip_kinds: &[u16],
     depth: u32,
@@ -293,7 +293,7 @@ fn infer_from_children<'tcx>(
 /// Infer template type: vector<int>, map<K, V>, etc.
 fn infer_template_type<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -318,7 +318,7 @@ fn infer_template_type<'tcx>(
 /// Infer qualified identifier: std::vector, foo::bar
 fn infer_qualified_identifier<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
     // Get the name field (the final identifier in the chain)
@@ -356,7 +356,7 @@ fn infer_qualified_identifier<'tcx>(
 /// Infer field expression: obj.field or obj->field
 fn infer_field_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
-    _scopes: &BinderScopes<'tcx>,
+    _scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
     // Try to get the field's symbol directly
@@ -377,7 +377,7 @@ fn infer_field_expression<'tcx>(
 /// Infer subscript expression: arr[i]
 fn infer_subscript_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
@@ -395,7 +395,7 @@ fn infer_subscript_expression<'tcx>(
 /// Infer binary expression: a + b, a == b, etc.
 fn infer_binary_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {

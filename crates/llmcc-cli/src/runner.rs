@@ -12,7 +12,7 @@ use llmcc_core::{CompileCtxt, Error, ResolveOptions, Result, print_block_tree};
 use llmcc_core::{GraphBuildOptions, build_graphs};
 use llmcc_cpp::LangCpp;
 use llmcc_dot::{RenderOptions, render_graph_with_options};
-use llmcc_resolver::{bind_symbols_with, build_and_collect_symbols};
+use llmcc_resolver::{bind_symbols, build_and_collect};
 use llmcc_rust::LangRust;
 use llmcc_ts::LangTypeScript;
 
@@ -72,7 +72,7 @@ impl Runner {
             .with_print_ir(self.options.print_ir)
             .with_sequential(false);
 
-        let globals = build_and_collect_symbols::<L>(&cc, &resolve_options)?;
+        let globals = build_and_collect::<L>(&cc, &resolve_options)?;
 
         info!(
             "IR build + Symbol collection: {:.2}s",
@@ -80,7 +80,7 @@ impl Runner {
         );
 
         let bind_start = Instant::now();
-        bind_symbols_with::<L>(&cc, globals, &resolve_options)?;
+        bind_symbols::<L>(&cc, globals, &resolve_options)?;
         info!("Symbol binding: {:.2}s", bind_start.elapsed().as_secs_f64());
 
         let graph_start = Instant::now();

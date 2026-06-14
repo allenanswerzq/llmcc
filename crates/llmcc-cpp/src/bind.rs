@@ -9,14 +9,14 @@ use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirNode, HirScope};
 use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{SYM_KIND_ALL, SYM_KIND_TYPES, SymKind, SymKindSet, Symbol};
-use llmcc_resolver::BinderScopes;
+use llmcc_resolver::BindCtxt;
 
 use crate::infer::infer_type;
 use crate::token::AstVisitorCpp;
 use crate::token::LangCpp;
 
 type ScopeEnterFn<'tcx> =
-    Box<dyn FnOnce(&CompileUnit<'tcx>, &'tcx HirScope<'tcx>, &mut BinderScopes<'tcx>) + 'tcx>;
+    Box<dyn FnOnce(&CompileUnit<'tcx>, &'tcx HirScope<'tcx>, &mut BindCtxt<'tcx>) + 'tcx>;
 
 /// Visitor for resolving symbol bindings and establishing relationships.
 #[derive(Debug)]
@@ -40,30 +40,30 @@ impl<'tcx> BinderVisitor<'tcx> {
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         sn: &'tcx HirScope<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
         on_scope_enter: Option<ScopeEnterFn<'tcx>>,
     ) {
-        let depth = scopes.scope_depth();
+        let depth = scopes.depth();
 
         let child_parent = sn.try_symbol().or(parent);
 
         // Skip if scope wasn't set
         if sn.try_scope().is_none() {
-            self.visit_children(unit, node, scopes, scopes.top(), child_parent);
+            self.visit_children(unit, node, scopes, scopes.current(), child_parent);
             return;
         }
-        scopes.push_scope_node(sn);
+        scopes.push_node_scope(sn);
 
         // Run the scope enter callback if provided
         if let Some(callback) = on_scope_enter {
             callback(unit, sn, scopes);
         }
 
-        self.visit_children(unit, node, scopes, scopes.top(), child_parent);
+        self.visit_children(unit, node, scopes, scopes.current(), child_parent);
 
-        scopes.pop_until(depth);
+        scopes.pop_to(depth);
     }
 
     /// Bind the type of a field declaration
@@ -71,7 +71,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         &self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &BinderScopes<'tcx>,
+        scopes: &BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
     ) {
         // Get the field symbol from the declarator
@@ -101,7 +101,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         &self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &BinderScopes<'tcx>,
+        scopes: &BindCtxt<'tcx>,
     ) {
         if let Some(decl_node) = node.child_by_field(unit, LangCpp::field_declarator) {
             if let Some(param_sym) = decl_node
@@ -140,7 +140,7 @@ impl<'tcx> BinderVisitor<'tcx> {
     fn bind_identifier_with_kinds(
         &self,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         kinds: SymKindSet,
     ) {
         let ident = node.as_ident().unwrap();
@@ -156,18 +156,18 @@ impl<'tcx> BinderVisitor<'tcx> {
     }
 }
 
-impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
+impl<'tcx> AstVisitorCpp<'tcx, BindCtxt<'tcx>> for BinderVisitor<'tcx> {
     fn visit_translation_unit(
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
         let file_path = unit.file_path().unwrap();
         let _ = file_path; // Used for debugging
-        let depth = scopes.scope_depth();
+        let depth = scopes.depth();
         let meta = unit.unit_meta();
 
         // Push package scope if present
@@ -198,11 +198,11 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
             let file_scope = unit.scope(scope_id);
             self.visit_children(unit, node, scopes, file_scope, Some(file_sym));
-            scopes.pop_until(depth);
+            scopes.pop_to(depth);
             return;
         }
 
-        self.visit_children(unit, node, scopes, scopes.top(), None);
+        self.visit_children(unit, node, scopes, scopes.current(), None);
     }
 
     // Identifier binding
@@ -210,7 +210,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         _unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
@@ -222,7 +222,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         _unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
@@ -234,7 +234,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         _unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
@@ -251,7 +251,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -263,7 +263,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -275,7 +275,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -291,7 +291,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -341,7 +341,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -353,7 +353,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -365,7 +365,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -381,7 +381,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -407,7 +407,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -420,7 +420,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -433,16 +433,16 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        let depth = scopes.scope_depth();
+        let depth = scopes.depth();
         if let Some(sn) = node.as_scope() {
-            scopes.push_scope_node(sn);
+            scopes.push_node_scope(sn);
         }
-        self.visit_children(unit, node, scopes, scopes.top(), parent);
-        scopes.pop_until(depth);
+        self.visit_children(unit, node, scopes, scopes.current(), parent);
+        scopes.pop_to(depth);
     }
 
     // Qualified identifier (namespace::name)
@@ -450,7 +450,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -463,7 +463,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 && let Some(scope_sym) = scope_ident.try_symbol()
                 && let Some(scope_id) = scope_sym.try_owned_scope()
             {
-                let depth = scopes.scope_depth();
+                let depth = scopes.depth();
                 scopes.push_scope(scope_id);
 
                 // Now resolve the name part in the scope context
@@ -474,7 +474,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                     }
                 }
 
-                scopes.pop_until(depth);
+                scopes.pop_to(depth);
                 return;
             }
         }
@@ -488,7 +488,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -508,7 +508,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -520,7 +520,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             if let Some(arg_type) = infer_type(unit, scopes, &arg_node)
                 && let Some(type_scope) = arg_type.try_owned_scope()
             {
-                let depth = scopes.scope_depth();
+                let depth = scopes.depth();
                 scopes.push_scope(type_scope);
 
                 if let Some(field_node) = node.child_by_field(unit, LangCpp::field_field) {
@@ -531,7 +531,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                     }
                 }
 
-                scopes.pop_until(depth);
+                scopes.pop_to(depth);
                 return;
             }
         }
@@ -545,12 +545,12 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
         // Templates create a new scope for their type parameters
-        let depth = scopes.scope_depth();
+        let depth = scopes.depth();
 
         // Visit template parameters
         if let Some(params_node) = node
@@ -564,7 +564,7 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         // Visit the templated declaration
         self.visit_children(unit, node, scopes, namespace, parent);
 
-        scopes.pop_until(depth);
+        scopes.pop_to(depth);
     }
 
     // Lambda expression
@@ -572,16 +572,16 @@ impl<'tcx> AstVisitorCpp<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        let depth = scopes.scope_depth();
+        let depth = scopes.depth();
         if let Some(sn) = node.as_scope() {
-            scopes.push_scope_node(sn);
+            scopes.push_node_scope(sn);
         }
-        self.visit_children(unit, node, scopes, scopes.top(), parent);
-        scopes.pop_until(depth);
+        self.visit_children(unit, node, scopes, scopes.current(), parent);
+        scopes.pop_to(depth);
     }
 }
 
@@ -592,7 +592,7 @@ pub fn bind_symbols<'tcx>(
     namespace: &'tcx Scope<'tcx>,
     config: &ResolveOptions,
 ) {
-    let mut scopes = BinderScopes::new(unit, namespace);
+    let mut scopes = BindCtxt::new(unit, namespace);
     let mut visitor = BinderVisitor::new(config.clone());
     visitor.visit_node(&unit, node, &mut scopes, namespace, None);
 }

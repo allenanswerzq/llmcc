@@ -8,7 +8,7 @@ use llmcc_core::symbol::{
     SYM_KIND_ALL, SYM_KIND_CALLABLE, SYM_KIND_IMPL_TARGETS, SYM_KIND_TYPES, SymKind, SymKindSet,
     Symbol,
 };
-use llmcc_resolver::BinderScopes;
+use llmcc_resolver::BindCtxt;
 
 use crate::infer::infer_type;
 use crate::pattern::bind_pattern_types;
@@ -16,7 +16,7 @@ use crate::token::AstVisitorRust;
 use crate::token::LangRust;
 
 type ScopeEnterFn<'tcx> =
-    Box<dyn FnOnce(&CompileUnit<'tcx>, &'tcx HirScope<'tcx>, &mut BinderScopes<'tcx>) + 'tcx>;
+    Box<dyn FnOnce(&CompileUnit<'tcx>, &'tcx HirScope<'tcx>, &mut BindCtxt<'tcx>) + 'tcx>;
 
 /// Visitor for resolving symbol bindings and establishing relationships.
 #[derive(Debug)]
@@ -41,12 +41,12 @@ impl<'tcx> BinderVisitor<'tcx> {
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         sn: &'tcx HirScope<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
         on_scope_enter: Option<ScopeEnterFn<'tcx>>,
     ) {
-        let depth = scopes.scope_depth();
+        let depth = scopes.depth();
 
         // Any visibility modifier (pub, pub(crate), pub(super), etc.) makes the symbol global
         if let Some(_vis_modifier) = node.child_by_kind(unit, LangRust::visibility_modifier)
@@ -59,27 +59,27 @@ impl<'tcx> BinderVisitor<'tcx> {
         let child_parent = sn.try_symbol().or(parent);
 
         // Push scope (always succeeds for Rust since collector sets all scopes)
-        scopes.push_scope_node(sn);
+        scopes.push_node_scope(sn);
 
         if let Some(scope_enter) = on_scope_enter {
             scope_enter(unit, sn, scopes);
         }
-        self.visit_children(unit, node, scopes, scopes.top(), child_parent);
-        scopes.pop_until(depth);
+        self.visit_children(unit, node, scopes, scopes.current(), child_parent);
+        scopes.pop_to(depth);
     }
 }
 
-impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
+impl<'tcx> AstVisitorRust<'tcx, BindCtxt<'tcx>> for BinderVisitor<'tcx> {
     fn visit_source_file(
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
         let _file_path = unit.file_path().unwrap();
-        let depth = scopes.scope_depth();
+        let depth = scopes.depth();
         let meta = unit.unit_meta();
 
         if let Some(ref crate_name) = meta.package_name
@@ -107,7 +107,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
             let file_scope = unit.scope(scope_id);
             self.visit_children(unit, node, scopes, file_scope, Some(file_sym));
-            scopes.pop_until(depth);
+            scopes.pop_to(depth);
         }
     }
 
@@ -116,7 +116,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         _unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
@@ -137,7 +137,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         _unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
@@ -158,7 +158,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         _unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
@@ -176,7 +176,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -205,7 +205,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -220,7 +220,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -237,7 +237,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -249,7 +249,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -283,7 +283,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -295,7 +295,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -329,7 +329,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -362,7 +362,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -393,7 +393,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
@@ -481,7 +481,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -504,7 +504,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -517,7 +517,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -530,7 +530,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -541,7 +541,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -553,7 +553,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -572,7 +572,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -584,7 +584,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -602,7 +602,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -628,7 +628,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -655,7 +655,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -667,7 +667,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -679,7 +679,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -727,7 +727,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -769,7 +769,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             };
 
             if let Some(path_sym) = path_sym {
-                if let Some(name_sym) = scopes.lookup_member_symbol(path_sym, name_ident.name, None)
+                if let Some(name_sym) =
+                    scopes.lookup_member(path_sym, name_ident.name, SymKindSet::empty())
                 {
                     name_ident.set_symbol(name_sym);
                 }
@@ -782,7 +783,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -805,7 +806,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -833,7 +834,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -845,7 +846,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -886,7 +887,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -917,7 +918,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -929,7 +930,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -941,7 +942,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
+        scopes: &mut BindCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -954,7 +955,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 /// For `Vec<Vec<User>>`, this yields [Vec<User>, User] (outer Vec then inner).
 fn extract_nested_types<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &BinderScopes<'tcx>,
+    scopes: &BindCtxt<'tcx>,
     type_node: &HirNode<'tcx>,
     target_sym: &Symbol,
 ) {
@@ -999,7 +1000,7 @@ pub fn bind_symbols<'tcx>(
     namespace: &'tcx Scope<'tcx>,
     config: &ResolveOptions,
 ) {
-    let mut scopes = BinderScopes::new(unit, namespace);
+    let mut scopes = BindCtxt::new(unit, namespace);
     let mut visit = BinderVisitor::new(config.clone());
     visit.visit_node(&unit, node, &mut scopes, namespace, None);
 }
