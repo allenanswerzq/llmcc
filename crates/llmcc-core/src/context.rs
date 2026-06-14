@@ -139,6 +139,11 @@ impl<'tcx> CompileUnit<'tcx> {
             .expect("CompileUnit index not mapped to UnitMeta")
     }
 
+    /// Return this unit's package group index.
+    pub fn package_index(&self) -> usize {
+        self.cc.package_index(self.index)
+    }
+
     /// Reserve a new block id.
     pub fn reserve_block_id(&self) -> BlockId {
         BlockId::allocate()
@@ -452,7 +457,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             .map(|file| Self::metadata_for_file(&meta_index, file))
             .collect();
 
-        Self::assign_crate_indexes(&mut metas);
+        Self::assign_package_indexes(&mut metas);
         metas
     }
 
@@ -469,21 +474,18 @@ impl<'tcx> CompileCtxt<'tcx> {
             .unwrap_or_default()
     }
 
-    fn assign_crate_indexes(metas: &mut [UnitMeta]) {
-        let mut package_crates: HashMap<PathBuf, usize> = HashMap::new();
-        let mut next_crate_index = 0usize;
+    fn assign_package_indexes(metas: &mut [UnitMeta]) {
+        let mut packages: HashMap<PathBuf, usize> = HashMap::new();
+        let mut next_package_index = 0usize;
 
         for meta in metas {
             if let Some(ref package_root) = meta.package_root {
-                let crate_index =
-                    *package_crates
-                        .entry(package_root.clone())
-                        .or_insert_with(|| {
-                            let crate_index = next_crate_index;
-                            next_crate_index += 1;
-                            crate_index
-                        });
-                meta.crate_index = crate_index;
+                let package_index = *packages.entry(package_root.clone()).or_insert_with(|| {
+                    let package_index = next_package_index;
+                    next_package_index += 1;
+                    package_index
+                });
+                meta.package_index = package_index;
             }
         }
     }
@@ -593,6 +595,13 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// Return metadata for a single unit.
     pub fn unit_meta(&self, index: usize) -> Option<&UnitMeta> {
         self.unit_metas.get(index)
+    }
+
+    /// Return a language-neutral package group index for one unit.
+    pub fn package_index(&self, index: usize) -> usize {
+        self.unit_meta(index)
+            .map(|meta| meta.package_index)
+            .unwrap_or(usize::MAX)
     }
 
     /// Return the block-relation map built for this context.

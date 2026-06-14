@@ -16,7 +16,7 @@ pub fn shape_for_kind(kind: Option<SymKind>) -> &'static str {
             | SymKind::TypeAlias,
         ) => "box",
         // Modules/Files: folder shape
-        Some(SymKind::Module | SymKind::File | SymKind::Namespace | SymKind::Crate) => "folder",
+        Some(SymKind::Module | SymKind::File | SymKind::Namespace | SymKind::Package) => "folder",
         // Fields/Variables: plain text (minimal)
         Some(SymKind::Field | SymKind::Variable) => "plaintext",
         // Constants: diamond

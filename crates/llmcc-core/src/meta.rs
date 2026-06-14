@@ -42,7 +42,7 @@ pub struct UnitMeta {
     pub module_root: Option<PathBuf>,
     pub file_name: Option<String>,
     pub file_path: Option<PathBuf>,
-    pub crate_index: usize,
+    pub package_index: usize,
 }
 
 impl UnitMeta {

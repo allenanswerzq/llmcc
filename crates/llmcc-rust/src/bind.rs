@@ -84,7 +84,7 @@ impl<'tcx> AstVisitorRust<'tcx, BindCtxt<'tcx>> for BinderVisitor<'tcx> {
 
         if let Some(ref crate_name) = meta.package_name
             && let Some(symbol) =
-                scopes.lookup_symbol(crate_name, SymKindSet::from_kind(SymKind::Crate))
+                scopes.lookup_symbol(crate_name, SymKindSet::from_kind(SymKind::Package))
             && let Some(scope_id) = symbol.try_owned_scope()
         {
             scopes.push_scope(scope_id);

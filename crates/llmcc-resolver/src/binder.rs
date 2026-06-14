@@ -122,11 +122,7 @@ impl<'a> BindCtxt<'a> {
     }
 
     fn choose(&self, symbols: &[&'a Symbol]) -> Option<&'a Symbol> {
-        try_resolve_ambiguous(
-            symbols,
-            self.unit.index(),
-            self.unit.unit_meta().crate_index,
-        )
+        try_resolve_ambiguous(symbols, self.unit.index(), self.unit.package_index())
     }
 
     /// All matching global symbols.

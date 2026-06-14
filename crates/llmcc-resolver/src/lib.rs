@@ -12,12 +12,12 @@ pub use llmcc_core::ResolveOptions;
 
 /// Select one symbol from ambiguous matches using resolver-wide precedence.
 ///
-/// Current-unit symbols win first, then current-crate symbols, then the last
+/// Current-unit symbols win first, then current-package symbols, then the last
 /// match returned by the underlying scope lookup.
 pub(crate) fn try_resolve_ambiguous<'a>(
     symbols: &[&'a Symbol],
     unit_index: usize,
-    crate_index: usize,
+    package_index: usize,
 ) -> Option<&'a Symbol> {
     symbols
         .iter()
@@ -27,7 +27,7 @@ pub(crate) fn try_resolve_ambiguous<'a>(
             symbols
                 .iter()
                 .rev()
-                .find(|symbol| symbol.crate_index() == Some(crate_index))
+                .find(|symbol| symbol.package_index() == Some(package_index))
         })
         .or_else(|| symbols.last())
         .copied()

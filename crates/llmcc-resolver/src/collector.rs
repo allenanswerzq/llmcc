@@ -47,13 +47,10 @@ impl<'a> CollectCtxt<'a> {
         self.unit_index
     }
 
-    /// Crate index for the current unit.
+    /// Package group index for the current unit.
     #[inline]
-    fn crate_index(&self) -> usize {
-        self.cc
-            .unit_meta(self.unit_index)
-            .map(|m| m.crate_index)
-            .unwrap_or(usize::MAX)
+    fn package_index(&self) -> usize {
+        self.cc.package_index(self.unit_index)
     }
 
     /// Shared arena.
@@ -74,7 +71,7 @@ impl<'a> CollectCtxt<'a> {
         self.scopes.push(scope);
     }
 
-    /// Push a symbol-owned scope, creating one when needed.
+    /// Push a symbol-owned scope, creating one when needed
     #[inline]
     pub fn push_symbol_scope(
         &mut self,
@@ -105,6 +102,50 @@ impl<'a> CollectCtxt<'a> {
         scope
     }
 
+    /// Declare and push a package scope.
+    pub fn push_package_scope(
+        &mut self,
+        node: &HirNode<'a>,
+        package_name: &str,
+    ) -> Option<&'a Scope<'a>> {
+        let symbol = self.declare_global(package_name, node, SymKind::Package)?;
+        Some(self.push_symbol_scope(node, Some(symbol)))
+    }
+
+    /// Declare a module wrapper scope with an optional semantic parent.
+    pub fn module_scope(
+        &self,
+        node: &HirNode<'a>,
+        module_name: &str,
+        parent: Option<&'a Scope<'a>>,
+    ) -> Option<&'a Scope<'a>> {
+        let symbol = self.declare_global(module_name, node, SymKind::Module)?;
+        let scope = self.alloc_symbol_scope(symbol);
+        if let Some(parent) = parent {
+            scope.add_parent(parent);
+        }
+        Some(scope)
+    }
+
+    /// Link a top-level file scope as a package module alias.
+    pub fn alias_file_module(
+        &self,
+        node: &HirNode<'a>,
+        module_name: &str,
+        file_scope: &'a Scope<'a>,
+        package_scope: Option<&'a Scope<'a>>,
+    ) {
+        if let Some(symbol) = self.declare_fresh_global(module_name, node, SymKind::Module) {
+            symbol.set_owned_scope(file_scope.id());
+        }
+
+        if let Some(package_scope) = package_scope
+            && let Some(symbol) = self.declare_in(package_scope, module_name, node, SymKind::Module)
+        {
+            symbol.set_owned_scope(file_scope.id());
+        }
+    }
+
     /// Pop the current scope, keeping globals.
     #[inline]
     pub fn pop_scope(&mut self) {
@@ -128,6 +169,12 @@ impl<'a> CollectCtxt<'a> {
     #[inline]
     fn interner(&self) -> &'a InternPool {
         self.cc.interner()
+    }
+
+    fn alloc_symbol_scope(&self, symbol: &'a Symbol) -> &'a Scope<'a> {
+        let scope = Scope::new_with(symbol.owner(), Some(symbol), Some(self.interner()));
+        let scope_id = scope.id().0;
+        self.arena().alloc_with_id(scope_id, scope)
     }
 
     /// Shared global scope.
@@ -156,13 +203,13 @@ impl<'a> CollectCtxt<'a> {
             symbol.set_owner(node.id());
             symbol.set_kind(kind);
             symbol.set_unit_index(self.unit_index());
-            symbol.set_crate_index(self.crate_index());
+            symbol.set_package_index(self.package_index());
             symbol.add_defining(node.id());
         }
     }
 
     fn choose(&self, symbols: &[&'a Symbol]) -> Option<&'a Symbol> {
-        try_resolve_ambiguous(symbols, self.unit_index(), self.crate_index())
+        try_resolve_ambiguous(symbols, self.unit_index(), self.package_index())
     }
 
     /// Declare or reuse a symbol in the current scope.
@@ -194,7 +241,7 @@ impl<'a> CollectCtxt<'a> {
 
     /// Declare a fresh global symbol, even when the name already exists.
     #[inline]
-    pub fn declare_fresh_global(
+    fn declare_fresh_global(
         &self,
         name: &str,
         node: &HirNode<'a>,
@@ -215,7 +262,7 @@ impl<'a> CollectCtxt<'a> {
 
     /// Declare a fresh symbol in a specific scope.
     #[inline]
-    pub fn declare_in(
+    fn declare_in(
         &self,
         scope: &'a Scope<'a>,
         name: &str,

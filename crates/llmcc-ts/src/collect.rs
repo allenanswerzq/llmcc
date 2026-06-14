@@ -55,7 +55,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         &self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &CollectCtxt<'tcx>,
+        ctxt: &CollectCtxt<'tcx>,
         kind: SymKind,
         field_id: u16,
     ) -> Option<&'tcx Symbol> {
@@ -64,7 +64,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
             .try_ident_with_field(field_id)
             .or_else(|| node.as_scope().and_then(|sn| sn.try_ident()))?;
 
-        let sym = scopes.declare(ident.name, node, kind)?;
+        let sym = ctxt.declare(ident.name, node, kind)?;
         ident.set_symbol(sym);
 
         if let Some(sn) = node.as_scope() {
@@ -90,23 +90,23 @@ impl<'tcx> CollectorVisitor<'tcx> {
     fn lookup_or_convert(
         &mut self,
         unit: &CompileUnit<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         name: &str,
         node: &HirNode<'tcx>,
         kind: SymKind,
     ) -> Option<&'tcx Symbol> {
-        if let Some(symbol) = scopes.lookup_symbol(name, SymKindSet::from_kind(kind)) {
+        if let Some(symbol) = ctxt.lookup_symbol(name, SymKindSet::from_kind(kind)) {
             return Some(symbol);
         }
 
         if let Some(symbol) =
-            scopes.lookup_symbol(name, SymKindSet::from_kind(SymKind::UnresolvedType))
+            ctxt.lookup_symbol(name, SymKindSet::from_kind(SymKind::UnresolvedType))
         {
             symbol.set_kind(kind);
             return Some(symbol);
         }
 
-        if let Some(symbol) = scopes.declare(name, node, kind) {
+        if let Some(symbol) = ctxt.declare(name, node, kind) {
             if symbol.try_owned_scope().is_none() {
                 let scope = self.alloc_scope(unit, symbol);
                 symbol.set_owned_scope(scope.id());
@@ -122,7 +122,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         sym: &'tcx Symbol,
         sn: &'tcx HirScope<'tcx>,
         ident: &'tcx HirIdent<'tcx>,
@@ -130,23 +130,23 @@ impl<'tcx> CollectorVisitor<'tcx> {
         ident.set_symbol(sym);
         sn.set_ident(ident);
 
-        let depth = scopes.depth();
+        let depth = ctxt.depth();
         if let Some(scope_id) = sym.try_owned_scope()
             && let Some(scope) = self.get_scope(scope_id)
         {
             sn.set_scope(scope);
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, Some(sym));
-            scopes.pop_to(depth);
+            ctxt.push_scope(scope);
+            self.visit_children(unit, node, ctxt, scope, Some(sym));
+            ctxt.pop_to(depth);
             return;
         }
 
         let scope = self.alloc_scope(unit, sym);
         sym.set_owned_scope(scope.id());
         sn.set_scope(scope);
-        scopes.push_scope(scope);
-        self.visit_children(unit, node, scopes, scope, Some(sym));
-        scopes.pop_to(depth);
+        ctxt.push_scope(scope);
+        self.visit_children(unit, node, ctxt, scope, Some(sym));
+        ctxt.pop_to(depth);
     }
 }
 
@@ -156,42 +156,30 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
         let file_path = unit.file_path().unwrap();
         let _ = file_path; // Used for debugging
 
-        let depth = scopes.depth();
+        let depth = ctxt.depth();
         let sn = node.as_scope();
         let meta = unit.unit_meta();
 
-        // Track package scope for parent relationships
-        let mut package_scope: Option<&'tcx Scope<'tcx>> = None;
+        let package_scope = meta
+            .package_name
+            .as_deref()
+            .and_then(|name| ctxt.push_package_scope(node, name));
 
-        // Set up package (crate) scope from unit metadata
-        if let Some(ref package_name) = meta.package_name
-            && let Some(symbol) = scopes.declare_global(package_name, node, SymKind::Crate)
-        {
-            package_scope = Some(scopes.push_symbol_scope(node, Some(symbol)));
-        }
-
-        // For files in subdirectories, create a module scope for proper hierarchy traversal
-        let mut module_wrapper_scope: Option<&'tcx Scope<'tcx>> = None;
-        if let Some(ref module_name) = meta.module_name
-            && let Some(module_sym) = scopes.declare_global(module_name, node, SymKind::Module)
-        {
-            let mod_scope = self.alloc_scope(unit, module_sym);
-            if let Some(pkg_s) = package_scope {
-                mod_scope.add_parent(pkg_s);
-            }
-            module_wrapper_scope = Some(mod_scope);
-        }
+        let module_wrapper_scope = meta
+            .module_name
+            .as_deref()
+            .and_then(|name| ctxt.module_scope(node, name, package_scope));
 
         // Create file symbol and scope
         if let Some(ref file_name) = meta.file_name {
-            let file_sym = scopes.declare(file_name, node, SymKind::File);
+            let file_sym = ctxt.declare(file_name, node, SymKind::File);
             if let Some(file_sym) = file_sym {
                 let arena_name = unit.context().arena().alloc_str(file_name);
                 let ident = unit
@@ -218,14 +206,14 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
                     sn.set_scope(file_scope);
                 }
 
-                scopes.push_scope(file_scope);
-                self.visit_children(unit, node, scopes, file_scope, Some(file_sym));
-                scopes.pop_to(depth);
+                ctxt.push_scope(file_scope);
+                self.visit_children(unit, node, ctxt, file_scope, Some(file_sym));
+                ctxt.pop_to(depth);
                 return;
             }
         }
 
-        self.visit_children(unit, node, scopes, namespace, None);
+        self.visit_children(unit, node, ctxt, namespace, None);
     }
 
     // Class declaration
@@ -233,7 +221,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
@@ -247,12 +235,12 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         {
             // Use global scope for exported classes to enable cross-file resolution
             let sym = if is_exported(unit, node) {
-                scopes.declare_global(ident.name, node, SymKind::Struct)
+                ctxt.declare_global(ident.name, node, SymKind::Struct)
             } else {
-                scopes.declare(ident.name, node, SymKind::Struct)
+                ctxt.declare(ident.name, node, SymKind::Struct)
             };
             if let Some(sym) = sym {
-                self.visit_with_scope(unit, node, scopes, sym, sn, ident);
+                self.visit_with_scope(unit, node, ctxt, sym, sn, ident);
             }
         }
     }
@@ -262,11 +250,11 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        self.visit_class_declaration(unit, node, scopes, namespace, parent);
+        self.visit_class_declaration(unit, node, ctxt, namespace, parent);
     }
 
     // Internal module (namespace)
@@ -274,7 +262,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
@@ -286,9 +274,9 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
             .query(unit)
             .try_ident_with_field(LangTypeScript::field_name)
         {
-            let sym = scopes.declare(ident.name, node, SymKind::Namespace);
+            let sym = ctxt.declare(ident.name, node, SymKind::Namespace);
             if let Some(sym) = sym {
-                self.visit_with_scope(unit, node, scopes, sym, sn, ident);
+                self.visit_with_scope(unit, node, ctxt, sym, sn, ident);
             }
         }
     }
@@ -298,7 +286,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
@@ -312,12 +300,12 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         {
             // Use global scope for exported interfaces to enable cross-file resolution
             let sym = if is_exported(unit, node) {
-                scopes.declare_global(ident.name, node, SymKind::Interface)
+                ctxt.declare_global(ident.name, node, SymKind::Interface)
             } else {
-                scopes.declare(ident.name, node, SymKind::Interface)
+                ctxt.declare(ident.name, node, SymKind::Interface)
             };
             if let Some(sym) = sym {
-                self.visit_with_scope(unit, node, scopes, sym, sn, ident);
+                self.visit_with_scope(unit, node, ctxt, sym, sn, ident);
             }
         }
     }
@@ -327,7 +315,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
@@ -341,12 +329,12 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         {
             // Use global scope for exported type aliases to enable cross-file resolution
             let sym = if is_exported(unit, node) {
-                scopes.declare_global(ident.name, node, SymKind::TypeAlias)
+                ctxt.declare_global(ident.name, node, SymKind::TypeAlias)
             } else {
-                scopes.declare(ident.name, node, SymKind::TypeAlias)
+                ctxt.declare(ident.name, node, SymKind::TypeAlias)
             };
             if let Some(sym) = sym {
-                self.visit_with_scope(unit, node, scopes, sym, sn, ident);
+                self.visit_with_scope(unit, node, ctxt, sym, sn, ident);
             }
         }
     }
@@ -356,7 +344,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
@@ -370,12 +358,12 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         {
             // Use global scope for exported enums to enable cross-file resolution
             let sym = if is_exported(unit, node) {
-                scopes.declare_global(ident.name, node, SymKind::Enum)
+                ctxt.declare_global(ident.name, node, SymKind::Enum)
             } else {
-                scopes.declare(ident.name, node, SymKind::Enum)
+                ctxt.declare(ident.name, node, SymKind::Enum)
             };
             if let Some(sym) = sym {
-                self.visit_with_scope(unit, node, scopes, sym, sn, ident);
+                self.visit_with_scope(unit, node, ctxt, sym, sn, ident);
             }
         }
     }
@@ -385,7 +373,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -404,12 +392,12 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
             };
             // Use global scope for exported functions to enable cross-file resolution
             let sym = if is_exported(unit, node) && kind == SymKind::Function {
-                scopes.declare_global(ident.name, node, kind)
+                ctxt.declare_global(ident.name, node, kind)
             } else {
-                scopes.declare(ident.name, node, kind)
+                ctxt.declare(ident.name, node, kind)
             };
             if let Some(sym) = sym {
-                self.visit_with_scope(unit, node, scopes, sym, sn, ident);
+                self.visit_with_scope(unit, node, ctxt, sym, sn, ident);
             }
         }
     }
@@ -419,7 +407,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -436,9 +424,9 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
             } else {
                 SymKind::Function
             };
-            let sym = scopes.declare(ident.name, node, kind);
+            let sym = ctxt.declare(ident.name, node, kind);
             if let Some(sym) = sym {
-                self.visit_with_scope(unit, node, scopes, sym, sn, ident);
+                self.visit_with_scope(unit, node, ctxt, sym, sn, ident);
             }
         }
     }
@@ -448,7 +436,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -465,9 +453,9 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
             } else {
                 SymKind::Function
             };
-            let sym = scopes.declare(ident.name, node, kind);
+            let sym = ctxt.declare(ident.name, node, kind);
             if let Some(sym) = sym {
-                self.visit_with_scope(unit, node, scopes, sym, sn, ident);
+                self.visit_with_scope(unit, node, ctxt, sym, sn, ident);
             }
         }
     }
@@ -477,7 +465,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
@@ -489,9 +477,9 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
             .query(unit)
             .try_ident_with_field(LangTypeScript::field_name)
         {
-            let sym = scopes.declare(ident.name, node, SymKind::Method);
+            let sym = ctxt.declare(ident.name, node, SymKind::Method);
             if let Some(sym) = sym {
-                self.visit_with_scope(unit, node, scopes, sym, sn, ident);
+                self.visit_with_scope(unit, node, ctxt, sym, sn, ident);
             }
         }
     }
@@ -501,7 +489,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -509,11 +497,11 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
             // Arrow functions are anonymous - create a scope and set it on the HirScope
             let scope = unit.context().alloc_scope(node.id());
             sn.set_scope(scope);
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
+            ctxt.push_scope(scope);
+            self.visit_children(unit, node, ctxt, scope, parent);
+            ctxt.pop_scope();
         } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
+            self.visit_children(unit, node, ctxt, namespace, parent);
         }
     }
 
@@ -522,7 +510,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -530,13 +518,13 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         if let Some(name_node) = node.child_by_field(unit, LangTypeScript::field_name)
             && let Some(ident) = name_node.as_ident()
         {
-            let sym = scopes.declare(ident.name, node, SymKind::Variable);
+            let sym = ctxt.declare(ident.name, node, SymKind::Variable);
             if let Some(sym) = sym {
                 ident.set_symbol(sym);
             }
         }
 
-        self.visit_children(unit, node, scopes, namespace, parent);
+        self.visit_children(unit, node, ctxt, namespace, parent);
     }
 
     // Required parameter
@@ -544,7 +532,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -552,13 +540,13 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         if let Some(pattern_node) = node.child_by_field(unit, LangTypeScript::field_pattern)
             && let Some(ident) = pattern_node.as_ident()
         {
-            let sym = scopes.declare(ident.name, node, SymKind::Variable);
+            let sym = ctxt.declare(ident.name, node, SymKind::Variable);
             if let Some(sym) = sym {
                 ident.set_symbol(sym);
             }
         }
 
-        self.visit_children(unit, node, scopes, namespace, parent);
+        self.visit_children(unit, node, ctxt, namespace, parent);
     }
 
     // Rest pattern (e.g., ...args in function(...args: T[]))
@@ -566,19 +554,19 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
         // Rest pattern contains an identifier directly as a child
         if let Some(ident) = node.query(unit).try_first_ident() {
-            let sym = scopes.declare(ident.name, node, SymKind::Variable);
+            let sym = ctxt.declare(ident.name, node, SymKind::Variable);
             if let Some(sym) = sym {
                 ident.set_symbol(sym);
             }
         }
 
-        self.visit_children(unit, node, scopes, namespace, parent);
+        self.visit_children(unit, node, ctxt, namespace, parent);
     }
 
     // Optional parameter
@@ -586,7 +574,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -594,13 +582,13 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         if let Some(pattern_node) = node.child_by_field(unit, LangTypeScript::field_pattern)
             && let Some(ident) = pattern_node.as_ident()
         {
-            let sym = scopes.declare(ident.name, node, SymKind::Variable);
+            let sym = ctxt.declare(ident.name, node, SymKind::Variable);
             if let Some(sym) = sym {
                 ident.set_symbol(sym);
             }
         }
 
-        self.visit_children(unit, node, scopes, namespace, parent);
+        self.visit_children(unit, node, ctxt, namespace, parent);
     }
 
     // Type parameter (e.g., T in function<T extends HasLength>)
@@ -608,7 +596,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -617,13 +605,13 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
             .query(unit)
             .try_ident_with_field(LangTypeScript::field_name)
         {
-            let sym = scopes.declare(ident.name, node, SymKind::TypeParameter);
+            let sym = ctxt.declare(ident.name, node, SymKind::TypeParameter);
             if let Some(sym) = sym {
                 ident.set_symbol(sym);
             }
         }
 
-        self.visit_children(unit, node, scopes, namespace, parent);
+        self.visit_children(unit, node, ctxt, namespace, parent);
     }
 
     // Property signature (interface field)
@@ -631,7 +619,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -639,13 +627,13 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
             .query(unit)
             .try_ident_with_field(LangTypeScript::field_name)
         {
-            let sym = scopes.declare(ident.name, node, SymKind::Field);
+            let sym = ctxt.declare(ident.name, node, SymKind::Field);
             if let Some(sym) = sym {
                 ident.set_symbol(sym);
             }
         }
 
-        self.visit_children(unit, node, scopes, namespace, parent);
+        self.visit_children(unit, node, ctxt, namespace, parent);
     }
 
     // Public field definition (class field)
@@ -653,7 +641,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -661,7 +649,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
             .query(unit)
             .try_ident_with_field(LangTypeScript::field_name)
         {
-            let sym = scopes.declare(ident.name, node, SymKind::Field);
+            let sym = ctxt.declare(ident.name, node, SymKind::Field);
             if let Some(sym) = sym {
                 ident.set_symbol(sym);
                 // Set the ident on the scope so BlockField can get the name
@@ -671,7 +659,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
             }
         }
 
-        self.visit_children(unit, node, scopes, namespace, parent);
+        self.visit_children(unit, node, ctxt, namespace, parent);
     }
 
     // Method signature (interface method)
@@ -679,7 +667,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
@@ -691,9 +679,9 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
             .query(unit)
             .try_ident_with_field(LangTypeScript::field_name)
         {
-            let sym = scopes.declare(ident.name, node, SymKind::Method);
+            let sym = ctxt.declare(ident.name, node, SymKind::Method);
             if let Some(sym) = sym {
-                self.visit_with_scope(unit, node, scopes, sym, sn, ident);
+                self.visit_with_scope(unit, node, ctxt, sym, sn, ident);
             }
         }
     }
@@ -703,11 +691,11 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        self.visit_method_signature(unit, node, scopes, namespace, parent);
+        self.visit_method_signature(unit, node, ctxt, namespace, parent);
     }
 
     // Enum member
@@ -715,7 +703,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
@@ -723,7 +711,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         if let Some(name_node) = node.child_ids().first().map(|id| unit.hir_node(*id))
             && let Some(ident) = name_node.as_ident()
         {
-            let sym = scopes.declare(ident.name, node, SymKind::EnumVariant);
+            let sym = ctxt.declare(ident.name, node, SymKind::EnumVariant);
             if let Some(sym) = sym {
                 ident.set_symbol(sym);
                 // Also set on scope so graph_builder extracts the correct symbol
@@ -733,7 +721,7 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
             }
         }
 
-        self.visit_children(unit, node, scopes, namespace, parent);
+        self.visit_children(unit, node, ctxt, namespace, parent);
     }
 
     // Anonymous scope handlers - these create scopes without symbols
@@ -743,18 +731,18 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
         if let Some(sn) = node.as_scope() {
             let scope = unit.context().alloc_scope(node.id());
             sn.set_scope(scope);
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
+            ctxt.push_scope(scope);
+            self.visit_children(unit, node, ctxt, scope, parent);
+            ctxt.pop_scope();
         } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
+            self.visit_children(unit, node, ctxt, namespace, parent);
         }
     }
 
@@ -763,18 +751,18 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
         if let Some(sn) = node.as_scope() {
             let scope = unit.context().alloc_scope(node.id());
             sn.set_scope(scope);
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
+            ctxt.push_scope(scope);
+            self.visit_children(unit, node, ctxt, scope, parent);
+            ctxt.pop_scope();
         } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
+            self.visit_children(unit, node, ctxt, namespace, parent);
         }
     }
 
@@ -783,18 +771,18 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
         if let Some(sn) = node.as_scope() {
             let scope = unit.context().alloc_scope(node.id());
             sn.set_scope(scope);
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
+            ctxt.push_scope(scope);
+            self.visit_children(unit, node, ctxt, scope, parent);
+            ctxt.pop_scope();
         } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
+            self.visit_children(unit, node, ctxt, namespace, parent);
         }
     }
 
@@ -803,18 +791,18 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
         if let Some(sn) = node.as_scope() {
             let scope = unit.context().alloc_scope(node.id());
             sn.set_scope(scope);
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
+            ctxt.push_scope(scope);
+            self.visit_children(unit, node, ctxt, scope, parent);
+            ctxt.pop_scope();
         } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
+            self.visit_children(unit, node, ctxt, namespace, parent);
         }
     }
 
@@ -823,18 +811,18 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
         if let Some(sn) = node.as_scope() {
             let scope = unit.context().alloc_scope(node.id());
             sn.set_scope(scope);
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
+            ctxt.push_scope(scope);
+            self.visit_children(unit, node, ctxt, scope, parent);
+            ctxt.pop_scope();
         } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
+            self.visit_children(unit, node, ctxt, namespace, parent);
         }
     }
 
@@ -843,18 +831,18 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
         if let Some(sn) = node.as_scope() {
             let scope = unit.context().alloc_scope(node.id());
             sn.set_scope(scope);
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
+            ctxt.push_scope(scope);
+            self.visit_children(unit, node, ctxt, scope, parent);
+            ctxt.pop_scope();
         } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
+            self.visit_children(unit, node, ctxt, namespace, parent);
         }
     }
 
@@ -863,18 +851,18 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
         if let Some(sn) = node.as_scope() {
             let scope = unit.context().alloc_scope(node.id());
             sn.set_scope(scope);
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
+            ctxt.push_scope(scope);
+            self.visit_children(unit, node, ctxt, scope, parent);
+            ctxt.pop_scope();
         } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
+            self.visit_children(unit, node, ctxt, namespace, parent);
         }
     }
 
@@ -883,18 +871,18 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
         if let Some(sn) = node.as_scope() {
             let scope = unit.context().alloc_scope(node.id());
             sn.set_scope(scope);
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
+            ctxt.push_scope(scope);
+            self.visit_children(unit, node, ctxt, scope, parent);
+            ctxt.pop_scope();
         } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
+            self.visit_children(unit, node, ctxt, namespace, parent);
         }
     }
 
@@ -903,18 +891,18 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
         if let Some(sn) = node.as_scope() {
             let scope = unit.context().alloc_scope(node.id());
             sn.set_scope(scope);
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
+            ctxt.push_scope(scope);
+            self.visit_children(unit, node, ctxt, scope, parent);
+            ctxt.pop_scope();
         } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
+            self.visit_children(unit, node, ctxt, namespace, parent);
         }
     }
 
@@ -923,18 +911,18 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
         if let Some(sn) = node.as_scope() {
             let scope = unit.context().alloc_scope(node.id());
             sn.set_scope(scope);
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
+            ctxt.push_scope(scope);
+            self.visit_children(unit, node, ctxt, scope, parent);
+            ctxt.pop_scope();
         } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
+            self.visit_children(unit, node, ctxt, namespace, parent);
         }
     }
 
@@ -943,18 +931,18 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
         if let Some(sn) = node.as_scope() {
             let scope = unit.context().alloc_scope(node.id());
             sn.set_scope(scope);
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
+            ctxt.push_scope(scope);
+            self.visit_children(unit, node, ctxt, scope, parent);
+            ctxt.pop_scope();
         } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
+            self.visit_children(unit, node, ctxt, namespace, parent);
         }
     }
 
@@ -963,18 +951,18 @@ impl<'tcx> AstVisitorTypeScript<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'t
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &mut CollectCtxt<'tcx>,
+        ctxt: &mut CollectCtxt<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
         if let Some(sn) = node.as_scope() {
             let scope = unit.context().alloc_scope(node.id());
             sn.set_scope(scope);
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, parent);
-            scopes.pop_scope();
+            ctxt.push_scope(scope);
+            self.visit_children(unit, node, ctxt, scope, parent);
+            ctxt.pop_scope();
         } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
+            self.visit_children(unit, node, ctxt, namespace, parent);
         }
     }
 }
@@ -990,10 +978,10 @@ pub fn collect_symbols<'tcx>(
     let unit_globals_val = Scope::new(HirId(unit.index()));
     let scope_id = unit_globals_val.id().0;
     let unit_globals = arena.alloc_with_id(scope_id, unit_globals_val);
-    let mut scopes = CollectCtxt::new(cc, unit.index(), scope_stack, unit_globals);
+    let mut ctxt = CollectCtxt::new(cc, unit.index(), scope_stack, unit_globals);
 
     let mut visit = CollectorVisitor::new();
-    visit.visit_node(&unit, node, &mut scopes, unit_globals, None);
+    visit.visit_node(&unit, node, &mut ctxt, unit_globals, None);
 
     unit_globals
 }
