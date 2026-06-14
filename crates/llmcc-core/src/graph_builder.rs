@@ -123,9 +123,8 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
 
         match kind {
             BlockKind::Root => {
-                let file_name = query.try_file_path();
-                let block = BlockRoot::new_with(id, node, parent, children, file_name, symbol);
-                block.set_meta(self.unit, node.try_scope());
+                let block = BlockRoot::new_with(id, node, parent, children, symbol);
+                block.set_meta(self.unit);
                 BasicBlock::Root(self.unit.alloc_block(id, block))
             }
             BlockKind::Func | BlockKind::Method => {
@@ -168,7 +167,7 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                     query.try_first_ident_name(),
                     symbol,
                 );
-                if let Some(type_sym) = self.unit.try_effective_type(symbol) {
+                if let Some(type_sym) = self.unit.try_actual_type(symbol) {
                     stmt.set_type(self.unit, type_sym);
                 }
                 BasicBlock::Const(self.unit.alloc_block(id, stmt))
@@ -195,7 +194,7 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                     query.try_field_name(L::name_field(), L::type_field()),
                     symbol,
                 );
-                if let Some(type_sym) = self.unit.try_effective_type(symbol) {
+                if let Some(type_sym) = self.unit.try_actual_type(symbol) {
                     block.set_type(self.unit, type_sym);
                 }
                 BasicBlock::Field(self.unit.alloc_block(id, block))
@@ -209,7 +208,7 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                     query.try_parameter_name(),
                     symbol,
                 );
-                if let Some(type_sym) = self.unit.try_effective_type(symbol) {
+                if let Some(type_sym) = self.unit.try_actual_type(symbol) {
                     block.set_type(self.unit, type_sym);
                 }
                 BasicBlock::Parameter(self.unit.alloc_block(id, block))
@@ -217,7 +216,7 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
             BlockKind::Return => {
                 // Return blocks: symbol should already have type_of set during binding
                 let mut block = BlockReturn::new_with(id, node, parent, children, symbol);
-                if let Some(type_sym) = self.unit.try_effective_type(symbol) {
+                if let Some(type_sym) = self.unit.try_actual_type(symbol) {
                     block.set_type(self.unit, type_sym);
                 }
                 BasicBlock::Return(self.unit.alloc_block(id, block))

@@ -10,7 +10,7 @@ use crate::context::CompileUnit;
 use crate::declare_arena;
 pub use crate::id::{BlockId, reset_block_id_counter};
 use crate::ir::HirNode;
-use crate::scope::Scope;
+use crate::meta::UnitMeta;
 use crate::symbol::{SymId, SymKind, Symbol};
 
 declare_arena!(BlockArena {
@@ -113,6 +113,21 @@ impl BlockKind {
     /// Return true when graph building should require a scope symbol for this kind.
     pub fn requires_scope_symbol(self) -> bool {
         matches!(self, BlockKind::Func | BlockKind::Method)
+    }
+
+    /// Return true when this kind is a top-level architecture graph node.
+    ///
+    /// Methods and fields are represented through edges instead of nodes; callers
+    /// should still exclude function blocks that are semantically methods.
+    pub fn is_architecture_node_kind(self) -> bool {
+        matches!(
+            self,
+            BlockKind::Class
+                | BlockKind::Trait
+                | BlockKind::Interface
+                | BlockKind::Enum
+                | BlockKind::Func
+        )
     }
 }
 
@@ -252,9 +267,14 @@ impl<'blk> BasicBlock<'blk> {
         &self.base().node
     }
 
-    /// Get the symbol that defines this block (if any)
-    pub fn symbol(&self) -> Option<&'blk Symbol> {
+    /// Return the symbol that defines this block, if any.
+    pub fn try_symbol(&self) -> Option<&'blk Symbol> {
         self.base().symbol()
+    }
+
+    /// Return the defining symbol kind, if this block has one.
+    pub fn try_symbol_kind(&self) -> Option<SymKind> {
+        self.try_symbol().map(Symbol::kind)
     }
 
     /// Return the block's semantic name, if it has one.
@@ -512,7 +532,7 @@ pub struct BlockBase<'blk> {
     pub parent: RwLock<Option<BlockId>>,
     pub children: RwLock<Vec<BlockId>>,
     /// Direct reference to the symbol that defines this block.
-    /// Set during block building. Enables: block.symbol().type_of().block_id()
+    /// Set during block building. Enables: block.try_symbol().type_of().block_id()
     pub symbol: Option<&'blk Symbol>,
     /// Type-like blocks this block depends on for architecture graph edges.
     ///
@@ -646,15 +666,7 @@ fn set_type_fields<'blk>(
 #[derive(Debug)]
 pub struct BlockRoot<'blk> {
     pub base: BlockBase<'blk>,
-    pub file_name: Option<String>,
-    /// Crate name from Cargo.toml [package] name
-    pub crate_name: RwLock<Option<String>>,
-    /// Crate/package root directory path
-    pub crate_root: RwLock<Option<String>>,
-    /// Module path relative to crate root (e.g., "utils::helpers")
-    pub module_path: RwLock<Option<String>>,
-    /// Module root directory path
-    pub module_root: RwLock<Option<String>>,
+    meta: RwLock<UnitMeta>,
 }
 
 impl<'blk> BlockRoot<'blk> {
@@ -663,9 +675,8 @@ impl<'blk> BlockRoot<'blk> {
         node: HirNode<'blk>,
         parent: Option<BlockId>,
         children: Vec<BlockId>,
-        file_name: Option<String>,
     ) -> Self {
-        Self::new_with(id, node, parent, children, file_name, None)
+        Self::new_with(id, node, parent, children, None)
     }
 
     pub fn new_with(
@@ -673,90 +684,64 @@ impl<'blk> BlockRoot<'blk> {
         node: HirNode<'blk>,
         parent: Option<BlockId>,
         children: Vec<BlockId>,
-        file_name: Option<String>,
         symbol: Option<&'blk Symbol>,
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Root, parent, children, symbol);
         Self {
             base,
-            file_name,
-            crate_name: RwLock::new(None),
-            crate_root: RwLock::new(None),
-            module_path: RwLock::new(None),
-            module_root: RwLock::new(None),
+            meta: RwLock::new(UnitMeta::default()),
         }
     }
 
-    pub fn set_crate_name(&self, name: String) {
-        *self.crate_name.write() = Some(name);
+    pub fn set_meta(&self, unit: CompileUnit<'blk>) {
+        *self.meta.write() = unit.unit_meta().clone();
     }
 
-    pub fn set_meta(&self, unit: CompileUnit<'blk>, scope: Option<&Scope<'blk>>) {
-        let meta = unit.unit_meta();
-        let interner = unit.interner();
-
-        if let Some(ref package_name) = meta.package_name {
-            self.set_crate_name(package_name.clone());
-        }
-        if let Some(ref package_root) = meta.package_root {
-            self.set_crate_root(package_root.display().to_string());
-        }
-        if let Some(ref module_name) = meta.module_name {
-            self.set_module_path(module_name.clone());
-        }
-        if let Some(ref module_root) = meta.module_root {
-            self.set_module_root(module_root.display().to_string());
-        }
-
-        if let Some(scope) = scope {
-            if meta.package_name.is_none()
-                && let Some(crate_sym) = scope.try_parent_symbol(SymKind::Crate)
-                && let Some(name) = interner.try_resolve(crate_sym.name)
-            {
-                self.set_crate_name(name);
-            }
-            if meta.module_name.is_none()
-                && let Some(module_sym) = scope.try_parent_symbol(SymKind::Module)
-                && let Some(name) = interner.try_resolve(module_sym.name)
-            {
-                self.set_module_path(name);
-            }
-        }
+    pub fn unit_meta(&self) -> UnitMeta {
+        self.meta.read().clone()
     }
 
-    pub fn crate_name(&self) -> Option<String> {
-        self.crate_name.read().clone()
+    pub fn package_name(&self) -> Option<String> {
+        self.meta.read().package_name.clone()
     }
 
-    pub fn set_crate_root(&self, root: String) {
-        *self.crate_root.write() = Some(root);
+    pub fn package_root(&self) -> Option<String> {
+        self.meta
+            .read()
+            .package_root
+            .as_ref()
+            .map(|root| root.display().to_string())
     }
 
-    pub fn crate_root(&self) -> Option<String> {
-        self.crate_root.read().clone()
+    pub fn namespace_path(&self) -> Option<String> {
+        self.meta.read().module_name.clone()
     }
 
-    pub fn set_module_path(&self, path: String) {
-        *self.module_path.write() = Some(path);
+    pub fn namespace_root(&self) -> Option<String> {
+        self.meta
+            .read()
+            .module_root
+            .as_ref()
+            .map(|root| root.display().to_string())
     }
 
-    pub fn module_path(&self) -> Option<String> {
-        self.module_path.read().clone()
+    pub fn file_path(&self) -> Option<String> {
+        self.meta
+            .read()
+            .file_path
+            .as_ref()
+            .map(|path| path.display().to_string())
     }
 
-    pub fn set_module_root(&self, root: String) {
-        *self.module_root.write() = Some(root);
-    }
-
-    pub fn module_root(&self) -> Option<String> {
-        self.module_root.read().clone()
+    pub fn file_name(&self) -> Option<String> {
+        self.meta.read().file_name.clone()
     }
 }
 
 impl<'blk> fmt::Display for BlockRoot<'blk> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let name = self.base.try_name().unwrap_or("");
-        if let Some(file_name) = &self.file_name {
+        if let Some(file_name) = self.file_name() {
             write!(
                 f,
                 "{}:{} {} ({})",

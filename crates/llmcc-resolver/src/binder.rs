@@ -10,12 +10,18 @@ use llmcc_core::{CompileCtxt, Language, Result};
 
 use rayon::prelude::*;
 
-use crate::ResolveOptions;
+use crate::{ResolveOptions, elapsed_ms, select_preferred_symbol};
 
+/// Binding scope stack for one compilation unit.
+///
+/// A binder stack always keeps the global scope available. Pop operations never
+/// remove it, so language visitors can pass [`BinderScopes::top`] to child
+/// traversal without risking a process abort if a malformed tree over-pops.
 #[derive(Debug)]
 pub struct BinderScopes<'a> {
     unit: CompileUnit<'a>,
     scopes: ScopeStack<'a>,
+    globals: &'a Scope<'a>,
 }
 
 impl<'a> BinderScopes<'a> {
@@ -23,12 +29,26 @@ impl<'a> BinderScopes<'a> {
         let scopes = ScopeStack::new(unit.context().arena(), unit.context().interner());
         scopes.push(globals);
 
-        Self { unit, scopes }
+        Self {
+            unit,
+            scopes,
+            globals,
+        }
     }
 
+    /// Return the current lexical scope, falling back to globals if the stack invariant is broken.
     #[inline]
     pub fn top(&self) -> &'a Scope<'a> {
-        self.scopes.try_current().unwrap()
+        match self.scopes.try_current() {
+            Some(scope) => scope,
+            None => {
+                tracing::error!(
+                    unit_index = self.unit.index(),
+                    "scope stack was empty during binding, falling back to globals"
+                );
+                self.globals
+            }
+        }
     }
 
     #[inline]
@@ -53,7 +73,6 @@ impl<'a> BinderScopes<'a> {
 
     /// Gets the current depth of the scope stack.
     ///
-    /// - 0 means no scope has been pushed yet
     /// - 1 means global scope is active
     /// - 2+ means nested scopes are active
     #[inline]
@@ -87,29 +106,36 @@ impl<'a> BinderScopes<'a> {
         true
     }
 
-    /// Pops the current scope from the stack.
+    /// Pops the current scope from the stack without removing the global scope.
     #[inline]
     pub fn pop_scope(&mut self) {
+        if self.scopes.depth() <= 1 {
+            tracing::error!(
+                unit_index = self.unit.index(),
+                "attempted to pop binder global scope"
+            );
+            return;
+        }
         self.scopes.pop();
     }
 
-    /// Pops scopes until reaching the specified depth.
+    /// Pops scopes until reaching the specified depth without removing globals.
     #[inline]
     pub fn pop_until(&mut self, depth: usize) {
-        self.scopes.pop_until(depth);
+        self.scopes.pop_until(depth.max(1));
     }
 
     /// Gets the global scope (always at index 0).
     #[inline]
     pub fn globals(&self) -> &'a Scope<'a> {
-        self.scopes.globals()
+        self.globals
     }
 
     #[inline]
     pub fn lookup_globals(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
         let options = SymbolFilter::kinds(kind_filters);
         let name_key = self.unit.interner().intern(name);
-        self.scopes.globals().try_lookup_symbols(name_key, options)
+        self.globals.try_lookup_symbols(name_key, options)
     }
 
     #[inline]
@@ -119,57 +145,40 @@ impl<'a> BinderScopes<'a> {
             tracing::warn!(
                 name,
                 count = symbols.len(),
-                "multiple global symbols found, returning the last one"
+                "multiple global symbols found, using preferred symbol"
             );
         }
-        symbols.last().copied()
+        select_preferred_symbol(
+            &symbols,
+            self.unit.index(),
+            self.unit.unit_meta().crate_index,
+        )
     }
 
-    /// Lookup symbols by name with options
+    /// Lookup symbols by name with options.
     #[inline]
     pub fn lookup_symbols(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
         let options = SymbolFilter::kinds(kind_filters);
         self.scopes.try_lookup_symbols(name, options)
     }
 
+    /// Look up one symbol by name, preferring current-unit then current-crate matches.
     #[inline]
     pub fn lookup_symbol(&self, name: &str, kind_filters: SymKindSet) -> Option<&'a Symbol> {
         let symbols = self.lookup_symbols(name, kind_filters)?;
+        let current_unit = self.unit.index();
+        let current_crate_index = self.unit.unit_meta().crate_index;
         if symbols.len() > 1 {
-            let current_unit = self.unit.index();
-            let current_crate_index = self.unit.unit_meta().crate_index;
-
-            // 1. Prefer symbols from the current unit (same file)
-            if let Some(local_sym) = symbols
-                .iter()
-                .find(|s| s.unit_index() == Some(current_unit))
-            {
-                return Some(*local_sym);
-            }
-
-            // 2. Prefer symbols from the same crate over cross-crate symbols
-            // Only filter if there are actually cross-crate symbols
-            let same_crate_symbols: Vec<_> = symbols
-                .iter()
-                .filter(|s| s.crate_index() == Some(current_crate_index))
-                .copied()
-                .collect();
-
-            if !same_crate_symbols.is_empty() && same_crate_symbols.len() < symbols.len() {
-                // There are both same-crate and cross-crate symbols, prefer same-crate
-                return same_crate_symbols.last().copied();
-            }
-
             tracing::warn!(
                 name,
                 count = symbols.len(),
-                "multiple symbols found, returning the last one"
+                "multiple symbols found, using preferred symbol"
             );
         }
-        symbols.last().copied()
+        select_preferred_symbol(&symbols, current_unit, current_crate_index)
     }
 
-    /// Look up a member symbol in a type's scope.
+    /// Look up a member symbol in a type's scope using common member-kind priority first.
     pub fn lookup_member_symbols(
         &self,
         obj_type_symbol: &'a Symbol,
@@ -194,7 +203,13 @@ impl<'a> BinderScopes<'a> {
                 }
             }
         }
-        None
+
+        let filter = if kind_filters.is_empty() {
+            SymbolFilter::any()
+        } else {
+            SymbolFilter::kinds(kind_filters)
+        };
+        self.lookup_member_symbol_with_filter(obj_type_symbol, member_name, filter)
     }
 
     /// Look up a member symbol in a type's scope.
@@ -204,10 +219,31 @@ impl<'a> BinderScopes<'a> {
         member_name: &str,
         kind_filter: Option<SymKind>,
     ) -> Option<&'a Symbol> {
-        // For TypeAlias (like Self), follow type_of to get the actual type
+        let options = if let Some(filter) = kind_filter {
+            SymbolFilter::kinds(SymKindSet::from_kind(filter))
+        } else {
+            SymbolFilter::any()
+        };
+
+        self.lookup_member_symbol_with_filter(obj_type_symbol, member_name, options)
+    }
+
+    fn lookup_member_symbol_with_filter(
+        &self,
+        obj_type_symbol: &'a Symbol,
+        member_name: &str,
+        options: SymbolFilter,
+    ) -> Option<&'a Symbol> {
+        // For TypeAlias (like Self), follow type_of to get the actual type.
         let effective_symbol = if obj_type_symbol.kind() == SymKind::TypeAlias {
             if let Some(type_of_id) = obj_type_symbol.type_of() {
-                self.unit.try_symbol(type_of_id).unwrap_or(obj_type_symbol)
+                self.unit.try_symbol(type_of_id).unwrap_or_else(|| {
+                    tracing::warn!(
+                        symbol_id = ?type_of_id,
+                        "type alias target symbol not found during member lookup"
+                    );
+                    obj_type_symbol
+                })
             } else {
                 obj_type_symbol
             }
@@ -221,12 +257,6 @@ impl<'a> BinderScopes<'a> {
         // Create isolated scope stack for member lookup to avoid falling back to lexical scopes
         let scopes = ScopeStack::new(self.unit.context().arena(), self.unit.context().interner());
         scopes.push_recursive(scope);
-
-        let options = if let Some(filter) = kind_filter {
-            SymbolFilter::kinds(SymKindSet::from_kind(filter))
-        } else {
-            SymbolFilter::any()
-        };
 
         scopes
             .try_lookup_symbols(member_name, options)?
@@ -258,28 +288,13 @@ impl<'a> BinderScopes<'a> {
         let current_unit = self.unit.index();
 
         if symbols.len() > 1 {
-            // 1. Prefer symbols from the current unit (same file)
-            if let Some(local_sym) = symbols
-                .iter()
-                .find(|s| s.unit_index() == Some(current_unit))
-            {
-                return Some(*local_sym);
-            }
-
-            // 2. Prefer symbols from the same crate using crate_index (O(1) check)
             let current_crate_index = self.unit.unit_meta().crate_index;
-            if let Some(same_crate_sym) = symbols
-                .iter()
-                .find(|s| s.crate_index() == Some(current_crate_index))
-            {
-                return Some(*same_crate_sym);
-            }
-
             tracing::warn!(
                 path = ?qualified_name,
                 count = symbols.len(),
-                "multiple symbols found for qualified path, returning the last one"
+                "multiple symbols found for qualified path, using preferred symbol"
             );
+            return select_preferred_symbol(&symbols, current_unit, current_crate_index);
         }
         symbols.last().copied()
     }
@@ -289,6 +304,8 @@ impl<'a> BinderScopes<'a> {
 ///
 /// The binding phase resolves all symbol references and establishes relationships between symbols
 /// across compilation units. This happens after collection when all symbols have been discovered.
+/// Language-specific bind visitors report recoverable resolution misses through symbol state and
+/// tracing rather than this function's [`Result`].
 pub fn bind_symbols_with<'a, L: Language>(
     cc: &'a CompileCtxt<'a>,
     globals: &'a Scope<'a>,
@@ -320,9 +337,9 @@ pub fn bind_symbols_with<'a, L: Language>(
             .collect::<Vec<_>>()
     };
     results.into_iter().collect::<Result<Vec<_>>>()?;
-    let parallel_ms = parallel_time_ms(parallel_start);
+    let parallel_ms = elapsed_ms(parallel_start);
     let bind_cpu_ms = bind_cpu_time_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
-    let total_ms = parallel_time_ms(total_start);
+    let total_ms = elapsed_ms(total_start);
 
     tracing::info!(
         parallel_ms,
@@ -331,8 +348,4 @@ pub fn bind_symbols_with<'a, L: Language>(
         "symbol binding complete"
     );
     Ok(())
-}
-
-fn parallel_time_ms(start: Instant) -> f64 {
-    start.elapsed().as_secs_f64() * 1000.0
 }

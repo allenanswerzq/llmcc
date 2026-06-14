@@ -3,33 +3,30 @@
 use std::collections::BTreeSet;
 use std::fmt::Write;
 
-use llmcc_collect::{ComponentDepth, ComponentTree, RenderEdge, RenderNode};
+use llmcc_collect::{CollectedEdge, CollectedEdgeKind, CollectedNode};
 
 use crate::dot::{escape_label, sanitize_id, shape_for_kind, write_indent};
+use crate::types::{ComponentDepth, ComponentTree};
 
-/// Build a ComponentTree from nodes based on crate/module/file hierarchy.
+/// Build a ComponentTree from nodes based on package/namespace/file hierarchy.
 ///
 /// This is used for File-level depth where we show individual nodes
-/// clustered by crate → module → file.
-pub fn build_component_tree(nodes: &[RenderNode], _depth: ComponentDepth) -> ComponentTree {
+/// clustered by package -> namespace -> file.
+pub fn build_component_tree(nodes: &[CollectedNode], _depth: ComponentDepth) -> ComponentTree {
     let mut tree = ComponentTree::default();
     for (idx, node) in nodes.iter().enumerate() {
         let mut path: Vec<(String, &'static str)> = Vec::new();
 
-        if let Some(ref crate_name) = node.crate_name {
-            path.push((crate_name.clone(), "crate"));
+        if let Some(package_name) = node.package() {
+            path.push((package_name.to_owned(), "package"));
         }
 
-        if let Some(ref module) = node.module_path {
-            path.push((module.clone(), "module"));
+        if let Some(namespace) = node.namespace() {
+            path.push((namespace.to_owned(), "namespace"));
         }
 
-        if let Some(ref file) = node.file_name {
-            let file_name = std::path::Path::new(file)
-                .file_name()
-                .and_then(|s| s.to_str())
-                .unwrap_or(file);
-            path.push((file_name.to_string(), "file"));
+        if let Some(file_name) = node.file_name() {
+            path.push((file_name, "file"));
         }
 
         tree.insert(&path, idx);
@@ -39,8 +36,8 @@ pub fn build_component_tree(nodes: &[RenderNode], _depth: ComponentDepth) -> Com
 
 /// Render the graph to DOT format with file-level detail.
 pub fn render_dot(
-    nodes: &[RenderNode],
-    edges: &BTreeSet<RenderEdge>,
+    nodes: &[CollectedNode],
+    edges: &BTreeSet<CollectedEdge>,
     tree: &ComponentTree,
 ) -> String {
     let estimated_size = nodes.len() * 150 + edges.len() * 80 + 200;
@@ -66,13 +63,14 @@ pub fn render_dot(
 
     // Render edges
     for edge in edges {
+        let labels = DotEdgeLabels::from_edge(edge);
         let _ = writeln!(
             output,
             "  n{} -> n{} [from=\"{}\", to=\"{}\"];",
             edge.from_id.as_u32(),
             edge.to_id.as_u32(),
-            edge.from_label,
-            edge.to_label,
+            labels.from,
+            labels.to,
         );
     }
 
@@ -80,11 +78,36 @@ pub fn render_dot(
     output
 }
 
+struct DotEdgeLabels {
+    from: &'static str,
+    to: &'static str,
+}
+
+impl DotEdgeLabels {
+    fn from_edge(edge: &CollectedEdge) -> Self {
+        let (from, to) = match edge.kind {
+            CollectedEdgeKind::Field => ("field_type", "container"),
+            CollectedEdgeKind::NestedField => ("type_dep", "container"),
+            CollectedEdgeKind::TypeArg => ("type_arg", "generic"),
+            CollectedEdgeKind::Call => ("caller", "callee"),
+            CollectedEdgeKind::Param => ("input", "func"),
+            CollectedEdgeKind::Return => ("func", "output"),
+            CollectedEdgeKind::Conformance => ("contract", "conforms"),
+            CollectedEdgeKind::Specialization => ("base", "specializes"),
+            CollectedEdgeKind::TypeDep => ("source", "type_dep"),
+            CollectedEdgeKind::ImplArg => ("type_arg", "implementation"),
+            CollectedEdgeKind::Annotation => ("annotation", "annotates"),
+        };
+
+        Self { from, to }
+    }
+}
+
 /// Recursively render the component tree as nested subgraph clusters.
 fn render_tree_recursive(
     output: &mut String,
     tree: &ComponentTree,
-    nodes: &[RenderNode],
+    nodes: &[CollectedNode],
     indent_level: usize,
 ) {
     // Render child subtrees
@@ -102,11 +125,11 @@ fn render_tree_recursive(
         output.push_str("style=rounded;\n");
         write_indent(output, indent_level + 1);
         match level_type.as_str() {
-            "crate" => {
+            "package" => {
                 write_indent(output, indent_level + 1);
                 output.push_str("bgcolor=\"#f8f8f8\";\n");
             }
-            "module" => {
+            "namespace" => {
                 write_indent(output, indent_level + 1);
                 output.push_str("bgcolor=\"#f5f5f5\";\n");
             }
@@ -129,9 +152,9 @@ fn render_tree_recursive(
         let node_a = &nodes[a];
         let node_b = &nodes[b];
         node_a
-            .location
-            .as_ref()
-            .cmp(&node_b.location.as_ref())
+            .path_text()
+            .cmp(&node_b.path_text())
+            .then_with(|| node_a.source_line.cmp(&node_b.source_line))
             .then_with(|| node_a.name.cmp(&node_b.name))
             .then_with(|| node_a.block_id.as_u32().cmp(&node_b.block_id.as_u32()))
     });
@@ -143,7 +166,7 @@ fn render_tree_recursive(
 }
 
 /// Render a single node.
-fn render_node(output: &mut String, node: &RenderNode, indent_level: usize) {
+fn render_node(output: &mut String, node: &CollectedNode, indent_level: usize) {
     write_indent(output, indent_level);
 
     let _ = write!(
@@ -153,13 +176,13 @@ fn render_node(output: &mut String, node: &RenderNode, indent_level: usize) {
         escape_label(&node.name)
     );
 
-    if let Some(location) = &node.location {
-        let _ = write!(output, ", path=\"{}\"", escape_label(location));
+    if let Some(location) = node.location() {
+        let _ = write!(output, ", path=\"{}\"", escape_label(&location));
     }
 
-    if let Some(sym_kind) = &node.sym_kind {
-        let _ = write!(output, ", sym_ty=\"{sym_kind:?}\"");
-        let shape = shape_for_kind(Some(*sym_kind));
+    if let Some(symbol_kind) = &node.symbol_kind {
+        let _ = write!(output, ", sym_ty=\"{symbol_kind:?}\"");
+        let shape = shape_for_kind(Some(*symbol_kind));
         // Always include shape for clarity
         let _ = write!(output, ", shape={shape}");
     }

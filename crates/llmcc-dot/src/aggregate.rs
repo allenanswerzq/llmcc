@@ -1,32 +1,34 @@
-//! Aggregated graph rendering for crate/module/project level views.
+//! Aggregated graph rendering for project/package/namespace level views.
 
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::fmt::Write;
 
-use llmcc_collect::{AggregatedNode, ComponentDepth, RenderEdge, RenderNode, RenderOptions};
+use llmcc_collect::{CollectedEdge, CollectedEdgeKind, CollectedNode};
 use llmcc_core::BlockId;
 use llmcc_core::graph::ProjectGraph;
 use llmcc_core::pagerank::{PageRanker, RankMetric};
 
 use crate::dot::sanitize_id;
+use crate::types::{AggregatedNode, ComponentDepth, RenderOptions};
 
 /// Get the component key for a node at a given depth level.
 ///
 /// Returns (component_id, component_label, component_type).
 #[allow(dead_code)]
 pub fn get_component_key(
-    node: &RenderNode,
+    node: &CollectedNode,
     depth: ComponentDepth,
 ) -> (String, String, &'static str) {
-    let (id, label, comp_type, _crate, _folder) = get_component_key_with_crate(node, depth, false);
+    let (id, label, comp_type, _package, _folder) =
+        get_component_key_with_package(node, depth, false);
     (id, label, comp_type)
 }
 
 /// Get the component key for a node with optional short labels.
 ///
-/// Returns (component_id, component_label, component_type, crate_name, folder).
-fn get_component_key_with_crate(
-    node: &RenderNode,
+/// Returns (component_id, component_label, component_type, package_name, folder).
+fn get_component_key_with_package(
+    node: &CollectedNode,
     depth: ComponentDepth,
     short_labels: bool,
 ) -> (String, String, &'static str, Option<String>, Option<String>) {
@@ -38,88 +40,67 @@ fn get_component_key_with_crate(
             None,
             None, // Project folder could be derived from any file's root
         ),
-        ComponentDepth::Crate => {
-            let crate_name = node
-                .crate_name
-                .clone()
-                .unwrap_or_else(|| "unknown".to_string());
-            let id = format!("crate_{}", sanitize_id(&crate_name));
-            // Use crate_root directly from the node (populated from package_registry)
-            let folder = node.crate_root.clone();
-            (id, crate_name.clone(), "crate", Some(crate_name), folder)
+        ComponentDepth::Package => {
+            let package_name = node.package().unwrap_or("unknown").to_owned();
+            let id = format!("package_{}", sanitize_id(&package_name));
+            let folder = node.package_root();
+            (
+                id,
+                package_name.clone(),
+                "package",
+                Some(package_name),
+                folder,
+            )
         }
-        ComponentDepth::Module => {
-            let crate_name = node
-                .crate_name
-                .clone()
-                .unwrap_or_else(|| "unknown".to_string());
-            let module_path = node.module_path.clone();
+        ComponentDepth::Namespace => {
+            let package_name = node.package().unwrap_or("unknown").to_owned();
+            let namespace_path = node.namespace();
 
-            // Derive folder from location: "path/to/file.rs:42" -> "path/to"
-            let derive_folder = |loc: &str| -> Option<String> {
-                std::path::Path::new(loc.split(':').next().unwrap_or(loc))
-                    .parent()
-                    .map(|p| p.to_string_lossy().to_string())
-            };
-
-            let (label, id, short, folder) = if let Some(ref module) = module_path {
-                let full_label = format!("{crate_name}::{module}");
-                let short_label = module.clone();
-                let id = format!("mod_{}_{}", sanitize_id(&crate_name), sanitize_id(module));
-                // Use module_root if available, otherwise derive from location
-                let folder = node
-                    .module_root
-                    .clone()
-                    .or_else(|| node.location.as_ref().and_then(|loc| derive_folder(loc)));
+            let (label, id, short, folder) = if let Some(namespace) = namespace_path {
+                let full_label = format!("{package_name}::{namespace}");
+                let short_label = namespace.to_owned();
+                let id = format!(
+                    "namespace_{}_{}",
+                    sanitize_id(&package_name),
+                    sanitize_id(namespace)
+                );
+                let folder = node.namespace_root().or_else(|| node.dir());
                 (full_label, id, short_label, folder)
             } else {
-                let file_name = node
-                    .file_name
-                    .clone()
-                    .map(|f| {
-                        std::path::Path::new(&f)
-                            .file_stem()
-                            .and_then(|s| s.to_str())
-                            .unwrap_or(&f)
-                            .to_string()
-                    })
-                    .unwrap_or_else(|| "unknown".to_string());
-                let full_label = format!("{crate_name}::{file_name}");
-                let short_label = file_name.clone();
+                let file_stem = node.file_stem().unwrap_or_else(|| "unknown".to_string());
+                let full_label = format!("{package_name}::{file_stem}");
+                let short_label = file_stem.clone();
                 let id = format!(
-                    "mod_{}_{}",
-                    sanitize_id(&crate_name),
-                    sanitize_id(&file_name)
+                    "namespace_{}_{}",
+                    sanitize_id(&package_name),
+                    sanitize_id(&file_stem)
                 );
-                // For file-based modules, derive folder from location
-                let folder = node.location.as_ref().and_then(|loc| {
-                    std::path::Path::new(loc.split(':').next().unwrap_or(loc))
-                        .parent()
-                        .map(|p| p.to_string_lossy().to_string())
-                });
+                let folder = node.dir();
                 (full_label, id, short_label, folder)
             };
             let display_label = if short_labels { short } else { label };
-            (id, display_label, "module", Some(crate_name), folder)
+            (id, display_label, "namespace", Some(package_name), folder)
         }
         ComponentDepth::File => {
             let name = node.name.clone();
             let id = format!("node_{}", node.block_id.as_u32());
-            let folder = node.location.as_ref().and_then(|loc| {
-                std::path::Path::new(loc.split(':').next().unwrap_or(loc))
-                    .parent()
-                    .map(|p| p.to_string_lossy().to_string())
-            });
-            (id, name, "node", node.crate_name.clone(), folder)
+            let folder = node.dir();
+            (
+                id,
+                name,
+                "node",
+                node.package().map(ToOwned::to_owned),
+                folder,
+            )
         }
     }
 }
 
-/// Render an aggregated graph where nodes represent components (crates/modules/projects)
+/// Render an aggregated graph where nodes represent project/package/namespace components
 /// and edges represent dependencies between those components.
 pub fn render_aggregated_graph(
-    nodes: &[RenderNode],
-    edges: &BTreeSet<RenderEdge>,
+    nodes: &[CollectedNode],
+    edges: &BTreeSet<CollectedEdge>,
     depth: ComponentDepth,
     project: &ProjectGraph,
     options: &RenderOptions,
@@ -150,14 +131,14 @@ pub fn render_aggregated_graph(
         depth,
         &filtered_nodes,
         &filtered_edges,
-        options.cluster_by_crate && depth == ComponentDepth::Module,
+        options.cluster_by_package && depth == ComponentDepth::Namespace,
     )
 }
 
 // Component Mapping
 
 fn build_component_mapping(
-    nodes: &[RenderNode],
+    nodes: &[CollectedNode],
     depth: ComponentDepth,
     short_labels: bool,
 ) -> (
@@ -168,8 +149,8 @@ fn build_component_mapping(
     let mut component_nodes = BTreeMap::new();
 
     for node in nodes {
-        let (id, label, component_type, crate_name, folder) =
-            get_component_key_with_crate(node, depth, short_labels);
+        let (id, label, component_type, package_name, folder) =
+            get_component_key_with_package(node, depth, short_labels);
         block_to_component.insert(node.block_id, id.clone());
 
         component_nodes
@@ -186,7 +167,7 @@ fn build_component_mapping(
                 label,
                 component_type,
                 node_count: 1,
-                crate_name,
+                package_name,
                 folder,
             });
     }
@@ -231,7 +212,7 @@ fn compute_pagerank_components(
 
 /// Aggregate edges between components with correct dependency direction.
 fn aggregate_edges(
-    edges: &BTreeSet<RenderEdge>,
+    edges: &BTreeSet<CollectedEdge>,
     block_to_component: &std::collections::HashMap<BlockId, String>,
 ) -> BTreeMap<(String, String), usize> {
     let mut component_edges = BTreeMap::new();
@@ -245,20 +226,10 @@ fn aggregate_edges(
                 continue;
             }
 
-            // The reason we filp back is for aggregated graphs, to have correct relation
-            // for moudule and crates, becase we failed at the llmcc-collect, to able to draw
-            // file depth graph, like input -> func -> output, its not input crates depen on
-            // fun crate
-            let (dep_from, dep_to) = match (edge.from_label, edge.to_label) {
-                ("field_type", _)
-                | ("input", _)
-                | ("trait", _)
-                | ("interface", _)
-                | ("bound", _)
-                | ("type_arg", _)
-                | ("type_dep", _) => (to.clone(), from.clone()),
-                // Default: keep raw direction
-                _ => (from.clone(), to.clone()),
+            let (dep_from, dep_to) = if reverses_for_aggregation(edge) {
+                (to.clone(), from.clone())
+            } else {
+                (from.clone(), to.clone())
             };
 
             *component_edges.entry((dep_from, dep_to)).or_insert(0) += 1;
@@ -266,6 +237,20 @@ fn aggregate_edges(
     }
 
     component_edges
+}
+
+fn reverses_for_aggregation(edge: &CollectedEdge) -> bool {
+    matches!(
+        edge.kind,
+        CollectedEdgeKind::Field
+            | CollectedEdgeKind::NestedField
+            | CollectedEdgeKind::TypeArg
+            | CollectedEdgeKind::Param
+            | CollectedEdgeKind::Conformance
+            | CollectedEdgeKind::Specialization
+            | CollectedEdgeKind::ImplArg
+            | CollectedEdgeKind::Annotation
+    )
 }
 
 /// Filter edges by weight threshold (75th percentile).
@@ -341,7 +326,7 @@ fn render_to_dot(
     depth: ComponentDepth,
     nodes: &[&AggregatedNode],
     edges: &[(String, String)],
-    cluster_by_crate: bool,
+    cluster_by_package: bool,
 ) -> String {
     let mut output = String::with_capacity(nodes.len() * 100 + edges.len() * 50);
 
@@ -361,8 +346,8 @@ fn render_to_dot(
     output.push_str("  labelloc=t;\n");
     output.push_str("  fontsize=16;\n\n");
 
-    // Cluster modules by crate if enabled
-    if cluster_by_crate && depth == ComponentDepth::Module {
+    // Cluster namespaces by package if enabled.
+    if cluster_by_package && depth == ComponentDepth::Namespace {
         render_clustered_nodes(&mut output, nodes);
     } else {
         // Render nodes without clustering
@@ -390,29 +375,29 @@ fn render_to_dot(
     output
 }
 
-/// Render nodes clustered by crate
+/// Render namespace nodes clustered by package.
 fn render_clustered_nodes(output: &mut String, nodes: &[&AggregatedNode]) {
     use std::collections::BTreeMap;
 
-    // Group nodes by crate
-    let mut crate_groups: BTreeMap<String, Vec<&AggregatedNode>> = BTreeMap::new();
+    // Group nodes by package.
+    let mut package_groups: BTreeMap<String, Vec<&AggregatedNode>> = BTreeMap::new();
     for node in nodes {
-        let crate_name = node
-            .crate_name
+        let package_name = node
+            .package_name
             .clone()
             .unwrap_or_else(|| "unknown".to_string());
-        crate_groups.entry(crate_name).or_default().push(node);
+        package_groups.entry(package_name).or_default().push(node);
     }
 
-    // Render each crate as a subgraph cluster
-    for (crate_name, crate_nodes) in &crate_groups {
-        let cluster_id = sanitize_id(crate_name);
+    // Render each package as a subgraph cluster.
+    for (package_name, package_nodes) in &package_groups {
+        let cluster_id = sanitize_id(package_name);
         let _ = writeln!(output, "  subgraph cluster_{cluster_id} {{");
-        let _ = writeln!(output, "    label=\"{crate_name}\";");
+        let _ = writeln!(output, "    label=\"{package_name}\";");
         output.push_str("    style=rounded;\n");
         output.push_str("    bgcolor=\"#f8f8f8\";\n\n");
 
-        for node in crate_nodes {
+        for node in package_nodes {
             if let Some(ref folder) = node.folder {
                 let _ = writeln!(
                     output,

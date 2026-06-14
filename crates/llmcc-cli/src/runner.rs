@@ -111,7 +111,7 @@ impl Runner {
         let render_options = RenderOptions {
             show_orphan_nodes: false,
             pagerank_top_k: self.options.pagerank_top_k,
-            cluster_by_crate: self.options.cluster_by_crate,
+            cluster_by_package: self.options.cluster_by_package,
             short_labels: self.options.short_labels,
         };
         let output = render_graph_with_options(

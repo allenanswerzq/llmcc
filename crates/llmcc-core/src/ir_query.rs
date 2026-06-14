@@ -148,7 +148,7 @@ impl<'hir, 'unit> HirQuery<'hir, 'unit> {
         self.node
             .as_file()
             .map(|file| file.file_path.clone())
-            .or_else(|| self.unit.file_path().map(ToOwned::to_owned))
+            .or_else(|| self.unit.file_path())
     }
 
     /// Position among siblings that share this node's parent field id.

@@ -11,9 +11,13 @@ use llmcc_core::{Language, Result};
 
 use rayon::prelude::*;
 
-use crate::ResolveOptions;
+use crate::{ResolveOptions, elapsed_ms, select_preferred_symbol};
 
-/// Core symbol collector for a single compilation unit
+/// Core symbol collector for a single compilation unit.
+///
+/// A collector stack always keeps the global scope available. Pop operations never
+/// remove it, which keeps per-language collectors from accidentally losing their
+/// merge target during traversal.
 pub struct CollectorScopes<'a> {
     cc: &'a CompileCtxt<'a>,
     unit_index: usize,
@@ -59,7 +63,7 @@ impl<'a> CollectorScopes<'a> {
         self.cc.arena()
     }
 
-    /// Get current scope stack depth
+    /// Get current scope stack depth. A live collector starts at depth 1 for globals.
     #[inline]
     pub fn scope_depth(&self) -> usize {
         self.scopes.depth()
@@ -99,16 +103,23 @@ impl<'a> CollectorScopes<'a> {
         self.push_scope(scope);
     }
 
-    /// Pop current scope from stack
+    /// Pop current scope from stack without removing the global scope.
     #[inline]
     pub fn pop_scope(&mut self) {
+        if self.scopes.depth() <= 1 {
+            tracing::error!(
+                unit_index = self.unit_index,
+                "attempted to pop collector global scope"
+            );
+            return;
+        }
         self.scopes.pop();
     }
 
-    /// Pop scopes until reaching target depth
+    /// Pop scopes until reaching target depth without removing globals.
     #[inline]
     pub fn pop_until(&mut self, depth: usize) {
-        self.scopes.pop_until(depth);
+        self.scopes.pop_until(depth.max(1));
     }
 
     /// Get shared string interner
@@ -136,7 +147,7 @@ impl<'a> CollectorScopes<'a> {
     }
 
     /// Initialize a symbol with common properties
-    fn init_symbol(&self, symbol: &'a Symbol, _name: &str, node: &HirNode<'a>, kind: SymKind) {
+    fn init_symbol(&self, symbol: &'a Symbol, node: &HirNode<'a>, kind: SymKind) {
         if symbol.kind() == SymKind::Unknown {
             symbol.set_owner(node.id());
             symbol.set_kind(kind);
@@ -158,7 +169,7 @@ impl<'a> CollectorScopes<'a> {
             self.scopes
                 .try_lookup_or_insert(name, node.id(), InsertOptions::current())?;
         let symbol = symbols.last().copied()?;
-        self.init_symbol(symbol, name, node, kind);
+        self.init_symbol(symbol, node, kind);
         Some(symbol)
     }
 
@@ -175,7 +186,7 @@ impl<'a> CollectorScopes<'a> {
         let options = InsertOptions::global().with_existing_kinds(SymKindSet::from_kind(kind));
         let symbols = self.scopes.try_lookup_or_insert(name, node.id(), options)?;
         let symbol = symbols.last().copied()?;
-        self.init_symbol(symbol, name, node, kind);
+        self.init_symbol(symbol, node, kind);
         symbol.set_is_global(true);
         Some(symbol)
     }
@@ -195,7 +206,7 @@ impl<'a> CollectorScopes<'a> {
         let sym_id = new_symbol.id().0;
         let allocated = self.arena().alloc_with_id(sym_id, new_symbol);
         self.globals.insert(allocated);
-        self.init_symbol(allocated, name, node, kind);
+        self.init_symbol(allocated, node, kind);
         allocated.set_is_global(true);
         Some(allocated)
     }
@@ -216,48 +227,29 @@ impl<'a> CollectorScopes<'a> {
         let sym_id = new_symbol.id().0;
         let allocated = self.arena().alloc_with_id(sym_id, new_symbol);
         scope.insert(allocated);
-        self.init_symbol(allocated, name, node, kind);
+        self.init_symbol(allocated, node, kind);
         Some(allocated)
     }
 
-    /// Lookup symbols by name with options
+    /// Lookup symbols by name with options.
     #[inline]
     pub fn lookup_symbols(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
         let options = SymbolFilter::kinds(kind_filters);
         self.scopes.try_lookup_symbols(name, options)
     }
 
+    /// Look up one symbol by name, preferring current-unit then current-crate matches.
     #[inline]
     pub fn lookup_symbol(&self, name: &str, kind_filters: SymKindSet) -> Option<&'a Symbol> {
         let symbols = self.lookup_symbols(name, kind_filters)?;
         if symbols.len() > 1 {
-            // 1. Prefer symbols from the current unit (same file)
-            if let Some(local_sym) = symbols
-                .iter()
-                .find(|s| s.unit_index() == Some(self.unit_index))
-            {
-                return Some(*local_sym);
-            }
-
-            // 2. Prefer symbols from the same crate (same package root)
-            let current_crate_root = self
-                .cc
-                .unit_meta(self.unit_index)
-                .and_then(|m| m.package_root.as_ref());
-            if let Some(current_root) = current_crate_root
-                && let Some(same_crate_sym) = symbols.iter().find(|s| {
-                    s.unit_index()
-                        .and_then(|idx| self.cc.unit_meta(idx))
-                        .and_then(|meta| meta.package_root.as_ref())
-                        .is_some_and(|r| r == current_root)
-                })
-            {
-                return Some(*same_crate_sym);
-            }
-
-            tracing::warn!(name, count = symbols.len(), "multiple symbols found");
+            tracing::warn!(
+                name,
+                count = symbols.len(),
+                "multiple symbols found, using preferred symbol"
+            );
         }
-        symbols.last().copied()
+        select_preferred_symbol(&symbols, self.unit_index(), self.crate_index())
     }
 }
 
@@ -297,7 +289,13 @@ pub fn collect_symbols_with<'a, L: Language>(
 
         if config.print_ir {
             use llmcc_core::printer::print_ir;
-            let _ = print_ir(unit);
+            if let Err(error) = print_ir(unit) {
+                tracing::warn!(
+                    ?error,
+                    unit_index = i,
+                    "failed to print IR during collection"
+                );
+            }
         }
 
         Ok(unit_globals)
@@ -313,7 +311,7 @@ pub fn collect_symbols_with<'a, L: Language>(
             .collect::<Vec<_>>()
     };
     let unit_globals_vec = unit_globals_vec.into_iter().collect::<Result<Vec<_>>>()?;
-    let parallel_time = parallel_start.elapsed();
+    let parallel_ms = elapsed_ms(parallel_start);
 
     let globals = scope_stack.globals();
 
@@ -323,13 +321,11 @@ pub fn collect_symbols_with<'a, L: Language>(
     }
     let merge_time = merge_start.elapsed();
 
-    let total_time = total_start.elapsed();
     let clone_ms = clone_time_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
     let visit_ms = visit_time_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
 
-    let total_ms = total_time.as_secs_f64() * 1000.0;
+    let total_ms = elapsed_ms(total_start);
     let init_ms = init_time.as_secs_f64() * 1000.0;
-    let parallel_ms = parallel_time.as_secs_f64() * 1000.0;
     let merge_ms = merge_time.as_secs_f64() * 1000.0;
 
     tracing::info!(
@@ -395,7 +391,13 @@ pub fn build_and_collect_symbols<'a, L: Language>(
 
         if resolver_config.print_ir {
             use llmcc_core::printer::print_ir;
-            let _ = print_ir(unit);
+            if let Err(error) = print_ir(unit) {
+                tracing::warn!(
+                    ?error,
+                    unit_index = i,
+                    "failed to print IR during collection"
+                );
+            }
         }
 
         Ok(unit_globals)
@@ -413,9 +415,9 @@ pub fn build_and_collect_symbols<'a, L: Language>(
             .map(build_and_collect_unit)
             .collect::<Vec<_>>()
     };
-    let parallel_time = parallel_start.elapsed();
+    let parallel_ms = elapsed_ms(parallel_start);
 
-    // Unwrap results
+    // Propagate any per-unit build or collection failure after the parallel pass.
     let unit_globals_vec: Vec<&'a Scope<'a>> =
         unit_globals_vec.into_iter().collect::<Result<Vec<_>>>()?;
 
@@ -428,13 +430,11 @@ pub fn build_and_collect_symbols<'a, L: Language>(
     }
     let merge_time = merge_start.elapsed();
 
-    let total_time = total_start.elapsed();
     let ir_ms = ir_build_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
     let collect_ms = collect_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
 
-    let total_ms = total_time.as_secs_f64() * 1000.0;
+    let total_ms = elapsed_ms(total_start);
     let init_ms = init_time.as_secs_f64() * 1000.0;
-    let parallel_ms = parallel_time.as_secs_f64() * 1000.0;
     let merge_ms = merge_time.as_secs_f64() * 1000.0;
 
     tracing::info!(

@@ -8,6 +8,7 @@ pub mod file;
 pub mod graph;
 mod graph_adapters;
 pub mod graph_builder;
+pub mod graph_query;
 mod graph_semantics;
 pub mod id;
 pub mod interner;
@@ -31,6 +32,7 @@ pub use block::{BasicBlock, BlockKind, BlockRelation};
 pub use context::{CompileCtxt, CompileUnit, FileOrder};
 pub use graph::{ProjectGraph, UnitGraph, UnitNode};
 pub use graph_builder::{GraphBuildOptions, build_graphs};
+pub use graph_query::{FieldArgs, FieldTypes, GraphQuery};
 pub use id::{
     BlockId, HirId, ScopeId, SymId, SymbolId, next_hir_id, reset_block_id_counter,
     reset_hir_id_counter, reset_scope_id_counter, reset_symbol_id_counter,

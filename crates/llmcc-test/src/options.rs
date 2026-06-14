@@ -5,8 +5,8 @@ use llmcc_dot::ComponentDepth;
 pub struct GraphOptions {
     /// Component grouping depth for graph visualization.
     /// - 0/flat: No grouping (flat graph, no clusters)
-    /// - 1/crate: Crate level only
-    /// - 2/module: Module level
+    /// - 1/package: Package level only
+    /// - 2/namespace: Namespace level
     /// - 3/file: File level (default)
     #[arg(long = "component-depth", default_value = "3")]
     component_depth_num: usize,
@@ -19,9 +19,9 @@ pub struct GraphOptions {
     #[arg(long = "arch-graph")]
     pub architecture_graph: bool,
 
-    /// Cluster modules by their parent crate.
-    #[arg(long = "cluster-by-crate")]
-    pub cluster_by_crate: bool,
+    /// Cluster namespaces by their parent package.
+    #[arg(long = "cluster-by-package")]
+    pub cluster_by_package: bool,
 
     /// Use shortened labels.
     #[arg(long = "short-labels")]
@@ -34,11 +34,11 @@ impl GraphOptions {
     }
 
     pub fn component_depth(&self) -> ComponentDepth {
-        ComponentDepth::from_number(self.component_depth_num)
+        ComponentDepth::from(self.component_depth_num)
     }
 
     pub fn with_component_depth(mut self, depth: ComponentDepth) -> Self {
-        self.component_depth_num = depth.as_number();
+        self.component_depth_num = usize::from(depth);
         self
     }
 

@@ -5,6 +5,7 @@ use std::collections::BTreeMap;
 
 use crate::block::{BasicBlock, BlockBase, BlockId, BlockRelation};
 use crate::context::{CompileCtxt, CompileUnit};
+use crate::graph_query::GraphQuery;
 use crate::graph_semantics::{
     CallSiteBlock, CallableBlock, ContractBlock, GraphLinkBlock, ImplementationBlock,
     MemberFieldBlock, NominalTypeBlock, StructuralContractBlock, TypeAliasBlock, TypeRefBlock,
@@ -60,6 +61,11 @@ impl<'tcx> ProjectGraph<'tcx> {
     /// Return the compilation context backing this project graph.
     pub fn context(&self) -> &'tcx CompileCtxt<'tcx> {
         self.cc
+    }
+
+    /// Build a read-only query helper for graph traversal and semantic lookups.
+    pub fn query(&self) -> GraphQuery<'_, 'tcx> {
+        GraphQuery::new(self)
     }
 
     /// Insert or replace one unit graph while preserving unit-index order.

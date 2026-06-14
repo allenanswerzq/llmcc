@@ -32,7 +32,7 @@ impl ArchitectureLevel {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct UnitMeta {
     pub project_name: Option<String>,
     pub project_root: Option<PathBuf>,

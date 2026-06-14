@@ -54,7 +54,7 @@ struct RenderArgs {
     #[arg(long)]
     graph: bool,
 
-    /// Component grouping depth for graph visualization (0=flat, 1=crate, 2=module, 3=file)
+    /// Component grouping depth for graph visualization (0=project, 1=package, 2=namespace, 3=file)
     #[arg(long = "depth", default_value_t = 3)]
     component_depth: usize,
 
@@ -62,9 +62,9 @@ struct RenderArgs {
     #[arg(long = "pagerank-top-k")]
     pagerank_top_k: Option<usize>,
 
-    /// Cluster modules by their parent crate (for module-level graphs)
-    #[arg(long = "cluster-by-crate")]
-    cluster_by_crate: bool,
+    /// Cluster namespaces by their parent package.
+    #[arg(long = "cluster-by-package")]
+    cluster_by_package: bool,
 
     /// Use shortened labels (module name only, without crate prefix)
     #[arg(long = "short-labels")]
@@ -109,9 +109,9 @@ impl Cli {
             print_ir: render.print_ir,
             print_block: render.print_block,
             graph: render.graph,
-            component_depth: ComponentDepth::from_number(render.component_depth),
+            component_depth: ComponentDepth::from(render.component_depth),
             pagerank_top_k: render.pagerank_top_k,
-            cluster_by_crate: render.cluster_by_crate,
+            cluster_by_package: render.cluster_by_package,
             short_labels: render.short_labels,
         };
 

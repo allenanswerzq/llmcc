@@ -238,7 +238,7 @@ impl<'unit> FileHirBuilder<'unit> {
 /// Build HIR for a single source file and return its root node id.
 pub fn build_file_hir<'unit, L: Language>(unit: CompileUnit<'unit>) -> Result<HirId> {
     let root = unit.parse_tree()?.root();
-    let path = unit.file_path().unwrap_or("<memory>").to_string();
+    let path = unit.file_path().unwrap_or_else(|| "<memory>".to_string());
     let bytes = unit.file().content();
 
     let builder = FileHirBuilder::new(unit.context().arena(), path, bytes);

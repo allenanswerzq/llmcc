@@ -462,7 +462,7 @@ struct PipelineSummary {
     block_relations: Option<Vec<BlockRelationSnapshot>>,
     dep_graph_dot: Option<String>,
     arch_graph_dot: Option<String>,
-    /// Depth-specific arch graphs (Project, Crate, Module, File levels)
+    /// Depth-specific arch graphs (Project, Package, Namespace, File levels)
     arch_graph_depth_0: Option<String>,
     arch_graph_depth_1: Option<String>,
     arch_graph_depth_2: Option<String>,
@@ -1469,12 +1469,12 @@ where
             None
         };
         let arch_graph_d1: Option<String> = if options.build_arch_graph_depth_1 {
-            Some(render_graph(&project, ComponentDepth::Crate))
+            Some(render_graph(&project, ComponentDepth::Package))
         } else {
             None
         };
         let arch_graph_d2: Option<String> = if options.build_arch_graph_depth_2 {
-            Some(render_graph(&project, ComponentDepth::Module))
+            Some(render_graph(&project, ComponentDepth::Namespace))
         } else {
             None
         };

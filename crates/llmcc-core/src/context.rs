@@ -10,7 +10,7 @@ use std::time::Instant;
 use tree_sitter::Node;
 
 use crate::block::{
-    ArenaInsertWithId as BlockArenaInsertWithId, BasicBlock, BlockArena, BlockId,
+    ArenaInsertWithId as BlockArenaInsertWithId, BasicBlock, BlockArena, BlockId, BlockRoot,
     reset_block_id_counter,
 };
 use crate::block_rel::{BlockIndexEntry, BlockIndexMaps, BlockRelationMap};
@@ -120,8 +120,16 @@ impl<'tcx> CompileUnit<'tcx> {
     }
 
     /// Return this unit's file path, if the unit is file-backed.
-    pub fn file_path(&self) -> Option<&str> {
-        self.cc.file_path(self.index)
+    pub fn try_file_path(&self) -> Option<String> {
+        self.cc
+            .file_path(self.index)
+            .or_else(|| self.file().path())
+            .map(ToOwned::to_owned)
+    }
+
+    /// Return this unit's file path, if the unit is file-backed.
+    pub fn file_path(&self) -> Option<String> {
+        self.try_file_path()
     }
 
     /// Return this unit's project/package/module/file metadata.
@@ -187,6 +195,11 @@ impl<'tcx> CompileUnit<'tcx> {
             .cc
             .find_blocks_by_kind_in_unit(crate::block::BlockKind::Root, self.index);
         root_blocks.first().and_then(|&id| self.try_block(id))
+    }
+
+    /// Return this unit's root block payload, if graph building has produced one.
+    pub fn try_root_block(self) -> Option<&'tcx BlockRoot<'tcx>> {
+        self.root_block().and_then(|block| block.as_root())
     }
 
     /// Return a HIR node's parent id, if the node exists and has a parent.
@@ -256,7 +269,7 @@ impl<'tcx> CompileUnit<'tcx> {
     }
 
     /// Return the graph-display type symbol for an already-bound symbol.
-    pub fn try_effective_type(self, symbol: Option<&'tcx Symbol>) -> Option<&'tcx Symbol> {
+    pub fn try_actual_type(self, symbol: Option<&'tcx Symbol>) -> Option<&'tcx Symbol> {
         let symbol = symbol?;
         if symbol.kind() == SymKind::EnumVariant {
             return None;
@@ -822,6 +835,15 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// Return all blocks with their metadata.
     pub fn blocks(&self) -> Vec<BlockIndexEntry> {
         self.block_indexes.blocks()
+    }
+
+    /// Visit all blocks with their metadata in parallel and collect present results.
+    pub fn par_blocks<T, F>(&self, f: F) -> Vec<T>
+    where
+        T: Send,
+        F: Fn(BlockIndexEntry) -> Option<T> + Sync + Send,
+    {
+        self.blocks().into_par_iter().filter_map(f).collect()
     }
 
     /// Return all registered symbols.

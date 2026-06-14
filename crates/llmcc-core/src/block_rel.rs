@@ -259,6 +259,7 @@ impl BlockRelationMap {
 pub struct BlockIndexEntry {
     pub block_id: BlockId,
     pub unit_index: usize,
+    /// Name captured from the indexed block when available.
     pub name: Option<String>,
     pub kind: BlockKind,
 }
@@ -278,8 +279,14 @@ impl BlockIndexEntry {
         }
     }
 
-    fn sort_key(&self) -> (usize, u32) {
+    pub fn sort_key(&self) -> (usize, u32) {
         (self.unit_index, self.block_id.as_u32())
+    }
+
+    pub fn name_or_id(&self) -> String {
+        self.name
+            .clone()
+            .unwrap_or_else(|| format!("{}:{}", self.kind, self.block_id.as_u32()))
     }
 }
 

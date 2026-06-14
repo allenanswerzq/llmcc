@@ -3,16 +3,17 @@
 mod aggregate;
 mod detail;
 mod dot;
+mod types;
 
 use std::collections::{BTreeSet, HashMap, HashSet};
 
-use llmcc_collect::{collect_edges, collect_nodes};
+use llmcc_collect::{CollectedEdge, CollectedGraph, CollectedNode};
 use llmcc_core::BlockId;
 use llmcc_core::graph::ProjectGraph;
 use llmcc_core::pagerank::PageRanker;
 
 pub use dot::DotBuilder;
-pub use llmcc_collect::{ComponentDepth, RenderEdge, RenderNode, RenderOptions};
+pub use types::{ComponentDepth, RenderOptions};
 
 /// Render the project graph to DOT format.
 pub fn render_graph(project: &ProjectGraph, depth: ComponentDepth) -> String {
@@ -28,7 +29,7 @@ pub fn render_graph_with_pagerank(
     let options = RenderOptions {
         show_orphan_nodes: false,
         pagerank_top_k,
-        cluster_by_crate: false,
+        cluster_by_package: false,
         short_labels: false,
     };
     render_graph_with_options(project, depth, &options)
@@ -40,13 +41,11 @@ pub fn render_graph_with_options(
     depth: ComponentDepth,
     options: &RenderOptions,
 ) -> String {
-    let nodes = collect_nodes(project);
-    if nodes.is_empty() {
+    let graph = CollectedGraph::new(project);
+    if graph.is_empty() {
         return "digraph G {\n}\n".to_string();
     }
-
-    let node_set: HashSet<BlockId> = nodes.iter().map(|n| n.block_id).collect();
-    let edges = collect_edges(project, &node_set);
+    let (nodes, edges) = graph.into_parts();
 
     if depth.is_aggregated() {
         return aggregate::render_aggregated_graph(&nodes, &edges, depth, project, options);
@@ -56,8 +55,8 @@ pub fn render_graph_with_options(
 }
 
 fn render_file_level(
-    nodes: &[RenderNode],
-    edges: BTreeSet<RenderEdge>,
+    nodes: &[CollectedNode],
+    edges: BTreeSet<CollectedEdge>,
     project: &ProjectGraph,
     options: &RenderOptions,
 ) -> String {
@@ -96,9 +95,9 @@ fn render_file_level(
             } else {
                 let mut module_by_block: HashMap<BlockId, String> = HashMap::new();
                 for node in &filtered_nodes {
-                    let crate_name = node.crate_name.as_deref().unwrap_or("unknown-crate");
-                    let module = node.module_path.as_deref().unwrap_or("<root>");
-                    module_by_block.insert(node.block_id, format!("{crate_name}::{module}"));
+                    let package_name = node.package().unwrap_or("unknown-package");
+                    let namespace = node.namespace().unwrap_or("<root>");
+                    module_by_block.insert(node.block_id, format!("{package_name}::{namespace}"));
                 }
 
                 let mut module_scores: HashMap<String, f64> = HashMap::new();
@@ -108,7 +107,7 @@ fn render_file_level(
                     let module_key = module_by_block
                         .get(&ranked.block_id())
                         .cloned()
-                        .unwrap_or_else(|| "unknown-crate::<root>".to_string());
+                        .unwrap_or_else(|| "unknown-package::<root>".to_string());
                     *module_scores.entry(module_key.clone()).or_insert(0.0) += ranked.score();
                     module_blocks
                         .entry(module_key)
@@ -155,7 +154,7 @@ fn render_file_level(
     }
 
     let filtered_node_ids: HashSet<BlockId> = filtered_nodes.iter().map(|n| n.block_id).collect();
-    let filtered_edges: BTreeSet<RenderEdge> = edges
+    let filtered_edges: BTreeSet<CollectedEdge> = edges
         .into_iter()
         .filter(|e| filtered_node_ids.contains(&e.from_id) && filtered_node_ids.contains(&e.to_id))
         .collect();
