@@ -87,13 +87,20 @@ impl<'tcx> CompileUnit<'tcx> {
     }
 
     /// Resolve an interned symbol into an owned string.
+    pub fn try_resolve_name(&self, symbol: InternedStr) -> Option<String> {
+        self.cc.interner().try_resolve(symbol)
+    }
+
+    /// Resolve an interned symbol into an owned string.
+    ///
+    /// Alias for [`try_resolve_name`](Self::try_resolve_name).
     pub fn resolve_interned_owned(&self, symbol: InternedStr) -> Option<String> {
-        self.cc.interner().resolve_owned(symbol)
+        self.try_resolve_name(symbol)
     }
 
     /// Resolve an interned symbol to an owned string, using `default` when missing.
     pub fn resolve_name_or(&self, symbol: InternedStr, default: &str) -> String {
-        self.resolve_interned_owned(symbol)
+        self.try_resolve_name(symbol)
             .unwrap_or_else(|| default.to_string())
     }
 

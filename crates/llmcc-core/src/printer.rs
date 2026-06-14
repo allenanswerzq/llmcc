@@ -1,113 +1,115 @@
-//! HIR and block graph printing utilities.
+//! Debug rendering for AST, HIR, and block trees.
+//!
+//! This module turns compiler structures into a small render tree first, then
+//! formats that tree. Keeping collection separate from formatting makes the
+//! output modes consistent and keeps config behavior in one place.
+
+use std::fmt::Write as _;
+use std::io::{self, Write as IoWrite};
+
+use strum_macros::{Display, EnumString};
+
 use crate::block::BasicBlock;
 use crate::context::CompileUnit;
 use crate::id::BlockId;
 use crate::ir::{HirId, HirNode};
-use std::fmt;
+use crate::lang_def::ParseNode;
+use crate::{Error, ErrorKind, Result};
 
-/// Output format for rendering
-///
-/// Controls how the tree structure is rendered to string output.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+const DEFAULT_SNIPPET_COLUMN: usize = 60;
+const DEFAULT_SNIPPET_MAX_LEN: usize = 60;
+const DEFAULT_MAX_DEPTH: usize = 1000;
+const DEFAULT_INDENT_WIDTH: usize = 2;
+const VERBOSE_SNIPPET_COLUMN: usize = 80;
+const VERBOSE_SNIPPET_MAX_LEN: usize = 100;
+
+/// Text format used when rendering debug trees.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Display, EnumString)]
+#[strum(serialize_all = "snake_case", ascii_case_insensitive)]
 pub enum PrintFormat {
-    /// Standard tree format with indentation and nested structure
-    /// ```text
-    /// (root
-    ///   (child1)
-    ///   (child2)
-    /// )
-    /// ```
+    /// Parenthesized tree with indentation.
     #[default]
     Tree,
-
-    /// Compact format with minimal whitespace
-    /// ```text
-    /// (root (child1) (child2))
-    /// ```
+    /// Parenthesized tree rendered onto one line.
     Compact,
-
-    /// One node per line, minimal formatting
-    /// ```text
-    /// root
-    /// child1
-    /// child2
-    /// ```
+    /// One node label per line in traversal order.
     Flat,
 }
 
-impl fmt::Display for PrintFormat {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            PrintFormat::Tree => write!(f, "tree"),
-            PrintFormat::Compact => write!(f, "compact"),
-            PrintFormat::Flat => write!(f, "flat"),
+/// Rendered AST and HIR debug output for one compile unit.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IrRender {
+    /// Rendered parse tree, or a diagnostic placeholder when no parse tree exists.
+    pub ast: String,
+    /// Rendered HIR tree.
+    pub hir: String,
+}
+
+impl IrRender {
+    /// Create rendered IR output from AST and HIR strings.
+    pub fn new(ast: impl Into<String>, hir: impl Into<String>) -> Self {
+        Self {
+            ast: ast.into(),
+            hir: hir.into(),
         }
+    }
+
+    /// Return borrowed rendered sections.
+    pub fn as_parts(&self) -> (&str, &str) {
+        (&self.ast, &self.hir)
+    }
+
+    /// Return owned rendered sections.
+    pub fn into_parts(self) -> (String, String) {
+        (self.ast, self.hir)
+    }
+
+    /// Write the rendered sections to `writer`.
+    pub fn write_to(&self, mut writer: impl IoWrite) -> Result<()> {
+        writeln!(writer, "AST:\n{}\n\nHIR:\n{}\n", self.ast, self.hir).map_err(write_failed)
     }
 }
 
-impl std::str::FromStr for PrintFormat {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "tree" => Ok(PrintFormat::Tree),
-            "compact" => Ok(PrintFormat::Compact),
-            "flat" => Ok(PrintFormat::Flat),
-            other => Err(format!(
-                "Unknown format: {other}. Use 'tree', 'compact', or 'flat'"
-            )),
-        }
-    }
-}
-
-/// Production-ready configuration for rendering and printing
+/// Options controlling debug rendering.
 ///
-/// This struct controls all aspects of output formatting. Use the builder
-/// methods to customize behavior, or use preset configurations via
-/// [`PrintConfig::minimal()`] and [`PrintConfig::verbose()`].
-#[derive(Debug, Clone)]
+/// Fields remain public for compatibility, but builder methods are preferred in
+/// new code because they keep call sites self-documenting. Call
+/// [`validate`](Self::validate) before rendering when constructing a config by
+/// literal struct update.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PrintConfig {
-    /// Output format (tree, compact, flat)
+    /// Output format.
     pub format: PrintFormat,
-
-    /// Include source code snippets in output
+    /// Include compact source snippets next to rendered nodes.
     pub include_snippets: bool,
-
-    /// Include line number information [start-end]
+    /// Include one-indexed source line ranges.
     pub include_line_info: bool,
-
-    /// Column width for snippet alignment (for tree format)
+    /// Minimum column used to align snippets in tree format.
     pub snippet_col_width: usize,
-
-    /// Maximum snippet length before truncation with "..."
+    /// Maximum snippet length before truncation.
     pub snippet_max_length: usize,
-
-    /// Maximum nesting depth (prevents stack overflow on deeply nested input)
+    /// Maximum recursion depth from the root node.
     pub max_depth: usize,
-
-    /// Indentation width in spaces per nesting level
+    /// Spaces per indentation level in tree format.
     pub indent_width: usize,
-
-    /// Include unique node IDs in output
+    /// Include node ids when the source structure exposes them.
     pub include_node_ids: bool,
-
-    /// Include field names (for tree-sitter nodes)
+    /// Include parser field names in AST labels.
     pub include_field_names: bool,
-
-    /// Truncate long lines to this width (0 = no truncation)
+    /// Maximum output line length; `0` means unlimited.
     pub line_width_limit: usize,
 }
 
 impl Default for PrintConfig {
     fn default() -> Self {
-        PrintConfig {
+        Self {
             format: PrintFormat::Tree,
             include_snippets: true,
             include_line_info: true,
-            snippet_col_width: 60,
-            snippet_max_length: 60,
-            max_depth: 1000,
-            indent_width: 2,
+            snippet_col_width: DEFAULT_SNIPPET_COLUMN,
+            snippet_max_length: DEFAULT_SNIPPET_MAX_LEN,
+            max_depth: DEFAULT_MAX_DEPTH,
+            indent_width: DEFAULT_INDENT_WIDTH,
             include_node_ids: false,
             include_field_names: false,
             line_width_limit: 0,
@@ -116,692 +118,634 @@ impl Default for PrintConfig {
 }
 
 impl PrintConfig {
-    /// Create a new configuration with default settings
+    /// Return the default render configuration.
     pub fn new() -> Self {
         Self::default()
     }
 
-    // Builder methods
-
-    /// Set output format
+    /// Use a specific output format.
     pub fn with_format(mut self, format: PrintFormat) -> Self {
         self.format = format;
         self
     }
 
-    /// Enable/disable snippets
+    /// Enable or disable source snippets.
     pub fn with_snippets(mut self, enabled: bool) -> Self {
         self.include_snippets = enabled;
         self
     }
 
-    /// Enable/disable line information
+    /// Enable or disable source line ranges.
     pub fn with_line_info(mut self, enabled: bool) -> Self {
         self.include_line_info = enabled;
         self
     }
 
-    /// Set snippet display width
+    /// Set the tree-format snippet alignment column.
     pub fn with_snippet_width(mut self, width: usize) -> Self {
         self.snippet_col_width = width;
         self
     }
 
-    /// Set maximum snippet length before truncation
+    /// Set the maximum displayed snippet length.
     pub fn with_snippet_max_length(mut self, length: usize) -> Self {
         self.snippet_max_length = length;
         self
     }
 
-    /// Set maximum nesting depth
+    /// Set the maximum recursion depth from the root node.
     pub fn with_max_depth(mut self, depth: usize) -> Self {
         self.max_depth = depth;
         self
     }
 
-    /// Set indentation width
+    /// Set the tree-format indentation width.
     pub fn with_indent_width(mut self, width: usize) -> Self {
         self.indent_width = width;
         self
     }
 
-    /// Enable/disable node IDs
+    /// Enable or disable node ids.
     pub fn with_node_ids(mut self, enabled: bool) -> Self {
         self.include_node_ids = enabled;
         self
     }
 
-    /// Enable/disable field names
+    /// Enable or disable parser field names in AST labels.
     pub fn with_field_names(mut self, enabled: bool) -> Self {
         self.include_field_names = enabled;
         self
     }
 
-    /// Set line width limit
+    /// Set the maximum rendered line length; `0` means unlimited.
     pub fn with_line_width_limit(mut self, width: usize) -> Self {
         self.line_width_limit = width;
         self
     }
 
-    // Preset configurations
-
-    /// Minimal configuration (fastest rendering)
-    ///
-    /// Disables snippets, line info, and node IDs for maximum speed
+    /// Small, fast output useful for smoke diagnostics.
     pub fn minimal() -> Self {
-        PrintConfig {
+        Self {
             format: PrintFormat::Flat,
             include_snippets: false,
             include_line_info: false,
             include_node_ids: false,
             include_field_names: false,
-            ..Default::default()
+            ..Self::default()
         }
     }
 
-    /// Verbose configuration (maximum detail)
-    ///
-    /// Enables all features for comprehensive output
+    /// Verbose output useful when inspecting parser or lowering issues.
     pub fn verbose() -> Self {
-        PrintConfig {
+        Self {
             format: PrintFormat::Tree,
             include_snippets: true,
             include_line_info: true,
             include_node_ids: true,
             include_field_names: true,
-            snippet_col_width: 80,
-            snippet_max_length: 100,
-            ..Default::default()
+            snippet_col_width: VERBOSE_SNIPPET_COLUMN,
+            snippet_max_length: VERBOSE_SNIPPET_MAX_LEN,
+            ..Self::default()
         }
     }
 
-    /// Compact configuration (balanced)
-    ///
-    /// Good for interactive debugging
+    /// Dense output that still keeps structural parentheses.
     pub fn compact() -> Self {
-        PrintConfig {
+        Self {
             format: PrintFormat::Compact,
             include_snippets: true,
             include_line_info: true,
             include_node_ids: false,
-            ..Default::default()
+            ..Self::default()
         }
     }
 
-    /// Validate configuration for logical consistency
-    pub fn validate(&self) -> Result<(), String> {
+    /// Validate configuration invariants before rendering.
+    pub fn validate(&self) -> Result<()> {
         if self.max_depth == 0 {
-            return Err("max_depth must be > 0".to_string());
+            return Err(invalid_config("max_depth must be greater than 0"));
         }
         if self.indent_width == 0 {
-            return Err("indent_width must be > 0".to_string());
+            return Err(invalid_config("indent_width must be greater than 0"));
         }
         if self.snippet_col_width == 0 {
-            return Err("snippet_col_width must be > 0".to_string());
+            return Err(invalid_config("snippet_col_width must be greater than 0"));
+        }
+        if self.snippet_max_length == 0 {
+            return Err(invalid_config("snippet_max_length must be greater than 0"));
         }
         Ok(())
     }
 }
 
-/// Error type for rendering operations
-#[derive(Debug, Clone)]
-pub struct RenderError {
-    pub message: String,
+fn invalid_config(reason: impl Into<String>) -> Error {
+    Error::new(ErrorKind::ConfigInvalid, reason)
+        .with_operation("printer.validate")
+        .with_context("component", "printer")
 }
 
-impl fmt::Display for RenderError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Render error: {}", self.message)
+fn max_depth_exceeded(depth: usize, max_depth: usize) -> Error {
+    Error::new(ErrorKind::InvalidArgument, "maximum render depth exceeded")
+        .with_operation("printer.build_tree")
+        .with_context("depth", depth.to_string())
+        .with_context("max_depth", max_depth.to_string())
+}
+
+fn missing_hir_root() -> Error {
+    Error::new(ErrorKind::InvariantViolation, "no HIR root node found")
+        .with_operation("printer.print_ir")
+}
+
+fn write_failed(error: io::Error) -> Error {
+    Error::new(ErrorKind::IoFailed, "failed to write printer output")
+        .with_operation("printer.write")
+        .with_context("component", "printer")
+        .set_source(error)
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct SourceSpan {
+    start_line: usize,
+    end_line: usize,
+}
+
+impl SourceSpan {
+    fn from_bytes(unit: CompileUnit<'_>, start_byte: usize, end_byte: usize) -> Self {
+        let start_line = line_for_byte(unit, start_byte);
+        let end_line = line_for_byte(unit, end_byte.saturating_sub(1));
+        Self {
+            start_line,
+            end_line: end_line.max(start_line),
+        }
     }
-}
 
-impl std::error::Error for RenderError {}
-
-impl From<String> for RenderError {
-    fn from(message: String) -> Self {
-        RenderError { message }
-    }
-}
-
-impl From<&str> for RenderError {
-    fn from(message: &str) -> Self {
-        RenderError {
-            message: message.to_string(),
+    fn label(self) -> String {
+        if self.start_line == self.end_line {
+            format!("[{}]", self.start_line)
+        } else {
+            format!("[{}-{}]", self.start_line, self.end_line)
         }
     }
 }
 
-impl RenderError {
-    /// Create a new render error
-    pub fn new(message: impl Into<String>) -> Self {
-        RenderError {
-            message: message.into(),
-        }
-    }
-
-    /// Error for exceeding maximum depth
-    pub fn max_depth_exceeded(depth: usize, max: usize) -> Self {
-        RenderError::new(format!("Maximum depth {depth} exceeded (limit: {max})"))
-    }
-
-    /// Error for invalid configuration
-    pub fn config_invalid(reason: impl Into<String>) -> Self {
-        RenderError::new(format!("Invalid configuration: {}", reason.into()))
-    }
-}
-
-pub type RenderResult<T> = Result<T, RenderError>;
-
-// Internal Render Node Structure
-
-/// Internal representation of a node for rendering
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct RenderNode {
     label: String,
-    line_info: Option<String>,
+    span: Option<SourceSpan>,
     snippet: Option<String>,
     children: Vec<RenderNode>,
     node_id: Option<String>,
 }
 
 impl RenderNode {
-    fn new(
-        label: String,
-        line_info: Option<String>,
-        snippet: Option<String>,
-        children: Vec<RenderNode>,
-        node_id: Option<String>,
-    ) -> Self {
+    fn new(label: impl Into<String>) -> Self {
         Self {
-            label,
-            line_info,
-            snippet,
-            children,
-            node_id,
+            label: label.into(),
+            span: None,
+            snippet: None,
+            children: Vec::new(),
+            node_id: None,
         }
+    }
+
+    fn with_span(mut self, span: SourceSpan) -> Self {
+        self.span = Some(span);
+        self
+    }
+
+    fn with_snippet(mut self, snippet: Option<String>) -> Self {
+        self.snippet = snippet;
+        self
+    }
+
+    fn with_children(mut self, children: Vec<RenderNode>) -> Self {
+        self.children = children;
+        self
+    }
+
+    fn with_id(mut self, node_id: impl Into<String>) -> Self {
+        self.node_id = Some(node_id.into());
+        self
     }
 }
 
-// Public API Functions
-
-/// Render HIR with default configuration
-pub fn render_llmcc_ir(root: HirId, unit: CompileUnit<'_>) -> RenderResult<(String, String)> {
-    render_llmcc_ir_with_config(root, unit, &PrintConfig::default())
+struct RenderTree {
+    root: RenderNode,
 }
 
-/// Render HIR with custom configuration
-pub fn render_llmcc_ir_with_config(
+impl RenderTree {
+    fn new(root: RenderNode) -> Self {
+        Self { root }
+    }
+
+    fn render(&self, config: &PrintConfig) -> String {
+        TreeWriter::new(config).render(&self.root)
+    }
+}
+
+struct TreeBuilder<'cfg> {
+    config: &'cfg PrintConfig,
+}
+
+impl<'cfg> TreeBuilder<'cfg> {
+    fn new(config: &'cfg PrintConfig) -> Self {
+        Self { config }
+    }
+
+    fn ast_tree(&self, unit: CompileUnit<'_>) -> Result<RenderTree> {
+        let Some(parse_tree) = unit.try_parse_tree() else {
+            return Ok(RenderTree::new(RenderNode::new(
+                "parse tree not available for this compilation unit",
+            )));
+        };
+
+        let root = parse_tree.root();
+        Ok(RenderTree::new(self.ast_node(&*root, None, 0, unit, 0)?))
+    }
+
+    fn ast_node(
+        &self,
+        node: &dyn ParseNode,
+        parent: Option<&dyn ParseNode>,
+        child_index: usize,
+        unit: CompileUnit<'_>,
+        depth: usize,
+    ) -> Result<RenderNode> {
+        self.check_depth(depth)?;
+
+        let field_name = self
+            .config
+            .include_field_names
+            .then(|| parent.and_then(|parent| parent.child_field_name(child_index)))
+            .flatten();
+
+        let mut children = Vec::with_capacity(node.child_count());
+        for index in 0..node.child_count() {
+            let Some(child) = node.child(index) else {
+                continue;
+            };
+            children.push(self.ast_node(&*child, Some(node), index, unit, depth + 1)?);
+        }
+
+        Ok(RenderNode::new(node.label(field_name))
+            .with_span(SourceSpan::from_bytes(
+                unit,
+                node.start_byte(),
+                node.end_byte(),
+            ))
+            .with_snippet(snippet_from_unit(
+                unit,
+                node.start_byte(),
+                node.end_byte(),
+                self.config,
+            ))
+            .with_children(children))
+    }
+
+    fn hir_tree(&self, root: HirId, unit: CompileUnit<'_>) -> Result<RenderTree> {
+        let root = unit.hir_node(root);
+        Ok(RenderTree::new(self.hir_node(&root, unit, 0)?))
+    }
+
+    fn hir_node(
+        &self,
+        node: &HirNode<'_>,
+        unit: CompileUnit<'_>,
+        depth: usize,
+    ) -> Result<RenderNode> {
+        self.check_depth(depth)?;
+
+        let mut children = Vec::with_capacity(node.child_count());
+        for child_id in node.child_ids() {
+            let child = unit.hir_node(*child_id);
+            children.push(self.hir_node(&child, unit, depth + 1)?);
+        }
+
+        let mut render = RenderNode::new(hir_label(node)).with_children(children);
+
+        if let Some(base) = node.try_base() {
+            render = render
+                .with_id(format!("hir:{}", base.id))
+                .with_span(SourceSpan::from_bytes(unit, base.start_byte, base.end_byte))
+                .with_snippet(snippet_from_unit(
+                    unit,
+                    base.start_byte,
+                    base.end_byte,
+                    self.config,
+                ));
+        }
+
+        Ok(render)
+    }
+
+    fn block_tree(&self, root: BlockId, unit: CompileUnit<'_>) -> Result<RenderTree> {
+        let block = unit.block(root);
+        Ok(RenderTree::new(self.block_node(&block, unit, 0)?))
+    }
+
+    fn block_node(
+        &self,
+        block: &BasicBlock<'_>,
+        unit: CompileUnit<'_>,
+        depth: usize,
+    ) -> Result<RenderNode> {
+        self.check_depth(depth)?;
+
+        let mut children = Vec::with_capacity(block.children().len());
+        for child_id in block.children() {
+            let child = unit.block(child_id);
+            children.push(self.block_node(&child, unit, depth + 1)?);
+        }
+
+        let node = block.node();
+        Ok(RenderNode::new(block.to_string())
+            .with_id(format!("block:{}", block.id()))
+            .with_span(SourceSpan::from_bytes(
+                unit,
+                node.start_byte(),
+                node.end_byte(),
+            ))
+            .with_snippet(snippet_from_unit(
+                unit,
+                node.start_byte(),
+                node.end_byte(),
+                self.config,
+            ))
+            .with_children(children))
+    }
+
+    fn check_depth(&self, depth: usize) -> Result<()> {
+        if depth > self.config.max_depth {
+            return Err(max_depth_exceeded(depth, self.config.max_depth));
+        }
+        Ok(())
+    }
+}
+
+struct TreeWriter<'cfg> {
+    config: &'cfg PrintConfig,
+}
+
+impl<'cfg> TreeWriter<'cfg> {
+    fn new(config: &'cfg PrintConfig) -> Self {
+        Self { config }
+    }
+
+    fn render(&self, root: &RenderNode) -> String {
+        match self.config.format {
+            PrintFormat::Tree => self.render_tree(root),
+            PrintFormat::Compact => self.render_compact(root),
+            PrintFormat::Flat => self.render_flat(root),
+        }
+    }
+
+    fn render_tree(&self, root: &RenderNode) -> String {
+        let mut lines = Vec::new();
+        self.push_tree_node(root, 0, &mut lines);
+        lines.join("\n")
+    }
+
+    fn push_tree_node(&self, node: &RenderNode, depth: usize, lines: &mut Vec<String>) {
+        let indent = " ".repeat(depth * self.config.indent_width);
+        let mut line = format!("{indent}({}", self.node_header(node));
+        self.push_snippet(&mut line, node, true);
+
+        if node.children.is_empty() {
+            line.push(')');
+            self.push_line(lines, line);
+            return;
+        }
+
+        self.push_line(lines, line);
+        for child in &node.children {
+            self.push_tree_node(child, depth + 1, lines);
+        }
+        self.push_line(lines, format!("{indent})"));
+    }
+
+    fn render_compact(&self, root: &RenderNode) -> String {
+        let mut line = String::new();
+        self.write_compact_node(root, &mut line);
+        limit_line(line, self.config.line_width_limit)
+    }
+
+    fn write_compact_node(&self, node: &RenderNode, output: &mut String) {
+        output.push('(');
+        output.push_str(&self.node_header(node));
+        self.push_snippet(output, node, false);
+        for child in &node.children {
+            output.push(' ');
+            self.write_compact_node(child, output);
+        }
+        output.push(')');
+    }
+
+    fn render_flat(&self, root: &RenderNode) -> String {
+        let mut lines = Vec::new();
+        self.push_flat_node(root, &mut lines);
+        lines.join("\n")
+    }
+
+    fn push_flat_node(&self, node: &RenderNode, lines: &mut Vec<String>) {
+        let mut line = self.node_header(node);
+        self.push_snippet(&mut line, node, false);
+        self.push_line(lines, line);
+
+        for child in &node.children {
+            self.push_flat_node(child, lines);
+        }
+    }
+
+    fn node_header(&self, node: &RenderNode) -> String {
+        let mut label = node.label.clone();
+
+        if self.config.include_node_ids
+            && let Some(node_id) = &node.node_id
+        {
+            let _ = write!(label, " #{node_id}");
+        }
+
+        if self.config.include_line_info
+            && let Some(span) = node.span
+        {
+            let _ = write!(label, " {}", span.label());
+        }
+
+        label
+    }
+
+    fn push_snippet(&self, line: &mut String, node: &RenderNode, align: bool) {
+        let Some(snippet) = &node.snippet else {
+            return;
+        };
+
+        if align && self.config.line_width_limit == 0 {
+            let padding = self.config.snippet_col_width.saturating_sub(line.len());
+            line.push_str(&" ".repeat(padding.max(1)));
+        } else {
+            line.push(' ');
+        }
+
+        let _ = write!(line, "|{snippet}|");
+    }
+
+    fn push_line(&self, lines: &mut Vec<String>, line: String) {
+        lines.push(limit_line(line, self.config.line_width_limit));
+    }
+}
+
+/// Render AST and HIR debug trees with default configuration.
+pub fn render_ir(root: HirId, unit: CompileUnit<'_>) -> Result<IrRender> {
+    render_ir_with(root, unit, &PrintConfig::default())
+}
+
+/// Render AST and HIR debug trees with custom configuration.
+pub fn render_ir_with(
     root: HirId,
     unit: CompileUnit<'_>,
     config: &PrintConfig,
-) -> RenderResult<(String, String)> {
+) -> Result<IrRender> {
     config.validate()?;
 
-    let hir_root = unit.hir_node(root);
+    let builder = TreeBuilder::new(config);
+    let ast = builder.ast_tree(unit)?.render(config);
+    let hir = builder.hir_tree(root, unit)?.render(config);
 
-    // Build AST render tree from parse tree if available
-    let ast_render = if let Some(parse_tree) = unit.try_parse_tree() {
-        let root_node = parse_tree.root();
-        build_ast_render(&*root_node, unit, config, 0)?
-    } else {
-        RenderNode::new(
-            "Parse tree not available for this compilation unit".to_string(),
-            None,
-            None,
-            vec![],
-            None,
-        )
-    };
-
-    let hir_render = build_hir_render(&hir_root, unit, config, 0)?;
-    let ast = render_lines(&ast_render, config)?;
-    let hir = render_lines(&hir_render, config)?;
-
-    Ok((ast, hir))
+    Ok(IrRender::new(ast, hir))
 }
 
-/// Print HIR to stdout
-pub fn print_llmcc_ir(unit: CompileUnit<'_>) -> RenderResult<()> {
-    print_llmcc_ir_with_config(unit, &PrintConfig::default())
+/// Write AST and HIR debug trees to `writer`.
+pub fn write_ir(unit: CompileUnit<'_>, writer: impl IoWrite) -> Result<()> {
+    write_ir_with(unit, &PrintConfig::default(), writer)
 }
 
-/// Print HIR to stdout with custom configuration
-pub fn print_llmcc_ir_with_config(unit: CompileUnit<'_>, config: &PrintConfig) -> RenderResult<()> {
-    let root = unit
-        .try_file_root_id()
-        .ok_or_else(|| RenderError::new("No HIR root node found"))?;
-
-    let (ast, _hir) = render_llmcc_ir_with_config(root, unit, config)?;
-    println!("{ast}\n");
-    Ok(())
+/// Write AST and HIR debug trees to `writer` with custom configuration.
+pub fn write_ir_with(
+    unit: CompileUnit<'_>,
+    config: &PrintConfig,
+    writer: impl IoWrite,
+) -> Result<()> {
+    let root = unit.try_file_root_id().ok_or_else(missing_hir_root)?;
+    render_ir_with(root, unit, config)?.write_to(writer)
 }
 
-/// Render control flow graph with custom configuration
-pub fn render_llmcc_graph_with_config(
+/// Print AST and HIR debug trees to stdout.
+pub fn print_ir(unit: CompileUnit<'_>) -> Result<()> {
+    print_ir_with(unit, &PrintConfig::default())
+}
+
+/// Print AST and HIR debug trees to stdout with custom configuration.
+pub fn print_ir_with(unit: CompileUnit<'_>, config: &PrintConfig) -> Result<()> {
+    let stdout = io::stdout();
+    write_ir_with(unit, config, stdout.lock())
+}
+
+/// Render a block tree with default configuration.
+pub fn render_block_tree(root: BlockId, unit: CompileUnit<'_>) -> Result<String> {
+    render_block_tree_with(root, unit, &PrintConfig::default())
+}
+
+/// Render a block tree with custom configuration.
+pub fn render_block_tree_with(
     root: BlockId,
     unit: CompileUnit<'_>,
     config: &PrintConfig,
-) -> RenderResult<String> {
+) -> Result<String> {
     config.validate()?;
 
-    let block = unit.block(root);
-    let render = build_block_render(&block, unit, config, 0)?;
-    render_lines(&render, config)
+    TreeBuilder::new(config)
+        .block_tree(root, unit)
+        .map(|tree| tree.render(config))
 }
 
-/// Print control flow graph to stdout
-pub fn print_llmcc_graph(root: BlockId, unit: CompileUnit<'_>) -> RenderResult<()> {
-    print_llmcc_graph_with_config(root, unit, &PrintConfig::default())
+/// Write a block tree to `writer`.
+pub fn write_block_tree(root: BlockId, unit: CompileUnit<'_>, writer: impl IoWrite) -> Result<()> {
+    write_block_tree_with(root, unit, &PrintConfig::default(), writer)
 }
 
-/// Print control flow graph to stdout with custom configuration
-pub fn print_llmcc_graph_with_config(
+/// Write a block tree to `writer` with custom configuration.
+pub fn write_block_tree_with(
     root: BlockId,
     unit: CompileUnit<'_>,
     config: &PrintConfig,
-) -> RenderResult<()> {
-    let graph = render_llmcc_graph_with_config(root, unit, config)?;
-    println!("{graph}\n");
-    Ok(())
+    mut writer: impl IoWrite,
+) -> Result<()> {
+    let graph = render_block_tree_with(root, unit, config)?;
+    writeln!(writer, "{graph}\n").map_err(write_failed)
 }
 
-// Internal Rendering Functions
+/// Print a block tree to stdout.
+pub fn print_block_tree(root: BlockId, unit: CompileUnit<'_>) -> Result<()> {
+    print_block_tree_with(root, unit, &PrintConfig::default())
+}
 
-/// Build render tree for AST node (from parse tree)
-fn build_ast_render(
-    node: &(dyn crate::lang_def::ParseNode + '_),
+/// Print a block tree to stdout with custom configuration.
+pub fn print_block_tree_with(
+    root: BlockId,
     unit: CompileUnit<'_>,
     config: &PrintConfig,
-    depth: usize,
-) -> RenderResult<RenderNode> {
-    build_ast_render_with(node, None, 0, unit, config, depth)
+) -> Result<()> {
+    let stdout = io::stdout();
+    write_block_tree_with(root, unit, config, stdout.lock())
 }
 
-/// Build render tree for AST node with parent context for field names
-fn build_ast_render_with(
-    node: &(dyn crate::lang_def::ParseNode + '_),
-    parent: Option<&(dyn crate::lang_def::ParseNode + '_)>,
-    child_index: usize,
+fn hir_label(node: &HirNode<'_>) -> String {
+    let mut label = node.kind().to_string();
+    if let HirNode::Ident(ident) = node {
+        let _ = write!(label, " = \"{}\"", ident.name);
+    }
+    label
+}
+
+fn snippet_from_unit(
     unit: CompileUnit<'_>,
-    config: &PrintConfig,
-    depth: usize,
-) -> RenderResult<RenderNode> {
-    // Check depth limit
-    if depth > config.max_depth {
-        return Err(RenderError::max_depth_exceeded(depth, config.max_depth));
-    }
-
-    // Get field name if available from parent
-    let field_name: Option<&str> = parent.and_then(|p| p.child_field_name(child_index));
-
-    // Use the trait method to format the label
-    let label = node.label(field_name);
-
-    // Line range info
-    let line_info = Some(format!("[{}-{}]", node.start_byte(), node.end_byte()));
-
-    // Extract snippet from source
-    let snippet = if config.include_snippets {
-        snippet_from_ctx(&unit, node.start_byte(), node.end_byte(), config)
-    } else {
-        None
-    };
-
-    // Collect children
-    let mut children = Vec::new();
-    for i in 0..node.child_count() {
-        if let Some(child) = node.child(i)
-            && let Ok(render) =
-                build_ast_render_with(&*child, Some(node), i, unit, config, depth + 1)
-        {
-            children.push(render);
-        }
-    }
-
-    Ok(RenderNode::new(label, line_info, snippet, children, None))
-}
-
-/// Build render tree for HIR node
-fn build_hir_render<'tcx>(
-    node: &HirNode<'tcx>,
-    unit: CompileUnit<'tcx>,
-    config: &PrintConfig,
-    depth: usize,
-) -> RenderResult<RenderNode> {
-    // Check depth limit
-    if depth > config.max_depth {
-        return Err(RenderError::max_depth_exceeded(depth, config.max_depth));
-    }
-
-    let mut label = node.label();
-
-    // Add identifier name info for Ident nodes
-    if let crate::ir::HirNode::Ident(ident) = node {
-        label.push_str(&format!(" = \"{}\"", ident.name));
-    }
-
-    let line_info = if config.include_line_info {
-        Some(format!(
-            "[{}-{}]",
-            get_line_from_byte(&unit, node.start_byte()),
-            get_line_from_byte(&unit, node.end_byte())
-        ))
-    } else {
-        None
-    };
-
-    let snippet = if config.include_snippets {
-        snippet_from_ctx(&unit, node.start_byte(), node.end_byte(), config)
-    } else {
-        None
-    };
-
-    let children = node
-        .child_ids()
-        .iter()
-        .map(|id| {
-            let child = unit.hir_node(*id);
-            build_hir_render(&child, unit, config, depth + 1)
-        })
-        .collect::<RenderResult<Vec<_>>>()?;
-
-    Ok(RenderNode::new(label, line_info, snippet, children, None))
-}
-
-/// Build render tree for control flow block
-fn build_block_render<'tcx>(
-    block: &BasicBlock<'tcx>,
-    unit: CompileUnit<'tcx>,
-    config: &PrintConfig,
-    depth: usize,
-) -> RenderResult<RenderNode> {
-    // Check depth limit
-    if depth > config.max_depth {
-        return Err(RenderError::max_depth_exceeded(depth, config.max_depth));
-    }
-
-    let label = block.to_string();
-
-    let line_info = if config.include_line_info {
-        let node = block.node();
-        Some(format!(
-            "[{}-{}]",
-            get_line_from_byte(&unit, node.start_byte()),
-            get_line_from_byte(&unit, node.end_byte())
-        ))
-    } else {
-        None
-    };
-
-    let snippet = if config.include_snippets {
-        let node = block.node();
-        snippet_from_ctx(&unit, node.start_byte(), node.end_byte(), config)
-    } else {
-        None
-    };
-
-    let children = block
-        .children()
-        .iter()
-        .map(|id| {
-            let child = unit.block(*id);
-            build_block_render(&child, unit, config, depth + 1)
-        })
-        .collect::<RenderResult<Vec<_>>>()?;
-
-    Ok(RenderNode::new(label, line_info, snippet, children, None))
-}
-
-/// Render node tree to string based on configuration
-fn render_lines(node: &RenderNode, config: &PrintConfig) -> RenderResult<String> {
-    let mut lines = Vec::new();
-    render_node_with_format(node, 0, &mut lines, config)?;
-    Ok(lines.join("\n"))
-}
-
-/// Render individual node with format-specific handling
-fn render_node_with_format(
-    node: &RenderNode,
-    depth: usize,
-    out: &mut Vec<String>,
-    config: &PrintConfig,
-) -> RenderResult<()> {
-    match config.format {
-        PrintFormat::Tree => render_node_tree(node, depth, out, config),
-        PrintFormat::Compact => render_node_compact(node, out, config),
-        PrintFormat::Flat => render_node_flat(node, out, config),
-    }
-}
-
-/// Render in tree format (indented with nesting)
-fn render_node_tree(
-    node: &RenderNode,
-    depth: usize,
-    out: &mut Vec<String>,
-    config: &PrintConfig,
-) -> RenderResult<()> {
-    let indent = " ".repeat(depth * config.indent_width);
-    let mut line = format!("{indent}(");
-
-    // Add label
-    line.push_str(&node.label);
-
-    // Add node ID if configured
-    if config.include_node_ids
-        && let Some(id) = &node.node_id
-    {
-        line.push_str(&format!(" #{id}"));
-    }
-
-    // Add line information
-    if let Some(line_info) = &node.line_info {
-        line.push_str(&format!(" {line_info}"));
-    }
-
-    // Handle children
-    if node.children.is_empty() {
-        line.push(')');
-        // Align snippet to column and add inline with pipes
-        if let Some(snippet) = &node.snippet {
-            // Pad to column width for alignment
-            let padding = config.snippet_col_width.saturating_sub(line.len());
-            if padding > 0 {
-                line.push_str(&" ".repeat(padding));
-            } else {
-                line.push(' ');
-            }
-            line.push_str(&format!("|{snippet}|"));
-        }
-        out.push(line);
-    } else {
-        // Align snippet to column and add inline with pipes (for nodes with children)
-        if let Some(snippet) = &node.snippet {
-            let padding = config.snippet_col_width.saturating_sub(line.len());
-            if padding > 0 {
-                line.push_str(&" ".repeat(padding));
-            } else {
-                line.push(' ');
-            }
-            line.push_str(&format!("|{snippet}|"));
-        }
-        out.push(line);
-        for child in &node.children {
-            render_node_tree(child, depth + 1, out, config)?;
-        }
-        out.push(format!("{indent})"));
-    }
-
-    Ok(())
-}
-
-/// Render in compact format
-fn render_node_compact(
-    node: &RenderNode,
-    out: &mut Vec<String>,
-    config: &PrintConfig,
-) -> RenderResult<()> {
-    let mut line = format!("({})", node.label);
-
-    if config.include_line_info
-        && let Some(info) = &node.line_info
-    {
-        line.push_str(&format!(" {info}"));
-    }
-
-    for child in &node.children {
-        let mut child_line = format!("({})", child.label);
-        if let Some(ref info) = child.line_info
-            && config.include_line_info
-        {
-            child_line.push_str(&format!(" {info}"));
-        }
-        line.push_str(&format!(" {child_line}"));
-    }
-
-    out.push(line);
-    Ok(())
-}
-
-/// Render in flat format (one node per line)
-fn render_node_flat(
-    node: &RenderNode,
-    out: &mut Vec<String>,
-    config: &PrintConfig,
-) -> RenderResult<()> {
-    let mut line = node.label.clone();
-
-    if config.include_line_info
-        && let Some(info) = &node.line_info
-    {
-        line.push_str(&format!(" {info}"));
-    }
-
-    out.push(line);
-
-    for child in &node.children {
-        render_node_flat(child, out, config)?;
-    }
-
-    Ok(())
-}
-
-// Utility Functions
-
-/// Extract and format source code snippet
-fn snippet_from_ctx(
-    unit: &CompileUnit<'_>,
-    start: usize,
-    end: usize,
+    start_byte: usize,
+    end_byte: usize,
     config: &PrintConfig,
 ) -> Option<String> {
+    if !config.include_snippets {
+        return None;
+    }
+
     unit.file()
-        .opt_get_text(start, end)
-        .map(|text| text.split_whitespace().collect::<Vec<_>>().join(" "))
-        .filter(|s| !s.is_empty() && s.len() <= config.snippet_max_length)
+        .try_get_text(start_byte, end_byte)
+        .map(collapse_whitespace)
+        .filter(|snippet| !snippet.is_empty())
+        .map(|snippet| truncate_text(&snippet, config.snippet_max_length))
 }
 
-/// Get line number from byte position
-fn get_line_from_byte(unit: &CompileUnit<'_>, byte_pos: usize) -> usize {
+fn collapse_whitespace(text: impl AsRef<str>) -> String {
+    text.as_ref()
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn line_for_byte(unit: CompileUnit<'_>, byte_pos: usize) -> usize {
     let content = unit.file().content();
-    let text = String::from_utf8_lossy(&content[..byte_pos.min(content.len())]);
-    text.lines().count()
+    let end = byte_pos.min(content.len());
+    content[..end].iter().filter(|byte| **byte == b'\n').count() + 1
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_print_format_display() {
-        assert_eq!(PrintFormat::Tree.to_string(), "tree");
-        assert_eq!(PrintFormat::Compact.to_string(), "compact");
-        assert_eq!(PrintFormat::Flat.to_string(), "flat");
+fn limit_line(line: String, limit: usize) -> String {
+    if limit == 0 {
+        return line;
     }
 
-    #[test]
-    fn test_print_format_from_str() {
-        assert_eq!("tree".parse::<PrintFormat>().unwrap(), PrintFormat::Tree);
-        assert_eq!(
-            "compact".parse::<PrintFormat>().unwrap(),
-            PrintFormat::Compact
-        );
-        assert_eq!("flat".parse::<PrintFormat>().unwrap(), PrintFormat::Flat);
-        assert!("invalid".parse::<PrintFormat>().is_err());
+    truncate_text(&line, limit)
+}
+
+fn truncate_text(text: &str, max_chars: usize) -> String {
+    let char_count = text.chars().count();
+    if char_count <= max_chars {
+        return text.to_string();
     }
 
-    #[test]
-    fn test_print_config_default() {
-        let config = PrintConfig::default();
-        assert_eq!(config.format, PrintFormat::Tree);
-        assert!(config.include_snippets);
-        assert!(config.include_line_info);
-        assert_eq!(config.max_depth, 1000);
+    if max_chars <= 3 {
+        return text.chars().take(max_chars).collect();
     }
 
-    #[test]
-    fn test_print_config_minimal() {
-        let config = PrintConfig::minimal();
-        assert_eq!(config.format, PrintFormat::Flat);
-        assert!(!config.include_snippets);
-        assert!(!config.include_line_info);
-        assert!(!config.include_node_ids);
-    }
-
-    #[test]
-    fn test_print_config_verbose() {
-        let config = PrintConfig::verbose();
-        assert_eq!(config.format, PrintFormat::Tree);
-        assert!(config.include_snippets);
-        assert!(config.include_line_info);
-        assert!(config.include_node_ids);
-    }
-
-    #[test]
-    fn test_print_config_builder() {
-        let config = PrintConfig::new()
-            .with_format(PrintFormat::Flat)
-            .with_snippets(false)
-            .with_max_depth(10)
-            .with_indent_width(4);
-
-        assert_eq!(config.format, PrintFormat::Flat);
-        assert!(!config.include_snippets);
-        assert_eq!(config.max_depth, 10);
-        assert_eq!(config.indent_width, 4);
-    }
-
-    #[test]
-    fn test_print_config_validation() {
-        let bad_config = PrintConfig {
-            max_depth: 0,
-            ..Default::default()
-        };
-        assert!(bad_config.validate().is_err());
-
-        let bad_config = PrintConfig {
-            indent_width: 0,
-            ..Default::default()
-        };
-        assert!(bad_config.validate().is_err());
-
-        let good_config = PrintConfig::default();
-        assert!(good_config.validate().is_ok());
-    }
-
-    #[test]
-    fn test_render_error_creation() {
-        let err = RenderError::new("test error");
-        assert_eq!(err.message, "test error");
-
-        let err = RenderError::max_depth_exceeded(100, 50);
-        assert!(err.message.contains("100"));
-        assert!(err.message.contains("50"));
-    }
-
-    #[test]
-    fn test_render_node_creation() {
-        let node = RenderNode::new("test".to_string(), None, None, vec![], None);
-        assert_eq!(node.label, "test");
-        assert_eq!(node.children.len(), 0);
-    }
+    let mut truncated: String = text.chars().take(max_chars - 3).collect();
+    truncated.push_str("...");
+    truncated
 }

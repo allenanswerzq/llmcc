@@ -296,8 +296,8 @@ pub fn collect_symbols_with<'a, L: Language>(
         visit_time_ns.fetch_add(visit_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
 
         if config.print_ir {
-            use llmcc_core::printer::print_llmcc_ir;
-            let _ = print_llmcc_ir(unit);
+            use llmcc_core::printer::print_ir;
+            let _ = print_ir(unit);
         }
 
         Ok(unit_globals)
@@ -394,8 +394,8 @@ pub fn build_and_collect_symbols<'a, L: Language>(
         collect_ns.fetch_add(collect_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
 
         if resolver_config.print_ir {
-            use llmcc_core::printer::print_llmcc_ir;
-            let _ = print_llmcc_ir(unit);
+            use llmcc_core::printer::print_ir;
+            let _ = print_ir(unit);
         }
 
         Ok(unit_globals)

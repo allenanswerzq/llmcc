@@ -646,13 +646,13 @@ impl<'blk> BlockRoot<'blk> {
         if let Some(scope) = scope {
             if meta.package_name.is_none()
                 && let Some(crate_sym) = scope.try_parent_symbol(SymKind::Crate)
-                && let Some(name) = interner.resolve_owned(crate_sym.name)
+                && let Some(name) = interner.try_resolve(crate_sym.name)
             {
                 self.set_crate_name(name);
             }
             if meta.module_name.is_none()
                 && let Some(module_sym) = scope.try_parent_symbol(SymKind::Module)
-                && let Some(name) = interner.resolve_owned(module_sym.name)
+                && let Some(name) = interner.try_resolve(module_sym.name)
             {
                 self.set_module_path(name);
             }

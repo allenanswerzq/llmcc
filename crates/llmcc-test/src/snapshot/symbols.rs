@@ -26,7 +26,7 @@ impl Snapshot for SymbolsSnapshot {
         let mut entries = Vec::with_capacity(symbols.len());
         for symbol in symbols {
             let name_str = interner
-                .resolve_owned(symbol.name)
+                .try_resolve(symbol.name)
                 .unwrap_or_else(|| "?".to_string());
 
             entries.push(SymbolEntry {

@@ -1819,14 +1819,14 @@ fn snapshot_symbols<'a>(cc: &'a CompileCtxt<'a>) -> Vec<SymbolSnapshot> {
     let mut rows = Vec::with_capacity(symbols.len());
     for symbol in symbols {
         let name_str = interner
-            .resolve_owned(symbol.name)
+            .try_resolve(symbol.name)
             .unwrap_or_else(|| "?".to_string());
 
         // Get type_of info
         let type_of = symbol.type_of().and_then(|sym_id| {
             cc.try_symbol(sym_id).map(|type_sym| {
                 let type_name = interner
-                    .resolve_owned(type_sym.name)
+                    .try_resolve(type_sym.name)
                     .unwrap_or_else(|| "?".to_string());
                 let type_unit = type_sym.unit_index().unwrap_or_default();
                 format!("u{}:{} ({})", type_unit, sym_id.0 as u32, type_name)
@@ -2002,7 +2002,7 @@ fn describe_block<'a>(
         .or_else(|| {
             // Try to get name from associated symbol
             cc.find_symbol_by_block_id(block_id)
-                .and_then(|sym| cc.interner().resolve_owned(sym.name))
+                .and_then(|sym| cc.interner().try_resolve(sym.name))
         })
         .unwrap_or_else(|| format!("block#{block_id}"));
 

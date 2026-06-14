@@ -381,7 +381,7 @@ impl Symbol {
     pub fn format(&self, interner: Option<&crate::interner::InternPool>) -> String {
         let kind = format!("{:?}", self.kind());
         if let Some(interner) = interner {
-            if let Some(name) = interner.resolve_owned(self.name) {
+            if let Some(name) = interner.try_resolve(self.name) {
                 format!("[{}:{}] {}", self.id.0, kind, name)
             } else {
                 format!("[{}:{}]?", self.id.0, kind)

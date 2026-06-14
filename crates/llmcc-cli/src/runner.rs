@@ -8,7 +8,7 @@ use tracing::info;
 use llmcc_core::context::{BuildMetrics, FileOrder};
 use llmcc_core::graph::ProjectGraph;
 use llmcc_core::lang_def::Language as CoreLanguage;
-use llmcc_core::{CompileCtxt, Error, ResolveOptions, Result, print_llmcc_graph};
+use llmcc_core::{CompileCtxt, Error, ResolveOptions, Result, print_block_tree};
 use llmcc_core::{GraphBuildOptions, build_graphs};
 use llmcc_cpp::LangCpp;
 use llmcc_dot::{RenderOptions, render_graph_with_options};
@@ -99,7 +99,7 @@ impl Runner {
         if self.options.print_block {
             for unit_graph in project_graph.units() {
                 let unit = cc.compile_unit(unit_graph.unit_index());
-                let _ = print_llmcc_graph(unit_graph.root(), unit);
+                let _ = print_block_tree(unit_graph.root(), unit);
             }
         }
 

@@ -20,7 +20,6 @@ pub mod lang_registry;
 pub mod meta;
 pub mod pagerank;
 pub mod printer;
-pub mod query;
 pub mod resolve;
 pub mod scope;
 pub mod symbol;
@@ -42,6 +41,10 @@ pub use lang_def::{HirBuildAction, Language, LanguageDefinition, NO_FIELD_ID, Pa
 pub use lang_registry::{LanguageHandler, LanguageHandlerImpl, LanguageRegistry};
 pub use meta::{ArchitectureLevel, UnitMeta, UnitMetaIndex};
 pub use paste;
-pub use printer::{PrintConfig, PrintFormat, print_llmcc_graph, print_llmcc_ir, render_llmcc_ir};
+pub use printer::{
+    IrRender, PrintConfig, PrintFormat, print_block_tree, print_block_tree_with, print_ir,
+    print_ir_with, render_block_tree, render_block_tree_with, render_ir, render_ir_with,
+    write_block_tree, write_block_tree_with, write_ir, write_ir_with,
+};
 pub use resolve::ResolveOptions;
 pub use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};

@@ -1,4 +1,8 @@
-//! String interning for symbol names.
+//! Thread-safe string interning for compiler symbols.
+//!
+//! The pool stores each distinct string once and returns compact symbols for
+//! names used throughout HIR, scopes, and symbol tables. Cloning an
+//! [`InternPool`] shares the same backing table.
 
 use parking_lot::RwLock;
 use std::sync::Arc;
@@ -7,73 +11,75 @@ use string_interner::StringInterner;
 use string_interner::backend::DefaultBackend;
 use string_interner::symbol::DefaultSymbol;
 
-/// Interned string symbol backed by a `StringInterner`.
+/// Opaque symbol for an interned string.
+///
+/// A symbol is meaningful only with the [`InternPool`] that produced it. The
+/// compiler normally uses one shared pool per [`CompileCtxt`](crate::context::CompileCtxt).
 pub type InternedStr = DefaultSymbol;
 
-/// Inner implementation of the string interner.
+type RawInterner = StringInterner<DefaultBackend>;
+
 #[derive(Debug)]
-pub struct InternPoolInner {
-    interner: RwLock<StringInterner<DefaultBackend>>,
+struct InternPoolInner {
+    interner: RwLock<RawInterner>,
 }
 
 impl InternPoolInner {
-    /// Create a new interner.
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             interner: RwLock::new(StringInterner::new()),
         }
     }
 
-    /// Intern the provided string slice and return its symbol.
     #[inline]
-    pub fn intern<S>(&self, value: S) -> InternedStr
+    fn intern<S>(&self, value: S) -> InternedStr
     where
         S: AsRef<str>,
     {
-        {
-            let s = value.as_ref();
-            // Fast path: check if already interned with read lock
-            if let Some(symbol) = self.interner.read().get(s) {
-                return symbol;
-            }
-            // Slow path: take write lock and intern
-            self.interner.write().get_or_intern(s)
+        let value = value.as_ref();
+
+        if let Some(symbol) = self.try_get(value) {
+            return symbol;
         }
+
+        self.interner.write().get_or_intern(value)
     }
 
-    /// Intern multiple strings and return a vector of their symbols.
-    pub fn intern_batch<S>(&self, values: impl IntoIterator<Item = S>) -> Vec<InternedStr>
+    fn intern_many<S>(&self, values: impl IntoIterator<Item = S>) -> Vec<InternedStr>
     where
         S: AsRef<str>,
     {
-        values.into_iter().map(|v| self.intern(v)).collect()
+        values.into_iter().map(|value| self.intern(value)).collect()
     }
 
-    /// Resolve an interned symbol back into an owned string.
-    ///
-    /// Clones the underlying string from the interner to avoid lifetime issues.
-    pub fn resolve_owned(&self, symbol: InternedStr) -> Option<String> {
-        self.interner.read().resolve(symbol).map(|s| s.to_owned())
+    fn try_get<S>(&self, value: S) -> Option<InternedStr>
+    where
+        S: AsRef<str>,
+    {
+        self.interner.read().get(value.as_ref())
     }
 
-    /// Resolve an interned symbol and apply a closure while the borrow is active.
-    pub fn with_resolved<R, F>(&self, symbol: InternedStr, f: F) -> Option<R>
+    fn try_resolve(&self, symbol: InternedStr) -> Option<String> {
+        self.with_str(symbol, |value| value.to_owned())
+    }
+
+    fn with_str<R, F>(&self, symbol: InternedStr, f: F) -> Option<R>
     where
         F: FnOnce(&str) -> R,
     {
         self.interner.read().resolve(symbol).map(f)
     }
-}
 
-impl Default for InternPoolInner {
-    fn default() -> Self {
-        Self::new()
+    fn len(&self) -> usize {
+        self.interner.read().len()
     }
 }
 
-/// Shared string interner used across the llmcc core.
+/// Shared, thread-safe string interner.
 ///
-/// Thread-safe wrapper around `InternPoolInner` using `Arc` for shared ownership.
+/// `InternPool` is cheap to clone; clones share the same table. Use
+/// [`intern`](Self::intern) to create or fetch a symbol, and
+/// [`try_resolve`](Self::try_resolve) to clone the string for display or output.
 #[derive(Clone, Debug)]
 pub struct InternPool {
     inner: Arc<InternPoolInner>,
@@ -93,7 +99,7 @@ impl InternPool {
         }
     }
 
-    /// Intern the provided string slice and return its symbol.
+    /// Return the symbol for `value`, inserting it when needed.
     pub fn intern<S>(&self, value: S) -> InternedStr
     where
         S: AsRef<str>,
@@ -101,35 +107,74 @@ impl InternPool {
         self.inner.intern(value)
     }
 
-    /// Intern multiple strings and return a vector of their symbols.
+    /// Intern each string from `values` and return symbols in input order.
+    pub fn intern_many<S>(&self, values: impl IntoIterator<Item = S>) -> Vec<InternedStr>
+    where
+        S: AsRef<str>,
+    {
+        self.inner.intern_many(values)
+    }
+
+    /// Intern each string from `values` and return symbols in input order.
+    ///
+    /// Alias for [`intern_many`](Self::intern_many).
     pub fn intern_batch<S>(&self, values: impl IntoIterator<Item = S>) -> Vec<InternedStr>
     where
         S: AsRef<str>,
     {
-        self.inner.intern_batch(values)
+        self.intern_many(values)
     }
 
-    /// Resolve an interned symbol back into an owned string.
+    /// Return the existing symbol for `value` without inserting it.
+    pub fn try_get<S>(&self, value: S) -> Option<InternedStr>
+    where
+        S: AsRef<str>,
+    {
+        self.inner.try_get(value)
+    }
+
+    /// Resolve `symbol` into an owned string.
+    pub fn try_resolve(&self, symbol: InternedStr) -> Option<String> {
+        self.inner.try_resolve(symbol)
+    }
+
+    /// Resolve `symbol` into an owned string.
     ///
-    /// Clones the underlying string from the interner to avoid lifetime issues.
+    /// Kept for callers that prefer the explicit ownership in the name. New
+    /// code should usually use [`try_resolve`](Self::try_resolve).
     pub fn resolve_owned(&self, symbol: InternedStr) -> Option<String> {
-        self.inner.resolve_owned(symbol)
+        self.try_resolve(symbol)
     }
 
-    /// Resolve an interned symbol and apply a closure while the borrow is active.
+    /// Borrow the interned string for `symbol` and apply `f` while it is live.
+    ///
+    /// The closure runs while the pool's read lock is held. Keep it small and
+    /// do not call methods that may intern new strings on the same pool from it.
+    pub fn with_str<R, F>(&self, symbol: InternedStr, f: F) -> Option<R>
+    where
+        F: FnOnce(&str) -> R,
+    {
+        self.inner.with_str(symbol, f)
+    }
+
+    /// Borrow the interned string for `symbol` and apply `f` while it is live.
+    ///
+    /// Alias for [`with_str`](Self::with_str).
     pub fn with_resolved<R, F>(&self, symbol: InternedStr, f: F) -> Option<R>
     where
         F: FnOnce(&str) -> R,
     {
-        self.inner.with_resolved(symbol, f)
+        self.with_str(symbol, f)
     }
 
-    /// Get the number of interned strings (for diagnostics).
+    /// Return the current number of unique interned strings.
+    ///
+    /// In concurrent use this is only a moment-in-time diagnostic snapshot.
     pub fn len(&self) -> usize {
-        self.inner.interner.read().len()
+        self.inner.len()
     }
 
-    /// Check if the pool is empty.
+    /// Return `true` when no strings have been interned.
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -152,47 +197,71 @@ mod tests {
     }
 
     #[test]
-    fn resolve_owned_recovers_string() {
+    fn try_get_only_reports_existing_symbols() {
+        let pool = InternPool::default();
+
+        assert_eq!(pool.try_get("missing"), None);
+
+        let symbol = pool.intern("present");
+        assert_eq!(pool.try_get("present"), Some(symbol));
+    }
+
+    #[test]
+    fn try_resolve_recovers_string() {
         let pool = InternPool::default();
         let sym = pool.intern("bar");
         let resolved = pool
-            .resolve_owned(sym)
+            .try_resolve(sym)
             .expect("symbol should resolve to a string");
         assert_eq!(resolved, "bar");
     }
 
     #[test]
-    fn with_resolved_provides_borrowed_str() {
+    fn resolve_owned_remains_supported() {
+        let pool = InternPool::default();
+        let sym = pool.intern("owned");
+        assert_eq!(pool.resolve_owned(sym).as_deref(), Some("owned"));
+    }
+
+    #[test]
+    fn with_str_provides_borrowed_str() {
         let pool = InternPool::default();
         let sym = pool.intern("baz");
         let length = pool
-            .with_resolved(sym, |s| s.len())
+            .with_str(sym, |s| s.len())
             .expect("symbol should resolve to a closure result");
         assert_eq!(length, 3);
     }
 
     #[test]
-    fn intern_batch_interns_multiple_strings() {
+    fn with_resolved_remains_supported() {
+        let pool = InternPool::default();
+        let sym = pool.intern("borrowed");
+        assert_eq!(pool.with_resolved(sym, str::len), Some(8));
+    }
+
+    #[test]
+    fn intern_many_interns_multiple_strings() {
         let pool = InternPool::default();
         let strings = vec!["apple", "banana", "cherry"];
-        let symbols = pool.intern_batch(strings.clone());
+        let symbols = pool.intern_many(strings.clone());
 
         assert_eq!(symbols.len(), 3);
 
-        // Verify each symbol resolves correctly
         for (i, sym) in symbols.iter().enumerate() {
-            let resolved = pool.resolve_owned(*sym).expect("symbol should resolve");
+            let resolved = pool.try_resolve(*sym).expect("symbol should resolve");
             assert_eq!(resolved, strings[i]);
         }
     }
 
     #[test]
-    fn intern_batch_with_duplicates() {
+    fn intern_many_with_duplicates() {
         let pool = InternPool::default();
         let strings = vec!["x", "y", "x", "z", "y"];
-        let symbols = pool.intern_batch(strings);
+        let symbols = pool.intern_many(strings);
 
-        // Duplicates should map to the same symbol
+        assert_eq!(pool.intern_batch(["x"]), vec![symbols[0]]);
+
         assert_eq!(
             symbols[0], symbols[2],
             "First and third 'x' should be the same symbol"
@@ -209,7 +278,6 @@ mod tests {
 
     #[test]
     fn send_sync_bounds_work() {
-        // This test ensures InternPool is Send + Sync
         fn assert_send_sync<T: Send + Sync>() {}
         assert_send_sync::<InternPool>();
     }
@@ -226,7 +294,6 @@ mod tests {
         pool.intern("second");
         assert_eq!(pool.len(), 2);
 
-        // Interning the same string shouldn't increase count
         pool.intern("first");
         assert_eq!(pool.len(), 2);
     }
@@ -239,7 +306,6 @@ mod tests {
         let sym1 = pool1.intern("shared");
         let sym2 = pool2.intern("shared");
 
-        // Both should refer to the same interned string
         assert_eq!(sym1, sym2);
         assert_eq!(pool1.len(), 1);
         assert_eq!(pool2.len(), 1);
@@ -249,19 +315,16 @@ mod tests {
     fn parallel_interning_many_strings() {
         let pool = InternPool::default();
 
-        // Intern 1000 strings in parallel
         let symbols: Vec<_> = (0..1000)
             .into_par_iter()
-            .map(|i| pool.intern(format!("string_{i}").as_str()))
+            .map(|i| pool.intern(format!("string_{i}")))
             .collect();
 
-        // Verify all were interned
         assert_eq!(symbols.len(), 1000);
         assert_eq!(pool.len(), 1000);
 
-        // Verify each resolves correctly
         for (i, sym) in symbols.iter().enumerate() {
-            let resolved = pool.resolve_owned(*sym).expect("should resolve");
+            let resolved = pool.try_resolve(*sym).expect("should resolve");
             assert_eq!(resolved, format!("string_{i}"));
         }
     }
@@ -270,7 +333,6 @@ mod tests {
     fn parallel_interning_with_duplicates() {
         let pool = InternPool::default();
 
-        // Intern strings with many duplicates in parallel
         let base_strings = ["alpha", "beta", "gamma", "delta", "epsilon"];
         let symbols: Vec<_> = (0..500)
             .into_par_iter()
@@ -280,19 +342,17 @@ mod tests {
             })
             .collect();
 
-        // Should only have 5 unique strings
         assert_eq!(pool.len(), 5);
         assert_eq!(symbols.len(), 500);
 
-        // Verify all symbols resolve correctly
         for sym in symbols.iter() {
-            let resolved = pool.resolve_owned(*sym);
+            let resolved = pool.try_resolve(*sym);
             assert!(resolved.is_some());
         }
     }
 
     #[test]
-    fn parallel_batch_interning() {
+    fn parallel_many_interning() {
         let pool = InternPool::default();
 
         let batches: Vec<Vec<&str>> = (0..10)
@@ -303,13 +363,11 @@ mod tests {
             })
             .collect();
 
-        // Intern batches in parallel
         let all_symbols: Vec<_> = batches
             .into_par_iter()
-            .flat_map(|batch| pool.intern_batch(batch))
+            .flat_map(|batch| pool.intern_many(batch))
             .collect();
 
-        // Should have 1000 symbols total but only 2 unique strings
         assert_eq!(all_symbols.len(), 1000);
         assert_eq!(pool.len(), 2);
     }
@@ -318,19 +376,16 @@ mod tests {
     fn parallel_mixed_operations() {
         let pool = InternPool::default();
 
-        // Perform mixed operations in parallel
         (0..100).into_par_iter().for_each(|i| {
             let s = format!("item_{}", i % 10);
             let sym = pool.intern(s.as_str());
-            let resolved = pool.resolve_owned(sym);
+            let resolved = pool.try_resolve(sym);
             assert!(resolved.is_some());
 
-            // Use with_resolved as well
-            let len = pool.with_resolved(sym, |s| s.len());
+            let len = pool.with_str(sym, str::len);
             assert!(len.is_some());
         });
 
-        // Should have exactly 10 unique strings
         assert_eq!(pool.len(), 10);
     }
 
@@ -338,12 +393,10 @@ mod tests {
     fn parallel_interning_high_contention() {
         let pool = InternPool::default();
 
-        // Very high contention: all threads intern the same string repeatedly
         (0..1000).into_par_iter().for_each(|_| {
             let _ = pool.intern("hotspot");
         });
 
-        // Should still only have 1 string
         assert_eq!(pool.len(), 1);
     }
 
@@ -351,28 +404,14 @@ mod tests {
     fn parallel_clone_and_intern() {
         let pool_original = InternPool::default();
 
-        // Create multiple clones and intern in parallel
         (0..100).into_par_iter().for_each(|i| {
             let pool = pool_original.clone();
             let s = format!("cloned_{}", i % 5);
             let sym = pool.intern(s.as_str());
-            let resolved = pool.resolve_owned(sym);
+            let resolved = pool.try_resolve(sym);
             assert!(resolved.is_some());
         });
 
-        // All clones share the same inner pool
         assert_eq!(pool_original.len(), 5);
-    }
-
-    #[test]
-    fn intern_pool_inner_direct_usage() {
-        let inner = InternPoolInner::new();
-
-        let sym1 = inner.intern("direct");
-        let sym2 = inner.intern("direct");
-        assert_eq!(sym1, sym2);
-
-        let resolved = inner.resolve_owned(sym1).expect("should resolve");
-        assert_eq!(resolved, "direct");
     }
 }
