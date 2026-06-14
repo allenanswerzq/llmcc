@@ -67,7 +67,17 @@ fn render_file_level(
 
     if let Some(top_k) = options.pagerank_top_k {
         let ranker = PageRanker::new(project);
-        let all_ranked = ranker.rank();
+        let Ok(all_ranked) = ranker.rank() else {
+            return render_file_level(
+                nodes,
+                edges,
+                project,
+                &RenderOptions {
+                    pagerank_top_k: None,
+                    ..options.clone()
+                },
+            );
+        };
         let node_ids: HashSet<BlockId> = filtered_nodes.iter().map(|n| n.block_id).collect();
 
         let ranked_in_graph: Vec<_> = all_ranked
@@ -107,8 +117,7 @@ fn render_file_level(
                 }
 
                 let mut sorted_modules: Vec<_> = module_scores.into_iter().collect();
-                sorted_modules
-                    .sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+                sorted_modules.sort_by(|a, b| b.1.total_cmp(&a.1));
 
                 let per_module = (top_k / 120).clamp(1, 5);
                 let module_budget = ((top_k as f64) * 0.4).round() as usize;

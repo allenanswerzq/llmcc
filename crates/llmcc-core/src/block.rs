@@ -3,6 +3,7 @@
 use parking_lot::RwLock;
 use std::collections::HashSet;
 use std::fmt;
+use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
 use crate::context::CompileUnit;
@@ -66,6 +67,31 @@ pub enum BlockKind {
 }
 
 impl BlockKind {
+    /// Return the default PageRank teleport prior for this block kind.
+    pub const fn pagerank_prior(self) -> f64 {
+        match self {
+            BlockKind::Root => 0.2,
+            BlockKind::Module => 0.6,
+            BlockKind::Class | BlockKind::Trait | BlockKind::Interface => 1.0,
+            BlockKind::Func | BlockKind::Method => 1.0,
+            BlockKind::Impl | BlockKind::Enum => 0.8,
+            BlockKind::Alias => 0.6,
+            BlockKind::Const => 0.4,
+            BlockKind::Field => 0.3,
+            BlockKind::Parameter | BlockKind::Return => 0.2,
+            BlockKind::Call | BlockKind::Scope => 0.1,
+            BlockKind::Undefined => 0.05,
+            BlockKind::Closure => 1.0,
+        }
+    }
+
+    /// Return all default PageRank teleport priors.
+    pub fn pagerank_priors() -> Vec<(BlockKind, f64)> {
+        Self::iter()
+            .map(|kind| (kind, kind.pagerank_prior()))
+            .collect()
+    }
+
     /// Return true when this kind has a concrete [`BasicBlock`] representation.
     pub fn is_materialized(self) -> bool {
         matches!(
