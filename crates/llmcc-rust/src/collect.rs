@@ -22,6 +22,23 @@ fn is_method_context(parent: Option<&Symbol>) -> bool {
     })
 }
 
+fn insert_global_once<'tcx>(ctxt: &CollectCtxt<'tcx>, symbol: &'tcx Symbol) {
+    let mut exists = false;
+    ctxt.globals().for_each_symbol(|existing| {
+        if existing.id() == symbol.id() {
+            exists = true;
+        }
+    });
+    if !exists {
+        ctxt.globals().insert(symbol);
+    }
+}
+
+fn publish_global<'tcx>(ctxt: &CollectCtxt<'tcx>, symbol: &'tcx Symbol) {
+    symbol.set_is_global(true);
+    insert_global_once(ctxt, symbol);
+}
+
 /// Callback type for scope entry actions
 type ScopeEntryCallback<'tcx> = Box<dyn FnOnce(&HirNode<'tcx>, &mut CollectCtxt<'tcx>) + 'tcx>;
 
@@ -204,6 +221,12 @@ impl<'tcx> CollectorVisitor<'tcx> {
         if let Some((sn, ident)) = node.query(unit).try_scope_and_ident_with_field(field_id)
             && let Some(sym) = self.lookup_or_convert(unit, ctxt, ident.name, node, kind)
         {
+            if node
+                .child_by_kind(unit, LangRust::visibility_modifier)
+                .is_some()
+            {
+                publish_global(ctxt, sym);
+            }
             self.visit_with_scope(unit, node, ctxt, sym, sn, ident, on_scope_enter);
         }
     }
@@ -371,15 +394,18 @@ impl<'tcx> AstVisitorRust<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'tcx> {
             None,
         );
 
-        // For free functions, also add a reference in unit_globals for cross-crate resolution
-        // This happens after visit_scoped_named so the symbol already exists with its scope
+        // For free functions, also add a reference in unit_globals for cross-crate resolution.
         if !is_method
             && let Some((_, ident)) = node
                 .query(unit)
                 .try_scope_and_ident_with_field(LangRust::field_name)
             && let Some(sym) = ctxt.lookup_symbol(ident.name, SymKindSet::from_kind(kind))
         {
-            ctxt.globals().insert(sym);
+            if ident.name == "main" {
+                publish_global(ctxt, sym);
+            } else {
+                insert_global_once(ctxt, sym);
+            }
         }
     }
 
@@ -442,7 +468,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'tcx> {
             && let Some(sym) =
                 ctxt.lookup_symbol(ident.name, SymKindSet::from_kind(SymKind::Struct))
         {
-            ctxt.globals().insert(sym);
+            insert_global_once(ctxt, sym);
         }
     }
 
@@ -473,7 +499,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'tcx> {
             .try_scope_and_ident_with_field(LangRust::field_name)
             && let Some(sym) = ctxt.lookup_symbol(ident.name, SymKindSet::from_kind(SymKind::Enum))
         {
-            ctxt.globals().insert(sym);
+            insert_global_once(ctxt, sym);
         }
     }
 
@@ -507,7 +533,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'tcx> {
             .try_scope_and_ident_with_field(LangRust::field_name)
             && let Some(sym) = ctxt.lookup_symbol(ident.name, SymKindSet::from_kind(SymKind::Trait))
         {
-            ctxt.globals().insert(sym);
+            insert_global_once(ctxt, sym);
         }
     }
 

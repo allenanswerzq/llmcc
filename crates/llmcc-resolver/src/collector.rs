@@ -102,7 +102,7 @@ impl<'a> CollectCtxt<'a> {
         scope
     }
 
-    /// Declare and push a package scope.
+    /// Declare and push a package/crate scope.
     pub fn push_package_scope(
         &mut self,
         node: &HirNode<'a>,
@@ -127,20 +127,24 @@ impl<'a> CollectCtxt<'a> {
         Some(scope)
     }
 
-    /// Link a top-level file scope as a package module alias.
+    /// Link a top-level file scope as a crate module alias.
     pub fn alias_file_module(
         &self,
         node: &HirNode<'a>,
         module_name: &str,
         file_scope: &'a Scope<'a>,
-        package_scope: Option<&'a Scope<'a>>,
+        crate_scope: Option<&'a Scope<'a>>,
     ) {
+        if module_name == "lib" || module_name == "main" {
+            return;
+        }
+
         if let Some(symbol) = self.declare_fresh_global(module_name, node, SymKind::Module) {
             symbol.set_owned_scope(file_scope.id());
         }
 
-        if let Some(package_scope) = package_scope
-            && let Some(symbol) = self.declare_in(package_scope, module_name, node, SymKind::Module)
+        if let Some(crate_scope) = crate_scope
+            && let Some(symbol) = self.declare_in(crate_scope, module_name, node, SymKind::Module)
         {
             symbol.set_owned_scope(file_scope.id());
         }

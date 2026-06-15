@@ -48,14 +48,6 @@ impl<'tcx> BinderVisitor<'tcx> {
     ) {
         let depth = scopes.depth();
 
-        // Any visibility modifier (pub, pub(crate), pub(super), etc.) makes the symbol global
-        if let Some(_vis_modifier) = node.child_by_kind(unit, LangRust::visibility_modifier)
-            && let Some(sym) = sn.try_symbol()
-        {
-            sym.set_is_global(true);
-            scopes.globals().insert(sym);
-        }
-
         let child_parent = sn.try_symbol().or(parent);
 
         // Push scope (always succeeds for Rust since collector sets all scopes)
@@ -270,11 +262,6 @@ impl<'tcx> AstVisitorRust<'tcx, BindCtxt<'tcx>> for BinderVisitor<'tcx> {
         // Extract nested types from generic return types (e.g., Result<User, Error>)
         if let Some(return_type_node) = node.child_by_field(unit, LangRust::field_return_type) {
             extract_nested_types(unit, scopes, &return_type_node, fn_sym);
-        }
-
-        if unit.resolve_name(fn_sym.name) == "main" {
-            fn_sym.set_is_global(true);
-            scopes.globals().insert(fn_sym);
         }
     }
 

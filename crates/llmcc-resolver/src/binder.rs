@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::collections::HashSet;
 use std::time::Instant;
 
 use llmcc_core::context::CompileUnit;
@@ -23,8 +23,10 @@ pub struct BindCtxt<'a> {
 }
 
 impl<'a> BindCtxt<'a> {
+    /// Create a binding context rooted at the shared global scope.
     pub fn new(unit: CompileUnit<'a>, globals: &'a Scope<'a>) -> Self {
-        let scopes = ScopeStack::new(unit.context().arena(), unit.context().interner());
+        let cc = unit.context();
+        let scopes = ScopeStack::new(cc.arena(), cc.interner());
         scopes.push(globals);
 
         Self {
@@ -55,7 +57,7 @@ impl<'a> BindCtxt<'a> {
         self.scopes.depth()
     }
 
-    /// Push a scope by id.
+    /// Push a scope by id, following merge redirects.
     pub fn push_scope(&mut self, id: ScopeId) -> bool {
         let Some(scope) = self.try_scope(id) else {
             return false;
@@ -64,24 +66,24 @@ impl<'a> BindCtxt<'a> {
         true
     }
 
-    fn push_scope_recursive(&mut self, id: ScopeId) -> bool {
-        let Some(scope) = self.try_scope(id) else {
-            return false;
-        };
-        self.scopes.push_recursive(scope);
-        true
-    }
-
     /// Push a HIR scope node's semantic scope.
+    ///
+    /// Symbol-owned scopes also expose their semantic parents. Anonymous lexical
+    /// scopes do not, so blocks cannot accidentally inherit type/module parents.
     pub fn push_node_scope(&mut self, sn: &'a HirScope<'a>) -> bool {
         let Some(scope) = sn.try_scope() else {
             return false;
         };
-        if sn.try_ident().is_some() {
-            self.push_scope_recursive(scope.id())
+        let Some(scope) = self.try_scope(scope.id()) else {
+            return false;
+        };
+
+        if scope.try_symbol().is_some() {
+            self.scopes.push_recursive(scope);
         } else {
-            self.push_scope(scope.id())
+            self.scopes.push(scope);
         }
+        true
     }
 
     /// Pop the current scope, keeping globals.
@@ -123,6 +125,39 @@ impl<'a> BindCtxt<'a> {
 
     fn choose(&self, symbols: &[&'a Symbol]) -> Option<&'a Symbol> {
         try_resolve_ambiguous(symbols, self.unit.index(), self.unit.package_index())
+    }
+
+    fn new_scope_stack(&self) -> ScopeStack<'a> {
+        ScopeStack::new(self.unit.context().arena(), self.unit.context().interner())
+    }
+
+    fn resolve_type_alias(&self, symbol: &'a Symbol) -> &'a Symbol {
+        let mut current = symbol;
+        let mut visited = HashSet::new();
+
+        while current.kind() == SymKind::TypeAlias {
+            if !visited.insert(current.id()) {
+                tracing::warn!(
+                    symbol_id = current.id().0,
+                    "cyclic type alias encountered during member lookup"
+                );
+                break;
+            }
+
+            let Some(target_id) = current.type_of() else {
+                break;
+            };
+            let Some(target) = self.unit.try_symbol(target_id) else {
+                tracing::warn!(
+                    symbol_id = target_id.0,
+                    "type alias target symbol not found during member lookup"
+                );
+                break;
+            };
+            current = target;
+        }
+
+        current
     }
 
     /// All matching global symbols.
@@ -215,33 +250,16 @@ impl<'a> BindCtxt<'a> {
         options: SymbolFilter,
     ) -> Option<&'a Symbol> {
         // Type aliases such as `Self` delegate lookup to their target type.
-        let actual_sym = if obj_type_symbol.kind() == SymKind::TypeAlias {
-            if let Some(type_of_id) = obj_type_symbol.type_of() {
-                self.unit.try_symbol(type_of_id).unwrap_or_else(|| {
-                    tracing::warn!(
-                        symbol_id = ?type_of_id,
-                        "type alias target symbol not found during member lookup"
-                    );
-                    obj_type_symbol
-                })
-            } else {
-                obj_type_symbol
-            }
-        } else {
-            obj_type_symbol
-        };
-
+        let actual_sym = self.resolve_type_alias(obj_type_symbol);
         let scope_id = actual_sym.try_owned_scope()?;
         let scope = self.try_scope(scope_id)?;
 
         // Isolate member lookup from lexical scopes.
-        let scopes = ScopeStack::new(self.unit.context().arena(), self.unit.context().interner());
+        let scopes = self.new_scope_stack();
         scopes.push_recursive(scope);
 
-        scopes
-            .try_lookup_symbols(member_name, options)?
-            .into_iter()
-            .last()
+        let symbols = scopes.try_lookup_symbols(member_name, options)?;
+        self.choose(&symbols)
     }
 
     /// All matches for a qualified path, such as `foo::Bar::baz`.
@@ -272,6 +290,20 @@ impl<'a> BindCtxt<'a> {
     }
 }
 
+fn bind_unit<'a, L: Language>(
+    cc: &'a CompileCtxt<'a>,
+    globals: &'a Scope<'a>,
+    config: &ResolveOptions,
+    unit_index: usize,
+) -> Result<u64> {
+    let bind_start = Instant::now();
+    let unit = cc.compile_unit(unit_index);
+    let id = unit.file_root_id()?;
+    let node = unit.hir_node(id);
+    L::bind_symbols(unit, node, globals, config);
+    Ok(bind_start.elapsed().as_nanos() as u64)
+}
+
 /// Bind all compilation units.
 ///
 /// Binding resolves references after collection has discovered every symbol.
@@ -285,30 +317,20 @@ pub fn bind_symbols<'a, L: Language>(
     let unit_count = cc.unit_count();
     tracing::info!(unit_count, "starting symbol binding");
 
-    let bind_cpu_time_ns = AtomicU64::new(0);
-
-    let bind_unit = |unit_index: usize| -> Result<()> {
-        let bind_start = Instant::now();
-        let unit = cc.compile_unit(unit_index);
-        let id = unit.file_root_id()?;
-        let node = unit.hir_node(id);
-        L::bind_symbols(unit, node, globals, config);
-        bind_cpu_time_ns.fetch_add(bind_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
-        Ok(())
-    };
-
     let parallel_start = Instant::now();
     let results = if config.sequential {
-        (0..unit_count).map(bind_unit).collect::<Vec<_>>()
+        (0..unit_count)
+            .map(|unit_index| bind_unit::<L>(cc, globals, config, unit_index))
+            .collect::<Vec<_>>()
     } else {
         (0..unit_count)
             .into_par_iter()
-            .map(bind_unit)
+            .map(|unit_index| bind_unit::<L>(cc, globals, config, unit_index))
             .collect::<Vec<_>>()
     };
-    results.into_iter().collect::<Result<Vec<_>>>()?;
+    let bind_unit_times_ns = results.into_iter().collect::<Result<Vec<_>>>()?;
     let parallel_ms = elapsed_ms(parallel_start);
-    let bind_cpu_ms = bind_cpu_time_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
+    let bind_cpu_ms = bind_unit_times_ns.into_iter().sum::<u64>() as f64 / 1_000_000.0;
     let total_ms = elapsed_ms(total_start);
 
     tracing::info!(
