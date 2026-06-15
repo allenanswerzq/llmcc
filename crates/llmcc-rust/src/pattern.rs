@@ -1,5 +1,3 @@
-#![allow(clippy::collapsible_if)]
-
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{SymKind, SymKindSet, Symbol};
@@ -7,57 +5,45 @@ use llmcc_resolver::BindCtxt;
 
 use crate::token::LangRust;
 
-pub fn bind_pattern_types<'tcx>(
+pub(crate) fn bind_pattern_types<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BindCtxt<'tcx>,
     pattern: &HirNode<'tcx>,
     pattern_type: &'tcx Symbol,
 ) {
-    // Check if this is an identifier
     if let Some(ident) = pattern.as_ident() {
         assign_type_to_ident(unit, scopes, ident, pattern_type);
         return;
     }
 
-    // Check the pattern kind
     match pattern.kind_id() {
-        // AST: (pattern1, pattern2, ...)
         LangRust::tuple_pattern => {
             assign_type_to_tuple_pattern(unit, scopes, pattern, pattern_type);
         }
-        // AST: Struct { field1, field2, ... }
         LangRust::struct_pattern => {
             assign_type_to_struct_pattern(unit, scopes, pattern, pattern_type);
         }
-        // AST: TupleStruct(a, b, c)
         LangRust::tuple_struct_pattern => {
             assign_type_to_tuple_struct_pattern(unit, scopes, pattern, pattern_type);
         }
-        // AST: pattern1 | pattern2
         LangRust::or_pattern => {
             assign_type_to_or_pattern(unit, scopes, pattern, pattern_type);
         }
-        // AST: [element1, element2, ...]
         LangRust::slice_pattern => {
             assign_type_to_slice_pattern(unit, scopes, pattern, pattern_type);
         }
-        // AST: &pattern or &mut pattern
         LangRust::reference_pattern => {
             assign_type_to_reference_pattern(unit, scopes, pattern, pattern_type);
         }
-        // AST: mut pattern or ref pattern
         LangRust::mut_pattern | LangRust::ref_pattern => {
-            // Unwrap the mutable/ref modifier and process inner pattern
             if let Some(inner) = pattern.children(unit).first() {
                 bind_pattern_types(unit, scopes, inner, pattern_type);
             }
         }
         _ => {
-            // Handle other patterns - find and assign to any identifiers
             if let Some(ident) = pattern.query(unit).try_first_ident() {
                 assign_type_to_ident(unit, scopes, ident, pattern_type);
             } else {
-                // Recurse into children
                 for child in pattern.children(unit) {
                     bind_pattern_types(unit, scopes, &child, pattern_type);
                 }
@@ -66,7 +52,7 @@ pub fn bind_pattern_types<'tcx>(
     }
 }
 
-/// Assign type to a single identifier binding
+/// Attach a known type to one binding identifier if it does not already have one.
 fn assign_type_to_ident<'tcx>(
     _unit: &CompileUnit<'tcx>,
     scopes: &mut BindCtxt<'tcx>,
@@ -102,8 +88,7 @@ fn assign_type_to_ident<'tcx>(
     }
 }
 
-/// AST: (pattern1, pattern2, pattern3)
-/// Assign tuple element types to each pattern
+/// Propagate tuple element types by position.
 fn assign_type_to_tuple_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BindCtxt<'tcx>,
@@ -130,15 +115,13 @@ fn assign_type_to_tuple_pattern<'tcx>(
     }
 }
 
-/// AST: Struct { field1, field2, ... }
-/// Bind each field pattern to the struct field's type
+/// Propagate named struct field types into field patterns.
 fn assign_type_to_struct_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BindCtxt<'tcx>,
     pattern: &HirNode<'tcx>,
     _pattern_type: &'tcx Symbol,
 ) {
-    // Find the struct type identifier
     let struct_type_node = match pattern.child_by_field(unit, LangRust::field_type) {
         Some(node) => node,
         None => return,
@@ -158,7 +141,6 @@ fn assign_type_to_struct_pattern<'tcx>(
         if child.kind_id() == LangRust::field_pattern {
             if let Some(field_name_node) = child.child_by_field(unit, LangRust::field_name) {
                 if let Some(field_name_ident) = field_name_node.query(unit).try_first_ident() {
-                    // Try to find matching field in struct scope
                     if let Some(field_sym) = scopes.lookup_member(
                         struct_symbol,
                         field_name_ident.name,
@@ -171,12 +153,9 @@ fn assign_type_to_struct_pattern<'tcx>(
                         if let Some(inner_pattern) =
                             child.child_by_field(unit, LangRust::field_pattern)
                             && let Some(field_type) = field_type
-                        // Check for full pattern (field: pattern)
                         {
                             bind_pattern_types(unit, scopes, &inner_pattern, field_type);
-                        }
-                        // Shorthand: { field } - bind the identifier directly
-                        else if let Some(field_type) = field_type {
+                        } else if let Some(field_type) = field_type {
                             if let Some(binding_sym) = field_name_ident.try_symbol() {
                                 if binding_sym.kind() == SymKind::Variable {
                                     binding_sym.set_type_of(field_type.id());
@@ -207,15 +186,13 @@ fn assign_type_to_struct_pattern<'tcx>(
     }
 }
 
-/// AST: TupleVariant(a, b, c) or TupleStruct(x, y)
-/// Assign nested types to each pattern element
+/// Propagate tuple-struct/variant field types by position.
 fn assign_type_to_tuple_struct_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BindCtxt<'tcx>,
     pattern: &HirNode<'tcx>,
     _pattern_type: &'tcx Symbol,
 ) {
-    // Get the tuple struct type
     let type_node = match pattern.child_by_field(unit, LangRust::field_type) {
         Some(node) => node,
         None => return,
@@ -235,7 +212,6 @@ fn assign_type_to_tuple_struct_pattern<'tcx>(
 
     let mut element_index = 0;
     for child in pattern.children(unit) {
-        // Skip the type field and text nodes
         if child.field_id() == LangRust::field_type || child.is_trivia() {
             continue;
         }
@@ -252,8 +228,7 @@ fn assign_type_to_tuple_struct_pattern<'tcx>(
     }
 }
 
-/// AST: pattern1 | pattern2 | pattern3
-/// Each alternative gets the same type
+/// Every alternative in an or-pattern has the same matched type.
 fn assign_type_to_or_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BindCtxt<'tcx>,
@@ -267,15 +242,13 @@ fn assign_type_to_or_pattern<'tcx>(
     }
 }
 
-/// AST: [elem1, elem2, ...] or [elem; size]
-/// All elements get the same element type from the array/slice
+/// Slice/array pattern elements share the collection element type.
 fn assign_type_to_slice_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BindCtxt<'tcx>,
     pattern: &HirNode<'tcx>,
     pattern_type: &'tcx Symbol,
 ) {
-    // Extract the element type from the slice/array type
     let element_type = match pattern_type.nested_types() {
         Some(types) => match types.first().and_then(|type_id| unit.try_symbol(*type_id)) {
             Some(ty) => ty,
@@ -285,7 +258,6 @@ fn assign_type_to_slice_pattern<'tcx>(
     };
 
     for child in pattern.children(unit) {
-        // Skip text nodes (brackets, commas, semicolons)
         if child.is_trivia() {
             continue;
         }
@@ -294,15 +266,13 @@ fn assign_type_to_slice_pattern<'tcx>(
     }
 }
 
-/// AST: &pattern or &mut pattern
-/// Get the dereferenced type
+/// Reference patterns bind their inner pattern to the referenced type.
 fn assign_type_to_reference_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BindCtxt<'tcx>,
     pattern: &HirNode<'tcx>,
     pattern_type: &'tcx Symbol,
 ) {
-    // For reference patterns, try to get the referenced type
     let inner_type = match pattern_type.nested_types() {
         Some(types) => match types.first().and_then(|type_id| unit.try_symbol(*type_id)) {
             Some(ty) => ty,
@@ -311,11 +281,9 @@ fn assign_type_to_reference_pattern<'tcx>(
         None => pattern_type,
     };
 
-    // Find the inner pattern (skip &, &mut keywords)
     if let Some(inner_pattern) = pattern.child_by_field(unit, LangRust::field_pattern) {
         bind_pattern_types(unit, scopes, &inner_pattern, inner_type);
     } else {
-        // Fallback: look for any identifier in children
         for child in pattern.children(unit) {
             if !child.is_trivia() {
                 bind_pattern_types(unit, scopes, &child, inner_type);

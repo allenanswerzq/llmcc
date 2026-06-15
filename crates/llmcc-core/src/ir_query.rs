@@ -323,7 +323,12 @@ impl<'hir, 'unit> HirQuery<'hir, 'unit> {
     /// through the type child to return the generic callee (`Repository` in
     /// `Repository<User>`).
     pub fn try_ident_with_field(self, field_id: u16) -> Option<&'hir HirIdent<'hir>> {
-        debug_assert!(!self.node.is_kind(HirKind::Identifier));
+        if self.node.is_kind(HirKind::Identifier) {
+            return (self.node.try_field_id() == Some(field_id))
+                .then(|| self.node.as_ident())
+                .flatten();
+        }
+
         for child in self.node.children(self.unit) {
             if child
                 .try_base()

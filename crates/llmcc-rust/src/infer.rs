@@ -8,8 +8,8 @@ use crate::token::LangRust;
 /// Maximum inference recursion depth to prevent stack overflow.
 const MAX_INFER_DEPTH: u32 = 16;
 
-/// Infer the type of any AST node
-pub fn infer_type<'tcx>(
+/// Infer the best available symbol for a Rust expression or type node.
+pub(crate) fn infer_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
@@ -17,7 +17,7 @@ pub fn infer_type<'tcx>(
     infer_type_impl(unit, scopes, node, 0)
 }
 
-/// Internal implementation with explicit depth tracking.
+/// Recursive inference with an explicit depth guard for malformed trees.
 fn infer_type_impl<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BindCtxt<'tcx>,
@@ -29,36 +29,28 @@ fn infer_type_impl<'tcx>(
     }
 
     match node.kind_id() {
-        // Literal types
         LangRust::boolean_literal => get_primitive_type(scopes, "bool"),
         LangRust::integer_literal => get_primitive_type(scopes, "i32"),
         LangRust::float_literal => get_primitive_type(scopes, "f64"),
         LangRust::char_literal => get_primitive_type(scopes, "char"),
         LangRust::string_literal => get_primitive_type(scopes, "str"),
 
-        // Type identifiers
         LangRust::primitive_type | LangRust::type_identifier => {
             let ident = node.query(unit).try_first_ident()?;
-            // First try existing symbol on the identifier
             if let Some(sym) = ident.try_symbol() {
-                // If it's a concrete type (Struct/Enum/Trait), use it directly
                 if sym.kind().is_defined_type() {
                     return Some(sym);
                 }
-                // If it's UnresolvedType, try to resolve it via scope lookup
                 if sym.kind() != SymKind::UnresolvedType {
                     return Some(sym);
                 }
             }
-            // Try to look up by name in scopes (for unresolved types)
             if let Some(sym) = scopes.lookup_symbol(ident.name, SYM_KIND_TYPES) {
                 return Some(sym);
             }
-            // Fall back to original symbol if lookup failed
             ident.try_symbol()
         }
 
-        // Block expressions
         LangRust::block => infer_block(unit, scopes, node, depth + 1),
 
         // Generic type with turbofish: Vec::<T>::new()
@@ -66,7 +58,6 @@ fn infer_type_impl<'tcx>(
             .child_by_field(unit, LangRust::field_type)
             .and_then(|ty_node| infer_type_impl(unit, scopes, &ty_node, depth + 1)),
 
-        // Generic type: Vec<T>, Option<String>, etc.
         LangRust::generic_type => infer_generic_type(unit, scopes, node, depth + 1),
 
         // Array expression: [1, 2, 3] or [1; 5]
@@ -88,7 +79,6 @@ fn infer_type_impl<'tcx>(
         LangRust::scoped_identifier => infer_scoped_identifier(unit, scopes, node, depth + 1),
         LangRust::scoped_type_identifier => infer_scoped_identifier(unit, scopes, node, depth + 1),
 
-        // Identifier
         LangRust::identifier => {
             let ident = node.query(unit).try_first_ident()?;
             let symbol = ident.try_symbol()?;
@@ -146,17 +136,13 @@ fn infer_type_impl<'tcx>(
         // If expression: if cond { ... } else { ... }
         LangRust::if_expression => infer_if_expression(unit, scopes, node, depth + 1),
 
-        // Type nodes
         LangRust::array_type => infer_array_type(unit, scopes, node, depth + 1),
         LangRust::tuple_type => infer_tuple_type(unit, scopes, node, depth + 1),
         LangRust::function_type => infer_function_type(unit, scopes, node, depth + 1),
         LangRust::reference_type => infer_reference_type(unit, scopes, node, depth + 1),
         LangRust::pointer_type => infer_pointer_type(unit, scopes, node, depth + 1),
-        // impl Trait - get the trait from the "trait" field
         LangRust::abstract_type => infer_abstract_type(unit, scopes, node, depth + 1),
-        // Bounded type: 'a + Clone, T: Clone + Debug
         LangRust::bounded_type => infer_bounded_type(unit, scopes, node, depth + 1),
-        // Trait bounds: Into<T> + Clone - returns first non-lifetime type
         LangRust::trait_bounds => infer_trait_bounds(unit, scopes, node, depth + 1),
 
         _ => {
@@ -168,7 +154,7 @@ fn infer_type_impl<'tcx>(
     }
 }
 
-/// Get primitive type by name
+/// Primitive type symbols live in the initial global scope.
 fn get_primitive_type<'tcx>(scopes: &BindCtxt<'tcx>, name: &str) -> Option<&'tcx Symbol> {
     scopes
         .lookup_globals(name, SymKindSet::from_kind(SymKind::Primitive))?
@@ -176,7 +162,7 @@ fn get_primitive_type<'tcx>(scopes: &BindCtxt<'tcx>, name: &str) -> Option<&'tcx
         .copied()
 }
 
-/// Infer block type: type of last expression in block
+/// A block expression has the type of its last non-let expression.
 fn infer_block<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BindCtxt<'tcx>,
@@ -230,7 +216,7 @@ fn infer_range_expression<'tcx>(
         .or_else(|| get_primitive_type(scopes, "i32"))
 }
 
-/// Infer tuple expression type: (a, b, c) -> (TypeA, TypeB, TypeC)
+/// Tuple expressions currently collect element types but do not synthesize a tuple symbol.
 fn infer_tuple_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BindCtxt<'tcx>,
@@ -239,7 +225,6 @@ fn infer_tuple_expression<'tcx>(
 ) -> Option<&'tcx Symbol> {
     let children = node.children(unit);
 
-    // Collect all non-trivia expressions (tuple elements)
     let mut _elem_types = Vec::new();
     for child in children {
         if !child.is_trivia()
@@ -249,8 +234,6 @@ fn infer_tuple_expression<'tcx>(
         }
     }
 
-    // For now, return None as we don't have synthetic type creation.
-    // Full implementation would create (T1, T2, T3) type
     None
 }
 
@@ -284,11 +267,9 @@ fn infer_field_expression<'tcx>(
     let field_node = node.child_by_field(unit, LangRust::field_field)?;
     let field_ident = field_node.query(unit).try_first_ident()?;
 
-    // Check if field is a numeric literal (tuple indexing)
     if field_node.kind() == HirKind::Text {
         let field_text = unit.hir_text(&field_node);
         if let Ok(index) = field_text.parse::<usize>() {
-            // Tuple indexing: get element type from nested_types
             if let Some(nested) = obj_type.nested_types()
                 && let Some(elem_id) = nested.get(index)
             {
@@ -298,7 +279,6 @@ fn infer_field_expression<'tcx>(
         }
     }
 
-    // Look up field in object's scope
     scopes
         .lookup_member_kind(obj_type, field_ident.name, SymKind::Field)
         .and_then(|field_sym| {
@@ -310,7 +290,7 @@ fn infer_field_expression<'tcx>(
         })
 }
 
-/// Infer scoped identifier type: module::Type or foo::bar::baz
+/// Resolve a qualified Rust path through resolver path lookup.
 fn infer_scoped_identifier<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BindCtxt<'tcx>,
@@ -325,7 +305,7 @@ fn infer_scoped_identifier<'tcx>(
 
     let qualified_names: Vec<&str> = idents.iter().map(|i| i.name).collect();
 
-    // Handle Rust's "crate" keyword by replacing with actual crate name
+    // `crate::x` is a Rust keyword path, while resolver lookup uses package names.
     let resolved_path: Vec<&str>;
     let crate_name_owned = unit.unit_meta().package_name.clone();
     let lookup_path = if !qualified_names.is_empty() && qualified_names[0] == "crate" {
@@ -341,7 +321,6 @@ fn infer_scoped_identifier<'tcx>(
         &qualified_names[..]
     };
 
-    // Use path lookup to apply same-crate preference for multi-crate scenarios.
     scopes.lookup_path_symbol(lookup_path, SymKindSet::empty())
 }
 
@@ -355,7 +334,6 @@ fn infer_index_expression<'tcx>(
     let value_node = node.child_by_field(unit, LangRust::field_value)?;
     let obj_type = infer_type_impl(unit, scopes, &value_node, depth + 1)?;
 
-    // For indexed access, get first nested type
     if let Some(nested) = obj_type.nested_types()
         && let Some(elem_id) = nested.first()
     {
@@ -395,7 +373,7 @@ fn infer_binary_expression<'tcx>(
     }
 }
 
-/// Infer if expression type: type of consequence block
+/// If expressions currently use the consequence block as the best available type.
 fn infer_if_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BindCtxt<'tcx>,
@@ -415,7 +393,6 @@ fn infer_array_type<'tcx>(
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
-    // Try to get the CompositeType symbol that was created for this array type
     if let Some(sn) = node.as_scope()
         && let Some(array_ident) = sn.try_ident()
         && let Some(array_symbol) = scopes.lookup_symbol(
@@ -426,7 +403,6 @@ fn infer_array_type<'tcx>(
         return Some(array_symbol);
     }
 
-    // Fallback: get element type
     let elem_node = node.child_by_field(unit, LangRust::field_element)?;
     infer_type_impl(unit, scopes, &elem_node, depth + 1)
 }
@@ -438,7 +414,6 @@ fn infer_tuple_type<'tcx>(
     node: &HirNode<'tcx>,
     _depth: u32,
 ) -> Option<&'tcx Symbol> {
-    // Try to get the CompositeType symbol that was created for this tuple type
     if let Some(sn) = node.as_scope()
         && let Some(tuple_ident) = sn.try_ident()
         && let Some(tuple_symbol) = scopes.lookup_symbol(
@@ -449,8 +424,6 @@ fn infer_tuple_type<'tcx>(
         return Some(tuple_symbol);
     }
 
-    // Fallback: collect element types but can't return a proper symbol
-    // This handles cases where the tuple type wasn't pre-collected
     None
 }
 
@@ -461,27 +434,22 @@ fn infer_function_type<'tcx>(
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
-    // For function_type, check if there's a trait field (e.g., FnOnce() -> T)
-    // If so, return the trait. Otherwise return the return type.
+    // `FnOnce() -> T` is modeled as the trait; bare `fn(T) -> U` uses return type.
     if let Some(trait_node) = node.child_by_field(unit, LangRust::field_trait) {
         return infer_type_impl(unit, scopes, &trait_node, depth + 1);
     }
 
-    // Try return type first (for fn(T) -> U syntax)
     if let Some(ret_node) = node.child_by_field(unit, LangRust::field_return_type)
         && let Some(ret_sym) = infer_type_impl(unit, scopes, &ret_node, depth + 1)
     {
         return Some(ret_sym);
     }
 
-    // No return type, try to extract type from parameters (for fn(T) without return)
-    // Look for the "parameters" field which contains the parameter types
     if let Some(params_node) = node.child_by_field(unit, LangRust::field_parameters) {
         for child in params_node.children(unit) {
             if child.is_trivia() {
                 continue;
             }
-            // Each child might be a type directly
             if let Some(param_type) = infer_type_impl(unit, scopes, &child, depth + 1) {
                 return Some(param_type);
             }
@@ -491,39 +459,29 @@ fn infer_function_type<'tcx>(
     None
 }
 
-/// Infer generic type: Vec<T>, Option<String>, HashMap<K, V>, etc.
-///
-/// Strategy: From outer to inner, return the first defined type.
-/// - For `Vec<Tree>` where Vec is not defined → returns Tree
-/// - For `MyStruct<T>` where MyStruct is defined → returns MyStruct
-/// - For `Into<Text>` where Into is defined (trait) → returns Into
+/// Prefer the outer generic type when known; otherwise use a defined type argument.
 fn infer_generic_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
-    // The generic_type has structure: type<type_arguments>
     let type_node = node.child_by_field(unit, LangRust::field_type)?;
     let outer_type = infer_type_impl(unit, scopes, &type_node, depth + 1);
 
-    // If outer type is a defined type (Struct/Enum/Trait), use it
     if let Some(outer) = outer_type
         && outer.kind().is_defined_type()
     {
         return Some(outer);
     }
 
-    // Outer type is not defined (e.g., Vec, Option from std, or TypeParameter).
-    // For relationship graphs, we care about contained defined types.
-    // Recursively search type arguments for first defined type.
+    // Unknown standard-library wrappers still need useful dependency targets.
     if let Some(type_args) = node.child_by_field(unit, LangRust::field_type_arguments) {
         for child in type_args.children(unit) {
             if child.is_trivia() || child.kind_id() == LangRust::lifetime {
                 continue;
             }
             if let Some(inner_type) = infer_type_impl(unit, scopes, &child, depth + 1) {
-                // Use inner type if it's a defined type
                 if inner_type.kind().is_defined_type() {
                     return Some(inner_type);
                 }
@@ -531,7 +489,6 @@ fn infer_generic_type<'tcx>(
         }
     }
 
-    // Return outer type even if not defined (for unresolved cases)
     outer_type
 }
 
@@ -542,8 +499,6 @@ fn infer_reference_type<'tcx>(
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
-    // The reference_type has structure: & [mutable_specifier] type
-    // We need to get the inner type via the "type" field
     node.child_by_field(unit, LangRust::field_type)
         .and_then(|type_node| infer_type_impl(unit, scopes, &type_node, depth + 1))
 }
@@ -555,8 +510,6 @@ fn infer_pointer_type<'tcx>(
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
-    // The pointer_type has structure: * [const|mut] type
-    // We need to get the inner type via the "type" field
     node.child_by_field(unit, LangRust::field_type)
         .and_then(|type_node| infer_type_impl(unit, scopes, &type_node, depth + 1))
 }
@@ -568,8 +521,6 @@ fn infer_abstract_type<'tcx>(
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
-    // The abstract_type has structure: impl [for<'a>] Trait
-    // Get the trait from the "trait" field and let infer_type handle generics
     let trait_node = node.child_by_field(unit, LangRust::field_trait)?;
     infer_type_impl(unit, scopes, &trait_node, depth + 1)
 }
@@ -582,17 +533,13 @@ fn infer_bounded_type<'tcx>(
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
-    // bounded_type contains multiple bounds separated by +
-    // We want to find the actual trait type, skipping lifetimes
     for child in node.children(unit) {
-        // Skip lifetimes and punctuation
         if child.kind_id() == LangRust::lifetime {
             continue;
         }
         if child.is_trivia() {
             continue;
         }
-        // Try to infer type from this child
         if let Some(sym) = infer_type_impl(unit, scopes, &child, depth + 1) {
             return Some(sym);
         }
@@ -607,13 +554,10 @@ fn infer_trait_bounds<'tcx>(
     node: &HirNode<'tcx>,
     depth: u32,
 ) -> Option<&'tcx Symbol> {
-    // trait_bounds contains type children - get the first non-lifetime one
     for child in node.children(unit) {
-        // Skip lifetimes and punctuation
         if child.kind_id() == LangRust::lifetime || child.is_trivia() {
             continue;
         }
-        // Let infer_type handle all type kinds including generic_type
         if let Some(sym) = infer_type_impl(unit, scopes, &child, depth + 1) {
             return Some(sym);
         }

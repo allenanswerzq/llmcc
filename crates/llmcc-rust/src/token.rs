@@ -6,28 +6,23 @@ use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_core::{CompileCtxt, CompileUnit, Error, HirBuildAction, ResolveOptions, Result};
 
-#[allow(clippy::single_component_path_imports)]
-use tree_sitter_rust;
-
-// Include the auto-generated language definition from build script
-// The generated file contains a define_lang! call that expands to LangRust
+// Generated from token_map.toml and tree-sitter-rust NODE_TYPES.
 include!(concat!(env!("OUT_DIR"), "/rust_tokens.rs"));
 
 impl LanguageDefinition for LangRust {
-    /// Block kind with parent context - handles tuple struct fields
+    /// Parent context disambiguates Rust syntax that tree-sitter represents generically.
     fn block_kind_for_child(
         _kind_id: u16,
         field_id: u16,
         parent_kind_id: u16,
     ) -> Option<BlockKind> {
-        // Tuple struct fields: types inside ordered_field_declaration_list with field "type"
         if parent_kind_id == LangRust::ordered_field_declaration_list
             && field_id == LangRust::field_type
         {
             return Some(BlockKind::Field);
         }
-        // Don't create return blocks inside function_type (type annotations, not function definitions)
-        // e.g., `type F = impl FnOnce() -> T;` should not create a return block for T
+
+        // Function type annotations are types, not callable definitions with returns.
         if parent_kind_id == LangRust::function_type && field_id == LangRust::field_return_type {
             return Some(BlockKind::Undefined);
         }
@@ -57,17 +52,33 @@ impl LanguageDefinition for LangRust {
     fn parse_source(text: impl AsRef<[u8]>) -> Result<Box<dyn ParseTree>> {
         use std::cell::RefCell;
 
-        // Thread-local parser reuse to avoid contention from Parser::new()
+        // Parser instances are not shared across threads; reuse one per worker thread.
         thread_local! {
-            static PARSER: RefCell<tree_sitter::Parser> = {
-                let mut parser = tree_sitter::Parser::new();
-                parser.set_language(&tree_sitter_rust::LANGUAGE.into()).unwrap();
-                RefCell::new(parser)
-            };
+            static PARSER: RefCell<Option<tree_sitter::Parser>> = const { RefCell::new(None) };
         }
 
         PARSER.with(|parser| {
-            let mut parser = parser.borrow_mut();
+            let mut parser_slot = parser.borrow_mut();
+            if parser_slot.is_none() {
+                let mut parser = tree_sitter::Parser::new();
+                parser
+                    .set_language(&tree_sitter_rust::LANGUAGE.into())
+                    .map_err(|error| {
+                        Error::parse_failed(format!(
+                            "failed to initialize tree-sitter-rust parser: {error}"
+                        ))
+                        .with_operation("parse_source")
+                        .with_context("language", "rust")
+                    })?;
+                *parser_slot = Some(parser);
+            }
+
+            let Some(parser) = parser_slot.as_mut() else {
+                return Err(Error::parse_failed("rust parser was not initialized")
+                    .with_operation("parse_source")
+                    .with_context("language", "rust"));
+            };
+
             let bytes = text.as_ref();
             let tree = parser.parse(bytes, None).ok_or_else(|| {
                 Error::parse_failed("tree-sitter returned no parse tree")
@@ -91,13 +102,11 @@ impl LanguageDefinition for LangRust {
     }
 
     fn hir_build_action(node: &dyn ParseNode, source: &[u8]) -> HirBuildAction {
-        // First check if this is an attribute_item or inner_attribute_item
         let kind_id = node.kind_id();
         if kind_id != LangRust::attribute_item && kind_id != LangRust::inner_attribute_item {
             return HirBuildAction::Build;
         }
 
-        // Extract the text of the attribute
         let start = node.start_byte();
         let end = node.end_byte();
         if end <= start || end > source.len() {
@@ -109,12 +118,7 @@ impl LanguageDefinition for LangRust {
             Err(_) => return HirBuildAction::Build,
         };
 
-        // Check for test-related attributes
-        if attr_text.contains("#[test]")
-            || attr_text.contains("#[cfg(test)]")
-            || attr_text.contains("::test]")
-        // catches #[tokio::test], #[async_std::test], etc.
-        {
+        if is_test_attribute(attr_text) {
             HirBuildAction::SkipNextSibling
         } else {
             HirBuildAction::Build
@@ -137,5 +141,41 @@ impl LanguageDefinition for LangRust {
         options: &ResolveOptions,
     ) {
         crate::bind::bind_symbols(unit, &node, globals, options);
+    }
+}
+
+fn is_test_attribute(attr_text: &str) -> bool {
+    let attr = attr_text.trim();
+    let inner = attr
+        .strip_prefix("#[")
+        .or_else(|| attr.strip_prefix("#!["))
+        .and_then(|value| value.strip_suffix(']'))
+        .unwrap_or(attr)
+        .trim();
+
+    let path = inner.split_once('(').map_or(inner, |(path, _)| path).trim();
+    if path.rsplit("::").next() == Some("test") {
+        return true;
+    }
+
+    let compact: String = inner.chars().filter(|ch| !ch.is_whitespace()).collect();
+    compact == "cfg(test)" || compact.starts_with("cfg_attr(test,")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_test_attribute;
+
+    #[test]
+    fn detects_test_attributes() {
+        assert!(is_test_attribute("#[test]"));
+        assert!(is_test_attribute("#[cfg(test)]"));
+        assert!(is_test_attribute("#[tokio::test]"));
+        assert!(is_test_attribute(
+            "#[tokio::test(flavor = \"multi_thread\")]"
+        ));
+        assert!(is_test_attribute("#[async_std::test(attributes)]"));
+        assert!(!is_test_attribute("#[derive(Debug)]"));
+        assert!(!is_test_attribute("#[cfg(not(test))]"));
     }
 }

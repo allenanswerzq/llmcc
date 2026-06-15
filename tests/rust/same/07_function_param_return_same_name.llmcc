@@ -35,31 +35,65 @@ pub fn process(input: InputData) -> OutputData {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs)
+(root:1 001_lib (001_lib)
   (module:2 input)
   (module:3 output)
   (module:4 processor)
 )
 
-(root:5 input ($TMP/sample/src/input.rs)
+(root:5 002_input (002_input)
   (class:6 Data
     (field:7 raw @type raw)
   )
 )
 
-(root:8 output ($TMP/sample/src/output.rs)
+(root:8 003_output (003_output)
   (class:9 Data
     (field:10 processed @type String)
   )
 )
 
-(root:11 processor ($TMP/sample/src/processor.rs)
+(root:11 004_processor (004_processor)
   (func:12 process
-    (parameter:13 input @type input)
-    (return:14)
+    (parameter:13 input @type InputData)
+    (return:14 @type:9 Data)
   )
 )
 
 --- expect:arch-graph ---
-digraph G {
+digraph architecture {
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+        bgcolor="#f8f8f8";
+
+    subgraph cluster_003_output_rs {
+      label="003_output.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n9[label="Data", path="C:\\Users\\zhangqiang\\AppData\\Local\\Temp\\$TMP\\sample\\src\\003_output.rs:2", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_004_processor_rs {
+      label="004_processor.rs";
+      style=rounded;
+            bgcolor="#fafafa";
+
+      n12[label="process", path="C:\\Users\\zhangqiang\\AppData\\Local\\Temp\\$TMP\\sample\\src\\004_processor.rs:5", sym_ty="Function", shape=ellipse];
+    }
+
+  }
+
+
+  n12 -> n9 [from="func", to="output"];
 }
