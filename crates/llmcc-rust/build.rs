@@ -9,10 +9,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("cargo:rerun-if-changed={}", config_path.display());
 
     // Use NODE_TYPES constant from tree-sitter-rust crate (no local file needed)
-    let contents = llmcc_tree::generate_tokens_from_str(
+    let contents = llmcc_tree::generate_tokens(
         "Rust",
         tree_sitter_rust::LANGUAGE.into(),
-        tree_sitter_rust::NODE_TYPES,
+        llmcc_tree::NodeTypesSource::Embedded(tree_sitter_rust::NODE_TYPES),
         &config_path,
     )?;
 

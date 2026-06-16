@@ -9,10 +9,10 @@ fn main() {
     println!("cargo:rerun-if-changed={}", config_path.display());
 
     // Use TYPESCRIPT_NODE_TYPES constant from tree-sitter-typescript crate (no local file needed)
-    let contents = llmcc_tree::generate_tokens_from_str(
+    let contents = llmcc_tree::generate_tokens(
         "TypeScript",
         tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into(),
-        tree_sitter_typescript::TYPESCRIPT_NODE_TYPES,
+        llmcc_tree::NodeTypesSource::Embedded(tree_sitter_typescript::TYPESCRIPT_NODE_TYPES),
         &config_path,
     )
     .unwrap();

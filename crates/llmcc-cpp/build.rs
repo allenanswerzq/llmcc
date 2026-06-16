@@ -13,7 +13,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let contents = llmcc_tree::generate_tokens(
         "Cpp",
         tree_sitter_cpp::LANGUAGE.into(),
-        &node_types,
+        llmcc_tree::NodeTypesSource::Path(&node_types),
         &config_path,
     )?;
 
