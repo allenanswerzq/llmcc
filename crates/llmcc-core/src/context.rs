@@ -242,27 +242,35 @@ impl<'tcx> CompileUnit<'tcx> {
 
     /// Return the symbol referenced by `symbol.type_of()` and its graph block id.
     pub fn try_type_of_with_block_id(self, symbol: &Symbol) -> Option<(&'tcx Symbol, BlockId)> {
-        let type_id = symbol.type_of()?;
-        self.try_symbol_with_block_id(type_id)
+        let type_symbol = self.try_resolved_type_link(symbol)?;
+        let block_id = type_symbol.block_id()?;
+        Some((type_symbol, block_id))
     }
 
     /// Resolve `symbol.type_of()` through type links and return its graph block id.
     pub fn try_type_of_block_id(self, symbol: &Symbol) -> Option<BlockId> {
-        let type_id = symbol.type_of()?;
-        self.try_type_block_id(type_id)
+        self.try_resolved_type_link(symbol)?.block_id()
     }
 
     /// Resolve a symbol id through its type link, falling back to the symbol's own block.
     pub fn try_type_block_id(self, symbol_id: SymId) -> Option<BlockId> {
         let symbol = self.try_symbol(symbol_id)?;
-        self.try_type(symbol).unwrap_or(symbol).block_id()
+        self.try_resolved_type_link(symbol)
+            .unwrap_or(symbol)
+            .block_id()
     }
 
     /// Resolve the graph type block for a block-owned symbol.
     pub fn try_type_ref_block_id(self, symbol: Option<&Symbol>) -> Option<BlockId> {
         let symbol = symbol?;
 
-        if let Some(type_symbol) = self.try_type(symbol) {
+        let resolved = if matches!(symbol.kind(), SymKind::TypeAlias | SymKind::TypeParameter) {
+            self.try_resolved_type_link(symbol)
+        } else {
+            self.try_type(symbol)
+        };
+
+        if let Some(type_symbol) = resolved {
             return type_symbol.block_id();
         }
 
@@ -286,6 +294,27 @@ impl<'tcx> CompileUnit<'tcx> {
         }
 
         Some(type_symbol)
+    }
+
+    fn try_resolved_type_link(self, symbol: &Symbol) -> Option<&'tcx Symbol> {
+        let mut current = self.try_type(symbol)?;
+
+        for _ in 0..32 {
+            if !matches!(current.kind(), SymKind::TypeAlias | SymKind::TypeParameter) {
+                return Some(current);
+            }
+
+            let Some(next) = self.try_type(current) else {
+                return Some(current);
+            };
+            current = next;
+        }
+
+        tracing::warn!(
+            symbol_id = symbol.id().0,
+            "type resolution chain exceeded limit"
+        );
+        Some(current)
     }
 
     /// Return a scope by id, panicking when it is missing.

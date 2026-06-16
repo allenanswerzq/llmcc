@@ -227,6 +227,17 @@ impl<'a> CollectCtxt<'a> {
         Some(symbol)
     }
 
+    /// Declare a fresh symbol in the current scope, even when the name exists.
+    #[inline]
+    pub fn declare_fresh(
+        &self,
+        name: &str,
+        node: &HirNode<'a>,
+        kind: SymKind,
+    ) -> Option<&'a Symbol> {
+        self.declare_in(self.current(), name, node, kind)
+    }
+
     /// Declare or reuse a symbol in globals, separated by kind.
     #[inline]
     pub fn declare_global(
@@ -287,7 +298,7 @@ impl<'a> CollectCtxt<'a> {
 
     /// All matching lexical symbols.
     #[inline]
-    fn lookup_symbols(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
+    pub fn lookup_symbols(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
         let options = SymbolFilter::kinds(kind_filters);
         self.scopes.try_lookup_symbols(name, options)
     }

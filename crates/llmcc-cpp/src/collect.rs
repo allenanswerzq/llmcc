@@ -66,7 +66,7 @@ fn has_qualified_name_impl<'tcx>(
 }
 
 #[derive(Debug)]
-pub struct CollectorVisitor<'tcx> {
+struct CollectorVisitor<'tcx> {
     scope_map: HashMap<ScopeId, &'tcx Scope<'tcx>>,
 }
 
@@ -75,31 +75,6 @@ impl<'tcx> CollectorVisitor<'tcx> {
         Self {
             scope_map: HashMap::new(),
         }
-    }
-
-    /// Declare a symbol from a named field in the AST node
-    #[allow(dead_code)]
-    fn declare_symbol(
-        &self,
-        unit: &CompileUnit<'tcx>,
-        node: &HirNode<'tcx>,
-        ctxt: &CollectCtxt<'tcx>,
-        kind: SymKind,
-        field_id: u16,
-    ) -> Option<&'tcx Symbol> {
-        let ident = node
-            .query(unit)
-            .try_ident_with_field(field_id)
-            .or_else(|| node.as_scope().and_then(|sn| sn.try_ident()))?;
-
-        let sym = ctxt.declare(ident.name, node, kind)?;
-        ident.set_symbol(sym);
-
-        if let Some(sn) = node.as_scope() {
-            sn.set_ident(ident);
-        }
-
-        Some(sym)
     }
 
     fn alloc_scope(&mut self, unit: &CompileUnit<'tcx>, symbol: &'tcx Symbol) -> &'tcx Scope<'tcx> {
@@ -113,36 +88,91 @@ impl<'tcx> CollectorVisitor<'tcx> {
         self.scope_map.get(&scope_id).copied()
     }
 
-    /// Lookup a symbol by name, trying primary kind first, then UnresolvedType, then inserting new
-    #[allow(dead_code)]
-    fn lookup_or_convert(
+    fn callable_parameter_signature(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+    ) -> Option<Vec<String>> {
+        let declarator = node
+            .child_by_field(unit, LangCpp::field_declarator)
+            .unwrap_or(*node);
+        let parameter_list = self.find_parameter_list(unit, &declarator)?;
+        Some(
+            parameter_list
+                .children(unit)
+                .into_iter()
+                .filter(|child| {
+                    matches!(
+                        child.kind_id(),
+                        LangCpp::parameter_declaration
+                            | LangCpp::optional_parameter_declaration
+                            | LangCpp::variadic_parameter_declaration
+                            | LangCpp::explicit_object_parameter_declaration
+                    )
+                })
+                .map(|parameter| {
+                    Self::declared_type_node(unit, &parameter)
+                        .map(|type_node| unit.hir_text(&type_node))
+                        .unwrap_or_default()
+                })
+                .collect(),
+        )
+    }
+
+    fn declared_type_node(unit: &CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<HirNode<'tcx>> {
+        node.child_by_field(unit, LangCpp::field_type).or_else(|| {
+            node.children(unit).into_iter().find(|child| {
+                matches!(
+                    child.kind_id(),
+                    LangCpp::type_identifier
+                        | LangCpp::qualified_identifier
+                        | LangCpp::template_type
+                        | LangCpp::type_descriptor
+                        | LangCpp::primitive_type
+                        | LangCpp::sized_type_specifier
+                )
+            })
+        })
+    }
+
+    fn find_parameter_list(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+    ) -> Option<HirNode<'tcx>> {
+        if node.kind_id() == LangCpp::parameter_list {
+            return Some(*node);
+        }
+        for child in node.children(unit) {
+            if let Some(parameter_list) = self.find_parameter_list(unit, &child) {
+                return Some(parameter_list);
+            }
+        }
+        None
+    }
+
+    fn declare_callable(
         &mut self,
         unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
         ctxt: &mut CollectCtxt<'tcx>,
         name: &str,
-        node: &HirNode<'tcx>,
         kind: SymKind,
     ) -> Option<&'tcx Symbol> {
-        if let Some(symbol) = ctxt.lookup_symbol(name, SymKindSet::from_kind(kind)) {
-            return Some(symbol);
-        }
+        let signature = self.callable_parameter_signature(unit, node);
+        let existing = ctxt.lookup_symbols(name, SymKindSet::from_kind(kind));
+        let has_same_signature = existing.as_deref().is_some_and(|symbols| {
+            symbols.iter().any(|symbol| {
+                let owner = unit.hir_node(symbol.owner());
+                self.callable_parameter_signature(unit, &owner) == signature
+            })
+        });
 
-        if let Some(symbol) =
-            ctxt.lookup_symbol(name, SymKindSet::from_kind(SymKind::UnresolvedType))
-        {
-            symbol.set_kind(kind);
-            return Some(symbol);
+        if existing.is_some() && !has_same_signature {
+            ctxt.declare_fresh(name, node, kind)
+        } else {
+            ctxt.declare(name, node, kind)
         }
-
-        if let Some(symbol) = ctxt.declare(name, node, kind) {
-            if symbol.try_owned_scope().is_none() {
-                let scope = self.alloc_scope(unit, symbol);
-                symbol.set_owned_scope(scope.id());
-            }
-            return Some(symbol);
-        }
-
-        None
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -550,9 +580,6 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
-        let file_path = unit.file_path().unwrap();
-        let _ = file_path; // Used for debugging
-
         let depth = ctxt.depth();
         let sn = node.as_scope();
         let meta = unit.unit_meta();
@@ -641,6 +668,12 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'tcx> {
         };
 
         self.visit_with_scope(unit, node, ctxt, sym, sn, name_ident);
+
+        // C++ namespaces can be reopened across translation units; publish the
+        // namespace symbol globally so qualified paths like `models::User` can
+        // resolve from sibling files without falling back to the leaf name.
+        sym.set_is_global(true);
+        ctxt.globals().insert(sym);
     }
 
     // Class specifier
@@ -816,7 +849,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'tcx> {
             SymKind::Function
         };
 
-        let sym = match ctxt.declare(name_ident.name, node, kind) {
+        let sym = match self.declare_callable(unit, node, ctxt, name_ident.name, kind) {
             Some(s) => s,
             None => {
                 // Still need to set up scope even if symbol creation failed
@@ -953,7 +986,9 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'tcx> {
                         SymKind::Function
                     };
 
-                    if let Some(sym) = ctxt.declare(name_ident.name, &func_decl, kind) {
+                    if let Some(sym) =
+                        self.declare_callable(unit, &func_decl, ctxt, name_ident.name, kind)
+                    {
                         // Force set the kind for function declarations as well
                         sym.set_kind(kind);
 
@@ -1307,7 +1342,7 @@ impl<'tcx> AstVisitorCpp<'tcx, CollectCtxt<'tcx>> for CollectorVisitor<'tcx> {
 }
 
 /// Entry point for symbol collection
-pub fn collect_symbols<'tcx>(
+pub(crate) fn collect_symbols<'tcx>(
     unit: CompileUnit<'tcx>,
     node: &HirNode<'tcx>,
     scope_stack: ScopeStack<'tcx>,

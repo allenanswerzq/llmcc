@@ -6,11 +6,7 @@ use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_core::{CompileCtxt, CompileUnit, Error, HirBuildAction, ResolveOptions, Result};
 
-#[allow(clippy::single_component_path_imports)]
-use tree_sitter_cpp;
-
-// Include the auto-generated language definition from build script
-// The generated file contains a define_lang! call that expands to LangCpp
+// Generated from token_map.toml and tree-sitter-cpp node-types.json.
 include!(concat!(env!("OUT_DIR"), "/cpp_tokens.rs"));
 
 impl LanguageDefinition for LangCpp {
@@ -37,17 +33,33 @@ impl LanguageDefinition for LangCpp {
     fn parse_source(text: impl AsRef<[u8]>) -> Result<Box<dyn ParseTree>> {
         use std::cell::RefCell;
 
-        // Thread-local parser reuse to avoid contention from Parser::new()
+        // Parser instances are not shared across threads; reuse one per worker thread.
         thread_local! {
-            static PARSER: RefCell<tree_sitter::Parser> = {
-                let mut parser = tree_sitter::Parser::new();
-                parser.set_language(&tree_sitter_cpp::LANGUAGE.into()).unwrap();
-                RefCell::new(parser)
-            };
+            static PARSER: RefCell<Option<tree_sitter::Parser>> = const { RefCell::new(None) };
         }
 
         PARSER.with(|parser| {
-            let mut parser = parser.borrow_mut();
+            let mut parser_slot = parser.borrow_mut();
+            if parser_slot.is_none() {
+                let mut parser = tree_sitter::Parser::new();
+                parser
+                    .set_language(&tree_sitter_cpp::LANGUAGE.into())
+                    .map_err(|error| {
+                        Error::parse_failed(format!(
+                            "failed to initialize tree-sitter-cpp parser: {error}"
+                        ))
+                        .with_operation("parse_source")
+                        .with_context("language", "cpp")
+                    })?;
+                *parser_slot = Some(parser);
+            }
+
+            let Some(parser) = parser_slot.as_mut() else {
+                return Err(Error::parse_failed("cpp parser was not initialized")
+                    .with_operation("parse_source")
+                    .with_context("language", "cpp"));
+            };
+
             let bytes = text.as_ref();
             let tree = parser.parse(bytes, None).ok_or_else(|| {
                 Error::parse_failed("tree-sitter returned no parse tree")

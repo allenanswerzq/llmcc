@@ -268,8 +268,15 @@ impl<'a> BindCtxt<'a> {
         if !kind_filters.is_empty() {
             options = options.with_result_kinds(kind_filters)
         }
-        let symbols = self.scopes.try_lookup_qualified(path, options)?;
-        Some(symbols)
+        if let Some(symbols) = self.scopes.try_lookup_qualified(path, options) {
+            return Some(symbols);
+        }
+
+        let mut options = QualifiedLookup::global();
+        if !kind_filters.is_empty() {
+            options = options.with_result_kinds(kind_filters)
+        }
+        self.scopes.try_lookup_qualified(path, options)
     }
 
     /// Preferred match for a qualified path.

@@ -222,14 +222,10 @@ impl<'tcx, L: Language> GraphBuilder<'tcx, L> {
                 BasicBlock::Return(self.unit.alloc_block(id, block))
             }
             BlockKind::Alias => {
-                let block = BlockAlias::new_with_name(
-                    id,
-                    node,
-                    parent,
-                    children,
-                    query.try_first_ident_name(),
-                    symbol,
-                );
+                let name = symbol
+                    .map(|symbol| self.unit.resolve_name(symbol.name))
+                    .or_else(|| query.try_first_ident_name());
+                let block = BlockAlias::new_with_name(id, node, parent, children, name, symbol);
                 BasicBlock::Alias(self.unit.alloc_block(id, block))
             }
             BlockKind::Module => {

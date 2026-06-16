@@ -321,7 +321,9 @@ fn infer_scoped_identifier<'tcx>(
         &qualified_names[..]
     };
 
-    scopes.lookup_path_symbol(lookup_path, SymKindSet::empty())
+    scopes
+        .lookup_path_symbol(lookup_path, SymKindSet::empty())
+        .or_else(|| idents.last().and_then(|ident| ident.try_symbol()))
 }
 
 /// Infer index expression type: arr[i] -> ElementType

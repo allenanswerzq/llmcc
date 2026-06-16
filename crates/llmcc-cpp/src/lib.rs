@@ -5,21 +5,15 @@ extern crate llmcc_core;
 mod bind;
 mod collect;
 mod infer;
-mod pattern;
-pub mod token;
+mod token;
 
-pub use infer::infer_type;
-
-/// C/C++ primitive types
-pub const CPP_PRIMITIVES: &[&str] = &[
-    // Integer types
+const CPP_PRIMITIVES: &[&str] = &[
     "int",
     "short",
     "long",
     "char",
     "signed",
     "unsigned",
-    // Sized integer types (C99/C++11)
     "int8_t",
     "int16_t",
     "int32_t",
@@ -33,26 +27,18 @@ pub const CPP_PRIMITIVES: &[&str] = &[
     "ptrdiff_t",
     "intptr_t",
     "uintptr_t",
-    // Floating point types
     "float",
     "double",
-    // Boolean
     "bool",
     "_Bool",
-    // Void
     "void",
-    // Wide character types
     "wchar_t",
     "char16_t",
     "char32_t",
     "char8_t",
-    // C++ specific
     "auto",
     "nullptr_t",
 ];
 
-pub use crate::bind::BinderVisitor;
-pub use crate::collect::CollectorVisitor;
-
-pub use llmcc_core::{CompileCtxt, ProjectGraph, build_graphs, build_hir, print_ir};
+/// C/C++ language implementation for llmcc parsing, collection, binding, and graph building.
 pub use token::LangCpp;

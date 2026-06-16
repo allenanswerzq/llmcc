@@ -1,5 +1,5 @@
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirKind, HirNode};
+use llmcc_core::ir::{HirIdent, HirKind, HirNode};
 use llmcc_core::symbol::{SYM_KIND_TYPES, SymKind, SymKindSet, Symbol};
 use llmcc_resolver::BindCtxt;
 
@@ -10,7 +10,7 @@ const MAX_INFER_DEPTH: u32 = 16;
 
 /// Infer the type of any C/C++ AST node.
 /// Public entry point that starts recursion at depth 0.
-pub fn infer_type<'tcx>(
+pub(crate) fn infer_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
@@ -321,7 +321,6 @@ fn infer_qualified_identifier<'tcx>(
     scopes: &BindCtxt<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
-    // Get the name field (the final identifier in the chain)
     if let Some(name_node) = node.child_by_field(unit, LangCpp::field_name)
         && let Some(ident) = name_node.query(unit).try_first_ident()
         && let Some(sym) = ident.try_symbol()
@@ -329,28 +328,44 @@ fn infer_qualified_identifier<'tcx>(
         return Some(sym);
     }
 
-    // Try to look up the full qualified name
-    let full_name = unit.hir_text(node);
-    if let Some(sym) = scopes.lookup_symbol(&full_name, SYM_KIND_TYPES) {
-        return Some(sym);
-    }
+    let path = qualified_path(unit, node)?;
+    scopes.lookup_path_symbol(&path, SYM_KIND_TYPES)
+}
 
-    if let Some(sym) = scopes.lookup_global(&full_name, SYM_KIND_TYPES) {
-        return Some(sym);
-    }
+fn qualified_name_ident<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    node: &HirNode<'tcx>,
+) -> Option<&'tcx HirIdent<'tcx>> {
+    node.query(unit)
+        .try_ident_with_field(LangCpp::field_name)
+        .or_else(|| node.as_ident())
+}
 
-    if let Some(name_node) = node.child_by_field(unit, LangCpp::field_name)
-        && let Some(ident) = name_node.query(unit).try_first_ident()
+fn qualified_path<'tcx>(unit: &CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<Vec<&'tcx str>> {
+    let mut path = Vec::new();
+    if push_qualified_path(unit, node, &mut path) && path.len() > 1 {
+        Some(path)
+    } else {
+        None
+    }
+}
+
+fn push_qualified_path<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    node: &HirNode<'tcx>,
+    path: &mut Vec<&'tcx str>,
+) -> bool {
+    if let Some(scope_node) = node.child_by_field(unit, LangCpp::field_scope)
+        && !push_qualified_path(unit, &scope_node, path)
     {
-        if let Some(sym) = scopes.lookup_symbol(ident.name, SYM_KIND_TYPES) {
-            return Some(sym);
-        }
-        if let Some(sym) = scopes.lookup_global(ident.name, SYM_KIND_TYPES) {
-            return Some(sym);
-        }
+        return false;
     }
 
-    None
+    let Some(name_ident) = qualified_name_ident(unit, node) else {
+        return false;
+    };
+    path.push(name_ident.name);
+    true
 }
 
 /// Infer field expression: obj.field or obj->field
