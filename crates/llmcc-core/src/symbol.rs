@@ -9,7 +9,7 @@
 
 use parking_lot::RwLock;
 use std::fmt;
-use strum_macros::{EnumIter, FromRepr};
+use strum_macros::{Display, EnumIter, EnumString, FromRepr, IntoStaticStr};
 
 use crate::id::BlockId;
 pub use crate::id::{ScopeId, SymId, SymbolId, reset_scope_id_counter, reset_symbol_id_counter};
@@ -21,8 +21,22 @@ use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU32, AtomicU64, AtomicUsize,
 pub const INDEX_NONE: u32 = u32::MAX;
 
 /// Coarse classification for a named program entity.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, EnumIter, FromRepr, Default)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    PartialEq,
+    Eq,
+    Hash,
+    Display,
+    EnumIter,
+    EnumString,
+    FromRepr,
+    IntoStaticStr,
+    Default,
+)]
 #[repr(u8)]
+#[strum(serialize_all = "snake_case", ascii_case_insensitive)]
 pub enum SymKind {
     /// Kind has not been determined yet.
     #[default]
@@ -391,7 +405,7 @@ impl Symbol {
 
     /// Formats the symbol with basic information
     pub fn format(&self, interner: Option<&crate::interner::InternPool>) -> String {
-        let kind = format!("{:?}", self.kind());
+        let kind = self.kind().to_string();
         if let Some(interner) = interner {
             if let Some(name) = interner.try_resolve(self.name) {
                 format!("[{}:{}] {}", self.id.0, kind, name)
@@ -644,5 +658,15 @@ mod tests {
         for kind in SymKind::iter() {
             assert!(SYM_KIND_ALL.contains(kind), "SYM_KIND_ALL missing {kind:?}");
         }
+    }
+
+    #[test]
+    fn sym_kind_string_conversions_are_derived() {
+        assert_eq!(SymKind::Function.to_string(), "function");
+        assert_eq!(SymKind::UnresolvedType.to_string(), "unresolved_type");
+        assert_eq!("TYPE_ALIAS".parse::<SymKind>(), Ok(SymKind::TypeAlias));
+
+        let value: &'static str = SymKind::EnumVariant.into();
+        assert_eq!(value, "enum_variant");
     }
 }

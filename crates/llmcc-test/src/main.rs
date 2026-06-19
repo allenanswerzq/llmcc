@@ -2,308 +2,137 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 use llmcc_error::{Error, ErrorKind, Result};
-
-use llmcc_test::{
-    CaseOutcome, CaseStatus, Corpus, GraphOptions, ProcessingOptions, RunnerConfig, run_cases,
-    run_cases_for_file_with_parallel,
-};
+use llmcc_test::{CaseOutcome, CaseStatus, RunOptions, load_suite_files, run_path};
+use strum_macros::{Display, IntoStaticStr};
 
 #[derive(Parser, Debug)]
-#[command(name = "llmcc-test", about = "Corpus runner for llmcc", version)]
+#[command(
+    name = "llmcc-test",
+    about = "JSON-backed corpus runner for llmcc",
+    version
+)]
 struct Cli {
-    /// Root directory containing `.llmcc` corpus files
-    #[arg(long, value_name = "DIR", default_value = "tests")]
-    root: PathBuf,
-
     #[command(subcommand)]
     command: Command,
 }
 
-#[derive(Subcommand, Debug)]
+#[derive(Subcommand, Debug, Display, IntoStaticStr)]
+#[strum(serialize_all = "snake_case")]
 enum Command {
-    /// Run every case contained in a single corpus file
+    /// Run one JSON suite file or every JSON suite under a directory.
     Run {
-        /// Path to the `.llmcc` file (relative to --root or absolute)
-        #[arg(value_name = "FILE")]
-        file: PathBuf,
-        /// Update expectation sections with current output (bless)
-        #[arg(long)]
-        update: bool,
-        /// Keep the temporary project directory for inspection
-        #[arg(long = "keep-temps")]
-        keep_temps: bool,
-        #[command(flatten)]
-        graph: GraphOptions,
-        #[command(flatten)]
-        processing: ProcessingOptions,
-    },
-    /// Run the entire corpus (optionally filtered by case id or directory)
-    RunAll {
-        /// Only run cases whose id contains this substring
+        #[arg(value_name = "PATH", default_value = "tests/json")]
+        path: PathBuf,
+        /// Only run cases whose id contains this substring.
         #[arg(long)]
         filter: Option<String>,
-        /// Optional directory or filter string - if a directory, run all tests in it
-        #[arg(value_name = "DIR_OR_FILTER", required = false)]
-        dir_or_filter: Option<PathBuf>,
-        /// Update expectation sections with current output (bless)
-        #[arg(
-            long,
-            value_name = "UPDATE_FILTER",
-            num_args = 0..=1,
-            default_missing_value = ""
-        )]
-        update: Option<String>,
-        /// Keep the temporary project directory for inspection
+        /// Bless expected graph documents with current output.
+        #[arg(long)]
+        update: bool,
+        /// Keep materialized temp projects on disk.
         #[arg(long = "keep-temps")]
         keep_temps: bool,
-        #[command(flatten)]
-        graph: GraphOptions,
-        #[command(flatten)]
-        processing: ProcessingOptions,
+        /// Build HIR and graphs in parallel.
+        #[arg(long)]
+        parallel: bool,
+        /// Print IR during symbol resolution.
+        #[arg(long = "print-ir")]
+        print_ir: bool,
     },
-    /// List available cases (optionally filtering by substring)
+    /// List cases in one JSON suite file or directory.
     List {
+        #[arg(value_name = "PATH", default_value = "tests/json")]
+        path: PathBuf,
         #[arg(long)]
         filter: Option<String>,
     },
 }
 
 fn main() -> Result<()> {
-    let cli = Cli::parse();
-    match cli.command {
+    match Cli::parse().command {
         Command::Run {
-            file,
-            update,
-            keep_temps,
-            graph,
-            processing,
-        } => run_single_command(cli.root, file, update, keep_temps, graph, processing),
-        Command::RunAll {
+            path,
             filter,
-            dir_or_filter,
             update,
             keep_temps,
-            graph,
-            processing,
-        } => {
-            let (should_update, update_filter) = match update {
-                Some(value) if value.is_empty() => (true, None),
-                Some(value) => (true, Some(value)),
-                None => (false, None),
-            };
-
-            // Determine if dir_or_filter is a directory or a filter string
-            let (effective_root, effective_filter) = if let Some(ref path) = dir_or_filter {
-                if path.is_dir() {
-                    // It's a directory - use it as root, no filter
-                    (path.clone(), filter.or(update_filter))
-                } else {
-                    // It's a filter string
-                    (
-                        cli.root,
-                        filter
-                            .or(path.to_string_lossy().to_string().into())
-                            .or(update_filter),
-                    )
-                }
-            } else {
-                (cli.root, filter.or(update_filter))
-            };
-
-            run_all_command(
-                effective_root,
-                effective_filter,
-                should_update,
+            parallel,
+            print_ir,
+        } => run_command(
+            path,
+            RunOptions {
+                filter,
+                update,
                 keep_temps,
-                graph,
-                processing,
-            )
-        }
-        Command::List { filter } => list_command(cli.root, filter),
+                parallel,
+                print_ir,
+            },
+        ),
+        Command::List { path, filter } => list_command(path, filter),
     }
 }
 
-fn run_all_command(
-    root: PathBuf,
-    filter: Option<String>,
-    update: bool,
-    keep_temps: bool,
-    graph: GraphOptions,
-    processing: ProcessingOptions,
-) -> Result<()> {
-    let mut corpus = Corpus::load(&root)?;
-    let outcomes = run_cases(
-        &mut corpus,
-        RunnerConfig {
-            filter: filter.clone(),
-            update,
-            keep_temps,
-            graph,
-            processing,
-        },
-    )?;
+fn run_command(path: PathBuf, options: RunOptions) -> Result<()> {
+    let report = run_path(&path, options)?;
 
-    // Results are already printed inline by the runner
-    let summary = count_outcomes(&outcomes);
-
-    if update {
-        corpus.write_updates()?;
+    for outcome in &report.outcomes {
+        print_outcome(outcome);
     }
 
-    print_summary(&summary);
-    print_failed_tests(&outcomes);
+    println!(
+        "\nSummary: {} passed, {} updated, {} failed",
+        report.passed(),
+        report.updated(),
+        report.failed()
+    );
+
+    if report.failed() > 0 {
+        return Err(Error::new(
+            ErrorKind::AssertionFailed,
+            format!("{} llmcc JSON case(s) failed", report.failed()),
+        ));
+    }
 
     Ok(())
 }
 
-fn run_single_command(
-    root: PathBuf,
-    file: PathBuf,
-    update: bool,
-    keep_temps: bool,
-    graph: GraphOptions,
-    processing: ProcessingOptions,
-) -> Result<()> {
-    let mut corpus = Corpus::load(&root)?;
-    let root_canon = root.canonicalize().map_err(|e| {
-        Error::new(
-            ErrorKind::FileNotFound,
-            format!("failed to resolve root {}: {}", root.display(), e),
-        )
-    })?;
-
-    let canonical = if file.is_absolute() {
-        file.canonicalize().map_err(|e| {
-            Error::new(
-                ErrorKind::FileNotFound,
-                format!("corpus file '{}' not found: {}", file.display(), e),
-            )
-        })?
-    } else {
-        match file.canonicalize() {
-            Ok(path) => path,
-            Err(_) => {
-                let joined = root_canon.join(&file);
-                joined.canonicalize().map_err(|e| {
-                    Error::new(
-                        ErrorKind::FileNotFound,
-                        format!(
-                            "corpus file '{}' (joined with {}) not found: {}",
-                            file.display(),
-                            root_canon.display(),
-                            e
-                        ),
-                    )
-                })?
+fn print_outcome(outcome: &CaseOutcome) {
+    match outcome.status {
+        CaseStatus::Passed => println!("  {} ... ok", outcome.id),
+        CaseStatus::Updated => println!("  {} ... updated", outcome.id),
+        CaseStatus::Failed => {
+            println!("  {} ... FAILED", outcome.id);
+            if let Some(message) = &outcome.message {
+                for line in message.lines() {
+                    println!("        {line}");
+                }
             }
         }
-    };
-
-    let Some(entry) = corpus
-        .files_mut()
-        .iter_mut()
-        .find(|candidate| candidate.path == canonical)
-    else {
-        return Err(Error::new(
-            ErrorKind::FileNotFound,
-            format!(
-                "file '{}' is not registered under {}",
-                file.display(),
-                root.display()
-            ),
-        ));
-    };
-
-    let outcomes = run_cases_for_file_with_parallel(
-        entry,
-        update,
-        keep_temps,
-        processing.parallel,
-        processing.print_ir,
-        graph.component_depth(),
-        graph.pagerank_top_k,
-    )?;
-    // Results are already printed inline by the runner
-    let summary = count_outcomes(&outcomes);
-
-    if update {
-        corpus.write_updates()?;
     }
-
-    print_summary(&summary);
-    print_failed_tests(&outcomes);
-
-    Ok(())
 }
 
-fn list_command(root: PathBuf, filter: Option<String>) -> Result<()> {
-    let corpus = Corpus::load(&root)?;
+fn list_command(path: PathBuf, filter: Option<String>) -> Result<()> {
+    let suites = load_suite_files(&path)?;
     let mut count = 0usize;
-    for file in corpus.files() {
-        for case in &file.cases {
-            let id = case.id();
+
+    for suite in suites {
+        for case in &suite.suite.cases {
             if let Some(term) = &filter
-                && !id.contains(term)
+                && !case.id.contains(term)
             {
                 continue;
             }
+
             count += 1;
-            println!("{id}");
+            println!("{}", case.id);
         }
     }
+
     if count == 0 {
         return Err(Error::new(
             ErrorKind::InvalidArgument,
-            format!(
-                "no llmcc-test cases found{}",
-                filter
-                    .as_ref()
-                    .map(|term| format!(" matching '{term}'"))
-                    .unwrap_or_default()
-            ),
+            "no llmcc JSON cases matched the requested path/filter",
         ));
     }
+
     Ok(())
-}
-
-#[derive(Default)]
-struct OutcomeSummary {
-    passed: usize,
-    updated: usize,
-    failed: usize,
-    skipped: usize,
-}
-
-fn count_outcomes(outcomes: &[CaseOutcome]) -> OutcomeSummary {
-    let mut summary = OutcomeSummary::default();
-    for outcome in outcomes {
-        match outcome.status {
-            CaseStatus::Passed => summary.passed += 1,
-            CaseStatus::Updated => summary.updated += 1,
-            CaseStatus::Failed => summary.failed += 1,
-            CaseStatus::NoExpectations => summary.skipped += 1,
-        }
-    }
-    summary
-}
-
-fn print_summary(summary: &OutcomeSummary) {
-    println!(
-        "\nSummary: {} passed, {} updated, {} failed, {} skipped",
-        summary.passed, summary.updated, summary.failed, summary.skipped
-    );
-}
-
-fn print_failed_tests(outcomes: &[CaseOutcome]) {
-    let failed: Vec<_> = outcomes
-        .iter()
-        .filter(|o| o.status == CaseStatus::Failed)
-        .collect();
-
-    if !failed.is_empty() {
-        println!("\nFailed tests:");
-        for outcome in failed {
-            println!("  - {}", outcome.id);
-        }
-    }
 }
