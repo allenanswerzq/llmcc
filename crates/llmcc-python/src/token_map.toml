@@ -1,0 +1,47 @@
+# Python token mappings for llmcc
+# Architecture-first: modules, classes, functions, and calls.
+
+default_hir_kind = "Internal"
+
+[[nodes]]
+ts_name = "module"
+hir_kind = "Scope"
+block_kind = "Root"
+
+[[nodes]]
+ts_name = "class_definition"
+hir_kind = "Scope"
+block_kind = "Class"
+
+[[nodes]]
+ts_name = "function_definition"
+hir_kind = "Scope"
+block_kind = "Func"
+
+[[nodes]]
+ts_name = "call"
+block_kind = "Call"
+
+[[nodes]]
+ts_name = "identifier"
+hir_kind = "Identifier"
+
+[[nodes]]
+ts_name = "attribute"
+
+[[fields]]
+name = "field_name"
+field_name = "name"
+
+[[fields]]
+name = "field_function"
+field_name = "function"
+
+[[fields]]
+name = "field_type"
+field_name = "type"
+
+# Python has no Rust-like trait field. The generated language contract requires one.
+[[fields]]
+name = "field_trait"
+field_name = "type"

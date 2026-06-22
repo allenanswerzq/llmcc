@@ -1,10 +1,17 @@
-//! JSON-backed test runner for llmcc graph behavior.
-//!
-//! Test suites are JSON files. Each case declares virtual source files, a
-//! language, a graph depth, and the expected [`llmcc_format::GraphDocument`].
+//! Test infrastructure and corpus management.
+pub mod corpus;
+mod expectation;
+mod materialize;
+pub mod options;
+mod pipeline;
+pub mod runner;
+pub mod snapshot;
 
-mod case;
-mod engine;
-
-pub use case::{CaseLanguage, JsonCase, JsonSuite, SourceFile, SuiteFile, load_suite_files};
-pub use engine::{CaseOutcome, CaseStatus, RunOptions, RunReport, run_path};
+pub use corpus::{Corpus, CorpusCase, CorpusCaseExpectation, CorpusFile, TestFile};
+pub use options::{CommonTestOptions, GraphOptions, ProcessingOptions};
+pub use pipeline::PipelineOptions;
+pub use runner::{
+    CaseOutcome, CaseStatus, RunnerConfig, run_cases, run_cases_for_file,
+    run_cases_for_file_with_parallel,
+};
+pub use snapshot::{Snapshot, SnapshotContext};

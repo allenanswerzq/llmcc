@@ -451,6 +451,7 @@ dependencies = [
  "pretty_assertions",
  "rayon",
  "regex",
+ "serde",
  "serde_json",
  "serial_test",
  "smallvec",
@@ -480,6 +481,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "llmcc-csharp"
+version = "0.2.65"
+dependencies = [
+ "llmcc-core",
+ "llmcc-resolver",
+ "llmcc-tree",
+ "pretty_assertions",
+ "tracing",
+ "tree-sitter",
+ "tree-sitter-c-sharp",
+]
+
+[[package]]
 name = "llmcc-dot"
 version = "0.2.65"
 dependencies = [
@@ -499,15 +513,55 @@ dependencies = [
 ]
 
 [[package]]
-name = "llmcc-format"
+name = "llmcc-go"
 version = "0.2.65"
 dependencies = [
  "llmcc-core",
- "llmcc-error",
- "serde",
- "serde_json",
- "strum",
- "strum_macros",
+ "llmcc-resolver",
+ "llmcc-tree",
+ "pretty_assertions",
+ "tracing",
+ "tree-sitter",
+ "tree-sitter-go",
+]
+
+[[package]]
+name = "llmcc-java"
+version = "0.2.65"
+dependencies = [
+ "llmcc-core",
+ "llmcc-resolver",
+ "llmcc-tree",
+ "pretty_assertions",
+ "tracing",
+ "tree-sitter",
+ "tree-sitter-java",
+]
+
+[[package]]
+name = "llmcc-js"
+version = "0.2.65"
+dependencies = [
+ "llmcc-core",
+ "llmcc-resolver",
+ "llmcc-tree",
+ "pretty_assertions",
+ "tracing",
+ "tree-sitter",
+ "tree-sitter-javascript",
+]
+
+[[package]]
+name = "llmcc-python"
+version = "0.2.65"
+dependencies = [
+ "llmcc-core",
+ "llmcc-resolver",
+ "llmcc-tree",
+ "pretty_assertions",
+ "tracing",
+ "tree-sitter",
+ "tree-sitter-python",
 ]
 
 [[package]]
@@ -545,17 +599,17 @@ name = "llmcc-test"
 version = "0.2.65"
 dependencies = [
  "clap",
+ "llmcc",
  "llmcc-core",
  "llmcc-cpp",
+ "llmcc-dot",
  "llmcc-error",
- "llmcc-format",
  "llmcc-resolver",
  "llmcc-rust",
  "llmcc-ts",
- "serde",
- "serde_json",
- "strum",
- "strum_macros",
+ "regex",
+ "shell-words",
+ "similar",
  "tempfile",
  "walkdir",
 ]
@@ -903,10 +957,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "shell-words"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dc6fe69c597f9c37bfeeeeeb33da3530379845f10be461a66d16d03eca2ded77"
+
+[[package]]
 name = "shlex"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
+
+[[package]]
+name = "similar"
+version = "2.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbbb5d9659141646ae647b42fe094daf6c6192d1620870b449d9557f748b2daa"
 
 [[package]]
 name = "slab"
@@ -1147,6 +1213,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "tree-sitter-c-sharp"
+version = "0.23.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c1aac67f1ad71de1d6d39708d34811081c26dfa495658de6c14c34200849357c"
+dependencies = [
+ "cc",
+ "tree-sitter-language",
+]
+
+[[package]]
 name = "tree-sitter-cpp"
 version = "0.23.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1157,10 +1233,50 @@ dependencies = [
 ]
 
 [[package]]
+name = "tree-sitter-go"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c8560a4d2f835cc0d4d2c2e03cbd0dde2f6114b43bc491164238d333e28b16ea"
+dependencies = [
+ "cc",
+ "tree-sitter-language",
+]
+
+[[package]]
+name = "tree-sitter-java"
+version = "0.23.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0aa6cbcdc8c679b214e616fd3300da67da0e492e066df01bcf5a5921a71e90d6"
+dependencies = [
+ "cc",
+ "tree-sitter-language",
+]
+
+[[package]]
+name = "tree-sitter-javascript"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "68204f2abc0627a90bdf06e605f5c470aa26fdcb2081ea553a04bdad756693f5"
+dependencies = [
+ "cc",
+ "tree-sitter-language",
+]
+
+[[package]]
 name = "tree-sitter-language"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c4013970217383f67b18aef68f6fb2e8d409bc5755227092d32efb0422ba24b8"
+
+[[package]]
+name = "tree-sitter-python"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6bf85fd39652e740bf60f46f4cda9492c3a9ad75880575bf14960f775cb74a1c"
+dependencies = [
+ "cc",
+ "tree-sitter-language",
+]
 
 [[package]]
 name = "tree-sitter-rust"

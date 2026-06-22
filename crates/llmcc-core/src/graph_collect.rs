@@ -3,6 +3,14 @@
 //! The collector keeps renderer APIs small: callers get stable nodes, unique
 //! edges, and display metadata without handling raw graph relations.
 
+#[path = "graph_aggregate.rs"]
+mod aggregate;
+
+pub use aggregate::{
+    AggregateVisitor, AggregatedEdge, AggregatedGraph, AggregatedGraphVisitor, AggregatedNode,
+    AggregatedNodeKind,
+};
+
 use std::collections::{BTreeSet, HashSet};
 use std::path::Path;
 
@@ -21,6 +29,26 @@ pub struct CollectedGraph {
     nodes: Vec<CollectedNode>,
     /// Unique semantic edges between visible nodes.
     edges: BTreeSet<CollectedEdge>,
+}
+
+/// Visitor for collected graph facts.
+///
+/// This is the stable traversal boundary for renderers, JSON formatters,
+/// indexes, tests, and agent-oriented summaries. Visitors receive already
+/// filtered renderer-ready nodes and semantic edges without handling raw block
+/// relations.
+pub trait CollectedGraphVisitor {
+    /// Output produced after the visitor has traversed the graph.
+    type Output;
+
+    /// Visit one collected node in source order.
+    fn visit_node(&mut self, node: &CollectedNode);
+
+    /// Visit one collected edge in deterministic order.
+    fn visit_edge(&mut self, edge: &CollectedEdge);
+
+    /// Finish the visitor and return its output.
+    fn finish(self) -> Self::Output;
 }
 
 impl CollectedGraph {
@@ -45,6 +73,25 @@ impl CollectedGraph {
     /// Return collected edges between visible nodes.
     pub fn edges(&self) -> &BTreeSet<CollectedEdge> {
         &self.edges
+    }
+
+    /// Traverse collected nodes followed by collected edges.
+    pub fn visit<V: CollectedGraphVisitor>(&self, visitor: &mut V) {
+        for node in &self.nodes {
+            visitor.visit_node(node);
+        }
+        for edge in &self.edges {
+            visitor.visit_edge(edge);
+        }
+    }
+
+    /// Apply a transform visitor and return the visitor's output type.
+    pub fn transform<Output>(
+        &self,
+        mut visitor: impl CollectedGraphVisitor<Output = Output>,
+    ) -> Output {
+        self.visit(&mut visitor);
+        visitor.finish()
     }
 
     /// Split the graph into owned node and edge collections.
@@ -420,6 +467,23 @@ pub enum CollectedEdgeKind {
     Annotation,
 }
 
+impl CollectedEdgeKind {
+    /// Return true when the stored edge direction should be reversed for dependency output.
+    pub fn reverses_for_dependency(self) -> bool {
+        matches!(
+            self,
+            Self::Field
+                | Self::NestedField
+                | Self::TypeArg
+                | Self::Param
+                | Self::Conformance
+                | Self::Specialization
+                | Self::ImplArg
+                | Self::Annotation
+        )
+    }
+}
+
 /// Edge in the collected graph.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CollectedEdge {
@@ -438,6 +502,15 @@ impl CollectedEdge {
             from_id,
             to_id,
             kind,
+        }
+    }
+
+    /// Return source and target ids oriented as a dependency edge.
+    pub fn dependency_ids(&self) -> (BlockId, BlockId) {
+        if self.kind.reverses_for_dependency() {
+            (self.to_id, self.from_id)
+        } else {
+            (self.from_id, self.to_id)
         }
     }
 }

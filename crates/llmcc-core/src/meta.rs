@@ -6,19 +6,43 @@
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
+use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
-use strum_macros::{EnumIter, FromRepr};
+use strum_macros::{Display, EnumIter, EnumString, FromRepr, IntoStaticStr};
 
 const MIN_MODULE_SIBLING_RATIO: f64 = 0.05;
 const MIN_MODULE_SIBLING_FILES: usize = 1;
 const MAX_MODULE_DOMINANCE_RATIO: f64 = 0.80;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, FromRepr)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    Default,
+    Deserialize,
+    Serialize,
+    Display,
+    EnumIter,
+    EnumString,
+    FromRepr,
+    IntoStaticStr,
+)]
 #[repr(u8)]
+#[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case", ascii_case_insensitive)]
 pub enum ArchitectureLevel {
+    #[strum(serialize = "project", serialize = "0")]
     Project = 0,
+    #[strum(serialize = "package", serialize = "1")]
     Package = 1,
+    #[serde(alias = "namespace")]
+    #[strum(serialize = "module", serialize = "namespace", serialize = "2")]
     Module = 2,
+    #[default]
+    #[strum(serialize = "file", serialize = "3")]
     File = 3,
 }
 

@@ -33,7 +33,11 @@ pub use block::{BasicBlock, BlockKind, BlockRelation};
 pub use context::{CompileCtxt, CompileUnit, FileOrder};
 pub use graph::{ProjectGraph, UnitGraph, UnitNode};
 pub use graph_builder::{GraphBuildOptions, build_graphs};
-pub use graph_collect::{CollectedEdge, CollectedEdgeKind, CollectedGraph, CollectedNode};
+pub use graph_collect::{
+    AggregateVisitor, AggregatedEdge, AggregatedGraph, AggregatedGraphVisitor, AggregatedNode,
+    AggregatedNodeKind, CollectedEdge, CollectedEdgeKind, CollectedGraph, CollectedGraphVisitor,
+    CollectedNode,
+};
 pub use graph_query::{FieldArgs, FieldTypes, GraphQuery};
 pub use id::{
     BlockId, HirId, ScopeId, SymId, SymbolId, next_hir_id, reset_block_id_counter,
