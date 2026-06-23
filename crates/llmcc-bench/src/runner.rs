@@ -134,7 +134,7 @@ fn target_dir(root: &Path) -> PathBuf {
 /// Run codex exec with the given prompt against the repo directory.
 fn run_codex(prompt: &str, work_dir: &Path) -> CodexOutput {
     let mut child = Command::new(codex_command())
-        .args(["exec", "--json", "--full-auto", "-C"])
+        .args(["exec", "--json", "--sandbox", "danger-full-access", "-C"])
         .arg(work_dir)
         .arg("-")
         .stdin(Stdio::piped())
@@ -168,46 +168,66 @@ fn codex_command() -> &'static str {
     if cfg!(windows) { "codex.cmd" } else { "codex" }
 }
 
+/// Verify that Codex can execute native shell tools before collecting benchmark metrics.
+pub fn verify_codex_tool_execution(work_dir: &Path) {
+    let marker_name: String = format!(".llmcc-bench-codex-tool-probe-{}.txt", std::process::id());
+    let marker_path = work_dir.join(&marker_name);
+    let _ = fs::remove_file(&marker_path);
+
+    let command_hint = if cfg!(windows) {
+        format!(r#"powershell.exe -Command "Set-Content -Path '{marker_name}' -Value ok""#)
+    } else {
+        format!("sh -c 'printf ok > {marker_name}'")
+    };
+    let prompt = format!(
+        "This is an llmcc-bench preflight. Use the shell tool to create a file named `{marker_name}` in the current directory. A suitable command is `{command_hint}`. After the command runs, answer briefly."
+    );
+
+    let codex = run_codex(&prompt, work_dir);
+    let metrics = parse_metrics(&codex.stdout);
+    let marker_created = marker_path.exists();
+    let _ = fs::remove_file(&marker_path);
+
+    assert!(
+        codex.success,
+        "Codex tool preflight failed: {}",
+        codex.stderr
+    );
+    assert!(
+        marker_created && metrics.tool_calls > 0,
+        "Codex tool preflight did not execute a native shell tool. marker_created={marker_created} tool_calls={}\nstdout excerpt:\n{}\nstderr excerpt:\n{}",
+        metrics.tool_calls,
+        excerpt(&codex.stdout),
+        excerpt(&codex.stderr)
+    );
+}
+
 #[derive(Debug, Clone, Copy, Default)]
 struct Metrics {
     input_tokens: u64,
     cached_input_tokens: u64,
     output_tokens: u64,
-    native_tool_calls: u32,
-    text_tool_calls: u32,
-}
-
-impl Metrics {
-    fn tool_calls(self) -> u32 {
-        self.native_tool_calls + self.text_tool_calls
-    }
+    tool_calls: u32,
 }
 
 /// Parse JSONL codex output to extract token usage and tool call count.
 fn parse_metrics(jsonl: &str) -> Metrics {
-    let mut input_tokens: u64 = 0;
-    let mut cached_input_tokens: u64 = 0;
-    let mut output_tokens: u64 = 0;
-    let mut native_tool_calls: u32 = 0;
-    let mut text_tool_calls: u32 = 0;
+    let mut metrics = Metrics::default();
 
     for line in jsonl.lines() {
         let Ok(event) = serde_json::from_str::<serde_json::Value>(line) else {
             continue;
         };
 
-        // Count tool calls from item.completed events with tool use
+        // Count tool calls from item.completed events.
         if event.get("type").and_then(|t| t.as_str()) == Some("item.completed") {
             if let Some(item) = event.get("item") {
-                if item.get("type").and_then(|t| t.as_str()) == Some("tool_use") {
-                    native_tool_calls += 1;
-                }
-                if item.get("type").and_then(|t| t.as_str()) == Some("agent_message") {
-                    text_tool_calls += item
-                        .get("text")
-                        .and_then(|text| text.as_str())
-                        .map(count_text_tool_calls)
-                        .unwrap_or(0);
+                if item
+                    .get("type")
+                    .and_then(|kind| kind.as_str())
+                    .is_some_and(is_tool_item)
+                {
+                    metrics.tool_calls += 1;
                 }
             }
         }
@@ -215,15 +235,15 @@ fn parse_metrics(jsonl: &str) -> Metrics {
         // Sum token usage from turn.completed events
         if event.get("type").and_then(|t| t.as_str()) == Some("turn.completed") {
             if let Some(usage) = event.get("usage") {
-                input_tokens += usage
+                metrics.input_tokens += usage
                     .get("input_tokens")
                     .and_then(|v| v.as_u64())
                     .unwrap_or(0);
-                cached_input_tokens += usage
+                metrics.cached_input_tokens += usage
                     .get("cached_input_tokens")
                     .and_then(|v| v.as_u64())
                     .unwrap_or(0);
-                output_tokens += usage
+                metrics.output_tokens += usage
                     .get("output_tokens")
                     .and_then(|v| v.as_u64())
                     .unwrap_or(0);
@@ -231,17 +251,15 @@ fn parse_metrics(jsonl: &str) -> Metrics {
         }
     }
 
-    Metrics {
-        input_tokens,
-        cached_input_tokens,
-        output_tokens,
-        native_tool_calls,
-        text_tool_calls,
-    }
+    metrics
 }
 
-fn count_text_tool_calls(text: &str) -> u32 {
-    text_tool_blocks(text).len() as u32
+fn is_tool_item(kind: &str) -> bool {
+    matches!(kind, "tool_use" | "command_execution") || kind.contains("tool_call")
+}
+
+fn excerpt(text: &str) -> String {
+    text.chars().take(1200).collect()
 }
 
 /// Execute a single task in the given mode and return metrics.
@@ -292,7 +310,7 @@ pub fn run_task(task: &Task, mode: Mode, repo_dir: &Path, artifact_root: &Path) 
     write_artifact(
         &artifact_dir.join("metadata.toml"),
         &format!(
-            "task_id = {task_id:?}\nrepo = {repo:?}\nmode = {mode:?}\ninput_tokens = {input}\ncached_input_tokens = {cached_input}\noutput_tokens = {output}\ninput_tokens_k = {input_k:.1}\ncached_input_tokens_k = {cached_input_k:.1}\noutput_tokens_k = {output_k:.1}\ntool_calls = {tools}\nnative_tool_calls = {native_tools}\ntext_tool_calls = {text_tools}\nwall_time_s = {time:.1}\ngraph_bytes = {graph_bytes}\n",
+            "task_id = {task_id:?}\nrepo = {repo:?}\nmode = {mode:?}\ninput_tokens = {input}\ncached_input_tokens = {cached_input}\noutput_tokens = {output}\ninput_tokens_k = {input_k:.1}\ncached_input_tokens_k = {cached_input_k:.1}\noutput_tokens_k = {output_k:.1}\ntool_calls = {tools}\nwall_time_s = {time:.1}\ngraph_bytes = {graph_bytes}\n",
             task_id = task.id,
             repo = task.repo,
             mode = mode.to_string(),
@@ -302,9 +320,7 @@ pub fn run_task(task: &Task, mode: Mode, repo_dir: &Path, artifact_root: &Path) 
             input_k = metrics.input_tokens as f64 / 1000.0,
             cached_input_k = metrics.cached_input_tokens as f64 / 1000.0,
             output_k = metrics.output_tokens as f64 / 1000.0,
-            tools = metrics.tool_calls(),
-            native_tools = metrics.native_tool_calls,
-            text_tools = metrics.text_tool_calls,
+            tools = metrics.tool_calls,
             time = wall_time_s,
             graph_bytes = graph.as_ref().map_or(0, |graph| graph.len()),
         ),
@@ -316,7 +332,7 @@ pub fn run_task(task: &Task, mode: Mode, repo_dir: &Path, artifact_root: &Path) 
         input_tokens: metrics.input_tokens,
         cached_input_tokens: metrics.cached_input_tokens,
         output_tokens: metrics.output_tokens,
-        tool_calls: metrics.tool_calls(),
+        tool_calls: metrics.tool_calls,
         wall_time_s,
     }
 }
@@ -333,6 +349,9 @@ fn tool_transcript(jsonl: &str) -> String {
         let Ok(event) = serde_json::from_str::<serde_json::Value>(line) else {
             continue;
         };
+        if event.get("type").and_then(|t| t.as_str()) != Some("item.completed") {
+            continue;
+        }
         let Some(item) = event.get("item") else {
             continue;
         };
@@ -340,35 +359,12 @@ fn tool_transcript(jsonl: &str) -> String {
             continue;
         };
 
-        match item_type {
-            "agent_message" => {
-                let Some(text) = item.get("text").and_then(|text| text.as_str()) else {
-                    continue;
-                };
-                for block in text_tool_blocks(text) {
-                    count += 1;
-                    out.push_str(&format!(
-                        "## {count}. agent -> tool ({})\n\n{}\n\n",
-                        block.kind,
-                        block.body.trim()
-                    ));
-                }
-            }
-            "tool_use" => {
-                count += 1;
-                out.push_str(&format!(
-                    "## {count}. agent -> tool (native)\n\n{}\n\n",
-                    serde_json::to_string_pretty(item).unwrap()
-                ));
-            }
-            kind if kind.contains("tool") => {
-                count += 1;
-                out.push_str(&format!(
-                    "## {count}. tool -> agent ({kind})\n\n{}\n\n",
-                    serde_json::to_string_pretty(item).unwrap()
-                ));
-            }
-            _ => {}
+        if is_tool_item(item_type) {
+            count += 1;
+            out.push_str(&format!(
+                "## {count}. {item_type}\n\n{}\n\n",
+                serde_json::to_string_pretty(item).unwrap()
+            ));
         }
     }
 
@@ -377,128 +373,6 @@ fn tool_transcript(jsonl: &str) -> String {
     }
 
     out
-}
-
-#[derive(Debug)]
-struct TextToolBlock {
-    start: usize,
-    kind: String,
-    body: String,
-}
-
-fn text_tool_blocks(text: &str) -> Vec<TextToolBlock> {
-    let mut blocks = Vec::new();
-
-    for lang in ["shell", "powershell", "bash"] {
-        blocks.extend(fenced_blocks(text, lang));
-    }
-    for tag in ["shell", "tool", "tool_call", "tool_input"] {
-        blocks.extend(tagged_blocks(text, tag));
-    }
-    blocks.extend(details_shell_blocks(text));
-
-    blocks.sort_by_key(|block| block.start);
-    blocks
-}
-
-fn details_shell_blocks(text: &str) -> Vec<TextToolBlock> {
-    let mut blocks = Vec::new();
-    let open = "<details><summary>Shell:";
-    let summary_close = "</summary>";
-    let details_close = "</details>";
-    let mut offset = 0;
-
-    while let Some(relative_start) = text[offset..].find(open) {
-        let start = offset + relative_start;
-        let command_start = start + open.len();
-        let Some(relative_summary_end) = text[command_start..].find(summary_close) else {
-            break;
-        };
-        let command_end = command_start + relative_summary_end;
-        let body_start = command_end + summary_close.len();
-        let Some(relative_body_end) = text[body_start..].find(details_close) else {
-            break;
-        };
-        let body_end = body_start + relative_body_end;
-        let command = text[command_start..command_end].trim();
-        let output = text[body_start..body_end].trim();
-        blocks.push(TextToolBlock {
-            start,
-            kind: "details:shell".into(),
-            body: format!(
-                "command:\n{command}\n\noutput:\n{}",
-                strip_markdown_fence(output)
-            ),
-        });
-        offset = body_end + details_close.len();
-    }
-
-    blocks
-}
-
-fn strip_markdown_fence(text: &str) -> &str {
-    let trimmed = text.trim();
-    let Some(after_open) = trimmed.strip_prefix("```") else {
-        return trimmed;
-    };
-    let after_open = after_open
-        .strip_prefix("\r\n")
-        .or_else(|| after_open.strip_prefix('\n'))
-        .unwrap_or(after_open);
-    after_open.strip_suffix("```").unwrap_or(after_open).trim()
-}
-
-fn fenced_blocks(text: &str, lang: &str) -> Vec<TextToolBlock> {
-    let mut blocks = Vec::new();
-    let marker = format!("```{lang}");
-    let mut offset = 0;
-
-    while let Some(relative_start) = text[offset..].find(&marker) {
-        let start = offset + relative_start;
-        let mut body_start = start + marker.len();
-        if text[body_start..].starts_with("\r\n") {
-            body_start += 2;
-        } else if text[body_start..].starts_with('\n') {
-            body_start += 1;
-        }
-
-        let Some(relative_end) = text[body_start..].find("```") else {
-            break;
-        };
-        let end = body_start + relative_end;
-        blocks.push(TextToolBlock {
-            start,
-            kind: format!("fenced:{lang}"),
-            body: text[body_start..end].to_string(),
-        });
-        offset = end + 3;
-    }
-
-    blocks
-}
-
-fn tagged_blocks(text: &str, tag: &str) -> Vec<TextToolBlock> {
-    let mut blocks = Vec::new();
-    let open = format!("<{tag}>");
-    let close = format!("</{tag}>");
-    let mut offset = 0;
-
-    while let Some(relative_start) = text[offset..].find(&open) {
-        let start = offset + relative_start;
-        let body_start = start + open.len();
-        let Some(relative_end) = text[body_start..].find(&close) else {
-            break;
-        };
-        let end = body_start + relative_end;
-        blocks.push(TextToolBlock {
-            start,
-            kind: format!("tag:{tag}"),
-            body: text[body_start..end].to_string(),
-        });
-        offset = end + close.len();
-    }
-
-    blocks
 }
 
 fn pretty_codex_jsonl(jsonl: &str) -> String {

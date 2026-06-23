@@ -82,6 +82,8 @@ fn main() {
     println!("Repo root: {}", repo_root.display());
     let checkout = runner::checkout_repo(&repo, &repo_root);
     println!("Checkout: {}", checkout.path().display());
+    println!("Checking Codex tool execution...");
+    runner::verify_codex_tool_execution(checkout.path());
 
     let mut results = Vec::new();
 

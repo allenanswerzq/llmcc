@@ -65,7 +65,7 @@ struct RenderArgs {
     ai: bool,
 
     /// Emit a flat DOT graph without subgraph clusters
-    #[arg(long = "flat")]
+    #[arg(long = "flat", default_value_t = true, action = clap::ArgAction::Set)]
     flat: bool,
 }
 
