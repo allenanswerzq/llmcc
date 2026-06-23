@@ -64,7 +64,7 @@ impl RenderOptions {
 
     /// Enable or disable agent-optimized output (no visual styling).
     #[must_use]
-    pub fn with_for_agent(mut self, enabled: bool) -> Self {
+    pub fn with_ai(mut self, enabled: bool) -> Self {
         self.ai = enabled;
         self
     }

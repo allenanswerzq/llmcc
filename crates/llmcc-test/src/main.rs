@@ -2,6 +2,7 @@
 
 mod corpus;
 mod pipeline;
+mod render;
 mod runner;
 
 use std::path::PathBuf;

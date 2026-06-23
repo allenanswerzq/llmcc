@@ -19,11 +19,18 @@ pub enum OutputKind {
     BlockRelations,
     Blocks,
     BlockDeps,
-    ArchGraph,
-    ArchGraphDepth0,
-    ArchGraphDepth1,
-    ArchGraphDepth2,
-    ArchGraphDepth3,
+    #[strum(serialize = "file", serialize = "arch-graph")]
+    File,
+    #[strum(serialize = "project", serialize = "arch-graph-depth0")]
+    Project,
+    #[strum(serialize = "package", serialize = "arch-graph-depth1")]
+    Package,
+    #[strum(
+        serialize = "namespace",
+        serialize = "arch-graph-depth2",
+        serialize = "arch-graph-depth3"
+    )]
+    Namespace,
 }
 
 impl OutputKind {
@@ -35,11 +42,10 @@ impl OutputKind {
                 | Self::BlockRelations
                 | Self::Blocks
                 | Self::BlockDeps
-                | Self::ArchGraph
-                | Self::ArchGraphDepth0
-                | Self::ArchGraphDepth1
-                | Self::ArchGraphDepth2
-                | Self::ArchGraphDepth3
+                | Self::File
+                | Self::Project
+                | Self::Package
+                | Self::Namespace
         )
     }
 
