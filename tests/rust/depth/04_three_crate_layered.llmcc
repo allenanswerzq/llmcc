@@ -1,0 +1,119 @@
+===============================================================================
+three-crate-layered
+===============================================================================
+Three crates in a layered architecture: app -> service -> model.
+Verifies transitive dependency edges.
+
+--- file: model/Cargo.toml ---
+[package]
+name = "model"
+
+--- file: model/src/lib.rs ---
+pub struct User {
+    pub id: u64,
+    pub email: String,
+}
+
+--- file: service/Cargo.toml ---
+[package]
+name = "service"
+
+[dependencies]
+model = { path = "../model" }
+
+--- file: service/src/lib.rs ---
+use model::User;
+
+pub fn find_user(id: u64) -> User {
+    User { id, email: String::new() }
+}
+
+--- file: app/Cargo.toml ---
+[package]
+name = "app"
+
+[dependencies]
+service = { path = "../service" }
+model = { path = "../model" }
+
+--- file: app/src/lib.rs ---
+use model::User;
+use service::find_user;
+
+pub fn get_email(id: u64) -> String {
+    let user: User = find_user(id);
+    user.email
+}
+
+--- expect:block-graph ---
+(root:1 001_lib (001_lib)
+  (class:2 User
+    (field:3 id @type u64)
+    (field:4 email @type String)
+  )
+)
+
+(root:5 003_lib (003_lib)
+  (func:6 find_user
+    (parameter:7 id @type u64)
+    (return:8 @type:2 User)
+    (@tdep:2 User)
+  )
+)
+
+(root:10 005_lib (005_lib)
+  (func:11 get_email
+    (parameter:12 id @type u64)
+    (return:13 @type String)
+  )
+)
+
+--- expect:arch-graph ---
+// # llmcc architecture view:
+// quick structural map for AI agents to understand and explore this codebase.
+// Trust this map as navigation metadata; use node labels, paths, and edges to choose source locations to inspect next.
+// # Examples:
+// Node example: n42[label='Parser', path='crates/foo/src/parser.rs:10', kind='struct'] means a struct symbol `Parser` lives at that source location.
+// Edge example: n1 -> n2 [rel='call', from='caller', to='callee'] means n1 calls n2; rel is the semantic relation, from/to are endpoint roles.
+// Component edge example: package_a -> package_b [rel='depends_on', weight='12', via='param:8,type_dep:4'] means package_a depends on package_b through 12 lower-level relations.
+// # Stats:
+// mode=agent layout=clustered nodes=3 edges=1 clusters=6
+//
+digraph architecture {
+
+  subgraph cluster_root_0_app {
+    label="app";
+
+    subgraph cluster_root_0_app_0_005_lib_rs {
+      label="005_lib.rs";
+
+      n11[label="get_email", package="app", file="005_lib.rs", path="$TMP/app/src/005_lib.rs:4", kind="function"];
+    }
+
+  }
+
+  subgraph cluster_root_1_model {
+    label="model";
+
+    subgraph cluster_root_1_model_0_001_lib_rs {
+      label="001_lib.rs";
+
+      n2[label="User", package="model", file="001_lib.rs", path="$TMP/model/src/001_lib.rs:1", kind="struct"];
+    }
+
+  }
+
+  subgraph cluster_root_2_service {
+    label="service";
+
+    subgraph cluster_root_2_service_0_003_lib_rs {
+      label="003_lib.rs";
+
+      n6[label="find_user", package="service", file="003_lib.rs", path="$TMP/service/src/003_lib.rs:3", kind="function"];
+    }
+
+  }
+
+
+n6 -> n2 [rel="return", from="func", to="output"];
+}

@@ -181,11 +181,40 @@ fn normalize(kind: OutputKind, text: &str, temp_dir: Option<&str>) -> String {
 }
 
 /// Replace temp directory paths (and their final component) with `$TMP`.
+///
+/// Handles mismatches between the actual temp path and what appears in output
+/// (forward vs backslash, Windows short names like ZHANGQ~1) by also stripping
+/// any path prefix that precedes the `$TMP` placeholder after dir-name replacement.
 fn replace_tmp_path(text: &str, tmp: &str) -> String {
+    // Try exact full-path replacement first (handles matching separators).
     let mut s = text.replace(tmp, "$TMP");
+    // Also try with forward slashes (output often uses / on Windows).
+    let tmp_fwd = tmp.replace('\\', "/");
+    s = s.replace(&tmp_fwd, "$TMP");
+
+    // Replace just the temp directory name (final component).
     if let Some(dir_name) = Path::new(tmp).file_name().and_then(|n| n.to_str()) {
         s = s.replace(dir_name, "$TMP");
     }
+
+    // Collapse any prefix before $TMP to just $TMP.
+    while let Some(idx) = s.find("$TMP") {
+        if idx == 0 {
+            break;
+        }
+        // Find the start of this path token (look backward for quote or space).
+        let prefix = &s[..idx];
+        let boundary = prefix
+            .rfind(['"', '\'', '=', ' ', '\n'])
+            .map(|i| i + 1)
+            .unwrap_or(0);
+        if boundary < idx {
+            s = format!("{}{}", &s[..boundary], &s[idx..]);
+        } else {
+            break;
+        }
+    }
+
     s
 }
 

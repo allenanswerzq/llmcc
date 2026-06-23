@@ -327,7 +327,7 @@ impl fmt::Display for DepRow {
 
 fn arch_graph(project: &ProjectGraph<'_>, depth: ViewDepth) -> String {
     let graph = CollectedGraph::new(project);
-    let opts = RenderOptions::default();
+    let opts = RenderOptions::default().with_ai(true);
     llmcc_dot::render(&graph, depth, &opts)
 }
 

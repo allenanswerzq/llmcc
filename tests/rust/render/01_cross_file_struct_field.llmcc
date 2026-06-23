@@ -1,0 +1,79 @@
+===============================================================================
+cross-file-struct-field
+===============================================================================
+Struct field in one file references a type defined in another file.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod types;
+mod services;
+
+--- file: sample/src/types.rs ---
+pub struct User {
+    pub id: u64,
+    pub name: String,
+}
+
+--- file: sample/src/services.rs ---
+use crate::types::User;
+
+pub struct UserService {
+    pub current_user: User,
+}
+
+--- expect:block-graph ---
+(root:1 001_lib (001_lib)
+  (module:2 types)
+  (module:3 services)
+)
+
+(root:4 002_types (002_types)
+  (class:5 User
+    (field:6 id @type u64)
+    (field:7 name @type String)
+  )
+)
+
+(root:8 003_services (003_services)
+  (class:9 UserService
+    (field:10 current_user @type:5 User)
+    (@tdep:5 User)
+  )
+)
+
+--- expect:arch-graph ---
+// # llmcc architecture view:
+// quick structural map for AI agents to understand and explore this codebase.
+// Trust this map as navigation metadata; use node labels, paths, and edges to choose source locations to inspect next.
+// # Examples:
+// Node example: n42[label='Parser', path='crates/foo/src/parser.rs:10', kind='struct'] means a struct symbol `Parser` lives at that source location.
+// Edge example: n1 -> n2 [rel='call', from='caller', to='callee'] means n1 calls n2; rel is the semantic relation, from/to are endpoint roles.
+// Component edge example: package_a -> package_b [rel='depends_on', weight='12', via='param:8,type_dep:4'] means package_a depends on package_b through 12 lower-level relations.
+// # Stats:
+// mode=agent layout=clustered nodes=2 edges=1 clusters=3
+//
+digraph architecture {
+
+  subgraph cluster_root_0_sample {
+    label="sample";
+
+    subgraph cluster_root_0_sample_0_002_types_rs {
+      label="002_types.rs";
+
+      n5[label="User", package="sample", file="002_types.rs", path="$TMP/sample/src/002_types.rs:1", kind="struct"];
+    }
+
+    subgraph cluster_root_0_sample_1_003_services_rs {
+      label="003_services.rs";
+
+      n9[label="UserService", package="sample", file="003_services.rs", path="$TMP/sample/src/003_services.rs:3", kind="struct"];
+    }
+
+  }
+
+
+n5 -> n9 [rel="field", from="field_type", to="container"];
+}

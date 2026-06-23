@@ -69,7 +69,7 @@ struct RenderArgs {
     short_labels: bool,
 
     /// Output optimized for AI agents (no visual styling)
-    #[arg(long = "for-agent")]
+    #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
     ai: bool,
 
     /// Emit a flat DOT graph without subgraph clusters

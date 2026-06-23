@@ -1,0 +1,90 @@
+===============================================================================
+prefer-import-over-global
+===============================================================================
+Explicit use-import should be preferred over same-name global.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod external;
+mod consumer;
+
+pub struct Error {
+    pub code: i32,
+}
+
+--- file: sample/src/external.rs ---
+pub struct Error {
+    pub message: String,
+}
+
+--- file: sample/src/consumer.rs ---
+use crate::external::Error;
+
+pub fn fail() -> Error {
+    Error { message: "oops".into() }
+}
+
+--- expect:block-graph ---
+(root:1 001_lib (001_lib)
+  (module:2 external)
+  (module:3 consumer)
+  (class:4 Error
+    (field:5 code @type i32)
+  )
+)
+
+(root:6 002_external (002_external)
+  (class:7 Error
+    (field:8 message @type String)
+  )
+)
+
+(root:9 003_consumer (003_consumer)
+  (func:10 fail
+    (return:11 @type:7 Error)
+    (@tdep:7 Error)
+  )
+)
+
+--- expect:arch-graph ---
+// # llmcc architecture view:
+// quick structural map for AI agents to understand and explore this codebase.
+// Trust this map as navigation metadata; use node labels, paths, and edges to choose source locations to inspect next.
+// # Examples:
+// Node example: n42[label='Parser', path='crates/foo/src/parser.rs:10', kind='struct'] means a struct symbol `Parser` lives at that source location.
+// Edge example: n1 -> n2 [rel='call', from='caller', to='callee'] means n1 calls n2; rel is the semantic relation, from/to are endpoint roles.
+// Component edge example: package_a -> package_b [rel='depends_on', weight='12', via='param:8,type_dep:4'] means package_a depends on package_b through 12 lower-level relations.
+// # Stats:
+// mode=agent layout=clustered nodes=3 edges=1 clusters=4
+//
+digraph architecture {
+
+  subgraph cluster_root_0_sample {
+    label="sample";
+
+    subgraph cluster_root_0_sample_0_001_lib_rs {
+      label="001_lib.rs";
+
+      n4[label="Error", package="sample", file="001_lib.rs", path="$TMP/sample/src/001_lib.rs:4", kind="struct"];
+    }
+
+    subgraph cluster_root_0_sample_1_002_external_rs {
+      label="002_external.rs";
+
+      n7[label="Error", package="sample", file="002_external.rs", path="$TMP/sample/src/002_external.rs:1", kind="struct"];
+    }
+
+    subgraph cluster_root_0_sample_2_003_consumer_rs {
+      label="003_consumer.rs";
+
+      n10[label="fail", package="sample", file="003_consumer.rs", path="$TMP/sample/src/003_consumer.rs:3", kind="function"];
+    }
+
+  }
+
+
+n10 -> n7 [rel="return", from="func", to="output"];
+}

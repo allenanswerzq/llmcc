@@ -1,0 +1,67 @@
+===============================================================================
+same-name-different-kinds
+===============================================================================
+Same name used for different kinds (struct vs function) should resolve correctly.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+pub struct Config {
+    pub value: i32,
+}
+
+pub fn config() -> Config {
+    Config { value: 42 }
+}
+
+pub struct App {
+    pub settings: Config,
+}
+
+--- expect:block-graph ---
+(root:1 001_lib (001_lib)
+  (class:2 Config
+    (field:3 value @type i32)
+  )
+  (func:4 config
+    (return:5 @type:2 Config)
+    (@tdep:2 Config)
+  )
+  (class:6 App
+    (field:7 settings @type:2 Config)
+    (@tdep:2 Config)
+  )
+)
+
+--- expect:arch-graph ---
+// # llmcc architecture view:
+// quick structural map for AI agents to understand and explore this codebase.
+// Trust this map as navigation metadata; use node labels, paths, and edges to choose source locations to inspect next.
+// # Examples:
+// Node example: n42[label='Parser', path='crates/foo/src/parser.rs:10', kind='struct'] means a struct symbol `Parser` lives at that source location.
+// Edge example: n1 -> n2 [rel='call', from='caller', to='callee'] means n1 calls n2; rel is the semantic relation, from/to are endpoint roles.
+// Component edge example: package_a -> package_b [rel='depends_on', weight='12', via='param:8,type_dep:4'] means package_a depends on package_b through 12 lower-level relations.
+// # Stats:
+// mode=agent layout=clustered nodes=3 edges=2 clusters=2
+//
+digraph architecture {
+
+  subgraph cluster_root_0_sample {
+    label="sample";
+
+    subgraph cluster_root_0_sample_0_001_lib_rs {
+      label="001_lib.rs";
+
+      n2[label="Config", package="sample", file="001_lib.rs", path="$TMP/sample/src/001_lib.rs:1", kind="struct"];
+      n4[label="config", package="sample", file="001_lib.rs", path="$TMP/sample/src/001_lib.rs:5", kind="function"];
+      n6[label="App", package="sample", file="001_lib.rs", path="$TMP/sample/src/001_lib.rs:9", kind="struct"];
+    }
+
+  }
+
+
+n2 -> n6 [rel="field", from="field_type", to="container"];
+n4 -> n2 [rel="return", from="func", to="output"];
+}
