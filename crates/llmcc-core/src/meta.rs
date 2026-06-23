@@ -182,22 +182,25 @@ struct PackageLayout {
 }
 
 impl PackageLayout {
-    fn discover(files: &[PathBuf], manifest_name: &'static str) -> Vec<Self> {
+    fn discover(files: &[PathBuf], manifest_names: &'static [&'static str]) -> Vec<Self> {
         let mut roots = HashSet::new();
         let mut packages = Vec::new();
 
         for file in files {
             for dir in file.ancestors().skip(1) {
-                if !dir.join(manifest_name).exists() {
-                    continue;
+                if let Some(manifest_name) = manifest_names
+                    .iter()
+                    .copied()
+                    .find(|manifest_name| dir.join(manifest_name).exists())
+                {
+                    if roots.insert(dir.to_path_buf()) {
+                        packages.push(Self::manifest(
+                            dir.to_path_buf(),
+                            manifest_package_name(dir, manifest_name),
+                        ));
+                    }
+                    break;
                 }
-                if roots.insert(dir.to_path_buf()) {
-                    packages.push(Self::manifest(
-                        dir.to_path_buf(),
-                        manifest_package_name(dir, manifest_name),
-                    ));
-                }
-                break;
             }
         }
 
@@ -303,16 +306,17 @@ pub struct UnitMetaIndex {
 
 impl UnitMetaIndex {
     pub fn from_language<L: crate::lang_def::Language>(files: &[PathBuf]) -> Self {
-        Self::from_language_config(files, L::manifest_name(), L::container_dirs())
+        let lang = L::supported_lang();
+        Self::from_language_config(files, lang.manifest_names(), lang.container_dirs())
     }
 
     pub fn from_language_config(
         files: &[PathBuf],
-        manifest_name: &'static str,
+        manifest_names: &'static [&'static str],
         ignored_dirs: &'static [&'static str],
     ) -> Self {
         let project = ProjectLayout::from_files(files);
-        let mut packages = PackageLayout::discover(files, manifest_name);
+        let mut packages = PackageLayout::discover(files, manifest_names);
 
         if packages.is_empty() {
             packages.push(PackageLayout::fallback(

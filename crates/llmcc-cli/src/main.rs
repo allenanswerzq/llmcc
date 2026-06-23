@@ -60,14 +60,6 @@ struct RenderArgs {
     #[arg(long = "top-k")]
     top_k: Option<usize>,
 
-    /// Cluster namespaces by their parent package.
-    #[arg(long = "cluster-by-package")]
-    cluster_by_package: bool,
-
-    /// Use shortened labels (module name only, without crate prefix)
-    #[arg(long = "short-labels")]
-    short_labels: bool,
-
     /// Output optimized for AI agents (no visual styling)
     #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
     ai: bool,
@@ -117,8 +109,6 @@ impl Cli {
             graph: render.graph,
             view_depth: ViewDepth::from_repr(render.view_depth as u8).unwrap_or_default(),
             top_k: render.top_k,
-            cluster_by_package: render.cluster_by_package,
-            short_labels: render.short_labels,
             ai: render.ai,
             flat: render.flat,
         };

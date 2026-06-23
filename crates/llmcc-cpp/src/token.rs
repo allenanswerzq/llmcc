@@ -4,7 +4,9 @@ use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::lang_def::{ParseNode, ParseTree, TreeSitterParseTree};
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{SymKind, Symbol};
-use llmcc_core::{CompileCtxt, CompileUnit, Error, HirBuildAction, ResolveOptions, Result};
+use llmcc_core::{
+    CompileCtxt, CompileUnit, Error, HirBuildAction, ResolveOptions, Result, SupportedLang,
+};
 
 // Generated from token_map.toml and tree-sitter-cpp node-types.json.
 include!(concat!(env!("OUT_DIR"), "/cpp_tokens.rs"));
@@ -70,22 +72,8 @@ impl LanguageDefinition for LangCpp {
         })
     }
 
-    fn file_extensions() -> &'static [&'static str] {
-        &[
-            "c", "h", "cpp", "hpp", "cc", "hh", "cxx", "hxx", "c++", "h++", "C", "H", "ipp", "inl",
-            "tpp",
-        ]
-    }
-
-    fn manifest_file() -> &'static str {
-        // CMake is the most common C++ build system
-        "CMakeLists.txt"
-    }
-
-    fn container_dirs() -> &'static [&'static str] {
-        &[
-            "src", "source", "sources", "lib", "include", "inc", "headers",
-        ]
+    fn supported_lang() -> SupportedLang {
+        SupportedLang::Cpp
     }
 
     fn hir_build_action(node: &dyn ParseNode, source: &[u8]) -> HirBuildAction {

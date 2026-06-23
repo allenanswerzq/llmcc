@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::Result;
-use crate::lang_def::{Language, ParseTree};
+use crate::lang_def::{Language, ParseTree, SupportedLang};
 
 /// Object-safe language handler trait.
 /// This wraps static `Language` methods into dynamic dispatch.
@@ -16,15 +16,12 @@ pub trait LanguageHandler: Send + Sync {
     /// Get the unique name of this language (e.g., "rust", "typescript")
     fn name(&self) -> &'static str;
 
-    /// Get supported file extensions for this language
-    fn extensions(&self) -> &'static [&'static str];
-
-    /// Get the manifest file name (e.g., "Cargo.toml", "package.json")
-    fn manifest_name(&self) -> &'static str;
+    /// Supported source language.
+    fn supported_lang(&self) -> SupportedLang;
 
     /// Check if a file extension is supported by this language
     fn supports_extension(&self, ext: &str) -> bool {
-        self.extensions().contains(&ext)
+        self.supported_lang().extensions().contains(&ext)
     }
 
     /// Parse source code and return a generic parse tree
@@ -58,12 +55,8 @@ where
         self.name
     }
 
-    fn extensions(&self) -> &'static [&'static str] {
-        L::extensions()
-    }
-
-    fn manifest_name(&self) -> &'static str {
-        L::manifest_name()
+    fn supported_lang(&self) -> SupportedLang {
+        L::supported_lang()
     }
 
     fn parse(&self, text: &[u8]) -> Result<Box<dyn ParseTree>> {
@@ -100,7 +93,7 @@ impl LanguageRegistry {
         // Register by name
         self.handlers.insert(name, handler.clone());
         // Register by each extension
-        for ext in handler.extensions() {
+        for ext in handler.supported_lang().extensions() {
             self.extension_map.insert(*ext, handler.clone());
         }
     }
@@ -171,7 +164,7 @@ mod tests {
     // Test with mock language handler
     struct MockHandler {
         name: &'static str,
-        extensions: &'static [&'static str],
+        lang: SupportedLang,
     }
 
     impl LanguageHandler for MockHandler {
@@ -179,12 +172,8 @@ mod tests {
             self.name
         }
 
-        fn extensions(&self) -> &'static [&'static str] {
-            self.extensions
-        }
-
-        fn manifest_name(&self) -> &'static str {
-            "mock.toml"
+        fn supported_lang(&self) -> SupportedLang {
+            self.lang
         }
 
         fn parse(&self, _text: &[u8]) -> Result<Box<dyn ParseTree>> {
@@ -198,11 +187,11 @@ mod tests {
 
         let rust_handler = Arc::new(MockHandler {
             name: "rust",
-            extensions: &["rs"],
+            lang: SupportedLang::Rust,
         });
         let ts_handler = Arc::new(MockHandler {
             name: "typescript",
-            extensions: &["ts", "tsx"],
+            lang: SupportedLang::Typescript,
         });
 
         registry.register(rust_handler);
@@ -211,7 +200,7 @@ mod tests {
         assert_eq!(registry.len(), 2);
         assert!(registry.get_by_name("rust").is_some());
         assert!(registry.get_by_extension("ts").is_some());
-        assert!(registry.get_by_extension("tsx").is_some());
+        assert!(registry.get_by_extension("mts").is_some());
     }
 
     #[test]
@@ -220,11 +209,11 @@ mod tests {
 
         let rust_handler = Arc::new(MockHandler {
             name: "rust",
-            extensions: &["rs"],
+            lang: SupportedLang::Rust,
         });
         let ts_handler = Arc::new(MockHandler {
             name: "typescript",
-            extensions: &["ts"],
+            lang: SupportedLang::Typescript,
         });
 
         registry.register(rust_handler);

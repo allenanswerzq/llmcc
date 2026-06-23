@@ -1,0 +1,107 @@
+===============================================================================
+class-and-interface
+===============================================================================
+
+lang: csharp
+
+--- file: Program.cs ---
+namespace MyApp;
+
+public interface IRepository {
+    void Save(string data);
+    string Load(int id);
+}
+
+public class FileRepository : IRepository {
+    public string BasePath { get; set; }
+
+    public void Save(string data) {
+        // save to file
+    }
+
+    public string Load(int id) {
+        return "";
+    }
+}
+
+--- expect:block-graph ---
+(root:1  (000_Program)
+  (interface:2 IRepository
+    (method:3 Save)
+    (method:4 Load)
+  )
+  (class:5 FileRepository
+    (method:6 Save)
+    (method:7 Load)
+  )
+)
+
+
+
+
+===============================================================================
+inheritance
+===============================================================================
+
+lang: csharp
+
+--- file: Program.cs ---
+namespace MyApp;
+
+public class Shape {
+    public double X { get; set; }
+    public double Y { get; set; }
+
+    public virtual double Area() => 0;
+}
+
+public class Circle : Shape {
+    public double Radius { get; set; }
+
+    public override double Area() => Math.PI * Radius * Radius;
+}
+
+--- expect:block-graph ---
+(root:1  (000_Program)
+  (class:2 Shape
+    (method:3 Area)
+  )
+  (class:4 Circle
+    (method:5 Area)
+  )
+)
+
+
+
+
+===============================================================================
+struct-and-methods
+===============================================================================
+
+lang: csharp
+
+--- file: Program.cs ---
+namespace MyApp;
+
+public struct Point {
+    public int X;
+    public int Y;
+
+    public Point(int x, int y) {
+        X = x;
+        Y = y;
+    }
+
+    public double Distance(Point other) {
+        return Math.Sqrt(Math.Pow(X - other.X, 2) + Math.Pow(Y - other.Y, 2));
+    }
+}
+
+--- expect:block-graph ---
+(root:1  (000_Program)
+  (class:2 Point
+    (method:3 Point)
+    (method:4 Distance
+    )
+  )
+)

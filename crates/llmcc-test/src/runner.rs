@@ -180,42 +180,57 @@ fn normalize(kind: OutputKind, text: &str, temp_dir: Option<&str>) -> String {
     }
 }
 
-/// Replace temp directory paths (and their final component) with `$TMP`.
+/// Replace temp directory paths with `$TMP`.
 ///
-/// Handles mismatches between the actual temp path and what appears in output
-/// (forward vs backslash, Windows short names like ZHANGQ~1) by also stripping
-/// any path prefix that precedes the `$TMP` placeholder after dir-name replacement.
+/// The temp path in output can differ from `tmp` because renderers normalize
+/// path separators and DOT cluster ids sanitize labels. We normalize the random
+/// final component first, then strip any path prefix before `$TMP`.
 fn replace_tmp_path(text: &str, tmp: &str) -> String {
-    // Try exact full-path replacement first (handles matching separators).
-    let mut s = text.replace(tmp, "$TMP");
-    // Also try with forward slashes (output often uses / on Windows).
-    let tmp_fwd = tmp.replace('\\', "/");
-    s = s.replace(&tmp_fwd, "$TMP");
+    let dir_name = match Path::new(tmp).file_name().and_then(|n| n.to_str()) {
+        Some(name) => name.to_string(),
+        None => return text.to_string(),
+    };
 
-    // Replace just the temp directory name (final component).
-    if let Some(dir_name) = Path::new(tmp).file_name().and_then(|n| n.to_str()) {
-        s = s.replace(dir_name, "$TMP");
+    let mut s = text.replace(&dir_name, "$TMP");
+
+    let sanitized_dir = dot_id_fragment(&dir_name);
+    if sanitized_dir != dir_name {
+        s = s.replace(&sanitized_dir, "TMP");
     }
 
-    // Collapse any prefix before $TMP to just $TMP.
-    while let Some(idx) = s.find("$TMP") {
-        if idx == 0 {
-            break;
-        }
-        // Find the start of this path token (look backward for quote or space).
-        let prefix = &s[..idx];
-        let boundary = prefix
-            .rfind(['"', '\'', '=', ' ', '\n'])
-            .map(|i| i + 1)
-            .unwrap_or(0);
-        if boundary < idx {
-            s = format!("{}{}", &s[..boundary], &s[idx..]);
+    strip_tmp_path_prefixes(&s)
+}
+
+fn strip_tmp_path_prefixes(text: &str) -> String {
+    let mut result = String::with_capacity(text.len());
+    let mut remaining = text;
+
+    while let Some(pos) = remaining.find("$TMP") {
+        let before = &remaining[..pos];
+        let path_start = path_prefix_start(before);
+        result.push_str(&before[..path_start]);
+        result.push_str("$TMP");
+        remaining = &remaining[pos + "$TMP".len()..];
+    }
+
+    result.push_str(remaining);
+    result
+}
+
+fn path_prefix_start(before: &str) -> usize {
+    let bytes = before.as_bytes();
+    let mut idx = bytes.len();
+    while idx > 0 {
+        let byte = bytes[idx - 1];
+        if byte.is_ascii_alphanumeric()
+            || matches!(byte, b'/' | b'\\' | b':' | b'.' | b'~' | b'_' | b'-')
+        {
+            idx -= 1;
         } else {
             break;
         }
     }
-
-    s
+    idx
 }
 
 /// Prepare actual output for saving: replace temp paths and ensure trailing newline.
@@ -225,6 +240,12 @@ fn replace_tmp_and_finalize(text: &str, tmp: &str) -> String {
         result.push('\n');
     }
     result
+}
+
+fn dot_id_fragment(text: &str) -> String {
+    text.chars()
+        .map(|ch| if ch.is_ascii_alphanumeric() { ch } else { '_' })
+        .collect()
 }
 
 fn sort_lines(text: &str) -> String {

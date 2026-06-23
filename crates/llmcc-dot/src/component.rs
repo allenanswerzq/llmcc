@@ -2,10 +2,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use llmcc_core::{BlockId, CollectedEdge, CollectedGraph, CollectedNode, ViewDepth};
 
-use crate::{
-    ClusterKind, DotCluster, DotDocument, DotEdge, DotNode, RenderOptions, child_cluster_id,
-    normalize_path, sanitize_id,
-};
+use crate::{DotDocument, DotEdge, DotNode, RenderOptions, normalize_path, sanitize_id};
 
 /// Mapping from block ids to their component id.
 type BlockComponentMap = HashMap<BlockId, String>;
@@ -39,21 +36,13 @@ impl ComponentViewTree {
     }
 
     /// Build a complete DOT document for component-level rendering.
-    pub(crate) fn to_document(&self, options: &RenderOptions, depth: ViewDepth) -> DotDocument {
+    pub(crate) fn to_document(&self, _options: &RenderOptions, _depth: ViewDepth) -> DotDocument {
         let dot_edges = self.edges_to_dot();
 
-        if options.cluster_by_package && depth == ViewDepth::Module {
-            DotDocument {
-                clusters: self.clusters_by_package(),
-                free_nodes: vec![],
-                edges: dot_edges,
-            }
-        } else {
-            DotDocument {
-                clusters: vec![],
-                free_nodes: self.nodes_to_dot(),
-                edges: dot_edges,
-            }
+        DotDocument {
+            clusters: vec![],
+            free_nodes: self.nodes_to_dot(),
+            edges: dot_edges,
         }
     }
 
@@ -74,31 +63,6 @@ impl ComponentViewTree {
                     ("weight", edge.weight.to_string()),
                     ("via", edge.via()),
                 ],
-            })
-            .collect()
-    }
-
-    /// Group components by package into DOT clusters.
-    fn clusters_by_package(&self) -> Vec<DotCluster> {
-        let mut by_package: BTreeMap<String, Vec<DotNode>> = BTreeMap::new();
-
-        for component in self.components.values() {
-            let package = component.package().unwrap_or("unknown").to_owned();
-            by_package
-                .entry(package)
-                .or_default()
-                .push(DotNode::from(component));
-        }
-
-        by_package
-            .into_iter()
-            .enumerate()
-            .map(|(index, (package, nodes))| DotCluster {
-                id: child_cluster_id("packages", index, &package),
-                label: package,
-                kind: ClusterKind::Package,
-                nodes,
-                children: vec![],
             })
             .collect()
     }
@@ -200,7 +164,7 @@ impl ComponentViewTree {
         }
     }
 
-    fn module_component(node: &CollectedNode, options: &RenderOptions) -> Component {
+    fn module_component(node: &CollectedNode, _options: &RenderOptions) -> Component {
         let package = node.package().unwrap_or("unknown").to_owned();
 
         let (segment, folder) = if let Some(namespace) = node.namespace() {
@@ -220,11 +184,7 @@ impl ComponentViewTree {
             sanitize_id(&package),
             sanitize_id(&segment),
         );
-        let label = if options.short_labels {
-            segment.clone()
-        } else {
-            format!("{package}::{segment}")
-        };
+        let label = format!("{package}::{segment}");
 
         Component {
             id,

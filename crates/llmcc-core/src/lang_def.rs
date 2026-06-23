@@ -316,6 +316,14 @@ pub enum SupportedLang {
     Typescript,
     #[strum(serialize = "cpp", serialize = "c++", serialize = "c")]
     Cpp,
+    #[strum(serialize = "csharp", serialize = "cs", serialize = "c#")]
+    CSharp,
+    Go,
+    Java,
+    #[strum(serialize = "javascript", serialize = "js")]
+    JavaScript,
+    #[strum(serialize = "python", serialize = "py")]
+    Python,
     Auto,
 }
 
@@ -324,25 +332,72 @@ impl SupportedLang {
     pub fn manifest_names(self) -> &'static [&'static str] {
         match self {
             Self::Rust => &["Cargo.toml"],
-            Self::Typescript => &["package.json"],
+            Self::Typescript | Self::JavaScript => &["package.json"],
             Self::Cpp => &["CMakeLists.txt"],
-            Self::Auto => &["Cargo.toml", "package.json", "CMakeLists.txt"],
+            Self::CSharp => &["project.csproj"],
+            Self::Go => &["go.mod"],
+            Self::Java => &["pom.xml", "build.gradle"],
+            Self::Python => &["pyproject.toml", "setup.py"],
+            Self::Auto => &[
+                "Cargo.toml",
+                "package.json",
+                "CMakeLists.txt",
+                "go.mod",
+                "pom.xml",
+                "pyproject.toml",
+                "project.csproj",
+            ],
+        }
+    }
+
+    /// Source file extensions recognized for this language.
+    pub fn extensions(self) -> &'static [&'static str] {
+        match self {
+            Self::Rust => &["rs"],
+            Self::Typescript => &["ts", "mts", "cts"],
+            Self::Cpp => &[
+                "c", "h", "cpp", "hpp", "cc", "hh", "cxx", "hxx", "c++", "h++", "C", "H", "ipp",
+                "inl", "tpp",
+            ],
+            Self::CSharp => &["cs"],
+            Self::Go => &["go"],
+            Self::Java => &["java"],
+            Self::JavaScript => &["js", "mjs", "cjs"],
+            Self::Python => &["py", "pyi"],
+            Self::Auto => &[
+                "rs", "ts", "mts", "cts", "c", "h", "cpp", "hpp", "cc", "hh", "cxx", "hxx", "c++",
+                "h++", "C", "H", "ipp", "inl", "tpp", "cs", "go", "java", "js", "mjs", "cjs", "py",
+                "pyi",
+            ],
+        }
+    }
+
+    /// Directory names ignored when deriving module paths for this language.
+    pub fn container_dirs(self) -> &'static [&'static str] {
+        match self {
+            Self::Rust => &["src"],
+            Self::Typescript | Self::JavaScript => {
+                &["src", "lib", "dist", "build", "out", "source"]
+            }
+            Self::Cpp => &[
+                "src", "source", "sources", "lib", "include", "inc", "headers",
+            ],
+            Self::CSharp => &["src", "source"],
+            Self::Go => &["cmd", "internal", "pkg"],
+            Self::Java => &["src", "main", "java"],
+            Self::Python => &["src", "lib", "app", "python"],
+            Self::Auto => &[
+                "src", "lib", "dist", "build", "out", "source", "sources", "include", "inc",
+                "headers", "cmd", "internal", "pkg", "main", "java", "app", "python",
+            ],
         }
     }
 }
 
 /// Public language contract consumed by the pipeline.
 pub trait Language {
-    /// Manifest filename, such as `Cargo.toml` or `package.json`.
-    fn manifest_name() -> &'static str;
-
-    /// Directory names ignored when deriving module paths.
-    fn container_dirs() -> &'static [&'static str];
-
-    /// True when `name` is a container directory.
-    fn is_container(name: &str) -> bool {
-        Self::container_dirs().contains(&name)
-    }
+    /// Supported source language.
+    fn supported_lang() -> SupportedLang;
 
     /// Parse source bytes.
     fn parse(_text: impl AsRef<[u8]>) -> Result<Box<dyn ParseTree>>;
@@ -407,9 +462,6 @@ pub trait Language {
     /// Field id for implemented traits or interfaces.
     fn trait_field() -> u16;
 
-    /// Supported source file extensions.
-    fn extensions() -> &'static [&'static str];
-
     fn collect_init<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> ScopeStack<'tcx>;
 
     fn collect_symbols<'tcx>(
@@ -433,17 +485,11 @@ pub trait Language {
 /// implement this trait for parsing, project layout, filtering, and symbol
 /// passes.
 pub trait LanguageDefinition {
+    /// Supported source language.
+    fn supported_lang() -> SupportedLang;
+
     /// Parse source bytes.
     fn parse_source(text: impl AsRef<[u8]>) -> Result<Box<dyn ParseTree>>;
-
-    /// Supported source file extensions.
-    fn file_extensions() -> &'static [&'static str];
-
-    /// Manifest filename.
-    fn manifest_file() -> &'static str;
-
-    /// Directory names ignored when deriving module paths.
-    fn container_dirs() -> &'static [&'static str];
 
     /// Context-specific block override.
     ///
@@ -504,12 +550,8 @@ macro_rules! define_lang {
             }
 
             impl $crate::lang_def::Language for [<Lang $suffix>] {
-                fn manifest_name() -> &'static str {
-                    <Self as $crate::lang_def::LanguageDefinition>::manifest_file()
-                }
-
-                fn container_dirs() -> &'static [&'static str] {
-                    <Self as $crate::lang_def::LanguageDefinition>::container_dirs()
+                fn supported_lang() -> $crate::lang_def::SupportedLang {
+                    <Self as $crate::lang_def::LanguageDefinition>::supported_lang()
                 }
 
                 fn parse(text: impl AsRef<[u8]>) -> $crate::Result<Box<dyn $crate::lang_def::ParseTree>> {
@@ -536,10 +578,6 @@ macro_rules! define_lang {
                     options: &$crate::resolve::ResolveOptions,
                 ) {
                     <Self as $crate::lang_def::LanguageDefinition>::bind_symbols(unit, node, globals, options);
-                }
-
-                fn extensions() -> &'static [&'static str] {
-                    <Self as $crate::lang_def::LanguageDefinition>::file_extensions()
                 }
 
                 fn hir_kind(kind_id: u16) -> $crate::ir::HirKind {

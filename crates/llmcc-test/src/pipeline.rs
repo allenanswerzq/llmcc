@@ -13,6 +13,11 @@ use llmcc_core::{
     build_graphs,
 };
 use llmcc_cpp::LangCpp;
+use llmcc_csharp::LangCSharp;
+use llmcc_go::LangGo;
+use llmcc_java::LangJava;
+use llmcc_js::LangJavaScript;
+use llmcc_python::LangPython;
 use llmcc_resolver::{bind_symbols, collect_symbols};
 use llmcc_rust::LangRust;
 use llmcc_ts::LangTypeScript;
@@ -54,6 +59,11 @@ pub fn run_case(case: &TestCase) -> Result<CaseOutput> {
         SupportedLang::Rust => compile_and_render::<LangRust>(&root, &needed)?,
         SupportedLang::Typescript => compile_and_render::<LangTypeScript>(&root, &needed)?,
         SupportedLang::Cpp => compile_and_render::<LangCpp>(&root, &needed)?,
+        SupportedLang::CSharp => compile_and_render::<LangCSharp>(&root, &needed)?,
+        SupportedLang::Go => compile_and_render::<LangGo>(&root, &needed)?,
+        SupportedLang::Java => compile_and_render::<LangJava>(&root, &needed)?,
+        SupportedLang::JavaScript => compile_and_render::<LangJavaScript>(&root, &needed)?,
+        SupportedLang::Python => compile_and_render::<LangPython>(&root, &needed)?,
         SupportedLang::Auto => compile_auto(&root, &needed)?,
     };
 
@@ -177,7 +187,7 @@ fn render_all(
 /// Discover source files matching the language's extensions under `root`.
 /// Files are sorted by numeric prefix for deterministic processing order.
 fn discover_source_files<L: Language>(root: &Path) -> Result<Vec<String>> {
-    let extensions = L::extensions();
+    let extensions = L::supported_lang().extensions();
     let mut files = Vec::new();
 
     for entry in WalkDir::new(root).into_iter().filter_map(|r| r.ok()) {

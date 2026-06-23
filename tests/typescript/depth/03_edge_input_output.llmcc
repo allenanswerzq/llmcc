@@ -1,0 +1,107 @@
+===============================================================================
+edge-input-output
+===============================================================================
+Test that input/output edges create correct dependencies.
+Functions with parameters depend on parameter types.
+Functions with return types depend on return types.
+lang: typescript
+
+--- file: models/user.ts ---
+
+export interface User {
+    id: number;
+    name: string;
+}
+
+export interface Order {
+    orderId: number;
+    total: number;
+}
+
+--- file: services/user-service.ts ---
+
+import { User, Order } from "../models/user";
+
+export function getUser(id: number): User {
+    return { id, name: "" };
+}
+
+export function processUser(user: User): boolean {
+    return user.name.length > 0;
+}
+
+export function createOrder(user: User): Order {
+    return { orderId: 1, total: 0 };
+}
+
+--- expect:block-graph ---
+(root:1 000_user (000_user)
+  (interface:2 User
+    (field:3 id @type number)
+    (field:4 name @type string)
+  )
+  (interface:5 Order
+    (field:6 orderId @type number)
+    (field:7 total @type number)
+  )
+)
+
+(root:8 001_user-service (001_user-service)
+  (func:9 getUser
+    (parameter:10 id @type number)
+    (return:11 @type:2 User)
+  )
+  (func:12 processUser
+    (parameter:13 user @type:2 User)
+    (return:14 @type boolean)
+  )
+  (func:15 createOrder
+    (parameter:16 user @type:2 User)
+    (return:17 @type:5 Order)
+  )
+)
+
+--- expect:arch-graph ---
+// # llmcc architecture view:
+// quick structural map for AI agents to understand and explore this codebase.
+// Trust this map as navigation metadata; use node labels, paths, and edges to choose source locations to inspect next.
+// # Examples:
+// Node example: n42[label='Parser', path='crates/foo/src/parser.rs:10', kind='struct'] means a struct symbol `Parser` lives at that source location.
+// Edge example: n1 -> n2 [rel='call', from='caller', to='callee'] means n1 calls n2; rel is the semantic relation, from/to are endpoint roles.
+// Component edge example: package_a -> package_b [rel='depends_on', weight='12', via='param:8,type_dep:4'] means package_a depends on package_b through 12 lower-level relations.
+// # Stats:
+// mode=agent layout=clustered nodes=5 edges=4 clusters=4
+//
+digraph architecture {
+
+  subgraph cluster_root_0_models {
+    label="models";
+
+    subgraph cluster_root_0_models_0_000_user_ts {
+      label="000_user.ts";
+
+      n2[label="User", module="models", file="000_user.ts", path="$TMP/models/000_user.ts:2", kind="interface"];
+      n5[label="Order", module="models", file="000_user.ts", path="$TMP/models/000_user.ts:7", kind="interface"];
+    }
+
+  }
+
+  subgraph cluster_root_1_services {
+    label="services";
+
+    subgraph cluster_root_1_services_0_001_user_service_ts {
+      label="001_user-service.ts";
+
+      n9[label="getUser", module="services", file="001_user-service.ts", path="$TMP/services/001_user-service.ts:4", kind="function"];
+      n12[label="processUser", module="services", file="001_user-service.ts", path="$TMP/services/001_user-service.ts:8", kind="function"];
+      n15[label="createOrder", module="services", file="001_user-service.ts", path="$TMP/services/001_user-service.ts:12", kind="function"];
+    }
+
+  }
+
+
+n2 -> n12 [rel="param", from="input", to="func"];
+n2 -> n15 [rel="param", from="input", to="func"];
+n9 -> n2 [rel="return", from="func", to="output"];
+n15 -> n5 [rel="return", from="func", to="output"];
+}

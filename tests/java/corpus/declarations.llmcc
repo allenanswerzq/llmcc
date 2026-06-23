@@ -1,0 +1,103 @@
+===============================================================================
+class-and-methods
+===============================================================================
+
+lang: java
+
+--- file: Main.java ---
+package com.example;
+
+public class User {
+    private String name;
+    private int age;
+
+    public User(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+
+    public String getName() {
+        return name;
+    }
+}
+
+--- expect:block-graph ---
+(root:1  (000_Main)
+  (class:2 User
+    (method:3 User)
+    (method:4 getName)
+  )
+)
+
+
+
+
+===============================================================================
+interface-impl
+===============================================================================
+
+lang: java
+
+--- file: Main.java ---
+package com.example;
+
+public interface Serializable {
+    byte[] serialize();
+}
+
+public class Message implements Serializable {
+    private String body;
+
+    public byte[] serialize() {
+        return body.getBytes();
+    }
+}
+
+--- expect:block-graph ---
+(root:1  (000_Main)
+  (interface:2 Serializable
+    (method:3 serialize)
+  )
+  (class:4 Message
+    (method:5 serialize
+    )
+  )
+)
+
+
+
+
+===============================================================================
+inheritance
+===============================================================================
+
+lang: java
+
+--- file: Main.java ---
+package com.example;
+
+public class Animal {
+    public String name;
+
+    public void speak() {}
+}
+
+public class Dog extends Animal {
+    public void speak() {
+        System.out.println("Woof");
+    }
+
+    public void fetch() {}
+}
+
+--- expect:block-graph ---
+(root:1  (000_Main)
+  (class:2 Animal
+    (method:3 speak)
+  )
+  (class:4 Dog
+    (method:5 speak
+    )
+    (method:7 fetch)
+  )
+)

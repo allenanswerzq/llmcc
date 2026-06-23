@@ -1,0 +1,121 @@
+===============================================================================
+generic-wrapper-unwrap
+===============================================================================
+Unwrap wrapper types like Promise<T>, Ref<T>, Readonly<T> to expose inner type dependencies.
+lang: typescript
+
+--- file: src/context.ts ---
+export interface GlobalCtxt {
+    id: number;
+}
+
+export interface TaskManager {
+    active: boolean;
+}
+
+export interface EventManager {
+    count: number;
+}
+
+--- file: src/state.ts ---
+import { GlobalCtxt, TaskManager, EventManager } from './context';
+
+interface StateInner {
+    ctxt: GlobalCtxt;
+    tasks: TaskManager;
+    events: EventManager;
+}
+
+// Promise wrapper should unwrap: AsyncState -> StateInner
+export interface AsyncState {
+    inner: Promise<StateInner>;
+}
+
+// Ref wrapper should unwrap: RefState -> GlobalCtxt
+export interface RefState {
+    state: Ref<GlobalCtxt>;
+}
+
+// Readonly wrapper should unwrap: ReadonlyState -> TaskManager
+export interface ReadonlyState {
+    state: Readonly<TaskManager>;
+}
+
+// Nested wrappers: Promise<Readonly<T>> should unwrap to T
+export interface NestedState {
+    state: Promise<Readonly<EventManager>>;
+}
+
+--- expect:block-graph ---
+(root:1 000_context (000_context)
+  (interface:2 GlobalCtxt
+    (field:3 id @type number)
+  )
+  (interface:4 TaskManager
+    (field:5 active @type boolean)
+  )
+  (interface:6 EventManager
+    (field:7 count @type number)
+  )
+)
+
+(root:8 001_state (001_state)
+  (interface:9 StateInner
+    (field:10 ctxt @type:2 GlobalCtxt)
+    (field:11 tasks @type:4 TaskManager)
+    (field:12 events @type:6 EventManager)
+  )
+  (interface:13 AsyncState
+    (field:14 inner @type:9 StateInner)
+  )
+  (interface:15 RefState
+    (field:16 state @type:2 GlobalCtxt)
+  )
+  (interface:17 ReadonlyState
+    (field:18 state @type:4 TaskManager)
+  )
+  (interface:19 NestedState
+    (field:20 state @type:6 EventManager)
+  )
+)
+
+--- expect:arch-graph ---
+// # llmcc architecture view:
+// quick structural map for AI agents to understand and explore this codebase.
+// Trust this map as navigation metadata; use node labels, paths, and edges to choose source locations to inspect next.
+// # Examples:
+// Node example: n42[label='Parser', path='crates/foo/src/parser.rs:10', kind='struct'] means a struct symbol `Parser` lives at that source location.
+// Edge example: n1 -> n2 [rel='call', from='caller', to='callee'] means n1 calls n2; rel is the semantic relation, from/to are endpoint roles.
+// Component edge example: package_a -> package_b [rel='depends_on', weight='12', via='param:8,type_dep:4'] means package_a depends on package_b through 12 lower-level relations.
+// # Stats:
+// mode=agent layout=clustered nodes=8 edges=7 clusters=2
+//
+digraph architecture {
+
+  subgraph cluster_root_0_000_context_ts {
+    label="000_context.ts";
+
+    n2[label="GlobalCtxt", file="000_context.ts", path="$TMP/src/000_context.ts:1", kind="interface"];
+    n4[label="TaskManager", file="000_context.ts", path="$TMP/src/000_context.ts:5", kind="interface"];
+    n6[label="EventManager", file="000_context.ts", path="$TMP/src/000_context.ts:9", kind="interface"];
+  }
+
+  subgraph cluster_root_1_001_state_ts {
+    label="001_state.ts";
+
+    n9[label="StateInner", file="001_state.ts", path="$TMP/src/001_state.ts:3", kind="interface"];
+    n13[label="AsyncState", file="001_state.ts", path="$TMP/src/001_state.ts:10", kind="interface"];
+    n15[label="RefState", file="001_state.ts", path="$TMP/src/001_state.ts:15", kind="interface"];
+    n17[label="ReadonlyState", file="001_state.ts", path="$TMP/src/001_state.ts:20", kind="interface"];
+    n19[label="NestedState", file="001_state.ts", path="$TMP/src/001_state.ts:25", kind="interface"];
+  }
+
+
+n2 -> n9 [rel="field", from="field_type", to="container"];
+n2 -> n15 [rel="field", from="field_type", to="container"];
+n4 -> n9 [rel="field", from="field_type", to="container"];
+n4 -> n17 [rel="field", from="field_type", to="container"];
+n6 -> n9 [rel="field", from="field_type", to="container"];
+n6 -> n19 [rel="field", from="field_type", to="container"];
+n9 -> n13 [rel="field", from="field_type", to="container"];
+}

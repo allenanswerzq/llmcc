@@ -11,7 +11,12 @@ use llmcc_core::lang_def::Language;
 use llmcc_core::{CollectedGraph, GraphBuildOptions, SupportedLang, build_graphs};
 use llmcc_core::{CompileCtxt, Error, ResolveOptions, Result, print_block_tree};
 use llmcc_cpp::LangCpp;
+use llmcc_csharp::LangCSharp;
 use llmcc_dot::{RenderOptions, render};
+use llmcc_go::LangGo;
+use llmcc_java::LangJava;
+use llmcc_js::LangJavaScript;
+use llmcc_python::LangPython;
 use llmcc_resolver::{bind_symbols, build_and_collect};
 use llmcc_rust::LangRust;
 use llmcc_ts::LangTypeScript;
@@ -46,6 +51,11 @@ impl Runner {
             SupportedLang::Rust => self.process_language::<LangRust>(),
             SupportedLang::Typescript => self.process_language::<LangTypeScript>(),
             SupportedLang::Cpp => self.process_language::<LangCpp>(),
+            SupportedLang::CSharp => self.process_language::<LangCSharp>(),
+            SupportedLang::Go => self.process_language::<LangGo>(),
+            SupportedLang::Java => self.process_language::<LangJava>(),
+            SupportedLang::JavaScript => self.process_language::<LangJavaScript>(),
+            SupportedLang::Python => self.process_language::<LangPython>(),
             SupportedLang::Auto => self.process_language::<LangRust>(), // TODO: auto-detect
         }?;
 
@@ -53,12 +63,11 @@ impl Runner {
     }
 
     fn process_language<L: Language>(&self) -> Result<Option<String>> {
-        let files = self.discover_files(L::extensions())?;
-
-        let lang_name = L::extensions().first().unwrap_or(&"unknown");
+        let lang = L::supported_lang();
+        let files = self.discover_files(lang.extensions())?;
 
         let parse_start = Instant::now();
-        info!("Parsing {} {} files", files.len(), lang_name);
+        info!("Parsing {} {} files", files.len(), lang);
 
         let cc = CompileCtxt::from_files_with_order::<L>(&files, FileOrder::BySizeDescending)?;
 
@@ -117,8 +126,6 @@ impl Runner {
         graph = graph.remove_orphans();
 
         let render_options = RenderOptions {
-            cluster_by_package: self.options.cluster_by_package,
-            short_labels: self.options.short_labels,
             ai: self.options.ai,
             flat: self.options.flat,
         };

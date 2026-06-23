@@ -1,0 +1,70 @@
+===============================================================================
+prefer-same-file
+===============================================================================
+Test that symbol resolution prefers types defined in the same file
+over types with the same name in other files.
+lang: typescript
+
+--- file: src/types.ts ---
+
+export interface Config {
+    globalValue: number;
+}
+
+--- file: src/services.ts ---
+
+// Local Config in same file should be preferred
+interface Config {
+    localValue: string;
+}
+
+class Service {
+    // Should resolve to local Config (this file), not types::Config
+    config: Config;
+}
+
+--- expect:block-graph ---
+(root:1 000_types (000_types)
+  (interface:2 Config
+    (field:3 globalValue @type number)
+  )
+)
+
+(root:4 001_services (001_services)
+  (interface:5 Config
+    (field:6 localValue @type string)
+  )
+  (class:7 Service
+    (field:8 config @type:5 Config)
+  )
+)
+
+--- expect:arch-graph ---
+// # llmcc architecture view:
+// quick structural map for AI agents to understand and explore this codebase.
+// Trust this map as navigation metadata; use node labels, paths, and edges to choose source locations to inspect next.
+// # Examples:
+// Node example: n42[label='Parser', path='crates/foo/src/parser.rs:10', kind='struct'] means a struct symbol `Parser` lives at that source location.
+// Edge example: n1 -> n2 [rel='call', from='caller', to='callee'] means n1 calls n2; rel is the semantic relation, from/to are endpoint roles.
+// Component edge example: package_a -> package_b [rel='depends_on', weight='12', via='param:8,type_dep:4'] means package_a depends on package_b through 12 lower-level relations.
+// # Stats:
+// mode=agent layout=clustered nodes=3 edges=1 clusters=2
+//
+digraph architecture {
+
+  subgraph cluster_root_0_000_types_ts {
+    label="000_types.ts";
+
+    n2[label="Config", file="000_types.ts", path="$TMP/src/000_types.ts:2", kind="interface"];
+  }
+
+  subgraph cluster_root_1_001_services_ts {
+    label="001_services.ts";
+
+    n5[label="Config", file="001_services.ts", path="$TMP/src/001_services.ts:3", kind="interface"];
+    n7[label="Service", file="001_services.ts", path="$TMP/src/001_services.ts:7", kind="struct"];
+  }
+
+
+n5 -> n7 [rel="field", from="field_type", to="container"];
+}

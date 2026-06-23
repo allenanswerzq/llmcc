@@ -1,0 +1,95 @@
+===============================================================================
+edge-field-type
+===============================================================================
+Test that field->field_type edges create correct dependencies.
+Class/interface with field of another type depends on that type.
+lang: typescript
+
+--- file: types/common.ts ---
+
+export interface Address {
+    street: string;
+    city: string;
+    zipCode: string;
+}
+
+export interface Phone {
+    countryCode: string;
+    number: string;
+}
+
+--- file: types/user.ts ---
+
+import { Address, Phone } from "./common";
+
+export interface User {
+    id: number;
+    name: string;
+    address: Address;
+    phone: Phone;
+}
+
+export class UserProfile {
+    user: User;
+    primaryAddress: Address;
+}
+
+--- expect:block-graph ---
+(root:1 000_common (000_common)
+  (interface:2 Address
+    (field:3 street @type string)
+    (field:4 city @type string)
+    (field:5 zipCode @type string)
+  )
+  (interface:6 Phone
+    (field:7 countryCode @type string)
+    (field:8 number @type string)
+  )
+)
+
+(root:9 001_user (001_user)
+  (interface:10 User
+    (field:11 id @type number)
+    (field:12 name @type string)
+    (field:13 address @type:2 Address)
+    (field:14 phone @type:6 Phone)
+  )
+  (class:15 UserProfile
+    (field:16 user @type:10 User)
+    (field:17 primaryAddress @type:2 Address)
+  )
+)
+
+--- expect:arch-graph ---
+// # llmcc architecture view:
+// quick structural map for AI agents to understand and explore this codebase.
+// Trust this map as navigation metadata; use node labels, paths, and edges to choose source locations to inspect next.
+// # Examples:
+// Node example: n42[label='Parser', path='crates/foo/src/parser.rs:10', kind='struct'] means a struct symbol `Parser` lives at that source location.
+// Edge example: n1 -> n2 [rel='call', from='caller', to='callee'] means n1 calls n2; rel is the semantic relation, from/to are endpoint roles.
+// Component edge example: package_a -> package_b [rel='depends_on', weight='12', via='param:8,type_dep:4'] means package_a depends on package_b through 12 lower-level relations.
+// # Stats:
+// mode=agent layout=clustered nodes=4 edges=4 clusters=2
+//
+digraph architecture {
+
+  subgraph cluster_root_0_000_common_ts {
+    label="000_common.ts";
+
+    n2[label="Address", file="000_common.ts", path="$TMP/types/000_common.ts:2", kind="interface"];
+    n6[label="Phone", file="000_common.ts", path="$TMP/types/000_common.ts:8", kind="interface"];
+  }
+
+  subgraph cluster_root_1_001_user_ts {
+    label="001_user.ts";
+
+    n10[label="User", file="001_user.ts", path="$TMP/types/001_user.ts:4", kind="interface"];
+    n15[label="UserProfile", file="001_user.ts", path="$TMP/types/001_user.ts:11", kind="struct"];
+  }
+
+
+n2 -> n10 [rel="field", from="field_type", to="container"];
+n2 -> n15 [rel="field", from="field_type", to="container"];
+n6 -> n10 [rel="field", from="field_type", to="container"];
+n10 -> n15 [rel="field", from="field_type", to="container"];
+}

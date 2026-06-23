@@ -4,7 +4,7 @@ use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::lang_def::{ParseTree, TreeSitterParseTree};
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{SymKind, Symbol};
-use llmcc_core::{CompileCtxt, CompileUnit, Error, ResolveOptions, Result};
+use llmcc_core::{CompileCtxt, CompileUnit, Error, ResolveOptions, Result, SupportedLang};
 
 include!(concat!(env!("OUT_DIR"), "/javascript_tokens.rs"));
 
@@ -68,16 +68,8 @@ impl LanguageDefinition for LangJavaScript {
         })
     }
 
-    fn file_extensions() -> &'static [&'static str] {
-        &["js", "mjs", "cjs"]
-    }
-
-    fn manifest_file() -> &'static str {
-        "package.json"
-    }
-
-    fn container_dirs() -> &'static [&'static str] {
-        &["src", "lib", "dist", "build", "out", "source"]
+    fn supported_lang() -> SupportedLang {
+        SupportedLang::JavaScript
     }
 
     fn collect_symbols<'tcx>(

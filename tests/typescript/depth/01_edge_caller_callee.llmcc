@@ -1,0 +1,95 @@
+===============================================================================
+edge-caller-callee
+===============================================================================
+Test that caller->callee edges create correct dependency direction.
+When function A calls function B, A depends on B.
+lang: typescript
+
+--- file: utils/helpers.ts ---
+
+export function helper(): number {
+    return 42;
+}
+
+export function anotherHelper(): string {
+    return "hello";
+}
+
+--- file: app/main.ts ---
+
+import { helper, anotherHelper } from "../utils/helpers";
+
+export function mainLogic(): number {
+    return helper() + 1;
+}
+
+export function process(): string {
+    const num = helper();
+    const str = anotherHelper();
+    return `${str}: ${num}`;
+}
+
+--- expect:block-graph ---
+(root:1 000_helpers (000_helpers)
+  (func:2 helper
+    (return:3 @type number)
+  )
+  (func:4 anotherHelper
+    (return:5 @type string)
+  )
+)
+
+(root:6 001_main (001_main)
+  (func:7 mainLogic
+    (return:8 @type number)
+    (@fdep:2 helper)
+  )
+  (func:10 process
+    (return:11 @type string)
+    (@fdep:2 helper)
+    (@fdep:4 anotherHelper)
+  )
+)
+
+--- expect:arch-graph ---
+// # llmcc architecture view:
+// quick structural map for AI agents to understand and explore this codebase.
+// Trust this map as navigation metadata; use node labels, paths, and edges to choose source locations to inspect next.
+// # Examples:
+// Node example: n42[label='Parser', path='crates/foo/src/parser.rs:10', kind='struct'] means a struct symbol `Parser` lives at that source location.
+// Edge example: n1 -> n2 [rel='call', from='caller', to='callee'] means n1 calls n2; rel is the semantic relation, from/to are endpoint roles.
+// Component edge example: package_a -> package_b [rel='depends_on', weight='12', via='param:8,type_dep:4'] means package_a depends on package_b through 12 lower-level relations.
+// # Stats:
+// mode=agent layout=clustered nodes=4 edges=3 clusters=4
+//
+digraph architecture {
+
+  subgraph cluster_root_0_app {
+    label="app";
+
+    subgraph cluster_root_0_app_0_001_main_ts {
+      label="001_main.ts";
+
+      n7[label="mainLogic", module="app", file="001_main.ts", path="$TMP/app/001_main.ts:4", kind="function"];
+      n10[label="process", module="app", file="001_main.ts", path="$TMP/app/001_main.ts:8", kind="function"];
+    }
+
+  }
+
+  subgraph cluster_root_1_utils {
+    label="utils";
+
+    subgraph cluster_root_1_utils_0_000_helpers_ts {
+      label="000_helpers.ts";
+
+      n2[label="helper", module="utils", file="000_helpers.ts", path="$TMP/utils/000_helpers.ts:2", kind="function"];
+      n4[label="anotherHelper", module="utils", file="000_helpers.ts", path="$TMP/utils/000_helpers.ts:6", kind="function"];
+    }
+
+  }
+
+
+n7 -> n2 [rel="call", from="caller", to="callee"];
+n10 -> n2 [rel="call", from="caller", to="callee"];
+n10 -> n4 [rel="call", from="caller", to="callee"];
+}

@@ -4,7 +4,9 @@ use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::lang_def::{ParseNode, ParseTree, TreeSitterParseTree};
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{SymKind, Symbol};
-use llmcc_core::{CompileCtxt, CompileUnit, Error, HirBuildAction, ResolveOptions, Result};
+use llmcc_core::{
+    CompileCtxt, CompileUnit, Error, HirBuildAction, ResolveOptions, Result, SupportedLang,
+};
 
 #[allow(clippy::single_component_path_imports)]
 use tree_sitter_typescript;
@@ -58,16 +60,8 @@ impl LanguageDefinition for LangTypeScript {
         })
     }
 
-    fn file_extensions() -> &'static [&'static str] {
-        &["ts", "mts", "cts"]
-    }
-
-    fn manifest_file() -> &'static str {
-        "package.json"
-    }
-
-    fn container_dirs() -> &'static [&'static str] {
-        &["src", "lib", "dist", "build", "out", "source"]
+    fn supported_lang() -> SupportedLang {
+        SupportedLang::Typescript
     }
 
     fn hir_build_action(node: &dyn ParseNode, source: &[u8]) -> HirBuildAction {

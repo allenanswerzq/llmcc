@@ -1,0 +1,64 @@
+===============================================================================
+cross-file-call
+===============================================================================
+Method in one Java file calls a method defined in another file.
+lang: java
+
+--- file: pom.xml ---
+<project><modelVersion>4.0.0</modelVersion></project>
+
+--- file: src/main/java/com/example/Formatter.java ---
+package com.example;
+
+public class Formatter {
+    public static String format(String name) {
+        return "user:" + name;
+    }
+}
+
+--- file: src/main/java/com/example/UserService.java ---
+package com.example;
+
+public class UserService {
+    public String display(String name) {
+        return format(name);
+    }
+}
+
+--- expect:arch-graph ---
+// # llmcc architecture view:
+// quick structural map for AI agents to understand and explore this codebase.
+// Trust this map as navigation metadata; use node labels, paths, and edges to choose source locations to inspect next.
+// # Examples:
+// Node example: n42[label='Parser', path='crates/foo/src/parser.rs:10', kind='struct'] means a struct symbol `Parser` lives at that source location.
+// Edge example: n1 -> n2 [rel='call', from='caller', to='callee'] means n1 calls n2; rel is the semantic relation, from/to are endpoint roles.
+// Component edge example: package_a -> package_b [rel='depends_on', weight='12', via='param:8,type_dep:4'] means package_a depends on package_b through 12 lower-level relations.
+// # Stats:
+// mode=agent layout=clustered nodes=2 edges=0 clusters=4
+//
+digraph architecture {
+
+  subgraph cluster_root_0_TMP {
+    label="$TMP";
+
+    subgraph cluster_root_0_TMP_0_com {
+      label="com";
+
+      subgraph cluster_root_0_TMP_0_com_0_001_Formatter_java {
+        label="001_Formatter.java";
+
+        n2[label="Formatter", package="$TMP", module="com", file="001_Formatter.java", path="$TMP/src/main/java/com/example/001_Formatter.java:3", kind="struct"];
+      }
+
+      subgraph cluster_root_0_TMP_0_com_1_002_UserService_java {
+        label="002_UserService.java";
+
+        n5[label="UserService", package="$TMP", module="com", file="002_UserService.java", path="$TMP/src/main/java/com/example/002_UserService.java:3", kind="struct"];
+      }
+
+    }
+
+  }
+
+
+}

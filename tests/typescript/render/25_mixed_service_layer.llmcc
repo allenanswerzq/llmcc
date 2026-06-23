@@ -1,0 +1,110 @@
+===============================================================================
+mixed-service-layer
+===============================================================================
+Complex service layer pattern with interfaces, classes, generics, and cross-file deps.
+lang: typescript
+
+--- file: sample/src/models.ts ---
+
+export class User {
+    id: number;
+    name: string;
+}
+
+export class Order {
+    id: number;
+    userId: number;
+    total: number;
+}
+
+--- file: sample/src/repository.ts ---
+
+export interface Repository<T> {
+    find(id: number): T | null;
+    save(item: T): boolean;
+}
+
+--- file: sample/src/impl_repos.ts ---
+import { Repository } from './repository';
+import { User, Order } from './models';
+
+export class UserRepo implements Repository<User> {
+    connection: string;
+
+    find(id: number): User | null {
+        return null;
+    }
+
+    save(item: User): boolean {
+        return true;
+    }
+}
+
+export class OrderRepo implements Repository<Order> {
+    connection: string;
+
+    find(id: number): Order | null {
+        return null;
+    }
+
+    save(item: Order): boolean {
+        return true;
+    }
+}
+
+--- file: sample/src/service.ts ---
+import { Repository } from './repository';
+import { User } from './models';
+
+export class UserService {
+    repo: Repository<User>;
+
+    getUser(id: number): User | null {
+        return this.repo.find(id);
+    }
+}
+
+--- expect:arch-graph ---
+// # llmcc architecture view:
+// quick structural map for AI agents to understand and explore this codebase.
+// Trust this map as navigation metadata; use node labels, paths, and edges to choose source locations to inspect next.
+// # Examples:
+// Node example: n42[label='Parser', path='crates/foo/src/parser.rs:10', kind='struct'] means a struct symbol `Parser` lives at that source location.
+// Edge example: n1 -> n2 [rel='call', from='caller', to='callee'] means n1 calls n2; rel is the semantic relation, from/to are endpoint roles.
+// Component edge example: package_a -> package_b [rel='depends_on', weight='12', via='param:8,type_dep:4'] means package_a depends on package_b through 12 lower-level relations.
+// # Stats:
+// mode=agent layout=clustered nodes=6 edges=3 clusters=4
+//
+digraph architecture {
+
+  subgraph cluster_root_0_000_models_ts {
+    label="000_models.ts";
+
+    n2[label="User", file="000_models.ts", path="$TMP/sample/src/000_models.ts:2", kind="struct"];
+    n5[label="Order", file="000_models.ts", path="$TMP/sample/src/000_models.ts:7", kind="struct"];
+  }
+
+  subgraph cluster_root_1_001_repository_ts {
+    label="001_repository.ts";
+
+    n10[label="Repository", file="001_repository.ts", path="$TMP/sample/src/001_repository.ts:2", kind="interface"];
+  }
+
+  subgraph cluster_root_2_002_impl_repos_ts {
+    label="002_impl_repos.ts";
+
+    n18[label="UserRepo", file="002_impl_repos.ts", path="$TMP/sample/src/002_impl_repos.ts:4", kind="struct"];
+    n26[label="OrderRepo", file="002_impl_repos.ts", path="$TMP/sample/src/002_impl_repos.ts:16", kind="struct"];
+  }
+
+  subgraph cluster_root_3_003_service_ts {
+    label="003_service.ts";
+
+    n35[label="UserService", file="003_service.ts", path="$TMP/sample/src/003_service.ts:4", kind="struct"];
+  }
+
+
+n10 -> n18 [rel="conformance", from="contract", to="conforms"];
+n10 -> n26 [rel="conformance", from="contract", to="conforms"];
+n10 -> n35 [rel="field", from="field_type", to="container"];
+}

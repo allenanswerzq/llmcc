@@ -1,0 +1,58 @@
+===============================================================================
+construct-signatures
+===============================================================================
+Interface construct signatures.
+lang: typescript
+
+--- file: src/lib.ts ---
+interface Constructor {
+    new (): object;
+}
+
+interface TypedConstructor<T> {
+    new (): T;
+}
+
+interface ParameterizedConstructor {
+    new (name: string, age: number): Person;
+}
+
+interface GenericConstructor<T> {
+    new (...args: any[]): T;
+}
+
+interface FactoryConstructor {
+    new <T>(value: T): Container<T>;
+}
+
+interface Person {
+    name: string;
+    age: number;
+}
+
+interface Container<T> {
+    value: T;
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (interface:2 Constructor)
+  (interface:3 TypedConstructor)
+  (interface:4 ParameterizedConstructor
+    (parameter:5 name @type string)
+    (parameter:6 age @type number)
+  )
+  (interface:7 GenericConstructor
+    (parameter:8 args @type any)
+  )
+  (interface:9 FactoryConstructor
+    (parameter:10 value @type value)
+  )
+  (interface:11 Person
+    (field:12 name @type string)
+    (field:13 age @type number)
+  )
+  (interface:14 Container
+    (field:15 value @type T)
+  )
+)

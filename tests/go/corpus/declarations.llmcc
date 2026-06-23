@@ -1,0 +1,88 @@
+===============================================================================
+struct-and-methods
+===============================================================================
+
+lang: go
+
+--- file: main.go ---
+package main
+
+type User struct {
+    Name  string
+    Email string
+}
+
+func (u *User) Display() string {
+    return u.Name + " <" + u.Email + ">"
+}
+
+func NewUser(name, email string) *User {
+    return &User{Name: name, Email: email}
+}
+
+--- expect:block-graph ---
+(root:1  (000_main)
+  (class:2 User)
+  (func:3 NewUser)
+)
+
+
+
+
+===============================================================================
+interface-impl
+===============================================================================
+
+lang: go
+
+--- file: main.go ---
+package main
+
+type Reader interface {
+    Read(p []byte) (n int, err error)
+}
+
+type FileReader struct {
+    Path string
+}
+
+func (f *FileReader) Read(p []byte) (int, error) {
+    return 0, nil
+}
+
+--- expect:block-graph ---
+(root:1  (000_main)
+  (class:2 Reader)
+  (class:3 FileReader)
+)
+
+
+
+
+===============================================================================
+multiple-functions
+===============================================================================
+
+lang: go
+
+--- file: main.go ---
+package main
+
+import "fmt"
+
+func Add(a, b int) int {
+    return a + b
+}
+
+func Main() {
+    result := Add(1, 2)
+    fmt.Println(result)
+}
+
+--- expect:block-graph ---
+(root:1  (000_main)
+  (func:2 Add)
+  (func:3 Main
+    (@fdep:2 Add)
+  )
+)

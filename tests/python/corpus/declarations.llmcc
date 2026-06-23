@@ -1,0 +1,96 @@
+===============================================================================
+class-and-methods
+===============================================================================
+
+lang: python
+
+--- file: app.py ---
+class User:
+    def __init__(self, name: str, email: str):
+        self.name = name
+        self.email = email
+
+    def display(self) -> str:
+        return f"{self.name} <{self.email}>"
+
+def create_user(name: str, email: str) -> User:
+    return User(name, email)
+
+--- expect:block-graph ---
+(root:1  (000_app)
+  (class:2 User
+    (method:3 __init__)
+    (method:4 display)
+  )
+  (func:5 create_user
+    (@tdep:2 User)
+  )
+)
+
+
+
+
+===============================================================================
+inheritance
+===============================================================================
+
+lang: python
+
+--- file: app.py ---
+class Animal:
+    def __init__(self, name: str):
+        self.name = name
+
+    def speak(self) -> str:
+        return ""
+
+class Dog(Animal):
+    def speak(self) -> str:
+        return "Woof"
+
+    def fetch(self) -> None:
+        pass
+
+--- expect:block-graph ---
+(root:1  (000_app)
+  (class:2 Animal
+    (method:3 __init__)
+    (method:4 speak)
+  )
+  (class:5 Dog
+    (method:6 speak)
+    (method:7 fetch)
+  )
+)
+
+
+
+
+===============================================================================
+functions-and-decorators
+===============================================================================
+
+lang: python
+
+--- file: app.py ---
+def add(a: int, b: int) -> int:
+    return a + b
+
+def decorator(func):
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrapper
+
+@decorator
+def compute(x: int) -> int:
+    return x * 2
+
+--- expect:block-graph ---
+(root:1  (000_app)
+  (func:2 add)
+  (func:3 decorator
+    (func:4 wrapper
+    )
+  )
+  (func:6 compute)
+)

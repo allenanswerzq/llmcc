@@ -1,0 +1,55 @@
+===============================================================================
+prefer-same-file-function
+===============================================================================
+When two functions share a name, call resolution should prefer the same file.
+lang: python
+
+--- file: pyproject.toml ---
+[project]
+name = "sample"
+
+--- file: global_rules.py ---
+def validate() -> bool:
+    return False
+
+--- file: service.py ---
+def validate() -> bool:
+    return True
+
+def run() -> bool:
+    return validate()
+
+--- expect:arch-graph ---
+// # llmcc architecture view:
+// quick structural map for AI agents to understand and explore this codebase.
+// Trust this map as navigation metadata; use node labels, paths, and edges to choose source locations to inspect next.
+// # Examples:
+// Node example: n42[label='Parser', path='crates/foo/src/parser.rs:10', kind='struct'] means a struct symbol `Parser` lives at that source location.
+// Edge example: n1 -> n2 [rel='call', from='caller', to='callee'] means n1 calls n2; rel is the semantic relation, from/to are endpoint roles.
+// Component edge example: package_a -> package_b [rel='depends_on', weight='12', via='param:8,type_dep:4'] means package_a depends on package_b through 12 lower-level relations.
+// # Stats:
+// mode=agent layout=clustered nodes=3 edges=1 clusters=3
+//
+digraph architecture {
+
+  subgraph cluster_root_0_TMP {
+    label="$TMP";
+
+    subgraph cluster_root_0_TMP_0_001_global_rules_py {
+      label="001_global_rules.py";
+
+      n2[label="validate", package="$TMP", file="001_global_rules.py", path="$TMP/001_global_rules.py:1", kind="function"];
+    }
+
+    subgraph cluster_root_0_TMP_1_002_service_py {
+      label="002_service.py";
+
+      n4[label="validate", package="$TMP", file="002_service.py", path="$TMP/002_service.py:1", kind="function"];
+      n5[label="run", package="$TMP", file="002_service.py", path="$TMP/002_service.py:4", kind="function"];
+    }
+
+  }
+
+
+n5 -> n4 [rel="call", from="caller", to="callee"];
+}

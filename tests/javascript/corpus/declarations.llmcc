@@ -1,0 +1,95 @@
+===============================================================================
+class-and-functions
+===============================================================================
+
+lang: javascript
+
+--- file: src/app.js ---
+class User {
+    constructor(name, email) {
+        this.name = name;
+        this.email = email;
+    }
+
+    display() {
+        return `${this.name} <${this.email}>`;
+    }
+}
+
+function createUser(name, email) {
+    return new User(name, email);
+}
+
+--- expect:block-graph ---
+(root:1  (000_app)
+  (class:2 User
+    (method:3 constructor)
+    (method:4 display)
+  )
+  (func:5 createUser)
+)
+
+
+
+
+===============================================================================
+module-exports
+===============================================================================
+
+lang: javascript
+
+--- file: src/app.js ---
+class Service {
+    constructor(config) {
+        this.config = config;
+    }
+
+    start() {
+        return true;
+    }
+}
+
+function helper() {
+    return 42;
+}
+
+module.exports = { Service, helper };
+
+--- expect:block-graph ---
+(root:1  (000_app)
+  (class:2 Service
+    (method:3 constructor)
+    (method:4 start)
+  )
+  (func:5 helper)
+)
+
+
+
+
+===============================================================================
+arrow-functions
+===============================================================================
+
+lang: javascript
+
+--- file: src/app.js ---
+const add = (a, b) => a + b;
+
+const multiply = (a, b) => {
+    return a * b;
+};
+
+class Calculator {
+    compute(fn, a, b) {
+        return fn(a, b);
+    }
+}
+
+--- expect:block-graph ---
+(root:1  (000_app)
+  (class:2 Calculator
+    (method:3 compute
+    )
+  )
+)

@@ -20,14 +20,6 @@ pub use llmcc_core::ViewDepth;
 /// [`CollectedGraph`] before rendering.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct RenderOptions {
-    /// Cluster module-level components under their parent package.
-    ///
-    /// This only affects [`ViewDepth::Module`] aggregate rendering.
-    pub cluster_by_package: bool,
-    /// Use module-only labels instead of `package::module` labels.
-    ///
-    /// This only affects [`ViewDepth::Module`] aggregate rendering.
-    pub short_labels: bool,
     /// Optimize output for AI agent consumption.
     ///
     /// When true, visual styling (colors, shapes, fonts, layout hints) is
@@ -46,20 +38,6 @@ impl RenderOptions {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
-    }
-
-    /// Enable or disable package clustering for module-level graphs.
-    #[must_use]
-    pub fn with_cluster_by_package(mut self, enabled: bool) -> Self {
-        self.cluster_by_package = enabled;
-        self
-    }
-
-    /// Enable or disable short module labels.
-    #[must_use]
-    pub fn with_short_labels(mut self, enabled: bool) -> Self {
-        self.short_labels = enabled;
-        self
     }
 
     /// Enable or disable agent-optimized output (no visual styling).

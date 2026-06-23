@@ -1,0 +1,73 @@
+===============================================================================
+namespace
+===============================================================================
+Test that namespaces with nested types appear correctly.
+lang: typescript
+
+--- file: sample/src/lib.ts ---
+
+namespace Models {
+    export class User {
+        id: number;
+        name: string;
+    }
+
+    export class Order {
+        id: number;
+        user: User;
+    }
+}
+
+namespace Services {
+    export class UserService {
+        getUser(id: number): Models.User {
+            return new Models.User();
+        }
+    }
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (module:2 Models (inline)
+    (class:3 User
+      (field:4 id @type number)
+      (field:5 name @type string)
+    )
+    (class:6 Order
+      (field:7 id @type number)
+      (field:8 user @type:8 user)
+    )
+  )
+  (module:9 Services (inline)
+    (class:10 UserService
+      (method:11 getUser
+        (parameter:12 id @type number)
+        (return:13 @type:2 Models)
+      )
+    )
+  )
+)
+
+--- expect:arch-graph ---
+// # llmcc architecture view:
+// quick structural map for AI agents to understand and explore this codebase.
+// Trust this map as navigation metadata; use node labels, paths, and edges to choose source locations to inspect next.
+// # Examples:
+// Node example: n42[label='Parser', path='crates/foo/src/parser.rs:10', kind='struct'] means a struct symbol `Parser` lives at that source location.
+// Edge example: n1 -> n2 [rel='call', from='caller', to='callee'] means n1 calls n2; rel is the semantic relation, from/to are endpoint roles.
+// Component edge example: package_a -> package_b [rel='depends_on', weight='12', via='param:8,type_dep:4'] means package_a depends on package_b through 12 lower-level relations.
+// # Stats:
+// mode=agent layout=clustered nodes=3 edges=0 clusters=1
+//
+digraph architecture {
+
+  subgraph cluster_root_0_000_lib_ts {
+    label="000_lib.ts";
+
+    n3[label="User", file="000_lib.ts", path="$TMP/sample/src/000_lib.ts:3", kind="struct"];
+    n6[label="Order", file="000_lib.ts", path="$TMP/sample/src/000_lib.ts:8", kind="struct"];
+    n10[label="UserService", file="000_lib.ts", path="$TMP/sample/src/000_lib.ts:15", kind="struct"];
+  }
+
+
+}

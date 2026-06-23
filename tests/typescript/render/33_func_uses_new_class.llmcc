@@ -1,0 +1,105 @@
+===============================================================================
+func-uses-new-class
+===============================================================================
+Test that free functions using new Class() create type dependency edges.
+lang: typescript
+
+--- file: sample/src/lib.ts ---
+
+export class User {
+    id: number;
+    name: string;
+
+    initialize(): void {
+        this.id = 0;
+        this.name = "";
+    }
+}
+
+export class Order {
+    orderId: number;
+    amount: number;
+}
+
+export function createUser(): User {
+    const user = new User();
+    user.initialize();
+    return user;
+}
+
+export function createOrder(): Order {
+    const order = new Order();
+    return order;
+}
+
+export function foo()  {
+}
+
+export function createBoth(): User {
+    foo();
+    const user = new User();
+    const order = new Order();
+    return user;
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (class:2 User
+    (field:3 id @type number)
+    (field:4 name @type string)
+    (method:5 initialize
+      (return:6 @type void)
+    )
+  )
+  (class:7 Order
+    (field:8 orderId @type number)
+    (field:9 amount @type number)
+  )
+  (func:10 createUser
+    (return:11 @type:2 User)
+    (@tdep:2 User)
+  )
+  (func:14 createOrder
+    (return:15 @type:7 Order)
+    (@tdep:7 Order)
+  )
+  (func:17 foo)
+  (func:18 createBoth
+    (return:19 @type:2 User)
+    (@tdep:2 User)
+    (@tdep:7 Order)
+    (@fdep:17 foo)
+  )
+)
+
+--- expect:arch-graph ---
+// # llmcc architecture view:
+// quick structural map for AI agents to understand and explore this codebase.
+// Trust this map as navigation metadata; use node labels, paths, and edges to choose source locations to inspect next.
+// # Examples:
+// Node example: n42[label='Parser', path='crates/foo/src/parser.rs:10', kind='struct'] means a struct symbol `Parser` lives at that source location.
+// Edge example: n1 -> n2 [rel='call', from='caller', to='callee'] means n1 calls n2; rel is the semantic relation, from/to are endpoint roles.
+// Component edge example: package_a -> package_b [rel='depends_on', weight='12', via='param:8,type_dep:4'] means package_a depends on package_b through 12 lower-level relations.
+// # Stats:
+// mode=agent layout=clustered nodes=6 edges=5 clusters=1
+//
+digraph architecture {
+
+  subgraph cluster_root_0_000_lib_ts {
+    label="000_lib.ts";
+
+    n2[label="User", file="000_lib.ts", path="$TMP/sample/src/000_lib.ts:2", kind="struct"];
+    n7[label="Order", file="000_lib.ts", path="$TMP/sample/src/000_lib.ts:12", kind="struct"];
+    n10[label="createUser", file="000_lib.ts", path="$TMP/sample/src/000_lib.ts:17", kind="function"];
+    n14[label="createOrder", file="000_lib.ts", path="$TMP/sample/src/000_lib.ts:23", kind="function"];
+    n17[label="foo", file="000_lib.ts", path="$TMP/sample/src/000_lib.ts:28", kind="function"];
+    n18[label="createBoth", file="000_lib.ts", path="$TMP/sample/src/000_lib.ts:31", kind="function"];
+  }
+
+
+n10 -> n2 [rel="return", from="func", to="output"];
+n14 -> n7 [rel="return", from="func", to="output"];
+n18 -> n2 [rel="return", from="func", to="output"];
+n18 -> n7 [rel="type_dep", from="source", to="type_dep"];
+n18 -> n17 [rel="call", from="caller", to="callee"];
+}

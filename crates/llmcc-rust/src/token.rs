@@ -4,7 +4,9 @@ use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::lang_def::{ParseNode, ParseTree, TreeSitterParseTree};
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{SymKind, Symbol};
-use llmcc_core::{CompileCtxt, CompileUnit, Error, HirBuildAction, ResolveOptions, Result};
+use llmcc_core::{
+    CompileCtxt, CompileUnit, Error, HirBuildAction, ResolveOptions, Result, SupportedLang,
+};
 
 // Generated from token_map.toml and tree-sitter-rust NODE_TYPES.
 include!(concat!(env!("OUT_DIR"), "/rust_tokens.rs"));
@@ -89,16 +91,8 @@ impl LanguageDefinition for LangRust {
         })
     }
 
-    fn file_extensions() -> &'static [&'static str] {
-        &["rs"]
-    }
-
-    fn manifest_file() -> &'static str {
-        "Cargo.toml"
-    }
-
-    fn container_dirs() -> &'static [&'static str] {
-        &["src"]
+    fn supported_lang() -> SupportedLang {
+        SupportedLang::Rust
     }
 
     fn hir_build_action(node: &dyn ParseNode, source: &[u8]) -> HirBuildAction {

@@ -16,8 +16,6 @@ pub struct RunnerOptions {
     pub graph: bool,
     pub view_depth: ViewDepth,
     pub top_k: Option<usize>,
-    pub cluster_by_package: bool,
-    pub short_labels: bool,
     pub ai: bool,
     pub flat: bool,
 }

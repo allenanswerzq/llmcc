@@ -1,0 +1,81 @@
+===============================================================================
+function-param-return-same-name
+===============================================================================
+Test resolution when function parameter type and return type have
+the same name but come from different modules via import aliases.
+lang: typescript
+
+--- file: src/input.ts ---
+
+export interface Data {
+    raw: string;
+}
+
+--- file: src/output.ts ---
+
+export interface Data {
+    processed: string;
+}
+
+--- file: src/processor.ts ---
+
+import { Data as InputData } from "./input";
+import { Data as OutputData } from "./output";
+
+export function process(input: InputData): OutputData {
+    return { processed: "" };
+}
+
+--- expect:block-graph ---
+(root:1 000_input (000_input)
+  (interface:2 Data
+    (field:3 raw @type string)
+  )
+)
+
+(root:4 001_output (001_output)
+  (interface:5 Data
+    (field:6 processed @type string)
+  )
+)
+
+(root:7 002_processor (002_processor)
+  (func:8 process
+    (parameter:9 input @type input)
+    (return:10)
+  )
+)
+
+--- expect:arch-graph ---
+// # llmcc architecture view:
+// quick structural map for AI agents to understand and explore this codebase.
+// Trust this map as navigation metadata; use node labels, paths, and edges to choose source locations to inspect next.
+// # Examples:
+// Node example: n42[label='Parser', path='crates/foo/src/parser.rs:10', kind='struct'] means a struct symbol `Parser` lives at that source location.
+// Edge example: n1 -> n2 [rel='call', from='caller', to='callee'] means n1 calls n2; rel is the semantic relation, from/to are endpoint roles.
+// Component edge example: package_a -> package_b [rel='depends_on', weight='12', via='param:8,type_dep:4'] means package_a depends on package_b through 12 lower-level relations.
+// # Stats:
+// mode=agent layout=clustered nodes=3 edges=0 clusters=3
+//
+digraph architecture {
+
+  subgraph cluster_root_0_000_input_ts {
+    label="000_input.ts";
+
+    n2[label="Data", file="000_input.ts", path="$TMP/src/000_input.ts:2", kind="interface"];
+  }
+
+  subgraph cluster_root_1_001_output_ts {
+    label="001_output.ts";
+
+    n5[label="Data", file="001_output.ts", path="$TMP/src/001_output.ts:2", kind="interface"];
+  }
+
+  subgraph cluster_root_2_002_processor_ts {
+    label="002_processor.ts";
+
+    n8[label="process", file="002_processor.ts", path="$TMP/src/002_processor.ts:5", kind="function"];
+  }
+
+
+}

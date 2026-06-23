@@ -150,8 +150,18 @@ const BANNER: &str =
 fn detect_lang(suite: &str) -> SupportedLang {
     if suite.starts_with("typescript/") || suite.starts_with("ts/") {
         SupportedLang::Typescript
-    } else if suite.starts_with("cpp/") {
+    } else if suite.starts_with("cpp/") || suite.starts_with("c++/") {
         SupportedLang::Cpp
+    } else if suite.starts_with("csharp/") || suite.starts_with("cs/") {
+        SupportedLang::CSharp
+    } else if suite.starts_with("go/") {
+        SupportedLang::Go
+    } else if suite.starts_with("java/") {
+        SupportedLang::Java
+    } else if suite.starts_with("javascript/") || suite.starts_with("js/") {
+        SupportedLang::JavaScript
+    } else if suite.starts_with("python/") || suite.starts_with("py/") {
+        SupportedLang::Python
     } else if suite.starts_with("auto/") {
         SupportedLang::Auto
     } else {
