@@ -24,12 +24,12 @@ pub struct Dispatcher {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs)
+(root:1 001_lib (001_lib)
   (module:2 handler)
   (module:3 dispatcher)
 )
 
-(root:4 handler ($TMP/sample/src/handler.rs)
+(root:4 002_handler (002_handler)
   (trait:5 Handler
     (method:6 handle
       (parameter:7 self @type:5 Handler)
@@ -37,7 +37,7 @@ pub struct Dispatcher {
   )
 )
 
-(root:8 dispatcher ($TMP/sample/src/dispatcher.rs)
+(root:8 003_dispatcher (003_dispatcher)
   (class:9 Dispatcher
     (field:10 handler @type:5 Handler)
     (@tdep:5 Handler)
@@ -47,37 +47,35 @@ pub struct Dispatcher {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_dispatcher_rs {
-      label="dispatcher.rs";
+    subgraph cluster_root_0_sample_0_002_handler_rs {
+      label="002_handler.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n9[label="Dispatcher", path="$TMP/sample/src/dispatcher.rs:3", sym_ty="Struct", shape=box];
+      n5[label="Handler", package="sample", file="002_handler.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_handler.rs:1", kind="trait", shape="box"];
     }
 
-    subgraph cluster_handler_rs {
-      label="handler.rs";
+    subgraph cluster_root_0_sample_1_003_dispatcher_rs {
+      label="003_dispatcher.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n5[label="Handler", path="$TMP/sample/src/handler.rs:1", sym_ty="Trait", shape=box];
+      n9[label="Dispatcher", package="sample", file="003_dispatcher.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_dispatcher.rs:3", kind="struct", shape="box"];
     }
 
   }
 
 
-  n5 -> n9 [from="field_type", to="struct"];
+n5 -> n9 [rel="field", from="field_type", to="container"];
 }

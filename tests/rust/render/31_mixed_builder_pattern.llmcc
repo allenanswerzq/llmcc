@@ -80,12 +80,12 @@ pub fn create_default_config() -> impl Configurable {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs)
+(root:1 001_lib (001_lib)
   (module:2 config)
   (module:3 builder)
 )
 
-(root:4 config ($TMP/sample/src/config.rs)
+(root:4 002_config (002_config)
   (trait:5 Configurable
     (method:6 validate
       (parameter:7 self @type:5 Configurable)
@@ -112,7 +112,7 @@ pub fn create_default_config() -> impl Configurable {
   )
 )
 
-(root:22 builder ($TMP/sample/src/builder.rs)
+(root:22 003_builder (003_builder)
   (class:23 ConfigBuilder
     (field:24 host @type Self)
     (field:25 port @type Self)
@@ -121,6 +121,8 @@ pub fn create_default_config() -> impl Configurable {
   (impl:27 ConfigBuilder @type:23
     (method:28 new
       (return:29 @type:23 ConfigBuilder)
+      (@tdep:23 ConfigBuilder)
+      (@fdep:28 new)
     )
     (method:31 host
       (parameter:32 self @type:23 ConfigBuilder)
@@ -143,48 +145,49 @@ pub fn create_default_config() -> impl Configurable {
   )
   (func:44 create_default_config
     (return:45 @type:5 Configurable)
+    (@tdep:23 ConfigBuilder)
+    (@fdep:28 new)
   )
 )
 
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_builder_rs {
-      label="builder.rs";
+    subgraph cluster_root_0_sample_0_002_config_rs {
+      label="002_config.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n23[label="ConfigBuilder", path="$TMP/sample/src/builder.rs:3", sym_ty="Struct", shape=box];
-      n44[label="create_default_config", path="$TMP/sample/src/builder.rs:41", sym_ty="Function", shape=ellipse];
+      n5[label="Configurable", package="sample", file="002_config.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_config.rs:1", kind="trait", shape="box"];
+      n9[label="Buildable", package="sample", file="002_config.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_config.rs:5", kind="trait", shape="box"];
+      n14[label="ServerConfig", package="sample", file="002_config.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_config.rs:10", kind="struct", shape="box"];
     }
 
-    subgraph cluster_config_rs {
-      label="config.rs";
+    subgraph cluster_root_0_sample_1_003_builder_rs {
+      label="003_builder.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n5[label="Configurable", path="$TMP/sample/src/config.rs:1", sym_ty="Trait", shape=box];
-      n14[label="ServerConfig", path="$TMP/sample/src/config.rs:10", sym_ty="Struct", shape=box];
-      n9[label="Buildable", path="$TMP/sample/src/config.rs:5", sym_ty="Trait", shape=box];
+      n23[label="ConfigBuilder", package="sample", file="003_builder.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_builder.rs:3", kind="struct", shape="box"];
+      n44[label="create_default_config", package="sample", file="003_builder.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_builder.rs:41", kind="function", shape="ellipse"];
     }
 
   }
 
 
-  n5 -> n14 [from="trait", to="impl"];
-  n9 -> n23 [from="trait", to="impl"];
-  n44 -> n5 [from="func", to="output"];
+n5 -> n14 [rel="conformance", from="contract", to="conforms"];
+n9 -> n23 [rel="conformance", from="contract", to="conforms"];
+n44 -> n5 [rel="return", from="func", to="output"];
+n44 -> n23 [rel="type_dep", from="source", to="type_dep"];
 }

@@ -22,23 +22,22 @@ class UserManager {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_lib_ts {
-    label="lib.ts";
+  subgraph cluster_root_0_000_lib_ts {
+    label="000_lib.ts";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#fafafa";
 
-    n7[label="UserManager", path="$TMP/sample/src/lib.ts:11", sym_ty="Struct", shape=box];
-    n5[label="Container", path="$TMP/sample/src/lib.ts:7", sym_ty="Struct", shape=box];
+    n2[label="User", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/000_lib.ts:2", kind="struct", shape="box"];
+    n5[label="Container", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/000_lib.ts:7", kind="struct", shape="box"];
+    n7[label="UserManager", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/000_lib.ts:11", kind="struct", shape="box"];
   }
 
 
-  n5 -> n7 [from="field_type", to="struct"];
+n5 -> n7 [rel="field", from="field_type", to="container"];
 }

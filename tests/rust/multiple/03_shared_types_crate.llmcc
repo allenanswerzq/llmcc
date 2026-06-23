@@ -89,11 +89,11 @@ pub fn find_user(id: UserId) -> Result<User, StoreError> {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/types/src/lib.rs)
+(root:1 002_lib (002_lib)
   (module:2 common)
 )
 
-(root:3 common ($TMP/types/src/common.rs)
+(root:3 003_common (003_common)
   (class:4 UserId
     (field:5 0 @type u64)
   )
@@ -118,11 +118,11 @@ pub fn find_user(id: UserId) -> Result<User, StoreError> {
   )
 )
 
-(root:19 lib ($TMP/auth/src/lib.rs)
+(root:19 005_lib (005_lib)
   (module:20 auth)
 )
 
-(root:21 auth ($TMP/auth/src/auth.rs)
+(root:21 006_auth (006_auth)
   (class:22 Session
     (field:23 user @type:8 User)
     (field:24 token @type String)
@@ -145,11 +145,11 @@ pub fn find_user(id: UserId) -> Result<User, StoreError> {
   )
 )
 
-(root:34 lib ($TMP/store/src/lib.rs)
+(root:34 008_lib (008_lib)
   (module:35 repository)
 )
 
-(root:36 repository ($TMP/store/src/repository.rs)
+(root:36 009_repository (009_repository)
   (trait:37 UserStore
     (method:38 get
       (parameter:39 self @type:37 UserStore)
@@ -186,76 +186,75 @@ pub fn find_user(id: UserId) -> Result<User, StoreError> {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_auth {
+  subgraph cluster_root_0_auth {
     label="auth";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_auth_rs {
-      label="auth.rs";
+    subgraph cluster_root_0_auth_0_006_auth_rs {
+      label="006_auth.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n30[label="validate_session", path="$TMP/auth/src/auth.rs:12", sym_ty="Function", shape=ellipse];
-      n22[label="Session", path="$TMP/auth/src/auth.rs:3", sym_ty="Struct", shape=box];
-      n25[label="authenticate", path="$TMP/auth/src/auth.rs:8", sym_ty="Function", shape=ellipse];
+      n22[label="Session", package="auth", file="006_auth.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/auth/src/006_auth.rs:3", kind="struct", shape="box"];
+      n25[label="authenticate", package="auth", file="006_auth.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/auth/src/006_auth.rs:8", kind="function", shape="ellipse"];
+      n30[label="validate_session", package="auth", file="006_auth.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/auth/src/006_auth.rs:12", kind="function", shape="ellipse"];
     }
 
   }
 
-  subgraph cluster_store {
+  subgraph cluster_root_1_store {
     label="store";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_repository_rs {
-      label="repository.rs";
+    subgraph cluster_root_1_store_0_009_repository_rs {
+      label="009_repository.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n50[label="find_user", path="$TMP/store/src/repository.rs:9", sym_ty="Function", shape=ellipse];
+      n37[label="UserStore", package="store", file="009_repository.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/store/src/009_repository.rs:3", kind="trait", shape="box"];
+      n50[label="find_user", package="store", file="009_repository.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/store/src/009_repository.rs:9", kind="function", shape="ellipse"];
     }
 
   }
 
-  subgraph cluster_types {
+  subgraph cluster_root_2_types {
     label="types";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_common_rs {
-      label="common.rs";
+    subgraph cluster_root_2_types_0_003_common_rs {
+      label="003_common.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n4[label="UserId", path="$TMP/types/src/common.rs:1", sym_ty="Struct", shape=box];
-      n11[label="AuthError", path="$TMP/types/src/common.rs:10", sym_ty="Enum", shape=box];
-      n15[label="StoreError", path="$TMP/types/src/common.rs:16", sym_ty="Enum", shape=box];
-      n6[label="Email", path="$TMP/types/src/common.rs:3", sym_ty="Struct", shape=box];
-      n8[label="User", path="$TMP/types/src/common.rs:5", sym_ty="Struct", shape=box];
+      n4[label="UserId", package="types", file="003_common.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/types/src/003_common.rs:1", kind="struct", shape="box"];
+      n6[label="Email", package="types", file="003_common.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/types/src/003_common.rs:3", kind="struct", shape="box"];
+      n8[label="User", package="types", file="003_common.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/types/src/003_common.rs:5", kind="struct", shape="box"];
+      n11[label="AuthError", package="types", file="003_common.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/types/src/003_common.rs:10", kind="enum", shape="box"];
+      n15[label="StoreError", package="types", file="003_common.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/types/src/003_common.rs:16", kind="enum", shape="box"];
     }
 
   }
 
 
-  n4 -> n8 [from="field_type", to="struct"];
-  n4 -> n25 [from="input", to="func"];
-  n4 -> n50 [from="input", to="func"];
-  n6 -> n8 [from="field_type", to="struct"];
-  n8 -> n22 [from="field_type", to="struct"];
-  n22 -> n30 [from="input", to="func"];
-  n25 -> n11 [from="func", to="type_dep"];
-  n25 -> n22 [from="func", to="type_dep"];
-  n30 -> n8 [from="func", to="type_dep"];
-  n30 -> n11 [from="func", to="type_dep"];
-  n50 -> n8 [from="func", to="type_dep"];
-  n50 -> n15 [from="func", to="type_dep"];
+n4 -> n8 [rel="field", from="field_type", to="container"];
+n4 -> n25 [rel="param", from="input", to="func"];
+n4 -> n50 [rel="param", from="input", to="func"];
+n6 -> n8 [rel="field", from="field_type", to="container"];
+n8 -> n22 [rel="field", from="field_type", to="container"];
+n22 -> n30 [rel="param", from="input", to="func"];
+n25 -> n11 [rel="type_dep", from="source", to="type_dep"];
+n25 -> n22 [rel="type_dep", from="source", to="type_dep"];
+n30 -> n8 [rel="type_dep", from="source", to="type_dep"];
+n30 -> n11 [rel="type_dep", from="source", to="type_dep"];
+n50 -> n8 [rel="type_dep", from="source", to="type_dep"];
+n50 -> n15 [rel="type_dep", from="source", to="type_dep"];
 }

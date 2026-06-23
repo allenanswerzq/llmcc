@@ -44,12 +44,12 @@ pub fn transition(state: OrderState) -> OrderState {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs)
+(root:1 001_lib (001_lib)
   (module:2 types)
   (module:3 state)
 )
 
-(root:4 types ($TMP/sample/src/types.rs)
+(root:4 002_types (002_types)
   (class:5 Order
     (field:6 id @type u64)
   )
@@ -64,7 +64,7 @@ pub fn transition(state: OrderState) -> OrderState {
   )
 )
 
-(root:13 state ($TMP/sample/src/state.rs)
+(root:13 003_state (003_state)
   (enum:14 OrderState
     (field:15 Created
       (field:16 order @type:5 Order)
@@ -96,46 +96,44 @@ pub fn transition(state: OrderState) -> OrderState {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_state_rs {
-      label="state.rs";
+    subgraph cluster_root_0_sample_0_002_types_rs {
+      label="002_types.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n29[label="transition", path="$TMP/sample/src/state.rs:11", sym_ty="Function", shape=ellipse];
-      n14[label="OrderState", path="$TMP/sample/src/state.rs:3", sym_ty="Enum", shape=box];
+      n5[label="Order", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:1", kind="struct", shape="box"];
+      n7[label="Payment", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:5", kind="struct", shape="box"];
+      n9[label="Shipment", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:9", kind="struct", shape="box"];
+      n11[label="Cancellation", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:13", kind="struct", shape="box"];
     }
 
-    subgraph cluster_types_rs {
-      label="types.rs";
+    subgraph cluster_root_0_sample_1_003_state_rs {
+      label="003_state.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n5[label="Order", path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
-      n11[label="Cancellation", path="$TMP/sample/src/types.rs:13", sym_ty="Struct", shape=box];
-      n7[label="Payment", path="$TMP/sample/src/types.rs:5", sym_ty="Struct", shape=box];
-      n9[label="Shipment", path="$TMP/sample/src/types.rs:9", sym_ty="Struct", shape=box];
+      n14[label="OrderState", package="sample", file="003_state.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_state.rs:3", kind="enum", shape="box"];
+      n29[label="transition", package="sample", file="003_state.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_state.rs:11", kind="function", shape="ellipse"];
     }
 
   }
 
 
-  n5 -> n14 [from="field_type", to="enum"];
-  n7 -> n14 [from="field_type", to="enum"];
-  n9 -> n14 [from="field_type", to="enum"];
-  n11 -> n14 [from="field_type", to="enum"];
-  n14 -> n29 [from="input", to="func"];
-  n29 -> n14 [from="func", to="output"];
+n5 -> n14 [rel="field", from="field_type", to="container"];
+n7 -> n14 [rel="field", from="field_type", to="container"];
+n9 -> n14 [rel="field", from="field_type", to="container"];
+n11 -> n14 [rel="field", from="field_type", to="container"];
+n14 -> n29 [rel="param", from="input", to="func"];
+n29 -> n14 [rel="return", from="func", to="output"];
 }

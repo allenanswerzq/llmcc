@@ -2,7 +2,7 @@
 edge-field-type
 ===============================================================================
 Test that field type edges are correctly generated.
-lang: cpp
+lang: c++
 
 --- file: sample/CMakeLists.txt ---
 cmake_minimum_required(VERSION 3.10)
@@ -28,26 +28,31 @@ struct Company {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_lib_cpp {
-    label="lib.cpp";
+  subgraph cluster_root_0_sample {
+    label="sample";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#f8f8f8";
 
-    n2[label="Address", path="$TMP/sample/src/lib.cpp:1", sym_ty="Struct", shape=box];
-    n8[label="Company", path="$TMP/sample/src/lib.cpp:11", sym_ty="Struct", shape=box];
-    n5[label="Person", path="$TMP/sample/src/lib.cpp:6", sym_ty="Struct", shape=box];
+    subgraph cluster_root_0_sample_0_001_lib_cpp {
+      label="001_lib.cpp";
+      style=rounded;
+      bgcolor="#fafafa";
+
+      n2[label="Address", package="sample", file="001_lib.cpp", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.cpp:1", kind="struct", shape="box"];
+      n5[label="Person", package="sample", file="001_lib.cpp", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.cpp:6", kind="struct", shape="box"];
+      n8[label="Company", package="sample", file="001_lib.cpp", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.cpp:11", kind="struct", shape="box"];
+    }
+
   }
 
 
-  n2 -> n5 [from="field_type", to="struct"];
-  n2 -> n8 [from="field_type", to="struct"];
-  n5 -> n8 [from="field_type", to="struct"];
+n2 -> n5 [rel="field", from="field_type", to="container"];
+n2 -> n8 [rel="field", from="field_type", to="container"];
+n5 -> n8 [rel="field", from="field_type", to="container"];
 }

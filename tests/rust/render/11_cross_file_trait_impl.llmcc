@@ -30,12 +30,12 @@ impl Render for Html {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs)
+(root:1 001_lib (001_lib)
   (module:2 traits)
   (module:3 impls)
 )
 
-(root:4 traits ($TMP/sample/src/traits.rs)
+(root:4 002_traits (002_traits)
   (trait:5 Render
     (method:6 render
       (parameter:7 self @type:5 Render)
@@ -44,7 +44,7 @@ impl Render for Html {
   )
 )
 
-(root:9 impls ($TMP/sample/src/impls.rs)
+(root:9 003_impls (003_impls)
   (class:10 Html
     (field:11 content @type String)
   )
@@ -59,37 +59,35 @@ impl Render for Html {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_impls_rs {
-      label="impls.rs";
+    subgraph cluster_root_0_sample_0_002_traits_rs {
+      label="002_traits.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n10[label="Html", path="$TMP/sample/src/impls.rs:3", sym_ty="Struct", shape=box];
+      n5[label="Render", package="sample", file="002_traits.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_traits.rs:1", kind="trait", shape="box"];
     }
 
-    subgraph cluster_traits_rs {
-      label="traits.rs";
+    subgraph cluster_root_0_sample_1_003_impls_rs {
+      label="003_impls.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n5[label="Render", path="$TMP/sample/src/traits.rs:1", sym_ty="Trait", shape=box];
+      n10[label="Html", package="sample", file="003_impls.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_impls.rs:3", kind="struct", shape="box"];
     }
 
   }
 
 
-  n5 -> n10 [from="trait", to="impl"];
+n5 -> n10 [rel="conformance", from="contract", to="conforms"];
 }

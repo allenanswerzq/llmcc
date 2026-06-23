@@ -47,7 +47,7 @@ export interface NestedState {
 }
 
 --- expect:block-graph ---
-(root:1 context ($TMP/src/context.ts)
+(root:1 000_context (000_context)
   (interface:2 GlobalCtxt
     (field:3 id @type number)
   )
@@ -59,7 +59,7 @@ export interface NestedState {
   )
 )
 
-(root:8 state ($TMP/src/state.ts)
+(root:8 001_state (001_state)
   (interface:9 StateInner
     (field:10 ctxt @type:2 GlobalCtxt)
     (field:11 tasks @type:4 TaskManager)
@@ -82,42 +82,40 @@ export interface NestedState {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_context_ts {
-    label="context.ts";
+  subgraph cluster_root_0_000_context_ts {
+    label="000_context.ts";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#fafafa";
 
-    n2[label="GlobalCtxt", path="$TMP/src/context.ts:1", sym_ty="Interface", shape=box];
-    n4[label="TaskManager", path="$TMP/src/context.ts:5", sym_ty="Interface", shape=box];
-    n6[label="EventManager", path="$TMP/src/context.ts:9", sym_ty="Interface", shape=box];
+    n2[label="GlobalCtxt", file="000_context.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/000_context.ts:1", kind="interface", shape="box"];
+    n4[label="TaskManager", file="000_context.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/000_context.ts:5", kind="interface", shape="box"];
+    n6[label="EventManager", file="000_context.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/000_context.ts:9", kind="interface", shape="box"];
   }
 
-  subgraph cluster_state_ts {
-    label="state.ts";
+  subgraph cluster_root_1_001_state_ts {
+    label="001_state.ts";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#fafafa";
 
-    n13[label="AsyncState", path="$TMP/src/state.ts:10", sym_ty="Interface", shape=box];
-    n15[label="RefState", path="$TMP/src/state.ts:15", sym_ty="Interface", shape=box];
-    n17[label="ReadonlyState", path="$TMP/src/state.ts:20", sym_ty="Interface", shape=box];
-    n19[label="NestedState", path="$TMP/src/state.ts:25", sym_ty="Interface", shape=box];
-    n9[label="StateInner", path="$TMP/src/state.ts:3", sym_ty="Interface", shape=box];
+    n9[label="StateInner", file="001_state.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/001_state.ts:3", kind="interface", shape="box"];
+    n13[label="AsyncState", file="001_state.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/001_state.ts:10", kind="interface", shape="box"];
+    n15[label="RefState", file="001_state.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/001_state.ts:15", kind="interface", shape="box"];
+    n17[label="ReadonlyState", file="001_state.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/001_state.ts:20", kind="interface", shape="box"];
+    n19[label="NestedState", file="001_state.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/001_state.ts:25", kind="interface", shape="box"];
   }
 
 
-  n2 -> n9 [from="field_type", to="struct"];
-  n2 -> n15 [from="field_type", to="struct"];
-  n4 -> n9 [from="field_type", to="struct"];
-  n4 -> n17 [from="field_type", to="struct"];
-  n6 -> n9 [from="field_type", to="struct"];
-  n6 -> n19 [from="field_type", to="struct"];
-  n9 -> n13 [from="field_type", to="struct"];
+n2 -> n9 [rel="field", from="field_type", to="container"];
+n2 -> n15 [rel="field", from="field_type", to="container"];
+n4 -> n9 [rel="field", from="field_type", to="container"];
+n4 -> n17 [rel="field", from="field_type", to="container"];
+n6 -> n9 [rel="field", from="field_type", to="container"];
+n6 -> n19 [rel="field", from="field_type", to="container"];
+n9 -> n13 [rel="field", from="field_type", to="container"];
 }

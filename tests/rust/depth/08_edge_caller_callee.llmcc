@@ -32,84 +32,72 @@ pub fn main_logic() -> u32 {
 --- expect:arch-graph-depth-3 ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_app {
+  subgraph cluster_root_0_app {
     label="app";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_lib_rs {
-      label="lib.rs";
+    subgraph cluster_root_0_app_0_003_lib_rs {
+      label="003_lib.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n5[label="main_logic", path="$TMP/app/src/lib.rs:4", sym_ty="Function", shape=ellipse];
+      n5[label="main_logic", package="app", file="003_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/app/src/003_lib.rs:4", kind="function", shape="ellipse"];
     }
 
   }
 
-  subgraph cluster_utils {
+  subgraph cluster_root_1_utils {
     label="utils";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_lib_rs {
-      label="lib.rs";
+    subgraph cluster_root_1_utils_0_001_lib_rs {
+      label="001_lib.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n2[label="helper", path="$TMP/utils/src/lib.rs:1", sym_ty="Function", shape=ellipse];
+      n2[label="helper", package="utils", file="001_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/utils/src/001_lib.rs:1", kind="function", shape="ellipse"];
     }
 
   }
 
 
-  n5 -> n2 [from="caller", to="callee"];
+n5 -> n2 [rel="call", from="caller", to="callee"];
 }
 
 --- expect:arch-graph-depth-2 ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.8;
-  nodesep=0.4;
   splines=ortho;
-  concentrate=true;
+  compound=true;
 
-  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#888888", arrowsize=0.7];
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-  labelloc=t;
-  fontsize=16;
+  namespace_app_003_lib[label="app::003_lib", kind="module", package="app", module="003_lib", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/app/src"];
+  namespace_utils_001_lib[label="utils::001_lib", kind="module", package="utils", module="001_lib", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/utils/src"];
 
-  mod_app_lib[label="app::lib", path="$TMP/app/src"];
-  mod_utils_lib[label="utils::lib", path="$TMP/utils/src"];
-
-  mod_app_lib -> mod_utils_lib;
+namespace_app_003_lib -> namespace_utils_001_lib [rel="depends_on", weight="1", via="call:1"];
 }
 
 --- expect:arch-graph-depth-1 ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.8;
-  nodesep=0.4;
   splines=ortho;
-  concentrate=true;
+  compound=true;
 
-  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#888888", arrowsize=0.7];
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-  labelloc=t;
-  fontsize=16;
+  package_app[label="app", kind="package", package="app", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/app"];
+  package_utils[label="utils", kind="package", package="utils", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/utils"];
 
-  crate_app[label="app", path="$TMP/app"];
-  crate_utils[label="utils", path="$TMP/utils"];
-
-  crate_app -> crate_utils;
+package_app -> package_utils [rel="depends_on", weight="1", via="call:1"];
 }

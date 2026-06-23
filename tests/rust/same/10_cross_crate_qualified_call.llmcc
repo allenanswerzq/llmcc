@@ -36,22 +36,22 @@ pub fn helper() -> i32 {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/crate_a/src/lib.rs)
+(root:1 001_lib (001_lib)
   (module:2 consumer)
 )
 
-(root:3 consumer ($TMP/crate_a/src/consumer.rs)
+(root:3 002_consumer (002_consumer)
   (func:4 process
     (return:5 @type i32)
     (@fdep:10 helper)
   )
 )
 
-(root:7 lib ($TMP/crate_b/src/lib.rs)
+(root:7 004_lib (004_lib)
   (module:8 utils)
 )
 
-(root:9 utils ($TMP/crate_b/src/utils.rs)
+(root:9 005_utils (005_utils)
   (func:10 helper
     (return:11 @type i32)
   )
@@ -60,44 +60,42 @@ pub fn helper() -> i32 {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_crate_a {
+  subgraph cluster_root_0_crate_a {
     label="crate_a";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_consumer_rs {
-      label="consumer.rs";
+    subgraph cluster_root_0_crate_a_0_002_consumer_rs {
+      label="002_consumer.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n4[label="process", path="$TMP/crate_a/src/consumer.rs:2", sym_ty="Function", shape=ellipse];
+      n4[label="process", package="crate_a", file="002_consumer.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/crate_a/src/002_consumer.rs:2", kind="function", shape="ellipse"];
     }
 
   }
 
-  subgraph cluster_crate_b {
+  subgraph cluster_root_1_crate_b {
     label="crate_b";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_utils_rs {
-      label="utils.rs";
+    subgraph cluster_root_1_crate_b_0_005_utils_rs {
+      label="005_utils.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n10[label="helper", path="$TMP/crate_b/src/utils.rs:2", sym_ty="Function", shape=ellipse];
+      n10[label="helper", package="crate_b", file="005_utils.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/crate_b/src/005_utils.rs:2", kind="function", shape="ellipse"];
     }
 
   }
 
 
-  n4 -> n10 [from="caller", to="callee"];
+n4 -> n10 [rel="call", from="caller", to="callee"];
 }

@@ -68,11 +68,11 @@ impl Middleware for LogMiddleware {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/traits/src/lib.rs)
+(root:1 002_lib (002_lib)
   (module:2 core)
 )
 
-(root:3 core ($TMP/traits/src/core.rs)
+(root:3 003_core (003_core)
   (class:4 Request
     (field:5 path @type String)
   )
@@ -105,11 +105,11 @@ impl Middleware for LogMiddleware {
   )
 )
 
-(root:23 lib ($TMP/impl/src/lib.rs)
+(root:23 005_lib (005_lib)
   (module:24 handlers)
 )
 
-(root:25 handlers ($TMP/impl/src/handlers.rs)
+(root:25 006_handlers (006_handlers)
   (class:26 EchoHandler)
   (impl:27 EchoHandler @type:26 @trait:9
     (method:28 handle
@@ -140,47 +140,47 @@ impl Middleware for LogMiddleware {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_impl {
+  subgraph cluster_root_0_impl {
     label="impl";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_handlers_rs {
-      label="handlers.rs";
+    subgraph cluster_root_0_impl_0_006_handlers_rs {
+      label="006_handlers.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n32[label="LogMiddleware", path="$TMP/impl/src/handlers.rs:11", sym_ty="Struct", shape=box];
-      n26[label="EchoHandler", path="$TMP/impl/src/handlers.rs:3", sym_ty="Struct", shape=box];
+      n26[label="EchoHandler", package="impl", file="006_handlers.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/impl/src/006_handlers.rs:3", kind="struct", shape="box"];
+      n32[label="LogMiddleware", package="impl", file="006_handlers.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/impl/src/006_handlers.rs:11", kind="struct", shape="box"];
     }
 
   }
 
-  subgraph cluster_traits {
+  subgraph cluster_root_1_traits {
     label="traits";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_core_rs {
-      label="core.rs";
+    subgraph cluster_root_1_traits_0_003_core_rs {
+      label="003_core.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n9[label="Handler", path="$TMP/traits/src/core.rs:10", sym_ty="Trait", shape=box];
-      n14[label="Middleware", path="$TMP/traits/src/core.rs:14", sym_ty="Trait", shape=box];
+      n4[label="Request", package="traits", file="003_core.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/traits/src/003_core.rs:1", kind="struct", shape="box"];
+      n6[label="Response", package="traits", file="003_core.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/traits/src/003_core.rs:5", kind="struct", shape="box"];
+      n9[label="Handler", package="traits", file="003_core.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/traits/src/003_core.rs:10", kind="trait", shape="box"];
+      n14[label="Middleware", package="traits", file="003_core.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/traits/src/003_core.rs:14", kind="trait", shape="box"];
     }
 
   }
 
 
-  n9 -> n26 [from="trait", to="impl"];
-  n14 -> n32 [from="trait", to="impl"];
+n9 -> n26 [rel="conformance", from="contract", to="conforms"];
+n14 -> n32 [rel="conformance", from="contract", to="conforms"];
 }

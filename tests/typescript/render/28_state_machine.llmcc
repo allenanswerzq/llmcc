@@ -57,28 +57,26 @@ class OrderStateMachine {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_lib_ts {
-    label="lib.ts";
+  subgraph cluster_root_0_000_lib_ts {
+    label="000_lib.ts";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#fafafa";
 
-    n3[label="StateTransition", path="$TMP/sample/src/lib.ts:10", sym_ty="Interface", shape=box];
-    n7[label="Order", path="$TMP/sample/src/lib.ts:16", sym_ty="Struct", shape=box];
-    n2[label="OrderState", path="$TMP/sample/src/lib.ts:2", sym_ty="Enum", shape=box];
-    n17[label="OrderStateMachine", path="$TMP/sample/src/lib.ts:30", sym_ty="Struct", shape=box];
+    n2[label="OrderState", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/000_lib.ts:2", kind="enum", shape="box"];
+    n3[label="StateTransition", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/000_lib.ts:10", kind="interface", shape="box"];
+    n7[label="Order", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/000_lib.ts:16", kind="struct", shape="box"];
+    n17[label="OrderStateMachine", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/000_lib.ts:30", kind="struct", shape="box"];
   }
 
 
-  n2 -> n3 [from="field_type", to="struct"];
-  n2 -> n7 [from="field_type", to="struct"];
-  n3 -> n7 [from="field_type", to="struct"];
-  n7 -> n17 [from="field_type", to="struct"];
+n2 -> n3 [rel="field", from="field_type", to="container"];
+n2 -> n7 [rel="field", from="field_type", to="container"];
+n3 -> n7 [rel="field", from="field_type", to="container"];
+n7 -> n17 [rel="field", from="field_type", to="container"];
 }

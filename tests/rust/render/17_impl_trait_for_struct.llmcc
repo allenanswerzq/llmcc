@@ -30,12 +30,12 @@ impl Animal for Dog {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs)
+(root:1 001_lib (001_lib)
   (module:2 animal)
   (module:3 dog)
 )
 
-(root:4 animal ($TMP/sample/src/animal.rs)
+(root:4 002_animal (002_animal)
   (trait:5 Animal
     (method:6 speak
       (parameter:7 self @type:5 Animal)
@@ -43,7 +43,7 @@ impl Animal for Dog {
   )
 )
 
-(root:8 dog ($TMP/sample/src/dog.rs)
+(root:8 003_dog (003_dog)
   (class:9 Dog
     (field:10 name @type String)
   )
@@ -57,37 +57,35 @@ impl Animal for Dog {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_animal_rs {
-      label="animal.rs";
+    subgraph cluster_root_0_sample_0_002_animal_rs {
+      label="002_animal.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n5[label="Animal", path="$TMP/sample/src/animal.rs:1", sym_ty="Trait", shape=box];
+      n5[label="Animal", package="sample", file="002_animal.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_animal.rs:1", kind="trait", shape="box"];
     }
 
-    subgraph cluster_dog_rs {
-      label="dog.rs";
+    subgraph cluster_root_0_sample_1_003_dog_rs {
+      label="003_dog.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n9[label="Dog", path="$TMP/sample/src/dog.rs:3", sym_ty="Struct", shape=box];
+      n9[label="Dog", package="sample", file="003_dog.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_dog.rs:3", kind="struct", shape="box"];
     }
 
   }
 
 
-  n5 -> n9 [from="trait", to="impl"];
+n5 -> n9 [rel="conformance", from="contract", to="conforms"];
 }

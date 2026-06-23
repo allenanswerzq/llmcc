@@ -54,36 +54,36 @@ pub fn process() -> String {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/crate_a/src/lib.rs)
+(root:1 001_lib (001_lib)
   (module:2 utils)
   (module:3 consumer)
 )
 
-(root:4 utils ($TMP/crate_a/src/utils.rs)
+(root:4 002_utils (002_utils)
   (func:5 helper
     (return:6 @type i32)
   )
 )
 
-(root:7 consumer ($TMP/crate_a/src/consumer.rs)
+(root:7 003_consumer (003_consumer)
   (func:8 process
     (return:9 @type i32)
     (@fdep:5 helper)
   )
 )
 
-(root:11 lib ($TMP/crate_b/src/lib.rs)
+(root:11 005_lib (005_lib)
   (module:12 utils)
   (module:13 consumer)
 )
 
-(root:14 utils ($TMP/crate_b/src/utils.rs)
+(root:14 006_utils (006_utils)
   (func:15 helper
     (return:16 @type String)
   )
 )
 
-(root:18 consumer ($TMP/crate_b/src/consumer.rs)
+(root:18 007_consumer (007_consumer)
   (func:19 process
     (return:20 @type String)
     (@fdep:15 helper)
@@ -93,61 +93,59 @@ pub fn process() -> String {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_crate_a {
+  subgraph cluster_root_0_crate_a {
     label="crate_a";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_consumer_rs {
-      label="consumer.rs";
+    subgraph cluster_root_0_crate_a_0_002_utils_rs {
+      label="002_utils.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n8[label="process", path="$TMP/crate_a/src/consumer.rs:4", sym_ty="Function", shape=ellipse];
+      n5[label="helper", package="crate_a", file="002_utils.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/crate_a/src/002_utils.rs:2", kind="function", shape="ellipse"];
     }
 
-    subgraph cluster_utils_rs {
-      label="utils.rs";
+    subgraph cluster_root_0_crate_a_1_003_consumer_rs {
+      label="003_consumer.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n5[label="helper", path="$TMP/crate_a/src/utils.rs:2", sym_ty="Function", shape=ellipse];
+      n8[label="process", package="crate_a", file="003_consumer.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/crate_a/src/003_consumer.rs:4", kind="function", shape="ellipse"];
     }
 
   }
 
-  subgraph cluster_crate_b {
+  subgraph cluster_root_1_crate_b {
     label="crate_b";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_consumer_rs {
-      label="consumer.rs";
+    subgraph cluster_root_1_crate_b_0_006_utils_rs {
+      label="006_utils.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n19[label="process", path="$TMP/crate_b/src/consumer.rs:4", sym_ty="Function", shape=ellipse];
+      n15[label="helper", package="crate_b", file="006_utils.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/crate_b/src/006_utils.rs:2", kind="function", shape="ellipse"];
     }
 
-    subgraph cluster_utils_rs {
-      label="utils.rs";
+    subgraph cluster_root_1_crate_b_1_007_consumer_rs {
+      label="007_consumer.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n15[label="helper", path="$TMP/crate_b/src/utils.rs:2", sym_ty="Function", shape=ellipse];
+      n19[label="process", package="crate_b", file="007_consumer.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/crate_b/src/007_consumer.rs:4", kind="function", shape="ellipse"];
     }
 
   }
 
 
-  n8 -> n5 [from="caller", to="callee"];
-  n19 -> n15 [from="caller", to="callee"];
+n8 -> n5 [rel="call", from="caller", to="callee"];
+n19 -> n15 [rel="call", from="caller", to="callee"];
 }

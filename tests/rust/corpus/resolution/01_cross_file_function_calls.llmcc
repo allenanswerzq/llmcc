@@ -18,17 +18,19 @@ pub fn helper() {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/src/lib.rs)
+(root:1 000_lib (000_lib)
   (module:2 utils)
   (func:3 main
     (@fdep:6 helper)
   )
 )
 
-(root:5 utils ($TMP/src/utils.rs)
+(root:5 001_utils (001_utils)
   (func:6 helper
   )
 )
+
+
 
 
 ===============================================================================
@@ -51,7 +53,7 @@ pub fn add(a: i32, b: i32) -> i32 {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/src/lib.rs)
+(root:1 000_lib (000_lib)
   (module:2 math)
   (func:3 compute
     (return:4 @type i32)
@@ -59,13 +61,15 @@ pub fn add(a: i32, b: i32) -> i32 {
   )
 )
 
-(root:6 math ($TMP/src/math.rs)
+(root:6 001_math (001_math)
   (func:7 add
     (parameter:8 a @type i32)
     (parameter:9 b @type i32)
     (return:10 @type i32)
   )
 )
+
+
 
 
 ===============================================================================
@@ -89,7 +93,7 @@ pub struct Point {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/src/lib.rs)
+(root:1 000_lib (000_lib)
   (module:2 types)
   (func:3 make_point
     (return:4 @type:6 Point)
@@ -97,12 +101,14 @@ pub struct Point {
   )
 )
 
-(root:5 types ($TMP/src/types.rs)
+(root:5 001_types (001_types)
   (class:6 Point
     (field:7 x @type i32)
     (field:8 y @type i32)
   )
 )
+
+
 
 
 ===============================================================================
@@ -136,13 +142,16 @@ impl Counter {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/src/lib.rs)
+(root:1 000_lib (000_lib)
   (module:2 models)
   (func:3 use_counter
+    (@tdep:7 Counter)
+    (@fdep:10 new)
+    (@fdep:12 increment)
   )
 )
 
-(root:6 models ($TMP/src/models.rs)
+(root:6 001_models (001_models)
   (class:7 Counter
     (field:8 value @type i32)
   )

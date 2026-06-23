@@ -7,7 +7,6 @@ Test that a simple struct appears in the architecture graph.
 [package]
 name = "sample"
 
-
 --- file: sample/src/lib.rs ---
 
 struct Foo;
@@ -20,30 +19,28 @@ pub struct User {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_lib_rs {
-      label="lib.rs";
+    subgraph cluster_root_0_sample_0_001_lib_rs {
+      label="001_lib.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n2[label="Foo", path="$TMP/sample/src/lib.rs:2", sym_ty="Struct", shape=box];
-      n3[label="User", path="$TMP/sample/src/lib.rs:4", sym_ty="Struct", shape=box];
+      n2[label="Foo", package="sample", file="001_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.rs:2", kind="struct", shape="box"];
+      n3[label="User", package="sample", file="001_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.rs:4", kind="struct", shape="box"];
     }
 
   }
 
 
-  n2 -> n3 [from="field_type", to="struct"];
+n2 -> n3 [rel="field", from="field_type", to="container"];
 }

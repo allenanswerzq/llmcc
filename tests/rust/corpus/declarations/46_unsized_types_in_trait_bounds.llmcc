@@ -13,12 +13,12 @@ trait Foo<T: ?Sized> {
 fn univariant(this: &impl ?Sized, that: &(impl LayoutCalculator + ?Sized)) {}
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/src/lib.rs)
+(root:1 000_lib (000_lib)
   (trait:2 Sized)
   (trait:3 LayoutCalculator)
   (trait:4 Foo)
   (func:5 univariant
     (parameter:6 this @type:2 Sized)
-    (parameter:7 that @type (impl LayoutCalculator + ?Sized))
+    (parameter:7 that @type that)
   )
 )

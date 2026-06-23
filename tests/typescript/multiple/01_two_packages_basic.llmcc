@@ -29,7 +29,7 @@ export function createUser(name: string): User {
 }
 
 --- expect:block-graph ---
-(root:1 types ($TMP/common/src/types.ts)
+(root:1 000_types (000_types)
   (interface:2 User
     (field:3 id @type number)
     (field:4 name @type string)
@@ -40,7 +40,7 @@ export function createUser(name: string): User {
   )
 )
 
-(root:8 service ($TMP/app/src/service.ts)
+(root:8 001_service (001_service)
   (func:9 getUser
     (parameter:10 id @type number)
     (return:11 @type:2 User)
@@ -54,46 +54,45 @@ export function createUser(name: string): User {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_app {
+  subgraph cluster_root_0_app {
     label="app";
     style=rounded;
-        bgcolor="#f5f5f5";
+    bgcolor="#f5f5f5";
 
-    subgraph cluster_service_ts {
-      label="service.ts";
+    subgraph cluster_root_0_app_0_001_service_ts {
+      label="001_service.ts";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n9[label="getUser", path="$TMP/app/src/service.ts:4", sym_ty="Function", shape=ellipse];
-      n12[label="createUser", path="$TMP/app/src/service.ts:8", sym_ty="Function", shape=ellipse];
+      n9[label="getUser", module="app", file="001_service.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/app/src/001_service.ts:4", kind="function", shape="ellipse"];
+      n12[label="createUser", module="app", file="001_service.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/app/src/001_service.ts:8", kind="function", shape="ellipse"];
     }
 
   }
 
-  subgraph cluster_common {
+  subgraph cluster_root_1_common {
     label="common";
     style=rounded;
-        bgcolor="#f5f5f5";
+    bgcolor="#f5f5f5";
 
-    subgraph cluster_types_ts {
-      label="types.ts";
+    subgraph cluster_root_1_common_0_000_types_ts {
+      label="000_types.ts";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n2[label="User", path="$TMP/common/src/types.ts:2", sym_ty="Interface", shape=box];
+      n2[label="User", module="common", file="000_types.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/common/src/000_types.ts:2", kind="interface", shape="box"];
+      n5[label="ApiError", module="common", file="000_types.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/common/src/000_types.ts:7", kind="interface", shape="box"];
     }
 
   }
 
 
-  n9 -> n2 [from="func", to="output"];
-  n12 -> n2 [from="func", to="output"];
+n9 -> n2 [rel="return", from="func", to="output"];
+n12 -> n2 [rel="return", from="func", to="output"];
 }

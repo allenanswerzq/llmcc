@@ -39,12 +39,12 @@ pub struct Project {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs)
+(root:1 001_lib (001_lib)
   (module:2 types)
   (module:3 models)
 )
 
-(root:4 types ($TMP/sample/src/types.rs)
+(root:4 002_types (002_types)
   (enum:5 Status
     (field:6 Active)
     (field:7 Inactive)
@@ -57,7 +57,7 @@ pub struct Project {
   )
 )
 
-(root:13 models ($TMP/sample/src/models.rs)
+(root:13 003_models (003_models)
   (class:14 Task
     (field:15 name @type String)
     (field:16 status @type:5 Status)
@@ -75,41 +75,39 @@ pub struct Project {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_models_rs {
-      label="models.rs";
+    subgraph cluster_root_0_sample_0_002_types_rs {
+      label="002_types.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n14[label="Task", path="$TMP/sample/src/models.rs:3", sym_ty="Struct", shape=box];
-      n18[label="Project", path="$TMP/sample/src/models.rs:9", sym_ty="Struct", shape=box];
+      n5[label="Status", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:1", kind="enum", shape="box"];
+      n9[label="Priority", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:7", kind="enum", shape="box"];
     }
 
-    subgraph cluster_types_rs {
-      label="types.rs";
+    subgraph cluster_root_0_sample_1_003_models_rs {
+      label="003_models.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n5[label="Status", path="$TMP/sample/src/types.rs:1", sym_ty="Enum", shape=box];
-      n9[label="Priority", path="$TMP/sample/src/types.rs:7", sym_ty="Enum", shape=box];
+      n14[label="Task", package="sample", file="003_models.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_models.rs:3", kind="struct", shape="box"];
+      n18[label="Project", package="sample", file="003_models.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_models.rs:9", kind="struct", shape="box"];
     }
 
   }
 
 
-  n5 -> n14 [from="field_type", to="struct"];
-  n5 -> n18 [from="field_type", to="struct"];
-  n9 -> n14 [from="field_type", to="struct"];
+n5 -> n14 [rel="field", from="field_type", to="container"];
+n5 -> n18 [rel="field", from="field_type", to="container"];
+n9 -> n14 [rel="field", from="field_type", to="container"];
 }

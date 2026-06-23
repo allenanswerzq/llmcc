@@ -103,11 +103,11 @@ pub fn handle_order(order: Order) -> bool {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/domain/src/lib.rs)
+(root:1 002_lib (002_lib)
   (module:2 models)
 )
 
-(root:3 models ($TMP/domain/src/models.rs)
+(root:3 003_models (003_models)
   (class:4 User
     (field:5 id @type u64)
     (field:6 email @type String)
@@ -125,12 +125,12 @@ pub fn handle_order(order: Order) -> bool {
   )
 )
 
-(root:16 lib ($TMP/service/src/lib.rs)
+(root:16 005_lib (005_lib)
   (module:17 user_service)
   (module:18 order_service)
 )
 
-(root:19 user_service ($TMP/service/src/user_service.rs)
+(root:19 006_user_service (006_user_service)
   (trait:20 UserRepository
     (method:21 find_by_id
       (parameter:22 self @type:20 UserRepository)
@@ -152,7 +152,7 @@ pub fn handle_order(order: Order) -> bool {
   )
 )
 
-(root:32 order_service ($TMP/service/src/order_service.rs)
+(root:32 007_order_service (007_order_service)
   (trait:33 OrderRepository
     (method:34 find_by_id
       (parameter:35 self @type:33 OrderRepository)
@@ -175,11 +175,11 @@ pub fn handle_order(order: Order) -> bool {
   )
 )
 
-(root:45 lib ($TMP/api/src/lib.rs)
+(root:45 009_lib (009_lib)
   (module:46 handlers)
 )
 
-(root:47 handlers ($TMP/api/src/handlers.rs)
+(root:47 010_handlers (010_handlers)
   (class:48 ApiResponse
     (field:49 success @type bool)
     (field:50 data @type:4 User)
@@ -200,76 +200,76 @@ pub fn handle_order(order: Order) -> bool {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_api {
+  subgraph cluster_root_0_api {
     label="api";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_handlers_rs {
-      label="handlers.rs";
+    subgraph cluster_root_0_api_0_010_handlers_rs {
+      label="010_handlers.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n51[label="handle_get_user", path="$TMP/api/src/handlers.rs:10", sym_ty="Function", shape=ellipse];
-      n56[label="handle_order", path="$TMP/api/src/handlers.rs:15", sym_ty="Function", shape=ellipse];
-      n48[label="ApiResponse", path="$TMP/api/src/handlers.rs:5", sym_ty="Struct", shape=box];
+      n48[label="ApiResponse", package="api", file="010_handlers.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/api/src/010_handlers.rs:5", kind="struct", shape="box"];
+      n51[label="handle_get_user", package="api", file="010_handlers.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/api/src/010_handlers.rs:10", kind="function", shape="ellipse"];
+      n56[label="handle_order", package="api", file="010_handlers.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/api/src/010_handlers.rs:15", kind="function", shape="ellipse"];
     }
 
   }
 
-  subgraph cluster_domain {
+  subgraph cluster_root_1_domain {
     label="domain";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_models_rs {
-      label="models.rs";
+    subgraph cluster_root_1_domain_0_003_models_rs {
+      label="003_models.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n4[label="User", path="$TMP/domain/src/models.rs:1", sym_ty="Struct", shape=box];
-      n11[label="OrderStatus", path="$TMP/domain/src/models.rs:12", sym_ty="Enum", shape=box];
-      n7[label="Order", path="$TMP/domain/src/models.rs:6", sym_ty="Struct", shape=box];
+      n4[label="User", package="domain", file="003_models.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/domain/src/003_models.rs:1", kind="struct", shape="box"];
+      n7[label="Order", package="domain", file="003_models.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/domain/src/003_models.rs:6", kind="struct", shape="box"];
+      n11[label="OrderStatus", package="domain", file="003_models.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/domain/src/003_models.rs:12", kind="enum", shape="box"];
     }
 
   }
 
-  subgraph cluster_service {
+  subgraph cluster_root_2_service {
     label="service";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_order_service_rs {
-      label="order_service.rs";
+    subgraph cluster_root_2_service_0_006_user_service_rs {
+      label="006_user_service.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n42[label="process_order", path="$TMP/service/src/order_service.rs:8", sym_ty="Function", shape=ellipse];
+      n20[label="UserRepository", package="service", file="006_user_service.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/service/src/006_user_service.rs:3", kind="trait", shape="box"];
+      n29[label="get_user", package="service", file="006_user_service.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/service/src/006_user_service.rs:8", kind="function", shape="ellipse"];
     }
 
-    subgraph cluster_user_service_rs {
-      label="user_service.rs";
+    subgraph cluster_root_2_service_1_007_order_service_rs {
+      label="007_order_service.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n29[label="get_user", path="$TMP/service/src/user_service.rs:8", sym_ty="Function", shape=ellipse];
+      n33[label="OrderRepository", package="service", file="007_order_service.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/service/src/007_order_service.rs:3", kind="trait", shape="box"];
+      n42[label="process_order", package="service", file="007_order_service.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/service/src/007_order_service.rs:8", kind="function", shape="ellipse"];
     }
 
   }
 
 
-  n4 -> n48 [from="type_dep", to="struct"];
-  n7 -> n42 [from="input", to="func"];
-  n7 -> n56 [from="input", to="func"];
-  n29 -> n4 [from="func", to="type_dep"];
-  n42 -> n11 [from="func", to="output"];
-  n51 -> n48 [from="func", to="output"];
+n4 -> n48 [rel="nested_field", from="type_dep", to="container"];
+n7 -> n42 [rel="param", from="input", to="func"];
+n7 -> n56 [rel="param", from="input", to="func"];
+n29 -> n4 [rel="type_dep", from="source", to="type_dep"];
+n42 -> n11 [rel="return", from="func", to="output"];
+n51 -> n48 [rel="return", from="func", to="output"];
 }

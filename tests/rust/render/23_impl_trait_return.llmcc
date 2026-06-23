@@ -34,12 +34,12 @@ pub fn make_counter() -> impl Iterator {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs)
+(root:1 001_lib (001_lib)
   (module:2 iterator)
   (module:3 factory)
 )
 
-(root:4 iterator ($TMP/sample/src/iterator.rs)
+(root:4 002_iterator (002_iterator)
   (trait:5 Iterator
     (method:6 next
       (parameter:7 self @type:5 Iterator)
@@ -48,7 +48,7 @@ pub fn make_counter() -> impl Iterator {
   )
 )
 
-(root:9 factory ($TMP/sample/src/factory.rs)
+(root:9 003_factory (003_factory)
   (class:10 Counter
     (field:11 count @type i32)
   )
@@ -66,39 +66,37 @@ pub fn make_counter() -> impl Iterator {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_factory_rs {
-      label="factory.rs";
+    subgraph cluster_root_0_sample_0_002_iterator_rs {
+      label="002_iterator.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n17[label="make_counter", path="$TMP/sample/src/factory.rs:13", sym_ty="Function", shape=ellipse];
-      n10[label="Counter", path="$TMP/sample/src/factory.rs:3", sym_ty="Struct", shape=box];
+      n5[label="Iterator", package="sample", file="002_iterator.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_iterator.rs:1", kind="trait", shape="box"];
     }
 
-    subgraph cluster_iterator_rs {
-      label="iterator.rs";
+    subgraph cluster_root_0_sample_1_003_factory_rs {
+      label="003_factory.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n5[label="Iterator", path="$TMP/sample/src/iterator.rs:1", sym_ty="Trait", shape=box];
+      n10[label="Counter", package="sample", file="003_factory.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_factory.rs:3", kind="struct", shape="box"];
+      n17[label="make_counter", package="sample", file="003_factory.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_factory.rs:13", kind="function", shape="ellipse"];
     }
 
   }
 
 
-  n5 -> n10 [from="trait", to="impl"];
-  n17 -> n5 [from="func", to="output"];
+n5 -> n10 [rel="conformance", from="contract", to="conforms"];
+n17 -> n5 [rel="return", from="func", to="output"];
 }

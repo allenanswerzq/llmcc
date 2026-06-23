@@ -8,11 +8,9 @@ static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-use llmcc::Language;
 use llmcc::Runner;
 use llmcc::RunnerOptions;
-use llmcc_core::Result;
-use llmcc_core::ViewDepth;
+use llmcc_core::{Result, SupportedLang, ViewDepth};
 
 #[derive(Args, Debug)]
 #[command(group = ArgGroup::new("inputs").required(true).args(["files", "dirs"]))]
@@ -90,8 +88,8 @@ pub struct Cli {
     input: InputArgs,
 
     /// Language to use: rust, typescript (ts), cpp (c++, c)
-    #[arg(long, value_name = "LANG", value_enum, default_value = "rust")]
-    lang: Language,
+    #[arg(long, value_name = "LANG", default_value = "rust")]
+    lang: SupportedLang,
 
     #[command(flatten)]
     render: RenderArgs,

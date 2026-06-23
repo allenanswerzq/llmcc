@@ -37,27 +37,25 @@ class Document implements Serializable, Comparable, Cloneable {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_lib_ts {
-    label="lib.ts";
+  subgraph cluster_root_0_000_lib_ts {
+    label="000_lib.ts";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#fafafa";
 
-    n9[label="Cloneable", path="$TMP/sample/src/lib.ts:10", sym_ty="Interface", shape=box];
-    n12[label="Document", path="$TMP/sample/src/lib.ts:14", sym_ty="Struct", shape=box];
-    n2[label="Serializable", path="$TMP/sample/src/lib.ts:2", sym_ty="Interface", shape=box];
-    n5[label="Comparable", path="$TMP/sample/src/lib.ts:6", sym_ty="Interface", shape=box];
+    n2[label="Serializable", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/000_lib.ts:2", kind="interface", shape="box"];
+    n5[label="Comparable", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/000_lib.ts:6", kind="interface", shape="box"];
+    n9[label="Cloneable", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/000_lib.ts:10", kind="interface", shape="box"];
+    n12[label="Document", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/000_lib.ts:14", kind="struct", shape="box"];
   }
 
 
-  n2 -> n12 [from="interface", to="implements"];
-  n5 -> n12 [from="interface", to="implements"];
-  n9 -> n12 [from="interface", to="implements"];
+n2 -> n12 [rel="conformance", from="contract", to="conforms"];
+n5 -> n12 [rel="conformance", from="contract", to="conforms"];
+n9 -> n12 [rel="conformance", from="contract", to="conforms"];
 }

@@ -35,12 +35,12 @@ pub enum MultiResult {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs)
+(root:1 001_lib (001_lib)
   (module:2 types)
   (module:3 results)
 )
 
-(root:4 types ($TMP/sample/src/types.rs)
+(root:4 002_types (002_types)
   (class:5 Data
     (field:6 value @type i32)
   )
@@ -49,7 +49,7 @@ pub enum MultiResult {
   )
 )
 
-(root:9 results ($TMP/sample/src/results.rs)
+(root:9 003_results (003_results)
   (enum:10 Result
     (field:11 Ok
       (field:12 0 @type:5 Data)
@@ -76,42 +76,40 @@ pub enum MultiResult {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_results_rs {
-      label="results.rs";
+    subgraph cluster_root_0_sample_0_002_types_rs {
+      label="002_types.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n10[label="Result", path="$TMP/sample/src/results.rs:3", sym_ty="Enum", shape=box];
-      n15[label="MultiResult", path="$TMP/sample/src/results.rs:8", sym_ty="Enum", shape=box];
+      n5[label="Data", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:1", kind="struct", shape="box"];
+      n7[label="ErrorInfo", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:5", kind="struct", shape="box"];
     }
 
-    subgraph cluster_types_rs {
-      label="types.rs";
+    subgraph cluster_root_0_sample_1_003_results_rs {
+      label="003_results.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n5[label="Data", path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
-      n7[label="ErrorInfo", path="$TMP/sample/src/types.rs:5", sym_ty="Struct", shape=box];
+      n10[label="Result", package="sample", file="003_results.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_results.rs:3", kind="enum", shape="box"];
+      n15[label="MultiResult", package="sample", file="003_results.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_results.rs:8", kind="enum", shape="box"];
     }
 
   }
 
 
-  n5 -> n10 [from="field_type", to="enum"];
-  n5 -> n15 [from="field_type", to="enum"];
-  n7 -> n10 [from="field_type", to="enum"];
-  n7 -> n15 [from="field_type", to="enum"];
+n5 -> n10 [rel="field", from="field_type", to="container"];
+n5 -> n15 [rel="field", from="field_type", to="container"];
+n7 -> n10 [rel="field", from="field_type", to="container"];
+n7 -> n15 [rel="field", from="field_type", to="container"];
 }

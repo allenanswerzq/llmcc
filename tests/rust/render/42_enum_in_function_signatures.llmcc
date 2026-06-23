@@ -42,12 +42,12 @@ pub fn handle_response(response: Response) -> bool {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs)
+(root:1 001_lib (001_lib)
   (module:2 types)
   (module:3 handlers)
 )
 
-(root:4 types ($TMP/sample/src/types.rs)
+(root:4 002_types (002_types)
   (class:5 User
     (field:6 id @type u64)
   )
@@ -65,7 +65,7 @@ pub fn handle_response(response: Response) -> bool {
   )
 )
 
-(root:15 handlers ($TMP/sample/src/handlers.rs)
+(root:15 003_handlers (003_handlers)
   (func:16 get_user_status
     (parameter:17 user @type:5 User)
     (return:18 @type:7 Status)
@@ -89,47 +89,45 @@ pub fn handle_response(response: Response) -> bool {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_handlers_rs {
-      label="handlers.rs";
+    subgraph cluster_root_0_sample_0_002_types_rs {
+      label="002_types.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n23[label="handle_response", path="$TMP/sample/src/handlers.rs:11", sym_ty="Function", shape=ellipse];
-      n16[label="get_user_status", path="$TMP/sample/src/handlers.rs:3", sym_ty="Function", shape=ellipse];
-      n19[label="process_status", path="$TMP/sample/src/handlers.rs:7", sym_ty="Function", shape=ellipse];
+      n5[label="User", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:1", kind="struct", shape="box"];
+      n7[label="Status", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:5", kind="enum", shape="box"];
+      n10[label="Response", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:10", kind="enum", shape="box"];
     }
 
-    subgraph cluster_types_rs {
-      label="types.rs";
+    subgraph cluster_root_0_sample_1_003_handlers_rs {
+      label="003_handlers.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n5[label="User", path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
-      n10[label="Response", path="$TMP/sample/src/types.rs:10", sym_ty="Enum", shape=box];
-      n7[label="Status", path="$TMP/sample/src/types.rs:5", sym_ty="Enum", shape=box];
+      n16[label="get_user_status", package="sample", file="003_handlers.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_handlers.rs:3", kind="function", shape="ellipse"];
+      n19[label="process_status", package="sample", file="003_handlers.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_handlers.rs:7", kind="function", shape="ellipse"];
+      n23[label="handle_response", package="sample", file="003_handlers.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_handlers.rs:11", kind="function", shape="ellipse"];
     }
 
   }
 
 
-  n5 -> n10 [from="field_type", to="enum"];
-  n5 -> n16 [from="input", to="func"];
-  n7 -> n19 [from="input", to="func"];
-  n10 -> n23 [from="input", to="func"];
-  n16 -> n7 [from="func", to="output"];
-  n19 -> n5 [from="func", to="type_dep"];
-  n19 -> n10 [from="func", to="output"];
+n5 -> n10 [rel="field", from="field_type", to="container"];
+n5 -> n16 [rel="param", from="input", to="func"];
+n7 -> n19 [rel="param", from="input", to="func"];
+n10 -> n23 [rel="param", from="input", to="func"];
+n16 -> n7 [rel="return", from="func", to="output"];
+n19 -> n5 [rel="type_dep", from="source", to="type_dep"];
+n19 -> n10 [rel="return", from="func", to="output"];
 }

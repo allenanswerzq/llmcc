@@ -7,8 +7,8 @@ use tracing::info;
 
 use llmcc_core::context::{BuildMetrics, FileOrder};
 use llmcc_core::graph::ProjectGraph;
-use llmcc_core::lang_def::Language as CoreLanguage;
-use llmcc_core::{CollectedGraph, GraphBuildOptions, build_graphs};
+use llmcc_core::lang_def::Language;
+use llmcc_core::{CollectedGraph, GraphBuildOptions, SupportedLang, build_graphs};
 use llmcc_core::{CompileCtxt, Error, ResolveOptions, Result, print_block_tree};
 use llmcc_cpp::LangCpp;
 use llmcc_dot::{RenderOptions, render};
@@ -16,15 +16,15 @@ use llmcc_resolver::{bind_symbols, build_and_collect};
 use llmcc_rust::LangRust;
 use llmcc_ts::LangTypeScript;
 
-use crate::{Language, RunnerOptions};
+use crate::RunnerOptions;
 
 pub struct Runner {
-    lang: Language,
+    lang: SupportedLang,
     options: RunnerOptions,
 }
 
 impl Runner {
-    pub fn new(lang: Language, options: RunnerOptions) -> Self {
+    pub fn new(lang: SupportedLang, options: RunnerOptions) -> Self {
         Self { lang, options }
     }
 
@@ -43,15 +43,16 @@ impl Runner {
 
     fn do_execute(&self) -> Result<()> {
         let output = match self.lang {
-            Language::Rust => self.process_language::<LangRust>(),
-            Language::Typescript => self.process_language::<LangTypeScript>(),
-            Language::Cpp => self.process_language::<LangCpp>(),
+            SupportedLang::Rust => self.process_language::<LangRust>(),
+            SupportedLang::Typescript => self.process_language::<LangTypeScript>(),
+            SupportedLang::Cpp => self.process_language::<LangCpp>(),
+            SupportedLang::Auto => self.process_language::<LangRust>(), // TODO: auto-detect
         }?;
 
         self.emit_output(output)
     }
 
-    fn process_language<L: CoreLanguage>(&self) -> Result<Option<String>> {
+    fn process_language<L: Language>(&self) -> Result<Option<String>> {
         let files = self.discover_files(L::extensions())?;
 
         let lang_name = L::extensions().first().unwrap_or(&"unknown");

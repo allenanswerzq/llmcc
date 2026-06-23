@@ -36,7 +36,7 @@ export class UserModel extends BaseModel {
 }
 
 --- expect:block-graph ---
-(root:1 entity ($TMP/base/entity.ts)
+(root:1 000_entity (000_entity)
   (interface:2 Entity
     (field:3 id @type number)
     (field:4 createdAt @type Date)
@@ -50,7 +50,7 @@ export class UserModel extends BaseModel {
   )
 )
 
-(root:10 user ($TMP/models/user.ts)
+(root:10 001_user (001_user)
   (interface:11 User @extends:2 Entity @extends:5 Timestamped
     (field:12 email @type string)
     (field:13 name @type string)
@@ -64,49 +64,47 @@ export class UserModel extends BaseModel {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_base {
+  subgraph cluster_root_0_base {
     label="base";
     style=rounded;
-        bgcolor="#f5f5f5";
+    bgcolor="#f5f5f5";
 
-    subgraph cluster_entity_ts {
-      label="entity.ts";
+    subgraph cluster_root_0_base_0_000_entity_ts {
+      label="000_entity.ts";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n8[label="BaseModel", path="$TMP/base/entity.ts:12", sym_ty="Struct", shape=box];
-      n2[label="Entity", path="$TMP/base/entity.ts:2", sym_ty="Interface", shape=box];
-      n5[label="Timestamped", path="$TMP/base/entity.ts:7", sym_ty="Interface", shape=box];
+      n2[label="Entity", module="base", file="000_entity.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/base/000_entity.ts:2", kind="interface", shape="box"];
+      n5[label="Timestamped", module="base", file="000_entity.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/base/000_entity.ts:7", kind="interface", shape="box"];
+      n8[label="BaseModel", module="base", file="000_entity.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/base/000_entity.ts:12", kind="struct", shape="box"];
     }
 
   }
 
-  subgraph cluster_models {
+  subgraph cluster_root_1_models {
     label="models";
     style=rounded;
-        bgcolor="#f5f5f5";
+    bgcolor="#f5f5f5";
 
-    subgraph cluster_user_ts {
-      label="user.ts";
+    subgraph cluster_root_1_models_0_001_user_ts {
+      label="001_user.ts";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n11[label="User", path="$TMP/models/user.ts:4", sym_ty="Interface", shape=box];
-      n14[label="UserModel", path="$TMP/models/user.ts:9", sym_ty="Struct", shape=box];
+      n11[label="User", module="models", file="001_user.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/models/001_user.ts:4", kind="interface", shape="box"];
+      n14[label="UserModel", module="models", file="001_user.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/models/001_user.ts:9", kind="struct", shape="box"];
     }
 
   }
 
 
-  n2 -> n11 [from="base", to="extends"];
-  n5 -> n11 [from="base", to="extends"];
-  n8 -> n14 [from="base", to="extends"];
+n2 -> n11 [rel="specialization", from="base", to="specializes"];
+n5 -> n11 [rel="specialization", from="base", to="specializes"];
+n8 -> n14 [rel="specialization", from="base", to="specializes"];
 }

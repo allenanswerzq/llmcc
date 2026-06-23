@@ -1,30 +1,162 @@
-﻿use std::fs;
-use std::path::{Path, PathBuf};
+//! Parse `.llmcc` corpus files into test cases.
 
-use llmcc_error::{Error, ErrorKind, Result};
-use shell_words::{join, split};
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::str::FromStr;
+
+use llmcc_core::{Error, ErrorKind, Result, SupportedLang};
+use strum_macros::{Display, EnumString};
 use walkdir::WalkDir;
 
-const CASE_BANNER: &str =
-    "===============================================================================";
+/// Output expectation kinds that can appear in `.llmcc` files.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Display, EnumString)]
+#[strum(serialize_all = "kebab-case", ascii_case_insensitive)]
+pub enum OutputKind {
+    Symbols,
+    SymbolTypes,
+    SymbolDeps,
+    BlockGraph,
+    BlockRelations,
+    Blocks,
+    BlockDeps,
+    ArchGraph,
+    ArchGraphDepth0,
+    ArchGraphDepth1,
+    ArchGraphDepth2,
+    ArchGraphDepth3,
+}
 
-/// Detect language from the suite path (e.g., "rust/render/01_test" -> "rust")
-fn detect_language(suite: &str) -> String {
-    if suite.starts_with("typescript/") || suite.starts_with("ts/") {
-        "typescript".to_string()
-    } else if suite.starts_with("auto/") {
-        "auto".to_string()
-    } else {
-        // Default to rust for backward compatibility
-        "rust".to_string()
+impl OutputKind {
+    /// Whether this output kind requires a project graph to be built.
+    pub fn needs_graph(self) -> bool {
+        matches!(
+            self,
+            Self::BlockGraph
+                | Self::BlockRelations
+                | Self::Blocks
+                | Self::BlockDeps
+                | Self::ArchGraph
+                | Self::ArchGraphDepth0
+                | Self::ArchGraphDepth1
+                | Self::ArchGraphDepth2
+                | Self::ArchGraphDepth3
+        )
+    }
+
+    /// Whether this output kind uses line-sorted normalization.
+    pub fn sorts_lines(self) -> bool {
+        matches!(
+            self,
+            Self::Symbols
+                | Self::SymbolTypes
+                | Self::Blocks
+                | Self::SymbolDeps
+                | Self::BlockDeps
+                | Self::BlockRelations
+        )
     }
 }
 
-fn slugify_case_name(raw: &str) -> String {
+/// A collection of `.llmcc` test files discovered under a root directory.
+pub struct Corpus {
+    pub files: Vec<CorpusFile>,
+}
+
+/// One `.llmcc` file containing one or more test cases.
+pub struct CorpusFile {
+    pub path: PathBuf,
+    pub suite: String,
+    pub cases: Vec<TestCase>,
+    pub dirty: bool,
+}
+
+/// A single test case parsed from a `.llmcc` file.
+#[derive(Clone)]
+pub struct TestCase {
+    pub name: String,
+    pub lang: SupportedLang,
+    /// Source files to materialize: `(relative_path, content)`.
+    pub files: Vec<(String, String)>,
+    /// Expected outputs.
+    pub expectations: Vec<(OutputKind, String)>,
+    /// Raw metadata for re-serialization.
+    pub(crate) comments: Vec<String>,
+    pub(crate) description: Vec<String>,
+    pub(crate) args: Vec<String>,
+}
+
+impl TestCase {
+    /// Full test identifier: `suite::case-name`.
+    pub fn qualified_name(&self, suite: &str) -> String {
+        format!("{suite}::{}", self.name)
+    }
+}
+
+impl Corpus {
+    /// Walk `root` for `.llmcc` files and parse them.
+    pub fn load(root: &Path) -> Result<Self> {
+        let mut files = Vec::new();
+
+        for entry in WalkDir::new(root)
+            .into_iter()
+            .filter_map(|r| r.ok())
+            .filter(|e| e.file_type().is_file())
+        {
+            if entry.path().extension().and_then(|e| e.to_str()) != Some("llmcc") {
+                continue;
+            }
+
+            let rel = entry.path().strip_prefix(root).unwrap_or(entry.path());
+            let suite = rel.with_extension("").to_string_lossy().replace('\\', "/");
+
+            let path = entry.path().canonicalize()?;
+            let content = fs::read_to_string(&path)?;
+            let cases = parse_file(&suite, &content)?;
+            files.push(CorpusFile {
+                path,
+                suite,
+                cases,
+                dirty: false,
+            });
+        }
+
+        files.sort_by(|a, b| a.path.cmp(&b.path));
+        Ok(Self { files })
+    }
+
+    /// Write back any files that were modified by `--update`.
+    pub fn write_updates(&self) -> Result<()> {
+        for file in &self.files {
+            if file.dirty {
+                let rendered = render_file(file);
+                fs::write(&file.path, rendered)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+// ─── Parsing ────────────────────────────────────────────────────────────────
+
+const BANNER: &str =
+    "===============================================================================";
+
+fn detect_lang(suite: &str) -> SupportedLang {
+    if suite.starts_with("typescript/") || suite.starts_with("ts/") {
+        SupportedLang::Typescript
+    } else if suite.starts_with("cpp/") {
+        SupportedLang::Cpp
+    } else if suite.starts_with("auto/") {
+        SupportedLang::Auto
+    } else {
+        SupportedLang::Rust
+    }
+}
+
+fn slugify(name: &str) -> String {
     let mut slug = String::new();
     let mut pending_dash = false;
-
-    for ch in raw.chars() {
+    for ch in name.chars() {
         if ch.is_ascii_alphanumeric() {
             if pending_dash && !slug.is_empty() {
                 slug.push('-');
@@ -35,517 +167,269 @@ fn slugify_case_name(raw: &str) -> String {
             pending_dash = true;
         }
     }
-
-    while slug.ends_with('-') {
-        slug.pop();
-    }
-
-    if slug.is_empty() {
-        "case".to_string()
-    } else {
-        slug
-    }
+    if slug.is_empty() { "case".into() } else { slug }
 }
 
-///  Top-level corpus container discovered under a directory (e.g. `tests/corpus`).
-pub struct Corpus {
-    files: Vec<CorpusFile>,
-}
-
-impl Corpus {
-    pub fn load(root: impl AsRef<Path>) -> Result<Self> {
-        let root = root.as_ref().to_path_buf();
-        let mut files = Vec::new();
-        if !root.exists() {
-            return Err(Error::new(
-                ErrorKind::FileNotFound,
-                format!("corpus root {} does not exist", root.display()),
-            ));
-        }
-
-        for entry in WalkDir::new(&root)
-            .into_iter()
-            .filter_map(|res| res.ok())
-            .filter(|entry| entry.file_type().is_file())
-        {
-            if entry.path().extension().and_then(|ext| ext.to_str()) != Some("llmcc") {
-                continue;
-            }
-
-            let rel = entry
-                .path()
-                .strip_prefix(&root)
-                .unwrap_or_else(|_| entry.path());
-            let suite = rel.with_extension("").to_string_lossy().replace('\\', "/");
-            let canonical = entry.path().canonicalize().map_err(|e| {
-                Error::new(
-                    ErrorKind::FileNotFound,
-                    format!("failed to resolve {}: {}", entry.path().display(), e),
-                )
-            })?;
-            let content = fs::read_to_string(&canonical).map_err(|e| {
-                Error::new(
-                    ErrorKind::FileNotFound,
-                    format!("failed to read {}: {}", canonical.display(), e),
-                )
-            })?;
-            let cases = parse_corpus_file(&suite, &canonical, &content)?;
-            files.push(CorpusFile {
-                path: canonical,
-                suite,
-                cases,
-                dirty: false,
-            });
-        }
-
-        files.sort_by(|a, b| a.path.cmp(&b.path));
-
-        Ok(Self { files })
-    }
-
-    pub fn files(&self) -> &[CorpusFile] {
-        &self.files
-    }
-
-    pub fn files_mut(&mut self) -> &mut [CorpusFile] {
-        &mut self.files
-    }
-
-    pub fn write_updates(&mut self) -> Result<()> {
-        for file in &mut self.files {
-            if file.dirty {
-                let rendered = file.render();
-                fs::write(&file.path, rendered).map_err(|e| {
-                    Error::new(
-                        ErrorKind::IoFailed,
-                        format!("failed to update {}: {}", file.path.display(), e),
-                    )
-                })?;
-                file.dirty = false;
-            }
-        }
-        Ok(())
-    }
-}
-
-#[derive(Debug)]
-pub struct CorpusFile {
-    pub path: PathBuf,
-    pub suite: String,
-    pub cases: Vec<CorpusCase>,
-    pub(crate) dirty: bool,
-}
-
-impl CorpusFile {
-    pub fn cases(&self) -> &[CorpusCase] {
-        &self.cases
-    }
-
-    pub fn cases_mut(&mut self) -> &mut [CorpusCase] {
-        &mut self.cases
-    }
-
-    pub fn case_id(&self, case_name: &str) -> String {
-        format!("{}::{}", self.suite, case_name)
-    }
-
-    pub fn mark_dirty(&mut self) {
-        self.dirty = true;
-    }
-
-    fn render(&self) -> String {
-        let mut buf = String::new();
-        for (idx, case) in self.cases.iter().enumerate() {
-            if idx > 0 {
-                buf.push_str("\n\n\n");
-            }
-            let rendered = case.render();
-            buf.push_str(rendered.trim_end_matches('\n'));
-        }
-        buf.push('\n');
-        buf
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct CorpusCase {
-    pub suite: String,
-    pub name: String,
-    pub lang: String,
-    pub args: Vec<String>,
-    pub files: Vec<TestFile>,
-    pub expectations: Vec<CorpusCaseExpectation>,
-    /// Comments lines (starting with $//)
-    pub comments: Vec<String>,
-    /// Description text between banner and first --- section
-    pub description: Vec<String>,
-}
-
-impl CorpusCase {
-    pub fn id(&self) -> String {
-        format!("{}::{}", self.suite, self.name)
-    }
-
-    pub fn expectation(&self, key: &str) -> Option<&str> {
-        self.expectations
-            .iter()
-            .find(|entry| entry.kind == key)
-            .map(|entry| entry.value.as_str())
-    }
-
-    pub fn expectation_mut(&mut self, key: &str) -> Option<&mut CorpusCaseExpectation> {
-        self.expectations.iter_mut().find(|entry| entry.kind == key)
-    }
-
-    pub fn ensure_expectation(&mut self, key: &str) -> &mut CorpusCaseExpectation {
-        if self.expectation(key).is_none() {
-            self.expectations.push(CorpusCaseExpectation {
-                kind: key.to_string(),
-                value: String::new(),
-            });
-        }
-        self.expectation_mut(key).expect("expectation present")
-    }
-
-    pub fn render(&self) -> String {
-        let mut buf = String::new();
-        // Render comments first
-        for comment in &self.comments {
-            buf.push_str(comment);
-            buf.push('\n');
-        }
-        buf.push_str(CASE_BANNER);
-        buf.push('\n');
-        buf.push_str(&self.name);
-        buf.push('\n');
-        buf.push_str(CASE_BANNER);
-        buf.push('\n');
-        // Render description after banner
-        for desc_line in &self.description {
-            buf.push_str(desc_line);
-            buf.push('\n');
-        }
-        if self.description.is_empty() {
-            buf.push('\n');
-        }
-        if self.lang != "rust" {
-            buf.push_str(&format!("lang: {}\n", self.lang));
-        }
-        if !self.args.is_empty() {
-            buf.push_str(&format!("args: {}\n", join(&self.args)));
-        }
-        buf.push('\n');
-        for file in &self.files {
-            buf.push_str(&format!("--- file: {} ---\n", file.path));
-            buf.push_str(&file.contents);
-            if !file.contents.ends_with('\n') {
-                buf.push('\n');
-            }
-            buf.push('\n');
-        }
-
-        for expect in &self.expectations {
-            buf.push_str(&format!("--- expect:{} ---\n", expect.kind));
-            buf.push_str(&expect.value);
-            if !expect.value.ends_with('\n') {
-                buf.push('\n');
-            }
-            buf.push('\n');
-        }
-
-        buf
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct TestFile {
-    pub path: String,
-    pub contents: String,
-}
-
-#[derive(Debug, Clone)]
-pub struct CorpusCaseExpectation {
-    pub kind: String,
-    pub value: String,
-}
-
-fn parse_corpus_file(suite: &str, path: &Path, content: &str) -> Result<Vec<CorpusCase>> {
-    let lang = detect_language(suite);
+fn parse_file(suite: &str, content: &str) -> Result<Vec<TestCase>> {
+    let default_lang = detect_lang(suite);
     let mut cases = Vec::new();
-    let mut current: Option<CorpusCase> = None;
-    let mut pending_section: Option<SectionHeader> = None;
+    let mut current: Option<TestCase> = None;
+    let mut section: Option<Section> = None;
     let mut section_lines: Vec<String> = Vec::new();
-    let mut awaiting_banner_name = false;
-    let mut awaiting_banner_close = false;
+    let mut state = ParseState::BetweenCases;
     let mut pending_comments: Vec<String> = Vec::new();
 
     for raw_line in content.lines() {
         let line = raw_line.trim_end_matches('\r');
         let trimmed = line.trim();
 
+        // Collect comment lines before a case starts.
         if trimmed.starts_with("$//") {
             pending_comments.push(line.to_string());
             continue;
         }
 
-        if awaiting_banner_close {
-            if trimmed.is_empty() {
-                continue;
+        match state {
+            ParseState::BetweenCases => {
+                if is_banner(line) {
+                    flush_section(&mut current, &mut section, &mut section_lines);
+                    if let Some(case) = current.take() {
+                        cases.push(case);
+                    }
+                    state = ParseState::AwaitingName;
+                }
+                // Ignore other lines between cases.
             }
-            if is_banner_line(line) {
-                awaiting_banner_close = false;
-                continue;
-            } else {
+
+            ParseState::AwaitingName => {
+                if trimmed.is_empty() {
+                    continue;
+                }
+                current = Some(TestCase {
+                    name: slugify(trimmed),
+                    lang: default_lang,
+                    files: Vec::new(),
+                    expectations: Vec::new(),
+                    comments: std::mem::take(&mut pending_comments),
+                    description: Vec::new(),
+                    args: Vec::new(),
+                });
+                state = ParseState::AwaitingClose;
+            }
+
+            ParseState::AwaitingClose => {
+                if trimmed.is_empty() {
+                    continue;
+                }
+                if is_banner(line) {
+                    state = ParseState::CaseBody;
+                    continue;
+                }
                 return Err(Error::new(
-                    ErrorKind::InvalidArgument,
-                    format!(
-                        "expected closing banner after case '{}' in {}",
-                        current
-                            .as_ref()
-                            .map(|c| c.name.as_str())
-                            .unwrap_or("unknown"),
-                        path.display()
-                    ),
+                    ErrorKind::ParseFailed,
+                    format!("expected closing banner in suite {suite}"),
                 ));
             }
-        }
 
-        if awaiting_banner_name {
-            if trimmed.is_empty() {
-                continue;
-            }
-
-            finalize_section(&mut current, &mut pending_section, &mut section_lines)?;
-            if let Some(case) = current.take() {
-                cases.push(case);
-            }
-
-            current = Some(CorpusCase {
-                suite: suite.to_string(),
-                name: slugify_case_name(trimmed),
-                lang: lang.clone(),
-                args: Vec::new(),
-                files: Vec::new(),
-                expectations: Vec::new(),
-                comments: std::mem::take(&mut pending_comments),
-                description: Vec::new(),
-            });
-            awaiting_banner_name = false;
-            awaiting_banner_close = true;
-            continue;
-        }
-
-        if is_banner_line(line) {
-            finalize_section(&mut current, &mut pending_section, &mut section_lines)?;
-            if let Some(case) = current.take() {
-                cases.push(case);
-            }
-            awaiting_banner_name = true;
-            continue;
-        }
-
-        if let Some(header) = parse_case_header(line) {
-            finalize_section(&mut current, &mut pending_section, &mut section_lines)?;
-            if let Some(case) = current.take() {
-                cases.push(case);
-            }
-
-            current = Some(CorpusCase {
-                suite: suite.to_string(),
-                name: header,
-                lang: lang.clone(),
-                args: Vec::new(),
-                files: Vec::new(),
-                expectations: Vec::new(),
-                comments: std::mem::take(&mut pending_comments),
-                description: Vec::new(),
-            });
-            continue;
-        }
-
-        if let Some(section) = parse_section_header(line) {
-            finalize_section(&mut current, &mut pending_section, &mut section_lines)?;
-            pending_section = Some(section);
-            continue;
-        }
-
-        if pending_section.is_some() {
-            section_lines.push(line.to_string());
-            continue;
-        }
-
-        if trimmed.is_empty() {
-            continue;
-        }
-
-        // If we have a case but no pending section, we're in the metadata/description
-        // area between the banner and the first --- section. Parse known metadata
-        // keys (lang, args), capture everything else as description.
-        if let Some(ref mut case) = current
-            && pending_section.is_none()
-        {
-            if let Some((key, value)) = trimmed.split_once(':') {
-                let key = key.trim();
-                let value = value.trim();
-                match key {
-                    "lang" => case.lang = value.to_string(),
-                    "args" => {
-                        case.args = split(value).map_err(|err| {
-                            Error::new(
-                                ErrorKind::InvalidArgument,
-                                format!("invalid args in {}: {}", path.display(), err),
-                            )
-                        })?
+            ParseState::CaseBody => {
+                // Transition to next case on a new banner.
+                if is_banner(line) {
+                    flush_section(&mut current, &mut section, &mut section_lines);
+                    if let Some(case) = current.take() {
+                        cases.push(case);
                     }
-                    // Unknown key:value - treat as description line
-                    _ => case.description.push(line.to_string()),
+                    state = ParseState::AwaitingName;
+                    continue;
                 }
-            } else {
-                // Plain text (no colon) - capture as description
-                case.description.push(line.to_string());
+
+                // Section header.
+                if let Some(s) = parse_section_header(line) {
+                    flush_section(&mut current, &mut section, &mut section_lines);
+                    section = Some(s);
+                    continue;
+                }
+
+                // Inside a section: accumulate content lines.
+                if section.is_some() {
+                    section_lines.push(line.to_string());
+                    continue;
+                }
+
+                if trimmed.is_empty() {
+                    continue;
+                }
+
+                // Metadata area (before first section header).
+                if let Some(ref mut case) = current {
+                    parse_metadata_line(case, line, trimmed, default_lang);
+                }
             }
-            continue;
-        }
-
-        // Content before any case header
-        if current.is_none() {
-            return Err(Error::new(
-                ErrorKind::InvalidArgument,
-                format!(
-                    "content encountered before case header in {}",
-                    path.display()
-                ),
-            ));
         }
     }
 
-    finalize_section(&mut current, &mut pending_section, &mut section_lines)?;
-    if awaiting_banner_name || awaiting_banner_close {
-        return Err(Error::new(
-            ErrorKind::InvalidArgument,
-            format!(
-                "unterminated banner in {} (missing case name or closing separator)",
-                path.display()
-            ),
-        ));
-    }
+    flush_section(&mut current, &mut section, &mut section_lines);
     if let Some(case) = current.take() {
         cases.push(case);
-    }
-
-    if cases.is_empty() {
-        return Err(Error::new(
-            ErrorKind::InvalidArgument,
-            format!("corpus file {} does not contain any cases", path.display()),
-        ));
-    }
-
-    for case in &cases {
-        if case.files.is_empty() {
-            return Err(Error::new(
-                ErrorKind::InvalidArgument,
-                format!(
-                    "case {}::{} in {} does not declare any files",
-                    case.suite,
-                    case.name,
-                    path.display()
-                ),
-            ));
-        }
     }
 
     Ok(cases)
 }
 
-fn parse_case_header(line: &str) -> Option<String> {
-    if line.starts_with("===") && line.ends_with("===") {
-        let name = line.trim_matches('=').trim();
-        if name.is_empty() {
-            None
-        } else {
-            Some(slugify_case_name(name))
+/// Parser state machine states.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ParseState {
+    /// Between test cases (or at start of file).
+    BetweenCases,
+    /// Saw opening banner, waiting for the case name line.
+    AwaitingName,
+    /// Saw the case name, waiting for closing banner.
+    AwaitingClose,
+    /// Inside a case body (metadata, file sections, expect sections).
+    CaseBody,
+}
+
+/// Parse a key:value metadata line within a test case header.
+fn parse_metadata_line(
+    case: &mut TestCase,
+    line: &str,
+    trimmed: &str,
+    default_lang: SupportedLang,
+) {
+    if let Some((key, value)) = trimmed.split_once(':') {
+        let key = key.trim();
+        let value = value.trim();
+        match key {
+            "lang" => case.lang = SupportedLang::from_str(value).unwrap_or(default_lang),
+            "args" => case.args = shell_words::split(value).unwrap_or_default(),
+            _ => case.description.push(line.to_string()),
         }
     } else {
-        None
+        case.description.push(line.to_string());
     }
 }
 
-fn is_banner_line(line: &str) -> bool {
+enum Section {
+    File(String),
+    Expect(OutputKind),
+}
+
+fn is_banner(line: &str) -> bool {
     let trimmed = line.trim();
-    if trimmed.is_empty() {
-        return false;
-    }
-    trimmed.chars().all(|ch| ch == '=') && trimmed.len() >= 5
+    trimmed.len() >= 20 && trimmed.chars().all(|c| c == '=')
 }
 
-#[derive(Debug, Clone)]
-enum SectionHeader {
-    File { path: String },
-    Expect { kind: String },
+fn parse_section_header(line: &str) -> Option<Section> {
+    let trimmed = line.trim();
+    let inner = trimmed.strip_prefix("---")?.trim();
+    let inner = inner.strip_suffix("---").unwrap_or(inner).trim();
+
+    inner
+        .strip_prefix("file:")
+        .map(|path| Section::File(path.trim().to_string()))
+        .or_else(|| {
+            inner
+                .strip_prefix("expect:")
+                .and_then(|kind| OutputKind::from_str(kind.trim()).ok())
+                .map(Section::Expect)
+        })
 }
 
-fn parse_section_header(line: &str) -> Option<SectionHeader> {
-    if !line.starts_with("---") || !line.ends_with("---") {
-        return None;
-    }
-
-    let inner = line.trim_start_matches('-').trim_end_matches('-').trim();
-    if let Some(rest) = inner.strip_prefix("file:") {
-        return Some(SectionHeader::File {
-            path: rest.trim().to_string(),
-        });
-    }
-
-    if let Some(rest) = inner.strip_prefix("expect:") {
-        return Some(SectionHeader::Expect {
-            kind: rest.trim().to_string(),
-        });
-    }
-
-    None
-}
-
-fn finalize_section(
-    current: &mut Option<CorpusCase>,
-    pending: &mut Option<SectionHeader>,
+fn flush_section(
+    current: &mut Option<TestCase>,
+    section: &mut Option<Section>,
     lines: &mut Vec<String>,
-) -> Result<()> {
-    if pending.is_none() {
+) {
+    let Some(case) = current.as_mut() else {
         lines.clear();
-        return Ok(());
-    }
-
-    let case = current.as_mut().ok_or_else(|| {
-        Error::new(
-            ErrorKind::InvalidArgument,
-            "section declared before any case header",
-        )
-    })?;
-
-    let mut content = if lines.is_empty() {
-        String::new()
-    } else {
-        lines.join("\n")
+        *section = None;
+        return;
     };
-    if !content.is_empty() && !content.ends_with('\n') {
-        content.push('\n');
-    }
+    let Some(sec) = section.take() else {
+        lines.clear();
+        return;
+    };
 
-    match pending.take().unwrap() {
-        SectionHeader::File { path } => {
-            case.files.push(TestFile {
-                path,
-                contents: content,
-            });
-        }
-        SectionHeader::Expect { kind } => {
-            case.expectations.push(CorpusCaseExpectation {
-                kind,
-                value: content,
-            });
-        }
-    }
-
+    let text = join_section_lines(lines);
     lines.clear();
-    Ok(())
+
+    match sec {
+        Section::File(path) => case.files.push((path, text)),
+        Section::Expect(kind) => case.expectations.push((kind, text)),
+    }
+}
+
+fn join_section_lines(lines: &[String]) -> String {
+    // Trim trailing empty lines but keep content intact
+    let mut end = lines.len();
+    while end > 0 && lines[end - 1].trim().is_empty() {
+        end -= 1;
+    }
+    let mut text = lines[..end].join("\n");
+    if !text.is_empty() {
+        text.push('\n');
+    }
+    text
+}
+
+// ─── Rendering (for --update) ───────────────────────────────────────────────
+
+fn render_file(file: &CorpusFile) -> String {
+    let mut buf = String::new();
+    for (idx, case) in file.cases.iter().enumerate() {
+        if idx > 0 {
+            buf.push_str("\n\n\n");
+        }
+        render_case(&mut buf, case);
+    }
+    // Ensure file ends with exactly one newline
+    let trimmed = buf.trim_end_matches('\n');
+    let mut result = trimmed.to_string();
+    result.push('\n');
+    result
+}
+
+fn render_case(buf: &mut String, case: &TestCase) {
+    for comment in &case.comments {
+        buf.push_str(comment);
+        buf.push('\n');
+    }
+    buf.push_str(BANNER);
+    buf.push('\n');
+    buf.push_str(&case.name);
+    buf.push('\n');
+    buf.push_str(BANNER);
+    buf.push('\n');
+
+    for line in &case.description {
+        buf.push_str(line);
+        buf.push('\n');
+    }
+    if case.description.is_empty() {
+        buf.push('\n');
+    }
+    if case.lang != SupportedLang::Rust {
+        buf.push_str(&format!("lang: {}\n", case.lang));
+    }
+    if !case.args.is_empty() {
+        buf.push_str(&format!("args: {}\n", shell_words::join(&case.args)));
+    }
+    buf.push('\n');
+
+    for (path, content) in &case.files {
+        buf.push_str(&format!("--- file: {path} ---\n"));
+        buf.push_str(content);
+        if !content.ends_with('\n') {
+            buf.push('\n');
+        }
+        buf.push('\n');
+    }
+
+    for (kind, value) in &case.expectations {
+        buf.push_str(&format!("--- expect:{kind} ---\n"));
+        buf.push_str(value);
+        if !value.ends_with('\n') {
+            buf.push('\n');
+        }
+        buf.push('\n');
+    }
 }

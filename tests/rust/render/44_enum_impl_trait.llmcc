@@ -47,11 +47,11 @@ impl Displayable for Priority {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs)
+(root:1 001_lib (001_lib)
   (module:2 types)
 )
 
-(root:3 types ($TMP/sample/src/types.rs)
+(root:3 002_types (002_types)
   (trait:4 Displayable
     (method:5 display
       (parameter:6 self @type:4 Displayable)
@@ -94,34 +94,32 @@ impl Displayable for Priority {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_types_rs {
-      label="types.rs";
+    subgraph cluster_root_0_sample_0_002_types_rs {
+      label="002_types.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n4[label="Displayable", path="$TMP/sample/src/types.rs:1", sym_ty="Trait", shape=box];
-      n15[label="Priority", path="$TMP/sample/src/types.rs:15", sym_ty="Enum", shape=box];
-      n8[label="Processable", path="$TMP/sample/src/types.rs:5", sym_ty="Trait", shape=box];
-      n11[label="Status", path="$TMP/sample/src/types.rs:9", sym_ty="Enum", shape=box];
+      n4[label="Displayable", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:1", kind="trait", shape="box"];
+      n8[label="Processable", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:5", kind="trait", shape="box"];
+      n11[label="Status", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:9", kind="enum", shape="box"];
+      n15[label="Priority", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:15", kind="enum", shape="box"];
     }
 
   }
 
 
-  n4 -> n11 [from="trait", to="impl"];
-  n4 -> n15 [from="trait", to="impl"];
-  n8 -> n11 [from="trait", to="impl"];
+n4 -> n11 [rel="conformance", from="contract", to="conforms"];
+n4 -> n15 [rel="conformance", from="contract", to="conforms"];
+n8 -> n11 [rel="conformance", from="contract", to="conforms"];
 }

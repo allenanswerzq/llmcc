@@ -31,18 +31,18 @@ pub struct Service {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs)
+(root:1 001_lib (001_lib)
   (module:2 types)
   (module:3 services)
 )
 
-(root:4 types ($TMP/sample/src/types.rs)
+(root:4 002_types (002_types)
   (class:5 Config
     (field:6 global_value @type i32)
   )
 )
 
-(root:7 services ($TMP/sample/src/services.rs)
+(root:7 003_services (003_services)
   (class:8 Config
     (field:9 local_value @type String)
   )
@@ -55,30 +55,36 @@ pub struct Service {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_services_rs {
-      label="services.rs";
+    subgraph cluster_root_0_sample_0_002_types_rs {
+      label="002_types.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n8[label="Config", path="$TMP/sample/src/services.rs:3", sym_ty="Struct", shape=box];
-      n10[label="Service", path="$TMP/sample/src/services.rs:7", sym_ty="Struct", shape=box];
+      n5[label="Config", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:2", kind="struct", shape="box"];
+    }
+
+    subgraph cluster_root_0_sample_1_003_services_rs {
+      label="003_services.rs";
+      style=rounded;
+      bgcolor="#fafafa";
+
+      n8[label="Config", package="sample", file="003_services.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_services.rs:3", kind="struct", shape="box"];
+      n10[label="Service", package="sample", file="003_services.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_services.rs:7", kind="struct", shape="box"];
     }
 
   }
 
 
-  n8 -> n10 [from="field_type", to="struct"];
+n8 -> n10 [rel="field", from="field_type", to="container"];
 }

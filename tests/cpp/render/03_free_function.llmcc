@@ -2,7 +2,7 @@
 free-function
 ===============================================================================
 Test that free functions appear in the architecture graph.
-lang: cpp
+lang: c++
 
 --- file: sample/CMakeLists.txt ---
 cmake_minimum_required(VERSION 3.10)
@@ -22,7 +22,7 @@ int helper(int x) {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.cpp)
+(root:1 001_lib (001_lib)
   (class:2 Input)
   (class:3 Output)
   (func:4 process_data
@@ -36,23 +36,30 @@ int helper(int x) {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_lib_cpp {
-    label="lib.cpp";
+  subgraph cluster_root_0_sample {
+    label="sample";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#f8f8f8";
 
-    n2[label="Input", path="$TMP/sample/src/lib.cpp:2", sym_ty="Struct", shape=box];
-    n4[label="process_data", path="$TMP/sample/src/lib.cpp:5", sym_ty="Function", shape=ellipse];
+    subgraph cluster_root_0_sample_0_001_lib_cpp {
+      label="001_lib.cpp";
+      style=rounded;
+      bgcolor="#fafafa";
+
+      n2[label="Input", package="sample", file="001_lib.cpp", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.cpp:2", kind="struct", shape="box"];
+      n3[label="Output", package="sample", file="001_lib.cpp", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.cpp:3", kind="struct", shape="box"];
+      n4[label="process_data", package="sample", file="001_lib.cpp", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.cpp:5", kind="function", shape="ellipse"];
+      n6[label="helper", package="sample", file="001_lib.cpp", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.cpp:9", kind="function", shape="ellipse"];
+    }
+
   }
 
 
-  n2 -> n4 [from="input", to="func"];
+n2 -> n4 [rel="param", from="input", to="func"];
 }

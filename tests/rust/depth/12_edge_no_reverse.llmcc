@@ -51,89 +51,77 @@ pub fn process(data: &Data) -> u32 {
 --- expect:arch-graph-depth-3 ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_app {
+  subgraph cluster_root_0_app {
     label="app";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_lib_rs {
-      label="lib.rs";
+    subgraph cluster_root_0_app_0_003_lib_rs {
+      label="003_lib.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n16[label="process", path="$TMP/app/src/lib.rs:18", sym_ty="Function", shape=ellipse];
-      n9[label="DataProcessor", path="$TMP/app/src/lib.rs:4", sym_ty="Struct", shape=box];
-      n11[label="MyHandler", path="$TMP/app/src/lib.rs:9", sym_ty="Struct", shape=box];
+      n9[label="DataProcessor", package="app", file="003_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/app/src/003_lib.rs:4", kind="struct", shape="box"];
+      n11[label="MyHandler", package="app", file="003_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/app/src/003_lib.rs:9", kind="struct", shape="box"];
+      n16[label="process", package="app", file="003_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/app/src/003_lib.rs:18", kind="function", shape="ellipse"];
     }
 
   }
 
-  subgraph cluster_types {
+  subgraph cluster_root_1_types {
     label="types";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_lib_rs {
-      label="lib.rs";
+    subgraph cluster_root_1_types_0_001_lib_rs {
+      label="001_lib.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n2[label="Data", path="$TMP/types/src/lib.rs:2", sym_ty="Struct", shape=box];
-      n4[label="Handler", path="$TMP/types/src/lib.rs:6", sym_ty="Trait", shape=box];
+      n2[label="Data", package="types", file="001_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/types/src/001_lib.rs:2", kind="struct", shape="box"];
+      n4[label="Handler", package="types", file="001_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/types/src/001_lib.rs:6", kind="trait", shape="box"];
     }
 
   }
 
 
-  n2 -> n9 [from="field_type", to="struct"];
-  n2 -> n16 [from="input", to="func"];
-  n4 -> n11 [from="trait", to="impl"];
+n2 -> n9 [rel="field", from="field_type", to="container"];
+n2 -> n16 [rel="param", from="input", to="func"];
+n4 -> n11 [rel="conformance", from="contract", to="conforms"];
 }
 
 --- expect:arch-graph-depth-2 ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.8;
-  nodesep=0.4;
   splines=ortho;
-  concentrate=true;
+  compound=true;
 
-  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#888888", arrowsize=0.7];
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-  labelloc=t;
-  fontsize=16;
+  namespace_app_003_lib[label="app::003_lib", kind="module", package="app", module="003_lib", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/app/src"];
+  namespace_types_001_lib[label="types::001_lib", kind="module", package="types", module="001_lib", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/types/src"];
 
-  mod_app_lib[label="app::lib", path="$TMP/app/src"];
-  mod_types_lib[label="types::lib", path="$TMP/types/src"];
-
-  mod_app_lib -> mod_types_lib;
+namespace_app_003_lib -> namespace_types_001_lib [rel="depends_on", weight="3", via="conformance:1,field:1,param:1"];
 }
 
 --- expect:arch-graph-depth-1 ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.8;
-  nodesep=0.4;
   splines=ortho;
-  concentrate=true;
+  compound=true;
 
-  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#888888", arrowsize=0.7];
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-  labelloc=t;
-  fontsize=16;
+  package_app[label="app", kind="package", package="app", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/app"];
+  package_types[label="types", kind="package", package="types", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/types"];
 
-  crate_app[label="app", path="$TMP/app"];
-  crate_types[label="types", path="$TMP/types"];
-
-  crate_app -> crate_types;
+package_app -> package_types [rel="depends_on", weight="3", via="conformance:1,field:1,param:1"];
 }

@@ -33,7 +33,7 @@ impl Config for Implementor {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs)
+(root:1 001_lib (001_lib)
   (class:2 Config
     (field:3 value @type i32)
   )
@@ -57,32 +57,31 @@ impl Config for Implementor {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_lib_rs {
-      label="lib.rs";
+    subgraph cluster_root_0_sample_0_001_lib_rs {
+      label="001_lib.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n7[label="Holder", path="$TMP/sample/src/lib.rs:13", sym_ty="Struct", shape=box];
-      n9[label="Implementor", path="$TMP/sample/src/lib.rs:18", sym_ty="Struct", shape=box];
-      n4[label="Config", path="$TMP/sample/src/lib.rs:8", sym_ty="Struct", shape=box];
+      n2[label="Config", package="sample", file="001_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.rs:3", kind="struct", shape="box"];
+      n4[label="Config", package="sample", file="001_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.rs:8", kind="struct", shape="box"];
+      n7[label="Holder", package="sample", file="001_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.rs:13", kind="struct", shape="box"];
+      n9[label="Implementor", package="sample", file="001_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.rs:18", kind="struct", shape="box"];
     }
 
   }
 
 
-  n4 -> n7 [from="field_type", to="struct"];
-  n4 -> n9 [from="trait", to="impl"];
+n4 -> n7 [rel="field", from="field_type", to="container"];
+n4 -> n9 [rel="conformance", from="contract", to="conforms"];
 }

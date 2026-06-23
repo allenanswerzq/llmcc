@@ -50,23 +50,15 @@ export const utils = {
 
 --- expect:arch-graph-depth-1 ---
 digraph architecture {
-  rankdir=TB;
-  ranksep=0.8;
-  nodesep=0.4;
-  splines=ortho;
-  concentrate=true;
-
-  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#888888", arrowsize=0.7];
-
-  labelloc=t;
-  fontsize=16;
-
-  crate_app[label="app", path="$TMP/app"];
-  crate_common[label="common", path="$TMP/common"];
-
-  crate_app -> crate_common;
+  compound=true;
+  package_app[label="app", kind="package", package="app", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/app"];
+  package_common[label="common", kind="package", package="common", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/common"];
+package_app -> package_common [rel="depends_on", weight="1", via="param:1"];
+  compound=true;
+  package_frontend[label="frontend", kind="package", package="frontend", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/frontend"];
 }
+
+
 
 
 ===============================================================================
@@ -96,17 +88,8 @@ export class App {
 
 --- expect:arch-graph-depth-1 ---
 digraph architecture {
-  rankdir=TB;
-  ranksep=0.8;
-  nodesep=0.4;
-  splines=ortho;
-  concentrate=true;
-
-  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#888888", arrowsize=0.7];
-
-  labelloc=t;
-  fontsize=16;
-
-
+  compound=true;
+  package_core[label="core", kind="package", package="core", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/core"];
+  compound=true;
+  package_web[label="web", kind="package", package="web", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/web"];
 }

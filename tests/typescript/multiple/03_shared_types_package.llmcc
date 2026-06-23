@@ -45,7 +45,7 @@ export function findOrder(id: number): Result<Order> {
 }
 
 --- expect:block-graph ---
-(root:1 types ($TMP/shared/types.ts)
+(root:1 000_types (000_types)
   (interface:2 Entity
     (field:3 id @type number)
     (field:4 createdAt @type Date)
@@ -58,7 +58,7 @@ export function findOrder(id: number): Result<Order> {
   )
 )
 
-(root:10 user ($TMP/users/user.ts)
+(root:10 001_user (001_user)
   (interface:11 User @extends:2 Entity
     (field:12 email @type string)
     (field:13 name @type string)
@@ -69,7 +69,7 @@ export function findOrder(id: number): Result<Order> {
   )
 )
 
-(root:17 order ($TMP/orders/order.ts)
+(root:17 002_order (002_order)
   (interface:18 Order @extends:2 Entity
     (field:19 userId @type number)
     (field:20 total @type number)
@@ -83,65 +83,63 @@ export function findOrder(id: number): Result<Order> {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_orders {
+  subgraph cluster_root_0_orders {
     label="orders";
     style=rounded;
-        bgcolor="#f5f5f5";
+    bgcolor="#f5f5f5";
 
-    subgraph cluster_order_ts {
-      label="order.ts";
+    subgraph cluster_root_0_orders_0_002_order_ts {
+      label="002_order.ts";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n18[label="Order", path="$TMP/orders/order.ts:4", sym_ty="Interface", shape=box];
-      n21[label="findOrder", path="$TMP/orders/order.ts:9", sym_ty="Function", shape=ellipse];
+      n18[label="Order", module="orders", file="002_order.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/orders/002_order.ts:4", kind="interface", shape="box"];
+      n21[label="findOrder", module="orders", file="002_order.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/orders/002_order.ts:9", kind="function", shape="ellipse"];
     }
 
   }
 
-  subgraph cluster_shared {
+  subgraph cluster_root_1_shared {
     label="shared";
     style=rounded;
-        bgcolor="#f5f5f5";
+    bgcolor="#f5f5f5";
 
-    subgraph cluster_types_ts {
-      label="types.ts";
+    subgraph cluster_root_1_shared_0_000_types_ts {
+      label="000_types.ts";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n2[label="Entity", path="$TMP/shared/types.ts:2", sym_ty="Interface", shape=box];
-      n6[label="Result", path="$TMP/shared/types.ts:8", sym_ty="Interface", shape=box];
+      n2[label="Entity", module="shared", file="000_types.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/shared/000_types.ts:2", kind="interface", shape="box"];
+      n6[label="Result", module="shared", file="000_types.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/shared/000_types.ts:8", kind="interface", shape="box"];
     }
 
   }
 
-  subgraph cluster_users {
+  subgraph cluster_root_2_users {
     label="users";
     style=rounded;
-        bgcolor="#f5f5f5";
+    bgcolor="#f5f5f5";
 
-    subgraph cluster_user_ts {
-      label="user.ts";
+    subgraph cluster_root_2_users_0_001_user_ts {
+      label="001_user.ts";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n11[label="User", path="$TMP/users/user.ts:4", sym_ty="Interface", shape=box];
-      n14[label="findUser", path="$TMP/users/user.ts:9", sym_ty="Function", shape=ellipse];
+      n11[label="User", module="users", file="001_user.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/users/001_user.ts:4", kind="interface", shape="box"];
+      n14[label="findUser", module="users", file="001_user.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/users/001_user.ts:9", kind="function", shape="ellipse"];
     }
 
   }
 
 
-  n2 -> n11 [from="base", to="extends"];
-  n2 -> n18 [from="base", to="extends"];
-  n14 -> n6 [from="func", to="output"];
-  n21 -> n6 [from="func", to="output"];
+n2 -> n11 [rel="specialization", from="base", to="specializes"];
+n2 -> n18 [rel="specialization", from="base", to="specializes"];
+n14 -> n6 [rel="return", from="func", to="output"];
+n21 -> n6 [rel="return", from="func", to="output"];
 }

@@ -108,13 +108,19 @@ export function run() {
 
 --- expect:arch-graph-depth-1 ---
 digraph architecture {
-  crate_rust_api_2[label="rust-api-2", path="$TMP/rust-api-2"];
-  crate_rust_core[label="rust-core", path="$TMP/rust-core"];
-  crate_rust_api_2 -> crate_rust_core;
-  crate_ts_main[label="ts-main", path="$TMP/ts-main"];
-  crate_ts_utils[label="ts-utils", path="$TMP/ts-utils"];
-  crate_ts_main -> crate_ts_utils;
+  compound=true;
+  package_rust_api[label="rust-api", kind="package", package="rust-api", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/rust-api"];
+  package_rust_api_2[label="rust-api-2", kind="package", package="rust-api-2", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/rust-api-2"];
+  package_rust_core[label="rust-core", kind="package", package="rust-core", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/rust-core"];
+package_rust_api_2 -> package_rust_core [rel="depends_on", weight="1", via="return:1"];
+  compound=true;
+  package_ts_app[label="ts-app", kind="package", package="ts-app", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/ts-app"];
+  package_ts_main[label="ts-main", kind="package", package="ts-main", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/ts-main"];
+  package_ts_utils[label="ts-utils", kind="package", package="ts-utils", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/ts-utils"];
+package_ts_main -> package_ts_utils [rel="depends_on", weight="1", via="call:1"];
 }
+
+
 
 
 ===============================================================================
@@ -204,13 +210,17 @@ export class UserComponent {
 
 --- expect:arch-graph-depth-1 ---
 digraph architecture {
-  crate_backend_api[label="backend-api", path="$TMP/backend/api"];
-  crate_backend_core[label="backend-core", path="$TMP/backend/core"];
-  crate_backend_api -> crate_backend_core;
-  crate_shared[label="shared", path="$TMP/frontend/shared"];
-  crate_webapp[label="webapp", path="$TMP/frontend/webapp"];
-  crate_webapp -> crate_shared;
+  compound=true;
+  package_backend_api[label="backend-api", kind="package", package="backend-api", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/backend/api"];
+  package_backend_core[label="backend-core", kind="package", package="backend-core", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/backend/core"];
+package_backend_api -> package_backend_core [rel="depends_on", weight="1", via="field:1"];
+  compound=true;
+  package_shared[label="shared", kind="package", package="shared", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/frontend/shared"];
+  package_webapp[label="webapp", kind="package", package="webapp", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/frontend/webapp"];
+package_webapp -> package_shared [rel="depends_on", weight="1", via="return:1"];
 }
+
+
 
 
 ===============================================================================
@@ -364,12 +374,16 @@ export class MobileAppV2 {
 
 --- expect:arch-graph-depth-1 ---
 digraph architecture {
-  crate_auth_service[label="auth-service", path="$TMP/services/auth"];
-  crate_gateway_service[label="gateway-service", path="$TMP/services/gateway"];
-  crate_users_service[label="users-service", path="$TMP/services/users"];
-  crate_gateway_service -> crate_auth_service;
-  crate_users_service -> crate_auth_service;
-  crate_client_sdk[label="client-sdk", path="$TMP/clients/sdk"];
-  crate_mobile_v2[label="mobile-v2", path="$TMP/clients/mobile-v2"];
-  crate_mobile_v2 -> crate_client_sdk;
+  compound=true;
+  package_auth_service[label="auth-service", kind="package", package="auth-service", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/services/auth"];
+  package_gateway_service[label="gateway-service", kind="package", package="gateway-service", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/services/gateway"];
+  package_users_service[label="users-service", kind="package", package="users-service", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/services/users"];
+package_gateway_service -> package_auth_service [rel="depends_on", weight="1", via="param:1"];
+package_users_service -> package_auth_service [rel="depends_on", weight="1", via="param:1"];
+  compound=true;
+  package_admin_client[label="admin-client", kind="package", package="admin-client", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/clients/admin"];
+  package_client_sdk[label="client-sdk", kind="package", package="client-sdk", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/clients/sdk"];
+  package_mobile_client[label="mobile-client", kind="package", package="mobile-client", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/clients/mobile"];
+  package_mobile_v2[label="mobile-v2", kind="package", package="mobile-v2", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/clients/mobile-v2"];
+package_mobile_v2 -> package_client_sdk [rel="depends_on", weight="1", via="field:1"];
 }

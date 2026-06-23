@@ -2,7 +2,7 @@
 edge-input-output
 ===============================================================================
 Test that function input/output type edges are correctly generated.
-lang: cpp
+lang: c++
 
 --- file: sample/CMakeLists.txt ---
 cmake_minimum_required(VERSION 3.10)
@@ -24,25 +24,32 @@ Input create_input() {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_lib_cpp {
-    label="lib.cpp";
+  subgraph cluster_root_0_sample {
+    label="sample";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#f8f8f8";
 
-    n2[label="Input", path="$TMP/sample/src/lib.cpp:1", sym_ty="Struct", shape=box];
-    n4[label="Config", path="$TMP/sample/src/lib.cpp:3", sym_ty="Struct", shape=box];
-    n5[label="process", path="$TMP/sample/src/lib.cpp:5", sym_ty="Function", shape=ellipse];
+    subgraph cluster_root_0_sample_0_001_lib_cpp {
+      label="001_lib.cpp";
+      style=rounded;
+      bgcolor="#fafafa";
+
+      n2[label="Input", package="sample", file="001_lib.cpp", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.cpp:1", kind="struct", shape="box"];
+      n3[label="Output", package="sample", file="001_lib.cpp", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.cpp:2", kind="struct", shape="box"];
+      n4[label="Config", package="sample", file="001_lib.cpp", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.cpp:3", kind="struct", shape="box"];
+      n5[label="process", package="sample", file="001_lib.cpp", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.cpp:5", kind="function", shape="ellipse"];
+      n8[label="create_input", package="sample", file="001_lib.cpp", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.cpp:9", kind="function", shape="ellipse"];
+    }
+
   }
 
 
-  n2 -> n5 [from="input", to="func"];
-  n4 -> n5 [from="input", to="func"];
+n2 -> n5 [rel="param", from="input", to="func"];
+n4 -> n5 [rel="param", from="input", to="func"];
 }

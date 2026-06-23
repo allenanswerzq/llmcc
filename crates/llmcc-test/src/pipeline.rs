@@ -1,355 +1,476 @@
-mod collect;
-mod output;
+//! Pipeline execution: materialize test files, run the llmcc compiler pipeline,
+//! and produce rendered outputs for comparison against expectations.
 
-use llmcc_core::ViewDepth;
+use std::collections::BTreeMap;
+use std::fmt;
+use std::fmt::Write as _;
+use std::fs;
+use std::path::{Path, PathBuf};
+
+use llmcc_core::block::BlockKind;
+use llmcc_core::context::{CompileCtxt, CompileUnit};
+use llmcc_core::ir_builder::{HirBuildOptions, build_hir};
+use llmcc_core::lang_def::Language;
+use llmcc_core::{
+    BlockId, CollectedGraph, Error, ErrorKind, GraphBuildOptions, ProjectGraph, ResolveOptions,
+    Result, SupportedLang, ViewDepth, build_graphs,
+};
 use llmcc_cpp::LangCpp;
-use llmcc_error::{Error, ErrorKind, Result};
+use llmcc_dot::RenderOptions;
+use llmcc_resolver::{bind_symbols, collect_symbols};
 use llmcc_rust::LangRust;
 use llmcc_ts::LangTypeScript;
+use tempfile::TempDir;
+use walkdir::WalkDir;
 
-use crate::corpus::CorpusCase;
-use crate::materialize::materialize_case;
+use crate::corpus::{OutputKind, TestCase};
 
-use self::collect::{collect_pipeline, collect_pipeline_auto};
-pub(crate) use self::output::render_expectation;
+// --- Public API ---
 
-#[derive(Clone)]
-#[allow(dead_code)]
-struct SymbolSnapshot {
+/// Output produced by running one test case through the full pipeline.
+pub struct CaseOutput {
+    /// Rendered outputs keyed by expectation kind.
+    pub outputs: BTreeMap<OutputKind, String>,
+    /// Absolute temp directory path (callers replace with `$TMP` for portability).
+    pub temp_dir: String,
+}
+
+/// Execute a test case: materialize source files, compile, and render all
+/// requested output kinds.
+pub fn run_case(case: &TestCase) -> Result<CaseOutput> {
+    let needed: Vec<OutputKind> = case.expectations.iter().map(|(k, _)| *k).collect();
+    if needed.is_empty() {
+        return Ok(CaseOutput {
+            outputs: BTreeMap::new(),
+            temp_dir: String::new(),
+        });
+    }
+
+    // Reset global counters for deterministic output across test cases.
+    llmcc_core::block::reset_block_id_counter();
+    llmcc_core::symbol::reset_symbol_id_counter();
+
+    let (temp_dir, root) = materialize_files(case)?;
+    let temp_path = root.to_string_lossy().to_string();
+
+    let outputs = match case.lang {
+        SupportedLang::Rust => compile_and_render::<LangRust>(&root, &needed)?,
+        SupportedLang::Typescript => compile_and_render::<LangTypeScript>(&root, &needed)?,
+        SupportedLang::Cpp => compile_and_render::<LangCpp>(&root, &needed)?,
+        SupportedLang::Auto => compile_auto(&root, &needed)?,
+    };
+
+    drop(temp_dir);
+    Ok(CaseOutput {
+        outputs,
+        temp_dir: temp_path,
+    })
+}
+
+// --- File materialization ---
+
+/// Write test case source files into a temp directory.
+///
+/// Source files are prefixed with a numeric index for deterministic ordering,
+/// while manifest files (Cargo.toml, package.json, etc.) retain their original
+/// paths so the pipeline can detect project structure.
+fn materialize_files(case: &TestCase) -> Result<(TempDir, PathBuf)> {
+    let temp_dir = tempfile::tempdir()?;
+    let root = temp_dir.path().to_path_buf();
+    let manifests = case.lang.manifest_names();
+
+    for (idx, (path, content)) in case.files.iter().enumerate() {
+        let original = Path::new(path);
+        let file_name = original.file_name().unwrap_or_default().to_string_lossy();
+
+        let final_path = if manifests.iter().any(|m| *m == file_name) {
+            original.to_path_buf()
+        } else {
+            let prefixed = format!("{idx:03}_{file_name}");
+            original
+                .parent()
+                .map(|p| p.join(&prefixed))
+                .unwrap_or_else(|| PathBuf::from(&prefixed))
+        };
+
+        let abs_path = root.join(&final_path);
+        if let Some(parent) = abs_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        fs::write(&abs_path, content.as_bytes())?;
+    }
+
+    Ok((temp_dir, root))
+}
+
+// --- Compilation and rendering ---
+
+/// Run the full pipeline for a single language and render all needed outputs.
+fn compile_and_render<L: Language>(
+    root: &Path,
+    needed: &[OutputKind],
+) -> Result<BTreeMap<OutputKind, String>> {
+    let files = discover_source_files::<L>(root)?;
+    let cc = CompileCtxt::from_files::<L>(&files)?;
+
+    build_hir::<L>(&cc, HirBuildOptions::new().with_sequential(true))?;
+
+    let resolve_opts = ResolveOptions::default().with_sequential(true);
+    let globals = collect_symbols::<L>(&cc, &resolve_opts)?;
+    bind_symbols::<L>(&cc, globals, &resolve_opts)?;
+
+    let project = if needed.iter().any(|k| k.needs_graph()) {
+        let units = build_graphs::<L>(&cc, GraphBuildOptions::new().with_sequential(true))?;
+        Some(ProjectGraph::build(&cc, units))
+    } else {
+        None
+    };
+
+    let mut outputs = BTreeMap::new();
+    for &kind in needed {
+        let text = render_output(kind, &cc, project.as_ref())?;
+        outputs.insert(kind, text);
+    }
+
+    Ok(outputs)
+}
+
+/// Auto-detect languages by file presence and merge results.
+fn compile_auto(root: &Path, needed: &[OutputKind]) -> Result<BTreeMap<OutputKind, String>> {
+    let rust_files = discover_source_files::<LangRust>(root).unwrap_or_default();
+    let ts_files = discover_source_files::<LangTypeScript>(root).unwrap_or_default();
+
+    let mut merged: BTreeMap<OutputKind, Vec<String>> = BTreeMap::new();
+
+    if !rust_files.is_empty() {
+        for (kind, text) in compile_and_render::<LangRust>(root, needed)? {
+            merged.entry(kind).or_default().push(text);
+        }
+    }
+    if !ts_files.is_empty() {
+        for (kind, text) in compile_and_render::<LangTypeScript>(root, needed)? {
+            merged.entry(kind).or_default().push(text);
+        }
+    }
+
+    Ok(merged
+        .into_iter()
+        .map(|(kind, texts)| {
+            let combined = if texts.len() == 1 {
+                texts.into_iter().next().unwrap()
+            } else {
+                texts.join("\n")
+            };
+            (kind, combined)
+        })
+        .collect())
+}
+
+// --- Output rendering ---
+
+/// Render a single output kind from the compiled context and optional graph.
+fn render_output(
+    kind: OutputKind,
+    cc: &CompileCtxt<'_>,
+    project: Option<&ProjectGraph<'_>>,
+) -> Result<String> {
+    match kind {
+        OutputKind::Symbols | OutputKind::SymbolTypes => Ok(render_symbols(cc)),
+        OutputKind::SymbolDeps => Ok(String::new()),
+        OutputKind::BlockGraph => Ok(render_block_graph(require_graph(project, kind)?)),
+        OutputKind::BlockRelations => Ok(render_block_relations(require_graph(project, kind)?)),
+        OutputKind::Blocks | OutputKind::BlockDeps => {
+            Ok(render_block_deps(require_graph(project, kind)?))
+        }
+        OutputKind::ArchGraph => render_arch(project, ViewDepth::File),
+        OutputKind::ArchGraphDepth0 => render_arch(project, ViewDepth::Project),
+        OutputKind::ArchGraphDepth1 => render_arch(project, ViewDepth::Package),
+        OutputKind::ArchGraphDepth2 => render_arch(project, ViewDepth::Module),
+        OutputKind::ArchGraphDepth3 => render_arch(project, ViewDepth::File),
+    }
+}
+
+/// Unwrap a project graph reference, returning an error naming the output kind.
+fn require_graph<'a>(
+    project: Option<&'a ProjectGraph<'_>>,
+    kind: OutputKind,
+) -> Result<&'a ProjectGraph<'a>> {
+    project.ok_or_else(|| Error::new(ErrorKind::Unexpected, format!("{kind} requires graph")))
+}
+
+fn render_arch(project: Option<&ProjectGraph<'_>>, depth: ViewDepth) -> Result<String> {
+    let pg = require_graph(project, OutputKind::ArchGraph)?;
+    let graph = CollectedGraph::new(pg);
+    let opts = RenderOptions::default();
+    Ok(llmcc_dot::render(&graph, depth, &opts))
+}
+
+// --- Symbol rendering ---
+
+/// One row in the symbol table output.
+struct SymbolRow {
     unit: usize,
     id: u32,
     kind: String,
     name: String,
     is_global: bool,
-    type_of: Option<String>,
-    block_id: Option<String>,
 }
 
-#[derive(Clone)]
-struct SymbolDependencySnapshot {
-    label: String,
-    depends_on: Vec<String>,
-    depended_by: Vec<String>,
+impl SymbolRow {
+    fn label(&self) -> String {
+        format!("u{}:{}", self.unit, self.id)
+    }
 }
 
-#[derive(Clone)]
-#[allow(dead_code)]
-struct BlockSnapshot {
+fn render_symbols(cc: &CompileCtxt<'_>) -> String {
+    let symbols = cc.symbols();
+    let interner = cc.interner();
+
+    if symbols.is_empty() {
+        return "none\n".to_string();
+    }
+
+    let mut rows: Vec<SymbolRow> = symbols
+        .iter()
+        .map(|sym| SymbolRow {
+            unit: sym.unit_index().unwrap_or_default(),
+            id: sym.id().0 as u32,
+            kind: format!("{:?}", sym.kind()),
+            name: interner
+                .try_resolve(sym.name)
+                .unwrap_or_else(|| "?".to_string()),
+            is_global: sym.is_global(),
+        })
+        .collect();
+
+    rows.sort_by(|a, b| a.unit.cmp(&b.unit).then(a.id.cmp(&b.id)));
+
+    let label_w = rows.iter().map(|r| r.label().len()).max().unwrap_or(0);
+    let kind_w = rows.iter().map(|r| r.kind.len()).max().unwrap_or(0);
+    let name_w = rows.iter().map(|r| r.name.len()).max().unwrap_or(0);
+    let has_globals = rows.iter().any(|r| r.is_global);
+
+    let mut buf = String::new();
+    for row in &rows {
+        let label = row.label();
+        let global = if row.is_global { "[global]" } else { "" };
+        if has_globals {
+            let _ = writeln!(
+                buf,
+                "{label:<label_w$} | {:<kind_w$} | {:<name_w$} | {global:8}",
+                row.kind, row.name
+            );
+        } else {
+            let _ = writeln!(
+                buf,
+                "{label:<label_w$} | {:<kind_w$} | {:<name_w$} |",
+                row.kind, row.name
+            );
+        }
+    }
+    buf
+}
+
+// --- Block graph rendering ---
+
+fn render_block_graph(project: &ProjectGraph<'_>) -> String {
+    let mut units: Vec<_> = project.units().iter().collect();
+    if units.is_empty() {
+        return "none\n".to_string();
+    }
+    units.sort_by_key(|u| u.unit_index());
+
+    let mut sections = Vec::new();
+    for unit_graph in units {
+        let unit = project.context().compile_unit(unit_graph.unit_index());
+        let mut buf = String::new();
+        render_block_node(unit_graph.root(), unit, 0, &mut buf);
+        sections.push(buf.trim_end().to_string());
+    }
+
+    if sections.is_empty() {
+        "none\n".to_string()
+    } else {
+        let mut joined = sections.join("\n\n");
+        joined.push('\n');
+        joined
+    }
+}
+
+fn render_block_node(id: BlockId, unit: CompileUnit<'_>, depth: usize, buf: &mut String) {
+    let block = unit.block(id);
+    let indent = "  ".repeat(depth);
+    let label = block.to_string();
+    let deps = block.dependency_labels(unit);
+
+    let _ = write!(buf, "{indent}({label}");
+
+    let children = block.children();
+    if children.is_empty() && deps.is_empty() {
+        buf.push_str(")\n");
+        return;
+    }
+
+    buf.push('\n');
+    for child_id in children {
+        if unit.block(child_id).kind() == BlockKind::Call {
+            continue;
+        }
+        render_block_node(child_id, unit, depth + 1, buf);
+    }
+    let child_indent = "  ".repeat(depth + 1);
+    for dep in deps {
+        let _ = writeln!(buf, "{child_indent}({dep})");
+    }
+    buf.push_str(&indent);
+    buf.push_str(")\n");
+}
+
+// --- Block relations rendering ---
+
+/// One row in the block-relations output.
+struct RelationRow {
+    source: String,
+    kind: String,
+    name: String,
+    relation: String,
+    targets: Vec<String>,
+}
+
+impl fmt::Display for RelationRow {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} ({} {}) {}: [{}]",
+            self.source,
+            self.kind,
+            self.name,
+            self.relation,
+            self.targets.join(", ")
+        )
+    }
+}
+
+fn render_block_relations(project: &ProjectGraph<'_>) -> String {
+    let cc = project.context();
+    let related_map = cc.block_relations();
+    let mut rows: Vec<RelationRow> = Vec::new();
+
+    for block_id in related_map.blocks() {
+        let Some(info) = cc.block_info(block_id) else {
+            continue;
+        };
+
+        let relations = related_map.relations_from(block_id);
+        if relations.is_empty() {
+            continue;
+        }
+
+        let source = format!("u{}:{}", info.unit_index, block_id.as_u32());
+
+        for rel in relations.iter() {
+            let mut targets: Vec<String> = rel
+                .targets
+                .iter()
+                .map(|tid| {
+                    let tunit = cc
+                        .block_info(*tid)
+                        .map(|e| e.unit_index)
+                        .unwrap_or_default();
+                    format!("u{tunit}:{}", tid.as_u32())
+                })
+                .collect();
+            targets.sort();
+
+            rows.push(RelationRow {
+                source: source.clone(),
+                kind: info.kind.to_string(),
+                name: info.name.clone().unwrap_or_default(),
+                relation: rel.relation.to_string(),
+                targets,
+            });
+        }
+    }
+
+    render_sorted_lines(&rows)
+}
+
+// --- Block deps rendering ---
+
+/// One row in the blocks/block-deps output.
+struct BlockRow {
     label: String,
     kind: String,
     name: String,
 }
 
-#[derive(Clone)]
-struct BlockRelationSnapshot {
-    label: String,
-    kind: String,
-    name: String,
-    relations: Vec<(String, Vec<String>)>,
-}
-
-#[derive(Default)]
-#[allow(dead_code)]
-pub(crate) struct PipelineSummary {
-    symbols: Option<Vec<SymbolSnapshot>>,
-    symbol_types: Option<Vec<SymbolSnapshot>>,
-    block_relations: Option<Vec<BlockRelationSnapshot>>,
-    dep_graph_dot: Option<String>,
-    arch_graph_dot: Option<String>,
-    arch_graph_depth_0: Option<String>,
-    arch_graph_depth_1: Option<String>,
-    arch_graph_depth_2: Option<String>,
-    arch_graph_depth_3: Option<String>,
-    block_list: Option<Vec<BlockSnapshot>>,
-    block_deps: Option<Vec<SymbolDependencySnapshot>>,
-    symbol_deps: Option<Vec<SymbolDependencySnapshot>>,
-    block_graph: Option<String>,
-    temp_dir_path: Option<String>,
-}
-
-impl PipelineSummary {
-    pub(crate) fn temp_dir_path(&self) -> Option<&str> {
-        self.temp_dir_path.as_deref()
+impl fmt::Display for BlockRow {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} | {} | {}", self.label, self.kind, self.name)
     }
 }
 
-/// Options for configuring the pipeline collection process.
-#[derive(Debug, Clone)]
-pub struct PipelineOptions {
-    /// File paths to process (in declaration order).
-    pub file_paths: Vec<String>,
-    /// Whether to collect symbol information.
-    pub keep_symbols: bool,
-    /// Whether to collect symbol type resolution info.
-    pub keep_symbol_types: bool,
-    /// Whether to collect block relations.
-    pub keep_block_relations: bool,
-    /// Whether to build the dependency graph.
-    pub build_dep_graph: bool,
-    /// Whether to build the architecture graph.
-    pub build_arch_graph: bool,
-    /// Whether to build depth-0 (Project) arch graph.
-    pub build_arch_graph_depth_0: bool,
-    /// Whether to build depth-1 (Crate) arch graph.
-    pub build_arch_graph_depth_1: bool,
-    /// Whether to build depth-2 (Module) arch graph.
-    pub build_arch_graph_depth_2: bool,
-    /// Whether to build depth-3 (File) arch graph.
-    pub build_arch_graph_depth_3: bool,
-    /// Whether to build block reports (blocks and block-deps).
-    pub build_block_reports: bool,
-    /// Whether to build the block graph.
-    pub build_block_graph: bool,
-    /// Whether to collect symbol dependencies.
-    pub keep_symbol_deps: bool,
-    /// When true, may process files in parallel.
-    pub parallel: bool,
-    /// Whether to print IR during symbol resolution.
-    pub print_ir: bool,
-    /// Component grouping depth for graph visualization.
-    pub view_depth: ViewDepth,
-    /// Number of top PageRank nodes to include (None = all nodes).
-    pub top_k: Option<usize>,
-}
+fn render_block_deps(project: &ProjectGraph<'_>) -> String {
+    let cc = project.context();
+    let mut rows: Vec<BlockRow> = Vec::new();
 
-impl Default for PipelineOptions {
-    fn default() -> Self {
-        Self {
-            file_paths: Vec::new(),
-            keep_symbols: false,
-            keep_symbol_types: false,
-            keep_block_relations: false,
-            build_dep_graph: false,
-            build_arch_graph: false,
-            build_arch_graph_depth_0: false,
-            build_arch_graph_depth_1: false,
-            build_arch_graph_depth_2: false,
-            build_arch_graph_depth_3: false,
-            build_block_reports: false,
-            build_block_graph: false,
-            keep_symbol_deps: false,
-            parallel: false,
-            print_ir: false,
-            view_depth: ViewDepth::File,
-            top_k: None,
+    for unit_graph in project.units() {
+        for entry in cc.find_blocks_in_unit(unit_graph.unit_index()) {
+            rows.push(BlockRow {
+                label: format!("u{}:{}", entry.unit_index, entry.block_id.as_u32()),
+                name: entry.name.clone().unwrap_or_default(),
+                kind: entry.kind.to_string(),
+            });
         }
     }
+
+    render_sorted_lines(&rows)
 }
 
-impl PipelineOptions {
-    pub fn new() -> Self {
-        Self::default()
+/// Render a collection of `Display` items as sorted, newline-terminated text.
+fn render_sorted_lines(items: &[impl fmt::Display]) -> String {
+    if items.is_empty() {
+        return "none\n".to_string();
     }
-
-    pub fn with_file_paths(mut self, paths: Vec<String>) -> Self {
-        self.file_paths = paths;
-        self
-    }
-
-    pub fn with_keep_symbols(mut self, keep: bool) -> Self {
-        self.keep_symbols = keep;
-        self
-    }
-
-    pub fn with_build_dep_graph(mut self, build: bool) -> Self {
-        self.build_dep_graph = build;
-        self
-    }
-
-    pub fn with_build_arch_graph(mut self, build: bool) -> Self {
-        self.build_arch_graph = build;
-        self
-    }
-
-    pub fn with_build_arch_graph_depth_0(mut self, build: bool) -> Self {
-        self.build_arch_graph_depth_0 = build;
-        self
-    }
-
-    pub fn with_build_arch_graph_depth_1(mut self, build: bool) -> Self {
-        self.build_arch_graph_depth_1 = build;
-        self
-    }
-
-    pub fn with_build_arch_graph_depth_2(mut self, build: bool) -> Self {
-        self.build_arch_graph_depth_2 = build;
-        self
-    }
-
-    pub fn with_build_arch_graph_depth_3(mut self, build: bool) -> Self {
-        self.build_arch_graph_depth_3 = build;
-        self
-    }
-
-    pub fn with_build_block_reports(mut self, build: bool) -> Self {
-        self.build_block_reports = build;
-        self
-    }
-
-    pub fn with_build_block_graph(mut self, build: bool) -> Self {
-        self.build_block_graph = build;
-        self
-    }
-
-    pub fn with_keep_symbol_deps(mut self, keep: bool) -> Self {
-        self.keep_symbol_deps = keep;
-        self
-    }
-
-    pub fn with_keep_symbol_types(mut self, keep: bool) -> Self {
-        self.keep_symbol_types = keep;
-        self
-    }
-
-    pub fn with_keep_block_relations(mut self, keep: bool) -> Self {
-        self.keep_block_relations = keep;
-        self
-    }
-
-    pub fn with_parallel(mut self, parallel: bool) -> Self {
-        self.parallel = parallel;
-        self
-    }
-
-    pub fn with_print_ir(mut self, print: bool) -> Self {
-        self.print_ir = print;
-        self
-    }
-
-    pub fn with_view_depth(mut self, depth: ViewDepth) -> Self {
-        self.view_depth = depth;
-        self
-    }
-
-    pub fn with_pagerank_top_k(mut self, top_k: Option<usize>) -> Self {
-        self.top_k = top_k;
-        self
-    }
+    let mut lines: Vec<String> = items.iter().map(|item| item.to_string()).collect();
+    lines.sort();
+    let mut result = lines.join("\n");
+    result.push('\n');
+    result
 }
 
-pub(crate) fn build_pipeline_summary(
-    case: &CorpusCase,
-    keep_temps: bool,
-    parallel: bool,
-    print_ir: bool,
-    view_depth: ViewDepth,
-    top_k: Option<usize>,
-) -> Result<PipelineSummary> {
-    let required = RequiredOutputs::from_case(case);
-    if required.is_empty() {
-        return Ok(PipelineSummary::default());
-    }
+// --- Helpers ---
 
-    let project = materialize_case(case, keep_temps)?;
-    let temp_dir_path = project.root().to_string_lossy().to_string();
-    if keep_temps && project.is_persistent() {
-        println!(
-            "preserved materialized project for {} at {}",
-            case.id(),
-            project.root().display()
-        );
-    }
+/// Discover source files matching the language's extensions under `root`.
+/// Files are sorted by numeric prefix for deterministic processing order.
+fn discover_source_files<L: Language>(root: &Path) -> Result<Vec<String>> {
+    let extensions = L::extensions();
+    let mut files = Vec::new();
 
-    let options = required.pipeline_options(parallel, print_ir, view_depth, top_k);
-    let mut summary = match case.lang.as_str() {
-        "rust" => collect_pipeline::<LangRust>(project.root(), &options)?,
-        "typescript" | "ts" => collect_pipeline::<LangTypeScript>(project.root(), &options)?,
-        "cpp" | "c++" | "c" => collect_pipeline::<LangCpp>(project.root(), &options)?,
-        "auto" => collect_pipeline_auto(project.root(), &options)?,
-        other => {
-            return Err(Error::new(
-                ErrorKind::InvalidArgument,
-                format!("unsupported lang '{}' requested by {}", other, case.id()),
-            ));
+    for entry in WalkDir::new(root).into_iter().filter_map(|r| r.ok()) {
+        if !entry.file_type().is_file() {
+            continue;
         }
-    };
-    summary.temp_dir_path = Some(temp_dir_path);
-    drop(project);
-
-    Ok(summary)
-}
-
-#[derive(Default)]
-struct RequiredOutputs {
-    symbols: bool,
-    dep_graph: bool,
-    arch_graph: bool,
-    arch_graph_depth_0: bool,
-    arch_graph_depth_1: bool,
-    arch_graph_depth_2: bool,
-    arch_graph_depth_3: bool,
-    block_reports: bool,
-    block_graph: bool,
-    symbol_deps: bool,
-    symbol_types: bool,
-    block_relations: bool,
-}
-
-impl RequiredOutputs {
-    fn from_case(case: &CorpusCase) -> Self {
-        let mut outputs = Self::default();
-        for expect in &case.expectations {
-            match expect.kind.as_str() {
-                "symbols" => outputs.symbols = true,
-                "dep-graph" => outputs.dep_graph = true,
-                "arch-graph" => outputs.arch_graph = true,
-                "arch-graph-depth-0" => outputs.arch_graph_depth_0 = true,
-                "arch-graph-depth-1" => outputs.arch_graph_depth_1 = true,
-                "arch-graph-depth-2" => outputs.arch_graph_depth_2 = true,
-                "arch-graph-depth-3" => outputs.arch_graph_depth_3 = true,
-                "blocks" | "block-deps" => outputs.block_reports = true,
-                "block-graph" => outputs.block_graph = true,
-                "symbol-deps" => outputs.symbol_deps = true,
-                "symbol-types" => outputs.symbol_types = true,
-                "block-relations" => outputs.block_relations = true,
-                _ => {}
-            }
+        let Some(ext) = entry.path().extension().and_then(|e| e.to_str()) else {
+            continue;
+        };
+        if extensions.iter().any(|e| e.eq_ignore_ascii_case(ext)) {
+            files.push(entry.path().to_string_lossy().to_string());
         }
-        outputs
     }
 
-    fn is_empty(&self) -> bool {
-        !self.symbols
-            && !self.symbol_types
-            && !self.block_relations
-            && !self.dep_graph
-            && !self.needs_any_arch_graph()
-            && !self.block_reports
-            && !self.block_graph
-            && !self.symbol_deps
-    }
+    files.sort_by(|a, b| {
+        let prefix = |p: &str| -> Option<usize> {
+            Path::new(p)
+                .file_name()?
+                .to_str()?
+                .split('_')
+                .next()?
+                .parse()
+                .ok()
+        };
+        prefix(a).cmp(&prefix(b))
+    });
 
-    fn needs_any_arch_graph(&self) -> bool {
-        self.arch_graph
-            || self.arch_graph_depth_0
-            || self.arch_graph_depth_1
-            || self.arch_graph_depth_2
-            || self.arch_graph_depth_3
-    }
-
-    fn pipeline_options(
-        &self,
-        parallel: bool,
-        print_ir: bool,
-        view_depth: ViewDepth,
-        top_k: Option<usize>,
-    ) -> PipelineOptions {
-        PipelineOptions::new()
-            .with_keep_symbols(self.symbols)
-            .with_keep_symbol_types(self.symbol_types)
-            .with_keep_block_relations(self.block_relations)
-            .with_build_dep_graph(self.dep_graph)
-            .with_build_arch_graph(self.needs_any_arch_graph())
-            .with_build_arch_graph_depth_0(self.arch_graph_depth_0)
-            .with_build_arch_graph_depth_1(self.arch_graph_depth_1)
-            .with_build_arch_graph_depth_2(self.arch_graph_depth_2)
-            .with_build_arch_graph_depth_3(self.arch_graph_depth_3)
-            .with_build_block_reports(self.block_reports)
-            .with_build_block_graph(self.block_graph)
-            .with_keep_symbol_deps(self.symbol_deps)
-            .with_parallel(parallel)
-            .with_print_ir(print_ir)
-            .with_view_depth(view_depth)
-            .with_pagerank_top_k(top_k)
-    }
+    Ok(files)
 }

@@ -2,7 +2,7 @@
 simple-class
 ===============================================================================
 Test that a simple class appears in the architecture graph.
-lang: cpp
+lang: c++
 
 --- file: sample/CMakeLists.txt ---
 cmake_minimum_required(VERSION 3.10)
@@ -33,7 +33,7 @@ public:
 };
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.cpp)
+(root:1 001_lib (001_lib)
   (class:2 Animal
     (field:3 std @type name)
     (method:4 Animal
@@ -54,23 +54,28 @@ public:
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_lib_cpp {
-    label="lib.cpp";
+  subgraph cluster_root_0_sample {
+    label="sample";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#f8f8f8";
 
-    n7[label="Dog", path="$TMP/sample/src/lib.cpp:13", sym_ty="Struct", shape=box];
-    n2[label="Animal", path="$TMP/sample/src/lib.cpp:2", sym_ty="Struct", shape=box];
+    subgraph cluster_root_0_sample_0_001_lib_cpp {
+      label="001_lib.cpp";
+      style=rounded;
+      bgcolor="#fafafa";
+
+      n2[label="Animal", package="sample", file="001_lib.cpp", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.cpp:2", kind="struct", shape="box"];
+      n7[label="Dog", package="sample", file="001_lib.cpp", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.cpp:13", kind="struct", shape="box"];
+    }
+
   }
 
 
-  n2 -> n7 [from="base", to="extends"];
+n2 -> n7 [rel="specialization", from="base", to="specializes"];
 }

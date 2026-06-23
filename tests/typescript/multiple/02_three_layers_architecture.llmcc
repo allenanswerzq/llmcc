@@ -72,7 +72,7 @@ export function handleOrder(order: Order): boolean {
 }
 
 --- expect:block-graph ---
-(root:1 models ($TMP/domain/models.ts)
+(root:1 000_models (000_models)
   (interface:2 User
     (field:3 id @type number)
     (field:4 email @type string)
@@ -85,7 +85,7 @@ export function handleOrder(order: Order): boolean {
   (enum:9 OrderStatus)
 )
 
-(root:10 user-service ($TMP/service/user-service.ts)
+(root:10 001_user-service (001_user-service)
   (interface:11 UserRepository
     (method:12 findById
       (parameter:13 id @type number)
@@ -102,7 +102,7 @@ export function handleOrder(order: Order): boolean {
   )
 )
 
-(root:21 order-service ($TMP/service/order-service.ts)
+(root:21 002_order-service (002_order-service)
   (interface:22 OrderRepository
     (method:23 findById
       (parameter:24 id @type number)
@@ -122,7 +122,7 @@ export function handleOrder(order: Order): boolean {
   )
 )
 
-(root:33 handlers ($TMP/api/handlers.ts)
+(root:33 003_handlers (003_handlers)
   (interface:34 ApiResponse
     (field:35 success @type boolean)
     (field:36 data @type:2 User)
@@ -140,76 +140,76 @@ export function handleOrder(order: Order): boolean {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_api {
+  subgraph cluster_root_0_api {
     label="api";
     style=rounded;
-        bgcolor="#f5f5f5";
+    bgcolor="#f5f5f5";
 
-    subgraph cluster_handlers_ts {
-      label="handlers.ts";
+    subgraph cluster_root_0_api_0_003_handlers_ts {
+      label="003_handlers.ts";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n37[label="handleGetUser", path="$TMP/api/handlers.ts:11", sym_ty="Function", shape=ellipse];
-      n41[label="handleOrder", path="$TMP/api/handlers.ts:16", sym_ty="Function", shape=ellipse];
-      n34[label="ApiResponse", path="$TMP/api/handlers.ts:6", sym_ty="Interface", shape=box];
+      n34[label="ApiResponse", module="api", file="003_handlers.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/api/003_handlers.ts:6", kind="interface", shape="box"];
+      n37[label="handleGetUser", module="api", file="003_handlers.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/api/003_handlers.ts:11", kind="function", shape="ellipse"];
+      n41[label="handleOrder", module="api", file="003_handlers.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/api/003_handlers.ts:16", kind="function", shape="ellipse"];
     }
 
   }
 
-  subgraph cluster_domain {
+  subgraph cluster_root_1_domain {
     label="domain";
     style=rounded;
-        bgcolor="#f5f5f5";
+    bgcolor="#f5f5f5";
 
-    subgraph cluster_models_ts {
-      label="models.ts";
+    subgraph cluster_root_1_domain_0_000_models_ts {
+      label="000_models.ts";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n9[label="OrderStatus", path="$TMP/domain/models.ts:13", sym_ty="Enum", shape=box];
-      n2[label="User", path="$TMP/domain/models.ts:2", sym_ty="Interface", shape=box];
-      n5[label="Order", path="$TMP/domain/models.ts:7", sym_ty="Interface", shape=box];
+      n2[label="User", module="domain", file="000_models.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/domain/000_models.ts:2", kind="interface", shape="box"];
+      n5[label="Order", module="domain", file="000_models.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/domain/000_models.ts:7", kind="interface", shape="box"];
+      n9[label="OrderStatus", module="domain", file="000_models.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/domain/000_models.ts:13", kind="enum", shape="box"];
     }
 
   }
 
-  subgraph cluster_service {
+  subgraph cluster_root_2_service {
     label="service";
     style=rounded;
-        bgcolor="#f5f5f5";
+    bgcolor="#f5f5f5";
 
-    subgraph cluster_order_service_ts {
-      label="order-service.ts";
+    subgraph cluster_root_2_service_0_001_user_service_ts {
+      label="001_user-service.ts";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n30[label="processOrder", path="$TMP/service/order-service.ts:9", sym_ty="Function", shape=ellipse];
+      n11[label="UserRepository", module="service", file="001_user-service.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/service/001_user-service.ts:4", kind="interface", shape="box"];
+      n18[label="getUser", module="service", file="001_user-service.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/service/001_user-service.ts:9", kind="function", shape="ellipse"];
     }
 
-    subgraph cluster_user_service_ts {
-      label="user-service.ts";
+    subgraph cluster_root_2_service_1_002_order_service_ts {
+      label="002_order-service.ts";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n18[label="getUser", path="$TMP/service/user-service.ts:9", sym_ty="Function", shape=ellipse];
+      n22[label="OrderRepository", module="service", file="002_order-service.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/service/002_order-service.ts:4", kind="interface", shape="box"];
+      n30[label="processOrder", module="service", file="002_order-service.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/service/002_order-service.ts:9", kind="function", shape="ellipse"];
     }
 
   }
 
 
-  n2 -> n34 [from="field_type", to="struct"];
-  n5 -> n30 [from="input", to="func"];
-  n5 -> n41 [from="input", to="func"];
-  n18 -> n2 [from="func", to="output"];
-  n30 -> n9 [from="func", to="output"];
-  n37 -> n34 [from="func", to="output"];
+n2 -> n34 [rel="field", from="field_type", to="container"];
+n5 -> n30 [rel="param", from="input", to="func"];
+n5 -> n41 [rel="param", from="input", to="func"];
+n18 -> n2 [rel="return", from="func", to="output"];
+n30 -> n9 [rel="return", from="func", to="output"];
+n37 -> n34 [rel="return", from="func", to="output"];
 }

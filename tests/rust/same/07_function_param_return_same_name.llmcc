@@ -63,37 +63,43 @@ pub fn process(input: InputData) -> OutputData {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_003_output_rs {
-      label="003_output.rs";
+    subgraph cluster_root_0_sample_0_002_input_rs {
+      label="002_input.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n9[label="Data", path="C:\\Users\\zhangqiang\\AppData\\Local\\Temp\\$TMP\\sample\\src\\003_output.rs:2", sym_ty="Struct", shape=box];
+      n6[label="Data", package="sample", file="002_input.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_input.rs:2", kind="struct", shape="box"];
     }
 
-    subgraph cluster_004_processor_rs {
+    subgraph cluster_root_0_sample_1_003_output_rs {
+      label="003_output.rs";
+      style=rounded;
+      bgcolor="#fafafa";
+
+      n9[label="Data", package="sample", file="003_output.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_output.rs:2", kind="struct", shape="box"];
+    }
+
+    subgraph cluster_root_0_sample_2_004_processor_rs {
       label="004_processor.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n12[label="process", path="C:\\Users\\zhangqiang\\AppData\\Local\\Temp\\$TMP\\sample\\src\\004_processor.rs:5", sym_ty="Function", shape=ellipse];
+      n12[label="process", package="sample", file="004_processor.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/004_processor.rs:5", kind="function", shape="ellipse"];
     }
 
   }
 
 
-  n12 -> n9 [from="func", to="output"];
+n12 -> n9 [rel="return", from="func", to="output"];
 }

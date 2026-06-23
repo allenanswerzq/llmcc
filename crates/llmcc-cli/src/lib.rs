@@ -1,7 +1,5 @@
 //! llmcc command-line interface.
 //!
-use clap::ValueEnum;
-
 pub mod runner;
 
 use llmcc_core::ViewDepth;
@@ -22,14 +20,4 @@ pub struct RunnerOptions {
     pub short_labels: bool,
     pub ai: bool,
     pub flat: bool,
-}
-
-#[derive(Clone, Copy, Debug, ValueEnum)]
-#[value(rename_all = "lower")]
-pub enum Language {
-    Rust,
-    #[value(alias = "ts")]
-    Typescript,
-    #[value(alias = "c++", alias = "c")]
-    Cpp,
 }

@@ -54,12 +54,12 @@ pub struct GroupedUserGrids {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs)
+(root:1 001_lib (001_lib)
   (module:2 types)
   (module:3 containers)
 )
 
-(root:4 types ($TMP/sample/src/types.rs)
+(root:4 002_types (002_types)
   (class:5 Vec)
   (class:6 User
     (field:7 id @type u64)
@@ -71,7 +71,7 @@ pub struct GroupedUserGrids {
   )
 )
 
-(root:12 containers ($TMP/sample/src/containers.rs)
+(root:12 003_containers (003_containers)
   (class:13 Matrix
     (field:14 rows @type:5 Vec)
     (@tdep:5 Vec)
@@ -97,51 +97,49 @@ pub struct GroupedUserGrids {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_containers_rs {
-      label="containers.rs";
+    subgraph cluster_root_0_sample_0_002_types_rs {
+      label="002_types.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n15[label="UserGrid", path="$TMP/sample/src/containers.rs:10", sym_ty="Struct", shape=box];
-      n17[label="UserOrders", path="$TMP/sample/src/containers.rs:15", sym_ty="Struct", shape=box];
-      n19[label="Cube", path="$TMP/sample/src/containers.rs:20", sym_ty="Struct", shape=box];
-      n21[label="GroupedUserGrids", path="$TMP/sample/src/containers.rs:25", sym_ty="Struct", shape=box];
-      n13[label="Matrix", path="$TMP/sample/src/containers.rs:5", sym_ty="Struct", shape=box];
+      n5[label="Vec", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:1", kind="struct", shape="box"];
+      n6[label="User", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:3", kind="struct", shape="box"];
+      n9[label="Order", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:8", kind="struct", shape="box"];
     }
 
-    subgraph cluster_types_rs {
-      label="types.rs";
+    subgraph cluster_root_0_sample_1_003_containers_rs {
+      label="003_containers.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n5[label="Vec", path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
-      n6[label="User", path="$TMP/sample/src/types.rs:3", sym_ty="Struct", shape=box];
-      n9[label="Order", path="$TMP/sample/src/types.rs:8", sym_ty="Struct", shape=box];
+      n13[label="Matrix", package="sample", file="003_containers.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_containers.rs:5", kind="struct", shape="box"];
+      n15[label="UserGrid", package="sample", file="003_containers.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_containers.rs:10", kind="struct", shape="box"];
+      n17[label="UserOrders", package="sample", file="003_containers.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_containers.rs:15", kind="struct", shape="box"];
+      n19[label="Cube", package="sample", file="003_containers.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_containers.rs:20", kind="struct", shape="box"];
+      n21[label="GroupedUserGrids", package="sample", file="003_containers.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_containers.rs:25", kind="struct", shape="box"];
     }
 
   }
 
 
-  n5 -> n13 [from="type_dep", to="struct"];
-  n5 -> n15 [from="type_dep", to="struct"];
-  n5 -> n17 [from="type_dep", to="struct"];
-  n5 -> n19 [from="type_dep", to="struct"];
-  n5 -> n21 [from="type_dep", to="struct"];
-  n6 -> n15 [from="type_dep", to="struct"];
-  n6 -> n17 [from="type_dep", to="struct"];
-  n6 -> n21 [from="type_dep", to="struct"];
-  n9 -> n17 [from="type_dep", to="struct"];
+n5 -> n13 [rel="nested_field", from="type_dep", to="container"];
+n5 -> n15 [rel="nested_field", from="type_dep", to="container"];
+n5 -> n17 [rel="nested_field", from="type_dep", to="container"];
+n5 -> n19 [rel="nested_field", from="type_dep", to="container"];
+n5 -> n21 [rel="nested_field", from="type_dep", to="container"];
+n6 -> n15 [rel="nested_field", from="type_dep", to="container"];
+n6 -> n17 [rel="nested_field", from="type_dep", to="container"];
+n6 -> n21 [rel="nested_field", from="type_dep", to="container"];
+n9 -> n17 [rel="nested_field", from="type_dep", to="container"];
 }

@@ -26,14 +26,14 @@ export class Api {
 }
 
 --- expect:block-graph ---
-(root:1 internal ($TMP/src/internal.ts)
+(root:1 000_internal (000_internal)
   (interface:2 Error
     (field:3 internalCode @type number)
   )
   (alias:4 Result)
 )
 
-(root:5 public ($TMP/src/public.ts)
+(root:5 001_public (001_public)
   (interface:6 Error
     (field:7 userMessage @type string)
   )
@@ -46,23 +46,29 @@ export class Api {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_public_ts {
-    label="public.ts";
+  subgraph cluster_root_0_000_internal_ts {
+    label="000_internal.ts";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#fafafa";
 
-    n6[label="Error", path="$TMP/src/public.ts:2", sym_ty="Interface", shape=box];
-    n9[label="Api", path="$TMP/src/public.ts:9", sym_ty="Struct", shape=box];
+    n2[label="Error", file="000_internal.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/000_internal.ts:2", kind="interface", shape="box"];
+  }
+
+  subgraph cluster_root_1_001_public_ts {
+    label="001_public.ts";
+    style=rounded;
+    bgcolor="#fafafa";
+
+    n6[label="Error", file="001_public.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/001_public.ts:2", kind="interface", shape="box"];
+    n9[label="Api", file="001_public.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/001_public.ts:9", kind="struct", shape="box"];
   }
 
 
-  n6 -> n9 [from="field_type", to="struct"];
+n6 -> n9 [rel="field", from="field_type", to="container"];
 }

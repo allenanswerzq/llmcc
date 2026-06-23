@@ -23,30 +23,28 @@ export class CartItem {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_cart_ts {
-    label="cart.ts";
+  subgraph cluster_root_0_000_models_ts {
+    label="000_models.ts";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#fafafa";
 
-    n7[label="CartItem", path="$TMP/sample/src/cart.ts:3", sym_ty="Struct", shape=box];
+    n2[label="Product", file="000_models.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/000_models.ts:2", kind="struct", shape="box"];
   }
 
-  subgraph cluster_models_ts {
-    label="models.ts";
+  subgraph cluster_root_1_001_cart_ts {
+    label="001_cart.ts";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#fafafa";
 
-    n2[label="Product", path="$TMP/sample/src/models.ts:2", sym_ty="Struct", shape=box];
+    n7[label="CartItem", file="001_cart.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_cart.ts:3", kind="struct", shape="box"];
   }
 
 
-  n2 -> n7 [from="field_type", to="struct"];
+n2 -> n7 [rel="field", from="field_type", to="container"];
 }

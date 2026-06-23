@@ -23,7 +23,7 @@ class AppComponent {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.ts)
+(root:1 000_lib (000_lib)
   (func:2 Component
     (parameter:3 name @type string)
     (parameter:4 target @type any)
@@ -41,25 +41,23 @@ class AppComponent {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_lib_ts {
-    label="lib.ts";
+  subgraph cluster_root_0_000_lib_ts {
+    label="000_lib.ts";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#fafafa";
 
-    n7[label="AppComponent", path="$TMP/sample/src/lib.ts:12", sym_ty="Struct", shape=box];
-    n2[label="Component", path="$TMP/sample/src/lib.ts:2", sym_ty="Function", shape=ellipse];
-    n5[label="Injectable", path="$TMP/sample/src/lib.ts:8", sym_ty="Function", shape=ellipse];
+    n2[label="Component", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/000_lib.ts:2", kind="function", shape="ellipse"];
+    n5[label="Injectable", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/000_lib.ts:8", kind="function", shape="ellipse"];
+    n7[label="AppComponent", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/000_lib.ts:12", kind="struct", shape="box"];
   }
 
 
-  n2 -> n7 [from="decorator", to="decorates"];
-  n5 -> n7 [from="decorator", to="decorates"];
+n2 -> n7 [rel="annotation", from="annotation", to="annotates"];
+n5 -> n7 [rel="annotation", from="annotation", to="annotates"];
 }

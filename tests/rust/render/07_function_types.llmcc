@@ -25,32 +25,30 @@ pub fn transform(input: Input) -> Output {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_lib_rs {
-      label="lib.rs";
+    subgraph cluster_root_0_sample_0_001_lib_rs {
+      label="001_lib.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n6[label="transform", path="$TMP/sample/src/lib.rs:11", sym_ty="Function", shape=ellipse];
-      n2[label="Input", path="$TMP/sample/src/lib.rs:3", sym_ty="Struct", shape=box];
-      n4[label="Output", path="$TMP/sample/src/lib.rs:7", sym_ty="Struct", shape=box];
+      n2[label="Input", package="sample", file="001_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.rs:3", kind="struct", shape="box"];
+      n4[label="Output", package="sample", file="001_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.rs:7", kind="struct", shape="box"];
+      n6[label="transform", package="sample", file="001_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.rs:11", kind="function", shape="ellipse"];
     }
 
   }
 
 
-  n2 -> n6 [from="input", to="func"];
-  n6 -> n4 [from="func", to="output"];
+n2 -> n6 [rel="param", from="input", to="func"];
+n6 -> n4 [rel="return", from="func", to="output"];
 }

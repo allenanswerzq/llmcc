@@ -35,7 +35,7 @@ export class UserProfile {
 }
 
 --- expect:block-graph ---
-(root:1 common ($TMP/types/common.ts)
+(root:1 000_common (000_common)
   (interface:2 Address
     (field:3 street @type string)
     (field:4 city @type string)
@@ -47,7 +47,7 @@ export class UserProfile {
   )
 )
 
-(root:9 user ($TMP/types/user.ts)
+(root:9 001_user (001_user)
   (interface:10 User
     (field:11 id @type number)
     (field:12 name @type string)
@@ -63,35 +63,33 @@ export class UserProfile {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_common_ts {
-    label="common.ts";
+  subgraph cluster_root_0_000_common_ts {
+    label="000_common.ts";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#fafafa";
 
-    n2[label="Address", path="$TMP/types/common.ts:2", sym_ty="Interface", shape=box];
-    n6[label="Phone", path="$TMP/types/common.ts:8", sym_ty="Interface", shape=box];
+    n2[label="Address", file="000_common.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/types/000_common.ts:2", kind="interface", shape="box"];
+    n6[label="Phone", file="000_common.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/types/000_common.ts:8", kind="interface", shape="box"];
   }
 
-  subgraph cluster_user_ts {
-    label="user.ts";
+  subgraph cluster_root_1_001_user_ts {
+    label="001_user.ts";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#fafafa";
 
-    n15[label="UserProfile", path="$TMP/types/user.ts:11", sym_ty="Struct", shape=box];
-    n10[label="User", path="$TMP/types/user.ts:4", sym_ty="Interface", shape=box];
+    n10[label="User", file="001_user.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/types/001_user.ts:4", kind="interface", shape="box"];
+    n15[label="UserProfile", file="001_user.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/types/001_user.ts:11", kind="struct", shape="box"];
   }
 
 
-  n2 -> n10 [from="field_type", to="struct"];
-  n2 -> n15 [from="field_type", to="struct"];
-  n6 -> n10 [from="field_type", to="struct"];
-  n10 -> n15 [from="field_type", to="struct"];
+n2 -> n10 [rel="field", from="field_type", to="container"];
+n2 -> n15 [rel="field", from="field_type", to="container"];
+n6 -> n10 [rel="field", from="field_type", to="container"];
+n10 -> n15 [rel="field", from="field_type", to="container"];
 }

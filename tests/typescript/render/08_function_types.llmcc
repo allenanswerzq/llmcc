@@ -21,25 +21,23 @@ function transform(input: Input): Output {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_lib_ts {
-    label="lib.ts";
+  subgraph cluster_root_0_000_lib_ts {
+    label="000_lib.ts";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#fafafa";
 
-    n6[label="transform", path="$TMP/sample/src/lib.ts:10", sym_ty="Function", shape=ellipse];
-    n2[label="Input", path="$TMP/sample/src/lib.ts:2", sym_ty="Struct", shape=box];
-    n4[label="Output", path="$TMP/sample/src/lib.ts:6", sym_ty="Struct", shape=box];
+    n2[label="Input", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/000_lib.ts:2", kind="struct", shape="box"];
+    n4[label="Output", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/000_lib.ts:6", kind="struct", shape="box"];
+    n6[label="transform", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/000_lib.ts:10", kind="function", shape="ellipse"];
   }
 
 
-  n2 -> n6 [from="input", to="func"];
-  n6 -> n4 [from="func", to="output"];
+n2 -> n6 [rel="param", from="input", to="func"];
+n6 -> n4 [rel="return", from="func", to="output"];
 }

@@ -46,12 +46,12 @@ pub enum Event {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs)
+(root:1 001_lib (001_lib)
   (module:2 types)
   (module:3 events)
 )
 
-(root:4 types ($TMP/sample/src/types.rs)
+(root:4 002_types (002_types)
   (class:5 User
     (field:6 id @type u64)
     (field:7 name @type String)
@@ -66,7 +66,7 @@ pub enum Event {
   )
 )
 
-(root:14 events ($TMP/sample/src/events.rs)
+(root:14 003_events (003_events)
   (enum:15 Event
     (field:16 UserCreated
       (field:17 user @type:5 User)
@@ -86,41 +86,39 @@ pub enum Event {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_events_rs {
-      label="events.rs";
+    subgraph cluster_root_0_sample_0_002_types_rs {
+      label="002_types.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n15[label="Event", path="$TMP/sample/src/events.rs:3", sym_ty="Enum", shape=box];
+      n5[label="User", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:1", kind="struct", shape="box"];
+      n8[label="Order", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:6", kind="struct", shape="box"];
+      n11[label="Error", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:11", kind="struct", shape="box"];
     }
 
-    subgraph cluster_types_rs {
-      label="types.rs";
+    subgraph cluster_root_0_sample_1_003_events_rs {
+      label="003_events.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n5[label="User", path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
-      n11[label="Error", path="$TMP/sample/src/types.rs:11", sym_ty="Struct", shape=box];
-      n8[label="Order", path="$TMP/sample/src/types.rs:6", sym_ty="Struct", shape=box];
+      n15[label="Event", package="sample", file="003_events.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_events.rs:3", kind="enum", shape="box"];
     }
 
   }
 
 
-  n5 -> n15 [from="field_type", to="enum"];
-  n8 -> n15 [from="field_type", to="enum"];
-  n11 -> n15 [from="field_type", to="enum"];
+n5 -> n15 [rel="field", from="field_type", to="container"];
+n8 -> n15 [rel="field", from="field_type", to="container"];
+n11 -> n15 [rel="field", from="field_type", to="container"];
 }

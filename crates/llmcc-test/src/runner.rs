@@ -1,248 +1,230 @@
-use llmcc_core::ViewDepth;
-use llmcc_core::block::reset_block_id_counter;
-use llmcc_core::symbol::reset_symbol_id_counter;
-use llmcc_error::{Error, ErrorKind, Result};
+//! Test execution engine: run cases, compare outputs, report results.
 
-use crate::corpus::{Corpus, CorpusCase, CorpusFile};
-use crate::expectation::{ensure_trailing_newline, format_expectation_diff, normalize};
-use crate::pipeline::{build_pipeline_summary, render_expectation};
-use crate::{GraphOptions, ProcessingOptions};
+use std::fmt;
+use std::path::Path;
 
-pub use crate::options::{
-    GraphOptions as SharedGraphOptions, ProcessingOptions as SharedProcessingOptions,
-};
-pub use crate::pipeline::PipelineOptions;
+use similar::TextDiff;
 
-#[derive(Debug, Clone)]
-pub struct RunnerConfig {
-    pub filter: Option<String>,
-    pub update: bool,
-    pub keep_temps: bool,
-    /// Graph building and visualization options.
-    pub graph: GraphOptions,
-    /// Processing behavior options.
-    pub processing: ProcessingOptions,
+use llmcc_core::Result;
+
+use crate::corpus::{Corpus, CorpusFile, OutputKind, TestCase};
+use crate::pipeline;
+
+// --- Public API ---
+
+/// Execute all matching test cases in a corpus.
+///
+/// Returns a summary of pass/fail/skip/update counts.
+/// When `update` is true, mismatched expectations are overwritten with actual output.
+pub fn run(corpus: &mut Corpus, filter: Option<&str>, update: bool) -> Result<RunSummary> {
+    let mut summary = RunSummary::default();
+
+    for file in &mut corpus.files {
+        run_file(file, filter, update, &mut summary);
+    }
+
+    Ok(summary)
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CaseStatus {
-    Passed,
-    Failed,
+/// Aggregated results from a test run.
+#[derive(Default)]
+pub struct RunSummary {
+    pub total: usize,
+    pub passed: usize,
+    pub failed: usize,
+    pub updated: usize,
+    pub errors: usize,
+    pub skipped: usize,
+}
+
+impl RunSummary {
+    /// True when no tests failed or errored.
+    pub fn is_ok(&self) -> bool {
+        self.failed == 0 && self.errors == 0
+    }
+}
+
+impl fmt::Display for RunSummary {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} tests: {} passed, {} failed, {} updated, {} errors, {} skipped",
+            self.total, self.passed, self.failed, self.updated, self.errors, self.skipped
+        )
+    }
+}
+
+// --- Outcome ---
+
+/// Outcome of executing a single test case.
+enum Outcome {
+    /// All expectations matched.
+    Pass,
+    /// Expectations were updated (bless mode).
     Updated,
-    NoExpectations,
+    /// One or more expectations diverged.
+    Fail(String),
+    /// Pipeline error prevented comparison.
+    Error(String),
+    /// No expectations defined; nothing to check.
+    Skip,
 }
 
-#[derive(Debug, Clone)]
-pub struct CaseOutcome {
-    pub id: String,
-    pub status: CaseStatus,
-    pub message: Option<String>,
-}
+// --- Internal execution ---
 
-pub fn run_cases(corpus: &mut Corpus, config: RunnerConfig) -> Result<Vec<CaseOutcome>> {
-    let mut outcomes = Vec::new();
-    let mut matched = 0usize;
+fn run_file(file: &mut CorpusFile, filter: Option<&str>, update: bool, summary: &mut RunSummary) {
+    for case in &mut file.cases {
+        let case_id = case.qualified_name(&file.suite);
 
-    for file in corpus.files_mut() {
-        outcomes.extend(run_cases_in_file(
-            file,
-            config.update,
-            config.filter.as_deref(),
-            &mut matched,
-            config.keep_temps,
-            config.processing.parallel,
-            config.processing.print_ir,
-            config.graph.view_depth(),
-            config.graph.top_k,
-        )?);
-    }
-
-    if matched == 0 {
-        return Err(Error::new(
-            ErrorKind::InvalidArgument,
-            format!("no llmcc-test cases matched filter {:?}", config.filter),
-        ));
-    }
-
-    Ok(outcomes)
-}
-
-pub fn run_cases_for_file(
-    file: &mut CorpusFile,
-    update: bool,
-    keep_temps: bool,
-) -> Result<Vec<CaseOutcome>> {
-    run_cases_for_file_with_parallel(file, update, keep_temps, false, true, ViewDepth::File, None)
-}
-
-pub fn run_cases_for_file_with_parallel(
-    file: &mut CorpusFile,
-    update: bool,
-    keep_temps: bool,
-    parallel: bool,
-    print_ir: bool,
-    view_depth: ViewDepth,
-    top_k: Option<usize>,
-) -> Result<Vec<CaseOutcome>> {
-    let mut matched = 0usize;
-    run_cases_in_file(
-        file,
-        update,
-        None,
-        &mut matched,
-        keep_temps,
-        parallel,
-        print_ir,
-        view_depth,
-        top_k,
-    )
-}
-
-#[allow(clippy::too_many_arguments)]
-fn run_cases_in_file(
-    file: &mut CorpusFile,
-    update: bool,
-    filter: Option<&str>,
-    matched: &mut usize,
-    keep_temps: bool,
-    parallel: bool,
-    print_ir: bool,
-    view_depth: ViewDepth,
-    top_k: Option<usize>,
-) -> Result<Vec<CaseOutcome>> {
-    let mut file_outcomes = Vec::new();
-    let mut mutated_file = false;
-    for idx in 0..file.cases.len() {
-        let run_case = {
-            let case = &file.cases[idx];
-            if let Some(filter_term) = filter {
-                case.id().contains(filter_term)
-            } else {
-                true
+        if let Some(f) = filter {
+            if !case_id.contains(f) {
+                continue;
             }
-        };
-
-        if !run_case {
-            continue;
         }
 
-        *matched += 1;
-        let case_name = file.cases[idx].id();
-        print!("  {case_name} ... ");
-        use std::io::Write;
-        let _ = std::io::stdout().flush();
+        summary.total += 1;
+        print!("  {case_id} ... ");
 
-        let (outcome, mutated) = {
-            let case = &mut file.cases[idx];
-            evaluate_case(
-                case, update, keep_temps, parallel, print_ir, view_depth, top_k,
-            )?
-        };
+        let outcome = execute_case(case, update);
 
-        match outcome.status {
-            CaseStatus::Passed => println!("ok"),
-            CaseStatus::Updated => println!("updated"),
-            CaseStatus::Failed => {
+        match &outcome {
+            Outcome::Pass => {
+                println!("ok");
+                summary.passed += 1;
+            }
+            Outcome::Updated => {
+                println!("updated");
+                summary.updated += 1;
+                file.dirty = true;
+            }
+            Outcome::Fail(diff) => {
                 println!("FAILED");
-                if let Some(message) = &outcome.message {
-                    for line in message.lines() {
-                        println!("        {line}");
-                    }
+                for line in diff.lines() {
+                    println!("        {line}");
                 }
+                summary.failed += 1;
             }
-            CaseStatus::NoExpectations => println!("skipped (no expectations)"),
+            Outcome::Error(msg) => {
+                println!("ERROR: {msg}");
+                summary.errors += 1;
+            }
+            Outcome::Skip => {
+                println!("skipped");
+                summary.skipped += 1;
+            }
         }
-
-        if mutated {
-            file.mark_dirty();
-            mutated_file = true;
-        }
-        file_outcomes.push(outcome);
     }
-    if update && !mutated_file {
-        file.mark_dirty();
-    }
-    Ok(file_outcomes)
 }
 
-fn evaluate_case(
-    case: &mut CorpusCase,
-    update: bool,
-    keep_temps: bool,
-    parallel: bool,
-    print_ir: bool,
-    view_depth: ViewDepth,
-    top_k: Option<usize>,
-) -> Result<(CaseOutcome, bool)> {
-    let case_id = case.id();
-
+/// Run the pipeline for one case and compare all expectations.
+fn execute_case(case: &mut TestCase, update: bool) -> Outcome {
     if case.expectations.is_empty() {
-        return Ok((
-            CaseOutcome {
-                id: case_id,
-                status: CaseStatus::NoExpectations,
-                message: Some("no expectation blocks declared".to_string()),
-            },
-            false,
-        ));
+        return Outcome::Skip;
     }
 
-    reset_symbol_id_counter();
-    reset_block_id_counter();
-    let summary = build_pipeline_summary(case, keep_temps, parallel, print_ir, view_depth, top_k)?;
-    let mut mutated = false;
-    let mut status = CaseStatus::Passed;
-    let mut failures = Vec::new();
+    let output = match pipeline::run_case(case) {
+        Ok(o) => o,
+        Err(e) => return Outcome::Error(e.to_string()),
+    };
 
-    let temp_dir_path = summary.temp_dir_path();
-    for expect in &mut case.expectations {
-        let kind = expect.kind.as_str();
-        let actual = render_expectation(kind, &summary, &case_id)?;
-        let expected_norm = normalize(kind, &expect.value, None);
-        let actual_norm = normalize(kind, &actual, temp_dir_path);
+    let mut failures = Vec::new();
+    let mut any_updated = false;
+
+    for (kind, expected) in &mut case.expectations {
+        let Some(actual) = output.outputs.get(kind) else {
+            continue;
+        };
+
+        let expected_norm = normalize(*kind, expected, None);
+        let actual_norm = normalize(*kind, actual, Some(&output.temp_dir));
 
         if expected_norm == actual_norm {
             continue;
         }
 
         if update {
-            let actual_to_save = if let Some(tmp_path) = temp_dir_path {
-                let mut result = actual.replace(tmp_path, "$TMP");
-                if let Some(dir_name) = std::path::Path::new(tmp_path)
-                    .file_name()
-                    .and_then(|s| s.to_str())
-                {
-                    result = result.replace(dir_name, "$TMP");
-                }
-                result
-            } else {
-                actual.clone()
-            };
-            expect.value = ensure_trailing_newline(actual_to_save);
-            mutated = true;
-            status = CaseStatus::Updated;
+            *expected = replace_tmp_and_finalize(actual, &output.temp_dir);
+            any_updated = true;
         } else {
-            status = CaseStatus::Failed;
-            failures.push(format_expectation_diff(
-                &expect.kind,
-                &expected_norm,
-                &actual_norm,
-            ));
+            failures.push(format_diff(&kind.to_string(), &expected_norm, &actual_norm));
         }
     }
 
-    let message = if failures.is_empty() {
-        None
+    if !failures.is_empty() {
+        Outcome::Fail(failures.join("\n"))
+    } else if any_updated {
+        Outcome::Updated
     } else {
-        Some(failures.join("\n"))
-    };
+        Outcome::Pass
+    }
+}
 
-    Ok((
-        CaseOutcome {
-            id: case_id,
-            status,
-            message,
-        },
-        mutated,
-    ))
+// --- Normalization ---
+
+/// Normalize text for comparison: unify line endings, replace temp paths, apply
+/// kind-specific ordering.
+fn normalize(kind: OutputKind, text: &str, temp_dir: Option<&str>) -> String {
+    let mut s = text.replace("\r\n", "\n");
+    s = s.trim_end_matches('\n').to_string();
+
+    if let Some(tmp) = temp_dir {
+        s = replace_tmp_path(&s, tmp);
+    }
+
+    if kind.sorts_lines() {
+        sort_lines(&s)
+    } else if kind == OutputKind::BlockGraph {
+        normalize_block_graph(&s)
+    } else {
+        s
+    }
+}
+
+/// Replace temp directory paths (and their final component) with `$TMP`.
+fn replace_tmp_path(text: &str, tmp: &str) -> String {
+    let mut s = text.replace(tmp, "$TMP");
+    if let Some(dir_name) = Path::new(tmp).file_name().and_then(|n| n.to_str()) {
+        s = s.replace(dir_name, "$TMP");
+    }
+    s
+}
+
+/// Prepare actual output for saving: replace temp paths and ensure trailing newline.
+fn replace_tmp_and_finalize(text: &str, tmp: &str) -> String {
+    let mut result = replace_tmp_path(text, tmp);
+    if !result.ends_with('\n') {
+        result.push('\n');
+    }
+    result
+}
+
+fn sort_lines(text: &str) -> String {
+    let mut lines: Vec<&str> = text.lines().filter(|l| !l.trim().is_empty()).collect();
+    lines.sort();
+    lines.join("\n")
+}
+
+fn normalize_block_graph(text: &str) -> String {
+    let mut lines: Vec<String> = text.lines().map(|l| l.trim_end().to_string()).collect();
+    while lines.last().is_some_and(|l| l.is_empty()) {
+        lines.pop();
+    }
+    lines.join("\n")
+}
+
+// --- Diff formatting ---
+
+fn format_diff(kind: &str, expected: &str, actual: &str) -> String {
+    let diff = TextDiff::from_lines(expected, actual);
+    let mut buf = format!("Expectation '{kind}' mismatch:\n");
+    for change in diff.iter_all_changes() {
+        let sign = match change.tag() {
+            similar::ChangeTag::Delete => "-",
+            similar::ChangeTag::Insert => "+",
+            similar::ChangeTag::Equal => " ",
+        };
+        buf.push_str(sign);
+        buf.push_str(&change.to_string());
+    }
+    buf
 }

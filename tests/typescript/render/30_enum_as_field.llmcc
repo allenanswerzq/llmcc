@@ -30,25 +30,23 @@ class Ticket {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_lib_ts {
-    label="lib.ts";
+  subgraph cluster_root_0_000_lib_ts {
+    label="000_lib.ts";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#fafafa";
 
-    n4[label="Ticket", path="$TMP/sample/src/lib.ts:16", sym_ty="Struct", shape=box];
-    n2[label="Priority", path="$TMP/sample/src/lib.ts:2", sym_ty="Enum", shape=box];
-    n3[label="Status", path="$TMP/sample/src/lib.ts:9", sym_ty="Enum", shape=box];
+    n2[label="Priority", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/000_lib.ts:2", kind="enum", shape="box"];
+    n3[label="Status", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/000_lib.ts:9", kind="enum", shape="box"];
+    n4[label="Ticket", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/000_lib.ts:16", kind="struct", shape="box"];
   }
 
 
-  n2 -> n4 [from="field_type", to="struct"];
-  n3 -> n4 [from="field_type", to="struct"];
+n2 -> n4 [rel="field", from="field_type", to="container"];
+n3 -> n4 [rel="field", from="field_type", to="container"];
 }

@@ -59,12 +59,12 @@ pub fn get_user_sessions() -> Option<HashMap<User, Vec<Session>>> {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs)
+(root:1 001_lib (001_lib)
   (module:2 types)
   (module:3 complex)
 )
 
-(root:4 types ($TMP/sample/src/types.rs)
+(root:4 002_types (002_types)
   (class:5 User
     (field:6 id @type u64)
   )
@@ -76,7 +76,7 @@ pub fn get_user_sessions() -> Option<HashMap<User, Vec<Session>>> {
   )
 )
 
-(root:11 complex ($TMP/sample/src/complex.rs)
+(root:11 003_complex (003_complex)
   (class:12 MaybeResult
     (field:13 value @type:5 User)
     (@tdep:5 User)
@@ -108,54 +108,52 @@ pub fn get_user_sessions() -> Option<HashMap<User, Vec<Session>>> {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_complex_rs {
-      label="complex.rs";
+    subgraph cluster_root_0_sample_0_002_types_rs {
+      label="002_types.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n14[label="OptionalUsers", path="$TMP/sample/src/complex.rs:10", sym_ty="Struct", shape=box];
-      n16[label="UserSessionMap", path="$TMP/sample/src/complex.rs:15", sym_ty="Struct", shape=box];
-      n18[label="fetch_users", path="$TMP/sample/src/complex.rs:20", sym_ty="Function", shape=ellipse];
-      n21[label="ComplexNested", path="$TMP/sample/src/complex.rs:25", sym_ty="Struct", shape=box];
-      n23[label="get_user_sessions", path="$TMP/sample/src/complex.rs:30", sym_ty="Function", shape=ellipse];
-      n12[label="MaybeResult", path="$TMP/sample/src/complex.rs:5", sym_ty="Struct", shape=box];
+      n5[label="User", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:1", kind="struct", shape="box"];
+      n7[label="Error", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:5", kind="struct", shape="box"];
+      n9[label="Session", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:9", kind="struct", shape="box"];
     }
 
-    subgraph cluster_types_rs {
-      label="types.rs";
+    subgraph cluster_root_0_sample_1_003_complex_rs {
+      label="003_complex.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n5[label="User", path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
-      n7[label="Error", path="$TMP/sample/src/types.rs:5", sym_ty="Struct", shape=box];
-      n9[label="Session", path="$TMP/sample/src/types.rs:9", sym_ty="Struct", shape=box];
+      n12[label="MaybeResult", package="sample", file="003_complex.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_complex.rs:5", kind="struct", shape="box"];
+      n14[label="OptionalUsers", package="sample", file="003_complex.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_complex.rs:10", kind="struct", shape="box"];
+      n16[label="UserSessionMap", package="sample", file="003_complex.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_complex.rs:15", kind="struct", shape="box"];
+      n18[label="fetch_users", package="sample", file="003_complex.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_complex.rs:20", kind="function", shape="ellipse"];
+      n21[label="ComplexNested", package="sample", file="003_complex.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_complex.rs:25", kind="struct", shape="box"];
+      n23[label="get_user_sessions", package="sample", file="003_complex.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_complex.rs:30", kind="function", shape="ellipse"];
     }
 
   }
 
 
-  n5 -> n12 [from="type_dep", to="struct"];
-  n5 -> n14 [from="type_dep", to="struct"];
-  n5 -> n16 [from="type_dep", to="struct"];
-  n5 -> n21 [from="type_dep", to="struct"];
-  n7 -> n12 [from="type_dep", to="struct"];
-  n9 -> n16 [from="type_dep", to="struct"];
-  n9 -> n21 [from="type_dep", to="struct"];
-  n18 -> n5 [from="func", to="type_dep"];
-  n18 -> n7 [from="func", to="type_dep"];
-  n23 -> n5 [from="func", to="type_dep"];
-  n23 -> n9 [from="func", to="type_dep"];
+n5 -> n12 [rel="nested_field", from="type_dep", to="container"];
+n5 -> n14 [rel="nested_field", from="type_dep", to="container"];
+n5 -> n16 [rel="nested_field", from="type_dep", to="container"];
+n5 -> n21 [rel="nested_field", from="type_dep", to="container"];
+n7 -> n12 [rel="nested_field", from="type_dep", to="container"];
+n9 -> n16 [rel="nested_field", from="type_dep", to="container"];
+n9 -> n21 [rel="nested_field", from="type_dep", to="container"];
+n18 -> n5 [rel="type_dep", from="source", to="type_dep"];
+n18 -> n7 [rel="type_dep", from="source", to="type_dep"];
+n23 -> n5 [rel="type_dep", from="source", to="type_dep"];
+n23 -> n9 [rel="type_dep", from="source", to="type_dep"];
 }

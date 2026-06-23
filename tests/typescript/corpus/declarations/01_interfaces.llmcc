@@ -17,7 +17,7 @@ interface Admin extends User {
 interface Empty {}
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/src/lib.ts)
+(root:1 000_lib (000_lib)
   (interface:2 User
     (field:3 name @type string)
     (field:4 age @type number)
@@ -31,23 +31,22 @@ interface Empty {}
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_lib_ts {
-    label="lib.ts";
+  subgraph cluster_root_0_000_lib_ts {
+    label="000_lib.ts";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#fafafa";
 
-    n2[label="User", path="$TMP/src/lib.ts:1", sym_ty="Interface", shape=box];
-    n5[label="Admin", path="$TMP/src/lib.ts:6", sym_ty="Interface", shape=box];
+    n2[label="User", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/000_lib.ts:1", kind="interface", shape="box"];
+    n5[label="Admin", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/000_lib.ts:6", kind="interface", shape="box"];
+    n7[label="Empty", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/000_lib.ts:10", kind="interface", shape="box"];
   }
 
 
-  n2 -> n5 [from="base", to="extends"];
+n2 -> n5 [rel="specialization", from="base", to="specializes"];
 }

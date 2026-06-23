@@ -30,21 +30,21 @@ export class Client {
 }
 
 --- expect:block-graph ---
-(root:1 v1 ($TMP/src/v1.ts)
+(root:1 000_v1 (000_v1)
   (interface:2 Response
     (field:3 data @type string)
     (field:4 version @type number)
   )
 )
 
-(root:5 v2 ($TMP/src/v2.ts)
+(root:5 001_v2 (001_v2)
   (interface:6 Response
     (field:7 payload @type string)
     (field:8 status @type number)
   )
 )
 
-(root:9 consumer ($TMP/src/consumer.ts)
+(root:9 002_consumer (002_consumer)
   (class:10 Client
     (field:11 lastResponse @type:6 Response)
   )
@@ -53,30 +53,36 @@ export class Client {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_consumer_ts {
-    label="consumer.ts";
+  subgraph cluster_root_0_000_v1_ts {
+    label="000_v1.ts";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#fafafa";
 
-    n10[label="Client", path="$TMP/src/consumer.ts:5", sym_ty="Struct", shape=box];
+    n2[label="Response", file="000_v1.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/000_v1.ts:2", kind="interface", shape="box"];
   }
 
-  subgraph cluster_v2_ts {
-    label="v2.ts";
+  subgraph cluster_root_1_001_v2_ts {
+    label="001_v2.ts";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#fafafa";
 
-    n6[label="Response", path="$TMP/src/v2.ts:2", sym_ty="Interface", shape=box];
+    n6[label="Response", file="001_v2.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/001_v2.ts:2", kind="interface", shape="box"];
+  }
+
+  subgraph cluster_root_2_002_consumer_ts {
+    label="002_consumer.ts";
+    style=rounded;
+    bgcolor="#fafafa";
+
+    n10[label="Client", file="002_consumer.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/002_consumer.ts:5", kind="struct", shape="box"];
   }
 
 
-  n6 -> n10 [from="field_type", to="struct"];
+n6 -> n10 [rel="field", from="field_type", to="container"];
 }

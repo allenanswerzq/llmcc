@@ -39,19 +39,14 @@ pub fn create_user() -> User {
 --- expect:arch-graph-depth-2 ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.8;
-  nodesep=0.4;
   splines=ortho;
-  concentrate=true;
+  compound=true;
 
-  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#888888", arrowsize=0.7];
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-  labelloc=t;
-  fontsize=16;
+  namespace_sample_002_models[label="sample::002_models", kind="module", package="sample", module="002_models", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src"];
+  namespace_sample_003_services[label="sample::003_services", kind="module", package="sample", module="003_services", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src"];
 
-  mod_sample_models[label="sample::models", path="$TMP/sample/src"];
-  mod_sample_services[label="sample::services", path="$TMP/sample/src"];
-
-  mod_sample_services -> mod_sample_models;
+namespace_sample_003_services -> namespace_sample_002_models [rel="depends_on", weight="3", via="field:2,return:1"];
 }

@@ -61,99 +61,89 @@ pub fn handle_request<R: UserRepo>(service: &UserService<R>) -> Option<User> {
 --- expect:arch-graph-depth-3 ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_handlers_rs {
-      label="handlers.rs";
+    subgraph cluster_root_0_sample_0_002_models_rs {
+      label="002_models.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n30[label="handle_request", path="$TMP/sample/src/handlers.rs:5", sym_ty="Function", shape=ellipse];
+      n7[label="User", package="sample", file="002_models.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_models.rs:1", kind="struct", shape="box"];
+      n10[label="Order", package="sample", file="002_models.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_models.rs:6", kind="struct", shape="box"];
     }
 
-    subgraph cluster_models_rs {
-      label="models.rs";
+    subgraph cluster_root_0_sample_1_003_repository_rs {
+      label="003_repository.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n7[label="User", path="$TMP/sample/src/models.rs:1", sym_ty="Struct", shape=box];
+      n14[label="UserRepo", package="sample", file="003_repository.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_repository.rs:3", kind="trait", shape="box"];
+      n19[label="OrderRepo", package="sample", file="003_repository.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_repository.rs:7", kind="trait", shape="box"];
     }
 
-    subgraph cluster_repository_rs {
-      label="repository.rs";
+    subgraph cluster_root_0_sample_2_004_services_rs {
+      label="004_services.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n14[label="UserRepo", path="$TMP/sample/src/repository.rs:3", sym_ty="Trait", shape=box];
-      n19[label="OrderRepo", path="$TMP/sample/src/repository.rs:7", sym_ty="Trait", shape=box];
+      n25[label="UserService", package="sample", file="004_services.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/004_services.rs:4", kind="struct", shape="box"];
+      n27[label="OrderService", package="sample", file="004_services.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/004_services.rs:8", kind="struct", shape="box"];
     }
 
-    subgraph cluster_services_rs {
-      label="services.rs";
+    subgraph cluster_root_0_sample_3_005_handlers_rs {
+      label="005_handlers.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n25[label="UserService", path="$TMP/sample/src/services.rs:4", sym_ty="Struct", shape=box];
-      n27[label="OrderService", path="$TMP/sample/src/services.rs:8", sym_ty="Struct", shape=box];
+      n30[label="handle_request", package="sample", file="005_handlers.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/005_handlers.rs:5", kind="function", shape="ellipse"];
     }
 
   }
 
 
-  n14 -> n25 [from="field_type", to="struct"];
-  n19 -> n27 [from="field_type", to="struct"];
-  n25 -> n30 [from="input", to="func"];
-  n30 -> n7 [from="func", to="type_dep"];
+n14 -> n25 [rel="field", from="field_type", to="container"];
+n19 -> n27 [rel="field", from="field_type", to="container"];
+n25 -> n30 [rel="param", from="input", to="func"];
+n30 -> n7 [rel="type_dep", from="source", to="type_dep"];
 }
 
 --- expect:arch-graph-depth-2 ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.8;
-  nodesep=0.4;
   splines=ortho;
-  concentrate=true;
+  compound=true;
 
-  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#888888", arrowsize=0.7];
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-  labelloc=t;
-  fontsize=16;
+  namespace_sample_002_models[label="sample::002_models", kind="module", package="sample", module="002_models", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src"];
+  namespace_sample_003_repository[label="sample::003_repository", kind="module", package="sample", module="003_repository", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src"];
+  namespace_sample_004_services[label="sample::004_services", kind="module", package="sample", module="004_services", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src"];
+  namespace_sample_005_handlers[label="sample::005_handlers", kind="module", package="sample", module="005_handlers", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src"];
 
-  mod_sample_handlers[label="sample::handlers", path="$TMP/sample/src"];
-  mod_sample_models[label="sample::models", path="$TMP/sample/src"];
-  mod_sample_repository[label="sample::repository", path="$TMP/sample/src"];
-  mod_sample_services[label="sample::services", path="$TMP/sample/src"];
-
-  mod_sample_handlers -> mod_sample_models;
-  mod_sample_handlers -> mod_sample_services;
-  mod_sample_services -> mod_sample_repository;
+namespace_sample_004_services -> namespace_sample_003_repository [rel="depends_on", weight="2", via="field:2"];
+namespace_sample_005_handlers -> namespace_sample_002_models [rel="depends_on", weight="1", via="type_dep:1"];
+namespace_sample_005_handlers -> namespace_sample_004_services [rel="depends_on", weight="1", via="param:1"];
 }
 
 --- expect:arch-graph-depth-1 ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.8;
-  nodesep=0.4;
   splines=ortho;
-  concentrate=true;
+  compound=true;
 
-  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#666666", arrowsize=0.7];
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-  labelloc=t;
-  fontsize=16;
-
+  package_sample[label="sample", kind="package", package="sample", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample"];
 
 }

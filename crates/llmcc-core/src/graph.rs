@@ -58,6 +58,14 @@ impl<'tcx> ProjectGraph<'tcx> {
         }
     }
 
+    /// Build a complete project graph from units, linking all blocks.
+    pub fn build(cc: &'tcx CompileCtxt<'tcx>, units: impl IntoIterator<Item = UnitGraph>) -> Self {
+        let mut pg = Self::new(cc);
+        pg.add_units(units);
+        pg.link_blocks();
+        pg
+    }
+
     /// Return the compilation context backing this project graph.
     pub fn context(&self) -> &'tcx CompileCtxt<'tcx> {
         self.cc

@@ -21,30 +21,28 @@ export function fetchData(): Response {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_api_ts {
-    label="api.ts";
+  subgraph cluster_root_0_000_response_ts {
+    label="000_response.ts";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#fafafa";
 
-    n6[label="fetchData", path="$TMP/sample/src/api.ts:3", sym_ty="Function", shape=ellipse];
+    n2[label="Response", file="000_response.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/000_response.ts:2", kind="struct", shape="box"];
   }
 
-  subgraph cluster_response_ts {
-    label="response.ts";
+  subgraph cluster_root_1_001_api_ts {
+    label="001_api.ts";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#fafafa";
 
-    n2[label="Response", path="$TMP/sample/src/response.ts:2", sym_ty="Struct", shape=box];
+    n6[label="fetchData", file="001_api.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_api.ts:3", kind="function", shape="ellipse"];
   }
 
 
-  n6 -> n2 [from="func", to="output"];
+n6 -> n2 [rel="return", from="func", to="output"];
 }

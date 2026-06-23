@@ -17,7 +17,7 @@ fn add(x: i32, t: ComplexType<T>) -> i32 {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/src/lib.rs)
+(root:1 000_lib (000_lib)
   (class:2 Foo)
   (class:3 ComplexType
     (field:4 y @type:2 Foo)
@@ -30,6 +30,8 @@ fn add(x: i32, t: ComplexType<T>) -> i32 {
     (@tdep:3 ComplexType)
   )
 )
+
+
 
 
 ===============================================================================
@@ -75,7 +77,7 @@ fn add(x: i32, t: ComplexType<T>) -> i32 {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/src/lib.rs)
+(root:1 000_lib (000_lib)
   (class:2 Foo)
   (class:3 Bar
     (field:4 a @type i32)
@@ -104,6 +106,8 @@ fn add(x: i32, t: ComplexType<T>) -> i32 {
     (@fdep:15 free)
   )
 )
+
+
 
 
 ===============================================================================
@@ -155,7 +159,7 @@ trait Baz<T> {}
 fn takes_hrtb(bar: impl for<'a> Baz<Quux<'a>>) {}
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/src/lib.rs)
+(root:1 000_lib (000_lib)
   (func:2 main)
   (func:3 add
     (parameter:4 x @type i32)

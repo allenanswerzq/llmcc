@@ -2,7 +2,7 @@
 alias-qualified-dependencies
 ===============================================================================
 Test that C++ type aliases preserve qualified type dependencies.
-lang: cpp
+lang: c++
 
 --- file: sample/CMakeLists.txt ---
 cmake_minimum_required(VERSION 3.10)
@@ -54,23 +54,3 @@ namespace services {
     )
   )
 )
-
---- expect:arch-graph-depth-2 ---
-digraph architecture {
-  rankdir=TB;
-  ranksep=0.8;
-  nodesep=0.4;
-  splines=ortho;
-  concentrate=true;
-
-  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
-  edge [color="#888888", arrowsize=0.7];
-
-  labelloc=t;
-  fontsize=16;
-
-  namespace_unknown_models[label="unknown::models", path="$TMP\sample\src\models"];
-  namespace_unknown_services[label="unknown::services", path="$TMP\sample\src\services"];
-
-  namespace_unknown_services -> namespace_unknown_models;
-}

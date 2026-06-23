@@ -24,18 +24,18 @@ pub fn handle(req: Request) {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs)
+(root:1 001_lib (001_lib)
   (module:2 types)
   (module:3 handler)
 )
 
-(root:4 types ($TMP/sample/src/types.rs)
+(root:4 002_types (002_types)
   (class:5 Request
     (field:6 body @type String)
   )
 )
 
-(root:7 handler ($TMP/sample/src/handler.rs)
+(root:7 003_handler (003_handler)
   (func:8 handle
     (parameter:9 req @type:5 Request)
     (@tdep:5 Request)
@@ -45,37 +45,35 @@ pub fn handle(req: Request) {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_handler_rs {
-      label="handler.rs";
+    subgraph cluster_root_0_sample_0_002_types_rs {
+      label="002_types.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n8[label="handle", path="$TMP/sample/src/handler.rs:3", sym_ty="Function", shape=ellipse];
+      n5[label="Request", package="sample", file="002_types.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_types.rs:1", kind="struct", shape="box"];
     }
 
-    subgraph cluster_types_rs {
-      label="types.rs";
+    subgraph cluster_root_0_sample_1_003_handler_rs {
+      label="003_handler.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n5[label="Request", path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+      n8[label="handle", package="sample", file="003_handler.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_handler.rs:3", kind="function", shape="ellipse"];
     }
 
   }
 
 
-  n5 -> n8 [from="input", to="func"];
+n5 -> n8 [rel="param", from="input", to="func"];
 }

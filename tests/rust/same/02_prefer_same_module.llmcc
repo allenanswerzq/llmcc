@@ -51,34 +51,34 @@ pub struct Handler {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs)
+(root:1 001_lib (001_lib)
   (module:2 data)
   (module:3 services)
 )
 
-(root:4 mod ($TMP/sample/src/data/mod.rs)
+(root:4 002_mod (002_mod)
   (module:5 models)
   (module:6 helpers)
 )
 
-(root:7 models ($TMP/sample/src/data/models.rs)
+(root:7 003_models (003_models)
   (class:8 Entity
     (field:9 id @type u64)
   )
 )
 
-(root:10 helpers ($TMP/sample/src/data/helpers.rs)
+(root:10 004_helpers (004_helpers)
   (class:11 EntityWrapper
-    (field:12 inner @type:8 Entity)
-    (@tdep:8 Entity)
+    (field:12 inner @type:16 Entity)
+    (@tdep:16 Entity)
   )
 )
 
-(root:13 mod ($TMP/sample/src/services/mod.rs)
+(root:13 005_mod (005_mod)
   (module:14 handlers)
 )
 
-(root:15 handlers ($TMP/sample/src/services/handlers.rs)
+(root:15 006_handlers (006_handlers)
   (class:16 Entity
     (field:17 name @type String)
   )
@@ -91,54 +91,52 @@ pub struct Handler {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_data {
+    subgraph cluster_root_0_sample_0_data {
       label="data";
       style=rounded;
-            bgcolor="#f5f5f5";
+      bgcolor="#f5f5f5";
 
-      subgraph cluster_helpers_rs {
-        label="helpers.rs";
+      subgraph cluster_root_0_sample_0_data_0_003_models_rs {
+        label="003_models.rs";
         style=rounded;
-                bgcolor="#fafafa";
+        bgcolor="#fafafa";
 
-        n11[label="EntityWrapper", path="$TMP/sample/src/data/helpers.rs:5", sym_ty="Struct", shape=box];
+        n8[label="Entity", package="sample", module="data", file="003_models.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/data/003_models.rs:3", kind="struct", shape="box"];
       }
 
-      subgraph cluster_models_rs {
-        label="models.rs";
+      subgraph cluster_root_0_sample_0_data_1_004_helpers_rs {
+        label="004_helpers.rs";
         style=rounded;
-                bgcolor="#fafafa";
+        bgcolor="#fafafa";
 
-        n8[label="Entity", path="$TMP/sample/src/data/models.rs:3", sym_ty="Struct", shape=box];
+        n11[label="EntityWrapper", package="sample", module="data", file="004_helpers.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/data/004_helpers.rs:5", kind="struct", shape="box"];
       }
 
     }
 
-    subgraph cluster_services {
+    subgraph cluster_root_0_sample_1_services {
       label="services";
       style=rounded;
-            bgcolor="#f5f5f5";
+      bgcolor="#f5f5f5";
 
-      subgraph cluster_handlers_rs {
-        label="handlers.rs";
+      subgraph cluster_root_0_sample_1_services_0_006_handlers_rs {
+        label="006_handlers.rs";
         style=rounded;
-                bgcolor="#fafafa";
+        bgcolor="#fafafa";
 
-        n16[label="Entity", path="$TMP/sample/src/services/handlers.rs:3", sym_ty="Struct", shape=box];
-        n18[label="Handler", path="$TMP/sample/src/services/handlers.rs:7", sym_ty="Struct", shape=box];
+        n16[label="Entity", package="sample", module="services", file="006_handlers.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/services/006_handlers.rs:3", kind="struct", shape="box"];
+        n18[label="Handler", package="sample", module="services", file="006_handlers.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/services/006_handlers.rs:7", kind="struct", shape="box"];
       }
 
     }
@@ -146,6 +144,6 @@ digraph architecture {
   }
 
 
-  n8 -> n11 [from="field_type", to="struct"];
-  n16 -> n18 [from="field_type", to="struct"];
+n16 -> n11 [rel="field", from="field_type", to="container"];
+n16 -> n18 [rel="field", from="field_type", to="container"];
 }

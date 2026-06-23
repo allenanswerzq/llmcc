@@ -35,30 +35,28 @@ pub fn create_counter() -> Counter {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_lib_rs {
-      label="lib.rs";
+    subgraph cluster_root_0_sample_0_001_lib_rs {
+      label="001_lib.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n2[label="Counter", path="$TMP/sample/src/lib.rs:2", sym_ty="Struct", shape=box];
-      n12[label="create_counter", path="$TMP/sample/src/lib.rs:20", sym_ty="Function", shape=ellipse];
+      n2[label="Counter", package="sample", file="001_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.rs:2", kind="struct", shape="box"];
+      n12[label="create_counter", package="sample", file="001_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.rs:20", kind="function", shape="ellipse"];
     }
 
   }
 
 
-  n12 -> n2 [from="func", to="output"];
+n12 -> n2 [rel="return", from="func", to="output"];
 }

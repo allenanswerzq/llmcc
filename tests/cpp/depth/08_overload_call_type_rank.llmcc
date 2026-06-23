@@ -2,7 +2,7 @@
 overload-call-type-rank
 ===============================================================================
 Test that same-arity C++ overload calls prefer exact primitive argument types.
-lang: cpp
+lang: c++
 
 --- file: sample/CMakeLists.txt ---
 cmake_minimum_required(VERSION 3.10)
@@ -34,25 +34,30 @@ void run() {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_001_lib_cpp {
-    label="001_lib.cpp";
+  subgraph cluster_root_0_sample {
+    label="sample";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#f8f8f8";
 
-    n2[label="convert", path="C:\\Users\\ZHANGQ~1\\AppData\\Local\\Temp\\$TMP\\sample\\src\\001_lib.cpp:1", sym_ty="Function", shape=ellipse];
-    n4[label="convert", path="C:\\Users\\ZHANGQ~1\\AppData\\Local\\Temp\\$TMP\\sample\\src\\001_lib.cpp:2", sym_ty="Function", shape=ellipse];
-    n6[label="run", path="C:\\Users\\ZHANGQ~1\\AppData\\Local\\Temp\\$TMP\\sample\\src\\001_lib.cpp:4", sym_ty="Function", shape=ellipse];
+    subgraph cluster_root_0_sample_0_001_lib_cpp {
+      label="001_lib.cpp";
+      style=rounded;
+      bgcolor="#fafafa";
+
+      n2[label="convert", package="sample", file="001_lib.cpp", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.cpp:1", kind="function", shape="ellipse"];
+      n4[label="convert", package="sample", file="001_lib.cpp", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.cpp:2", kind="function", shape="ellipse"];
+      n6[label="run", package="sample", file="001_lib.cpp", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.cpp:4", kind="function", shape="ellipse"];
+    }
+
   }
 
 
-  n6 -> n2 [from="caller", to="callee"];
-  n6 -> n4 [from="caller", to="callee"];
+n6 -> n2 [rel="call", from="caller", to="callee"];
+n6 -> n4 [rel="call", from="caller", to="callee"];
 }

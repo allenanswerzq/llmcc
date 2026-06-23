@@ -24,13 +24,13 @@ class Service {
 }
 
 --- expect:block-graph ---
-(root:1 types ($TMP/src/types.ts)
+(root:1 000_types (000_types)
   (interface:2 Config
     (field:3 globalValue @type number)
   )
 )
 
-(root:4 services ($TMP/src/services.ts)
+(root:4 001_services (001_services)
   (interface:5 Config
     (field:6 localValue @type string)
   )
@@ -42,23 +42,29 @@ class Service {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_services_ts {
-    label="services.ts";
+  subgraph cluster_root_0_000_types_ts {
+    label="000_types.ts";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#fafafa";
 
-    n5[label="Config", path="$TMP/src/services.ts:3", sym_ty="Interface", shape=box];
-    n7[label="Service", path="$TMP/src/services.ts:7", sym_ty="Struct", shape=box];
+    n2[label="Config", file="000_types.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/000_types.ts:2", kind="interface", shape="box"];
+  }
+
+  subgraph cluster_root_1_001_services_ts {
+    label="001_services.ts";
+    style=rounded;
+    bgcolor="#fafafa";
+
+    n5[label="Config", file="001_services.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/001_services.ts:3", kind="interface", shape="box"];
+    n7[label="Service", file="001_services.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/001_services.ts:7", kind="struct", shape="box"];
   }
 
 
-  n5 -> n7 [from="field_type", to="struct"];
+n5 -> n7 [rel="field", from="field_type", to="container"];
 }

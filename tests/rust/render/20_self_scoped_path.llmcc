@@ -23,11 +23,11 @@ pub struct Helper {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs)
+(root:1 001_lib (001_lib)
   (module:2 utils)
 )
 
-(root:3 utils ($TMP/sample/src/utils.rs)
+(root:3 002_utils (002_utils)
   (module:4 helper)
   (class:5 Wrapper
     (field:6 inner @type:8 Helper)
@@ -35,7 +35,7 @@ pub struct Helper {
   )
 )
 
-(root:7 helper ($TMP/sample/src/utils/helper.rs)
+(root:7 003_helper (003_helper)
   (class:8 Helper
     (field:9 id @type u32)
   )
@@ -44,44 +44,42 @@ pub struct Helper {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_utils {
-      label="utils";
+    subgraph cluster_root_0_sample_0_002_utils_rs {
+      label="002_utils.rs";
       style=rounded;
-            bgcolor="#f5f5f5";
+      bgcolor="#fafafa";
 
-      subgraph cluster_helper_rs {
-        label="helper.rs";
-        style=rounded;
-                bgcolor="#fafafa";
-
-        n8[label="Helper", path="$TMP/sample/src/utils/helper.rs:1", sym_ty="Struct", shape=box];
-      }
-
+      n5[label="Wrapper", package="sample", file="002_utils.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_utils.rs:3", kind="struct", shape="box"];
     }
 
-    subgraph cluster_utils_rs {
-      label="utils.rs";
+    subgraph cluster_root_0_sample_1_utils {
+      label="utils";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#f5f5f5";
 
-      n5[label="Wrapper", path="$TMP/sample/src/utils.rs:3", sym_ty="Struct", shape=box];
+      subgraph cluster_root_0_sample_1_utils_0_003_helper_rs {
+        label="003_helper.rs";
+        style=rounded;
+        bgcolor="#fafafa";
+
+        n8[label="Helper", package="sample", module="utils", file="003_helper.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/utils/003_helper.rs:1", kind="struct", shape="box"];
+      }
+
     }
 
   }
 
 
-  n8 -> n5 [from="field_type", to="struct"];
+n8 -> n5 [rel="field", from="field_type", to="container"];
 }

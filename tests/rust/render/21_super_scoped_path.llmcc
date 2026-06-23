@@ -19,7 +19,7 @@ mod inner {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs)
+(root:1 001_lib (001_lib)
   (class:2 Base
     (field:3 id @type u32)
   )
@@ -34,30 +34,28 @@ mod inner {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_lib_rs {
-      label="lib.rs";
+    subgraph cluster_root_0_sample_0_001_lib_rs {
+      label="001_lib.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n2[label="Base", path="$TMP/sample/src/lib.rs:1", sym_ty="Struct", shape=box];
-      n5[label="Child", path="$TMP/sample/src/lib.rs:6", sym_ty="Struct", shape=box];
+      n2[label="Base", package="sample", file="001_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.rs:1", kind="struct", shape="box"];
+      n5[label="Child", package="sample", file="001_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.rs:6", kind="struct", shape="box"];
     }
 
   }
 
 
-  n2 -> n5 [from="field_type", to="struct"];
+n2 -> n5 [rel="field", from="field_type", to="container"];
 }

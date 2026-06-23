@@ -24,12 +24,12 @@ pub fn format_item<T: Display>(item: T) -> String {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs)
+(root:1 001_lib (001_lib)
   (module:2 display)
   (module:3 formatter)
 )
 
-(root:4 display ($TMP/sample/src/display.rs)
+(root:4 002_display (002_display)
   (trait:5 Display
     (method:6 display
       (parameter:7 self @type:5 Display)
@@ -38,7 +38,7 @@ pub fn format_item<T: Display>(item: T) -> String {
   )
 )
 
-(root:9 formatter ($TMP/sample/src/formatter.rs)
+(root:9 003_formatter (003_formatter)
   (func:10 format_item
     (parameter:11 item @type:5 Display)
     (return:12 @type String)
@@ -48,37 +48,35 @@ pub fn format_item<T: Display>(item: T) -> String {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_display_rs {
-      label="display.rs";
+    subgraph cluster_root_0_sample_0_002_display_rs {
+      label="002_display.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n5[label="Display", path="$TMP/sample/src/display.rs:1", sym_ty="Trait", shape=box];
+      n5[label="Display", package="sample", file="002_display.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/002_display.rs:1", kind="trait", shape="box"];
     }
 
-    subgraph cluster_formatter_rs {
-      label="formatter.rs";
+    subgraph cluster_root_0_sample_1_003_formatter_rs {
+      label="003_formatter.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n10[label="format_item", path="$TMP/sample/src/formatter.rs:3", sym_ty="Function", shape=ellipse];
+      n10[label="format_item", package="sample", file="003_formatter.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/003_formatter.rs:3", kind="function", shape="ellipse"];
     }
 
   }
 
 
-  n5 -> n10 [from="input", to="func"];
+n5 -> n10 [rel="param", from="input", to="func"];
 }

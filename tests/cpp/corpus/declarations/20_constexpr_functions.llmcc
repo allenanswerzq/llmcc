@@ -19,9 +19,10 @@ public:
 };
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/src/lib.cpp)
+(root:1 000_lib (000_lib)
   (func:2 factorial
     (parameter:3 n @type int)
+    (@fdep:2 factorial)
   )
   (func:5 pi)
   (class:6 Circle
@@ -30,6 +31,7 @@ public:
       (parameter:9 r @type double)
     )
     (method:10 area
+      (@fdep:5 pi)
     )
   )
 )

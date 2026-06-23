@@ -27,7 +27,7 @@ fn helper(s: Input) -> Output {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/sample/src/lib.rs)
+(root:1 001_lib (001_lib)
   (class:2 Input)
   (enum:3 Output)
   (class:4 Foo)
@@ -43,6 +43,7 @@ fn helper(s: Input) -> Output {
     (@tdep:2 Input)
     (@tdep:3 Output)
     (@tdep:4 Foo)
+    (@fdep:6 new)
   )
   (func:13 helper
     (parameter:14 s @type:2 Input)
@@ -55,37 +56,35 @@ fn helper(s: Input) -> Output {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_sample {
+  subgraph cluster_root_0_sample {
     label="sample";
     style=rounded;
-        bgcolor="#f8f8f8";
+    bgcolor="#f8f8f8";
 
-    subgraph cluster_lib_rs {
-      label="lib.rs";
+    subgraph cluster_root_0_sample_0_001_lib_rs {
+      label="001_lib.rs";
       style=rounded;
-            bgcolor="#fafafa";
+      bgcolor="#fafafa";
 
-      n13[label="helper", path="$TMP/sample/src/lib.rs:14", sym_ty="Function", shape=ellipse];
-      n2[label="Input", path="$TMP/sample/src/lib.rs:2", sym_ty="Struct", shape=box];
-      n3[label="Output", path="$TMP/sample/src/lib.rs:3", sym_ty="Enum", shape=box];
-      n4[label="Foo", path="$TMP/sample/src/lib.rs:4", sym_ty="Struct", shape=box];
-      n8[label="process_data", path="$TMP/sample/src/lib.rs:9", sym_ty="Function", shape=ellipse];
+      n2[label="Input", package="sample", file="001_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.rs:2", kind="struct", shape="box"];
+      n3[label="Output", package="sample", file="001_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.rs:3", kind="enum", shape="box"];
+      n4[label="Foo", package="sample", file="001_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.rs:4", kind="struct", shape="box"];
+      n8[label="process_data", package="sample", file="001_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.rs:9", kind="function", shape="ellipse"];
+      n13[label="helper", package="sample", file="001_lib.rs", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/sample/src/001_lib.rs:14", kind="function", shape="ellipse"];
     }
 
   }
 
 
-  n2 -> n8 [from="input", to="func"];
-  n2 -> n13 [from="input", to="func"];
-  n8 -> n3 [from="func", to="output"];
-  n8 -> n4 [from="func", to="type_dep"];
-  n13 -> n3 [from="func", to="output"];
+n2 -> n8 [rel="param", from="input", to="func"];
+n2 -> n13 [rel="param", from="input", to="func"];
+n8 -> n3 [rel="return", from="func", to="output"];
+n8 -> n4 [rel="type_dep", from="source", to="type_dep"];
+n13 -> n3 [rel="return", from="func", to="output"];
 }

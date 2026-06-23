@@ -28,7 +28,7 @@ class Implementor implements Config {
 }
 
 --- expect:block-graph ---
-(root:1 lib ($TMP/src/lib.ts)
+(root:1 000_lib (000_lib)
   (interface:2 Config
     (field:3 value @type number)
   )
@@ -47,25 +47,24 @@ class Implementor implements Config {
 --- expect:arch-graph ---
 digraph architecture {
   rankdir=TB;
-  ranksep=0.6;
-  nodesep=0.3;
   splines=ortho;
   compound=true;
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
 
-  subgraph cluster_lib_ts {
-    label="lib.ts";
+  subgraph cluster_root_0_000_lib_ts {
+    label="000_lib.ts";
     style=rounded;
-        bgcolor="#fafafa";
+    bgcolor="#fafafa";
 
-    n6[label="Holder", path="$TMP/src/lib.ts:13", sym_ty="Struct", shape=box];
-    n8[label="Implementor", path="$TMP/src/lib.ts:18", sym_ty="Struct", shape=box];
-    n4[label="Config", path="$TMP/src/lib.ts:8", sym_ty="Interface", shape=box];
+    n2[label="Config", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/000_lib.ts:3", kind="interface", shape="box"];
+    n4[label="Config", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/000_lib.ts:8", kind="interface", shape="box"];
+    n6[label="Holder", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/000_lib.ts:13", kind="struct", shape="box"];
+    n8[label="Implementor", file="000_lib.ts", path="C:/Users/ZHANGQ~1/AppData/Local/Temp/$TMP/src/000_lib.ts:18", kind="struct", shape="box"];
   }
 
 
-  n4 -> n6 [from="field_type", to="struct"];
-  n4 -> n8 [from="type_arg", to="impl"];
+n4 -> n6 [rel="field", from="field_type", to="container"];
+n4 -> n8 [rel="conformance", from="contract", to="conforms"];
 }

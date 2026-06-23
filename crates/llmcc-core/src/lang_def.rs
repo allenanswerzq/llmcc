@@ -305,6 +305,32 @@ impl<'tree> ParseNode for TreeSitterParseNode<'tree> {
     }
 }
 
+/// Supported source languages.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, Hash, strum_macros::Display, strum_macros::EnumString,
+)]
+#[strum(serialize_all = "snake_case", ascii_case_insensitive)]
+pub enum SupportedLang {
+    Rust,
+    #[strum(serialize = "typescript", serialize = "ts")]
+    Typescript,
+    #[strum(serialize = "cpp", serialize = "c++", serialize = "c")]
+    Cpp,
+    Auto,
+}
+
+impl SupportedLang {
+    /// Manifest file names recognized for this language.
+    pub fn manifest_names(self) -> &'static [&'static str] {
+        match self {
+            Self::Rust => &["Cargo.toml"],
+            Self::Typescript => &["package.json"],
+            Self::Cpp => &["CMakeLists.txt"],
+            Self::Auto => &["Cargo.toml", "package.json", "CMakeLists.txt"],
+        }
+    }
+}
+
 /// Public language contract consumed by the pipeline.
 pub trait Language {
     /// Manifest filename, such as `Cargo.toml` or `package.json`.

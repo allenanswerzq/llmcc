@@ -41,7 +41,9 @@ pub use id::{
 };
 pub use ir_builder::{HirBuildMetrics, HirBuildOptions, build_file_hir, build_hir};
 pub use ir_query::HirQuery;
-pub use lang_def::{HirBuildAction, Language, LanguageDefinition, NO_FIELD_ID, ParseChild};
+pub use lang_def::{
+    HirBuildAction, Language, LanguageDefinition, NO_FIELD_ID, ParseChild, SupportedLang,
+};
 pub use lang_registry::{LanguageHandler, LanguageHandlerImpl, LanguageRegistry};
 pub use meta::{UnitMeta, UnitMetaIndex, ViewDepth};
 pub use paste;
