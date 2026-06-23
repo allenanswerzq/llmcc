@@ -72,7 +72,7 @@ struct RenderArgs {
 
     /// Output optimized for AI agents (no visual styling)
     #[arg(long = "for-agent")]
-    for_agent: bool,
+    ai: bool,
 
     /// Emit a flat DOT graph without subgraph clusters
     #[arg(long = "flat")]
@@ -121,7 +121,7 @@ impl Cli {
             top_k: render.top_k,
             cluster_by_package: render.cluster_by_package,
             short_labels: render.short_labels,
-            for_agent: render.for_agent,
+            ai: render.ai,
             flat: render.flat,
         };
 

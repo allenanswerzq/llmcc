@@ -7,7 +7,7 @@ use crate::{ClusterKind, DotCluster, DotDocument, DotEdge, DotNode, RenderOption
 /// Converts a [`DotDocument`] into a valid DOT language string.
 pub(crate) struct DotEmitter {
     out: String,
-    for_agent: bool,
+    ai: bool,
     flat: bool,
 }
 
@@ -17,7 +17,7 @@ impl DotEmitter {
         let estimated = (document.free_nodes.len() + document.edges.len()) * 100 + 500;
         let mut emitter = Self {
             out: String::with_capacity(estimated),
-            for_agent: options.for_agent,
+            ai: options.ai,
             flat: options.flat,
         };
         emitter.document(document);
@@ -30,7 +30,7 @@ impl DotEmitter {
     }
 
     fn document(&mut self, doc: &DotDocument) {
-        if self.for_agent {
+        if self.ai {
             let nodes = count_nodes(doc);
             let clusters = count_clusters(&doc.clusters);
             let layout = if self.flat { "flat" } else { "clustered" };
@@ -87,7 +87,7 @@ impl DotEmitter {
         let i = "  ".repeat(depth + 1);
 
         self.put(&"  ".repeat(depth));
-        if self.for_agent {
+        if self.ai {
             self.put(&formatdoc! {"
                 subgraph cluster_{id} {{
                 {i}label=\"{label}\";
@@ -125,7 +125,7 @@ impl DotEmitter {
     }
 
     fn node(&mut self, node: &DotNode, depth: usize) {
-        let attrs = if self.for_agent {
+        let attrs = if self.ai {
             format_attrs_minimal(&node.label, &node.attrs)
         } else {
             format_attrs(&node.label, &node.attrs)

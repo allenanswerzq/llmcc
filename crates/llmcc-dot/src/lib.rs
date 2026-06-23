@@ -33,7 +33,7 @@ pub struct RenderOptions {
     /// When true, visual styling (colors, shapes, fonts, layout hints) is
     /// omitted. The output retains only structural information: nodes with
     /// labels/paths, edges with semantic roles, and cluster grouping.
-    pub for_agent: bool,
+    pub ai: bool,
     /// Emit nodes flat instead of nesting them in DOT subgraph clusters.
     ///
     /// This is useful for agent-oriented output where ownership metadata on
@@ -65,7 +65,7 @@ impl RenderOptions {
     /// Enable or disable agent-optimized output (no visual styling).
     #[must_use]
     pub fn with_for_agent(mut self, enabled: bool) -> Self {
-        self.for_agent = enabled;
+        self.ai = enabled;
         self
     }
 
