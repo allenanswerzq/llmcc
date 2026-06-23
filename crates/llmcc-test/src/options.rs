@@ -9,7 +9,7 @@ pub struct GraphOptions {
     /// - 2/namespace: Namespace level
     /// - 3/file: File level (default)
     #[arg(long = "component-depth", default_value = "3")]
-    component_depth_num: usize,
+    view_depth_num: usize,
 
     /// Number of top PageRank nodes to include.
     #[arg(long = "pagerank-top-k")]
@@ -33,12 +33,12 @@ impl GraphOptions {
         Self::default()
     }
 
-    pub fn component_depth(&self) -> ViewDepth {
-        ViewDepth::from_repr(self.component_depth_num as u8).unwrap_or_default()
+    pub fn view_depth(&self) -> ViewDepth {
+        ViewDepth::from_repr(self.view_depth_num as u8).unwrap_or_default()
     }
 
-    pub fn with_component_depth(mut self, depth: ViewDepth) -> Self {
-        self.component_depth_num = depth as usize;
+    pub fn with_view_depth(mut self, depth: ViewDepth) -> Self {
+        self.view_depth_num = depth as usize;
         self
     }
 

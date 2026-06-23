@@ -107,7 +107,7 @@ pub struct PipelineOptions {
     /// Whether to print IR during symbol resolution.
     pub print_ir: bool,
     /// Component grouping depth for graph visualization.
-    pub component_depth: ViewDepth,
+    pub view_depth: ViewDepth,
     /// Number of top PageRank nodes to include (None = all nodes).
     pub pagerank_top_k: Option<usize>,
 }
@@ -130,7 +130,7 @@ impl Default for PipelineOptions {
             keep_symbol_deps: false,
             parallel: false,
             print_ir: false,
-            component_depth: ViewDepth::File,
+            view_depth: ViewDepth::File,
             pagerank_top_k: None,
         }
     }
@@ -216,8 +216,8 @@ impl PipelineOptions {
         self
     }
 
-    pub fn with_component_depth(mut self, depth: ViewDepth) -> Self {
-        self.component_depth = depth;
+    pub fn with_view_depth(mut self, depth: ViewDepth) -> Self {
+        self.view_depth = depth;
         self
     }
 
@@ -232,7 +232,7 @@ pub(crate) fn build_pipeline_summary(
     keep_temps: bool,
     parallel: bool,
     print_ir: bool,
-    component_depth: ViewDepth,
+    view_depth: ViewDepth,
     pagerank_top_k: Option<usize>,
 ) -> Result<PipelineSummary> {
     let required = RequiredOutputs::from_case(case);
@@ -250,7 +250,7 @@ pub(crate) fn build_pipeline_summary(
         );
     }
 
-    let options = required.pipeline_options(parallel, print_ir, component_depth, pagerank_top_k);
+    let options = required.pipeline_options(parallel, print_ir, view_depth, pagerank_top_k);
     let mut summary = match case.lang.as_str() {
         "rust" => collect_pipeline::<LangRust>(project.root(), &options)?,
         "typescript" | "ts" => collect_pipeline::<LangTypeScript>(project.root(), &options)?,
@@ -331,7 +331,7 @@ impl RequiredOutputs {
         &self,
         parallel: bool,
         print_ir: bool,
-        component_depth: ViewDepth,
+        view_depth: ViewDepth,
         pagerank_top_k: Option<usize>,
     ) -> PipelineOptions {
         PipelineOptions::new()
@@ -349,7 +349,7 @@ impl RequiredOutputs {
             .with_keep_symbol_deps(self.symbol_deps)
             .with_parallel(parallel)
             .with_print_ir(print_ir)
-            .with_component_depth(component_depth)
+            .with_view_depth(view_depth)
             .with_pagerank_top_k(pagerank_top_k)
     }
 }

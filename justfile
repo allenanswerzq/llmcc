@@ -3,6 +3,10 @@ set shell := ["/bin/bash", "-c"]
 
 root := justfile_directory()
 
+# Run the release binary with arguments (build first if needed)
+run *ARGS:
+    cargo build --release
+    {{root}}/target/release/llmcc {{ARGS}}
 
 test-all *ARGS:
     cargo run -p llmcc-test -- run-all {{ARGS}}

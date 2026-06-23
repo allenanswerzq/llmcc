@@ -52,7 +52,7 @@ pub fn run_cases(corpus: &mut Corpus, config: RunnerConfig) -> Result<Vec<CaseOu
             config.keep_temps,
             config.processing.parallel,
             config.processing.print_ir,
-            config.graph.component_depth(),
+            config.graph.view_depth(),
             config.graph.pagerank_top_k,
         )?);
     }
@@ -81,7 +81,7 @@ pub fn run_cases_for_file_with_parallel(
     keep_temps: bool,
     parallel: bool,
     print_ir: bool,
-    component_depth: ViewDepth,
+    view_depth: ViewDepth,
     pagerank_top_k: Option<usize>,
 ) -> Result<Vec<CaseOutcome>> {
     let mut matched = 0usize;
@@ -93,7 +93,7 @@ pub fn run_cases_for_file_with_parallel(
         keep_temps,
         parallel,
         print_ir,
-        component_depth,
+        view_depth,
         pagerank_top_k,
     )
 }
@@ -107,7 +107,7 @@ fn run_cases_in_file(
     keep_temps: bool,
     parallel: bool,
     print_ir: bool,
-    component_depth: ViewDepth,
+    view_depth: ViewDepth,
     pagerank_top_k: Option<usize>,
 ) -> Result<Vec<CaseOutcome>> {
     let mut file_outcomes = Vec::new();
@@ -140,7 +140,7 @@ fn run_cases_in_file(
                 keep_temps,
                 parallel,
                 print_ir,
-                component_depth,
+                view_depth,
                 pagerank_top_k,
             )?
         };
@@ -177,7 +177,7 @@ fn evaluate_case(
     keep_temps: bool,
     parallel: bool,
     print_ir: bool,
-    component_depth: ViewDepth,
+    view_depth: ViewDepth,
     pagerank_top_k: Option<usize>,
 ) -> Result<(CaseOutcome, bool)> {
     let case_id = case.id();
@@ -200,7 +200,7 @@ fn evaluate_case(
         keep_temps,
         parallel,
         print_ir,
-        component_depth,
+        view_depth,
         pagerank_top_k,
     )?;
     let mut mutated = false;

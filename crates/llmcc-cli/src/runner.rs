@@ -120,7 +120,7 @@ impl Runner {
             short_labels: self.options.short_labels,
             for_agent: false,
         };
-        let output = render(&graph, self.options.component_depth, &render_options);
+        let output = render(&graph, self.options.view_depth, &render_options);
 
         info!(
             "Graph rendering: {:.2}s",

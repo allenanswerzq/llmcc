@@ -1,4 +1,4 @@
-use clap::{ArgGroup, Args, Parser};
+use clap::{ArgGroup, Args, CommandFactory, Parser};
 
 #[cfg(not(target_env = "msvc"))]
 #[global_allocator]
@@ -56,7 +56,7 @@ struct RenderArgs {
 
     /// Component grouping depth for graph visualization (0=project, 1=package, 2=namespace, 3=file)
     #[arg(long = "depth", default_value_t = 3)]
-    component_depth: usize,
+    view_depth: usize,
 
     /// Show only top K nodes by PageRank score
     #[arg(long = "pagerank-top-k")]
@@ -109,7 +109,7 @@ impl Cli {
             print_ir: render.print_ir,
             print_block: render.print_block,
             graph: render.graph,
-            component_depth: ViewDepth::from_repr(render.component_depth as u8).unwrap_or_default(),
+            view_depth: ViewDepth::from_repr(render.view_depth as u8).unwrap_or_default(),
             pagerank_top_k: render.pagerank_top_k,
             cluster_by_package: render.cluster_by_package,
             short_labels: render.short_labels,
@@ -120,13 +120,24 @@ impl Cli {
 }
 
 pub fn main() -> Result<()> {
+    println!("llmcc version: {}", env!("CARGO_PKG_VERSION"));
+
     let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"));
+        .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("error"));
 
     tracing_subscriber::fmt()
         .with_env_filter(env_filter)
         .with_writer(std::io::stderr)
         .init();
 
-    Cli::parse().into_runner().execute()
+    // Print help if no arguments provided.
+    let cli = Cli::try_parse().unwrap_or_else(|e| {
+        if std::env::args().len() <= 1 {
+            Cli::command().print_help().ok();
+            std::process::exit(0);
+        }
+        e.exit();
+    });
+
+    cli.into_runner().execute()
 }

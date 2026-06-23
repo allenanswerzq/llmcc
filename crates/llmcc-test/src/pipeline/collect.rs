@@ -91,7 +91,7 @@ where
 
         let dep_graph: Option<String> = None;
         let arch_graph: Option<String> = if options.build_arch_graph {
-            Some(render_at(options.component_depth))
+            Some(render_at(options.view_depth))
         } else {
             None
         };
