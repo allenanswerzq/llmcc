@@ -118,7 +118,8 @@ impl Runner {
         let render_options = RenderOptions {
             cluster_by_package: self.options.cluster_by_package,
             short_labels: self.options.short_labels,
-            for_agent: false,
+            for_agent: self.options.for_agent,
+            flat: self.options.flat,
         };
         let output = render(&graph, self.options.view_depth, &render_options);
 

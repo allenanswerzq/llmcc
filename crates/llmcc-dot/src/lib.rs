@@ -34,6 +34,11 @@ pub struct RenderOptions {
     /// omitted. The output retains only structural information: nodes with
     /// labels/paths, edges with semantic roles, and cluster grouping.
     pub for_agent: bool,
+    /// Emit nodes flat instead of nesting them in DOT subgraph clusters.
+    ///
+    /// This is useful for agent-oriented output where ownership metadata on
+    /// each node is easier to consume than Graphviz cluster syntax.
+    pub flat: bool,
 }
 
 impl RenderOptions {
@@ -61,6 +66,13 @@ impl RenderOptions {
     #[must_use]
     pub fn with_for_agent(mut self, enabled: bool) -> Self {
         self.for_agent = enabled;
+        self
+    }
+
+    /// Enable or disable flat node output.
+    #[must_use]
+    pub fn with_flat(mut self, enabled: bool) -> Self {
+        self.flat = enabled;
         self
     }
 }
@@ -156,4 +168,12 @@ pub(crate) fn sanitize_id(input: &str) -> String {
         .chars()
         .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
         .collect()
+}
+
+pub(crate) fn normalize_path(input: &str) -> String {
+    let normalized = input.replace('\\', "/");
+    normalized
+        .strip_prefix("./")
+        .unwrap_or(&normalized)
+        .to_owned()
 }

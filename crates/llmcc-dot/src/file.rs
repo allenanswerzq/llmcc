@@ -3,7 +3,9 @@ use std::collections::BTreeMap;
 use llmcc_core::symbol::SymKind;
 use llmcc_core::{CollectedGraph, CollectedNode};
 
-use crate::{ClusterKind, DotCluster, DotDocument, DotEdge, DotNode, child_cluster_id};
+use crate::{
+    ClusterKind, DotCluster, DotDocument, DotEdge, DotNode, child_cluster_id, normalize_path,
+};
 
 /// Package/namespace/file tree used by file-level DOT rendering.
 #[derive(Default)]
@@ -35,10 +37,15 @@ impl FileViewTree {
                 .iter()
                 .map(|edge| {
                     let (from_role, to_role) = edge.kind.role_labels();
+                    let rel: &'static str = edge.kind.into();
                     DotEdge {
                         from: format!("n{}", edge.from_id.as_u32()),
                         to: format!("n{}", edge.to_id.as_u32()),
-                        attrs: vec![("from", from_role.into()), ("to", to_role.into())],
+                        attrs: vec![
+                            ("rel", rel.into()),
+                            ("from", from_role.into()),
+                            ("to", to_role.into()),
+                        ],
                     }
                 })
                 .collect(),
@@ -117,11 +124,21 @@ fn dot_nodes_sorted(indices: &[usize], nodes: &[CollectedNode]) -> Vec<DotNode> 
 impl From<&CollectedNode> for DotNode {
     fn from(node: &CollectedNode) -> Self {
         let mut attrs = Vec::new();
+        if let Some(package) = node.package() {
+            attrs.push(("package", package.to_owned()));
+        }
+        if let Some(module) = node.namespace() {
+            attrs.push(("module", module.to_owned()));
+        }
+        if let Some(file) = node.file_name() {
+            attrs.push(("file", file));
+        }
         if let Some(location) = node.location() {
-            attrs.push(("path", location));
+            attrs.push(("path", normalize_path(&location)));
         }
         if let Some(kind) = node.symbol_kind {
-            attrs.push(("sym_ty", format!("{kind:?}")));
+            let kind_name: &'static str = kind.into();
+            attrs.push(("kind", kind_name.to_owned()));
             attrs.push(("shape", shape_for_kind(kind).to_owned()));
         }
         Self {

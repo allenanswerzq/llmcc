@@ -7,7 +7,8 @@ use crate::{ClusterKind, DotCluster, DotDocument, DotEdge, DotNode, RenderOption
 /// Converts a [`DotDocument`] into a valid DOT language string.
 pub(crate) struct DotEmitter {
     out: String,
-    minimal: bool,
+    for_agent: bool,
+    flat: bool,
 }
 
 impl DotEmitter {
@@ -16,7 +17,8 @@ impl DotEmitter {
         let estimated = (document.free_nodes.len() + document.edges.len()) * 100 + 500;
         let mut emitter = Self {
             out: String::with_capacity(estimated),
-            minimal: options.for_agent,
+            for_agent: options.for_agent,
+            flat: options.flat,
         };
         emitter.document(document);
         emitter.out
@@ -28,8 +30,24 @@ impl DotEmitter {
     }
 
     fn document(&mut self, doc: &DotDocument) {
-        if self.minimal {
-            self.put("digraph architecture {\n\n");
+        if self.for_agent {
+            let nodes = count_nodes(doc);
+            let clusters = count_clusters(&doc.clusters);
+            let layout = if self.flat { "flat" } else { "clustered" };
+            self.put(&formatdoc! {"
+                // # llmcc architecture view:
+                // quick structural map for AI agents to understand and explore this codebase.
+                // Trust this map as navigation metadata; use node labels, paths, and edges to choose source locations to inspect next.
+                // # Examples:
+                // Node example: n42[label='Parser', path='crates/foo/src/parser.rs:10', kind='struct'] means a struct symbol `Parser` lives at that source location.
+                // Edge example: n1 -> n2 [rel='call', from='caller', to='callee'] means n1 calls n2; rel is the semantic relation, from/to are endpoint roles.
+                // Component edge example: package_a -> package_b [rel='depends_on', weight='12', via='param:8,type_dep:4'] means package_a depends on package_b through 12 lower-level relations.
+                // # Stats:
+                // mode=agent layout={layout} nodes={nodes} edges={edges} clusters={clusters}
+                //
+                digraph architecture {{
+
+            ", edges = doc.edges.len()});
         } else {
             self.put(&formatdoc! {"
                 digraph architecture {{
@@ -43,8 +61,14 @@ impl DotEmitter {
             "});
         }
 
-        for cluster in &doc.clusters {
-            self.cluster(cluster, 1);
+        if self.flat {
+            for cluster in &doc.clusters {
+                self.flat_cluster_nodes(cluster, 1);
+            }
+        } else {
+            for cluster in &doc.clusters {
+                self.cluster(cluster, 1);
+            }
         }
         for node in &doc.free_nodes {
             self.node(node, 1);
@@ -63,7 +87,7 @@ impl DotEmitter {
         let i = "  ".repeat(depth + 1);
 
         self.put(&"  ".repeat(depth));
-        if self.minimal {
+        if self.for_agent {
             self.put(&formatdoc! {"
                 subgraph cluster_{id} {{
                 {i}label=\"{label}\";
@@ -91,8 +115,17 @@ impl DotEmitter {
         self.put("}\n\n");
     }
 
+    fn flat_cluster_nodes(&mut self, cluster: &DotCluster, depth: usize) {
+        for child in &cluster.children {
+            self.flat_cluster_nodes(child, depth);
+        }
+        for node in &cluster.nodes {
+            self.node(node, depth);
+        }
+    }
+
     fn node(&mut self, node: &DotNode, depth: usize) {
-        let attrs = if self.minimal {
+        let attrs = if self.for_agent {
             format_attrs_minimal(&node.label, &node.attrs)
         } else {
             format_attrs(&node.label, &node.attrs)
@@ -124,7 +157,7 @@ impl DotEmitter {
 // Formatting helpers.
 
 /// Visual-only attrs that are noise for AI consumers.
-const VISUAL_ATTRS: &[&str] = &["shape", "sym_ty"];
+const VISUAL_ATTRS: &[&str] = &["shape"];
 
 fn format_attrs(label: &str, extra: &[(&'static str, String)]) -> String {
     let mut parts = vec![format!("label=\"{}\"", escape(label))];
@@ -160,6 +193,26 @@ impl ClusterKind {
             Self::File => "#fafafa",
         }
     }
+}
+
+fn count_nodes(doc: &DotDocument) -> usize {
+    doc.free_nodes.len() + doc.clusters.iter().map(count_cluster_nodes).sum::<usize>()
+}
+
+fn count_cluster_nodes(cluster: &DotCluster) -> usize {
+    cluster.nodes.len()
+        + cluster
+            .children
+            .iter()
+            .map(count_cluster_nodes)
+            .sum::<usize>()
+}
+
+fn count_clusters(clusters: &[DotCluster]) -> usize {
+    clusters
+        .iter()
+        .map(|cluster| 1 + count_clusters(&cluster.children))
+        .sum()
 }
 
 fn escape(input: &str) -> String {

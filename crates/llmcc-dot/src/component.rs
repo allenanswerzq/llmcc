@@ -4,7 +4,7 @@ use llmcc_core::{BlockId, CollectedEdge, CollectedGraph, CollectedNode, ViewDept
 
 use crate::{
     ClusterKind, DotCluster, DotDocument, DotEdge, DotNode, RenderOptions, child_cluster_id,
-    sanitize_id,
+    normalize_path, sanitize_id,
 };
 
 /// Mapping from block ids to their component id.
@@ -20,7 +20,7 @@ type ComponentMap = BTreeMap<String, Component>;
 /// Built once from a [`CollectedGraph`] at a given [`ViewDepth`].
 pub(crate) struct ComponentViewTree {
     components: ComponentMap,
-    edges: BTreeMap<(String, String), usize>,
+    edges: BTreeMap<(String, String), ComponentEdge>,
 }
 
 impl ComponentViewTree {
@@ -66,10 +66,14 @@ impl ComponentViewTree {
     fn edges_to_dot(&self) -> Vec<DotEdge> {
         self.edges
             .iter()
-            .map(|((from, to), weight)| DotEdge {
+            .map(|((from, to), edge)| DotEdge {
                 from: from.clone(),
                 to: to.clone(),
-                attrs: vec![("weight", weight.to_string())],
+                attrs: vec![
+                    ("rel", "depends_on".into()),
+                    ("weight", edge.weight.to_string()),
+                    ("via", edge.via()),
+                ],
             })
             .collect()
     }
@@ -136,7 +140,7 @@ impl ComponentViewTree {
     fn merge_edges(
         edges: &BTreeSet<CollectedEdge>,
         block_map: &BlockComponentMap,
-    ) -> BTreeMap<(String, String), usize> {
+    ) -> BTreeMap<(String, String), ComponentEdge> {
         let mut merged = BTreeMap::new();
 
         for edge in edges {
@@ -155,7 +159,11 @@ impl ComponentViewTree {
                 (from, to)
             };
 
-            *merged.entry((source.clone(), target.clone())).or_default() += 1;
+            let relation: &'static str = edge.kind.into();
+            merged
+                .entry((source.clone(), target.clone()))
+                .or_insert_with(ComponentEdge::default)
+                .add_relation(relation);
         }
 
         merged
@@ -167,7 +175,9 @@ impl ComponentViewTree {
             ViewDepth::Project => Component {
                 id: "project".into(),
                 label: "project".into(),
+                kind: "project",
                 package: None,
+                module: None,
                 folder: None,
             },
             ViewDepth::Package => Self::package_component(node),
@@ -183,7 +193,9 @@ impl ComponentViewTree {
         Component {
             id,
             label: package.clone(),
+            kind: "package",
             package: Some(package),
+            module: None,
             folder,
         }
     }
@@ -209,7 +221,7 @@ impl ComponentViewTree {
             sanitize_id(&segment),
         );
         let label = if options.short_labels {
-            segment
+            segment.clone()
         } else {
             format!("{package}::{segment}")
         };
@@ -217,9 +229,32 @@ impl ComponentViewTree {
         Component {
             id,
             label,
+            kind: "module",
             package: Some(package),
+            module: Some(segment),
             folder,
         }
+    }
+}
+
+#[derive(Default)]
+struct ComponentEdge {
+    weight: usize,
+    relations: BTreeMap<&'static str, usize>,
+}
+
+impl ComponentEdge {
+    fn add_relation(&mut self, relation: &'static str) {
+        self.weight += 1;
+        *self.relations.entry(relation).or_default() += 1;
+    }
+
+    fn via(&self) -> String {
+        self.relations
+            .iter()
+            .map(|(relation, count)| format!("{relation}:{count}"))
+            .collect::<Vec<_>>()
+            .join(",")
     }
 }
 
@@ -230,7 +265,9 @@ impl ComponentViewTree {
 pub(crate) struct Component {
     id: String,
     label: String,
+    kind: &'static str,
     package: Option<String>,
+    module: Option<String>,
     folder: Option<String>,
 }
 
@@ -245,9 +282,19 @@ impl Component {
         &self.label
     }
 
+    /// Architecture component kind (`project`, `package`, or `module`).
+    pub(crate) fn kind(&self) -> &'static str {
+        self.kind
+    }
+
     /// Package name, if this component belongs to a package.
     pub(crate) fn package(&self) -> Option<&str> {
         self.package.as_deref()
+    }
+
+    /// Module name, if this component represents a module.
+    pub(crate) fn module(&self) -> Option<&str> {
+        self.module.as_deref()
     }
 
     /// Filesystem folder path, if known.
@@ -259,8 +306,15 @@ impl Component {
 impl From<&Component> for DotNode {
     fn from(component: &Component) -> Self {
         let mut attrs = Vec::new();
+        attrs.push(("kind", component.kind().to_owned()));
+        if let Some(package) = component.package() {
+            attrs.push(("package", package.to_owned()));
+        }
+        if let Some(module) = component.module() {
+            attrs.push(("module", module.to_owned()));
+        }
         if let Some(folder) = component.folder() {
-            attrs.push(("path", folder.to_owned()));
+            attrs.push(("path", normalize_path(folder)));
         }
         Self {
             id: component.id().to_owned(),
