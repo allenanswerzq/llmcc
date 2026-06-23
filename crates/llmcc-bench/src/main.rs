@@ -6,7 +6,6 @@ mod task;
 
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use clap::Parser;
 
@@ -34,7 +33,7 @@ struct Cli {
     #[arg(long, short)]
     output: Option<PathBuf>,
 
-    /// Directory where prompts, graphs, Codex JSONL, and metadata are stored.
+    /// Directory where prompts, graphs, Codex output, and metadata are stored.
     #[arg(long)]
     artifacts: Option<PathBuf>,
 
@@ -61,9 +60,16 @@ fn main() {
         _ => vec![Mode::Baseline, Mode::WithLlmcc],
     };
 
-    let artifact_root = cli
-        .artifacts
-        .unwrap_or_else(|| default_artifact_root(&cli.tasks));
+    let artifact_root = match cli.artifacts {
+        Some(path) => path,
+        None => {
+            let path = default_artifact_root(&cli.tasks);
+            if path.exists() {
+                fs::remove_dir_all(&path).unwrap();
+            }
+            path
+        }
+    };
     fs::create_dir_all(&artifact_root).unwrap();
     println!("Artifacts: {}", artifact_root.display());
 
@@ -84,12 +90,12 @@ fn main() {
             println!("▶ {} [{}]", task.id, mode);
             let result = runner::run_task(task, mode, checkout.path(), &artifact_root);
             println!(
-                "  in={:.1}k out={:.1}k tools={} time={:.1}s artifacts={}",
-                result.input_tokens_k,
-                result.output_tokens_k,
+                "  in={:.1}k cached={:.1}k out={:.1}k tools={} time={:.1}s",
+                result.input_tokens as f64 / 1000.0,
+                result.cached_input_tokens as f64 / 1000.0,
+                result.output_tokens as f64 / 1000.0,
                 result.tool_calls,
                 result.wall_time_s,
-                result.artifact_dir.display(),
             );
             results.push(result);
         }
@@ -112,7 +118,7 @@ fn default_artifact_root(tasks_path: &Path) -> PathBuf {
     workspace_root()
         .join("target")
         .join("llmcc-bench-artifacts")
-        .join(format!("{task_file}-{}", unix_timestamp()))
+        .join(task_file)
 }
 
 fn default_repo_root() -> PathBuf {
@@ -125,11 +131,4 @@ fn workspace_root() -> PathBuf {
         .and_then(Path::parent)
         .unwrap()
         .to_path_buf()
-}
-
-fn unix_timestamp() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
 }

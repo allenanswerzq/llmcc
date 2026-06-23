@@ -8,21 +8,21 @@ use crate::runner::{Mode, RunResult};
 /// Print per-task detail table.
 pub fn print_detail(results: &[RunResult]) {
     println!(
-        "{:<32} | {:<8} | {:>8} | {:>8} | {:>5} | {:>8} | artifacts",
-        "task_id", "mode", "in (k)", "out (k)", "tools", "time_s"
+        "{:<32} | {:<8} | {:>8} | {:>8} | {:>8} | {:>5} | {:>8}",
+        "task_id", "mode", "in (k)", "cached", "out (k)", "tools", "time_s"
     );
-    println!("{}", "-".repeat(120));
+    println!("{}", "-".repeat(94));
 
     for r in results {
         println!(
-            "{:<32} | {:<8} | {:>8.1} | {:>8.1} | {:>5} | {:>8} | {}",
+            "{:<32} | {:<8} | {:>8.1} | {:>8.1} | {:>8.1} | {:>5} | {:>8.1}",
             r.task_id,
             r.mode,
-            r.input_tokens_k,
-            r.output_tokens_k,
+            r.input_tokens as f64 / 1000.0,
+            r.cached_input_tokens as f64 / 1000.0,
+            r.output_tokens as f64 / 1000.0,
             r.tool_calls,
             r.wall_time_s,
-            r.artifact_dir.display(),
         );
     }
 }
@@ -46,13 +46,15 @@ pub fn print_summary(results: &[RunResult]) {
         items.iter().map(|r| f(r)).sum::<f64>() / items.len() as f64
     };
 
-    let b_in = avg(&baseline, |r| r.input_tokens_k);
-    let b_out = avg(&baseline, |r| r.output_tokens_k);
+    let b_in = avg(&baseline, |r| r.input_tokens as f64 / 1000.0);
+    let b_cached = avg(&baseline, |r| r.cached_input_tokens as f64 / 1000.0);
+    let b_out = avg(&baseline, |r| r.output_tokens as f64 / 1000.0);
     let b_tools = avg(&baseline, |r| r.tool_calls as f64);
     let b_time = avg(&baseline, |r| r.wall_time_s);
 
-    let l_in = avg(&llmcc, |r| r.input_tokens_k);
-    let l_out = avg(&llmcc, |r| r.output_tokens_k);
+    let l_in = avg(&llmcc, |r| r.input_tokens as f64 / 1000.0);
+    let l_cached = avg(&llmcc, |r| r.cached_input_tokens as f64 / 1000.0);
+    let l_out = avg(&llmcc, |r| r.output_tokens as f64 / 1000.0);
     let l_tools = avg(&llmcc, |r| r.tool_calls as f64);
     let l_time = avg(&llmcc, |r| r.wall_time_s);
 
@@ -81,6 +83,13 @@ pub fn print_summary(results: &[RunResult]) {
     );
     println!(
         "{:<16} | {:>10.1} k | {:>10.1} k | {:>8}",
+        "cached_tokens",
+        b_cached,
+        l_cached,
+        delta(b_cached, l_cached)
+    );
+    println!(
+        "{:<16} | {:>10.1} k | {:>10.1} k | {:>8}",
         "output_tokens",
         b_out,
         l_out,
@@ -106,18 +115,19 @@ pub fn print_summary(results: &[RunResult]) {
 pub fn write_csv(results: &[RunResult], path: &Path) {
     let mut lines = Vec::with_capacity(results.len() + 1);
     lines.push(
-        "task_id,mode,input_tokens_k,output_tokens_k,tool_calls,wall_time_s,artifact_dir".into(),
+        "task_id,mode,input_tokens_k,cached_input_tokens_k,output_tokens_k,tool_calls,wall_time_s"
+            .into(),
     );
     for r in results {
         lines.push(format!(
-            "{},{},{:.1},{:.1},{},{},{}",
+            "{},{},{:.1},{:.1},{:.1},{},{:.1}",
             csv_escape(&r.task_id),
             r.mode,
-            r.input_tokens_k,
-            r.output_tokens_k,
+            r.input_tokens as f64 / 1000.0,
+            r.cached_input_tokens as f64 / 1000.0,
+            r.output_tokens as f64 / 1000.0,
             r.tool_calls,
             r.wall_time_s,
-            csv_escape(&r.artifact_dir.display().to_string()),
         ));
     }
     fs::write(path, lines.join("\n")).unwrap();

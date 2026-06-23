@@ -29,11 +29,11 @@ impl std::fmt::Display for Mode {
 pub struct RunResult {
     pub task_id: String,
     pub mode: Mode,
-    pub input_tokens_k: f64,
-    pub output_tokens_k: f64,
+    pub input_tokens: u64,
+    pub cached_input_tokens: u64,
+    pub output_tokens: u64,
     pub tool_calls: u32,
     pub wall_time_s: f64,
-    pub artifact_dir: PathBuf,
 }
 
 /// Repository checkout shared by all task runs for one task file.
@@ -168,11 +168,28 @@ fn codex_command() -> &'static str {
     if cfg!(windows) { "codex.cmd" } else { "codex" }
 }
 
+#[derive(Debug, Clone, Copy, Default)]
+struct Metrics {
+    input_tokens: u64,
+    cached_input_tokens: u64,
+    output_tokens: u64,
+    native_tool_calls: u32,
+    text_tool_calls: u32,
+}
+
+impl Metrics {
+    fn tool_calls(self) -> u32 {
+        self.native_tool_calls + self.text_tool_calls
+    }
+}
+
 /// Parse JSONL codex output to extract token usage and tool call count.
-fn parse_metrics(jsonl: &str) -> (u64, u64, u32) {
+fn parse_metrics(jsonl: &str) -> Metrics {
     let mut input_tokens: u64 = 0;
+    let mut cached_input_tokens: u64 = 0;
     let mut output_tokens: u64 = 0;
-    let mut tool_calls: u32 = 0;
+    let mut native_tool_calls: u32 = 0;
+    let mut text_tool_calls: u32 = 0;
 
     for line in jsonl.lines() {
         let Ok(event) = serde_json::from_str::<serde_json::Value>(line) else {
@@ -183,7 +200,14 @@ fn parse_metrics(jsonl: &str) -> (u64, u64, u32) {
         if event.get("type").and_then(|t| t.as_str()) == Some("item.completed") {
             if let Some(item) = event.get("item") {
                 if item.get("type").and_then(|t| t.as_str()) == Some("tool_use") {
-                    tool_calls += 1;
+                    native_tool_calls += 1;
+                }
+                if item.get("type").and_then(|t| t.as_str()) == Some("agent_message") {
+                    text_tool_calls += item
+                        .get("text")
+                        .and_then(|text| text.as_str())
+                        .map(count_text_tool_calls)
+                        .unwrap_or(0);
                 }
             }
         }
@@ -195,6 +219,10 @@ fn parse_metrics(jsonl: &str) -> (u64, u64, u32) {
                     .get("input_tokens")
                     .and_then(|v| v.as_u64())
                     .unwrap_or(0);
+                cached_input_tokens += usage
+                    .get("cached_input_tokens")
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or(0);
                 output_tokens += usage
                     .get("output_tokens")
                     .and_then(|v| v.as_u64())
@@ -203,7 +231,17 @@ fn parse_metrics(jsonl: &str) -> (u64, u64, u32) {
         }
     }
 
-    (input_tokens, output_tokens, tool_calls)
+    Metrics {
+        input_tokens,
+        cached_input_tokens,
+        output_tokens,
+        native_tool_calls,
+        text_tool_calls,
+    }
+}
+
+fn count_text_tool_calls(text: &str) -> u32 {
+    text_tool_blocks(text).len() as u32
 }
 
 /// Execute a single task in the given mode and return metrics.
@@ -233,23 +271,40 @@ pub fn run_task(task: &Task, mode: Mode, repo_dir: &Path, artifact_root: &Path) 
     let start = Instant::now();
     let codex = run_codex(&prompt, repo_dir);
     let wall_time_s = start.elapsed().as_secs_f64();
-    write_artifact(&artifact_dir.join("codex.jsonl"), &codex.stdout);
+    write_artifact(
+        &artifact_dir.join("codex.json"),
+        &pretty_codex_jsonl(&codex.stdout),
+    );
+    write_artifact(
+        &artifact_dir.join("codex.txt"),
+        &readable_codex_jsonl(&codex.stdout),
+    );
+    write_artifact(
+        &artifact_dir.join("tools.txt"),
+        &tool_transcript(&codex.stdout),
+    );
     write_artifact(&artifact_dir.join("codex.stderr"), &codex.stderr);
     assert!(codex.success, "codex exec failed: {}", codex.stderr);
 
     // Parse metrics.
-    let (input_tokens, output_tokens, tool_calls) = parse_metrics(&codex.stdout);
+    let metrics = parse_metrics(&codex.stdout);
 
     write_artifact(
         &artifact_dir.join("metadata.toml"),
         &format!(
-            "task_id = {task_id:?}\nrepo = {repo:?}\nmode = {mode:?}\ninput_tokens_k = {input:.1}\noutput_tokens_k = {output:.1}\ntool_calls = {tools}\nwall_time_s = {time:.1}\ngraph_bytes = {graph_bytes}\n",
+            "task_id = {task_id:?}\nrepo = {repo:?}\nmode = {mode:?}\ninput_tokens = {input}\ncached_input_tokens = {cached_input}\noutput_tokens = {output}\ninput_tokens_k = {input_k:.1}\ncached_input_tokens_k = {cached_input_k:.1}\noutput_tokens_k = {output_k:.1}\ntool_calls = {tools}\nnative_tool_calls = {native_tools}\ntext_tool_calls = {text_tools}\nwall_time_s = {time:.1}\ngraph_bytes = {graph_bytes}\n",
             task_id = task.id,
             repo = task.repo,
             mode = mode.to_string(),
-            input = input_tokens as f64 / 1000.0,
-            output = output_tokens as f64 / 1000.0,
-            tools = tool_calls,
+            input = metrics.input_tokens,
+            cached_input = metrics.cached_input_tokens,
+            output = metrics.output_tokens,
+            input_k = metrics.input_tokens as f64 / 1000.0,
+            cached_input_k = metrics.cached_input_tokens as f64 / 1000.0,
+            output_k = metrics.output_tokens as f64 / 1000.0,
+            tools = metrics.tool_calls(),
+            native_tools = metrics.native_tool_calls,
+            text_tools = metrics.text_tool_calls,
             time = wall_time_s,
             graph_bytes = graph.as_ref().map_or(0, |graph| graph.len()),
         ),
@@ -258,16 +313,257 @@ pub fn run_task(task: &Task, mode: Mode, repo_dir: &Path, artifact_root: &Path) 
     RunResult {
         task_id: task.id.clone(),
         mode,
-        input_tokens_k: input_tokens as f64 / 1000.0,
-        output_tokens_k: output_tokens as f64 / 1000.0,
-        tool_calls,
+        input_tokens: metrics.input_tokens,
+        cached_input_tokens: metrics.cached_input_tokens,
+        output_tokens: metrics.output_tokens,
+        tool_calls: metrics.tool_calls(),
         wall_time_s,
-        artifact_dir,
     }
 }
 
 fn write_artifact(path: &Path, content: &str) {
     fs::write(path, content).unwrap();
+}
+
+fn tool_transcript(jsonl: &str) -> String {
+    let mut out = String::new();
+    let mut count = 0;
+
+    for line in jsonl.lines() {
+        let Ok(event) = serde_json::from_str::<serde_json::Value>(line) else {
+            continue;
+        };
+        let Some(item) = event.get("item") else {
+            continue;
+        };
+        let Some(item_type) = item.get("type").and_then(|kind| kind.as_str()) else {
+            continue;
+        };
+
+        match item_type {
+            "agent_message" => {
+                let Some(text) = item.get("text").and_then(|text| text.as_str()) else {
+                    continue;
+                };
+                for block in text_tool_blocks(text) {
+                    count += 1;
+                    out.push_str(&format!(
+                        "## {count}. agent -> tool ({})\n\n{}\n\n",
+                        block.kind,
+                        block.body.trim()
+                    ));
+                }
+            }
+            "tool_use" => {
+                count += 1;
+                out.push_str(&format!(
+                    "## {count}. agent -> tool (native)\n\n{}\n\n",
+                    serde_json::to_string_pretty(item).unwrap()
+                ));
+            }
+            kind if kind.contains("tool") => {
+                count += 1;
+                out.push_str(&format!(
+                    "## {count}. tool -> agent ({kind})\n\n{}\n\n",
+                    serde_json::to_string_pretty(item).unwrap()
+                ));
+            }
+            _ => {}
+        }
+    }
+
+    if out.is_empty() {
+        out.push_str("No tool calls captured.\n");
+    }
+
+    out
+}
+
+#[derive(Debug)]
+struct TextToolBlock {
+    start: usize,
+    kind: String,
+    body: String,
+}
+
+fn text_tool_blocks(text: &str) -> Vec<TextToolBlock> {
+    let mut blocks = Vec::new();
+
+    for lang in ["shell", "powershell", "bash"] {
+        blocks.extend(fenced_blocks(text, lang));
+    }
+    for tag in ["shell", "tool", "tool_call", "tool_input"] {
+        blocks.extend(tagged_blocks(text, tag));
+    }
+    blocks.extend(details_shell_blocks(text));
+
+    blocks.sort_by_key(|block| block.start);
+    blocks
+}
+
+fn details_shell_blocks(text: &str) -> Vec<TextToolBlock> {
+    let mut blocks = Vec::new();
+    let open = "<details><summary>Shell:";
+    let summary_close = "</summary>";
+    let details_close = "</details>";
+    let mut offset = 0;
+
+    while let Some(relative_start) = text[offset..].find(open) {
+        let start = offset + relative_start;
+        let command_start = start + open.len();
+        let Some(relative_summary_end) = text[command_start..].find(summary_close) else {
+            break;
+        };
+        let command_end = command_start + relative_summary_end;
+        let body_start = command_end + summary_close.len();
+        let Some(relative_body_end) = text[body_start..].find(details_close) else {
+            break;
+        };
+        let body_end = body_start + relative_body_end;
+        let command = text[command_start..command_end].trim();
+        let output = text[body_start..body_end].trim();
+        blocks.push(TextToolBlock {
+            start,
+            kind: "details:shell".into(),
+            body: format!(
+                "command:\n{command}\n\noutput:\n{}",
+                strip_markdown_fence(output)
+            ),
+        });
+        offset = body_end + details_close.len();
+    }
+
+    blocks
+}
+
+fn strip_markdown_fence(text: &str) -> &str {
+    let trimmed = text.trim();
+    let Some(after_open) = trimmed.strip_prefix("```") else {
+        return trimmed;
+    };
+    let after_open = after_open
+        .strip_prefix("\r\n")
+        .or_else(|| after_open.strip_prefix('\n'))
+        .unwrap_or(after_open);
+    after_open.strip_suffix("```").unwrap_or(after_open).trim()
+}
+
+fn fenced_blocks(text: &str, lang: &str) -> Vec<TextToolBlock> {
+    let mut blocks = Vec::new();
+    let marker = format!("```{lang}");
+    let mut offset = 0;
+
+    while let Some(relative_start) = text[offset..].find(&marker) {
+        let start = offset + relative_start;
+        let mut body_start = start + marker.len();
+        if text[body_start..].starts_with("\r\n") {
+            body_start += 2;
+        } else if text[body_start..].starts_with('\n') {
+            body_start += 1;
+        }
+
+        let Some(relative_end) = text[body_start..].find("```") else {
+            break;
+        };
+        let end = body_start + relative_end;
+        blocks.push(TextToolBlock {
+            start,
+            kind: format!("fenced:{lang}"),
+            body: text[body_start..end].to_string(),
+        });
+        offset = end + 3;
+    }
+
+    blocks
+}
+
+fn tagged_blocks(text: &str, tag: &str) -> Vec<TextToolBlock> {
+    let mut blocks = Vec::new();
+    let open = format!("<{tag}>");
+    let close = format!("</{tag}>");
+    let mut offset = 0;
+
+    while let Some(relative_start) = text[offset..].find(&open) {
+        let start = offset + relative_start;
+        let body_start = start + open.len();
+        let Some(relative_end) = text[body_start..].find(&close) else {
+            break;
+        };
+        let end = body_start + relative_end;
+        blocks.push(TextToolBlock {
+            start,
+            kind: format!("tag:{tag}"),
+            body: text[body_start..end].to_string(),
+        });
+        offset = end + close.len();
+    }
+
+    blocks
+}
+
+fn pretty_codex_jsonl(jsonl: &str) -> String {
+    let events: Vec<serde_json::Value> = jsonl
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+    let mut text = serde_json::to_string_pretty(&events).unwrap();
+    text.push('\n');
+    text
+}
+
+fn readable_codex_jsonl(jsonl: &str) -> String {
+    let mut out = String::new();
+
+    for (idx, line) in jsonl.lines().enumerate() {
+        let event = serde_json::from_str::<serde_json::Value>(line).unwrap();
+        if idx > 0 {
+            out.push_str("\n\n");
+        }
+        write_readable_value(&mut out, "", &event);
+    }
+
+    if !out.is_empty() {
+        out.push('\n');
+    }
+    out
+}
+
+fn write_readable_value(out: &mut String, prefix: &str, value: &serde_json::Value) {
+    match value {
+        serde_json::Value::Object(map) => {
+            for (key, value) in map {
+                let key = if prefix.is_empty() {
+                    key.to_string()
+                } else {
+                    format!("{prefix}.{key}")
+                };
+                write_readable_value(out, &key, value);
+            }
+        }
+        serde_json::Value::Array(items) => {
+            for (idx, value) in items.iter().enumerate() {
+                write_readable_value(out, &format!("{prefix}[{idx}]"), value);
+            }
+        }
+        serde_json::Value::String(text) if text.contains('\n') => {
+            out.push_str(prefix);
+            out.push_str(":\n");
+            out.push_str(text.trim_matches('\n'));
+            out.push('\n');
+        }
+        serde_json::Value::String(text) => {
+            out.push_str(prefix);
+            out.push_str(": ");
+            out.push_str(text);
+            out.push('\n');
+        }
+        other => {
+            out.push_str(prefix);
+            out.push_str(": ");
+            out.push_str(&other.to_string());
+            out.push('\n');
+        }
+    }
 }
 
 fn sanitize_path_component(value: &str) -> String {
