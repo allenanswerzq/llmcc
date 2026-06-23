@@ -50,8 +50,8 @@ struct RenderArgs {
     #[arg(long)]
     print_block: bool,
 
-    /// Render a DOT graph for visualization
-    #[arg(long)]
+    /// Render a DOT graph for visualization (default behavior)
+    #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
     graph: bool,
 
     /// Component grouping depth for graph visualization (0=project, 1=package, 2=namespace, 3=file)
@@ -59,8 +59,8 @@ struct RenderArgs {
     view_depth: usize,
 
     /// Show only top K nodes by PageRank score
-    #[arg(long = "pagerank-top-k")]
-    pagerank_top_k: Option<usize>,
+    #[arg(long = "top-k")]
+    top_k: Option<usize>,
 
     /// Cluster namespaces by their parent package.
     #[arg(long = "cluster-by-package")]
@@ -110,7 +110,7 @@ impl Cli {
             print_block: render.print_block,
             graph: render.graph,
             view_depth: ViewDepth::from_repr(render.view_depth as u8).unwrap_or_default(),
-            pagerank_top_k: render.pagerank_top_k,
+            top_k: render.top_k,
             cluster_by_package: render.cluster_by_package,
             short_labels: render.short_labels,
         };

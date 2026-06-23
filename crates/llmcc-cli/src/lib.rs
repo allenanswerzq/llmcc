@@ -17,7 +17,7 @@ pub struct RunnerOptions {
     pub print_block: bool,
     pub graph: bool,
     pub view_depth: ViewDepth,
-    pub pagerank_top_k: Option<usize>,
+    pub top_k: Option<usize>,
     pub cluster_by_package: bool,
     pub short_labels: bool,
 }

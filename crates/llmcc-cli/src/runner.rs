@@ -110,7 +110,7 @@ impl Runner {
         let render_start = Instant::now();
 
         let mut graph = CollectedGraph::new(&project_graph);
-        if let Some(top_k) = self.options.pagerank_top_k {
+        if let Some(top_k) = self.options.top_k {
             graph = graph.filter_by_pagerank(&project_graph, top_k);
         }
         graph = graph.remove_orphans();

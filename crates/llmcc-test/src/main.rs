@@ -221,7 +221,7 @@ fn run_single_command(
         processing.parallel,
         processing.print_ir,
         graph.view_depth(),
-        graph.pagerank_top_k,
+        graph.top_k,
     )?;
     // Results are already printed inline by the runner
     let summary = count_outcomes(&outcomes);

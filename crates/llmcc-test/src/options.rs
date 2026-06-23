@@ -13,7 +13,7 @@ pub struct GraphOptions {
 
     /// Number of top PageRank nodes to include.
     #[arg(long = "pagerank-top-k")]
-    pub pagerank_top_k: Option<usize>,
+    pub top_k: Option<usize>,
 
     /// Generate architecture graph instead of dependency graph.
     #[arg(long = "arch-graph")]
@@ -43,7 +43,7 @@ impl GraphOptions {
     }
 
     pub fn with_pagerank_top_k(mut self, top_k: Option<usize>) -> Self {
-        self.pagerank_top_k = top_k;
+        self.top_k = top_k;
         self
     }
 }

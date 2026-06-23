@@ -53,7 +53,7 @@ pub fn run_cases(corpus: &mut Corpus, config: RunnerConfig) -> Result<Vec<CaseOu
             config.processing.parallel,
             config.processing.print_ir,
             config.graph.view_depth(),
-            config.graph.pagerank_top_k,
+            config.graph.top_k,
         )?);
     }
 
@@ -82,7 +82,7 @@ pub fn run_cases_for_file_with_parallel(
     parallel: bool,
     print_ir: bool,
     view_depth: ViewDepth,
-    pagerank_top_k: Option<usize>,
+    top_k: Option<usize>,
 ) -> Result<Vec<CaseOutcome>> {
     let mut matched = 0usize;
     run_cases_in_file(
@@ -94,7 +94,7 @@ pub fn run_cases_for_file_with_parallel(
         parallel,
         print_ir,
         view_depth,
-        pagerank_top_k,
+        top_k,
     )
 }
 
@@ -108,7 +108,7 @@ fn run_cases_in_file(
     parallel: bool,
     print_ir: bool,
     view_depth: ViewDepth,
-    pagerank_top_k: Option<usize>,
+    top_k: Option<usize>,
 ) -> Result<Vec<CaseOutcome>> {
     let mut file_outcomes = Vec::new();
     let mut mutated_file = false;
@@ -135,13 +135,7 @@ fn run_cases_in_file(
         let (outcome, mutated) = {
             let case = &mut file.cases[idx];
             evaluate_case(
-                case,
-                update,
-                keep_temps,
-                parallel,
-                print_ir,
-                view_depth,
-                pagerank_top_k,
+                case, update, keep_temps, parallel, print_ir, view_depth, top_k,
             )?
         };
 
@@ -178,7 +172,7 @@ fn evaluate_case(
     parallel: bool,
     print_ir: bool,
     view_depth: ViewDepth,
-    pagerank_top_k: Option<usize>,
+    top_k: Option<usize>,
 ) -> Result<(CaseOutcome, bool)> {
     let case_id = case.id();
 
@@ -195,14 +189,7 @@ fn evaluate_case(
 
     reset_symbol_id_counter();
     reset_block_id_counter();
-    let summary = build_pipeline_summary(
-        case,
-        keep_temps,
-        parallel,
-        print_ir,
-        view_depth,
-        pagerank_top_k,
-    )?;
+    let summary = build_pipeline_summary(case, keep_temps, parallel, print_ir, view_depth, top_k)?;
     let mut mutated = false;
     let mut status = CaseStatus::Passed;
     let mut failures = Vec::new();

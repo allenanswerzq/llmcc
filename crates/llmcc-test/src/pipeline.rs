@@ -109,7 +109,7 @@ pub struct PipelineOptions {
     /// Component grouping depth for graph visualization.
     pub view_depth: ViewDepth,
     /// Number of top PageRank nodes to include (None = all nodes).
-    pub pagerank_top_k: Option<usize>,
+    pub top_k: Option<usize>,
 }
 
 impl Default for PipelineOptions {
@@ -131,7 +131,7 @@ impl Default for PipelineOptions {
             parallel: false,
             print_ir: false,
             view_depth: ViewDepth::File,
-            pagerank_top_k: None,
+            top_k: None,
         }
     }
 }
@@ -222,7 +222,7 @@ impl PipelineOptions {
     }
 
     pub fn with_pagerank_top_k(mut self, top_k: Option<usize>) -> Self {
-        self.pagerank_top_k = top_k;
+        self.top_k = top_k;
         self
     }
 }
@@ -233,7 +233,7 @@ pub(crate) fn build_pipeline_summary(
     parallel: bool,
     print_ir: bool,
     view_depth: ViewDepth,
-    pagerank_top_k: Option<usize>,
+    top_k: Option<usize>,
 ) -> Result<PipelineSummary> {
     let required = RequiredOutputs::from_case(case);
     if required.is_empty() {
@@ -250,7 +250,7 @@ pub(crate) fn build_pipeline_summary(
         );
     }
 
-    let options = required.pipeline_options(parallel, print_ir, view_depth, pagerank_top_k);
+    let options = required.pipeline_options(parallel, print_ir, view_depth, top_k);
     let mut summary = match case.lang.as_str() {
         "rust" => collect_pipeline::<LangRust>(project.root(), &options)?,
         "typescript" | "ts" => collect_pipeline::<LangTypeScript>(project.root(), &options)?,
@@ -332,7 +332,7 @@ impl RequiredOutputs {
         parallel: bool,
         print_ir: bool,
         view_depth: ViewDepth,
-        pagerank_top_k: Option<usize>,
+        top_k: Option<usize>,
     ) -> PipelineOptions {
         PipelineOptions::new()
             .with_keep_symbols(self.symbols)
@@ -350,6 +350,6 @@ impl RequiredOutputs {
             .with_parallel(parallel)
             .with_print_ir(print_ir)
             .with_view_depth(view_depth)
-            .with_pagerank_top_k(pagerank_top_k)
+            .with_pagerank_top_k(top_k)
     }
 }
