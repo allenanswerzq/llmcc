@@ -1,4 +1,4 @@
-//! Snapshot capture and rendering for test verification.
+﻿//! Snapshot capture and rendering for test verification.
 //!
 //! This module provides a unified interface for capturing and rendering
 //! different aspects of the compilation pipeline for golden-file testing.

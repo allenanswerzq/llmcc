@@ -10,7 +10,7 @@
 //! to detect runs that hit the configured iteration limit.
 
 use std::cmp::Ordering;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 
 use strum_macros::{Display, EnumString};
@@ -508,6 +508,15 @@ impl RankingResult {
     /// Consume this result and return all ranked blocks.
     pub fn into_blocks(self) -> Vec<RankedBlock> {
         self.blocks.into_vec()
+    }
+
+    /// Consume this result, keeping only blocks in `visible`.
+    pub fn into_blocks_filtered(self, visible: &HashSet<BlockId>) -> Vec<RankedBlock> {
+        self.blocks
+            .into_vec()
+            .into_iter()
+            .filter(|r| visible.contains(&r.block_id()))
+            .collect()
     }
 }
 

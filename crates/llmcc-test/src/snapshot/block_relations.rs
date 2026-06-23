@@ -1,4 +1,4 @@
-//! Block relations snapshot capture and rendering.
+﻿//! Block relations snapshot capture and rendering.
 //!
 //! This module captures the relationships established by `link_blocks()`
 //! to verify impl-struct associations, function containment, and other

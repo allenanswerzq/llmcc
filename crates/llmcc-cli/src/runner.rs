@@ -8,10 +8,10 @@ use tracing::info;
 use llmcc_core::context::{BuildMetrics, FileOrder};
 use llmcc_core::graph::ProjectGraph;
 use llmcc_core::lang_def::Language as CoreLanguage;
+use llmcc_core::{CollectedGraph, GraphBuildOptions, build_graphs};
 use llmcc_core::{CompileCtxt, Error, ResolveOptions, Result, print_block_tree};
-use llmcc_core::{GraphBuildOptions, build_graphs};
 use llmcc_cpp::LangCpp;
-use llmcc_dot::{RenderOptions, render_graph_with_options};
+use llmcc_dot::{RenderOptions, render};
 use llmcc_resolver::{bind_symbols, build_and_collect};
 use llmcc_rust::LangRust;
 use llmcc_ts::LangTypeScript;
@@ -108,17 +108,19 @@ impl Runner {
         }
 
         let render_start = Instant::now();
+
+        let mut graph = CollectedGraph::new(&project_graph);
+        if let Some(top_k) = self.options.pagerank_top_k {
+            graph = graph.filter_by_pagerank(&project_graph, top_k);
+        }
+        graph = graph.remove_orphans();
+
         let render_options = RenderOptions {
-            show_orphan_nodes: false,
-            pagerank_top_k: self.options.pagerank_top_k,
             cluster_by_package: self.options.cluster_by_package,
             short_labels: self.options.short_labels,
+            for_agent: false,
         };
-        let output = render_graph_with_options(
-            &project_graph,
-            self.options.component_depth,
-            &render_options,
-        );
+        let output = render(&graph, self.options.component_depth, &render_options);
 
         info!(
             "Graph rendering: {:.2}s",

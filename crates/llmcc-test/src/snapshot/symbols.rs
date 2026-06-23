@@ -1,4 +1,4 @@
-//! Symbol snapshot capture and rendering.
+﻿//! Symbol snapshot capture and rendering.
 
 use super::{Snapshot, SnapshotContext};
 use std::fmt::Write as _;

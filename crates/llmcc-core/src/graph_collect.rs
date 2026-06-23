@@ -3,21 +3,14 @@
 //! The collector keeps renderer APIs small: callers get stable nodes, unique
 //! edges, and display metadata without handling raw graph relations.
 
-#[path = "graph_aggregate.rs"]
-mod aggregate;
-
-pub use aggregate::{
-    AggregateVisitor, AggregatedEdge, AggregatedGraph, AggregatedGraphVisitor, AggregatedNode,
-    AggregatedNodeKind,
-};
-
-use std::collections::{BTreeSet, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::path::Path;
 
 use rayon::prelude::*;
 
 use crate::block_rel::BlockIndexEntry;
 use crate::graph::ProjectGraph;
+use crate::pagerank::{PageRanker, RankedBlock};
 use crate::symbol::SymKind;
 use crate::{BlockId, GraphQuery, UnitMeta};
 use strum_macros::{Display, EnumString, IntoStaticStr};
@@ -29,26 +22,6 @@ pub struct CollectedGraph {
     nodes: Vec<CollectedNode>,
     /// Unique semantic edges between visible nodes.
     edges: BTreeSet<CollectedEdge>,
-}
-
-/// Visitor for collected graph facts.
-///
-/// This is the stable traversal boundary for renderers, JSON formatters,
-/// indexes, tests, and agent-oriented summaries. Visitors receive already
-/// filtered renderer-ready nodes and semantic edges without handling raw block
-/// relations.
-pub trait CollectedGraphVisitor {
-    /// Output produced after the visitor has traversed the graph.
-    type Output;
-
-    /// Visit one collected node in source order.
-    fn visit_node(&mut self, node: &CollectedNode);
-
-    /// Visit one collected edge in deterministic order.
-    fn visit_edge(&mut self, edge: &CollectedEdge);
-
-    /// Finish the visitor and return its output.
-    fn finish(self) -> Self::Output;
 }
 
 impl CollectedGraph {
@@ -75,29 +48,107 @@ impl CollectedGraph {
         &self.edges
     }
 
-    /// Traverse collected nodes followed by collected edges.
-    pub fn visit<V: CollectedGraphVisitor>(&self, visitor: &mut V) {
-        for node in &self.nodes {
-            visitor.visit_node(node);
+    /// Filter to the top-K most important nodes using PageRank scoring.
+    ///
+    /// Uses a module-coverage heuristic: reserves 40% of the budget for
+    /// distributing top nodes across modules, then fills the rest by global
+    /// rank. Returns self unchanged if ranking fails.
+    pub fn filter_by_pagerank(self, project: &ProjectGraph, top_k: usize) -> Self {
+        let ranker = PageRanker::new(project);
+        let Ok(result) = ranker.rank() else {
+            return self;
+        };
+
+        let node_ids: HashSet<BlockId> = self.nodes.iter().map(|n| n.block_id).collect();
+        let ranked = result.into_blocks_filtered(&node_ids);
+
+        if ranked.len() <= top_k {
+            return self;
         }
-        for edge in &self.edges {
-            visitor.visit_edge(edge);
+
+        let selected = select_top_k_with_coverage(&self.nodes, &ranked, top_k);
+        self.retain_nodes(&selected)
+    }
+
+    /// Remove nodes that have no edges.
+    pub fn remove_orphans(self) -> Self {
+        let connected: HashSet<BlockId> = self
+            .edges
+            .iter()
+            .flat_map(|e| [e.from_id, e.to_id])
+            .collect();
+        self.retain_nodes(&connected)
+    }
+
+    /// Keep only nodes whose block_id is in `keep`, and edges between them.
+    fn retain_nodes(mut self, keep: &HashSet<BlockId>) -> Self {
+        self.nodes.retain(|n| keep.contains(&n.block_id));
+        let node_ids: HashSet<BlockId> = self.nodes.iter().map(|n| n.block_id).collect();
+        self.edges
+            .retain(|e| node_ids.contains(&e.from_id) && node_ids.contains(&e.to_id));
+        self
+    }
+}
+
+/// Select top-K nodes ensuring broad module coverage.
+///
+/// Two-phase selection:
+/// 1. **Coverage phase** (40% of budget): pick the highest-ranked node from
+///    each module, ordered by module total score, until the coverage budget
+///    is exhausted. This prevents a single hot module from dominating.
+/// 2. **Fill phase** (remaining 60%): fill the rest by global PageRank order
+///    regardless of module.
+fn select_top_k_with_coverage(
+    nodes: &[CollectedNode],
+    ranked: &[RankedBlock],
+    top_k: usize,
+) -> HashSet<BlockId> {
+    // Index nodes by block_id for fast lookup.
+    let node_by_id: BTreeMap<BlockId, &CollectedNode> =
+        nodes.iter().map(|n| (n.block_id, n)).collect();
+
+    // Build per-module block lists (already in rank order) and total scores.
+    let mut modules: BTreeMap<String, (f64, Vec<BlockId>)> = BTreeMap::new();
+    for r in ranked {
+        let key = node_by_id
+            .get(&r.block_id())
+            .map(|n| n.module_key())
+            .unwrap_or_else(|| "unknown::<root>".into());
+        let entry = modules.entry(key).or_default();
+        entry.0 += r.score();
+        entry.1.push(r.block_id());
+    }
+
+    // Sort modules by total score, descending.
+    let mut by_score: Vec<_> = modules.into_iter().collect();
+    by_score.sort_by(|a, b| b.1.0.total_cmp(&a.1.0));
+
+    let coverage_budget = (top_k * 2 / 5).max(1); // 40% of budget
+    let per_module = (top_k / 120).clamp(1, 5);
+
+    // Phase 1: one or a few top nodes from each module for breadth.
+    let mut selected = HashSet::with_capacity(top_k);
+    for (_, (_, blocks)) in &by_score {
+        if selected.len() >= coverage_budget {
+            break;
+        }
+        for &bid in blocks.iter().take(per_module) {
+            if selected.len() >= coverage_budget {
+                break;
+            }
+            selected.insert(bid);
         }
     }
 
-    /// Apply a transform visitor and return the visitor's output type.
-    pub fn transform<Output>(
-        &self,
-        mut visitor: impl CollectedGraphVisitor<Output = Output>,
-    ) -> Output {
-        self.visit(&mut visitor);
-        visitor.finish()
+    // Phase 2: fill remaining slots by global rank.
+    for r in ranked {
+        if selected.len() >= top_k {
+            break;
+        }
+        selected.insert(r.block_id());
     }
 
-    /// Split the graph into owned node and edge collections.
-    pub fn into_parts(self) -> (Vec<CollectedNode>, BTreeSet<CollectedEdge>) {
-        (self.nodes, self.edges)
-    }
+    selected
 }
 
 struct NodePass<'p, 'tcx> {
@@ -431,6 +482,13 @@ impl CollectedNode {
     pub fn namespace_root(&self) -> Option<String> {
         self.unit_meta.module_root.as_deref().map(display_path)
     }
+
+    /// Module key for grouping: `"package::namespace"`.
+    pub fn module_key(&self) -> String {
+        let pkg = self.package().unwrap_or("<unknown_package>");
+        let ns = self.namespace().unwrap_or("<root>");
+        format!("{pkg}::{ns}")
+    }
 }
 
 fn display_path(path: &Path) -> String {
@@ -481,6 +539,23 @@ impl CollectedEdgeKind {
                 | Self::ImplArg
                 | Self::Annotation
         )
+    }
+
+    /// Return role labels for a DOT edge rendered in stored direction.
+    pub fn role_labels(self) -> (&'static str, &'static str) {
+        match self {
+            Self::Field => ("field_type", "container"),
+            Self::NestedField => ("type_dep", "container"),
+            Self::TypeArg => ("type_arg", "generic"),
+            Self::Call => ("caller", "callee"),
+            Self::Param => ("input", "func"),
+            Self::Return => ("func", "output"),
+            Self::Conformance => ("contract", "conforms"),
+            Self::Specialization => ("base", "specializes"),
+            Self::TypeDep => ("source", "type_dep"),
+            Self::ImplArg => ("type_arg", "implementation"),
+            Self::Annotation => ("annotation", "annotates"),
+        }
     }
 }
 

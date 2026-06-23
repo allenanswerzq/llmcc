@@ -1,6 +1,6 @@
+use llmcc_core::ViewDepth;
 use llmcc_core::block::reset_block_id_counter;
 use llmcc_core::symbol::reset_symbol_id_counter;
-use llmcc_dot::ComponentDepth;
 use llmcc_error::{Error, ErrorKind, Result};
 
 use crate::corpus::{Corpus, CorpusCase, CorpusFile};
@@ -72,15 +72,7 @@ pub fn run_cases_for_file(
     update: bool,
     keep_temps: bool,
 ) -> Result<Vec<CaseOutcome>> {
-    run_cases_for_file_with_parallel(
-        file,
-        update,
-        keep_temps,
-        false,
-        true,
-        ComponentDepth::File,
-        None,
-    )
+    run_cases_for_file_with_parallel(file, update, keep_temps, false, true, ViewDepth::File, None)
 }
 
 pub fn run_cases_for_file_with_parallel(
@@ -89,7 +81,7 @@ pub fn run_cases_for_file_with_parallel(
     keep_temps: bool,
     parallel: bool,
     print_ir: bool,
-    component_depth: ComponentDepth,
+    component_depth: ViewDepth,
     pagerank_top_k: Option<usize>,
 ) -> Result<Vec<CaseOutcome>> {
     let mut matched = 0usize;
@@ -115,7 +107,7 @@ fn run_cases_in_file(
     keep_temps: bool,
     parallel: bool,
     print_ir: bool,
-    component_depth: ComponentDepth,
+    component_depth: ViewDepth,
     pagerank_top_k: Option<usize>,
 ) -> Result<Vec<CaseOutcome>> {
     let mut file_outcomes = Vec::new();
@@ -185,7 +177,7 @@ fn evaluate_case(
     keep_temps: bool,
     parallel: bool,
     print_ir: bool,
-    component_depth: ComponentDepth,
+    component_depth: ViewDepth,
     pagerank_top_k: Option<usize>,
 ) -> Result<(CaseOutcome, bool)> {
     let case_id = case.id();

@@ -1,12 +1,15 @@
 use std::fmt::Write as _;
 use std::path::Path;
 
+use llmcc_core::ViewDepth;
 use llmcc_core::block::BlockKind;
 use llmcc_core::context::{CompileCtxt, CompileUnit};
 use llmcc_core::ir_builder::{HirBuildOptions, build_hir};
 use llmcc_core::lang_def::Language;
-use llmcc_core::{BlockId, GraphBuildOptions, ProjectGraph, ResolveOptions, build_graphs};
-use llmcc_dot::{ComponentDepth, render_graph};
+use llmcc_core::{
+    BlockId, CollectedGraph, GraphBuildOptions, ProjectGraph, ResolveOptions, build_graphs,
+};
+use llmcc_dot::RenderOptions;
 use llmcc_error::{Error, ErrorKind, Result};
 use llmcc_resolver::{bind_symbols, collect_symbols};
 use llmcc_rust::LangRust;
@@ -82,29 +85,33 @@ where
         block_relations,
     ) = if let Some(project) = project_graph {
         project.link_blocks();
+        let graph = CollectedGraph::new(&project);
+        let opts = RenderOptions::default();
+        let render_at = |level: ViewDepth| llmcc_dot::render(&graph, level, &opts);
+
         let dep_graph: Option<String> = None;
         let arch_graph: Option<String> = if options.build_arch_graph {
-            Some(render_graph(&project, options.component_depth))
+            Some(render_at(options.component_depth))
         } else {
             None
         };
         let arch_graph_d0: Option<String> = if options.build_arch_graph_depth_0 {
-            Some(render_graph(&project, ComponentDepth::Project))
+            Some(render_at(ViewDepth::Project))
         } else {
             None
         };
         let arch_graph_d1: Option<String> = if options.build_arch_graph_depth_1 {
-            Some(render_graph(&project, ComponentDepth::Package))
+            Some(render_at(ViewDepth::Package))
         } else {
             None
         };
         let arch_graph_d2: Option<String> = if options.build_arch_graph_depth_2 {
-            Some(render_graph(&project, ComponentDepth::Namespace))
+            Some(render_at(ViewDepth::Module))
         } else {
             None
         };
         let arch_graph_d3: Option<String> = if options.build_arch_graph_depth_3 {
-            Some(render_graph(&project, ComponentDepth::File))
+            Some(render_at(ViewDepth::File))
         } else {
             None
         };

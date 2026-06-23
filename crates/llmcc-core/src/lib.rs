@@ -33,11 +33,7 @@ pub use block::{BasicBlock, BlockKind, BlockRelation};
 pub use context::{CompileCtxt, CompileUnit, FileOrder};
 pub use graph::{ProjectGraph, UnitGraph, UnitNode};
 pub use graph_builder::{GraphBuildOptions, build_graphs};
-pub use graph_collect::{
-    AggregateVisitor, AggregatedEdge, AggregatedGraph, AggregatedGraphVisitor, AggregatedNode,
-    AggregatedNodeKind, CollectedEdge, CollectedEdgeKind, CollectedGraph, CollectedGraphVisitor,
-    CollectedNode,
-};
+pub use graph_collect::{CollectedEdge, CollectedEdgeKind, CollectedGraph, CollectedNode};
 pub use graph_query::{FieldArgs, FieldTypes, GraphQuery};
 pub use id::{
     BlockId, HirId, ScopeId, SymId, SymbolId, next_hir_id, reset_block_id_counter,
@@ -47,7 +43,7 @@ pub use ir_builder::{HirBuildMetrics, HirBuildOptions, build_file_hir, build_hir
 pub use ir_query::HirQuery;
 pub use lang_def::{HirBuildAction, Language, LanguageDefinition, NO_FIELD_ID, ParseChild};
 pub use lang_registry::{LanguageHandler, LanguageHandlerImpl, LanguageRegistry};
-pub use meta::{ArchitectureLevel, UnitMeta, UnitMetaIndex};
+pub use meta::{UnitMeta, UnitMetaIndex, ViewDepth};
 pub use paste;
 pub use printer::{
     IrRender, PrintConfig, PrintFormat, print_block_tree, print_block_tree_with, print_ir,

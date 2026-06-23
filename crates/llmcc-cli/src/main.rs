@@ -12,7 +12,7 @@ use llmcc::Language;
 use llmcc::Runner;
 use llmcc::RunnerOptions;
 use llmcc_core::Result;
-use llmcc_dot::ComponentDepth;
+use llmcc_core::ViewDepth;
 
 #[derive(Args, Debug)]
 #[command(group = ArgGroup::new("inputs").required(true).args(["files", "dirs"]))]
@@ -109,7 +109,7 @@ impl Cli {
             print_ir: render.print_ir,
             print_block: render.print_block,
             graph: render.graph,
-            component_depth: ComponentDepth::from(render.component_depth),
+            component_depth: ViewDepth::from_repr(render.component_depth as u8).unwrap_or_default(),
             pagerank_top_k: render.pagerank_top_k,
             cluster_by_package: render.cluster_by_package,
             short_labels: render.short_labels,

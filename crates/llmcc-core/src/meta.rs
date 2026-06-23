@@ -33,7 +33,7 @@ const MAX_MODULE_DOMINANCE_RATIO: f64 = 0.80;
 #[repr(u8)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case", ascii_case_insensitive)]
-pub enum ArchitectureLevel {
+pub enum ViewDepth {
     #[strum(serialize = "project", serialize = "0")]
     Project = 0,
     #[strum(serialize = "package", serialize = "1")]
@@ -46,7 +46,7 @@ pub enum ArchitectureLevel {
     File = 3,
 }
 
-impl ArchitectureLevel {
+impl ViewDepth {
     pub fn as_u8(self) -> u8 {
         self as u8
     }
@@ -97,26 +97,26 @@ impl UnitMeta {
         self
     }
 
-    pub fn name_at_level(&self, level: ArchitectureLevel) -> Option<&str> {
+    pub fn name_at_level(&self, level: ViewDepth) -> Option<&str> {
         match level {
-            ArchitectureLevel::Project => self.project_name.as_deref(),
-            ArchitectureLevel::Package => self.package_name.as_deref(),
-            ArchitectureLevel::Module => self.module_name.as_deref(),
-            ArchitectureLevel::File => self.file_name.as_deref(),
+            ViewDepth::Project => self.project_name.as_deref(),
+            ViewDepth::Package => self.package_name.as_deref(),
+            ViewDepth::Module => self.module_name.as_deref(),
+            ViewDepth::File => self.file_name.as_deref(),
         }
     }
 
-    pub fn root_at_level(&self, level: ArchitectureLevel) -> Option<&Path> {
+    pub fn root_at_level(&self, level: ViewDepth) -> Option<&Path> {
         match level {
-            ArchitectureLevel::Project => self.project_root.as_deref(),
-            ArchitectureLevel::Package => self.package_root.as_deref(),
-            ArchitectureLevel::Module => self.module_root.as_deref(),
-            ArchitectureLevel::File => self.file_path.as_deref(),
+            ViewDepth::Project => self.project_root.as_deref(),
+            ViewDepth::Package => self.package_root.as_deref(),
+            ViewDepth::Module => self.module_root.as_deref(),
+            ViewDepth::File => self.file_path.as_deref(),
         }
     }
 
-    pub fn qualified_name(&self, level: ArchitectureLevel) -> String {
-        ArchitectureLevel::iter()
+    pub fn qualified_name(&self, level: ViewDepth) -> String {
+        ViewDepth::iter()
             .take_while(|current| current.as_u8() <= level.as_u8())
             .filter_map(|current| self.name_at_level(current))
             .collect::<Vec<_>>()

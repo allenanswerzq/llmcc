@@ -4,7 +4,7 @@ use clap::ValueEnum;
 
 pub mod runner;
 
-use llmcc_dot::ComponentDepth;
+use llmcc_core::ViewDepth;
 
 pub use runner::Runner;
 
@@ -16,7 +16,7 @@ pub struct RunnerOptions {
     pub print_ir: bool,
     pub print_block: bool,
     pub graph: bool,
-    pub component_depth: ComponentDepth,
+    pub component_depth: ViewDepth,
     pub pagerank_top_k: Option<usize>,
     pub cluster_by_package: bool,
     pub short_labels: bool,

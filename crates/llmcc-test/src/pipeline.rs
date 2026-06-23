@@ -1,8 +1,8 @@
 mod collect;
 mod output;
 
+use llmcc_core::ViewDepth;
 use llmcc_cpp::LangCpp;
-use llmcc_dot::ComponentDepth;
 use llmcc_error::{Error, ErrorKind, Result};
 use llmcc_rust::LangRust;
 use llmcc_ts::LangTypeScript;
@@ -107,7 +107,7 @@ pub struct PipelineOptions {
     /// Whether to print IR during symbol resolution.
     pub print_ir: bool,
     /// Component grouping depth for graph visualization.
-    pub component_depth: ComponentDepth,
+    pub component_depth: ViewDepth,
     /// Number of top PageRank nodes to include (None = all nodes).
     pub pagerank_top_k: Option<usize>,
 }
@@ -130,7 +130,7 @@ impl Default for PipelineOptions {
             keep_symbol_deps: false,
             parallel: false,
             print_ir: false,
-            component_depth: ComponentDepth::File,
+            component_depth: ViewDepth::File,
             pagerank_top_k: None,
         }
     }
@@ -216,7 +216,7 @@ impl PipelineOptions {
         self
     }
 
-    pub fn with_component_depth(mut self, depth: ComponentDepth) -> Self {
+    pub fn with_component_depth(mut self, depth: ViewDepth) -> Self {
         self.component_depth = depth;
         self
     }
@@ -232,7 +232,7 @@ pub(crate) fn build_pipeline_summary(
     keep_temps: bool,
     parallel: bool,
     print_ir: bool,
-    component_depth: ComponentDepth,
+    component_depth: ViewDepth,
     pagerank_top_k: Option<usize>,
 ) -> Result<PipelineSummary> {
     let required = RequiredOutputs::from_case(case);
@@ -331,7 +331,7 @@ impl RequiredOutputs {
         &self,
         parallel: bool,
         print_ir: bool,
-        component_depth: ComponentDepth,
+        component_depth: ViewDepth,
         pagerank_top_k: Option<usize>,
     ) -> PipelineOptions {
         PipelineOptions::new()

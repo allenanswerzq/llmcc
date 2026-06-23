@@ -1,5 +1,5 @@
-use clap::Args;
-use llmcc_dot::ComponentDepth;
+﻿use clap::Args;
+use llmcc_core::ViewDepth;
 
 #[derive(Args, Debug, Clone, Default)]
 pub struct GraphOptions {
@@ -33,12 +33,12 @@ impl GraphOptions {
         Self::default()
     }
 
-    pub fn component_depth(&self) -> ComponentDepth {
-        ComponentDepth::from(self.component_depth_num)
+    pub fn component_depth(&self) -> ViewDepth {
+        ViewDepth::from_repr(self.component_depth_num as u8).unwrap_or_default()
     }
 
-    pub fn with_component_depth(mut self, depth: ComponentDepth) -> Self {
-        self.component_depth_num = usize::from(depth);
+    pub fn with_component_depth(mut self, depth: ViewDepth) -> Self {
+        self.component_depth_num = depth as usize;
         self
     }
 

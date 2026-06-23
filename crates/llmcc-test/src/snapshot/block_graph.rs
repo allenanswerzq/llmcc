@@ -1,4 +1,4 @@
-//! Block graph snapshot capture and rendering.
+﻿//! Block graph snapshot capture and rendering.
 
 use super::{Snapshot, SnapshotContext};
 use llmcc_core::BlockId;
