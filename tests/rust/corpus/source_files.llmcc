@@ -1,0 +1,262 @@
+===============================================================================
+block-comments
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+/*
+ * Block comments
+ */
+
+/* Comment with asterisks **/
+
+/** Outer block comment */
+
+
+/*! Inner block comment */
+/**/
+
+----
+
+(source_file
+  (block_comment)
+  (block_comment)
+  (block_comment
+    outer: (outer_doc_comment_marker)
+    doc: (doc_comment))
+  (block_comment
+    inner: (inner_doc_comment_marker)
+    doc: (doc_comment))
+  (block_comment))
+
+
+
+
+===============================================================================
+nested-block-comments
+===============================================================================
+/* /* double nested */ */
+// ---
+/*/*/* triple nested */*/*/
+// ---
+/****
+  /****
+    nested with extra stars which makes it a regular block comment
+    and not a block doc comment
+  ****/
+****/
+// ---
+----
+(source_file
+  (block_comment)
+  (line_comment)
+  (block_comment)
+  (line_comment)
+  (block_comment)
+  (line_comment))
+
+
+
+
+===============================================================================
+line-comments
+===============================================================================
+// Comment
+/// Outer line doc comment
+//! Inner line doc comment
+----
+(source_file
+  (line_comment)
+  (line_comment
+    outer: (outer_doc_comment_marker)
+    doc: (doc_comment))
+  (line_comment
+    inner: (inner_doc_comment_marker)
+    doc: (doc_comment)))
+
+
+
+
+===============================================================================
+line-doc-comments
+===============================================================================
+//!  - Inner line doc
+//!! - Still an inner line doc (but with a bang at the beginning)
+//   - Only a comment
+///  - Outer line doc (exactly 3 slashes)
+///
+//// - Only a comment
+---
+(source_file
+  (line_comment
+    inner: (inner_doc_comment_marker)
+    doc: (doc_comment))
+  (line_comment
+    inner: (inner_doc_comment_marker)
+    doc: (doc_comment))
+  (line_comment)
+  (line_comment
+    outer: (outer_doc_comment_marker)
+    doc: (doc_comment))
+  (line_comment
+    outer: (outer_doc_comment_marker)
+    doc: (doc_comment))
+  (line_comment))
+
+
+
+
+===============================================================================
+block-doc-comments
+===============================================================================
+/*!  - Inner block doc */
+/*!! - Still an inner block doc (but with a bang at the beginning) */
+/*   - Only a comment */
+/**  - Outer block doc (exactly) 2 asterisks */
+/*** - Only a comment */
+----
+(source_file
+  (block_comment
+    inner: (inner_doc_comment_marker)
+    doc: (doc_comment))
+  (block_comment
+    inner: (inner_doc_comment_marker)
+    doc: (doc_comment))
+  (block_comment)
+  (block_comment
+    outer: (outer_doc_comment_marker)
+    doc: (doc_comment))
+  (block_comment))
+
+
+
+
+===============================================================================
+nested-doc-block-comments
+===============================================================================
+/*   /* */  /** */  /*! */  */
+/*!  /* */  /** */  /*! */  */
+/**  /* */  /** */  /*! */  */
+----
+(source_file
+  (block_comment)
+  (block_comment
+    inner: (inner_doc_comment_marker)
+    doc: (doc_comment))
+  (block_comment
+    outer: (outer_doc_comment_marker)
+    doc: (doc_comment)))
+
+
+
+
+===============================================================================
+comments-degenerate-cases
+===============================================================================
+//!
+/*!*/
+//
+///
+let x; // <- immediate item after an empty line doc comment
+/**/
+/***/
+----
+(source_file
+  (line_comment
+    (inner_doc_comment_marker)
+    (doc_comment))
+  (block_comment
+    (inner_doc_comment_marker))
+  (line_comment)
+  (line_comment
+    (outer_doc_comment_marker)
+    (doc_comment))
+  (let_declaration
+    (identifier))
+  (line_comment)
+  (block_comment)
+  (block_comment))
+
+
+
+
+===============================================================================
+line-doc-comment-with-no-eol
+===============================================================================
+//! Doc comment
+
+--- expect:block-graph ---
+none
+
+
+
+
+===============================================================================
+greek-letters-in-identifiers
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+const σ1 : Σ = 0;
+const ψ_2 : Ψ = 1;
+
+---
+
+(source_file
+  (const_item
+    (identifier)
+    (type_identifier)
+    (integer_literal))
+  (const_item
+    (identifier)
+    (type_identifier)
+    (integer_literal)))
+
+
+
+
+===============================================================================
+shebang-line-containing-spaces
+===============================================================================
+#!/usr/bin/env -S cargo +nightly -Zscript
+
+--- expect:block-graph ---
+none
+
+
+
+
+===============================================================================
+empty-shebang-with-code-after
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+#!
+fn main() {}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (func:2 main)
+)
+
+
+
+
+===============================================================================
+immediate-inner-attribute
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+#![feature(thing)]
+fn main() {}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (func:2 main)
+)

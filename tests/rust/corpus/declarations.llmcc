@@ -1,0 +1,1538 @@
+===============================================================================
+modules
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+mod english;
+
+mod english {}
+
+mod english {
+    mod greetings {}
+    mod farewells {}
+}
+
+pub mod english;
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (module:2 english)
+  (module:3 english)
+  (module:4 english (inline)
+    (module:5 greetings)
+    (module:6 farewells)
+  )
+  (module:7 english)
+)
+
+
+
+
+===============================================================================
+extern-crate-declarations
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+extern crate std;
+extern crate std as ruststd;
+pub extern crate futures;
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib))
+
+
+
+
+===============================================================================
+function-declarations
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+fn main() {}
+
+fn add(x: i32, y: i32) -> i32 {
+    return x + y;
+}
+
+fn takes_slice(slice: &str) {
+    println!("Got: {}", slice);
+}
+
+fn foo() -> [u32; 2] {
+    return [1, 2];
+}
+
+fn foo() -> (u32, u16) {
+    return (1, 2);
+}
+
+fn foo() {
+    return
+}
+
+fn foo(x: impl FnOnce() -> result::Result<T, E>) {}
+
+fn foo(#[attr] x: i32, #[attr] x: i64) {}
+
+fn accumulate(self) -> Machine<{State::Accumulate}> {}
+
+fn foo(bar: impl for<'a> Baz<Quux<'a>>) {}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (func:2 main)
+  (func:3 add
+    (parameter:4 x @type i32)
+    (parameter:5 y @type i32)
+    (return:6 @type i32)
+  )
+  (func:7 takes_slice
+    (parameter:8 slice @type str)
+  )
+  (func:10 foo
+    (return:11 @type u32)
+  )
+  (func:12 foo
+    (return:13 @type u32)
+  )
+  (func:14 foo)
+  (func:15 foo
+    (parameter:16 x @type i32)
+  )
+  (func:17 foo
+    (parameter:18 x @type i32)
+    (parameter:19 x @type i32)
+  )
+  (func:20 accumulate
+    (parameter:21 self)
+    (return:22)
+  )
+  (func:23 foo
+    (parameter:24 bar @type bar)
+  )
+)
+
+
+
+
+===============================================================================
+const-function-declarations
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+const fn main() {}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (func:2 main)
+)
+
+
+
+
+===============================================================================
+functions-with-abstract-return-types
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+fn triples(a: impl B) -> impl Iterator<Item=(usize)> {
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (func:2 triples
+    (parameter:3 a @type a)
+    (return:4)
+  )
+)
+
+
+
+
+===============================================================================
+impl-with-lifetimes-first
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+fn foo<'a>(x: impl 'a + Clone) {}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (func:2 foo
+    (parameter:3 x @type x)
+  )
+)
+
+
+
+
+===============================================================================
+functions-with-precise-capture-syntax
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+fn capture<T>(&self) -> impl Iterator<Item = usize> + use<'_, T> {
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (func:2 capture
+    (parameter:3 self)
+    (return:4)
+  )
+)
+
+
+
+
+===============================================================================
+functions-with-empty-precise-capture-syntax
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+fn capture(&self) -> impl Iterator<Item = usize> + use<> {
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (func:2 capture
+    (parameter:3 self)
+    (return:4)
+  )
+)
+
+
+
+
+===============================================================================
+diverging-functions
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+fn aborts() -> ! {}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (func:2 aborts
+    (return:3)
+  )
+)
+
+
+
+
+===============================================================================
+extern-function-declarations
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+extern "C" fn foo() {}
+extern "C" fn printf(
+    *const c_char,
+    ...,
+) {}
+
+pub unsafe extern "C" fn c_variadic_no_use(fmt: *const i8, mut ap: ...) -> i32 {
+    // CHECK: call void @llvm.va_start
+    vprintf(fmt, ap.as_va_list())
+    // CHECK: call void @llvm.va_end
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (func:2 foo)
+  (func:3 printf)
+  (func:4 c_variadic_no_use
+    (parameter:5 fmt @type i8)
+    (return:6 @type i32)
+  )
+)
+
+
+
+
+===============================================================================
+use-declarations
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+use abc;
+use phrases::japanese;
+use sayings::english::greetings;
+use sayings::english::greetings as en_greetings ;
+use phrases::english::{greetings,farewells};
+use sayings::japanese::farewells::*;
+pub use self::greetings::hello;
+use sayings::english::{self, greetings as en_greetings, farewells as en_farewells};
+use three::{ dot::{one, four} };
+use my::{ some::* };
+use my::{*};
+use ::*;
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib))
+
+
+
+
+===============================================================================
+variable-bindings
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+let x;
+let x = 42;
+let x: i32;
+let x: i8 = 42;
+let mut x = 5;
+let y: bool = false;
+let bool: bool = false;
+let u32: str = "";
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib))
+
+
+
+
+===============================================================================
+let-else-statements
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+let Foo::Bar {
+    texts,
+    values,
+} = foo().bar().await? else {
+    return Err(index)
+};
+
+let Some(x) = y else {
+    let None = z else {
+        foo();
+        break;
+    };
+    continue;
+};
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+)
+
+
+
+
+===============================================================================
+let-declarations-with-if-expressions-as-the-value
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+let a = if b {
+    c
+} else {
+    d
+};
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib))
+
+
+
+
+===============================================================================
+let-declarations-with-contextual-keywords-as-names
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+let default = 1;
+let union = 2;
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib))
+
+
+
+
+===============================================================================
+structs
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+struct Proton;
+struct Electron {}
+struct Person {pub name: String, pub age: u32}
+struct Point {
+  x: i32,
+
+  #[attribute1]
+  y: i32,
+}
+struct Color(pub i32, i32, i32);
+struct Inches(i32);
+struct Empty(pub ());
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (class:2 Proton)
+  (class:3 Electron)
+  (class:4 Person
+    (field:5 name @type String)
+    (field:6 age @type u32)
+  )
+  (class:7 Point
+    (field:8 x @type i32)
+    (field:9 y @type i32)
+  )
+  (class:10 Color
+    (field:11 0 @type i32)
+    (field:12 1 @type i32)
+    (field:13 2 @type i32)
+  )
+  (class:14 Inches
+    (field:15 0 @type i32)
+  )
+  (class:16 Empty
+    (field:17 0)
+  )
+)
+
+
+
+
+===============================================================================
+unions
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+pub union in6_addr__bindgen_ty_1 {
+    pub __u6_addr8: [__uint8_t; 16usize],
+    pub __u6_addr16: [__uint16_t; 8usize],
+    pub __u6_addr32: [__uint32_t; 4usize],
+    _bindgen_union_align: [u32; 4usize],
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (field:2 __u6_addr8 @type __uint8_t)
+  (field:3 __u6_addr16 @type __uint16_t)
+  (field:4 __u6_addr32 @type __uint32_t)
+  (field:5 _bindgen_union_align @type u32)
+)
+
+
+
+
+===============================================================================
+generic-structs
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+struct A<B> {}
+struct C<'a, 'b> {}
+struct C<'a,> {}
+struct D<const SIZE: usize> {}
+struct E<#[attr] T> {}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (class:2 A)
+  (class:3 C)
+  (class:4 C)
+  (class:5 D)
+  (class:6 E)
+)
+
+
+
+
+===============================================================================
+enums
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+pub enum Option<T> {
+    None,
+    Some(T),
+}
+
+pub enum Node<T: Item> {
+    Internal {
+        children: Vec<Tree<T>>,
+        height: u16
+    },
+    #[attribute1]
+    #[attribute2]
+    Leaf {
+        value: T
+    }
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (enum:2 Option
+    (field:3 None)
+    (field:4 Some
+      (field:5 0 @type T)
+    )
+  )
+  (enum:6 Node
+    (field:7 Internal
+      (field:8 children @type children)
+      (field:9 height @type u16)
+    )
+    (field:10 Leaf
+      (field:11 value @type T)
+    )
+  )
+)
+
+
+
+
+===============================================================================
+enums-with-values-specified
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+pub enum c_style_enum {
+    val1 = 1,
+    val2 = 2
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (enum:2 c_style_enum
+    (field:3 val1)
+    (field:4 val2)
+  )
+)
+
+
+
+
+===============================================================================
+generic-functions
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+pub fn splice<T: Into<Text>>(&mut self, old_range: Range<usize>, new_text: T) {
+}
+pub fn uninit_array<const LEN: usize>() -> [Self; LEN] {}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (func:2 splice
+    (parameter:3 self)
+    (parameter:4 old_range @type old_range)
+    (parameter:5 new_text @type T)
+  )
+  (func:6 uninit_array
+    (return:7 @type Self)
+  )
+)
+
+
+
+
+===============================================================================
+functions-with-mutable-parameters
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+fn foo(mut x : u32) {
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (func:2 foo
+    (parameter:3 x @type u32)
+  )
+)
+
+
+
+
+===============================================================================
+functions-with-destructured-parameters
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+fn f1([x, y]: [u32; 2]) {}
+fn f2(&x: &Y) {}
+fn f3((x, y): (T, U)) {}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (func:2 f1
+    (parameter:3 x @type u32)
+  )
+  (func:4 f2
+    (parameter:5 x @type x)
+  )
+  (func:6 f3
+    (parameter:7 x @type T)
+  )
+)
+
+
+
+
+===============================================================================
+functions-with-custom-types-for-self
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+trait Callback {
+    fn call(self: Box<Self>);
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (trait:2 Callback
+    (method:3 call
+      (parameter:4 self @type Self)
+    )
+  )
+)
+
+
+
+
+===============================================================================
+constant-items
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+const N: i32 = 5;
+
+trait Foo {
+    const X: u8;
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (const:2 N @type i32)
+  (trait:3 Foo
+    (const:4 X @type u8)
+  )
+)
+
+
+
+
+===============================================================================
+static-items
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+static N: i32 = 5;
+static mut __progname: *mut ::c_char;
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (const:2 N @type i32)
+  (const:3 __progname @type:3 __progname)
+)
+
+
+
+
+===============================================================================
+static-ref-items-using-lazy-static
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+static ref ONE: usize = 0;
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (const:2 ONE @type usize)
+)
+
+
+
+
+===============================================================================
+type-aliases
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+type Inch = u64;
+type Name<T> = Vec<T>;
+type LazyResolve = impl (FnOnce() -> Capture) + Send + Sync + UnwindSafe;
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (alias:2 Inch)
+  (alias:3 Name)
+  (alias:4 LazyResolve)
+)
+
+
+
+
+===============================================================================
+type-alias-where-clauses
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+type Foo<T> where T: Copy = Box<T>;
+type Assoc3 where = () where;
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (alias:2 Foo)
+  (alias:3 Assoc3)
+)
+
+
+
+
+===============================================================================
+empty-statements
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+fn main() {
+    ;
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (func:2 main)
+)
+
+
+
+
+===============================================================================
+attributes
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+#[test]
+fn test_foo() {}
+
+#[derive(Debug)]
+struct Baz;
+
+#[derive(Debug, Eq,)]
+struct Foo;
+
+#[cfg(target_os = "macos")]
+mod macos_only {}
+
+#![allow(clippy::useless_transmute)]
+
+#[clippy::cyclomatic_complexity = "100"]
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (class:2 Baz)
+  (class:3 Foo)
+  (module:4 macos_only)
+)
+
+
+
+
+===============================================================================
+inner-attributes
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+mod macos_only {
+  #![cfg(target_os = "macos")]
+}
+
+match ty {
+    #![cfg_attr(all(test, exhaustive), deny(non_exhaustive_omitted_patterns))]
+    syn::Type::Array(ty) => self.visit_type(&ty.elem),
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (module:2 macos_only)
+)
+
+
+
+
+===============================================================================
+key-value-attribute-expressions
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+#[doc = include_str!("foo-doc.md")]
+fn foo() {}
+
+#[namespace = foo::bar]
+fn baz() {}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (func:3 foo)
+  (func:4 baz)
+)
+
+
+
+
+===============================================================================
+attribute-macros
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+foo(#[attr(=> arbitrary tokens <=)] x, y);
+
+foo(#[bar(some tokens are special in other contexts: $/';()*()+.)] x);
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+)
+
+
+
+
+===============================================================================
+derive-macro-helper-attributes
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+// Example from https://github.com/dtolnay/thiserror/blob/21c26903e29cb92ba1a7ff11e82ae2001646b60d/README.md
+
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error("first letter must be lowercase but was {:?}", first_char(.0))]
+    WrongCase(String),
+    #[error("invalid index {idx}, expected at least {} and at most {}", .limits.lo, .limits.hi)]
+    OutOfBounds { idx: usize, limits: Limits },
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (enum:2 Error
+    (field:3 WrongCase
+      (field:4 0 @type String)
+    )
+    (field:5 OutOfBounds
+      (field:6 idx @type usize)
+      (field:7 limits @type limits)
+    )
+  )
+)
+
+
+
+
+===============================================================================
+attributes-and-expressions
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+fn foo() {
+   bar(x,
+       #[cfg(foo = "bar")]
+       y);
+   let z = [#[hello] 2, 7, 8];
+   let t = (#[hello] 2, 7, 8);
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (func:2 foo
+    (@fdep:2 foo)
+  )
+)
+
+
+
+
+===============================================================================
+inherent-impls
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+impl Person {
+  const leg_count : u32 = 2;
+
+  fn walk(self) {}
+  fn walk_mut(mut self) {}
+  fn talk(& self) {}
+  fn talk_mut(&'a mut self) {}
+}
+
+impl Machine<{State::Init}> {}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (impl:2 Person
+    (const:3 leg_count @type u32)
+    (method:4 walk
+      (parameter:5 self)
+    )
+    (method:6 walk_mut
+      (parameter:7 self)
+    )
+    (method:8 talk
+      (parameter:9 self)
+    )
+    (method:10 talk_mut
+      (parameter:11 a)
+    )
+  )
+  (impl:12 Machine)
+)
+
+
+
+
+===============================================================================
+trait-impls
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+impl<'a> iter::Iterator for Self::Iter<'a> {
+}
+
+impl ConvertTo<i64> for i32 {
+    fn convert(&self) -> i64 { *self as i64 }
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (impl:2 Self)
+  (impl:3 i32
+    (method:4 convert
+      (parameter:5 self)
+      (return:6 @type i64)
+    )
+  )
+)
+
+
+
+
+===============================================================================
+unsafe-impls
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+unsafe impl Foo {
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (impl:2 Foo)
+)
+
+
+
+
+===============================================================================
+disable-automatically-derived-trait-impls
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+impl !Send for Foo {}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (impl:2 Foo)
+)
+
+
+
+
+===============================================================================
+impl-dyn-with-parentheses
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+pub unsafe trait Trait {}
+
+unsafe impl Trait for dyn (::std::any::Any) + Send { }
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (trait:2 Trait)
+  (impl:3 Send @trait:2)
+)
+
+
+
+
+===============================================================================
+trait-impl-signature
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+impl<K: Debug + Ord> Debug for OccupiedError<K>;
+impl<K: Debug + Ord> Display for OccupiedError<K>;
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (impl:2 OccupiedError)
+  (impl:3 OccupiedError)
+)
+
+
+
+
+===============================================================================
+impls-with-default-functions
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+impl Foo {
+  const default fn bar() -> i32 {
+    // Make 'default' still works as an identifier
+    default.bar();
+  }
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (impl:2 Foo
+    (method:3 bar
+      (return:4 @type i32)
+      (@fdep:3 bar)
+    )
+  )
+)
+
+
+
+
+===============================================================================
+trait-declarations
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+pub trait Item: Clone + Eq + fmt::Debug {
+    fn summarize(&self) -> Self::Summary;
+}
+
+unsafe trait Foo { }
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (trait:2 Item
+    (method:3 summarize
+      (parameter:4 self @type:2 Item)
+      (return:5 @type:2 Item)
+    )
+  )
+  (trait:6 Foo)
+)
+
+
+
+
+===============================================================================
+trait-declarations-with-optional-type-parameters
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+trait Add<RHS=Self> {
+    type Output;
+    fn add(self, rhs: RHS) -> Self::Output;
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (trait:2 Add
+    (alias:3 Output)
+    (method:4 add
+      (parameter:5 self @type:2 Add)
+      (parameter:6 rhs @type Self)
+      (return:7 @type:2 Add)
+    )
+  )
+)
+
+
+
+
+===============================================================================
+unsized-types-in-trait-bounds
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+trait Foo<T: ?Sized> {
+}
+
+fn univariant(this: &impl ?Sized, that: &(impl LayoutCalculator + ?Sized)) {}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (trait:2 Foo)
+  (func:3 univariant
+    (parameter:4 this @type this)
+    (parameter:5 that @type that)
+  )
+)
+
+
+
+
+===============================================================================
+trait-bounds-in-type-arguments-in-trait
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+impl<T: AstDeref<Target: HasNodeId>> HasNodeId for T {}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (impl:2 T)
+)
+
+
+
+
+===============================================================================
+macro-invocations-inside-trait-declarations
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+
+pub trait A: B + C + D {
+    private_decl!{}
+    fn f(&self);
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (trait:2 A
+    (method:4 f
+      (parameter:5 self @type:2 A)
+    )
+  )
+)
+
+
+
+
+===============================================================================
+associated-types
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+pub trait Graph {
+    type N: fmt::Display;
+    type E;
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (trait:2 Graph
+    (alias:3 N)
+    (alias:4 E)
+  )
+)
+
+
+
+
+===============================================================================
+associated-type-definitions
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+impl Trait for T {
+    type Associated = T where 'static: 'static;
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (impl:2 T
+    (alias:3 Associated)
+  )
+)
+
+
+
+
+===============================================================================
+generic-associated-types
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+pub trait Database {
+    type F<'a, D>: Future<Output = D> + 'a;
+}
+
+impl Database for Foo {
+    type F<'a, D> = DatabaseFuture<'a, D>;
+}
+
+fn use_database1<D: Database<F<'a, TD> = F>>() {}
+
+fn use_database2<D>()
+where
+    D: Database<F<'a, TD> = F>,
+{}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (trait:2 Database
+    (alias:3 F)
+  )
+  (impl:4 Foo @trait:2
+    (alias:5 F)
+  )
+  (func:6 use_database1)
+  (func:7 use_database2)
+)
+
+
+
+
+===============================================================================
+higher-ranked-types
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+trait T: for<'a> AddAssign<&'a usize> {
+}
+
+type FnObject<'b> = dyn for<'a> FnLike<&'a isize, &'a isize> + 'b;
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (trait:2 T)
+  (alias:3 FnObject)
+)
+
+
+
+
+===============================================================================
+visibility-modifiers
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+pub fn a() {}
+pub(super) fn b() {}
+pub(self) fn c() {}
+pub(crate) fn c() {}
+pub(in crate::d) fn e() {}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (func:2 a)
+  (func:3 b)
+  (func:4 c)
+  (func:5 c)
+  (func:6 e)
+)
+
+
+
+
+===============================================================================
+function-parameter-names-that-match-built-in-type-names
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+fn foo(str: *const c_char) {}
+fn bar(bool: bool) {}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (func:2 foo
+    (parameter:3 str @type str)
+  )
+  (func:4 bar
+    (parameter:5 bool @type bool)
+  )
+)
+
+
+
+
+===============================================================================
+where-clauses
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+fn walk<F>(&self, it: &mut F) -> bool
+    where F: FnMut(&Pat) -> bool
+{
+  return false
+}
+
+impl<'a, T: 'a + Item> Iterator for Iter<'a, T> where Self: 'a {
+}
+
+impl<T> A for B<T>
+    where C<T>: D,
+          T: 'c,
+          'c: 'b,
+{
+}
+
+impl<'a, E> Read
+where &'a E: Read,
+{
+}
+
+impl<T> A for B<T> where (T, T, T): C, {}
+
+impl<T> A for B<T>
+    where for<'a> D<T>: E<'a>,
+{
+}
+
+pub trait A<B> where B: C,
+{
+}
+
+fn foo<A>() where A: B + As<f64>, f64: As<A> {}
+
+impl<A> Default for B<A> where *mut A: C + D {}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (func:2 walk
+    (parameter:3 self)
+    (parameter:4 it @type F)
+    (return:5 @type bool)
+  )
+  (impl:6 Iter)
+  (impl:7 B @trait:11)
+  (impl:8 Read)
+  (impl:9 B @trait:11)
+  (impl:10 B @trait:11)
+  (trait:11 A)
+  (func:12 foo)
+  (impl:13 B)
+)
+
+
+
+
+===============================================================================
+external-modules
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+extern {
+  pub fn napi_module_register(mod_: *mut napi_module);
+}
+
+extern "C" {}
+
+unsafe extern "C" {}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (func:2 napi_module_register
+    (parameter:3 mod_ @type mod_)
+  )
+)
+
+
+
+
+===============================================================================
+crate-visibility
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+crate mod foo;
+crate struct Foo(crate crate::Bar);
+crate fn foo() { }
+crate const X: u32 = 0;
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (module:2 foo)
+  (class:3 Foo
+    (field:4 0)
+  )
+  (func:5 foo)
+  (const:6 X @type u32)
+)
+
+
+
+
+===============================================================================
+reserved-keywords-in-path
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+struct A {
+  a: default::B,
+  b: union::C,
+}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (class:2 A
+    (field:3 a @type a)
+    (field:4 b @type b)
+  )
+)
+
+
+
+
+===============================================================================
+array-constraint-in-where-clause
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+fn foo<D>(val: D)
+where
+    [u8; 32]: From<D>,
+
+{}
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (func:2 foo
+    (parameter:3 val @type D)
+  )
+)
+
+
+
+
+===============================================================================
+const-generics-with-default
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+pub struct Loaf<T: Sized, const N: usize = 1>([T; N]);
+
+--- expect:block-graph ---
+(root:1 000_lib (000_lib)
+  (class:2 Loaf
+    (field:3 0 @type T)
+  )
+)
