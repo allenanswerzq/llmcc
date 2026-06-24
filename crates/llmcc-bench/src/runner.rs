@@ -83,24 +83,28 @@ fn repo_dir_name(repo: &str) -> String {
 }
 
 /// Run llmcc against a directory and return the architecture graph output.
-fn run_llmcc(dir: &Path) -> String {
-    let mut command = llmcc_command();
-    let output = command
-        .args(["--dir"])
-        .arg(dir)
-        .args(["--ai", "true"])
-        .output()
-        .unwrap();
-    assert!(
-        output.status.success(),
-        "llmcc failed: {}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    String::from_utf8_lossy(&output.stdout).to_string()
-}
+/// Build the tool hint that tells the agent about llmcc availability.
+fn llmcc_tool_hint(llmcc_path: &Path) -> String {
+    let path_str = llmcc_path.display();
+    format!(
+        r#"You have access to `llmcc`, a tool that generates multi-depth architecture views of codebases.
+It produces a DOT graph showing packages, modules, files, and symbols with their relationships.
 
-fn llmcc_command() -> Command {
-    Command::new(release_llmcc_binary())
+Usage: {path_str} --dir <DIR> --depth <DEPTH> --ai true
+
+Depth levels:
+  1 = Package/crate boundaries and inter-package dependencies
+  2 = Module structure within packages
+  3 = File-level symbols (functions, structs, traits) and their relationships
+
+Choose the depth based on your task:
+- Use depth 1 to understand which packages own what and how they connect
+- Use depth 2 to see how a package is organized internally
+- Use depth 3 to find specific functions, types, and call relationships
+
+You can run it multiple times at different depths. Start broad (depth 1) to orient, then drill into specific packages at depth 2 or 3.
+The output is a DOT graph with labeled nodes (name, path, kind) and edges (relationship type, weight)."#
+    )
 }
 
 fn release_llmcc_binary() -> PathBuf {
@@ -270,16 +274,14 @@ pub fn run_task(task: &Task, mode: Mode, repo_dir: &Path, artifact_root: &Path) 
     fs::create_dir_all(&artifact_dir).unwrap();
 
     // Build prompt.
-    let mut graph = None;
     let prompt = match mode {
         Mode::Baseline => task.description.clone(),
         Mode::WithLlmcc => {
-            let rendered = run_llmcc(repo_dir);
-            write_artifact(&artifact_dir.join("llmcc.dot"), &rendered);
-            graph = Some(rendered.clone());
+            let llmcc_path = release_llmcc_binary();
             format!(
-                "Use this architecture graph as navigation context:\n\n{rendered}\n\nTask:\n{}",
-                task.description
+                "{llmcc_hint}\n\nTask:\n{task_desc}",
+                llmcc_hint = llmcc_tool_hint(&llmcc_path),
+                task_desc = task.description,
             )
         }
     };
@@ -310,7 +312,7 @@ pub fn run_task(task: &Task, mode: Mode, repo_dir: &Path, artifact_root: &Path) 
     write_artifact(
         &artifact_dir.join("metadata.toml"),
         &format!(
-            "task_id = {task_id:?}\nrepo = {repo:?}\nmode = {mode:?}\ninput_tokens = {input}\ncached_input_tokens = {cached_input}\noutput_tokens = {output}\ninput_tokens_k = {input_k:.1}\ncached_input_tokens_k = {cached_input_k:.1}\noutput_tokens_k = {output_k:.1}\ntool_calls = {tools}\nwall_time_s = {time:.1}\ngraph_bytes = {graph_bytes}\n",
+            "task_id = {task_id:?}\nrepo = {repo:?}\nmode = {mode:?}\ninput_tokens = {input}\ncached_input_tokens = {cached_input}\noutput_tokens = {output}\ninput_tokens_k = {input_k:.1}\ncached_input_tokens_k = {cached_input_k:.1}\noutput_tokens_k = {output_k:.1}\ntool_calls = {tools}\nwall_time_s = {time:.1}\n",
             task_id = task.id,
             repo = task.repo,
             mode = mode.to_string(),
@@ -322,7 +324,6 @@ pub fn run_task(task: &Task, mode: Mode, repo_dir: &Path, artifact_root: &Path) 
             output_k = metrics.output_tokens as f64 / 1000.0,
             tools = metrics.tool_calls,
             time = wall_time_s,
-            graph_bytes = graph.as_ref().map_or(0, |graph| graph.len()),
         ),
     );
 
