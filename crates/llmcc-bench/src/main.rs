@@ -42,7 +42,8 @@ struct Cli {
     repo_root: Option<PathBuf>,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = Cli::parse();
     let mut tasks = task::load(&cli.tasks);
 
@@ -83,24 +84,42 @@ fn main() {
     let checkout = runner::checkout_repo(&repo, &repo_root);
     println!("Checkout: {}", checkout.path().display());
     println!("Checking Codex tool execution...");
-    runner::verify_codex_tool_execution(checkout.path());
+    runner::verify_codex_tool_execution(checkout.path()).await;
 
-    let mut results = Vec::new();
-
+    let mut jobs: Vec<(task::Task, Mode)> = Vec::new();
     for task in &tasks {
         for &mode in &modes {
-            println!("▶ {} [{}]", task.id, mode);
-            let result = runner::run_task(task, mode, checkout.path(), &artifact_root);
-            println!(
-                "  in={:.1}k cached={:.1}k out={:.1}k tools={} time={:.1}s",
-                result.input_tokens as f64 / 1000.0,
-                result.cached_input_tokens as f64 / 1000.0,
-                result.output_tokens as f64 / 1000.0,
-                result.tool_calls,
-                result.wall_time_s,
-            );
-            results.push(result);
+            jobs.push((task.clone(), mode));
         }
+    }
+
+    println!("Running {} jobs (max 20 concurrent)...", jobs.len());
+    let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(20));
+    let handles: Vec<_> = jobs
+        .into_iter()
+        .map(|(task, mode)| {
+            let repo_dir = checkout.path().to_path_buf();
+            let artifact_root = artifact_root.clone();
+            let sem = semaphore.clone();
+            tokio::spawn(async move {
+                let _permit = sem.acquire().await.unwrap();
+                let result = runner::run_task(&task, mode, &repo_dir, &artifact_root).await;
+                println!(
+                    "  ✓ {} [{}] in={:.1}k tools={} time={:.1}s",
+                    result.task_id,
+                    result.mode,
+                    result.input_tokens as f64 / 1000.0,
+                    result.tool_calls,
+                    result.wall_time_s,
+                );
+                result
+            })
+        })
+        .collect();
+
+    let mut results = Vec::new();
+    for handle in handles {
+        results.push(handle.await.unwrap());
     }
 
     println!();

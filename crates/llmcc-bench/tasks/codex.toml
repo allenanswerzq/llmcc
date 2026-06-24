@@ -4,26 +4,84 @@ repo = "https://github.com/openai/codex"
 id = "codex-trace-tool-execution"
 description = """
 Trace how tool execution works in Codex:
-1. Where are tool calls dispatched?
-2. How are shell commands executed?
-3. How do tool results flow back to the agent?
-4. Where is sandbox enforcement applied?
+1. Where are tool calls dispatched from the model response?
+2. How does a shell command flow from the model's function_call through to actual process execution?
+3. What crate handles sandboxing and how is it invoked before execution?
+4. How do tool results (stdout/stderr/exit_code) flow back into the conversation history?
 """
 
 [[tasks]]
-id = "codex-find-streaming"
+id = "codex-prompt-assembly"
 description = """
-Find how SSE streaming works end-to-end:
-1. Where is the SSE connection established?
-2. How are streaming events parsed?
-3. How do they flow to the TUI for display?
+Trace how the system prompt is assembled before sending to the model:
+1. Which crate owns prompt construction?
+2. How are .rules files, project instructions, and system prompts merged?
+3. Where does context compaction happen when the conversation gets too long?
+4. How do features/flags alter what gets included in the prompt?
 """
 
 [[tasks]]
-id = "codex-add-new-tool"
+id = "codex-exec-mode-pipeline"
 description = """
-If I wanted to add a new tool (e.g., run_python), what would I need to implement?
-1. What trait/interface do tools implement?
-2. Where are tools registered?
-3. How is tool schema exposed to the LLM?
+Trace the full pipeline of `codex exec` (non-interactive mode):
+1. Where does CLI argument parsing happen and what crate owns it?
+2. How does the exec command set up the agent loop (which crate, which entry function)?
+3. How are turns managed — what triggers the model call, what processes the response, what decides to loop or stop?
+4. How does --json output get emitted (JSONL events) and what event types exist?
+5. What is the relationship between the exec crate, core crate, and the model-provider crate?
+"""
+
+[[tasks]]
+id = "codex-sandbox-architecture"
+description = """
+Trace how command sandboxing is architected across platforms:
+1. What crates are involved in sandboxing (find all sandbox-related crates)?
+2. How does the sandbox policy (read-only, workspace-write, full-access) get threaded from CLI config to the execution layer?
+3. On Linux, how does the bwrap/landlock sandbox get applied before running a command?
+4. On Windows, what sandbox mechanism is used and where is it implemented?
+5. How does sandbox violation detection work — what happens when a command tries to write outside allowed paths?
+"""
+
+[[tasks]]
+id = "codex-model-provider-abstraction"
+description = """
+Trace how Codex supports multiple model providers:
+1. What trait/interface abstracts over different providers (OpenAI, local, OSS)?
+2. Where is provider selection configured and how does it flow to the request layer?
+3. How does the wire_api (responses vs chat-completions) affect request/response handling?
+4. What crate handles auth/token management for each provider?
+5. How do streaming responses get unified across providers with different streaming formats?
+"""
+
+[[tasks]]
+id = "codex-session-persistence"
+description = """
+Trace how sessions are persisted and resumed:
+1. What crate owns session/thread storage?
+2. What format are sessions stored in (sqlite, json, jsonl)?
+3. How does `codex resume` reload a previous session into the agent loop?
+4. What is the rollout system and how does it relate to session files?
+5. How does session compaction (auto_compaction feature) interact with persistence?
+"""
+
+[[tasks]]
+id = "codex-mcp-integration"
+description = """
+Trace how MCP (Model Context Protocol) servers are integrated:
+1. What crate implements MCP client functionality?
+2. How are MCP servers configured and started (lifecycle management)?
+3. How do MCP tools get exposed to the model alongside native tools?
+4. When the model calls an MCP tool, how does the request flow to the MCP server and back?
+5. How does tool_call_mcp_elicitation work for MCP tools that need user input?
+"""
+
+[[tasks]]
+id = "codex-approval-flow"
+description = """
+Trace the command approval flow from model suggestion to execution:
+1. What crate defines the approval policy (untrusted, on-request, never)?
+2. When a model suggests a command, what decides whether to ask the user?
+3. How does the TUI present the approval prompt and capture the response?
+4. In exec mode (non-interactive), how does --sandbox policy bypass or enforce approval?
+5. Where do .rules files (execpolicy) influence which commands are auto-approved?
 """

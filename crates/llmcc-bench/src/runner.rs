@@ -1,10 +1,11 @@
 //! Execute a benchmark task: clone repo, run llmcc, run codex, collect metrics.
 
 use std::fs;
-use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
 use std::time::Instant;
+
+use tokio::io::AsyncWriteExt;
+use tokio::process::Command;
 
 use crate::task::Task;
 
@@ -64,7 +65,7 @@ pub fn checkout_repo(repo: &str, repo_root: &Path) -> RepoCheckout {
 
 /// Clone a repo into the given directory.
 fn clone_repo(repo: &str, dest: &Path) {
-    let status = Command::new("git")
+    let status = std::process::Command::new("git")
         .args(["clone", "--depth", "1", repo])
         .arg(dest)
         .status()
@@ -82,28 +83,32 @@ fn repo_dir_name(repo: &str) -> String {
         .unwrap_or_else(|| "repo".into())
 }
 
-/// Run llmcc against a directory and return the architecture graph output.
 /// Build the tool hint that tells the agent about llmcc availability.
 fn llmcc_tool_hint(llmcc_path: &Path) -> String {
     let path_str = llmcc_path.display();
     format!(
-        r#"You have access to `llmcc`, a tool that generates multi-depth architecture views of codebases.
-It produces a DOT graph showing packages, modules, files, and symbols with their relationships.
+        r#"You have access to `llmcc`, a codebase architecture tool.
 
 Usage: {path_str} --dir <DIR> --depth <DEPTH> --ai true
 
 Depth levels:
-  1 = Package/crate boundaries and inter-package dependencies
-  2 = Module structure within packages
-  3 = File-level symbols (functions, structs, traits) and their relationships
+  1 = Package/crate graph (which packages exist, how they depend on each other)
+  2 = Module graph within a package (how modules connect internally)
+  3 = Symbol graph within a file/package (functions, structs, traits, call/field/param edges)
 
-Choose the depth based on your task:
-- Use depth 1 to understand which packages own what and how they connect
-- Use depth 2 to see how a package is organized internally
-- Use depth 3 to find specific functions, types, and call relationships
+When to use llmcc (instead of grep/find):
+- You need to understand how multiple packages or modules relate to each other
+- You need to trace a data flow or call chain across crate boundaries
+- You need to figure out the overall architecture before diving into code
+- The task involves understanding ownership, dependency direction, or layering
 
-You can run it multiple times at different depths. Start broad (depth 1) to orient, then drill into specific packages at depth 2 or 3.
-The output is a DOT graph with labeled nodes (name, path, kind) and edges (relationship type, weight)."#
+When NOT to use llmcc (use grep/find/read instead):
+- You already know which file contains what you need
+- A keyword search will find the answer directly
+- The task is localized to a single file or module
+
+You can scope it to subdirectories: --dir <path-to-specific-crate> for focused views.
+Start at depth 1 to orient, then narrow to specific packages at depth 2 or 3."#
     )
 }
 
@@ -136,25 +141,26 @@ fn target_dir(root: &Path) -> PathBuf {
 }
 
 /// Run codex exec with the given prompt against the repo directory.
-fn run_codex(prompt: &str, work_dir: &Path) -> CodexOutput {
+async fn run_codex(prompt: &str, work_dir: &Path) -> CodexOutput {
     let mut child = Command::new(codex_command())
         .args(["exec", "--json", "--sandbox", "danger-full-access", "-C"])
         .arg(work_dir)
         .arg("-")
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
         .spawn()
         .unwrap();
 
     child
         .stdin
-        .as_mut()
+        .take()
         .unwrap()
         .write_all(prompt.as_bytes())
+        .await
         .unwrap();
 
-    let output = child.wait_with_output().unwrap();
+    let output = child.wait_with_output().await.unwrap();
     CodexOutput {
         success: output.status.success(),
         stdout: String::from_utf8_lossy(&output.stdout).to_string(),
@@ -173,7 +179,7 @@ fn codex_command() -> &'static str {
 }
 
 /// Verify that Codex can execute native shell tools before collecting benchmark metrics.
-pub fn verify_codex_tool_execution(work_dir: &Path) {
+pub async fn verify_codex_tool_execution(work_dir: &Path) {
     let marker_name: String = format!(".llmcc-bench-codex-tool-probe-{}.txt", std::process::id());
     let marker_path = work_dir.join(&marker_name);
     let _ = fs::remove_file(&marker_path);
@@ -187,7 +193,7 @@ pub fn verify_codex_tool_execution(work_dir: &Path) {
         "This is an llmcc-bench preflight. Use the shell tool to create a file named `{marker_name}` in the current directory. A suitable command is `{command_hint}`. After the command runs, answer briefly."
     );
 
-    let codex = run_codex(&prompt, work_dir);
+    let codex = run_codex(&prompt, work_dir).await;
     let metrics = parse_metrics(&codex.stdout);
     let marker_created = marker_path.exists();
     let _ = fs::remove_file(&marker_path);
@@ -267,7 +273,7 @@ fn excerpt(text: &str) -> String {
 }
 
 /// Execute a single task in the given mode and return metrics.
-pub fn run_task(task: &Task, mode: Mode, repo_dir: &Path, artifact_root: &Path) -> RunResult {
+pub async fn run_task(task: &Task, mode: Mode, repo_dir: &Path, artifact_root: &Path) -> RunResult {
     let artifact_dir = artifact_root
         .join(sanitize_path_component(&task.id))
         .join(mode.to_string());
@@ -289,7 +295,7 @@ pub fn run_task(task: &Task, mode: Mode, repo_dir: &Path, artifact_root: &Path) 
 
     // Run codex and time it.
     let start = Instant::now();
-    let codex = run_codex(&prompt, repo_dir);
+    let codex = run_codex(&prompt, repo_dir).await;
     let wall_time_s = start.elapsed().as_secs_f64();
     write_artifact(
         &artifact_dir.join("codex.json"),

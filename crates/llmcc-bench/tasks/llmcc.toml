@@ -49,3 +49,45 @@ Find how PageRank scoring works:
 3. How are scores used to filter nodes?
 4. What is the module-coverage heuristic?
 """
+
+[[tasks]]
+id = "llmcc-end-to-end-pipeline"
+description = """
+Trace the complete pipeline from CLI invocation to DOT output:
+1. What is the sequence of phases (parse, HIR, collect, resolve, graph, render)?
+2. Which crate owns each phase?
+3. What data structure is passed between phases?
+4. Where does parallelism (rayon) enter the pipeline?
+5. How does the --depth flag affect which phases run and what gets rendered?
+"""
+
+[[tasks]]
+id = "llmcc-cross-crate-type-flow"
+description = """
+Trace how type information flows across crate boundaries during symbol resolution:
+1. The Language trait is defined in llmcc-core but implemented in llmcc-rust/llmcc-ts/llmcc-cpp. How do language crates register their implementations?
+2. CollectCtxt and BindCtxt are created in llmcc-resolver but used by language crates. What data do they share?
+3. When llmcc-rust's binder resolves a type reference, what path does the lookup take through llmcc-resolver and llmcc-core?
+4. How does the InternPool (string interning) get shared across compilation units and crates?
+"""
+
+[[tasks]]
+id = "llmcc-error-propagation"
+description = """
+Trace how errors propagate from parsing through to the final output:
+1. What error types exist across the crates (llmcc-error, llmcc-core, language crates)?
+2. When a tree-sitter parse fails in llmcc-rust, how does that error surface to the CLI?
+3. What happens to partially-failed compilation units - are they skipped or do they abort?
+4. How do build.rs errors in language crates (missing tree-sitter grammar) get reported?
+"""
+
+[[tasks]]
+id = "llmcc-depth-transform"
+description = """
+Trace how the --depth flag transforms the graph from fine-grained to coarse:
+1. At depth 3, individual symbols are nodes. How are they collected from the block tree?
+2. At depth 2, symbols are aggregated into modules. Where does this aggregation happen and what logic groups blocks into modules?
+3. At depth 1, modules are aggregated into packages. How are inter-module edges collapsed into inter-package edges with weight/via annotations?
+4. What is the TransformedGraph and how does AggregateVisitor produce it from CollectedGraph?
+5. How does the DOT renderer decide between cluster-based and flat layout based on depth?
+"""
