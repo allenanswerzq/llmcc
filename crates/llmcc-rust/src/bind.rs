@@ -164,16 +164,16 @@ impl<'tcx> AstVisitorRust<'tcx, BindCtxt<'tcx>> for BinderVisitor {
         self.visit_children(unit, node, scopes, namespace, parent);
 
         if let Some(type_param_sym) = node.query(unit).try_resolved_by_field(LangRust::field_name) {
-            if let Some(bounds_node) = node.child_by_field(unit, LangRust::field_bounds) {
-                if let Some(first_bound) = infer_type(unit, scopes, &bounds_node) {
-                    type_param_sym.set_type_of(first_bound.id());
-                    return;
-                }
+            if let Some(bounds_node) = node.child_by_field(unit, LangRust::field_bounds)
+                && let Some(first_bound) = infer_type(unit, scopes, &bounds_node)
+            {
+                type_param_sym.set_type_of(first_bound.id());
+                return;
             }
-            if let Some(default_node) = node.child_by_field(unit, LangRust::field_default_type) {
-                if let Some(default_type) = infer_type(unit, scopes, &default_node) {
-                    type_param_sym.set_type_of(default_type.id());
-                }
+            if let Some(default_node) = node.child_by_field(unit, LangRust::field_default_type)
+                && let Some(default_type) = infer_type(unit, scopes, &default_node)
+            {
+                type_param_sym.set_type_of(default_type.id());
             }
         }
     }
@@ -438,10 +438,10 @@ impl<'tcx> AstVisitorRust<'tcx, BindCtxt<'tcx>> for BinderVisitor {
                         if child.is_trivia() || child.kind_id() == LangRust::lifetime {
                             continue;
                         }
-                        if let Some(type_arg_sym) = infer_type(unit, scopes, &child) {
-                            if type_arg_sym.kind().is_defined_type() {
-                                target_sym.add_nested_type(type_arg_sym.id());
-                            }
+                        if let Some(type_arg_sym) = infer_type(unit, scopes, &child)
+                            && type_arg_sym.kind().is_defined_type()
+                        {
+                            target_sym.add_nested_type(type_arg_sym.id());
                         }
                     }
                 }
@@ -635,13 +635,11 @@ impl<'tcx> AstVisitorRust<'tcx, BindCtxt<'tcx>> for BinderVisitor {
             && let Some(symbol) =
                 scopes.lookup_symbol(ident.name, SymKindSet::from_kind(SymKind::CompositeType))
             && symbol.nested_types().is_none()
-        {
-            if let Some(array_type_sym) = node
+            && let Some(array_type_sym) = node
                 .query(unit)
                 .try_resolved_by_field(LangRust::field_element)
-            {
-                symbol.add_nested_type(array_type_sym.id());
-            }
+        {
+            symbol.add_nested_type(array_type_sym.id());
         }
     }
 
@@ -714,22 +712,20 @@ impl<'tcx> AstVisitorRust<'tcx, BindCtxt<'tcx>> for BinderVisitor {
                 if let Some(field_sym) = field_node.query(unit).try_resolved() {
                     field_sym.set_field_of(value_sym.id());
 
-                    if let Some(text) = field_node.as_text().map(|s| s.text()) {
-                        if let Ok(index) = text.parse::<usize>() {
-                            if let Some(value_type_id) = value_sym.type_of()
-                                && let Some(value_type) = unit.try_symbol(value_type_id)
-                                && let Some(nested) = value_type.nested_types()
-                                && index < nested.len()
-                            {
-                                field_sym.set_type_of(nested[index]);
-                            }
-                        }
+                    if let Some(text) = field_node.as_text().map(|s| s.text())
+                        && let Ok(index) = text.parse::<usize>()
+                        && let Some(value_type_id) = value_sym.type_of()
+                        && let Some(value_type) = unit.try_symbol(value_type_id)
+                        && let Some(nested) = value_type.nested_types()
+                        && index < nested.len()
+                    {
+                        field_sym.set_type_of(nested[index]);
                     }
                 }
-            } else if let Some(field_ident) = field_node.query(unit).try_first_ident() {
-                if let Some(field_sym) = field_ident.try_symbol() {
-                    field_sym.set_field_of(value_sym.id());
-                }
+            } else if let Some(field_ident) = field_node.query(unit).try_first_ident()
+                && let Some(field_sym) = field_ident.try_symbol()
+            {
+                field_sym.set_field_of(value_sym.id());
             }
         }
     }
@@ -775,12 +771,11 @@ impl<'tcx> AstVisitorRust<'tcx, BindCtxt<'tcx>> for BinderVisitor {
                 None
             };
 
-            if let Some(path_sym) = path_sym {
-                if let Some(name_sym) =
+            if let Some(path_sym) = path_sym
+                && let Some(name_sym) =
                     scopes.lookup_member(path_sym, name_ident.name, SymKindSet::empty())
-                {
-                    name_ident.set_symbol(name_sym);
-                }
+            {
+                name_ident.set_symbol(name_sym);
             }
         }
     }
@@ -800,10 +795,9 @@ impl<'tcx> AstVisitorRust<'tcx, BindCtxt<'tcx>> for BinderVisitor {
             && let Some(pattern) = node
                 .query(unit)
                 .try_descendant_with_field(LangRust::field_pattern)
+            && let Some(type_sym) = infer_type(unit, scopes, &type_node)
         {
-            if let Some(type_sym) = infer_type(unit, scopes, &type_node) {
-                bind_pattern_types(unit, scopes, &pattern, type_sym);
-            }
+            bind_pattern_types(unit, scopes, &pattern, type_sym);
         }
     }
 
@@ -823,10 +817,10 @@ impl<'tcx> AstVisitorRust<'tcx, BindCtxt<'tcx>> for BinderVisitor {
         {
             for &child_id in node.child_ids() {
                 let child = unit.hir_node(child_id);
-                if let Some(ident) = child.as_ident() {
-                    if ident.name == "self" {
-                        ident.set_symbol(self_sym);
-                    }
+                if let Some(ident) = child.as_ident()
+                    && ident.name == "self"
+                {
+                    ident.set_symbol(self_sym);
                 }
             }
         }
@@ -951,18 +945,17 @@ fn extract_nested_types<'tcx>(
     if matches!(
         type_node.kind_id(),
         LangRust::generic_type | LangRust::scoped_type_identifier
-    ) {
-        if let Some(type_args) = type_node.child_by_field(unit, LangRust::field_type_arguments) {
-            for &child_id in type_args.child_ids() {
-                let child = unit.hir_node(child_id);
-                if child.is_trivia() || child.kind_id() == LangRust::lifetime {
-                    continue;
-                }
-                if let Some(type_arg_sym) = infer_type(unit, scopes, &child) {
-                    target_sym.add_nested_type(type_arg_sym.id());
-                }
-                extract_nested_types(unit, scopes, &child, target_sym);
+    ) && let Some(type_args) = type_node.child_by_field(unit, LangRust::field_type_arguments)
+    {
+        for &child_id in type_args.child_ids() {
+            let child = unit.hir_node(child_id);
+            if child.is_trivia() || child.kind_id() == LangRust::lifetime {
+                continue;
             }
+            if let Some(type_arg_sym) = infer_type(unit, scopes, &child) {
+                target_sym.add_nested_type(type_arg_sym.id());
+            }
+            extract_nested_types(unit, scopes, &child, target_sym);
         }
     }
 }

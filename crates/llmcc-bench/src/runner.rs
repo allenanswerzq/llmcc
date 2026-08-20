@@ -230,34 +230,32 @@ fn parse_metrics(jsonl: &str) -> Metrics {
         };
 
         // Count tool calls from item.completed events.
-        if event.get("type").and_then(|t| t.as_str()) == Some("item.completed") {
-            if let Some(item) = event.get("item") {
-                if item
-                    .get("type")
-                    .and_then(|kind| kind.as_str())
-                    .is_some_and(is_tool_item)
-                {
-                    metrics.tool_calls += 1;
-                }
-            }
+        if event.get("type").and_then(|t| t.as_str()) == Some("item.completed")
+            && let Some(item) = event.get("item")
+            && item
+                .get("type")
+                .and_then(|kind| kind.as_str())
+                .is_some_and(is_tool_item)
+        {
+            metrics.tool_calls += 1;
         }
 
         // Sum token usage from turn.completed events
-        if event.get("type").and_then(|t| t.as_str()) == Some("turn.completed") {
-            if let Some(usage) = event.get("usage") {
-                metrics.input_tokens += usage
-                    .get("input_tokens")
-                    .and_then(|v| v.as_u64())
-                    .unwrap_or(0);
-                metrics.cached_input_tokens += usage
-                    .get("cached_input_tokens")
-                    .and_then(|v| v.as_u64())
-                    .unwrap_or(0);
-                metrics.output_tokens += usage
-                    .get("output_tokens")
-                    .and_then(|v| v.as_u64())
-                    .unwrap_or(0);
-            }
+        if event.get("type").and_then(|t| t.as_str()) == Some("turn.completed")
+            && let Some(usage) = event.get("usage")
+        {
+            metrics.input_tokens += usage
+                .get("input_tokens")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0);
+            metrics.cached_input_tokens += usage
+                .get("cached_input_tokens")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0);
+            metrics.output_tokens += usage
+                .get("output_tokens")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0);
         }
     }
 

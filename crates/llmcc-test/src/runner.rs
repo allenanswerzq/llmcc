@@ -76,10 +76,10 @@ fn run_file(file: &mut CorpusFile, filter: Option<&str>, update: bool, summary: 
     for case in &mut file.cases {
         let case_id = case.qualified_name(&file.suite);
 
-        if let Some(f) = filter {
-            if !case_id.contains(f) {
-                continue;
-            }
+        if let Some(f) = filter
+            && !case_id.contains(f)
+        {
+            continue;
         }
 
         summary.total += 1;

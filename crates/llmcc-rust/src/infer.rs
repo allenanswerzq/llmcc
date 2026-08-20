@@ -483,10 +483,10 @@ fn infer_generic_type<'tcx>(
             if child.is_trivia() || child.kind_id() == LangRust::lifetime {
                 continue;
             }
-            if let Some(inner_type) = infer_type_impl(unit, scopes, &child, depth + 1) {
-                if inner_type.kind().is_defined_type() {
-                    return Some(inner_type);
-                }
+            if let Some(inner_type) = infer_type_impl(unit, scopes, &child, depth + 1)
+                && inner_type.kind().is_defined_type()
+            {
+                return Some(inner_type);
             }
         }
     }

@@ -398,12 +398,12 @@ impl<'tcx> ProjectGraph<'tcx> {
         }
 
         // Base-type edge and display metadata.
-        if let Some(symbol) = nominal.symbol() {
-            if let Some((base_symbol, base_block_id)) = unit.try_type_of_with_block_id(symbol) {
-                self.add_specialization(block_id, base_block_id);
-                let base_name = unit.resolve_name(base_symbol.name);
-                nominal.set_base_type(base_name, Some(base_block_id));
-            }
+        if let Some(symbol) = nominal.symbol()
+            && let Some((base_symbol, base_block_id)) = unit.try_type_of_with_block_id(symbol)
+        {
+            self.add_specialization(block_id, base_block_id);
+            let base_name = unit.resolve_name(base_symbol.name);
+            nominal.set_base_type(base_name, Some(base_block_id));
         }
 
         // Nested type metadata can represent implemented contracts, constraints,

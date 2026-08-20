@@ -104,12 +104,11 @@ fn assign_type_to_tuple_pattern<'tcx>(
             continue;
         }
 
-        if let Some(ref types) = nested_types {
-            if let Some(type_id) = types.get(element_index) {
-                if let Some(element_type) = unit.try_symbol(*type_id) {
-                    bind_pattern_types(unit, scopes, &child, element_type);
-                }
-            }
+        if let Some(ref types) = nested_types
+            && let Some(type_id) = types.get(element_index)
+            && let Some(element_type) = unit.try_symbol(*type_id)
+        {
+            bind_pattern_types(unit, scopes, &child, element_type);
         }
         element_index += 1;
     }
@@ -138,48 +137,40 @@ fn assign_type_to_struct_pattern<'tcx>(
     };
 
     for child in pattern.children(unit) {
-        if child.kind_id() == LangRust::field_pattern {
-            if let Some(field_name_node) = child.child_by_field(unit, LangRust::field_name) {
-                if let Some(field_name_ident) = field_name_node.query(unit).try_first_ident() {
-                    if let Some(field_sym) = scopes.lookup_member(
-                        struct_symbol,
-                        field_name_ident.name,
-                        SymKindSet::from_kind(SymKind::Field),
-                    ) {
-                        let field_type = field_sym
-                            .type_of()
-                            .and_then(|type_id| unit.try_symbol(type_id));
+        if child.kind_id() == LangRust::field_pattern
+            && let Some(field_name_node) = child.child_by_field(unit, LangRust::field_name)
+            && let Some(field_name_ident) = field_name_node.query(unit).try_first_ident()
+            && let Some(field_sym) = scopes.lookup_member(
+                struct_symbol,
+                field_name_ident.name,
+                SymKindSet::from_kind(SymKind::Field),
+            )
+        {
+            let field_type = field_sym
+                .type_of()
+                .and_then(|type_id| unit.try_symbol(type_id));
 
-                        if let Some(inner_pattern) =
-                            child.child_by_field(unit, LangRust::field_pattern)
-                            && let Some(field_type) = field_type
-                        {
-                            bind_pattern_types(unit, scopes, &inner_pattern, field_type);
-                        } else if let Some(field_type) = field_type {
-                            if let Some(binding_sym) = field_name_ident.try_symbol() {
-                                if binding_sym.kind() == SymKind::Variable {
-                                    binding_sym.set_type_of(field_type.id());
-                                } else if let Some(var_sym) = scopes.lookup_symbol(
-                                    field_name_ident.name,
-                                    SymKindSet::from_kind(SymKind::Variable),
-                                ) {
-                                    field_name_ident.set_symbol(var_sym);
-                                    assign_type_to_ident(
-                                        unit,
-                                        scopes,
-                                        field_name_ident,
-                                        field_type,
-                                    );
-                                }
-                            } else if let Some(var_sym) = scopes.lookup_symbol(
-                                field_name_ident.name,
-                                SymKindSet::from_kind(SymKind::Variable),
-                            ) {
-                                field_name_ident.set_symbol(var_sym);
-                                assign_type_to_ident(unit, scopes, field_name_ident, field_type);
-                            }
-                        }
+            if let Some(inner_pattern) = child.child_by_field(unit, LangRust::field_pattern)
+                && let Some(field_type) = field_type
+            {
+                bind_pattern_types(unit, scopes, &inner_pattern, field_type);
+            } else if let Some(field_type) = field_type {
+                if let Some(binding_sym) = field_name_ident.try_symbol() {
+                    if binding_sym.kind() == SymKind::Variable {
+                        binding_sym.set_type_of(field_type.id());
+                    } else if let Some(var_sym) = scopes.lookup_symbol(
+                        field_name_ident.name,
+                        SymKindSet::from_kind(SymKind::Variable),
+                    ) {
+                        field_name_ident.set_symbol(var_sym);
+                        assign_type_to_ident(unit, scopes, field_name_ident, field_type);
                     }
+                } else if let Some(var_sym) = scopes.lookup_symbol(
+                    field_name_ident.name,
+                    SymKindSet::from_kind(SymKind::Variable),
+                ) {
+                    field_name_ident.set_symbol(var_sym);
+                    assign_type_to_ident(unit, scopes, field_name_ident, field_type);
                 }
             }
         }
@@ -216,12 +207,11 @@ fn assign_type_to_tuple_struct_pattern<'tcx>(
             continue;
         }
 
-        if let Some(ref types) = nested_types {
-            if let Some(type_id) = types.get(element_index) {
-                if let Some(element_type) = unit.try_symbol(*type_id) {
-                    bind_pattern_types(unit, scopes, &child, element_type);
-                }
-            }
+        if let Some(ref types) = nested_types
+            && let Some(type_id) = types.get(element_index)
+            && let Some(element_type) = unit.try_symbol(*type_id)
+        {
+            bind_pattern_types(unit, scopes, &child, element_type);
         }
 
         element_index += 1;

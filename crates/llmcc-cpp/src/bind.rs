@@ -947,12 +947,11 @@ impl<'tcx> AstVisitorCpp<'tcx, BindCtxt<'tcx>> for Binder {
 
         self.visit_collected_scope(unit, node, scope_node, ctxt, parent);
 
-        if let Some(function_symbol) = scope_node.try_symbol() {
-            if let Some(type_node) = node.child_by_field(unit, LangCpp::field_type)
-                && let Some(return_type) = infer_type(unit, ctxt, &type_node)
-            {
-                function_symbol.set_type_of(return_type.id());
-            }
+        if let Some(function_symbol) = scope_node.try_symbol()
+            && let Some(type_node) = node.child_by_field(unit, LangCpp::field_type)
+            && let Some(return_type) = infer_type(unit, ctxt, &type_node)
+        {
+            function_symbol.set_type_of(return_type.id());
         }
     }
 

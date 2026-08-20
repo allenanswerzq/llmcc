@@ -45,11 +45,11 @@ fn main() {
         }
     };
 
-    if cli.update {
-        if let Err(e) = corpus.write_updates() {
-            eprintln!("error writing updates: {e}");
-            process::exit(1);
-        }
+    if cli.update
+        && let Err(e) = corpus.write_updates()
+    {
+        eprintln!("error writing updates: {e}");
+        process::exit(1);
     }
 
     println!("\n{summary}");
