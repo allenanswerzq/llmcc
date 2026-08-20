@@ -6,21 +6,9 @@
 
 llmcc tries a different approach. It builds multi-depth architecture views for code understanding and generation in extremely fast speed, so agents can see the big picture and precise symbols without complex RAG infrastructure.
 
-## Supported Languages
-
-| Language | Status |
-|----------|--------|
-| Rust | ✅ Supported |
-| TypeScript | ✅ Supported |
-| C++ | 🔜 Planned |
-| Python | 🔜 Planned |
-| Go | 🔜 Planned |
-| markdown | 🔜 Planned |
-| more |
-
 ## Why multi-depth graphs?
 
-People (and coding agents) need to understand systems from different dimensions. Sometimes you need the high-level architecture to see boundaries, ownership, and how subsystems connect; other times you need the low-level implementation details to make a safe, precise change. llmcc provides multiple depths so you can choose the right “distance” from the code for the task.
+People (and coding agents) need to understand systems from different dimensions. Sometimes you need the high-level architecture to see boundaries, ownership, and how subsystems connect; other times you need the low-level implementation details to make a safe, precise change. llmcc provides multiple depths so you can choose the right distance from the code for the task.
 
 | Depth | Perspective | Best for |
 |------:|-------------|----------|
@@ -87,28 +75,16 @@ Excerpt (PageRank timing, depth=3, top-200):
 
 ## Installation
 
-### npm / npx (Recommended)
-
-The easiest way to use llmcc is via npm. No build required:
+Use npm:
 
 ```bash
 npm install -g llmcc-cli
 llmcc --help
 ```
-
-### Cargo (Rust)
+Use cargo:
 
 ```bash
 cargo install llmcc
-```
-
-### From Source
-
-```bash
-git clone https://github.com/allenanswerzq/llmcc.git
-cd llmcc
-cargo build --release
-./target/release/llmcc --help
 ```
 
 ## CLI: generate graphs
@@ -140,11 +116,3 @@ Render DOT to SVG (requires Graphviz):
 ```bash
 dot -Tsvg /tmp/codex_depth3_pagerank.dot -o /tmp/codex_depth3_pagerank.svg
 ```
-
-For generating sample graphs, use [llmcc-bench](https://github.com/allenanswerzq/llmcc-bench). The generated graph outputs are published in [llmcc-samples](https://github.com/allenanswerzq/llmcc-samples).
-
-## Related repositories
-
-- Agent tooling: [llmcc-agent](https://github.com/allenanswerzq/llmcc-agent)
-- Benchmark harness: [llmcc-bench](https://github.com/allenanswerzq/llmcc-bench)
-- Sample outputs: [llmcc-samples](https://github.com/allenanswerzq/llmcc-samples)
